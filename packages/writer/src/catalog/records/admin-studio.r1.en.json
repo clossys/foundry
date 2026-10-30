@@ -7,7 +7,8 @@
   "scope": [
     "Studio Scorecard and check messages",
     "Inspector field labels",
-    "Graph and Explorer names from all five IA layers"
+    "Graph and Explorer names from all five IA layers",
+    "Director cell titles from the public strategy catalog"
   ],
   "activation": "none",
   "sourceFiles": {
@@ -4885,6 +4886,690 @@
       "text": "Toggle Sidebar",
       "limits": {
         "maxChars": 120
+      }
+    },
+    {
+      "id": "st.t731js7pda",
+      "leaf": "strings.names",
+      "context": "director.item.context.market.size",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Market size",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.dz8cv9jgfa",
+      "leaf": "strings.names",
+      "context": "director.item.context.market.trend",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Market trend",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.t2jbeczfze",
+      "leaf": "strings.names",
+      "context": "director.item.context.customer.need",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Customer need",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.rzhvp5tqxe",
+      "leaf": "strings.names",
+      "context": "director.item.context.customer.buying",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Buying behavior",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.spckhqzg98",
+      "leaf": "strings.names",
+      "context": "director.item.context.competition.alternative",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Competitive alternatives",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.7mz99pys92",
+      "leaf": "strings.names",
+      "context": "director.item.context.competition.gap",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Competitive gap",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.953khppgkp",
+      "leaf": "strings.names",
+      "context": "director.item.context.company.strength",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Company strengths",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.6ff8x3yvak",
+      "leaf": "strings.names",
+      "context": "director.item.context.company.constraint",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Company constraints",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.mshqwzfnr3",
+      "leaf": "strings.names",
+      "context": "director.item.aspiration.purpose.mission",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Mission",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.37mntt4k9g",
+      "leaf": "strings.names",
+      "context": "director.item.aspiration.purpose.vision",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Vision",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.skshbmg7gd",
+      "leaf": "strings.names",
+      "context": "director.item.aspiration.culture.belief",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Cultural beliefs",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.wxsz238341",
+      "leaf": "strings.names",
+      "context": "director.item.aspiration.culture.behavior",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Cultural behaviors",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.tacraw1ssr",
+      "leaf": "strings.names",
+      "context": "director.item.aspiration.goal.long-term",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Long-term goals",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.axwcjhet6d",
+      "leaf": "strings.names",
+      "context": "director.item.aspiration.goal.annual",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Annual goals",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.jvzj96g7hg",
+      "leaf": "strings.names",
+      "context": "director.item.focus.category.definition",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Category definition",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.skp95gzq0g",
+      "leaf": "strings.names",
+      "context": "director.item.focus.category.stance",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Category stance",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.765erb68j2",
+      "leaf": "strings.names",
+      "context": "director.item.focus.segment.core",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Core customer segment",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.d75w0yae4s",
+      "leaf": "strings.names",
+      "context": "director.item.focus.segment.next",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Next customer segment",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.p6a72qhqpd",
+      "leaf": "strings.names",
+      "context": "director.item.focus.offer.included",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Included offerings",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.ap8n9wezeh",
+      "leaf": "strings.names",
+      "context": "director.item.focus.offer.excluded",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Excluded offerings",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.5dc6w7wvyb",
+      "leaf": "strings.names",
+      "context": "director.item.focus.reach.geography",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Geographic reach",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.3va1nkegzn",
+      "leaf": "strings.names",
+      "context": "director.item.focus.reach.channel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Channels",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.nk83yh57mz",
+      "leaf": "strings.names",
+      "context": "director.item.focus.lifecycle.acquisition",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Customer acquisition",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.apr9bnmedn",
+      "leaf": "strings.names",
+      "context": "director.item.focus.lifecycle.retention",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Customer retention",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.vec2jx4kk0",
+      "leaf": "strings.names",
+      "context": "director.item.advantage.proposition.promise",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Value promise",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.an5n07az96",
+      "leaf": "strings.names",
+      "context": "director.item.advantage.proposition.proof",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Supporting proof",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.s7a6bvx45m",
+      "leaf": "strings.names",
+      "context": "director.item.advantage.defensibility.differentiator",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Differentiators",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.sbr4hxq7v1",
+      "leaf": "strings.names",
+      "context": "director.item.advantage.defensibility.moat",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Competitive moat",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.xpsqs4txvg",
+      "leaf": "strings.names",
+      "context": "director.item.advantage.model.pricing",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Pricing model",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.vjb9nzttsd",
+      "leaf": "strings.names",
+      "context": "director.item.advantage.model.margin",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Margin model",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.y5nrd9013w",
+      "leaf": "strings.names",
+      "context": "director.item.identity.brand.essence",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Brand essence",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.mfy7kk00nm",
+      "leaf": "strings.names",
+      "context": "director.item.identity.brand.personality",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Brand personality",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.xmesn04rfx",
+      "leaf": "strings.names",
+      "context": "director.item.identity.naming.name",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Brand name",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.28r658tsgx",
+      "leaf": "strings.names",
+      "context": "director.item.identity.naming.architecture",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Naming architecture",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.w4j2j6q9mg",
+      "leaf": "strings.names",
+      "context": "director.item.identity.verbal.narrative",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Brand narrative",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.mmacffjdy0",
+      "leaf": "strings.names",
+      "context": "director.item.identity.verbal.voice",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Brand voice",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.rkjj3p8p4s",
+      "leaf": "strings.names",
+      "context": "director.item.identity.visual.style",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Visual style",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.4svc0tsfze",
+      "leaf": "strings.names",
+      "context": "director.item.identity.visual.imagery",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Imagery",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.y3dktp1qfd",
+      "leaf": "strings.names",
+      "context": "director.item.capability.competency.critical",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Critical competencies",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.mras1pt5tb",
+      "leaf": "strings.names",
+      "context": "director.item.capability.competency.gap",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Competency gaps",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.j69s1ny7bb",
+      "leaf": "strings.names",
+      "context": "director.item.capability.sourcing.build",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Build capabilities",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.zv7617hykh",
+      "leaf": "strings.names",
+      "context": "director.item.capability.sourcing.partner",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Partner capabilities",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.pgyyc4em84",
+      "leaf": "strings.names",
+      "context": "director.item.capability.sourcing.acquire",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Acquire capabilities",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.3pexqc4e3e",
+      "leaf": "strings.names",
+      "context": "director.item.capability.operation.delivery",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Delivery operations",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.46c7ng0nw0",
+      "leaf": "strings.names",
+      "context": "director.item.capability.operation.technology",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Technology",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.2evf0jttnc",
+      "leaf": "strings.names",
+      "context": "director.item.capability.team.role",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Team roles",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.ve5tpt5h60",
+      "leaf": "strings.names",
+      "context": "director.item.capability.team.structure",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Team structure",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.9wbjhrqpdb",
+      "leaf": "strings.names",
+      "context": "director.item.capability.resource.funding",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Funding",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.eya4sej4mx",
+      "leaf": "strings.names",
+      "context": "director.item.capability.resource.allocation",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Resource allocation",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.7erv1smxw1",
+      "leaf": "strings.names",
+      "context": "director.item.execution.priority.bet",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Priority bets",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.m5qs3hvns9",
+      "leaf": "strings.names",
+      "context": "director.item.execution.priority.parked",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Parked priorities",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.7nqt63w00z",
+      "leaf": "strings.names",
+      "context": "director.item.execution.roadmap.milestone",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Milestones",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.qdxpahxf53",
+      "leaf": "strings.names",
+      "context": "director.item.execution.roadmap.release",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Releases",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.10exaek72w",
+      "leaf": "strings.names",
+      "context": "director.item.execution.measure.north-star",
+      "status": "draft",
+      "origin": "authored",
+      "text": "North star metric",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.mygs4nqe4k",
+      "leaf": "strings.names",
+      "context": "director.item.execution.measure.driver",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Driver metrics",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.dazggs1mkx",
+      "leaf": "strings.names",
+      "context": "director.item.execution.risk.threat",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Risk threats",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
+      }
+    },
+    {
+      "id": "st.3yd7zr65fz",
+      "leaf": "strings.names",
+      "context": "director.item.execution.risk.mitigation",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Risk mitigation",
+      "limits": {
+        "maxChars": 65,
+        "maxWords": 12
       }
     }
   ],
@@ -17515,6 +18200,462 @@
       "recordId": "st.qbaewx3e0y",
       "target": "packages/designer/src/components/sidebar/sidebar.tsx",
       "kind": "CopyRef"
+    },
+    {
+      "cellId": "director.item.context.market.size",
+      "sourceCellId": "context.market.size",
+      "recordId": "st.t731js7pda",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.context.market.trend",
+      "sourceCellId": "context.market.trend",
+      "recordId": "st.dz8cv9jgfa",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.context.customer.need",
+      "sourceCellId": "context.customer.need",
+      "recordId": "st.t2jbeczfze",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.context.customer.buying",
+      "sourceCellId": "context.customer.buying",
+      "recordId": "st.rzhvp5tqxe",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.context.competition.alternative",
+      "sourceCellId": "context.competition.alternative",
+      "recordId": "st.spckhqzg98",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.context.competition.gap",
+      "sourceCellId": "context.competition.gap",
+      "recordId": "st.7mz99pys92",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.context.company.strength",
+      "sourceCellId": "context.company.strength",
+      "recordId": "st.953khppgkp",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.context.company.constraint",
+      "sourceCellId": "context.company.constraint",
+      "recordId": "st.6ff8x3yvak",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.aspiration.purpose.mission",
+      "sourceCellId": "aspiration.purpose.mission",
+      "recordId": "st.mshqwzfnr3",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.aspiration.purpose.vision",
+      "sourceCellId": "aspiration.purpose.vision",
+      "recordId": "st.37mntt4k9g",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.aspiration.culture.belief",
+      "sourceCellId": "aspiration.culture.belief",
+      "recordId": "st.skshbmg7gd",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.aspiration.culture.behavior",
+      "sourceCellId": "aspiration.culture.behavior",
+      "recordId": "st.wxsz238341",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.aspiration.goal.long-term",
+      "sourceCellId": "aspiration.goal.long-term",
+      "recordId": "st.tacraw1ssr",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.aspiration.goal.annual",
+      "sourceCellId": "aspiration.goal.annual",
+      "recordId": "st.axwcjhet6d",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.focus.category.definition",
+      "sourceCellId": "focus.category.definition",
+      "recordId": "st.jvzj96g7hg",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.focus.category.stance",
+      "sourceCellId": "focus.category.stance",
+      "recordId": "st.skp95gzq0g",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.focus.segment.core",
+      "sourceCellId": "focus.segment.core",
+      "recordId": "st.765erb68j2",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.focus.segment.next",
+      "sourceCellId": "focus.segment.next",
+      "recordId": "st.d75w0yae4s",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.focus.offer.included",
+      "sourceCellId": "focus.offer.included",
+      "recordId": "st.p6a72qhqpd",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.focus.offer.excluded",
+      "sourceCellId": "focus.offer.excluded",
+      "recordId": "st.ap8n9wezeh",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.focus.reach.geography",
+      "sourceCellId": "focus.reach.geography",
+      "recordId": "st.5dc6w7wvyb",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.focus.reach.channel",
+      "sourceCellId": "focus.reach.channel",
+      "recordId": "st.3va1nkegzn",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.focus.lifecycle.acquisition",
+      "sourceCellId": "focus.lifecycle.acquisition",
+      "recordId": "st.nk83yh57mz",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.focus.lifecycle.retention",
+      "sourceCellId": "focus.lifecycle.retention",
+      "recordId": "st.apr9bnmedn",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.advantage.proposition.promise",
+      "sourceCellId": "advantage.proposition.promise",
+      "recordId": "st.vec2jx4kk0",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.advantage.proposition.proof",
+      "sourceCellId": "advantage.proposition.proof",
+      "recordId": "st.an5n07az96",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.advantage.defensibility.differentiator",
+      "sourceCellId": "advantage.defensibility.differentiator",
+      "recordId": "st.s7a6bvx45m",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.advantage.defensibility.moat",
+      "sourceCellId": "advantage.defensibility.moat",
+      "recordId": "st.sbr4hxq7v1",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.advantage.model.pricing",
+      "sourceCellId": "advantage.model.pricing",
+      "recordId": "st.xpsqs4txvg",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.advantage.model.margin",
+      "sourceCellId": "advantage.model.margin",
+      "recordId": "st.vjb9nzttsd",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.identity.brand.essence",
+      "sourceCellId": "identity.brand.essence",
+      "recordId": "st.y5nrd9013w",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.identity.brand.personality",
+      "sourceCellId": "identity.brand.personality",
+      "recordId": "st.mfy7kk00nm",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.identity.naming.name",
+      "sourceCellId": "identity.naming.name",
+      "recordId": "st.xmesn04rfx",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.identity.naming.architecture",
+      "sourceCellId": "identity.naming.architecture",
+      "recordId": "st.28r658tsgx",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.identity.verbal.narrative",
+      "sourceCellId": "identity.verbal.narrative",
+      "recordId": "st.w4j2j6q9mg",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.identity.verbal.voice",
+      "sourceCellId": "identity.verbal.voice",
+      "recordId": "st.mmacffjdy0",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.identity.visual.style",
+      "sourceCellId": "identity.visual.style",
+      "recordId": "st.rkjj3p8p4s",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.identity.visual.imagery",
+      "sourceCellId": "identity.visual.imagery",
+      "recordId": "st.4svc0tsfze",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.capability.competency.critical",
+      "sourceCellId": "capability.competency.critical",
+      "recordId": "st.y3dktp1qfd",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.capability.competency.gap",
+      "sourceCellId": "capability.competency.gap",
+      "recordId": "st.mras1pt5tb",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.capability.sourcing.build",
+      "sourceCellId": "capability.sourcing.build",
+      "recordId": "st.j69s1ny7bb",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.capability.sourcing.partner",
+      "sourceCellId": "capability.sourcing.partner",
+      "recordId": "st.zv7617hykh",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.capability.sourcing.acquire",
+      "sourceCellId": "capability.sourcing.acquire",
+      "recordId": "st.pgyyc4em84",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.capability.operation.delivery",
+      "sourceCellId": "capability.operation.delivery",
+      "recordId": "st.3pexqc4e3e",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.capability.operation.technology",
+      "sourceCellId": "capability.operation.technology",
+      "recordId": "st.46c7ng0nw0",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.capability.team.role",
+      "sourceCellId": "capability.team.role",
+      "recordId": "st.2evf0jttnc",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.capability.team.structure",
+      "sourceCellId": "capability.team.structure",
+      "recordId": "st.ve5tpt5h60",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.capability.resource.funding",
+      "sourceCellId": "capability.resource.funding",
+      "recordId": "st.9wbjhrqpdb",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.capability.resource.allocation",
+      "sourceCellId": "capability.resource.allocation",
+      "recordId": "st.eya4sej4mx",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.execution.priority.bet",
+      "sourceCellId": "execution.priority.bet",
+      "recordId": "st.7erv1smxw1",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.execution.priority.parked",
+      "sourceCellId": "execution.priority.parked",
+      "recordId": "st.m5qs3hvns9",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.execution.roadmap.milestone",
+      "sourceCellId": "execution.roadmap.milestone",
+      "recordId": "st.7nqt63w00z",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.execution.roadmap.release",
+      "sourceCellId": "execution.roadmap.release",
+      "recordId": "st.qdxpahxf53",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.execution.measure.north-star",
+      "sourceCellId": "execution.measure.north-star",
+      "recordId": "st.10exaek72w",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.execution.measure.driver",
+      "sourceCellId": "execution.measure.driver",
+      "recordId": "st.mygs4nqe4k",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.execution.risk.threat",
+      "sourceCellId": "execution.risk.threat",
+      "recordId": "st.dazggs1mkx",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
+    },
+    {
+      "cellId": "director.item.execution.risk.mitigation",
+      "sourceCellId": "execution.risk.mitigation",
+      "recordId": "st.3yd7zr65fz",
+      "kind": "item-name",
+      "target": "packages/strategist/src/catalog/cells/strategy.json",
+      "role": "heading"
     }
   ],
   "needs": [

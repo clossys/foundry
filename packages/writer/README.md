@@ -655,10 +655,19 @@ valid declared ICU arguments. The command creates a new envelope and never
 overwrites an existing destination. It supplies no approval or activation.
 
 The shipped Writer page drafts join `getAdminCopy()` through the existing
-`@clossys/writer/admin-copy` export. `resolveAdminCopyRef(ref, copy)` formats
-English draft-review text from that supplied store and returns `undefined` for
-missing records, unsupported locales or invalid message arguments. It is separate
-from the approved production resolver.
+`@clossys/writer/admin-copy` export. `resolveAdminCopyRef(ref, copy, options)` uses
+the shared approval policy: draft review requires `{ target: "preview" }`;
+the default target is production. Missing records, unsupported locales and
+invalid message arguments return `undefined`.
+
+The same export supplies `getAdminDirectorCellTitleBinding(cellId, copy)` and
+`resolveAdminDirectorCellTitle(cellId, copy, options)` for the public Director
+catalog. Titles are authored Studio records addressed by the exact cell ID;
+the binding retains its Writer record ID, source catalog path, source cell ID
+and semantic `role: "heading"`. The resolver also returns the `ref` and `binding`
+alongside the usual resolution metadata. Unknown cells and altered or missing
+bindings return `undefined`, leaving the host to request missing copy. These
+records remain drafts and do not supply strategy facts or approval evidence.
 
 ### `writer-check approve` — write or revoke a record
 
