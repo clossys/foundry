@@ -251,6 +251,8 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--color-skeleton-fill": { property: "--color-skeleton-fill", family: "skeleton", value: "var(--color-surface-sunken, oklch(0.9401 0 0))", brandable: false, themeDependent: false },
 
   // ── TEXT (font-size ramp — fixed scale, not brand-bound) ──────────────
+  "--text-display-2xl": { property: "--text-display-2xl", family: "text", value: "clamp(4.5rem, 10vw, 8rem)", brandable: false, themeDependent: false },
+  "--text-heading-2xl": { property: "--text-heading-2xl", family: "text", value: "clamp(3rem, 6vw, 5rem)", brandable: false, themeDependent: false },
   "--text-display-xl": { property: "--text-display-xl", family: "text", value: "72px", brandable: false, themeDependent: false },
   "--text-display-l": { property: "--text-display-l", family: "text", value: "56px", brandable: false, themeDependent: false },
   "--text-display-m": { property: "--text-display-m", family: "text", value: "44px", brandable: false, themeDependent: false },

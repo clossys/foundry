@@ -105,6 +105,8 @@
   --color-skeleton-fill:          var(--color-skeleton-fill, oklch(0.9401 0 0));
 
   /* ── TEXT (font-size) ─────────────────────────────────────────── */
+  --text-display-2xl:           var(--text-display-2xl, clamp(4.5rem, 10vw, 8rem));
+  --text-heading-2xl:           var(--text-heading-2xl, clamp(3rem, 6vw, 5rem));
   --text-display-xl:              var(--text-display-xl, 72px);
   --text-display-l:               var(--text-display-l, 56px);
   --text-display-m:               var(--text-display-m, 44px);

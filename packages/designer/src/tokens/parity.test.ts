@@ -58,9 +58,9 @@ describe("tokens.css <-> src/tokens.ts parity", () => {
     expect(declarations.has("--ui-scene-tilt")).toBe(false);
   });
 
-  it("declares exactly 230 tokens (the curated set this package promises)", () => {
-    expect(declarations.size).toBe(230);
-    expect(Object.keys(TOKENS).length).toBe(230);
+  it("declares exactly 232 tokens (the curated set this package promises)", () => {
+    expect(declarations.size).toBe(232);
+    expect(Object.keys(TOKENS).length).toBe(232);
   });
 });
 
