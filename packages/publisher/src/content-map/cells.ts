@@ -134,7 +134,7 @@ async function load(root: string, options: CellCompileOptions = {}) {
     maps.push(map);
     if (pub.routePack !== undefined) {
       if (!object(pub.routePack)) error(pub.id, "Invalid route pack header");
-      const compiledRoutes = entries.filter(entry => entry.kind !== "group").map(entry => {
+      const compiledRoutes = entries.filter(entry => entry.kind !== "group" && entry.kind !== "external").map(entry => {
         const metadata = routes.get(entry.id); if (!metadata) error(entry.id, "Missing Route metadata");
         return { ...metadata, instanceId: entry.id, path: entry.path ?? `/${entry.slug}`, label: entry.title, ...(entry.keywords === undefined ? {} : { keywords: entry.keywords }) };
       });

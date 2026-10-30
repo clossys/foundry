@@ -36,6 +36,10 @@
     "node": ">=20"
   },
   "exports": {
+    "./app-local": {
+      "types": "./dist/app-local/index.d.ts",
+      "node": "./dist/app-local/index.js"
+    },
     "./content-map": {
       "types": "./dist/content-map/index.d.ts",
       "import": "./dist/content-map/index.js"

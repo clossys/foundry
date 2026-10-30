@@ -1,3 +1,4 @@
+import { appLocalSpecifier, type AppLocalRouteSourceOptions } from "../app-local/route-options.js";
 import { assertContentRouteRegistration } from "./content-route-registration.js";
 import type { ContentRouteRegistration } from "./content-route-types.js";
 
@@ -22,11 +23,11 @@ function moduleJson(value: unknown): string {
 }
 
 /** Emit the server entry only; the active candidate remains the sole page-body authority. */
-export function emitContentRoutePage(route: ContentRouteRegistration): string {
+export function emitContentRoutePage(route: ContentRouteRegistration, options?: AppLocalRouteSourceOptions): string {
   assertContentRouteRegistration(route);
   return [
-    'import { ContentRoutePage, bindContentRoute, requireContentRoutePublishing } from "@clossys/publisher/web/content-route";',
-    'import type { ContentRouteInput, ContentRouteRegistration } from "@clossys/publisher/web/content-route";',
+    `import { ContentRoutePage, bindContentRoute, requireContentRoutePublishing } from ${JSON.stringify(appLocalSpecifier("@clossys/publisher/web/content-route", options))};`,
+    `import type { ContentRouteInput, ContentRouteRegistration } from ${JSON.stringify(appLocalSpecifier("@clossys/publisher/web/content-route", options))};`,
     `import { ${route.loader.export} as loadContentRoute } from ${moduleJson(modulePath(route.source.file, route.loader.file))};`,
     `const route: ContentRouteRegistration = ${moduleJson(route)};`,
     "export default async function ContentPage() {",

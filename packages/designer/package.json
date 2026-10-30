@@ -57,6 +57,10 @@
       "types": "./dist/components/server.d.ts",
       "import": "./dist/components/server.js"
     },
+    "./components/source-closure": {
+      "types": "./dist/components/source-closure.d.ts",
+      "import": "./dist/components/source-closure.js"
+    },
     "./icons": {
       "types": "./dist/icons/index.d.ts",
       "import": "./dist/icons/index.js"
