@@ -114,6 +114,7 @@ export function validateSpecimenCoverage(input: {
       const nativeKind = SPECIMEN_KIND_MAP.find(entry => entry.kind === cell.kind && (entry.layer === undefined || entry.layer === cell.layer));
       if (!nativeKind || agent !== nativeKind.agent) add(cell, "agent-specimen-mismatch");
       if (!["single", "ladder", "grid", "matrix"].includes(leaf.layout)) add(cell, "missing-or-invalid-layout");
+      if (!["full", "half", "third"].includes(leaf.span)) add(cell, "missing-or-invalid-span");
       if (typeof leaf.render !== "function") add(cell, "unrenderable-specimen-leaf");
       if (!Array.isArray(cell.items) || !cell.items.length) add(cell, "empty-specimen-items");
       if (leaf.validate || leaf.requirements?.length) {

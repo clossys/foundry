@@ -178,7 +178,7 @@ export function SpecimenPageViewports(props: SpecimenLeafProps): ReactNode {
   }} />;
 }
 export const contentSpecimenLeaves: readonly SpecimenLeafDefinition[] = [
-  { id: "sections.specimen-rich-passage", layout: "ladder", compatible: [{ kind: "passage" }], requirements: ["components.rich-text"], validate: props => contentSpecimenNeeds("sections.specimen-rich-passage", props), render: SpecimenRichPassage },
-  { id: "sections.specimen-copy-in-context", layout: "matrix", compatible: [{ kind: "copy" }], requirements: ["components.rich-text", "components.button", "components.navigation-tree", "sections.section-header", "sections.empty-state"], validate: props => contentSpecimenNeeds("sections.specimen-copy-in-context", props), render: SpecimenCopyInContext },
-  { id: "sections.specimen-page-viewports", layout: "matrix", compatible: [{ kind: "page" }], requirements: ["components.badge", "producer-emitted-page@1"], validate: props => contentSpecimenNeeds("sections.specimen-page-viewports", props), render: SpecimenPageViewports },
+  { id: "sections.specimen-rich-passage", layout: "ladder", span: "full", compatible: [{ kind: "passage" }], requirements: ["components.rich-text"], validate: props => contentSpecimenNeeds("sections.specimen-rich-passage", props), render: SpecimenRichPassage },
+  { id: "sections.specimen-copy-in-context", layout: "matrix", span: "full", compatible: [{ kind: "copy" }], requirements: ["components.rich-text", "components.button", "components.navigation-tree", "sections.section-header", "sections.empty-state"], validate: props => contentSpecimenNeeds("sections.specimen-copy-in-context", props), render: SpecimenCopyInContext },
+  { id: "sections.specimen-page-viewports", layout: "matrix", span: "full", compatible: [{ kind: "page" }], requirements: ["components.badge", "producer-emitted-page@1"], validate: props => contentSpecimenNeeds("sections.specimen-page-viewports", props), render: SpecimenPageViewports },
 ];

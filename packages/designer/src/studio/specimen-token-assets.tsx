@@ -9,7 +9,7 @@ import { checkedPreviewCss } from "../tokens/preview/checked-css.js";
 import { specimenDataset } from "./specimen-dataset.js";
 import { componentSpecimenPreview, type ComponentSpecimenBinding } from "./component-specimens.js";
 import type { DesignerSpecimenContext, DesignerSpecimenNeed } from "./DesignerSpecimen.js";
-import { SpecimenLayoutSection, specimenLayoutNeeds, type SpecimenItem, type SpecimenLeafDefinition, type SpecimenLeafId, type SpecimenLeafProps, type SpecimenLayout } from "./specimen-layouts.js";
+import { SpecimenLayoutSection, specimenLayoutNeeds, type SpecimenItem, type SpecimenLeafDefinition, type SpecimenLeafId, type SpecimenLeafProps, type SpecimenLayout, type SpecimenSpan } from "./specimen-layouts.js";
 
 /** The cell carries native member identities. Values always come from the current consumer resolution. */
 export interface TokenAssetSpecimenValue { readonly memberId: string }
@@ -173,11 +173,11 @@ function renderItem(mode: Mode, item: SpecimenItem, props: SpecimenLeafProps): R
     {mode === "icon-grid" ? <Artwork glyph={member.value.light} decorative={false} label={`${id} ${ground}`} /> : typeof member.value.light === "string" ? <Artwork src={`data:image/svg+xml,${encodeURIComponent(member.value.light)}`} size="lg" title={id} /> : null}
   </Content>)}</>;
 }
-function definition(mode: Mode, kind: string, layout: SpecimenLayout, layer: "tokens" | "assets"): TokenAssetSpecimenDefinition {
+function definition(mode: Mode, kind: string, layout: SpecimenLayout, layer: "tokens" | "assets", span: SpecimenSpan): TokenAssetSpecimenDefinition {
   const id: SpecimenLeafId = `sections.specimen-${mode}`;
   const requiredLeaves = [...requirements(mode), "components.grid-list", "components.disclosure"];
   return {
-    id, layout, compatible: [{ kind, layer }], cardinality: { minItems: 1 }, requirements: requiredLeaves, requiredLeaves, capabilities: ["native-consumer-components", "read-only", "value-applied", ...(mode === "motion-player" ? ["reduced-motion-static-final"] : [])],
+    id, layout, span, compatible: [{ kind, layer }], cardinality: { minItems: 1 }, requirements: requiredLeaves, requiredLeaves, capabilities: ["native-consumer-components", "read-only", "value-applied", ...(mode === "motion-player" ? ["reduced-motion-static-final"] : [])],
     validate: props => validate(mode, props, layout),
     render: props => {
       const needs = validate(mode, props, layout);
@@ -189,10 +189,10 @@ function definition(mode: Mode, kind: string, layout: SpecimenLayout, layer: "to
 function ContentNeed({ need, render }: { need: DesignerSpecimenNeed; render: SpecimenLeafProps["need"] }): ReactNode { return render(need); }
 /** Concrete executable cohort registry; the aggregate imports this array rather than reconstructing metadata. */
 export const tokenAssetSpecimenLeaves: readonly TokenAssetSpecimenDefinition[] = [
-  definition("swatch", "color", "grid", "tokens"), definition("color-ramp", "color-ramp", "grid", "tokens"),
-  definition("type-ladder", "type", "ladder", "tokens"), definition("spacing-ladder", "spacing", "ladder", "tokens"),
-  definition("radius-ladder", "radius", "ladder", "tokens"), definition("motion-player", "motion", "ladder", "tokens"),
-  definition("asset-grid", "asset", "grid", "assets"), definition("icon-grid", "icon", "grid", "assets"),
+  definition("swatch", "color", "grid", "tokens", "third"), definition("color-ramp", "color-ramp", "grid", "tokens", "full"),
+  definition("type-ladder", "type", "ladder", "tokens", "full"), definition("spacing-ladder", "spacing", "ladder", "tokens", "full"),
+  definition("radius-ladder", "radius", "ladder", "tokens", "full"), definition("motion-player", "motion", "ladder", "tokens", "full"),
+  definition("asset-grid", "asset", "grid", "assets", "third"), definition("icon-grid", "icon", "grid", "assets", "third"),
 ];
 export const SpecimenSwatch = tokenAssetSpecimenLeaves[0]!.render;
 export const SpecimenColorRamp = tokenAssetSpecimenLeaves[1]!.render;
