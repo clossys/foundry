@@ -9,6 +9,7 @@ import { startStudio, studioEntry, type StudioChild } from "./studio.js";
 import { watchCells } from "./watch.js";
 import { studioTheme } from "./theme.js";
 import { publication, servePreview } from "./publication.js";
+import { selectionProfile, selectionRuntime, studioSelection } from "./selection.js";
 
 export type { AgentCells, CellSummary, CellsResponse, ChangeEvent } from "./contract.js";
 export { TOKEN_HEADER } from "./contract.js";
@@ -88,7 +89,21 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
       if (request.method !== "GET") { json(response, 405, { error: "API is read-only" }); return; }
       if (pathname === "/api/health") { json(response, 200, { ok: !!child, studio: child ? "ready" : "starting" }); return; }
       if (pathname === "/api/config") {
-        json(response, 200, { token, tokenHeader: TOKEN_HEADER, readOnly: true, theme: await studioTheme(options.root), compilation: options.compilation ?? [], agents: AGENT_KINDS.map(agent => ({ agent, packageName: resolveAgent(agent).packageName })) }); return;
+        const [theme, selection] = await Promise.all([studioTheme(options.root), studioSelection(options.root)]);
+        json(response, 200, { token, tokenHeader: TOKEN_HEADER, readOnly: true, theme, selection, compilation: options.compilation ?? [], agents: AGENT_KINDS.map(agent => ({ agent, packageName: resolveAgent(agent).packageName })) }); return;
+      }
+      if (pathname === "/api/selection/runtime.js") {
+        const hash = new URL(raw, origin).searchParams.get("hash") ?? "";
+        const runtime = /^sha256:[a-f0-9]{64}$/.test(hash) ? selectionRuntime(hash) : undefined;
+        if (!runtime) { json(response, 404, { error: "Selected runtime is unavailable; reload the Producer config" }); return; }
+        response.writeHead(200, { "Content-Type": "text/javascript; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" });
+        response.end(runtime); return;
+      }
+      if (pathname === "/api/selection/profile") {
+        const hash = new URL(raw, origin).searchParams.get("hash") ?? "";
+        const profile = /^sha256:[a-f0-9]{64}$/.test(hash) ? selectionProfile(hash) : undefined;
+        if (!profile) { json(response, 404, { error: "Selected profile is unavailable; reload the Producer config" }); return; }
+        json(response, 200, profile); return;
       }
       if (pathname === "/api/cells") { json(response, 200, { agents: await Promise.all(AGENT_KINDS.map(agent => inventory(options.root, agent))) }); return; }
       if (pathname === "/api/publication") { json(response, 200, await publication(options.root, new URL(raw, origin).searchParams.get("publication") ?? undefined)); return; }

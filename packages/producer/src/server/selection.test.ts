@@ -1,0 +1,73 @@
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import * as React from "react";
+import * as ReactDOM from "react-dom";
+import * as ReactDOMClient from "react-dom/client";
+import * as ReactDOMServer from "react-dom/server";
+import * as JSXRuntime from "react/jsx-runtime";
+import * as JSXDevRuntime from "react/jsx-dev-runtime";
+import { applyLibraryChange, libraryHash, resolve } from "@clossys/designer/catalog";
+import { describe, expect, it } from "vitest";
+import { prepareStudioSelection } from "./selection-defaults.js";
+import { compileSelection, selectionRuntime, type StudioSelection } from "./selection.js";
+import { themeHash } from "./theme-default.js";
+import { startProducerServer, type ProducerServer } from "./index.js";
+
+describe("Studio selected runtime", () => {
+  it("executes different actual selected Badge fills and the selected disclosure composition", async () => {
+    const temporary = await mkdtemp(join(tmpdir(), "producer-selected-runtime-"));
+    const global = globalThis as typeof globalThis & { __studioDesignerRuntime?: Record<string, unknown> };
+    const previous = global.__studioDesignerRuntime;
+    let server: ProducerServer | undefined;
+    global.__studioDesignerRuntime = { react: React, "react-dom": ReactDOM, "react-dom/client": ReactDOMClient, "react-dom/server": ReactDOMServer, "react/jsx-runtime": JSXRuntime, "react/jsx-dev-runtime": JSXDevRuntime };
+    try {
+      const prepared = await prepareStudioSelection();
+      server = await startProducerServer({ root: temporary, port: 0, studioEntry: fileURLToPath(new URL("./__fixtures__/studio-child.mjs", import.meta.url)), handleSignals: false });
+      const config = await (await fetch(`${server.url}/api/config`)).json() as { selection: StudioSelection };
+      const first = config.selection;
+      const profileResponse = await fetch(`${server.url}${first.profileUrl!}`);
+      expect(profileResponse.status).toBe(200);
+      const profile = await profileResponse.json() as { selectionHash: string; components: { components: Record<string, unknown> } };
+      expect(profile.selectionHash).toBe(first.hash);
+      expect(profile.components.components["components.badge"]).toBeDefined();
+      const firstRuntimeHash = new URL(first.runtimeUrl!, "http://127.0.0.1").searchParams.get("hash")!;
+      const firstCode = selectionRuntime(firstRuntimeHash)!;
+      expect(firstRuntimeHash).toBe(themeHash(firstCode));
+      const firstPath = join(temporary, "first.mjs"); await writeFile(firstPath, firstCode);
+      const firstRuntime = await import(pathToFileURL(firstPath).href);
+      const firstBadge = ReactDOMServer.renderToStaticMarkup(React.createElement(firstRuntime.components.Badge, null, "Selected"));
+      expect(firstBadge).toContain('data-ds-fill="shadcn@aria/components.badge"');
+      expect(firstBadge).toContain('data-slot="badge"');
+      expect(first.cssHash).toBe(themeHash(first.css!));
+      expect(firstCode).not.toContain(temporary);
+      const disclosure = ReactDOMServer.renderToStaticMarkup(React.createElement(firstRuntime.disclosure.Disclosure, { title: "Source", defaultExpanded: true }, "Cell source"));
+      expect(disclosure).toContain('data-ds-leaf="components.disclosure"');
+      expect(disclosure).toContain('data-slot="accordion-trigger"');
+      const dialogTitle = ReactDOMServer.renderToStaticMarkup(React.createElement(firstRuntime.dialog.Dialog.Heading, null, "Find a page"));
+      expect(dialogTitle).toContain('data-slot="dialog-title"');
+      expect(dialogTitle).toContain("Find a page");
+      const controlledDialog = firstRuntime.dialog.Dialog({ trigger: null, isOpen: true, children: "Contents" });
+      expect(controlledDialog.type).toBe(firstRuntime.components.Dialog);
+      expect(controlledDialog.props.isOpen).toBe(true);
+      const trigger = React.createElement("button", null, "Close");
+      const tooltip = firstRuntime.tooltip.Tooltip({ trigger, children: "Close command menu" });
+      expect(tooltip.props.children[0]).toBe(trigger);
+      expect(tooltip.props.children[1].type).toBe(firstRuntime.components.Tooltip);
+      expect(tooltip.props.behaviorTiming["tokens.behavior-timing.tooltip-delay"]).toEqual(resolve(prepared.input).values.members["tokens.behavior-timing.tooltip-delay"]!.value.light);
+
+      const library = applyLibraryChange(prepared.input.catalog, prepared.input.library, { baseHash: libraryHash(prepared.input.library), changes: [{ portion: "components", change: { op: "adopt", slot: "components.badge", source: "foundry" } }] }, { componentOptions: prepared.input.componentOptions, surfaceOptions: prepared.input.surfaceOptions });
+      const second = await compileSelection(temporary, { ...prepared.input, library }, prepared.leaves, libraryHash(library));
+      const secondRuntimeHash = new URL(second.runtimeUrl!, "http://127.0.0.1").searchParams.get("hash")!;
+      const secondCode = selectionRuntime(secondRuntimeHash)!;
+      expect(secondRuntimeHash).toBe(themeHash(secondCode));
+      const secondPath = join(temporary, "second.mjs"); await writeFile(secondPath, secondCode);
+      const secondRuntime = await import(pathToFileURL(secondPath).href);
+      const secondBadge = ReactDOMServer.renderToStaticMarkup(React.createElement(secondRuntime.components.Badge, null, "Selected"));
+      expect(secondBadge).toContain('data-ds-fill="foundry/components.badge"');
+      expect(secondBadge).not.toContain('data-slot="badge"');
+      expect(second.hash).not.toBe(first.hash);
+    } finally { await server?.close(); global.__studioDesignerRuntime = previous; await rm(temporary, { recursive: true, force: true }); }
+  }, 30_000);
+});

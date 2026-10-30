@@ -1,11 +1,12 @@
-export interface StudioTheme { source: 'consumer' | 'foundry'; css: string; hash: string }
+export interface StudioTheme { source: 'consumer' | 'foundry'; css: string; hash: string; message?: string }
 
 /** Producer supplies compiler output; Studio never reconstructs brand tokens. */
 export function parseThemeResponse(value: unknown): StudioTheme {
   if (!value || typeof value !== 'object' || !('theme' in value)) throw new Error('Producer did not supply a Studio theme.');
   const theme = value.theme;
   if (!theme || typeof theme !== 'object' || !('source' in theme) || !['consumer', 'foundry'].includes(String(theme.source)) || !('css' in theme) || typeof theme.css !== 'string' || !theme.css.trim() || /[<>]/.test(theme.css) || !('hash' in theme) || typeof theme.hash !== 'string' || !/^sha256:[a-f0-9]{64}$/.test(theme.hash)) throw new Error('Producer supplied an invalid Studio theme.');
-  return { source: theme.source as StudioTheme['source'], css: theme.css, hash: theme.hash };
+  if ('message' in theme && typeof theme.message !== 'string') throw new Error('Producer supplied an invalid Studio theme message.');
+  return { source: theme.source as StudioTheme['source'], css: theme.css, hash: theme.hash, ...('message' in theme ? { message: theme.message as string } : {}) };
 }
 
 export async function loadTheme(signal: AbortSignal): Promise<StudioTheme> {

@@ -41,7 +41,9 @@ async function availablePort(): Promise<number> {
 }
 function responds(port: number): Promise<boolean> {
   return new Promise(resolve => {
-    const request = get({ hostname: "127.0.0.1", port, path: "/", timeout: 250 }, response => { response.resume(); resolve(true); });
+    // Dynamic root rendering can compile the consumer selection. Probe the shipped
+    // static asset so readiness does not start and abort that work repeatedly.
+    const request = get({ hostname: "127.0.0.1", port, path: "/studio-mark.svg", timeout: 250 }, response => { response.resume(); resolve(true); });
     request.on("timeout", () => request.destroy());
     request.on("error", () => resolve(false));
   });
