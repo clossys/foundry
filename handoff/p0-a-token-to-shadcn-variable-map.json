@@ -1,0 +1,174 @@
+{
+  "base": "0997b148d15efdfaaded8292f3f954a89f919c89",
+  "source": "packages/designer/src/catalog/fills/foundry",
+  "rows": [
+    {
+      "variable": "--background",
+      "source": "tokens.surface-color.base",
+      "light": "oklch(0.9702 0 0)",
+      "dark": "oklch(0.19 0 0)"
+    },
+    {
+      "variable": "--foreground",
+      "source": "tokens.text-color.primary",
+      "light": "oklch(0.2178 0 0)",
+      "dark": "oklch(0.97 0 0)"
+    },
+    {
+      "variable": "--card",
+      "source": "tokens.surface-color.raised",
+      "light": "oklch(1 0 0)",
+      "dark": "oklch(0.26 0 0)"
+    },
+    {
+      "variable": "--card-foreground",
+      "source": "tokens.text-color.primary",
+      "light": "oklch(0.2178 0 0)",
+      "dark": "oklch(0.97 0 0)"
+    },
+    {
+      "variable": "--popover",
+      "source": "tokens.surface-color.overlay",
+      "light": "oklch(1 0 0)",
+      "dark": "oklch(0.26 0 0)"
+    },
+    {
+      "variable": "--popover-foreground",
+      "source": "tokens.text-color.primary",
+      "light": "oklch(0.2178 0 0)",
+      "dark": "oklch(0.97 0 0)"
+    },
+    {
+      "variable": "--primary",
+      "source": "tokens.action-color.default",
+      "light": "#0A0A0A",
+      "dark": "#FAFAFA"
+    },
+    {
+      "variable": "--primary-foreground",
+      "source": "tokens.text-color.on-action",
+      "light": "oklch(0.9702 0 0)",
+      "dark": "oklch(0.2178 0 0)"
+    },
+    {
+      "variable": "--secondary",
+      "source": "tokens.surface-color.sunken",
+      "light": "oklch(0.9401 0 0)",
+      "dark": "oklch(0.15 0 0)"
+    },
+    {
+      "variable": "--secondary-foreground",
+      "source": "tokens.text-color.primary",
+      "light": "oklch(0.2178 0 0)",
+      "dark": "oklch(0.97 0 0)"
+    },
+    {
+      "variable": "--muted",
+      "source": "tokens.surface-color.sunken",
+      "light": "oklch(0.9401 0 0)",
+      "dark": "oklch(0.15 0 0)"
+    },
+    {
+      "variable": "--muted-foreground",
+      "source": "tokens.text-color.muted",
+      "light": "oklch(0.54 0 0)",
+      "dark": "oklch(0.7763 0 0)"
+    },
+    {
+      "variable": "--accent",
+      "source": "tokens.surface-color.selected",
+      "light": "oklch(0.4748 0 0 / 0.1)",
+      "dark": "oklch(0.9702 0 0 / 0.1)"
+    },
+    {
+      "variable": "--accent-foreground",
+      "source": "tokens.text-color.primary",
+      "light": "oklch(0.2178 0 0)",
+      "dark": "oklch(0.97 0 0)"
+    },
+    {
+      "variable": "--border",
+      "source": "tokens.border-color.base",
+      "light": "oklch(0.8761 0 0)",
+      "dark": "oklch(0.30 0 0)"
+    },
+    {
+      "variable": "--input",
+      "source": "tokens.border-color.control",
+      "light": "oklch(0.62 0 0)",
+      "dark": "oklch(0.54 0 0)"
+    },
+    {
+      "variable": "--ring",
+      "source": "tokens.focus-color.default",
+      "light": "oklch(0.4748 0 0)",
+      "dark": "oklch(0.62 0 0)"
+    },
+    {
+      "variable": "--radius",
+      "source": "tokens.control-radius.default",
+      "light": "6px",
+      "dark": "6px"
+    },
+    {
+      "variable": "--sidebar",
+      "source": "tokens.surface-color.aside",
+      "light": "oklch(0.9612 0 0)",
+      "dark": "oklch(0.165 0 0)"
+    },
+    {
+      "variable": "--sidebar-foreground",
+      "source": "tokens.text-color.primary",
+      "light": "oklch(0.2178 0 0)",
+      "dark": "oklch(0.97 0 0)"
+    },
+    {
+      "variable": "--sidebar-primary",
+      "source": "tokens.action-color.default",
+      "light": "#0A0A0A",
+      "dark": "#FAFAFA"
+    },
+    {
+      "variable": "--sidebar-primary-foreground",
+      "source": "tokens.text-color.on-action",
+      "light": "oklch(0.9702 0 0)",
+      "dark": "oklch(0.2178 0 0)"
+    },
+    {
+      "variable": "--sidebar-accent",
+      "source": "tokens.surface-color.selected",
+      "light": "oklch(0.4748 0 0 / 0.1)",
+      "dark": "oklch(0.9702 0 0 / 0.1)"
+    },
+    {
+      "variable": "--sidebar-accent-foreground",
+      "source": "tokens.text-color.primary",
+      "light": "oklch(0.2178 0 0)",
+      "dark": "oklch(0.97 0 0)"
+    },
+    {
+      "variable": "--sidebar-border",
+      "source": "tokens.border-color.base",
+      "light": "oklch(0.8761 0 0)",
+      "dark": "oklch(0.30 0 0)"
+    },
+    {
+      "variable": "--sidebar-ring",
+      "source": "tokens.focus-color.default",
+      "light": "oklch(0.4748 0 0)",
+      "dark": "oklch(0.62 0 0)"
+    },
+    {
+      "variable": "--brand-accent",
+      "source": "tokens.accent-color.default",
+      "light": "oklch(0.4748 0 0)",
+      "dark": "oklch(0.62 0 0)"
+    },
+    {
+      "variable": "--brand-accent-foreground",
+      "source": "tokens.text-color.on-accent",
+      "light": "oklch(0.9702 0 0)",
+      "dark": "oklch(0.2178 0 0)"
+    }
+  ]
+}
