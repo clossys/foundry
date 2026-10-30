@@ -27,8 +27,9 @@
   "sections": {
     "call-to-action": {
       "composes": [
-        "components.semantic-content",
-        "sections.section-header"
+        "components.card",
+        "components.link",
+        "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
@@ -92,7 +93,7 @@
       },
       "license": "MIT",
       "notes": [
-        "Header is the composed SectionHeader (eyebrow, title, description) on a section ground; actions are one primary and at most one secondary host node, so the two-action ceiling is structural.",
+        "Header and action layout compose the consumer-selected Card and SemanticContent leaves; runtime JSON actions use its selected Link. Copy and destinations remain caller-owned, with one primary and at most one secondary action.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
