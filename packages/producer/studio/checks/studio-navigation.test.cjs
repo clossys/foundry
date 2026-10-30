@@ -38,9 +38,9 @@ function frameModule() {
   } finally { fs.rmSync(scratch, { recursive: true, force: true }); }
 }
 const Frame = frameModule();
-function render(pathname, apps = { state: 'ready', publications: [] }, query = '') {
+function render(pathname, apps = { state: 'ready', publications: [] }, query = '', pageActionCapabilities) {
   globalThis.__studioFrameTest = { path: pathname, apps, query };
-  renderToStaticMarkup(React.createElement(Frame, { page: { title: 'Fixture' } }, 'Content'));
+  renderToStaticMarkup(React.createElement(Frame, { page: { title: 'Fixture' }, pageActionCapabilities }, 'Content'));
   const captured = globalThis.__studioFrameTest.frame;
   delete globalThis.__studioFrameTest;
   return captured;
@@ -53,6 +53,66 @@ test('frame navigation, commands and breadcrumbs consume the generated Publisher
     assert.deepEqual(targets(frame.navigation.tree), targets(projection.navigation[route.instanceId].tree));
     assert.deepEqual(frame.commands.groups.flatMap(group => group.items.map(({ id, label, href }) => ({ id, label, href }))), projection.commands.flatMap(group => group.items.filter(item => item.href).map(({ id, label, href }) => ({ id, label, href }))));
     assert.deepEqual(frame.page.breadcrumb, projection.breadcrumbs[route.instanceId]);
+    assert.deepEqual(frame.page.actions.map(({ id, label }) => ({ id, label })), projection.pageActions[route.instanceId].map(({ id, label }) => ({ id, label })));
+    assert.ok(frame.page.actions.every(action => action.icon), 'every projected page action uses the selected Designer icon');
+  }
+});
+
+test('page module actions dispatch the complete generated manifest to the module host', () => {
+  const route = projection.routes.find(row => projection.pageActions[row.instanceId].some(action => action.module && action.defaultOpen));
+  const frame = render(route.path);
+  const target = new EventTarget();
+  const received = [];
+  target.addEventListener('studio:page-action', event => received.push(event.detail));
+  const priorWindow = globalThis.window;
+  globalThis.window = target;
+  try {
+    const manifest = projection.pageActions[route.instanceId].filter(action => action.module);
+    for (const action of manifest) frame.page.actions.find(item => item.id === action.id).onAction();
+    assert.deepEqual(received, manifest.map(action => ({ pageId: route.instanceId, action })));
+    assert.ok(received.some(item => item.action.defaultOpen), 'host receives the authored Explorer default');
+  } finally {
+    if (priorWindow === undefined) delete globalThis.window;
+    else globalThis.window = priorWindow;
+  }
+});
+
+test('app actions require a declared runtime URL and workspaces contain no inline actions', () => {
+  const route = projection.routes.find(row => projection.pageActions[row.instanceId].some(action => action.intent));
+  const frame = render(route.path);
+  for (const action of projection.pageActions[route.instanceId].filter(item => item.intent)) {
+    const item = frame.page.actions.find(item => item.id === action.id);
+    assert.equal(item.isDisabled, true);
+    assert.equal(item.href, undefined);
+  }
+  for (const name of ['CellsWorkspace.tsx', 'AppsWorkspace.tsx']) {
+    const source = fs.readFileSync(path.join(studio, 'components', name), 'utf8');
+    assert.doesNotMatch(source, /actions\s*:/);
+    assert.doesNotMatch(source, /Reload cells|label:\s*`Open/);
+  }
+});
+
+test('declared app runtime capabilities open normalized URLs in a protected new tab', () => {
+  const route = projection.routes.find(row => projection.pageActions[row.instanceId].some(action => action.intent === 'open-app-dev-server'));
+  const manifest = projection.pageActions[route.instanceId].find(action => action.intent === 'open-app-dev-server');
+  const opened = [];
+  const priorWindow = globalThis.window;
+  globalThis.window = { open: (...args) => opened.push(args) };
+  try {
+    const frame = render(route.path, undefined, '', { appDevServerUrl: 'http://localhost:3000' });
+    const action = frame.page.actions.find(item => item.id === manifest.id);
+    assert.equal(action.isDisabled, false);
+    action.onAction();
+    assert.deepEqual(opened, [['http://localhost:3000/', '_blank', 'noopener,noreferrer']]);
+    for (const url of ['invalid', 'javascript:alert(1)', 'https://example.test', 'http://user:secret@localhost:3000']) {
+      const invalid = render(route.path, undefined, '', { appDevServerUrl: url }).page.actions.find(item => item.id === manifest.id);
+      assert.equal(invalid.isDisabled, true);
+      invalid.onAction();
+    }
+    assert.equal(opened.length, 1);
+  } finally {
+    if (priorWindow === undefined) delete globalThis.window;
+    else globalThis.window = priorWindow;
   }
 });
 

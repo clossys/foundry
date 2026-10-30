@@ -160,3 +160,34 @@ it("uses an actual registered frame/section source and refuses fabricated or amb
   expect(() => projectRoutes(map, { ...options, registrations: [route, route] })).toThrow(/registered source/);
   expect(() => projectRoutes({ ...map, entries: [{ ...map.entries[0]!, source: { frameId: "frames.app-shell", sectionIds: ["sections.missing"] } }] }, options)).toThrow(/registered source/);
 });
+
+it("accepts ordered page-local Section modules and host intents independently of publication commands", () => {
+  const map: Mutable = adminContentMap();
+  map.entries[1].actions = [
+    { id: "explorer", label: "Explorer", icon: "assets.icon-folder", defaultOpen: true, module: { section: "sections.cell-explorer" } },
+    { id: "open-app", label: "Open app", icon: "assets.icon-external-link", defaultOpen: false, intent: "open-app-dev-server" },
+  ];
+  expect(checkContentMap(map)).toEqual([]);
+  expect(projectCommands(map)).toEqual(projectCommands(adminContentMap()));
+  // An unavailable Section remains a reference for host NEED handling.
+  map.entries[1].actions[0].module.section = "sections.unavailable-section";
+  map.entries[1].actions[0].module.source = "designer.selection-needs";
+  expect(checkContentMap(map)).toEqual([]);
+});
+
+it("rejects malformed page action unions, defaults, identities and unsupported fields", () => {
+  const action = { id: "explorer", label: "Explorer", icon: "assets.icon-folder", defaultOpen: true, module: { section: "sections.cell-explorer" } };
+  const invalid = [null, {}, "explorer", { ...action, id: "" }, { ...action, label: " " },
+    { ...action, icon: "folder" }, { ...action, defaultOpen: "true" }, { ...action, callback: "run" },
+    { ...action, module: "sections.cell-explorer" }, { ...action, module: { section: "sections.check-findings", source: "" } }, { ...action, module: { section: "components.button" } },
+    { ...action, module: { section: "sections.cell-explorer", config: {} } },
+    { ...action, intent: "open-app-dev-server" }, { ...action, module: undefined },
+    { ...action, module: undefined, intent: "open-app-dev-server" },
+    { ...action, module: undefined, defaultOpen: false, intent: "" }];
+  for (const value of invalid) {
+    proof("contract", map => { map.entries[1].actions = [value]; });
+  }
+  proof("contract", map => { map.entries[1].actions = {}; });
+  proof("contract", map => { map.entries[0].actions = [action]; });
+  proof("action-id", map => { map.entries[1].actions = [action, action]; });
+});

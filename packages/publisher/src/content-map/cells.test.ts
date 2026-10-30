@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { contentMapFromCells, contentMapToCells, compileContentMaps, routePackToCells } from "./cells.js";
 import { checkContentMap, projectBreadcrumbs, projectCommands, projectNavigation, projectOutline, projectRoutes, projectSitemap, projectToc } from "./index.js";
-import type { ContentMap } from "./index.js";
+import type { ContentMap, ContentMapPageAction } from "./index.js";
 import { adminContentMap, adminRouteOptions } from "./__fixtures__/admin.js";
 
 const roots: string[] = [];
@@ -281,4 +281,33 @@ it.each([
   await writeFile(cell, mutate(await readFile(cell, "utf8")));
   await expect(compileContentMaps(path)).rejects.toThrow();
   expect(await Promise.all(outputs.map(file => readFile(join(path, file), "utf8")))).toEqual(before);
+});
+
+it("round-trips ordinary page actions through an authoritative fenced Actions body", async () => {
+  const path = await root();
+  const actions: readonly ContentMapPageAction[] = [
+    { id: "explorer", label: "Explorer", icon: "assets.icon-folder", defaultOpen: true, module: { section: "sections.cell-explorer" } },
+    { id: "open-app", label: "Open app", icon: "assets.icon-external-link", defaultOpen: false, intent: "open-app-dev-server" },
+  ];
+  const map: ContentMap = { ...adminContentMap(), entries: adminContentMap().entries.map(entry => entry.id === "designer" ? { ...entry, actions } : entry) };
+  await contentMapToCells(map, path);
+  const file = join(path, "cells/page.designer/v1.md");
+  expect(await readFile(file, "utf8")).toContain('## Actions\n```json\n[');
+  expect(await contentMapFromCells(path, map.publicationId)).toEqual(map);
+  const source = await readFile(file, "utf8");
+  await writeFile(file, source.replace('"label": "Explorer"', '"label": "Browse cells"'));
+  const changed = await contentMapFromCells(path, map.publicationId);
+  expect(changed.entries.find(entry => entry.id === "designer")?.actions?.[0]?.label).toBe("Browse cells");
+  const output = join(path, "content-map", `${map.publicationId}.json`), before = await readFile(output, "utf8");
+  await writeFile(file, source.replace('"defaultOpen": true', '"defaultOpen": "true"'));
+  await expect(compileContentMaps(path)).rejects.toThrow(/actions/);
+  expect(await readFile(output, "utf8")).toBe(before);
+});
+
+it.each(["null", "{}", '[{"id":"broken"}]'])("refuses malformed fenced Actions %s", async actions => {
+  const path = await root(), map = adminContentMap();
+  await contentMapToCells(map, path);
+  const file = join(path, "cells/page.designer/v1.md");
+  await writeFile(file, `${await readFile(file, "utf8")}\n## Actions\n\`\`\`json\n${actions}\n\`\`\`\n`);
+  await expect(contentMapFromCells(path, map.publicationId)).rejects.toThrow(/actions/i);
 });

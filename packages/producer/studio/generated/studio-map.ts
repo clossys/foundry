@@ -1,7 +1,9 @@
 // Generated from Foundry Publisher cells. Run npm run generate:studio-map.
-import type { ContentMap, ContentMapNavigation, ContentMapCommandGroup, ContentMapBreadcrumb } from '@clossys/publisher/content-map';
+import type { ContentMap, ContentMapNavigation, ContentMapCommandGroup, ContentMapBreadcrumb, ContentMapPageAction } from '@clossys/publisher/content-map';
 import projection from './studio-map.json';
+export type StudioPageAction = ContentMapPageAction;
 export const studioMap = projection.map as ContentMap;
+export const studioPageActions = projection.pageActions as Record<string, readonly StudioPageAction[]>;
 export const studioRoutes = projection.routes;
 export const studioNavigation = projection.navigation as Record<string, ContentMapNavigation>;
 export const studioCommands = projection.commands as readonly ContentMapCommandGroup[];

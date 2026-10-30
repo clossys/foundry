@@ -58,7 +58,7 @@ function DesignerSelectionNeeds() {
 }
 
 export function CellsWorkspace({ agent }: { agent?: Agent }) {
-  const { ArticleBody, ContentSection, EmptyState, SectionFrame, SectionHeader, Badge, Icon } = useStudioUI();
+  const { ArticleBody, ContentSection, EmptyState, SectionFrame, SectionHeader, Badge } = useStudioUI();
   const params = useSearchParams();
   const router = useRouter();
   const selectedId = params.get('cell') ?? undefined;
@@ -105,12 +105,9 @@ export function CellsWorkspace({ agent }: { agent?: Agent }) {
   const visible = index.state === 'ready' ? index.value.filter(item => agent === undefined || item.agent === agent) : [];
   const title = agent ? AGENT_LABELS[agent] : studioHome.label;
   const selectedCell = visible.find(item => item.agent === selectedAgent)?.cells.find(cell => cell.id === selectedId);
-  return <StudioFrame page={{ title, description: 'Read-only agent cells', actions: [
-    { id: 'refresh', label: 'Reload cells', icon: <Icon asset="assets.icon-document" decorative />, onAction: () => { setRevision(value => value + 1); router.refresh(); } },
-    ...(agent ? [{ id: studioHome.id, label: `Open ${studioHome.label}`, href: studioHome.href, icon: <Icon asset="assets.icon-home" decorative /> }] : []),
-  ] }}>
+  return <StudioFrame page={{ title, description: 'Read-only agent cells' }}>
     <SectionFrame measure="wide">
-      <SectionHeader role="status" description={live ? 'Changes refresh automatically.' : 'Use Reload cells to check for changes.'} />
+      <SectionHeader role="status" description={live ? 'Changes refresh automatically.' : 'Waiting for live changes.'} />
       {agent === 'designer' ? <DesignerSelectionNeeds /> : null}
       {index.state === 'loading' ? <EmptyState role="status" title="Loading cells…" description="Reading the current cell index from Producer." /> : index.state === 'error' ? <EmptyState role="alert" title="Cells could not be loaded" description={index.message} /> : visible.length === 0 ? <EmptyState title="No cells available" description="Producer has no cell index for this view." /> : <ArticleBody aria-label="Cell workspace" toc={<ContentSection>{visible.map(item => <AgentTree key={item.agent} index={item} selected={selectedAgent === item.agent ? selectedId : undefined} />)}</ContentSection>}>
         {!selectedId ? <EmptyState title="No cell selected" description="Select an available cell from the tree to read its content." /> : !selectedAgent ? <EmptyState role="alert" title="Choose an agent" description="The selected cell needs an agent from this repository." /> : detail.state === 'loading' || detail.state === 'ready' && (detail.value.agent !== selectedAgent || detail.value.id !== selectedId) ? <EmptyState role="status" title="Loading cell…" /> : detail.state === 'error' ? <EmptyState role="alert" title="Cell could not be loaded" description={detail.message} /> : <>

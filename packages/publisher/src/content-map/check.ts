@@ -90,11 +90,30 @@ export function checkContentMap(input: unknown): readonly ContentMapFinding[] {
     const planSource = record(source) && fields(source, ["planItemId"]) && text(source.planItemId);
     const frameSource = record(source) && fields(source, ["frameId", "sectionIds"]) && text(source.frameId) && Array.isArray(source.sectionIds) && source.sectionIds.every(text) && new Set(source.sectionIds).size === source.sectionIds.length;
     const external = entry.kind === "external";
-    if (!fields(entry, ["id", "parentId", "order", "title", "path", "slug", "kind", "pin", "source", "icon", "description", "keywords", "manifest", "constructs", "pageConfig", "href", "indexing", "lastModified"]) || !text(entry.id) || !text(entry.title) || !Number.isSafeInteger(entry.order) || entry.order < 0
+    if (!fields(entry, ["id", "parentId", "order", "title", "path", "slug", "kind", "pin", "source", "icon", "description", "keywords", "manifest", "constructs", "pageConfig", "href", "indexing", "lastModified", "actions"]) || !text(entry.id) || !text(entry.title) || !Number.isSafeInteger(entry.order) || entry.order < 0
       || !["page", "slide", "section", "group", "external"].includes(entry.kind) || (entry.parentId !== undefined && !text(entry.parentId)) || (!external && !planSource && !frameSource)
       || (external ? entry.source !== undefined || !text(entry.path) || !isContentMapExternalHref(entry.href) || entry.manifest !== undefined || entry.constructs !== undefined : Object.hasOwn(entry, "href"))
       || (entry.path === undefined) === (entry.slug === undefined) || !(text(entry.path) || text(entry.slug))
       || (entry.icon !== undefined && !text(entry.icon)) || (entry.description !== undefined && !text(entry.description)) || (entry.keywords !== undefined && (!Array.isArray(entry.keywords) || !entry.keywords.every(text)))) add("contract", at, "Invalid entry identity, content reference or metadata", entry.id);
+    if (entry.actions !== undefined) {
+      const actionIds = new Set<string>();
+      if (entry.kind !== "page" || !Array.isArray(entry.actions)) add("contract", `${at}.actions`, "Only pages may declare an ordered actions array", entry.id);
+      else for (const [actionIndex, action] of entry.actions.entries()) {
+        const actionPath = `${at}.actions.${actionIndex}`;
+        if (!record(action) || !fields(action, ["id", "label", "icon", "defaultOpen", "module", "intent"])
+          || !text(action.id) || !text(action.label) || typeof action.icon !== "string" || !/^assets\.[a-z][a-z0-9-]*$/.test(action.icon)
+          || typeof action.defaultOpen !== "boolean"
+          || (action.module === undefined) === (action.intent === undefined)
+          || (action.module !== undefined && (!record(action.module) || !fields(action.module, ["section", "source"]) || action.module.source !== undefined && !text(action.module.source) || typeof action.module.section !== "string" || !/^sections\.[a-z][a-z0-9-]*$/.test(action.module.section)))
+          || (action.intent !== undefined && (!text(action.intent) || action.defaultOpen !== false))) {
+          add("contract", actionPath, "A page action requires an identity, label, asset icon, boolean default and exactly one Section module or closed host intent", entry.id);
+        }
+        if (record(action) && text(action.id)) {
+          if (actionIds.has(action.id)) add("action-id", actionPath, "Duplicate page action identity", entry.id);
+          actionIds.add(action.id);
+        }
+      }
+    }
     if (entry.indexing !== undefined && (!record(entry.indexing) || !fields(entry.indexing, ["mode", "reason"]) || !["index", "noindex"].includes(entry.indexing.mode) || entry.indexing.reason !== undefined && !text(entry.indexing.reason))) add("contract", `${at}.indexing`, "An indexing mode and optional nonempty reason are required", entry.id);
     if (entry.lastModified !== undefined) {
       try { if (typeof entry.lastModified !== "string") throw new TypeError(); contentMapLastModified(entry.lastModified); }
