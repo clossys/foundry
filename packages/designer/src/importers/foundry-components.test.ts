@@ -130,6 +130,25 @@ describe("Foundry component package descriptors", () => {
     expect(fill.reads.assets).toEqual(["assets.icon-check"]);
   });
 
+  it("maps the existing NavigationTree native collection parts and refuses incomplete adoption", () => {
+    const result = imported(), doc = result.fills.find(doc => doc.components["navigation-tree"])!;
+    const fill = doc.components["navigation-tree"]!;
+    expect(fill.propMap).toEqual({
+      current: "./components#NavigationTree", expand: "./components#NavigationTree",
+      "part.item": "./components#NavigationTree.Item", "part.item-content": "./components#NavigationTree.ItemContent",
+    });
+    expect(result.coverage.find(row => row.slot === fill.slot)).toMatchObject({ status: "candidate", missing: [] });
+    expect(doc.$extensions["com.clossys.fill"]).toMatchObject({ relation: "same-contract", status: "draft", conforms: [], evidence: [] });
+    const input = { slots, fills: [fill], observations: {}, tokens: {}, assets: [], installedRac: { version: "1.21.1", instance: "consumer" } };
+    const complete = checkComponentProfile(input);
+    expect(complete.findings.filter(finding => finding.code === "K1")).toEqual([]);
+    const { "part.item": omitted, ...propMap } = fill.propMap;
+    expect(omitted).toBe("./components#NavigationTree.Item");
+    const incomplete = checkComponentProfile({ ...input, fills: [{ ...fill, members: fill.members.filter(member => member !== "part.item"), propMap }] });
+    expect(incomplete.ok).toBe(false);
+    expect(incomplete.findings).toContainEqual(expect.objectContaining({ code: "K1", subject: fill.slot, message: "Required member part.item is not mapped" }));
+  });
+
   it("rejects nonexistent primary and alternate exports", () => {
     expect(() => importFoundryComponents({ exports, mappings: changedMap("button", { export: "AbsentButton" }) })).toThrow("unavailable package export");
     expect(() => importFoundryComponents({ exports: { ...exports, components: exports.components.filter(name => name !== "Textarea") } })).toThrow("unavailable package export");
