@@ -7,7 +7,7 @@ function fixture(agent: AgentCells['agent'] = 'director'): AgentCells {
   return { agent, state: 'ready', cells: ['second', 'first'].map((name, i) => ({ id: `focus.segment.${name}`, title: name, version: i + 1, status: 'draft' })), tree: { tree: [{ id: 'focus', name: 'Focus', children: [{ id: 'segment', name: 'Segment', cells: ['focus.segment.first', 'focus.segment.second'] }] }] } };
 }
 function evidence(index: AgentCells): StudioCoverageEvidence[] {
-  return index.cells.map(cell => ({ cellId: cell.id, ready: true, boundSectionId: 'sections.specimen-rich-passage', registered: true, span: 'full', itemCount: 2, expectedVariantIds: ['visible', 'hidden'], variants: [{ id: 'visible', renderable: true }, { id: 'hidden', renderable: true }], issues: [] }));
+  return index.cells.map(cell => ({ cellId: cell.id, ready: true, inventoryComplete: true, boundSectionId: 'sections.specimen-rich-passage', registered: true, span: 'full', itemCount: 2, expectedVariantIds: ['visible', 'hidden'], variants: [{ id: 'visible', renderable: true }, { id: 'hidden', renderable: true }], issues: [] }));
 }
 describe('shared authored IA and strict specimen coverage', () => {
   it('keeps tree order and gives all four levels hash breadcrumbs', () => {
@@ -42,6 +42,21 @@ describe('shared authored IA and strict specimen coverage', () => {
       for (const record of records) record.span = span;
       expect(checkStudioSpecimenCoverage(index, records).state).toBe('pass');
     }
+  });
+  it.each(['false', 'missing'] as const)('fails and marks unknown source scope for %s completeness evidence', fault => {
+    const index = fixture(); const records = evidence(index);
+    if (fault === 'false') records[0]!.inventoryComplete = false;
+    else Reflect.deleteProperty(records[0]!, 'inventoryComplete');
+    expect(checkStudioSpecimenCoverage(index, records)).toMatchObject({ state: 'fail', variants: { total: 4, completeScope: false } });
+  });
+  it('keeps matching explicit version scope separate from whole-cell coverage', () => {
+    const original = fixture(); const cell = original.cells[0]!;
+    const scope = { kind: 'version' as const, cellId: cell.id, version: cell.version! };
+    const record = { ...evidence(original)[0]!, scope };
+    expect(checkStudioSpecimenCoverage(original, [record, evidence(original)[1]!])).toMatchObject({ state: 'fail', variants: { completeScope: false } });
+    const scoped: AgentCells = { ...original, cells: [cell], contentScope: scope };
+    expect(checkStudioSpecimenCoverage(scoped, [record])).toMatchObject({ state: 'pass', scope, cells: { covered: 1, total: 1 }, variants: { covered: 2, total: 2, completeScope: true }, sources: [{ cellId: cell.id, inventoryComplete: true, scope }] });
+    expect(checkStudioSpecimenCoverage(scoped, [{ ...record, scope: { ...scope, version: scope.version + 1 } }])).toMatchObject({ state: 'fail', variants: { completeScope: false } });
   });
   it('fails unknown variant inventory and missing IA instead of reporting 0/0 pass', () => {
     const index = fixture(); const records = evidence(index); records[0]!.expectedVariantIds = [];

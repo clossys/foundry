@@ -17,7 +17,7 @@ export interface AgentSpecimenPlan {
 
 /** Preserve every source variant before the selected-section binding checks readiness. */
 export function agentSpecimenPlan(index: AgentCells, cell: CellDetail, publication?: PublicationResponse): AgentSpecimenPlan {
-  const plan: AgentSpecimenPlan = { cellId: cell.id, items: [], expectedVariantIds: [], issues: [] };
+  const plan: AgentSpecimenPlan = { cellId: cell.id, ...(index.contentScope ? { scope: index.contentScope } : {}), items: [], expectedVariantIds: [], issues: [] };
   if (index.agent !== cell.agent || !index.cells.some(entry => entry.id === cell.id)) {
     plan.issues.push('The specimen cell does not belong to this agent index.');
     return plan;
