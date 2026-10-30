@@ -65,7 +65,7 @@ export function StudioSelectionProvider({ children }: { children: ReactNode }) {
       style.textContent = value.selection.css!;
       document.documentElement.dataset.selectionCssHash = value.selection.cssHash;
       document.documentElement.dataset.selectionHash = value.selection.hash;
-      if (!value.error) document.documentElement.dataset.studioState = 'ready';
+      if (value.error === undefined) document.documentElement.dataset.studioState = 'ready';
     }
   }, [value]);
   useEffect(() => {
@@ -87,9 +87,11 @@ export function StudioSelectionProvider({ children }: { children: ReactNode }) {
         setValue({ selection, runtime, ...(profile ? { profile } : {}) });
       }).catch(error => {
         if (!controller.signal.aborted) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.error('Studio Designer selection failed:', message);
           document.documentElement.dataset.studioState = 'selection-unavailable';
-          setInitialError(error instanceof Error ? error.message : 'The Designer selection could not be loaded.');
-          setValue(current => current ? { ...current, error: error instanceof Error ? error.message : 'The Designer selection could not be refreshed.' } : undefined);
+          setInitialError(message);
+          setValue(current => current ? { ...current, error: message } : undefined);
         }
       });
     };
@@ -99,8 +101,8 @@ export function StudioSelectionProvider({ children }: { children: ReactNode }) {
     events.addEventListener('change', refresh);
     return () => { request?.abort(); events.close(); };
   }, []);
-  if (!value) return initialError ? <>NEED: Designer selection. {initialError}</> : null;
-  return <SelectionContext.Provider value={value}><StudioSelectionBoundary key={value.selection.hash}>{value.error ? <StudioSelectionError message={value.error} /> : children}</StudioSelectionBoundary></SelectionContext.Provider>;
+  if (!value) return initialError !== undefined ? <>NEED: Designer selection. {initialError}</> : null;
+  return <SelectionContext.Provider value={value}><StudioSelectionBoundary key={value.selection.hash}>{value.error !== undefined ? <StudioSelectionError message={value.error} /> : children}</StudioSelectionBoundary></SelectionContext.Provider>;
 }
 
 /** Suspense fallbacks use the same selected section module as the loaded page. */

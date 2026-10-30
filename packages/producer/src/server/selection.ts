@@ -270,7 +270,9 @@ export async function studioSelection(root: string): Promise<StudioSelection> {
     while (preparedSelections.size > 32) preparedSelections.delete(preparedSelections.keys().next().value!);
     generation.catch(() => { preparedSelections.delete(key); });
     return await generation;
-  } catch {
-    return { hash, leaves: leaves.map(leaf => ({ ...leaf, source: "unavailable", message: "Selected runtime could not be compiled; Designer needs a usable selected fill" })), message: "Designer selection could not be compiled" };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Producer Designer selection failed:", message);
+    return { hash, leaves: leaves.map(leaf => ({ ...leaf, source: "unavailable", message })), message };
   }
 }
