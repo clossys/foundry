@@ -3,6 +3,7 @@ import { sha256 } from "../catalog-core/digest.js";
 import { stableStringify } from "../catalog-core/stable.js";
 import { surfaceDigest, surfaceManifest, surfaceFault } from "../catalog-core/surface-library.js";
 import type { SurfaceCandidateDocument, SurfaceFile, SurfaceSectionEntry, SurfaceTransform, SurfacePackageEvidence, SurfaceDependency } from "../catalog-core/surface-types.js";
+import { SPECIMEN_RENDER_PARTS } from "../studio/specimen-render-part-identities.js";
 
 export const SPECIMEN_SECTION_EXPORTS = [
   {
@@ -161,6 +162,7 @@ export function specimenSectionSourceCatalog(packages: readonly SurfacePackageEv
     const entry = registration.id.replace(".", "/") + "/" + registration.name + ".tsx";
     const components = [...new Set([...registration.components, "components.grid-list", "components.disclosure"])] as `components.${string}`[];
     const ports = components.map(id => ({ id, name: publicName(id) }));
+    const parts = Object.hasOwn(SPECIMEN_RENDER_PARTS, registration.id) ? [...SPECIMEN_RENDER_PARTS[registration.id as keyof typeof SPECIMEN_RENDER_PARTS]] : [];
     const code = [
       '"use client";',
       `import { ${registration.name} as RenderSpecimen, bindNativeSpecimenContext, studioSpecimenLeaves, type SpecimenLeafProps } from "@clossys/designer/studio";`,
@@ -183,11 +185,11 @@ export function specimenSectionSourceCatalog(packages: readonly SurfacePackageEv
     const candidate: SurfaceSectionEntry = {
       kind: "section", slot: registration.id, source: "foundry", impl: { kind: "source", entry, export: registration.name },
       rendering: "client", members: [], states: ["default"], reads: { tokens: ["tokens.spacing", "tokens.breakpoint"], assets: [] },
-      composes: components, parts: [], api: { version: 1, exports: [{ name: registration.name, export: registration.name }, { name: "SpecimenLeaf", export: "SpecimenLeaf" }] },
+      composes: components, parts, api: { version: 1, exports: [{ name: registration.name, export: registration.name }, { name: "SpecimenLeaf", export: "SpecimenLeaf" }] },
       bindings: ports.map(port => ({ file: entry, module: `../../components/${port.id.slice(11)}/index.js`, name: port.name, local: port.name, slot: port.id })),
       dependencies, license: "MIT", pin, notice: `notices/surfaces/n-${sha256(notice)}.txt`,
       outputSha256: surfaceManifest([{ path: entry, content: code }, { path: `notices/surfaces/n-${sha256(notice)}.txt`, content: notice }]),
-      blockers: [], slotMap: Object.fromEntries(["items", "axes", "context", "labels"].map(name => [name, { export: registration.name, path: [name] }])), propMap: {}, configs: {},
+      blockers: [], slotMap: Object.fromEntries(["items", "axes", "context", "labels", ...(parts.length ? ["renderParts"] : [])].map(name => [name, { export: registration.name, path: [name] }])), propMap: {}, configs: {},
     };
     const transformSource = [{ path: `rules/${registration.id.slice(9)}.json`, content: stableStringify({ version: 1, operation: "retain-native-specimen-source", files: pin.files }) }];
     const transform: SurfaceTransform = {

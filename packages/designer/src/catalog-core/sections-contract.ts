@@ -1,4 +1,5 @@
 import type { BodySubstrate, SectionSubstrateRenderTest } from "./body-substrate.js";
+import type { SpecimenRenderPartName } from "../studio/specimen-render-part-identities.js";
 import sectionSlots from "../catalog/slots/sections.json" with { type: "json" };
 import sectionPlacement from "../catalog/ia/sections.json" with { type: "json" };
 import sectionRetired from "../catalog/retired/sections.json" with { type: "json" };
@@ -27,7 +28,7 @@ export interface SectionContract {
   allowedComposes: readonly `components.${string}`[];
   /** Registered sections composed by this implementation, separate from shared parts. */
   composes?: readonly `sections.${string}`[];
-  parts: readonly ("sections.band" | "sections.section-header" | "sections.pagination")[];
+  parts: readonly ("sections.band" | "sections.section-header" | "sections.pagination" | SpecimenRenderPartName)[];
   allowedReads: { tokens: readonly `tokens.${string}`[]; assets: readonly `assets.${string}`[] };
   data: "host-injected";
   states?: readonly ("loading" | "empty" | "error")[];

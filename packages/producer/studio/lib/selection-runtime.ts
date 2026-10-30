@@ -5,6 +5,7 @@ import * as ReactDOM from 'react-dom';
 import * as JSXRuntime from 'react/jsx-runtime';
 import * as JSXDevRuntime from 'react/jsx-dev-runtime';
 import * as ReactDOMClient from 'react-dom/client';
+import type { CompositeResolved } from '@clossys/designer/catalog';
 
 /** Emitted consumer modules share the host React instance. */
 export function bindStudioRuntimeDependencies() {
@@ -15,6 +16,7 @@ export function bindStudioRuntimeDependencies() {
 }
 
 export interface StudioRuntimeModule {
+  ComponentProvider?: React.ComponentType<{ profile: CompositeResolved; children: React.ReactNode }>;
   components: Record<string, unknown>;
   surfaces: Record<string, unknown>;
   tree: Record<string, unknown>;

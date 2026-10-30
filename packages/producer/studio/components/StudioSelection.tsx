@@ -81,6 +81,7 @@ export function StudioSelectionProvider({ children }: { children: ReactNode }) {
         for (const name of ['Badge', 'Link', 'Icon', 'NavigationTree', 'Button', 'RichText']) exported(runtime.components, name);
         for (const name of ['NavigationTreeItem', 'NavigationTreeItemContent']) exported(runtime.tree, name);
         exported(runtime.disclosure, 'Disclosure');
+        exported(runtime as unknown as Record<string, unknown>, 'ComponentProvider');
         if (controller.signal.aborted) return;
         if (!document.getElementById('studio-selection-style')) throw new Error('The selected Designer stylesheet mount is unavailable.');
         setInitialError(undefined);
@@ -102,7 +103,9 @@ export function StudioSelectionProvider({ children }: { children: ReactNode }) {
     return () => { request?.abort(); events.close(); };
   }, []);
   if (!value) return initialError !== undefined ? <>NEED: Designer selection. {initialError}</> : null;
-  return <SelectionContext.Provider value={value}><StudioSelectionBoundary key={value.selection.hash}>{value.error !== undefined ? <StudioSelectionError message={value.error} /> : children}</StudioSelectionBoundary></SelectionContext.Provider>;
+  const ComponentProvider = value.runtime.ComponentProvider;
+  if (!ComponentProvider || !value.profile) return <>NEED: Designer component provider.</>;
+  return <SelectionContext.Provider value={value}><ComponentProvider profile={value.profile}><StudioSelectionBoundary key={value.selection.hash}>{value.error !== undefined ? <StudioSelectionError message={value.error} /> : children}</StudioSelectionBoundary></ComponentProvider></SelectionContext.Provider>;
 }
 
 /** Suspense fallbacks use the same selected section module as the loaded page. */

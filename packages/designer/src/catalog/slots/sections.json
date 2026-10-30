@@ -590,6 +590,11 @@
           "name": "labels",
           "type": "copy",
           "required": true
+        },
+        {
+          "name": "renderParts",
+          "type": "region",
+          "required": false
         }
       ],
       "members": {
@@ -603,7 +608,9 @@
         "components.disclosure",
         "components.badge"
       ],
-      "parts": [],
+      "parts": [
+        "renderComponentState"
+      ],
       "allowedReads": {
         "tokens": [
           "tokens.spacing",
@@ -662,6 +669,11 @@
           "name": "labels",
           "type": "copy",
           "required": true
+        },
+        {
+          "name": "renderParts",
+          "type": "region",
+          "required": false
         }
       ],
       "members": {
@@ -674,7 +686,10 @@
         "components.table",
         "components.disclosure"
       ],
-      "parts": [],
+      "parts": [
+        "renderSurface",
+        "renderViewport"
+      ],
       "allowedReads": {
         "tokens": [
           "tokens.spacing",
@@ -733,6 +748,11 @@
           "name": "labels",
           "type": "copy",
           "required": true
+        },
+        {
+          "name": "renderParts",
+          "type": "region",
+          "required": false
         }
       ],
       "members": {
@@ -745,7 +765,10 @@
         "components.table",
         "components.disclosure"
       ],
-      "parts": [],
+      "parts": [
+        "renderSurface",
+        "renderViewport"
+      ],
       "allowedReads": {
         "tokens": [
           "tokens.spacing",
@@ -875,6 +898,11 @@
           "name": "labels",
           "type": "copy",
           "required": true
+        },
+        {
+          "name": "renderParts",
+          "type": "region",
+          "required": false
         }
       ],
       "members": {
@@ -890,7 +918,9 @@
         "components.button",
         "components.navigation-tree"
       ],
-      "parts": [],
+      "parts": [
+        "renderContent"
+      ],
       "allowedReads": {
         "tokens": [
           "tokens.spacing",
@@ -949,6 +979,11 @@
           "name": "labels",
           "type": "copy",
           "required": true
+        },
+        {
+          "name": "renderParts",
+          "type": "region",
+          "required": false
         }
       ],
       "members": {
@@ -961,7 +996,9 @@
         "components.table",
         "components.disclosure"
       ],
-      "parts": [],
+      "parts": [
+        "renderViewport"
+      ],
       "allowedReads": {
         "tokens": [
           "tokens.spacing",
