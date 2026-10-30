@@ -11,6 +11,7 @@ import { AppFrame } from "@clossys/designer/frames";
 import { SectionHeader } from "@clossys/designer/blocks/server";
 import { JSDOM } from "jsdom";
 import type { CopyResolver } from "@clossys/writer";
+import { getAdminCopyRecord, resolveAdminCopyRef } from "@clossys/writer/admin-copy";
 import type { RuntimeRenderInput } from "@clossys/designer/catalog";
 import type { ReactNode } from "react";
 import { mainPublisherContent } from "../content/cli/index.js";
@@ -60,7 +61,18 @@ describe("active admin candidate AppFrame adapter", () => {
     const packet = JSON.parse(await readFile(new URL("../../../writer/src/catalog/records/admin-meta.r1.en.json", import.meta.url), "utf8"));
     expect(packet.activation).toBe("none");
     for (const page of ["designer", "writer", "publisher"] as const) for (const [key, reference] of Object.entries(ADMIN_PAGE_COPY_REFS[page])) {
-      expect(packet.records.find((record: { context: string }) => record.context === `admin.${page}.${key}`)).toMatchObject({ id: reference.id, status: "draft" });
+      const bindings = packet.bindings.filter((binding: { cellId: string }) => binding.cellId === `admin.${page}.${key}`);
+      expect(bindings).toHaveLength(1);
+      expect(bindings[0]).toMatchObject({ recordId: reference.id, target: `/agents/${page}`, kind: key === "navLabel" ? "navigation" : "metadata" });
+      // WR-META retains semantic bindings after shared copy moves to its canonical owner.
+      const record = getAdminCopyRecord(reference.id);
+      expect(record).toMatchObject({ id: reference.id, status: "draft" });
+      expect(record).not.toHaveProperty("approval");
+      expect(resolveAdminCopyRef({ ...reference, locale: "en" })).toBeUndefined();
+      expect(resolveAdminCopyRef({ ...reference, locale: "en" }, undefined, { target: "production" })).toBeUndefined();
+      expect(resolveAdminCopyRef({ ...reference, locale: "en" }, undefined, { target: "preview" })).toMatchObject({
+        text: record!.text, servedLocale: "en", status: "draft", activation: "none",
+      });
     }
   });
   it("runs all three slots through the real CLI and review, separate approval and activation, then binds all rendered copy", async () => {
@@ -70,7 +82,7 @@ describe("active admin candidate AppFrame adapter", () => {
     const catalogFile = join(parent, "catalog.json"), writerFile = join(parent, "writer.json");
     await writeFile(catalogFile, JSON.stringify(catalog));
     await writeContentStore(root, emptyRegistry());
-    const ids = (["designer", "writer", "publisher"] as const).flatMap(name => [ref(`${name}.heading`).id, ...adminPageMeta(name, "en").map(field => field.ref!.id)]);
+    const ids = [...new Set((["designer", "writer", "publisher"] as const).flatMap(name => [ref(`${name}.heading`).id, ...adminPageMeta(name, "en").map(field => field.ref!.id)]))];
     await writeFile(writerFile, JSON.stringify({ registry: { id: "synthetic", revision: "1", locale: "en", source: { kind: "consumer", reference: "fixture" },
       entries: ids.map(id => ({ id, text: `[[${id}]]`, context: "Synthetic CLI fixture", status: "approved" })) } }));
     let n = 0;

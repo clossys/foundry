@@ -35,7 +35,8 @@
 //      (#1381; see NOT_APPLICABLE_TO_PRODUCER below);
 //   4. the skill's loop section is generated from the loop matrix
 //      (docs/contracts/loop-matrix.json, issue #1197);
-//   5. the clossys/<role>/ layout is used (docs/contracts/consumer-layout.json),
+//   5. owned legacy or implemented native output declarations are used
+//      (docs/contracts/consumer-layout.json),
 //      graded on the paths the package's own manifest declares (#1381);
 //   6. the duplicated conversation block is removed, in favour of the
 //      #1182 shared contract (docs/contracts/conversation-contract.md);
@@ -88,7 +89,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { evaluatePackageFramework } from "./check-package-framework.mjs";
+import { evaluatePackageFramework, isOwnedOutputPath } from "./check-package-framework.mjs";
 import { ENVELOPE_COPY_PATH, renderEnvelopeCopyFromRoot } from "./sync-envelope-copies.mjs";
 import { evaluateCapabilityMaps } from "./check-capability-maps.mjs";
 import { evaluateLoopMatrix } from "./check-loop-matrix.mjs";
@@ -393,7 +394,8 @@ export const NOT_APPLICABLE_TO_PRODUCER = Object.freeze({
  * declares it will write (issue #1381's decision), not on whether this
  * repository happens to have a clossys/<role>/ folder of its own. Every
  * path the manifest declares (`outputs`, `feeds[].path`,
- * `capabilities[].outputs`) must sit under clossys/<role>/. `declared` when
+ * `capabilities[].outputs`) must be owned descendants under clossys/<role>/,
+ * or clossys/agents/<role>/ for implemented native CellAgent roles. `declared` when
  * at least one path is declared and all of them do; `absent` when none is
  * declared; `malformed` otherwise (the misplaced path itself is already a
  * finding from the Stage A gates composed above, so it is not reported
@@ -406,8 +408,7 @@ function layoutGap(role, manifest) {
   if (Array.isArray(foundry.feeds)) for (const item of foundry.feeds) paths.push(isRecord(item) ? item.path : item);
   if (Array.isArray(foundry.capabilities)) for (const item of foundry.capabilities) if (isRecord(item) && Array.isArray(item.outputs)) paths.push(...item.outputs);
   if (paths.length === 0) return { status: "absent" };
-  const prefix = `clossys/${roleShortName(role)}/`;
-  const inside = paths.every((path) => isText(path) && path.startsWith(prefix) && !path.split("/").includes(".."));
+  const inside = paths.every((path) => isOwnedOutputPath(role, path));
   return { status: inside ? "declared" : "malformed" };
 }
 

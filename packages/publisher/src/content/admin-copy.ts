@@ -2,28 +2,28 @@ import type { CopyRef } from "@clossys/writer";
 import type { CopyField } from "./composition.js";
 import type { ContentSlot, ContentWorkspace } from "./model.js";
 
-/** Permanent WR-META references; approval and locale coverage belong to the host resolver. */
+/** Canonical WR-META binding references; approval and locale coverage belong to the host resolver. */
 export const ADMIN_PAGE_COPY_REFS = {
   designer: {
-    title: { id: "st.pb0ynfnh58" },
+    title: { id: "st.2zj7yrtkfr" },
     description: { id: "st.abbasfn5h4" },
-    shareTitle: { id: "st.5yv263ckjd" },
-    shareDescription: { id: "st.j1mx26pxmq" },
+    shareTitle: { id: "st.2zj7yrtkfr" },
+    shareDescription: { id: "st.abbasfn5h4" },
     navLabel: { id: "st.2zj7yrtkfr" },
   },
   writer: {
     title: { id: "st.m22sa9p9y4" },
-    description: { id: "st.t5tp2ba7qy" },
-    shareTitle: { id: "st.phazcjdjs5" },
+    description: { id: "st.6zznbwptfh" },
+    shareTitle: { id: "st.m22sa9p9y4" },
     shareDescription: { id: "st.6zznbwptfh" },
-    navLabel: { id: "st.zz066nxnmh" },
+    navLabel: { id: "st.m22sa9p9y4" },
   },
   publisher: {
-    title: { id: "st.eyyshzcr6r" },
+    title: { id: "st.cy7122qr1d" },
     description: { id: "st.2tw3ay17tc" },
     shareTitle: { id: "st.cy7122qr1d" },
-    shareDescription: { id: "st.q0ettsmqf0" },
-    navLabel: { id: "st.yvc0ka3n3h" },
+    shareDescription: { id: "st.2tw3ay17tc" },
+    navLabel: { id: "st.cy7122qr1d" },
   },
 } as const;
 export type AdminPageName = keyof typeof ADMIN_PAGE_COPY_REFS;

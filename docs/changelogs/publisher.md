@@ -5,7 +5,7 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
-- Prepare registered site content with Designer’s native SiteFrame, Writer shell copy and registered image resolution. Carry Writer context and current Designer publication evidence into local content releases.
+- Prepare registered site content with Designer’s native SiteFrame, Writer shell copy and registered image resolution. Carry Writer context and current Designer publication evidence into local content releases. Bind admin metadata to canonical Writer records without approving drafts.
 
 ## 0.13.0 - 2026-10-16
 
