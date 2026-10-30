@@ -2213,6 +2213,11 @@
           "name": "footnote",
           "type": "copy",
           "required": false
+        },
+        {
+          "name": "aside",
+          "type": "records",
+          "required": false
         }
       ],
       "members": {
@@ -2340,6 +2345,24 @@
             "required": false,
             "maxLength": {
               "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "aside[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 1000
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "aside[].value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 1000
             },
             "dir": "auto"
           }
@@ -4621,7 +4644,8 @@
       "members": {
         "mode": "closed",
         "names": [
-          "brand.named"
+          "brand.named",
+          "brand.mark-only"
         ]
       },
       "allowedComposes": [
@@ -7900,7 +7924,8 @@
         "names": []
       },
       "allowedComposes": [
-        "components.separator"
+        "components.separator",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",

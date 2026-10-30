@@ -4,6 +4,7 @@ import { UI_BORDER_HAIRLINE } from "../components/internal/ui-vars.js";
 import { SECTION_MEASURE_MAX } from "./internal/block-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { SectionIntro, type SectionIntroEmphasis } from "./SectionIntro.js";
+import { SemanticContent } from "../components/SemanticContent.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.content", "foundry/sections.content");
@@ -69,6 +70,8 @@ interface ContentSectionBaseProps extends Omit<HTMLAttributes<HTMLDivElement>, "
   footnote?: ReactNode;
   /** Optional conclusion after the body, spanning the band with an accent start rule. */
   takeaway?: ReactNode;
+  /** Optional host-authored summary pairs; omission leaves no companion column. */
+  aside?: readonly { id: string; label: ReactNode; value: ReactNode }[];
   /** Optional authored attribution after the footnote, in the same column. */
   source?: ReactNode;
   /** Which heading element `heading` renders as. @default 2 */
@@ -186,7 +189,7 @@ function hasContent(node: ReactNode): boolean {
  * `footnote` and `source` follow in the footnote column. Without either new
  * slot, the footnote keeps its existing placement and markup.
  */
-export function ContentSection({
+function contentSectionBody({
   eyebrow,
   heading,
   headingId,
@@ -207,7 +210,7 @@ export function ContentSection({
   className,
   style,
   ...rest
-}: ContentSectionProps) {
+}: ContentSectionProps, stamp: Partial<ReturnType<typeof dsAttrs>>) {
   const hasHeader = eyebrow !== undefined || heading !== undefined || description !== undefined || actions !== undefined;
   const hasModules = Children.toArray(children).length > 0;
   const hasMedia = media !== undefined && media !== null && media !== false;
@@ -215,13 +218,13 @@ export function ContentSection({
   const footnoteCentred = align === "center";
   const footnoteNode =
     footnote === undefined || footnote === null || footnote === false ? null : (
-      <p
+      <SemanticContent as="p"
         data-content-section-footnote=""
         className={cx("text-body-s text-pretty", SECTION_GROUND_CLASSES[ground].secondary, footnoteCentred ? "text-center" : undefined)}
         style={{ maxWidth: SECTION_MEASURE_MAX.prose }}
       >
         {footnote}
-      </p>
+      </SemanticContent>
     );
 
   const hasTakeaway = hasContent(takeaway);
@@ -269,7 +272,7 @@ export function ContentSection({
       const hasCompanion = !headerSplit || hasSupportIntro || (!hasClosing && hasContent(footnote));
       return (
         <div
-          {...SECTION_STAMP} {...rest}
+          {...stamp} {...rest}
           data-content-section=""
           data-layout={layout}
           className={cx("grid w-full grid-cols-1 gap-y-2xl tablet-lg:grid-cols-12 tablet-lg:items-start tablet-lg:gap-x-4xl", hasClosing ? "tablet-lg:gap-y-3xl" : "tablet-lg:gap-y-0", padding, className)}
@@ -328,7 +331,7 @@ export function ContentSection({
     const atStart = layout === "split-start" || layout === "split" && mediaSide === "start";
     return (
       <div
-        {...SECTION_STAMP} {...rest}
+        {...stamp} {...rest}
         data-content-section=""
         data-layout={layout === "split-start" ? "split-start" : layout === "split-end" ? "split-end" : "split"}
         data-media-side={layout === "split" ? atStart ? "start" : "end" : undefined}
@@ -387,7 +390,7 @@ export function ContentSection({
 
   return (
     <div
-      {...SECTION_STAMP} {...rest}
+      {...stamp} {...rest}
       data-content-section=""
       className={cx("flex w-full flex-col", MODULE_GAP, centred ? "items-center" : "items-start", padding, className)}
       style={style}
@@ -419,4 +422,20 @@ export function ContentSection({
       {hasClosing ? closingNode() : footnoteNode}
     </div>
   );
+}
+
+/** Summary pairs share the semantic content primitive and never create an empty rail. */
+export function ContentSection({ aside, ...props }: ContentSectionProps) {
+  if (!aside?.length) return contentSectionBody(props, SECTION_STAMP);
+  return <SemanticContent as="div" {...SECTION_STAMP} data-content-aside-layout="" className="grid w-full min-w-0 grid-cols-1 gap-2xl tablet-lg:grid-cols-3">
+    <SemanticContent as="div" className="min-w-0 tablet-lg:col-span-2">{contentSectionBody(props, {})}</SemanticContent>
+    <SemanticContent as="aside" data-content-aside="" className="min-w-0">
+      <SemanticContent as="dl" className="m-0 flex flex-col gap-lg">
+        {aside.map(pair => <SemanticContent as="div" key={pair.id} className="flex flex-col gap-xs">
+          <SemanticContent as="dt" className="text-caption text-ink-secondary">{pair.label}</SemanticContent>
+          <SemanticContent as="dd" className="m-0 text-body text-ink-primary">{pair.value}</SemanticContent>
+        </SemanticContent>)}
+      </SemanticContent>
+    </SemanticContent>
+  </SemanticContent>;
 }

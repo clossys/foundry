@@ -1,12 +1,13 @@
 import { LogoHero } from "../../blocks/LogoHero.js";
 import type { SurfaceRendererEntry } from "../contract.js";
-import { readSectionContent, required, text } from "./group-a-content.js";
+import { readSectionContent, required, text, memberValue, optionalText } from "./group-a-content.js";
 
 export const logoHeroRenderer: SurfaceRendererEntry = {
   leaf: "sections.logo-hero",
   sample: dataset => ({ mark: dataset.assets.mark.src, name: dataset.assets.mark.name }),
   render(input) {
-    const content = readSectionContent(input, "sections.logo-hero", { slots: ["mark", "name"], members: [] });
-    return <LogoHero mark={text(content, required(content, "mark"), "mark")} name={text(content, required(content, "name"), "name")} />;
+    const content = readSectionContent(input, "sections.logo-hero", { slots: ["mark", "name"], members: ["brand.named", "brand.mark-only"] });
+    const brand = memberValue(content, "brand", ["named", "mark-only"] as const);
+    return <LogoHero member={brand === "mark-only" ? "brand.mark-only" : "brand.named"} mark={text(content, required(content, "mark"), "mark")} name={brand === "mark-only" ? optionalText(content, content.values.name, "name") : text(content, required(content, "name"), "name")} />;
   },
 };

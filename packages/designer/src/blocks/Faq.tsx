@@ -1,3 +1,4 @@
+import { Disclosure } from "../components/Disclosure.js";
 import { SectionHeader } from "./SectionHeader.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
@@ -109,7 +110,7 @@ export function Faq({
       {hasHeadingRegion ? (
         <SectionHeader density="standard" level={headingLevel} ground={ground} eyebrow={eyebrow} description={description} {...(heading ? { title: heading } : {})} titleClassName="leading-heading" />
       ) : null}
-      {faqLists(columns, layout, colors.border)}
+      <Disclosure.Group allowsMultipleExpanded>{faqLists(columns, layout, colors.border)}</Disclosure.Group>
     </div>
   );
 }
