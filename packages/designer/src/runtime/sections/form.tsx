@@ -18,7 +18,7 @@ const TEXT_TYPES = ["text", "email", "tel", "url", "password", "search"] as cons
  */
 export const formInputs: SectionInputs = { slots: ["fields", "submit", "error-summary", "success", "error", "honeypot", "turnstile"], members: ["form.contact"] };
 
-interface FieldRow { readonly id: string; readonly kind: string; readonly label: string; readonly placeholder?: string; readonly description?: string; readonly options: readonly { id: string; label: string }[] }
+interface FieldRow { readonly id: string; readonly kind: string; readonly label: string; readonly placeholder?: string; readonly description?: string; readonly error?: string; readonly options: readonly { id: string; label: string }[] }
 
 function fieldOf(row: RuntimeObject, index: number): FieldRow {
   const id = stringField(row, "id"), label = stringField(row, "label");
@@ -28,8 +28,8 @@ function fieldOf(row: RuntimeObject, index: number): FieldRow {
     if (!optionId || !optionLabel) throw new TypeError(`${LEAF}: field ${id} has an option without an id and a label`);
     return { id: optionId, label: optionLabel };
   });
-  const placeholder = stringField(row, "placeholder"), description = stringField(row, "description");
-  return { id, kind: stringField(row, "kind") ?? "text", label, options, ...(placeholder ? { placeholder } : {}), ...(description ? { description } : {}) };
+  const placeholder = stringField(row, "placeholder"), description = stringField(row, "description"), error = stringField(row, "error");
+  return { id, kind: stringField(row, "kind") ?? "text", label, options, ...(placeholder ? { placeholder } : {}), ...(description ? { description } : {}), ...(error ? { error } : {}) };
 }
 
 export const renderForm: SectionRenderer = input => {
@@ -62,12 +62,16 @@ export const renderForm: SectionRenderer = input => {
   const { heading } = anatomyOf(input);
   const children = fields.map(field => {
     const name = contact ? field.id : undefined;
-    if (field.kind === "select") return <Select key={field.id} id={field.id} name={name} label={field.label} placeholder={field.placeholder} description={field.description} options={field.options} />;
-    if (field.kind === "combo-box") return <ComboBox key={field.id} id={field.id} name={name} label={field.label} placeholder={field.placeholder} description={field.description} options={field.options} />;
-    if (field.kind === "checkbox") return <Checkbox key={field.id} id={field.id} name={name}>{field.label}</Checkbox>;
-    if (field.kind === "textarea") return <Textarea key={field.id} id={field.id} name={name} label={field.label} placeholder={field.placeholder} description={field.description} />;
+    const validation = { isInvalid: field.error ? true : undefined, errorMessage: field.error };
+    if (field.kind === "select") return <Select key={field.id} id={field.id} name={name} label={field.label} placeholder={field.placeholder ?? ""} description={field.description} options={field.options} {...validation} />;
+    if (field.kind === "combo-box") return <ComboBox key={field.id} id={field.id} name={name} label={field.label} triggerLabel={field.label} placeholder={field.placeholder} description={field.description} options={field.options} {...validation} />;
+    if (field.kind === "checkbox") {
+      if (field.error) throw new TypeError(`${LEAF}: field ${field.id} NEED registered checkbox error presentation; supply the error-summary slot`);
+      return <Checkbox key={field.id} id={field.id} name={name}>{field.label}</Checkbox>;
+    }
+    if (field.kind === "textarea") return <Textarea key={field.id} id={field.id} name={name} label={field.label} placeholder={field.placeholder} description={field.description} {...validation} />;
     if (!(TEXT_TYPES as readonly string[]).includes(field.kind)) throw new TypeError(`${LEAF}: field ${field.id} kind ${field.kind} has no registered component`);
-    return <TextField key={field.id} id={field.id} name={name} type={field.kind} label={field.label} placeholder={field.placeholder} description={field.description} />;
+    return <TextField key={field.id} id={field.id} name={name} type={field.kind} label={field.label} placeholder={field.placeholder} description={field.description} {...validation} />;
   });
   return (
     <Form
@@ -84,6 +88,7 @@ export const renderForm: SectionRenderer = input => {
       actions={<Button type="submit" variant="primary">{submit!.label}</Button>}
     >
       {children}
+      {contact ? host?.consent as FormProps["children"] : null}
     </Form>
   );
 };

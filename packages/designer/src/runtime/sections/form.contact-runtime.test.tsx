@@ -4,7 +4,9 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { RuntimeJson, RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { TextField } from "../../components/TextField.js";
+import { Checkbox } from "../../components/Checkbox.js";
 import { formInputs, renderForm } from "./form.js";
+import { bindContactFormSpecimen, contactFormSpecimenContent, contactFormSpecimenIdentity } from "../../studio/contact-form-section-specimen.js";
 
 const content: Record<string, RuntimeJson> = {
   fields: [
@@ -25,6 +27,69 @@ function input(overrides: Record<string, RuntimeJson> = {}, sectionHost?: object
 }
 
 describe("registered contact form runtime", () => {
+  it("names the missing checkbox error presentation instead of dropping supplied copy", () => {
+    expect(() => renderForm(input({ fields: [
+      { id: "contact-checkbox", kind: "checkbox", label: "Checkbox field", error: "Checkbox error" },
+    ] }, { onSubmit: async () => {} }))).toThrow(/NEED.*checkbox error presentation/);
+  });
+
+  it("renders the descriptor-bound contact specimen port and refuses stale or undeclared cases", async () => {
+    const descriptorHash = "contact-fixture-descriptor";
+    const runtime = input(contactFormSpecimenContent, { onSubmit: async () => {} });
+    const boundInput = {
+      ...runtime,
+      fill: { ...runtime.fill, surface: { descriptorHash } },
+      profile: { surfaces: { fills: { "sections.form": { descriptorHash } } } },
+    } as unknown as RuntimeRenderInput<ReactNode>;
+    const binding = bindContactFormSpecimen(boundInput);
+    expect(contactFormSpecimenIdentity.specimenLeaf).toBe("sections.specimen-section-viewports");
+    expect(binding.descriptorHash).toBe(descriptorHash);
+    const { container } = render(<>{binding.render({ width: 375, state: "default" })}</>);
+    expect(container.querySelector("form")).toHaveAttribute("data-ds-leaf", "sections.form");
+    expect(screen.getByRole("textbox", { name: "Email field" })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Message field" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Submit action" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("Success message");
+    expect(() => binding.render({ width: 375, state: "unknown" })).toThrow(/NEED/);
+    expect(() => bindContactFormSpecimen({ ...boundInput, fill: runtime.fill })).toThrow(/NEED/);
+    expect(() => bindContactFormSpecimen({ ...boundInput, sectionHost: {} })).toThrow(/NEED/);
+  });
+
+  it("preserves registered inline error copy and summary-to-control focus", async () => {
+    render(<>{renderForm(input({
+      fields: [
+        { id: "contact-email", kind: "email", label: "Email", error: "Check the email address" },
+        { id: "contact-message", kind: "textarea", label: "Message", error: "Add a message" },
+      ],
+      "error-summary": { heading: "Check these fields", items: [
+        { fieldId: "contact-email", message: "Check the email address" },
+        { fieldId: "contact-message", message: "Add a message" },
+      ] },
+    }, { onSubmit: async () => {} }))}</>);
+    const email = screen.getByRole("textbox", { name: "Email" });
+    const message = screen.getByRole("textbox", { name: "Message" });
+    expect(email).toHaveAttribute("aria-invalid", "true");
+    expect(email).toHaveAccessibleDescription("Check the email address");
+    expect(message).toHaveAttribute("aria-invalid", "true");
+    expect(message).toHaveAccessibleDescription("Add a message");
+    await userEvent.click(within(screen.getByRole("alert")).getByRole("link", { name: "Add a message" }));
+    expect(message).toHaveFocus();
+  });
+
+  it("passes the consumer's live consent control inside the named submission", async () => {
+    let submitted: FormData | undefined;
+    const { container } = render(<>{renderForm(input({}, {
+      onSubmit: async (event: FormEvent<HTMLFormElement>) => { submitted = new FormData(event.currentTarget); },
+      consent: <Checkbox name="contact-consent" value="accepted">Consent supplied by the host</Checkbox>,
+    }))}</>);
+    const consent = screen.getByRole("checkbox", { name: "Consent supplied by the host" });
+    expect(container.querySelector("form")).toContainElement(consent);
+    await userEvent.click(consent);
+    await act(async () => { fireEvent.submit(container.querySelector("form")!); });
+    expect(submitted?.get("contact-consent")).toBe("accepted");
+    expect(await screen.findByRole("status")).toHaveTextContent("The enquiry was received");
+  });
+
   it("refuses a selected contact composition without the consumer submit port", () => {
     const fields = [{ id: "contact-email", kind: "email", label: "Email" }];
     expect(() => renderForm(input({ fields }))).toThrow(/sectionHost.*onSubmit|onSubmit.*sectionHost/);
