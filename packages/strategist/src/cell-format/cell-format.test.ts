@@ -4,6 +4,8 @@ import { builtinModules } from "node:module";
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
+import * as publicSchema from "@clossys/strategist/cell-format/schema";
+import { checkImportPurity } from "../../../../scripts/lib/import-purity.mjs";
 import {
   CELL_ID_PATTERN, cellPath, formatLinkRef, isoDate, parseConfirmRef,
   parseDocument, parseLinkRef, positiveInteger, readBullet, serializeScalar,
@@ -180,6 +182,15 @@ describe("catalog-free generic tree", () => {
 });
 
 describe("cell-format import boundary", () => {
+  it("exposes the native citation schema through a pure public subpath", () => {
+    expect(publicSchema.parseLinkRef("director:identity.verbal.voice@2")).toEqual({ agent: "director", cell: "identity.verbal.voice", version: 2 });
+    expect(publicSchema.positiveInteger(14)).toBe(true);
+    const entry = fileURLToPath(import.meta.resolve("@clossys/strategist/cell-format/schema"));
+    expect(entry.replaceAll("\\", "/")).toMatch(/\/dist\/cell-format\/schema\.js$/);
+    const result = checkImportPurity({ entries: [entry] });
+    expect(result.findings).toEqual([]);
+    expect(result.visited).toHaveLength(1);
+  });
   it("permits only local sibling modules and Node builtins in every production source", () => {
     const root = dirname(fileURLToPath(import.meta.url));
     const builtin = new Set(builtinModules.map(name => name.replace(/^node:/, "")));

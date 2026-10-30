@@ -7,8 +7,9 @@ import { loadWriterCatalog } from '../catalog/ia/index.js';
 import { WRITER_LAYERS } from '../catalog-core/ids.js';
 import { checkVoiceDerivationCoverage, type VoiceDerivationCoverageResult } from '../voice/derivation-coverage.js';
 import { checkLocaleCoverage, type LocaleCoverageReport } from '../locale-coverage.js';
-import { assertNoSymlinkPath, isObject } from './migrate.js';
+import { assertNoSymlinkPath } from './migrate.js';
 import { parseWriterCell, type WriterCell } from './parse.js';
+import { isDirectorSource } from '../model/director-sources.js';
 
 const INPUTS = ['identity.brand.essence', 'identity.brand.personality', 'identity.visual.style', 'identity.verbal.voice', 'focus.segment.core', 'focus.category.stance', 'advantage.proposition.proof'] as const;
 export interface DirectorObligation { id: string; ref: string; line: number; key?: string; text: string }
@@ -89,7 +90,7 @@ export async function checkWriterDerivation(directorRoot: string, writerRoot: st
         if (sources === undefined) continue;
         if (!Array.isArray(sources)) { add('director-source-invalid', 'directorSources must be an array of {ref, line}', identity); continue; }
         for (const source of sources) {
-          if (!isObject(source) || typeof source.ref !== 'string' || !Number.isSafeInteger(source.line) || Number(source.line) < 1) { add('director-source-invalid', `Invalid source mapping on record ${String(item.record.id)}`, identity); continue; }
+          if (!isDirectorSource(source)) { add('director-source-invalid', `Invalid source mapping on record ${String(item.record.id)}`, identity); continue; }
           const id = `${source.ref}#L${source.line}`;
           if (!cell.links.includes(source.ref)) add('director-source-unlinked', `Record source is absent from cell links: ${id}`, identity);
           // Pass the actual declared mapping set, including stale/unknown mappings, to both-direction coverage.
