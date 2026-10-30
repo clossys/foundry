@@ -5645,7 +5645,10 @@
         "components.card",
         "components.badge",
         "components.icon",
-        "components.status-mark"
+        "components.status-mark",
+        "components.semantic-content",
+        "components.table",
+        "components.link"
       ],
       "parts": [
         "sections.band",
