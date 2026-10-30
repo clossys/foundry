@@ -168,8 +168,8 @@ it.each([0, 1])("routes selected ink and surface member identities and modes to 
 it.each([0, 1])("refuses missing registered swatch and contrast parts before rendering leaf %i", async index => {
   const selected = context(), leaf = tokenAssetSpecimenLeaves[index]!;
   for (const part of ["studio.specimen-swatch", "studio.specimen-contrast"] as const) {
-    const renderParts = tokenParts(selected);
-    delete (renderParts as { [key in keyof SpecimenTokenHostParts]?: SpecimenTokenHostParts[key] })[part];
+    const renderParts = { ...tokenParts(selected) };
+    delete renderParts[part];
     const props = { items: itemsFor(index, selected).slice(0, 1), context: selected, need, labels, renderParts };
     expect(leaf.validate(props)).toEqual([expect.objectContaining({ reason: `The registered ${part} part is not wired.` })]);
     const view = await renderSelected(leaf.render(props), selected);
