@@ -820,7 +820,7 @@
 [data-frame-root] {
   --site-header-clearance: calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px));
   & [id] { scroll-margin-block-start: var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))); }
-  & > header { position: sticky !important; inset-block-start: 0; padding-block-start: calc(var(--spacing-sm, 8px) + env(safe-area-inset-top, 0px)); }
+  & > header { position: sticky; inset-block-start: 0; padding-block-start: calc(var(--spacing-sm, 8px) + env(safe-area-inset-top, 0px)); }
   & > header[data-placement="overlay"] { position: fixed !important; }
   &:has(> header[data-placement="overlay"]) { padding-block-start: var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))); }
 }
