@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { Scanner } from "@tailwindcss/oxide";
 import { compile } from "tailwindcss";
+import { resolvePinnedAnimationCss } from "./pinned-animation-css.js";
 
 /** Compile the native source against its own standard shadcn contract. */
 export async function generateNativeShadcnCss(stylesDir: string): Promise<string> {
@@ -15,12 +16,14 @@ export async function generateNativeShadcnCss(stylesDir: string): Promise<string
   const candidates = scanner.scanFiles(sources);
   const entry = '@import "tailwindcss/theme";\n'
     + '@import "tailwindcss/utilities" layer(foundry-ui-compiled);\n'
+    + '@import "tw-animate-css";\n'
     + readFileSync(resolve(stylesDir, "shadcn-native.css"), "utf8");
   const compiled = await compile(entry, {
     base: stylesDir,
     async loadStylesheet(id, base) {
       const target = id === "tailwindcss/theme" ? require.resolve("tailwindcss/theme.css")
-        : id === "tailwindcss/utilities" ? require.resolve("tailwindcss/utilities.css") : resolve(base, id);
+        : id === "tailwindcss/utilities" ? require.resolve("tailwindcss/utilities.css")
+        : id === "tw-animate-css" ? resolvePinnedAnimationCss(import.meta.url) : resolve(base, id);
       return { path: target, base: dirname(target), content: readFileSync(target, "utf8") };
     },
   });
