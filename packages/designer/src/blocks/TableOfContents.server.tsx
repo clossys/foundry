@@ -1,3 +1,8 @@
+import { componentLeaf } from "../runtime/component-leaf.js";
+import { TableOfContentsDisclosure } from "./TableOfContentsDisclosure.js";
+const Link = componentLeaf<typeof import("../components/Link.server.js").Link>("components.link");
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+import { articleTocCss, readingTarget } from "./ArticleReading.js";
 import type { ReactNode } from "react";
 import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
 import { cx } from "../components/internal/cx.js";
@@ -50,14 +55,16 @@ export function validateTableOfContents({
 }
 
 /** The ordered list of in-page links; the current item carries the location value of aria-current. */
-export function renderTableOfContentsList(items: readonly TableOfContentsItem[], current: string | undefined, onNavigate?: (id: string) => void): ReactNode {
+export function renderTableOfContentsList(items: readonly TableOfContentsItem[], current: string | undefined, onNavigate?: (id: string) => void, cssTracking = false, LinkComponent: typeof Link = Link): ReactNode {
   return (
-    <ol className="flex flex-col">
+    <SemanticContent as="ol" className="flex flex-col">
       {items.map((item) => {
         const isCurrent = item.id === current;
         return (
-          <li key={item.id}>
-            <a
+          <SemanticContent as="li" key={item.id}>
+            <LinkComponent
+              variant="standalone"
+              data-reading-target={cssTracking ? readingTarget(item.id).name : undefined}
               href={"#" + item.id}
               onClick={onNavigate ? event => { event.preventDefault(); onNavigate(item.id); } : undefined}
               aria-current={isCurrent ? "location" : undefined}
@@ -72,11 +79,11 @@ export function renderTableOfContentsList(items: readonly TableOfContentsItem[],
               )}
             >
               {item.label}
-            </a>
-          </li>
+            </LinkComponent>
+          </SemanticContent>
         );
       })}
-    </ol>
+    </SemanticContent>
   );
 }
 
@@ -86,31 +93,35 @@ export function renderTableOfContentsList(items: readonly TableOfContentsItem[],
  * of the viewport edge once the capped list scrolls on its own.
  */
 export function renderTableOfContentsSidebar(
-  { label, items, className, style, onNavigate }: Pick<TableOfContentsProps, "label" | "items" | "className" | "style" | "onNavigate">,
+  { label, items, className, style, onNavigate, trackCurrent }: Pick<TableOfContentsProps, "label" | "items" | "className" | "style" | "onNavigate" | "trackCurrent">,
   current: string | undefined,
+  LinkComponent: typeof Link = Link,
 ): ReactNode {
   return (
-    <nav
+    <SemanticContent as="nav"
       {...SECTION_STAMP}
       aria-label={label}
       className={cx("desktop:sticky desktop:max-h-dvh desktop:overflow-y-auto", className)}
       style={{ insetBlockStart: SITE_HEADER_CLEARANCE, zIndex: Z_STICKY, ...style }}
     >
-      <p aria-hidden="true" className="pb-sm text-caption text-ink-muted">
+      <SemanticContent as="p" aria-hidden="true" className="pb-sm text-caption text-ink-muted">
         {label}
-      </p>
-      {renderTableOfContentsList(items, current, onNavigate)}
-      <div aria-hidden="true" className="hidden desktop:block" style={{ blockSize: SITE_HEADER_CLEARANCE }} />
-    </nav>
+      </SemanticContent>
+      {trackCurrent === "css" ? <style>{articleTocCss(items)}</style> : null}
+      {renderTableOfContentsList(items, current, onNavigate, trackCurrent === "css", LinkComponent)}
+      <SemanticContent as="div" aria-hidden="true" className="hidden desktop:block" style={{ blockSize: SITE_HEADER_CLEARANCE }} />
+    </SemanticContent>
   );
 }
 
 /** The inline presentation's navigation, without the sticky caption row. */
 export function renderTableOfContentsInlineNav(
-  { label, items, onNavigate }: Pick<TableOfContentsProps, "label" | "items" | "onNavigate">,
+  { label, items, onNavigate, trackCurrent }: Pick<TableOfContentsProps, "label" | "items" | "onNavigate" | "trackCurrent">,
   current: string | undefined,
+  LinkComponent: typeof Link = Link,
 ): ReactNode {
-  return <nav aria-label={label}>{renderTableOfContentsList(items, current, onNavigate)}</nav>;
+  return <SemanticContent as="nav" aria-label={label}>{trackCurrent === "css" ? <style>{articleTocCss(items)}</style> : null}
+      {renderTableOfContentsList(items, current, onNavigate, trackCurrent === "css", LinkComponent)}</SemanticContent>;
 }
 
 /**
@@ -120,16 +131,15 @@ export function renderTableOfContentsInlineNav(
  */
 export function TableOfContents(props: TableOfContentsProps) {
   validateTableOfContents(props);
-  const { label, items, presentation = "sidebar", currentId, className, style } = props;
+  const { label, items, presentation = "sidebar", currentId, className, style, trackCurrent } = props;
   if (presentation === "inline") {
     return (
-      <details open {...SECTION_STAMP} className={cx(BOX_CLASSES, className)} style={style}>
-        <summary className={cx("cursor-pointer rounded-default py-sm text-body text-ink-primary", FOCUS_CLASSES)}>
-          {label}
-        </summary>
-        {renderTableOfContentsInlineNav({ label, items }, currentId)}
-      </details>
+      <SemanticContent as="div" {...SECTION_STAMP} className={cx(BOX_CLASSES, className)} style={style}>
+        <TableOfContentsDisclosure id="article-toc" title={label}>
+        {renderTableOfContentsInlineNav({ label, items, trackCurrent }, currentId)}
+        </TableOfContentsDisclosure>
+      </SemanticContent>
     );
   }
-  return renderTableOfContentsSidebar({ label, items, className, style }, currentId);
+  return renderTableOfContentsSidebar({ label, items, className, style, trackCurrent }, currentId);
 }
