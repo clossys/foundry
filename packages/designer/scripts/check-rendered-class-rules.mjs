@@ -10,8 +10,9 @@
  * fail; a separate HTML invocation measures concrete rendered values.
  * HTML mode checks every class in the supplied rendered DOM, including SVG.
  * Neither mode proves selector matching, cascade, visual fidelity, or unrendered
- * runtime states. Positive selector participation is the measured contract:
- * structural markers must occur in a declaration-bearing selector too.
+ * runtime states. Styling classes require positive selector participation.
+ * Structural group markers and verified, unstyled upstream hooks are reported
+ * separately using immutable upstream provenance, never candidate CSS absence.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { createHash } from "node:crypto";
@@ -21,6 +22,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import ts from "typescript";
 import * as cssTree from "css-tree";
 import { parse as parseHtml } from "parse5";
+import { upstreamMarkers } from "./proc3-upstream-markers.mjs";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const sourceDirs = ["components", "blocks", "shell", "frames", "runtime", "studio"];
@@ -138,17 +140,23 @@ function sourceFiles(paths) {
   return [...files].sort();
 }
 
-export function sourceClasses(paths) {
-  const files = sourceFiles(paths);
+export function sourceClasses(paths, referenceSources) {
+  const virtual = referenceSources && new Map(referenceSources.map(row => [resolve(packageRoot, row.path), row.content]));
+  const files = virtual ? [...virtual.keys()] : sourceFiles(paths);
   const options = { target: ts.ScriptTarget.ESNext, module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext, jsx: ts.JsxEmit.Preserve, noLib: true, types: [], skipLibCheck: true };
   const host = ts.createCompilerHost(options);
+  if (virtual) {
+    host.fileExists = file => virtual.has(file);
+    host.readFile = file => virtual.get(file);
+    host.getSourceFile = (file, languageVersion) => virtual.has(file) ? ts.createSourceFile(file, virtual.get(file), languageVersion, true) : undefined;
+  }
   // Only repository-relative source imports are needed. Do not load dependency
   // declaration trees, execute modules, or resolve packages over the network.
   host.resolveModuleNames = (names, containingFile) => names.map(name => {
     if (!name.startsWith(".")) return undefined;
     const target = resolve(dirname(containingFile), name);
     const stem = target.replace(/\.[cm]?js$/, "");
-    const candidate = [target, stem + ".ts", stem + ".tsx", resolve(target, "index.ts"), resolve(target, "index.tsx")].find(path => /\.[cm]?tsx?$/.test(path) && existsSync(path) && statSync(path).isFile());
+    const candidate = [target, stem + ".ts", stem + ".tsx", resolve(target, "index.ts"), resolve(target, "index.tsx")].find(path => /\.[cm]?tsx?$/.test(path) && (virtual ? virtual.has(path) : existsSync(path) && statSync(path).isFile()));
     return candidate ? { resolvedFileName: candidate, extension: extname(candidate) === ".tsx" ? ts.Extension.Tsx : ts.Extension.Ts } : undefined;
   });
   const program = ts.createProgram(files, options, host);
@@ -369,7 +377,7 @@ Exit 0 = measured classes covered, 1 = missing rules/unsupported source, 2 = inv
 JSON reports exact inputs, selector evidence, missing classes, and source coverage limitations. No files are written.
 `;
 
-export function main(argv = process.argv.slice(2)) {
+export function main(argv = process.argv.slice(2), readReference = readFileSync) {
   try {
     const sources = [], html = [], css = [];
     let expectedHead, renderManifest;
@@ -419,19 +427,24 @@ export function main(argv = process.argv.slice(2)) {
     const classes = new Map(source.classes);
     for (const file of html) for (const [token, occurrences] of htmlClasses(readFileSync(file, "utf8"), file)) classes.set(token, [...(classes.get(token) ?? []), ...occurrences]);
     if (!classes.size) throw new Error("No classes measured; refusing an empty pass");
-    const missing = checkClasses(classes, rules);
+    const classification = upstreamMarkers(sourceClasses, readReference);
+    const markers = [...classes].filter(([token]) => classification.classify(token)).sort(([a], [b]) => a.localeCompare(b)).map(([token, occurrences]) => ({ class: token, occurrences, evidence: classification.classify(token) }));
+    const stylingClasses = new Map([...classes].filter(([token]) => !classification.classify(token)));
+    const missing = checkClasses(stylingClasses, rules);
     const failed = Boolean(missing.length || source.unsupported.length || source.externalInputs.length);
     const inputHashes = [...new Set([...source.files, ...html, ...css, ...(renderManifest ? [renderManifest] : [])])].sort().map(file => ({ file, sha256: createHash("sha256").update(readFileSync(file)).digest("hex") }));
     console.log(JSON.stringify({
-      gate: "rendered-class-rules", sourceHead, inputHashes,
+      gate: "rendered-class-rules", sourceHead, inputHashes: [...inputHashes, ...classification.inputHashes],
+      classificationProvenance: classification.provenance,
       scope: { sourceFiles: source.files, htmlFiles: html, cssFiles: css, ...(renderManifest ? { renderManifest } : {}) },
-      counts: { checked: classes.size, missing: missing.length, unsupported: source.unsupported.length, unverified: source.externalInputs.length },
+      counts: { checked: classes.size, markers: markers.length, missing: missing.length, unsupported: source.unsupported.length, unverified: source.externalInputs.length },
       violations: [...missing.map(row => ({ kind: "missing-rule", ...row })), ...source.unsupported.map(row => ({ kind: "unsupported-source", ...row }))],
       ok: !failed, mode: sources.length ? (html.length ? "source+html" : "source") : "html",
-      status: failed ? "findings" : "covered", measurement: "positive selector participation in declaration-bearing shipped CSS rules",
+      status: failed ? "findings" : "covered", measurement: "styling class participation in declaration-bearing shipped CSS; structural markers classified from pinned upstream evidence",
       cssFiles: css, sourceFiles: source.files, htmlFiles: html, classCount: classes.size, classSinkCount: source.sinks,
       checkedClasses: classes.size, missing, unsupported: source.unsupported, coverageUnverified: source.externalInputs, externalInputs: source.externalInputs, strictExternal: true,
-      covered: [...classes.keys()].filter(token => rules.has(token)).sort().map(token => ({ class: token, evidence: rules.get(token) })),
+      markerCount: markers.length, markers,
+      covered: [...stylingClasses.keys()].filter(token => rules.has(token)).sort().map(token => ({ class: token, evidence: rules.get(token) })),
       limitations: ["Source mode enumerates statically resolvable package classes; caller class inputs are listed separately.", "HTML mode measures only supplied rendered states.", "Selector participation does not prove selector matching, cascade, computed styles, or visual parity."],
     }, null, 2));
     return failed ? 1 : 0;
