@@ -64,7 +64,7 @@ async function fillAndReset(user: User, code = "123456", password = "a long new 
 
 const MODULE_SPECIFIER =
   /^\s*(?:import\b[^;]*?|export\s+(?:type\s+)?(?:\*(?:\s+as\s+\w+)?|\{[^}]*\})\s*from\s*)["']([^"']+)["']/gm;
-const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+|@clossys\/writer|\.{1,2}\/.+)$/;
+const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+|@clossys\/writer(?:\/front-door\/strict)?|\.{1,2}\/.+)$/;
 
 describe("ResetForm :: steps", () => {
   it("stretches both steps and keeps secondary actions before the primary in DOM and focus order", async () => {

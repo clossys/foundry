@@ -1,7 +1,7 @@
 import { validateRuntimeAssemblyEvidence, prepareRuntimeAssembly, runtimeHash, runtimeSnapshot, resolve } from "@clossys/designer/catalog";
 import type { RuntimeAssemblyInput, RuntimeAssemblyEvidence, RuntimeEvidenceResult } from "@clossys/designer/catalog";
-import { validateReviewEvidence } from "@clossys/controller/review";
-import type { ReviewEvidenceBundle, ReviewPolicy } from "@clossys/controller/review";
+import { validateReviewEvidence } from "@clossys/controller/review/pure";
+import type { ReviewEvidenceBundle, ReviewPolicy } from "@clossys/controller/review/pure";
 import { sha256 } from "../planning/digest.js";
 import type { RouteRuntimeMaterialization } from "./route-runtime.js";
 import { deriveRouteRuntimeBinding } from "./route-runtime.js";

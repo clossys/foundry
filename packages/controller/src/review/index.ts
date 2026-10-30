@@ -9,7 +9,6 @@ export {
   validateReviewEvidence,
   validateReviewPolicy,
 } from "./validate.js";
-export { CliInputError, main, run } from "./cli.js";
 export type {
   ReviewCheck,
   ReviewCheckConclusion,

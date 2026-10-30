@@ -1,4 +1,4 @@
-import { resolveFrontDoorCopy } from "@clossys/writer";
+import { resolveFrontDoorCopy } from "@clossys/writer/front-door/strict";
 import { createSignInForm } from "./internal/createSignInForm.js";
 export type { SignInFailure, SignInResult, SignInFormProps } from "./internal/createSignInForm.js";
 

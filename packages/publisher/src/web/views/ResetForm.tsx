@@ -1,4 +1,4 @@
-import { resolveFrontDoorCopy } from "@clossys/writer";
+import { resolveFrontDoorCopy } from "@clossys/writer/front-door/strict";
 import { createResetForm } from "./internal/createResetForm.js";
 export type { ResetFailure, ResetResult, ResetDetails, ResetFormProps } from "./internal/createResetForm.js";
 

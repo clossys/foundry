@@ -4,7 +4,7 @@ import { createContentPreviewProvenance } from "./preview/provenance.js";
 import { bindContentAppFrame, ContentCopyBindingError } from "./content-route-copy.js";
 import { renderContentSection } from "./content-route-runtime.js";
 import { Fragment, createElement } from "react";
-import { createCopyResolver } from "@clossys/writer";
+import { createCopyResolver } from "@clossys/writer/resolve";
 import type { ReactElement } from "react";
 import { canonicalLocale, directionFor } from "@clossys/writer/locale";
 import { AppFrame, AuthFrame, DocumentFrame } from "@clossys/designer/frames";

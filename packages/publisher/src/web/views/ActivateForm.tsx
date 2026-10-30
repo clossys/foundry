@@ -1,4 +1,4 @@
-import { resolveFrontDoorCopy } from "@clossys/writer";
+import { resolveFrontDoorCopy } from "@clossys/writer/front-door/strict";
 import { createActivateForm } from "./internal/createActivateForm.js";
 export type { ActivateFailure, ActivateResult, ActivateDetails, ActivateFormProps } from "./internal/createActivateForm.js";
 

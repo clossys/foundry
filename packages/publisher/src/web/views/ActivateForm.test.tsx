@@ -42,7 +42,7 @@ const submitButton = () => screen.getByRole("button", { name: defaultText("activ
 
 const MODULE_SPECIFIER =
   /^\s*(?:import\b[^;]*?|export\s+(?:type\s+)?(?:\*(?:\s+as\s+\w+)?|\{[^}]*\})\s*from\s*)["']([^"']+)["']/gm;
-const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+|@clossys\/writer|\.{1,2}\/.+)$/;
+const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+|@clossys\/writer(?:\/front-door\/strict)?|\.{1,2}\/.+)$/;
 
 describe("ActivateForm :: submit", () => {
   it.each([false, true])("stretches the activation CTA with collectName=%s", (collectName) => {
