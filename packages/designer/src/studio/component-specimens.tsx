@@ -160,7 +160,8 @@ const sampleKey = (specifier: string, exportName: string) => {
  * rule the emitted component index follows. A leaf that cannot bind stays unavailable with a named refusal;
  * nothing falls back to another library or to a placeholder.
  */
-export function componentSpecimenPreview(options: ComponentSpecimenOptions): ComponentSpecimenPreview {
+/** Bind selected modules without loading or enumerating component sample content. */
+export function bindComponentSpecimen(options: Pick<ComponentSpecimenOptions, "modules">, leaf: string, profile: CompositeResolved): ReturnType<ComponentSpecimenPreview["bind"]> {
   const refuse = (leaf: string, code: ComponentSpecimenRefusalCode, detail: string) => ({ refusal: { leaf, code, detail } });
   const exportOf = (leaf: string, module: string, name: string): { value: ComponentSpecimenComponent; namespace: ComponentSpecimenModule } | ReturnType<typeof refuse> => {
     const namespace = Object.hasOwn(options.modules, module) ? options.modules[module] : undefined;
@@ -168,7 +169,6 @@ export function componentSpecimenPreview(options: ComponentSpecimenOptions): Com
     const value = Object.hasOwn(namespace, name) ? namespace[name] : undefined;
     return renderable(value) ? { value, namespace } : refuse(leaf, "export-unavailable", `${module}#${name}`);
   };
-  const bind: ComponentSpecimenPreview["bind"] = (leaf, profile) => {
     if (!leaf.startsWith("components.")) return refuse(leaf, "not-a-component", leaf);
     const component: ResolvedComponent | undefined = profile.components.components[leaf];
     if (!component) return refuse(leaf, "not-chosen", leaf);
@@ -195,7 +195,10 @@ export function componentSpecimenPreview(options: ComponentSpecimenOptions): Com
     }
     const source = component.origin.kind === "adopted" ? component.origin.source : component.descriptor.source;
     return { binding: { leaf, source, Component: base.value, specifier, exportName: component.impl.export, exports: base.namespace, members, unbound } };
-  };
+}
+
+export function componentSpecimenPreview(options: ComponentSpecimenOptions): ComponentSpecimenPreview {
+  const bind: ComponentSpecimenPreview["bind"] = (leaf, profile) => bindComponentSpecimen(options, leaf, profile);
   return { bind, preview(leaf, profile) {
     const bound = bind(leaf, profile);
     if ("refusal" in bound) return undefined;

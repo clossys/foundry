@@ -6867,6 +6867,997 @@
     "status": "draft"
   },
   {
+    "id": "sections.specimen-asset-grid",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": null,
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "items",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "axes",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "context",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "labels",
+          "type": "copy",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.disclosure",
+        "components.logo"
+      ],
+      "parts": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.breakpoint"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "passageSchema": "passages.specimen-asset-grid",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "labels.showAllVariants",
+            "kind": "icu",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.specimen-color-ramp",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": null,
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "items",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "axes",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "context",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "labels",
+          "type": "copy",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.disclosure"
+      ],
+      "parts": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.breakpoint"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "passageSchema": "passages.specimen-color-ramp",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "labels.showAllVariants",
+            "kind": "icu",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.specimen-copy-in-context",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": null,
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "items",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "axes",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "context",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "labels",
+          "type": "copy",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.table",
+        "components.disclosure",
+        "components.rich-text",
+        "components.button",
+        "components.navigation-tree"
+      ],
+      "parts": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.breakpoint"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "passageSchema": "passages.specimen-copy-in-context",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "labels.showAllVariants",
+            "kind": "icu",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.specimen-frame-viewports",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": null,
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "items",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "axes",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "context",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "labels",
+          "type": "copy",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.table",
+        "components.disclosure"
+      ],
+      "parts": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.breakpoint"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "passageSchema": "passages.specimen-frame-viewports",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "labels.showAllVariants",
+            "kind": "icu",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.specimen-icon-grid",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": null,
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "items",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "axes",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "context",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "labels",
+          "type": "copy",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.disclosure",
+        "components.icon"
+      ],
+      "parts": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.breakpoint"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "passageSchema": "passages.specimen-icon-grid",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "labels.showAllVariants",
+            "kind": "icu",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.specimen-motion-player",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": null,
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "items",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "axes",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "context",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "labels",
+          "type": "copy",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.disclosure",
+        "components.button"
+      ],
+      "parts": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.breakpoint"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "passageSchema": "passages.specimen-motion-player",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "labels.showAllVariants",
+            "kind": "icu",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.specimen-page-viewports",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": null,
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "items",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "axes",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "context",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "labels",
+          "type": "copy",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.table",
+        "components.disclosure"
+      ],
+      "parts": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.breakpoint"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "passageSchema": "passages.specimen-page-viewports",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "labels.showAllVariants",
+            "kind": "icu",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.specimen-radius-ladder",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": null,
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "items",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "axes",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "context",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "labels",
+          "type": "copy",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.disclosure"
+      ],
+      "parts": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.breakpoint"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "passageSchema": "passages.specimen-radius-ladder",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "labels.showAllVariants",
+            "kind": "icu",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.specimen-rich-passage",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": null,
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "items",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "axes",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "context",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "labels",
+          "type": "copy",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.disclosure",
+        "components.rich-text"
+      ],
+      "parts": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.breakpoint"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "passageSchema": "passages.specimen-rich-passage",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "labels.showAllVariants",
+            "kind": "icu",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.specimen-section-viewports",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": null,
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "items",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "axes",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "context",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "labels",
+          "type": "copy",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.table",
+        "components.disclosure"
+      ],
+      "parts": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.breakpoint"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "passageSchema": "passages.specimen-section-viewports",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "labels.showAllVariants",
+            "kind": "icu",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.specimen-spacing-ladder",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": null,
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "items",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "axes",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "context",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "labels",
+          "type": "copy",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.disclosure"
+      ],
+      "parts": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.breakpoint"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "passageSchema": "passages.specimen-spacing-ladder",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "labels.showAllVariants",
+            "kind": "icu",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.specimen-swatch",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": null,
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "items",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "axes",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "context",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "labels",
+          "type": "copy",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.semantic-content"
+      ],
+      "parts": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.breakpoint"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "passageSchema": "passages.specimen-swatch",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "labels.showAllVariants",
+            "kind": "icu",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.specimen-type-ladder",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": null,
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "items",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "axes",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "context",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "labels",
+          "type": "copy",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.disclosure"
+      ],
+      "parts": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.breakpoint"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "passageSchema": "passages.specimen-type-ladder",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "labels.showAllVariants",
+            "kind": "icu",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.specimen-variant-matrix",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": null,
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "items",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "axes",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "context",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "labels",
+          "type": "copy",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.table",
+        "components.disclosure",
+        "components.badge"
+      ],
+      "parts": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.breakpoint"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "passageSchema": "passages.specimen-variant-matrix",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "labels.showAllVariants",
+            "kind": "icu",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
     "id": "sections.stats",
     "layer": "sections",
     "contract": {

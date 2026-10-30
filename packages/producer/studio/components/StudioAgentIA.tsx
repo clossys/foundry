@@ -8,6 +8,7 @@ import { projectStudioAgentIA, studioIAAnchor, studioIAHref } from '../lib/studi
 import { studioIABands, studioSelectedSurface, studioUsedByCount } from '../lib/studio-ia-body';
 import { checkStudioSpecimenCoverage, type StudioCoverageEvidence, type StudioCoverageResult } from '../lib/studio-specimen-coverage';
 import { cellContentTarget } from '../lib/cell-content';
+import { DirectorAgentIA } from './DirectorAgentIA';
 import { useAgentSpecimenCoverage } from './AgentL3Specimen';
 import { useStudioSelection, useStudioUI } from './StudioSelection';
 
@@ -24,7 +25,7 @@ function CellEvidence({ index, cell, report }: { index: AgentCells; cell: CellSu
 }
 
 /** One authored vertical IA. The selected Cards section owns every grid and placeholder card. */
-export function StudioAgentIA({ index, indexes, selectedId, onSelect, onCoverage }: {
+function OtherAgentIA({ index, indexes, selectedId, onSelect, onCoverage }: {
   index: AgentCells; indexes: readonly AgentCells[]; selectedId?: string; onSelect: (id: string) => void; onCoverage?: (coverage: StudioCoverageResult) => void;
 }) {
   const { selection, runtime } = useStudioSelection();
@@ -62,4 +63,8 @@ export function StudioAgentIA({ index, indexes, selectedId, onSelect, onCoverage
       </Fragment>) : <EmptyState title={group.label} description="This authored group has no collections." />}
     </Fragment>) : <EmptyState title={ia.label} description="The agent tree has no groups." />}
   </>;
+}
+
+export function StudioAgentIA(props: Parameters<typeof OtherAgentIA>[0]) {
+  return props.index.agent === 'director' ? <DirectorAgentIA {...props} /> : <OtherAgentIA {...props} />;
 }

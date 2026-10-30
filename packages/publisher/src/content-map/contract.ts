@@ -13,6 +13,20 @@ export type ContentMapConstructs = Readonly<Record<string, readonly SectionFill[
 export type ContentMapSource = { readonly planItemId: string; readonly frameId?: never; readonly sectionIds?: never }
   | { readonly planItemId?: never; readonly frameId: string; readonly sectionIds: readonly string[] };
 export interface ContentMapIndexing { readonly mode: "index" | "noindex"; readonly reason?: string }
+/** IA body declaration. An omitted specimen is an unresolved Designer-owned
+ * binding port; projection requires a concrete specimen for each cell. */
+export interface ContentMapPageBody {
+  readonly template: "ia-scroll";
+  readonly bands: { readonly L0: "sections.section-header"; readonly L1: "sections.section-header"; readonly L2: "sections.cards" };
+  readonly row: {
+    readonly specimen?: `sections.specimen-${string}`;
+    readonly columns: readonly ["title", "specimen", "status", "version", "usedBy", "linkOut"];
+  };
+}
+/** A body for one cell after its Designer-owned specimen binding resolves. */
+export interface ContentMapProjectedBody extends Omit<ContentMapPageBody, "row"> {
+  readonly row: Omit<ContentMapPageBody["row"], "specimen"> & { readonly specimen: `sections.specimen-${string}` };
+}
 /** Ordered, serializable page-local controls. Section references may describe a
  * NEED until the host library supplies them; they never register new Sections. */
 export type ContentMapPageAction = {
@@ -40,6 +54,7 @@ export type ContentMapEntry = {
   readonly description?: string;
   /** Page-local action order and module defaults, authored with the page. */
   readonly actions?: readonly ContentMapPageAction[];
+  readonly body?: ContentMapPageBody;
   readonly keywords?: readonly string[];
   readonly indexing?: ContentMapIndexing;
   /** Consumer-supplied ISO date or timestamp; no implicit build-time clock. */
@@ -49,7 +64,7 @@ export type ContentMapEntry = {
   & ({ readonly pageConfig: string } | { readonly pageConfig?: never });
 /** A local redirect identity and an external navigation destination, never an
  * executable page source. Sourced entry contracts retain their required source. */
-export type ContentMapExternalEntry = Omit<ContentMapEntry, "kind" | "source" | "path" | "slug" | "pageConfig" | "manifest" | "constructs" | "actions"> & {
+export type ContentMapExternalEntry = Omit<ContentMapEntry, "kind" | "source" | "path" | "slug" | "pageConfig" | "manifest" | "constructs" | "actions" | "body"> & {
   readonly kind: "external";
   readonly path: string;
   readonly href: string;
@@ -59,6 +74,7 @@ export type ContentMapExternalEntry = Omit<ContentMapEntry, "kind" | "source" | 
   readonly manifest?: never;
   readonly constructs?: never;
   readonly actions?: never;
+  readonly body?: never;
 };
 export type ContentMapNode = ContentMapEntry | ContentMapExternalEntry;
 export interface ContentMapRedirectDeclaration { readonly from: string; readonly to: string; readonly permanent: boolean }

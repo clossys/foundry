@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { AgentCells, CellDetail } from '../../studio/lib/cells-client';
 import { directorNativePlan } from '../../studio/lib/director-native-inventory';
+import { agentSpecimenCoverage, type ResolvedSpecimenEvidence } from '../../studio/lib/agent-specimen-coverage';
 
 const id = 'focus.segment.core';
 const source = readFileSync(new URL('../../../strategist/test-fixtures/strategy-v2/example/cells/focus.segment.core/v2.md', import.meta.url), 'utf8');
@@ -52,6 +53,26 @@ describe('selected Director native version inventory', () => {
     expect(plan.scope).toEqual({ kind: 'version', cellId: id, version: 1 });
     expect(scoped.tree?.active).toEqual({ [id]: 2 });
   });
+  it.each([0, 1, Number.NaN])('refuses an exact-version scope that does not identify the indexed version: %s', requested => {
+    const scoped: AgentCells = { ...index, contentScope: { kind: 'version', cellId: id, version: requested } };
+    const plan = directorNativePlan(scoped, [active, draft], id);
+    expect(plan.items).toEqual([]);
+    expect(plan.expectedVariantIds).toEqual([]);
+    expect(plan.issues).toContain('The exact Director content-version scope does not match the indexed version.');
+    expect(agentSpecimenCoverage(plan).inventoryComplete).toBe(false);
+  });
+  it('does not attribute another selected cell or agent source to this Director cell', () => {
+    const scoped: AgentCells = { ...index, contentScope: { kind: 'cell', cellId: 'focus.segment.other' } };
+    expect(directorNativePlan(scoped, [active, draft], id).items).toEqual([]);
+    const plan = directorNativePlan(index, [{ ...draft, agent: 'writer' }], id);
+    expect(plan.items).toEqual([]);
+    expect(plan.issues).toContain('A loaded selected-cell version belongs to another agent.');
+  });
+  it('preserves an unavailable index error even when no source version has loaded', () => {
+    const plan = directorNativePlan({ ...index, state: 'error', error: 'Cell store unavailable.' }, [], id);
+    expect(plan.issues).toContain('Cell store unavailable.');
+    expect(agentSpecimenCoverage(plan).ready).toBe(false);
+  });
   it('reports duplicate version metadata and keeps resulting item identities unique', () => {
     const plan = directorNativePlan(index, [draft, { ...draft, status: 'active' }, active], id);
     expect(plan.issues).toContain('The loaded Director version is duplicated: 2');
@@ -63,5 +84,17 @@ describe('selected Director native version inventory', () => {
   it('fails when source status contradicts the actual active pointer', () => {
     const plan = directorNativePlan(index, [draft, { ...active, status: 'draft' }], id);
     expect(plan.issues).toContain('The pointed active Director version has not loaded: 1');
+  });
+  it('requires a registered leaf with actual nonempty items covering both native versions', () => {
+    const plan = directorNativePlan(index, [active, draft], id);
+    const binding: ResolvedSpecimenEvidence = { sectionId: 'sections.specimen-rich-passage', registered: true, span: 'full', items: plan.items, variantIds: plan.expectedVariantIds };
+    expect(agentSpecimenCoverage(plan, binding).ready).toBe(true);
+    expect(agentSpecimenCoverage(plan).ready).toBe(false);
+    expect(agentSpecimenCoverage(plan, { ...binding, registered: false }).ready).toBe(false);
+    expect(agentSpecimenCoverage(plan, { ...binding, items: [] }).ready).toBe(false);
+    const draftOnly = plan.items.filter(item => item.version === 2);
+    const incomplete = agentSpecimenCoverage(plan, { ...binding, items: draftOnly, variantIds: draftOnly.map(item => String(item.id)) });
+    expect(incomplete.ready).toBe(false);
+    expect(incomplete.variants.filter(variant => !variant.renderable).map(variant => variant.id)).toEqual(plan.items.filter(item => item.version === 1).map(item => item.id));
   });
 });

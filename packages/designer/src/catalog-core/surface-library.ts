@@ -704,11 +704,12 @@ export function surfaceDocument(library: CompositeLibraryData, fill: SurfaceCand
     const meta = { id: `${library.source.id}/${fill.slot}`, slot: fill.slot, source: library.source.id, mode: "implementation" as const, sourceAddress: `fills/${fill.slot}.json`, relation: "same-contract" as const, builtOn: [], conforms: [], evidence: [], author: "consumer" as const, trust: "consumer" as const, license: fill.license, status: "draft" as const, originKinds: [fill.origin.kind] };
     return fill.kind === "section" ? { $extensions: { "com.clossys.fill": meta }, sections: { [fill.slot.slice(9)]: fill } } : { $extensions: { "com.clossys.fill": meta }, frames: { [fill.slot.slice(7)]: fill } };
 }
-export function assertSurfaceResolutionOptions(options: SurfaceResolutionOptions): void {
+export function assertSurfaceResolutionOptions(options: unknown): asserts options is SurfaceResolutionOptions {
     const value = runtimeSnapshot(options);
     object(value, ["packages", "measurements"]);
-    list(value.packages, row => { object(row, ["module", "version", "artifactSha256", "values", "types"]); string(row.module); string(row.version); hash(row.artifactSha256); strings(row.values); strings(row.types); });
-    if (new Set(value.packages.map(row => row.module)).size !== value.packages.length)
+    const modules: string[] = [];
+    list(value.packages, row => { object(row, ["module", "version", "artifactSha256", "values", "types"]); string(row.module); string(row.version); hash(row.artifactSha256); strings(row.values); strings(row.types); modules.push(row.module); });
+    if (new Set(modules).size !== modules.length)
         surfaceFault("S4 duplicate package evidence");
     const command = (row: unknown) => { object(row, ["argv", "exitCode", "stdoutSha256", "stderrSha256"]); list(row.argv, string, true); if (typeof row.exitCode !== "number" || !Number.isInteger(row.exitCode))
         surfaceFault("S8 invalid command exit"); hash(row.stdoutSha256); hash(row.stderrSha256); };

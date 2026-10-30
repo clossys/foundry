@@ -1,28 +1,66 @@
+import { parseDocument, tokenizeBody, type BodyLine } from '@clossys/strategist/cell-format';
 import { cellHierarchy, type AgentCells, type CellDetail, type CellNode, type CellSummary } from './cells-client';
 
 export function specimenTitle(cell: CellSummary): string {
   return typeof cell.fields?.title === 'string' && cell.fields.title.trim() ? cell.fields.title : cell.id.split('.').at(-1)!;
 }
 
-/** Only the semantic strategy sections enter the document; source stays in Source. */
-export function directorSections(source: string): { title: string; value: string }[] {
-  const body = source.replace(/^\uFEFF/, '').replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, '');
-  const sections: { title: string; value: string }[] = [];
-  let current: { title: string; lines: string[] } | undefined;
-  let fenced = false;
-  const flush = () => { if (current?.lines.some(line => line.trim())) sections.push({ title: current.title, value: current.lines.join('\n').trim() }); current = undefined; };
-  for (const line of body.split(/\r?\n/)) {
-    if (/^\s*```/.test(line)) { fenced = !fenced; continue; }
-    if (fenced) continue;
-    if (/^#{1,6}\s/.test(line)) {
-      flush();
-      const title = line.replace(/^#+\s*/, '').trim();
-      if (['Direction', 'Because', 'Watch'].includes(title)) current = { title, lines: [] };
-    } else if (current && /^\s*(?:[-*]\s|$)/.test(line)) current.lines.push(line);
+export interface DirectorSection { title: string; value: string }
+export interface DirectorProjection { sections: DirectorSection[]; issues: string[] }
+
+/** Native document/token boundaries select passages; original lines supply all their Markdown. */
+export function directorProjection(source: string): DirectorProjection {
+  const projection: DirectorProjection = { sections: [], issues: [] };
+  const text = source.replace(/^\uFEFF/, '');
+  let body: BodyLine[];
+  if (text.startsWith('---\n') || text.startsWith('---\r\n') || text === '---') {
+    const document = parseDocument(text);
+    if (!document.ok) {
+      projection.issues.push(...document.issues.map(issue => `Director ${issue.path}, line ${issue.line}: ${issue.message}`));
+      return projection;
+    }
+    body = document.value.body;
+  } else body = text.split(/\r?\n/).map((text, position) => ({ text, line: position + 1 }));
+
+  // Code is passage content, never a section boundary (including fenced heading examples).
+  // The shared native tokenizer only recognizes JSON fences, so shield other fences too.
+  let fence: { marker: string; length: number; line: number } | undefined;
+  const structural: BodyLine[] = [];
+  for (const row of body) {
+    if (fence) {
+      const close = /^ {0,3}(`{3,}|~{3,})\s*$/.exec(row.text);
+      if (close && close[1]![0] === fence.marker && close[1]!.length >= fence.length) fence = undefined;
+      structural.push({ ...row, text: '' });
+      continue;
+    }
+    const open = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(row.text);
+    if (!open || open[1]![0] === '`' && open[2]!.includes('`')) { structural.push(row); continue; }
+    fence = { marker: open[1]![0]!, length: open[1]!.length, line: row.line };
+    structural.push({ ...row, text: '' });
   }
-  flush();
-  return sections;
+  if (fence) projection.issues.push(`Director body, line ${fence.line}: Expected closing code fence.`);
+  const tokens = tokenizeBody(structural);
+  if (!tokens.ok) {
+    projection.issues.push(...tokens.issues.map(issue => `Director ${issue.path}, line ${issue.line}: ${issue.message}`));
+    return projection;
+  }
+  const headings = tokens.value.filter(token => token.type === 'heading' && token.depth === 2);
+  for (let position = 0; position < headings.length; position++) {
+    const heading = headings[position]!;
+    if (!['Direction', 'Because', 'Watch'].includes(heading.text)) continue;
+    const end = headings[position + 1]?.line ?? Infinity;
+    const lines = body.filter(row => row.line > heading.line && row.line < end).map(row => row.text);
+    // Remove section separators only: indentation and Markdown hard breaks are meaningful.
+    while (lines.length && !lines[0]!.trim()) lines.shift();
+    while (lines.length && !lines.at(-1)!.trim()) lines.pop();
+    if (!lines.length) projection.issues.push(`Director ${heading.text}, line ${heading.line}: A declared Director passage has no supported semantic content.`);
+    else projection.sections.push({ title: heading.text, value: lines.join('\n') });
+  }
+  return projection;
 }
+
+/** Compatibility projection for consumers that need only the source passages. */
+export function directorSections(source: string): DirectorSection[] { return directorProjection(source).sections; }
 
 export interface DirectorChapter { id: string; title: string; depth: number; cell?: CellSummary; children: DirectorChapter[] }
 export function directorDocument(index: AgentCells): DirectorChapter[] {
