@@ -92,7 +92,8 @@ export function specimenPart(binding: ComponentSpecimenBinding, foundryName: str
   return component(value) ? value : undefined;
 }
 function useMobile(context: DesignerSpecimenContext): boolean {
-  const breakpoint = Object.values(context.profile.values.members).find(member => member.slot === "tokens.breakpoint")?.css.light;
+  const breakpoints = Object.entries(context.profile.values.members).filter(([, member]) => member.slot === "tokens.breakpoint");
+  const breakpoint = (breakpoints.find(([id]) => id.endsWith(".mobile")) ?? breakpoints[0])?.[1].css.light;
   const [mobile, setMobile] = useState(false);
   useEffect(() => {
     if (!breakpoint || typeof matchMedia !== "function") return;

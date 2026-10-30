@@ -210,6 +210,7 @@ export { materializeSurfaceSourceFill } from "./surface-materialize.js";
 export { resolveSurfacePackageDescriptor, surfaceContractDiff } from "./surface-library.js";
 export type { SurfacePackagePin, SurfacePackageOrigin, SurfacePackageEntry, SurfacePackageDocument, SurfacePackageRegistration, SurfaceContractDiff } from "./surface-types.js";
 export type { SurfaceSlot, SurfaceFile, SurfaceFileHash, SurfacePin, SurfaceApi, SurfacePropBinding, SurfaceLiteralBinding, SurfaceConfig, SurfaceComponentBinding, SurfaceDependency, SurfaceBase, SurfaceInputRef, SurfaceInputIdentity, SurfaceRuleIdentity, SurfaceOrigin, SurfaceEntryBase, SurfaceSectionEntry, SurfaceFrameEntry, SurfaceCandidate, SurfaceCandidateDocument, SurfaceDocument, SurfaceLibraryPortion, SurfacePackageEvidence, SurfaceCommandReceipt, SurfaceMeasurement, SurfaceResolutionOptions, SurfaceApplyOptions, SurfaceFinding, SurfaceCheckResult, SurfaceResolvedFill, SurfaceResolved, SurfaceOperation, SurfaceTransformResult, SurfaceTransform, SurfaceRule, SurfaceCatalog, SurfaceFetchPort, SurfaceMaterializationInput, SurfaceSourceBundle, SurfaceSelection, SurfaceEmitTarget, SurfaceRuntimeIdentity, SurfaceMaterializationReceipt } from "./surface-types.js";
+export { SPECIMEN_SECTION_EXPORTS, specimenSectionSourceCatalog } from "../importers/specimen-sections.js";
 
 export * from "./full-library-runtime.js";
 

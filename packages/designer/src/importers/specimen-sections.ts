@@ -2,7 +2,7 @@
 import { sha256 } from "../catalog-core/digest.js";
 import { stableStringify } from "../catalog-core/stable.js";
 import { surfaceDigest, surfaceManifest, surfaceFault } from "../catalog-core/surface-library.js";
-import type { SurfaceCandidateDocument, SurfaceFile, SurfaceSectionEntry, SurfaceTransform, SurfacePackageEvidence } from "../catalog-core/surface-types.js";
+import type { SurfaceCandidateDocument, SurfaceFile, SurfaceSectionEntry, SurfaceTransform, SurfacePackageEvidence, SurfaceDependency } from "../catalog-core/surface-types.js";
 
 export const SPECIMEN_SECTION_EXPORTS = [
   {
@@ -154,30 +154,36 @@ export interface SpecimenSectionSourceCatalog {
  * Source files are an immutable, content-addressed local tree. Hosts may supply exact installed dependency
  * evidence when deriving for their selected component closure; no dependency artifact is invented here.
  */
-export function specimenSectionSourceCatalog(packages: readonly SurfacePackageEvidence[] = []): SpecimenSectionSourceCatalog {
+export function specimenSectionSourceCatalog(packages: readonly SurfacePackageEvidence[] = [], selectedDependencies: readonly SurfaceDependency[] = []): SpecimenSectionSourceCatalog {
   const upstream: SurfaceFile[] = [];
   const fills: SurfaceCandidateDocument[] = [], transforms: SurfaceTransform[] = [];
   for (const registration of SPECIMEN_SECTION_EXPORTS) {
     const entry = registration.id.replace(".", "/") + "/" + registration.name + ".tsx";
-    const ports = registration.components.map(id => ({ id, name: publicName(id) }));
+    const components = [...new Set([...registration.components, "components.grid-list", "components.disclosure"])] as `components.${string}`[];
+    const ports = components.map(id => ({ id, name: publicName(id) }));
     const code = [
       '"use client";',
-      `import { ${registration.name} as RenderSpecimen, bindNativeSpecimenContext, type SpecimenLeafProps } from "@clossys/designer/studio";`,
+      `import { ${registration.name} as RenderSpecimen, bindNativeSpecimenContext, studioSpecimenLeaves, type SpecimenLeafProps } from "@clossys/designer/studio";`,
       ...ports.map(port => `import { ${port.name} } from "../../components/${port.id.slice(11)}/index.js";`),
       `export function ${registration.name}(props: SpecimenLeafProps) {`,
       `  const context = bindNativeSpecimenContext(props.context, { ${ports.map(port => port.name).join(", ")} });`,
       '  if ("reason" in context) return props.need(context);',
       '  return <RenderSpecimen {...props} context={context} />;',
       '}',
+      'export function SpecimenLeaf() {',
+      `  const definition = studioSpecimenLeaves.find(leaf => leaf.id === ${JSON.stringify(registration.id)});`,
+      '  if (!definition) throw new Error("The native specimen definition is not registered.");',
+      `  return { ...definition, render: ${registration.name} };`,
+      '}',
       '',
     ].join("\n");
     const own = [{ path: entry, content: code }, { path: "LICENSE", content: notice }];
     const pin = { kind: "local-tree" as const, tree: sha256(stableStringify(surfaceManifest(own))).slice(0,40), files: surfaceManifest(own) };
-    const dependencies = [{ module: "@clossys/designer/studio", version: "0.12.0", license: "MIT" }, ...packages.filter(pkg => pkg.module !== "@clossys/designer/studio").map(pkg => ({ module: pkg.module, version: pkg.version, license: "MIT" }))];
+    const dependencies = [{ module: "@clossys/designer/studio", version: packages.find(pkg => pkg.module === "@clossys/designer/studio")?.version ?? "0.12.0", license: "MIT" }, ...selectedDependencies.filter(dependency => dependency.module !== "@clossys/designer/studio")];
     const candidate: SurfaceSectionEntry = {
       kind: "section", slot: registration.id, source: "foundry", impl: { kind: "source", entry, export: registration.name },
       rendering: "client", members: [], states: ["default"], reads: { tokens: ["tokens.spacing", "tokens.breakpoint"], assets: [] },
-      composes: [...registration.components], parts: [], api: { version: 1, exports: [{ name: registration.name, export: registration.name }] },
+      composes: components, parts: [], api: { version: 1, exports: [{ name: registration.name, export: registration.name }, { name: "SpecimenLeaf", export: "SpecimenLeaf" }] },
       bindings: ports.map(port => ({ file: entry, module: `../../components/${port.id.slice(11)}/index.js`, name: port.name, local: port.name, slot: port.id })),
       dependencies, license: "MIT", pin, notice: `notices/surfaces/n-${sha256(notice)}.txt`,
       outputSha256: surfaceManifest([{ path: entry, content: code }, { path: `notices/surfaces/n-${sha256(notice)}.txt`, content: notice }]),
