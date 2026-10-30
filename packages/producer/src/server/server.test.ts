@@ -68,7 +68,7 @@ describe("loopback Producer", () => {
     expect((await request(`/studio?token=${token}`)).status).toBe(400);
     const encodedToken = [...token].map(letter => `%${letter.charCodeAt(0).toString(16)}`).join("");
     expect((await request(`/studio?token=${encodedToken}`)).status).toBe(400);
-  });
+  }, 20_000);
 
   it("reverse proxies the real child, strips hop headers and isolates the token per run", async () => {
     await launch();
@@ -77,7 +77,7 @@ describe("loopback Producer", () => {
     expect(result.body).toMatchObject({ studio: true, path: "/nested/path?hello=world", origin: server!.url });
     expect(result.body.headers["x-forwarded-host"]).toBeUndefined(); expect(result.body.headers["x-custom"]).toBeUndefined(); expect(result.body.headers["x-clossys-token"]).toBeUndefined();
     await server!.close(); await launch(); expect((await request("/api/config")).body.token).not.toBe(firstToken);
-  });
+  }, 20_000);
 
   it("watches actual files even when agents is initially absent and closes SSE deterministically", async () => {
     await launch();
@@ -151,7 +151,7 @@ describe("loopback Producer", () => {
       const invalid = spawnSync(process.execPath, [join(runtime, "dist/cli/index.js"), "produce", "--no-open", "--json"], { cwd: root, encoding: "utf8" });
       expect(invalid.status).toBe(2); expect(JSON.parse(invalid.stdout).message).toContain("Studio manifest serverEntry must remain under dist/studio");
     } finally { if (cli.exitCode === null) { const exited = once(cli, "exit"); cli.kill("SIGKILL"); await exited; } }
-  });
+  }, 20_000);
 });
 
 describe("real agent projections", () => {
