@@ -1374,7 +1374,9 @@
       "allowedComposes": [
         "components.card",
         "components.link",
-        "components.badge"
+        "components.badge",
+        "components.semantic-content",
+        "sections.media"
       ],
       "parts": [
         "sections.band",
@@ -1394,9 +1396,12 @@
           "tokens.shift-distance",
           "tokens.body-size",
           "tokens.caption-size",
-          "tokens.text-color"
+          "tokens.text-color",
+          "tokens.heading-size"
         ],
-        "assets": []
+        "assets": [
+          "assets.image"
+        ]
       },
       "data": "host-injected",
       "surface": "both",
@@ -1519,6 +1524,96 @@
           },
           {
             "key": "records[].badge.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].image.alt",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.author.name",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.author.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.date.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.readingTime.value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.readingTime.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.tags[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.summary",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.outcomeStats[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.outcomeStats[].value",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -4535,6 +4630,24 @@
               "en": 120
             },
             "dir": "auto"
+          },
+          {
+            "key": "links[].details[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "links[].details[].value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
           }
         ]
       }
@@ -5285,7 +5398,9 @@
         "components.breadcrumbs",
         "components.button",
         "components.badge",
-        "components.tabs"
+        "components.tabs",
+        "components.semantic-content",
+        "components.link"
       ],
       "parts": [
         "sections.band",
@@ -5304,7 +5419,8 @@
           "tokens.shift-distance",
           "tokens.body-size",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.caption-size"
         ],
         "assets": []
       },
@@ -5401,6 +5517,87 @@
             "required": false,
             "maxLength": {
               "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.author.name",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.author.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.date.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.readingTime.value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.readingTime.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.tags[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.summary",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.outcomeStats[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.outcomeStats[].value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
             },
             "dir": "auto"
           }
