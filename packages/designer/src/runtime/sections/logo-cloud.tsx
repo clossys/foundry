@@ -5,8 +5,8 @@ import { Logomark } from "../../components/Logomark.js";
 import { list, memberValue, object, optionalText, readSectionContent, required, SectionContentError, text, type SectionRenderInput, type SectionRendererInputs } from "./group-a-content.js";
 
 export const logoCloudInputs: SectionRendererInputs = {
-  slots: ["logos"],
-  members: ["count.3", "count.4", "count.6", "count.8", "count.12", "monochrome.true", "monochrome.false"],
+  slots: ["logos", "controls"],
+  members: ["count.3", "count.4", "count.6", "count.8", "count.12", "monochrome.true", "monochrome.false", "motion.static", "motion.marquee"],
 };
 
 export function renderLogoCloudSection(input: SectionRenderInput): ReactNode {
@@ -24,5 +24,8 @@ export function renderLogoCloudSection(input: SectionRenderInput): ReactNode {
   const count = memberValue(content, "count", ["3", "4", "6", "8", "12"] as const);
   if (count !== undefined && Number(count) !== items.length) throw new SectionContentError(content.leaf, `count.${count} selected but ${items.length} logos supplied`);
   const monochrome = memberValue(content, "monochrome", ["true", "false"] as const);
-  return <LogoCloud items={items} tone={monochrome === undefined ? undefined : monochrome === "true" ? "monochrome" : "original"} />;
+  const motion = memberValue(content, "motion", ["static", "marquee"] as const);
+  const controls = content.values.controls === undefined ? undefined : object(content, content.values.controls, "controls");
+  const motionLabels = controls === undefined ? undefined : { pause: text(content, controls.pause, "controls.pause"), resume: text(content, controls.resume, "controls.resume") };
+  return <LogoCloud items={items} tone={monochrome === undefined ? undefined : monochrome === "true" ? "monochrome" : "original"} motion={motion} motionLabels={motionLabels} />;
 }

@@ -2676,6 +2676,24 @@
               "en": 160
             },
             "dir": "auto"
+          },
+          {
+            "key": "controls.close",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.enlarge",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
           }
         ]
       }
@@ -2976,6 +2994,24 @@
             "required": true,
             "maxLength": {
               "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.pause",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.resume",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
             },
             "dir": "auto"
           }
@@ -5241,6 +5277,24 @@
             "required": false,
             "maxLength": {
               "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.previous",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.next",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
             },
             "dir": "auto"
           }

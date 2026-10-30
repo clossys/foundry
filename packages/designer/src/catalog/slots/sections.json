@@ -4108,6 +4108,11 @@
           "name": "images",
           "type": "media",
           "required": true
+        },
+        {
+          "name": "controls",
+          "type": "copy",
+          "required": false
         }
       ],
       "members": {
@@ -4120,7 +4125,8 @@
       "allowedComposes": [
         "components.dialog",
         "components.grid-list",
-        "components.button"
+        "components.button",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -4212,6 +4218,24 @@
             "required": false,
             "maxLength": {
               "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.close",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.enlarge",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
             },
             "dir": "auto"
           }
@@ -4696,6 +4720,11 @@
           "name": "logos",
           "type": "media",
           "required": true
+        },
+        {
+          "name": "controls",
+          "type": "copy",
+          "required": false
         }
       ],
       "members": {
@@ -4707,12 +4736,15 @@
           "count.8",
           "count.12",
           "monochrome.true",
-          "monochrome.false"
+          "monochrome.false",
+          "motion.static",
+          "motion.marquee"
         ]
       },
       "allowedComposes": [
         "components.link",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.native-action"
       ],
       "parts": [
         "sections.band",
@@ -4788,6 +4820,24 @@
             "required": true,
             "maxLength": {
               "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.pause",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.resume",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
             },
             "dir": "auto"
           }
@@ -7241,12 +7291,15 @@
         "mode": "closed",
         "names": [
           "layout.grid",
-          "layout.row"
+          "layout.row",
+          "motion.static",
+          "motion.count"
         ]
       },
       "allowedComposes": [
         "components.chart-sparkline",
-        "components.meter"
+        "components.meter",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -8131,19 +8184,28 @@
           "name": "quotes",
           "type": "records",
           "required": true
+        },
+        {
+          "name": "controls",
+          "type": "copy",
+          "required": false
         }
       ],
       "members": {
         "mode": "closed",
         "names": [
           "layout.single",
-          "layout.grid"
+          "layout.grid",
+          "layout.wall",
+          "layout.carousel"
         ]
       },
       "allowedComposes": [
         "components.avatar",
         "components.card",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.scroll-area",
+        "components.native-action"
       ],
       "parts": [
         "sections.band",
@@ -8165,7 +8227,10 @@
           "tokens.status-color",
           "tokens.surface-radius",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.accent-color",
+          "tokens.focus-color",
+          "tokens.focus-outline"
         ],
         "assets": [
           "assets.image"
@@ -8228,6 +8293,24 @@
             "required": false,
             "maxLength": {
               "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.previous",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.next",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
             },
             "dir": "auto"
           }

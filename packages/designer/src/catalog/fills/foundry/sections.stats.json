@@ -26,14 +26,20 @@
   },
   "sections": {
     "stats": {
-      "composes": [],
+      "composes": [
+        "components.semantic-content"
+      ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.semantic-content"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.semantic-content"
+          ],
           "tokens": [
             "tokens.body-size",
             "tokens.border-color",
@@ -55,12 +61,20 @@
             "sha256": "4aa7cce812d8e68674aca3ccfe5580fa421661d7652e2c2d1eabfd69d1c1b466"
           },
           {
+            "path": "packages/designer/src/blocks/LogoCloud/motion.ts",
+            "sha256": "967bef0e3de8f0a38d5ceb970b988689eb48fd1b876cd07d133fbc6d63868f34"
+          },
+          {
             "path": "packages/designer/src/blocks/Stat.tsx",
             "sha256": "956a151aab78433f31d79bef837000f1b797cd4be3defc456ccd1d8100f36e86"
           },
           {
             "path": "packages/designer/src/blocks/StatGroup.tsx",
-            "sha256": "e32a9a69dfda580ae90ccfff1e25d051a0b551b8ba21dd8fe45ba1b3d999e729"
+            "sha256": "a1eb0f67a338d14d95d47cc295d8183413c1af8a02ca3c1c34bccb337ca37a22"
+          },
+          {
+            "path": "packages/designer/src/blocks/Stats/parts.tsx",
+            "sha256": "62b15a24f080bada5a2a7b67f2f196bbf3f48b07fcb102c1d4a6c121408cdbee"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -93,7 +107,7 @@
       },
       "license": "MIT",
       "notes": [
-        "Each item renders one Stat (label, value, optional delta/trend and description); no sparkline or meter composition is claimed.",
+        "Each item renders one Stat; count motion is opt-in and runs once on viewport entry for numeric values or an explicit countTo target. The authored final value is server HTML and remains screen-reader content; reduced motion uses the final value. Timing reads tokens.animation.count. The native Section adapter maps the selected motion member without replacing the authored final value.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -104,7 +118,9 @@
       },
       "propMap": {
         "layout.grid": "./blocks#StatGroup.layout=grid",
-        "layout.row": "./blocks#StatGroup.layout=row"
+        "layout.row": "./blocks#StatGroup.layout=row",
+        "motion.count": "./blocks#StatGroup.motion=count",
+        "motion.static": "./blocks#StatGroup.motion=static"
       },
       "reads": {
         "assets": [],
