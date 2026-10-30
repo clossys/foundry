@@ -1,5 +1,7 @@
 import { BLOCK_DISPLAY_TREE, blockPlacement } from "./display.js";
 import sectionHomes from "./maps/blocks-to-sections.json" with { type: "json" };
+import legalProseFill from "./fills/foundry/sections.legal-prose.json" with { type: "json" };
+import sectionSlots from "./slots/sections.json" with { type: "json" };
 import type {
   BlockContract,
   BlockEntry,
@@ -11,6 +13,25 @@ import type {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+const legalProse = legalProseFill.sections["legal-prose"];
+const legalProseMetadata = legalProseFill.$extensions["com.clossys.fill"];
+const legalProseSource = legalProse.consumption.sourceFiles.find(file =>
+  file.path === `packages/designer/src/blocks/${legalProse.impl.export}.tsx`);
+const legalProseSlot = sectionSlots.find(slot => slot.id === legalProseMetadata.slot);
+if (legalProseMetadata.mode !== "implementation" || legalProseMetadata.slot !== legalProse.slot ||
+    legalProseSlot?.contract.kind !== "section" || legalProse.impl.kind !== "package" ||
+    legalProse.impl.module !== `${legalProseMetadata.pin.package}/blocks` ||
+    legalProseMetadata.pin.export !== `./blocks#${legalProse.impl.export}` || !legalProseSource) {
+  throw new Error("Legal prose requires its canonical section contract and own package implementation.");
+}
+
+/** Canonical sections exported by the blocks barrel without a legacy block address. */
+export const CANONICAL_SECTION_BLOCK_REGISTRATIONS = [{
+  id: legalProseMetadata.slot,
+  export: legalProse.impl.export,
+  source: legalProseSource.path.replace(/^packages\/designer\//, ""),
+}] as const;
 
 const pr = (number: number, state: "draft" | "ready"): WorkRef => ({ kind: "pull-request", number, state });
 

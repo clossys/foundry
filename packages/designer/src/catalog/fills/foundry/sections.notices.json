@@ -30,18 +30,21 @@
   "sections": {
     "notices": {
       "composes": [
-        "components.banner"
+        "components.banner",
+        "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
-          "components.banner"
+          "components.banner",
+          "components.semantic-content"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
-            "components.banner"
+            "components.banner",
+            "components.semantic-content"
           ],
           "tokens": [
             "tokens.spacing"
@@ -54,7 +57,7 @@
           },
           {
             "path": "packages/designer/src/blocks/NoticeList.tsx",
-            "sha256": "fd916e20e9648ebe6d80cedd42b5e824df7c458da667c42fb973c1d204fa618a"
+            "sha256": "31f39e9b381714db89d75232b2553e92de949e758709ab57e743fd8a5ac4330c"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

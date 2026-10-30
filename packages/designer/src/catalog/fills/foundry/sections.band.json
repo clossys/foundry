@@ -29,14 +29,20 @@
   },
   "sections": {
     "band": {
-      "composes": [],
+      "composes": [
+        "components.semantic-content"
+      ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.semantic-content"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.semantic-content"
+          ],
           "tokens": [
             "tokens.border-color",
             "tokens.content-size",
@@ -58,7 +64,7 @@
           },
           {
             "path": "packages/designer/src/blocks/SectionFrame.tsx",
-            "sha256": "4e707067e1c81a759537a66ca80681307ea195cdb020982d4a189bc7fa711d8c"
+            "sha256": "a6d8d6398d38d5e4df2b81cccd01f4236d04dd24c8dd76c59921a631c427d25b"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

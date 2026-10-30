@@ -233,13 +233,6 @@ export interface WriterSectionCopyPorts {
     readonly "actions[].label"?: string;
     readonly "illustration.label"?: string;
   };
-  readonly "sections.error-message": {
-    readonly "status": string;
-    readonly "title": string;
-    readonly "description": string;
-    readonly "actions[].label": string;
-    readonly "reference"?: string;
-  };
   readonly "sections.error-state": {
     readonly "header.eyebrow"?: string;
     readonly "header.heading"?: string;
@@ -300,6 +293,8 @@ export interface WriterSectionCopyPorts {
     readonly "submit.label": string;
     readonly "error-summary.heading"?: string;
     readonly "error-summary.items[].message"?: string;
+    readonly "success.message"?: string;
+    readonly "error.message"?: string;
   };
   readonly "sections.gallery": {
     readonly "header.eyebrow"?: string;
@@ -352,6 +347,9 @@ export interface WriterSectionCopyPorts {
     readonly "figure.caption"?: string;
     readonly "figure.media.title": string;
     readonly "figure.media.series[].name"?: string;
+    readonly "figure.chromeLabel"?: string;
+    readonly "callouts.label"?: string;
+    readonly "callouts.items[].body"?: string;
   };
   readonly "sections.newsletter": {
     readonly "header.eyebrow"?: string;
@@ -392,6 +390,9 @@ export interface WriterSectionCopyPorts {
     readonly "page.nextLabel"?: string;
     readonly "page.pageText"?: WriterIcuMessage<"page.pageText">;
     readonly "total.label"?: string;
+    readonly "page.noResultsLabel"?: string;
+    readonly "page.pageSizeLabel"?: string;
+    readonly "total.rangeText"?: WriterIcuMessage<"total.rangeText">;
   };
   readonly "sections.people": {
     readonly "header.eyebrow"?: string;
@@ -542,6 +543,7 @@ export interface WriterSectionCopyPorts {
   readonly "sections.table-of-contents": {
     readonly "headings[].label": string;
     readonly "labels.label"?: string;
+    readonly "label"?: string;
   };
   readonly "sections.task-list": {
     readonly "header.eyebrow"?: string;

@@ -78,7 +78,8 @@ export function siteShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conte
   const mark = keys(record(brandRow.mark, "header.brand.mark"), "header.brand.mark", ["src", "width", "height"]);
   const brandLabel = required(brandRow.label, "header.brand.label");
   const assetId = "runtime-content.brand-mark";
-  const resolveAsset: AssetResolver = id => id === assetId ? { type: "image", src: mark.src, width: mark.width, height: mark.height, alt: brandLabel } : undefined;
+  const socialAssets = new Map<string, unknown>();
+  const resolveAsset: AssetResolver = id => id === assetId ? { type: "image", src: mark.src, width: mark.width, height: mark.height, alt: brandLabel } : socialAssets.get(id);
   const wordmark = text(brandRow.wordmark);
   const plate = choice(brandRow.plate, "header.brand.plate", ["self", "shared"] as const);
   const brandTone = choice(brandRow.tone, "header.brand.tone", ["auto", "inverse"] as const);
@@ -91,10 +92,11 @@ export function siteShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conte
 
   let nav: SiteShellInput["nav"];
   if (header.nav !== undefined) {
-    const row = keys(record(header.nav, "header.nav"), "header.nav", ["label", "triggerLabel", "links"]);
+    const row = keys(record(header.nav, "header.nav"), "header.nav", ["label", "triggerLabel", "closeLabel", "links"]);
     const trigger = text(row.triggerLabel);
+    const close = row.closeLabel === undefined ? undefined : required(row.closeLabel, "header.nav.closeLabel");
     nav = {
-      label: ref(required(row.label, "header.nav.label")), ...(trigger ? { triggerLabel: ref(trigger) } : {}),
+      label: ref(required(row.label, "header.nav.label")), ...(trigger ? { triggerLabel: ref(trigger) } : {}), ...(close ? { closeLabel: ref(close) } : {}),
       links: list(row.links, "header.nav.links").map((item, index) => {
         const at = `header.nav.links[${index}]`, fields = keys(record(item, at), at, ["label", "href", "isCurrent"]);
         return { ...link({ label: fields.label ?? null, href: fields.href ?? null }, at), ...(fields.isCurrent === true ? { isCurrent: true } : {}) };
@@ -119,13 +121,15 @@ export function siteShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conte
 
   let footer: SiteFooterInput | undefined;
   if (value("footer") !== undefined) {
-    const row = keys(record(value("footer"), "footer"), "footer", ["rule", "ground", "columns", "links", "social", "legal"]);
+    const row = keys(record(value("footer"), "footer"), "footer", ["brandBand", "rule", "ground", "columns", "links", "social", "legal"]);
+    if (row.brandBand !== undefined && typeof row.brandBand !== "boolean") fail("footer.brandBand must be a boolean");
     const legal = keys(record(row.legal, "footer.legal"), "footer.legal", ["entity", "links", "linksLabel"]);
     const linksLabel = text(legal.linksLabel);
     const rule = choice(row.rule, "footer.rule", ["none", "top"] as const);
     const social = row.social === undefined ? undefined : keys(record(row.social, "footer.social"), "footer.social", ["label", "links"]);
     const socialLabel = social && text(social.label);
     footer = {
+      ...(row.brandBand === undefined ? {} : { brandBand: row.brandBand as boolean }),
       ...(rule ? { rule } : {}),
       ...(row.ground === undefined ? {} : { ground: choice(row.ground, "footer.ground", SITE_CHROME_GROUNDS) }),
       ...(row.columns === undefined ? {} : { columns: list(row.columns, "footer.columns").map((item, index) => {
@@ -133,9 +137,16 @@ export function siteShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conte
         return { heading: ref(required(fields.heading, `${at}.heading`)), links: links(fields.links, `${at}.links`) };
       }) }),
       ...(row.links === undefined ? {} : { links: links(row.links, "footer.links") }),
-      ...(social ? { social: { ...(socialLabel ? { label: ref(socialLabel) } : {}), links: list(social.links, "footer.social.links").map((item, index): SiteIconLinkInput => {
-        const at = `footer.social.links[${index}]`, fields = keys(record(item, at), at, ["label", "href", "icon"]);
-        return { ...link({ label: fields.label ?? null, href: fields.href ?? null }, at), icon: iconOf(fields, at) };
+      ...(social ? { social: { ...(socialLabel ? { label: ref(socialLabel) } : {}), links: list(social.links, "footer.social.links").map((item, index): NonNullable<SiteFooterInput["social"]>["links"][number] => {
+        const at = `footer.social.links[${index}]`, fields = keys(record(item, at), at, ["label", "href", "icon", "image"]);
+        const identity = link({ label: fields.label ?? null, href: fields.href ?? null }, at);
+        if (fields.image !== undefined) {
+          if (fields.icon !== undefined) fail(`${at} requires one image or icon`);
+          const id = `runtime-content.social-mark.${index}`;
+          socialAssets.set(id, fields.image);
+          return { ...identity, assetId: id };
+        }
+        return { ...identity, icon: iconOf(fields, at) };
       }) } } : {}),
       legal: { entity: ref(required(legal.entity, "footer.legal.entity")), links: legal.links === undefined ? [] : links(legal.links, "footer.legal.links"), ...(linksLabel ? { linksLabel: ref(linksLabel) } : {}) },
     } as SiteFooterInput;
@@ -158,19 +169,18 @@ export function renderSiteShell(input: RuntimeRenderInput<ReactNode>): ReactNode
 
 /** Content drawn from the shared specimen dataset (Designer preview contract). */
 function sample(dataset: Dataset): Json {
-  const mark = dataset.assets.mark;
+  const mark = dataset.assets.mark, header = dataset.frames.siteHeader;
   return {
-    "skip-link": "Skip to content",
+    "skip-link": dataset.frames.app.skipLabel,
     header: {
-      // SiteFrame admits http(s) or root-relative image sources only; the dataset mark is a data: URI, so the
-      // sample addresses the same asset by its dataset slot and member, as a host serving it would.
-      brand: { label: `${mark.name} home`, mark: { src: `/${mark.slot}/${mark.member}.svg`, width: dataset.assets.appIcon.viewBox, height: dataset.assets.appIcon.viewBox }, wordmark: mark.name, size: "md" },
-      nav: { label: dataset.navigation.label, triggerLabel: "Menu", links: dataset.navigation.items.slice(0, 5).map((item, index) => ({ label: item.label, href: item.href, isCurrent: index === 0 })) },
-      actions: [{ label: "Get started", href: "#start", emphasis: "secondary" }],
+      brand: { label: header.homeLabel, mark: { src: `/${mark.slot}/${mark.member}.svg`, width: dataset.assets.appIcon.viewBox, height: dataset.assets.appIcon.viewBox }, wordmark: header.brand, size: "md" },
+      nav: { label: dataset.navigation.label, triggerLabel: header.menuLabel, closeLabel: dataset.frames.sheet.closeLabel, links: dataset.navigation.items.slice(0, 3).map((item, index) => ({ label: item.label, href: item.href, isCurrent: index === 0 })) },
+      actions: [{ label: dataset.sections.callToAction.primary.label, href: dataset.sections.callToAction.primary.href, emphasis: "secondary" }],
     },
     footer: {
-      columns: [{ heading: "Company", links: [{ label: "About", href: "#about" }, { label: "Contact", href: "#contact" }] }],
-      legal: { entity: mark.name, links: [] },
+      brandBand: true,
+      columns: dataset.frames.siteFooter.columns.map(column => ({ heading: column.heading, links: column.links.map(link => ({ label: link.label, href: link.href })) })),
+      legal: { entity: header.brand, links: [] },
     },
   };
 }
