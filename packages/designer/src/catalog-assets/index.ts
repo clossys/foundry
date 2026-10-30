@@ -9,3 +9,5 @@ export { withAssetCatalog } from './catalog.js';
 export { isImageResource, isVideoResource, VIDEO_REDUCED_MOTION } from './media.js';
 export type { ImageResource, ImageSource, VideoResource } from './media.js';
 export { IMAGE_RATIOS } from '../importers/image-ratio.js';
+export { DEFAULT_ICON_PREFERENCE, planIconDefaults, resolveIconAssets } from './icon-defaults.js';
+export type { IconDefaultsInput, IconDefaultsPlan } from './icon-defaults.js';

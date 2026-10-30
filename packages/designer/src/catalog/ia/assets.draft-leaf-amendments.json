@@ -4,6 +4,12 @@
   "baseSignedHead": "581e4fd70589fe072d9ce38fa159306d473c1754",
   "status": "pending-owner-ratification",
   "addedLeafIds": [
-    "assets.icon-panel-left"
+    "assets.icon-panel-left",
+    "assets.icon-set",
+    "assets.icon-explorer",
+    "assets.icon-inspector",
+    "assets.icon-source",
+    "assets.icon-checks",
+    "assets.icon-needs"
   ]
 }

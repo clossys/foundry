@@ -585,7 +585,9 @@
         "assets.icon-arrow-right",
         "assets.icon-external-link",
         "assets.icon-home",
-        "assets.icon-panel-left"
+        "assets.icon-panel-left",
+        "assets.icon-explorer",
+        "assets.icon-inspector"
       ],
       "offers": [
         {
@@ -598,7 +600,9 @@
             "assets.icon-arrow-right",
             "assets.icon-external-link",
             "assets.icon-home",
-            "assets.icon-panel-left"
+            "assets.icon-panel-left",
+            "assets.icon-explorer",
+            "assets.icon-inspector"
           ]
         },
         {
@@ -626,7 +630,10 @@
         "assets.icon-grid-view",
         "assets.icon-theme-light",
         "assets.icon-theme-dark",
-        "assets.icon-theme-system"
+        "assets.icon-theme-system",
+        "assets.icon-source",
+        "assets.icon-checks",
+        "assets.icon-needs"
       ],
       "offers": [
         {
@@ -640,7 +647,10 @@
             "assets.icon-grid-view",
             "assets.icon-theme-light",
             "assets.icon-theme-dark",
-            "assets.icon-theme-system"
+            "assets.icon-theme-system",
+            "assets.icon-source",
+            "assets.icon-checks",
+            "assets.icon-needs"
           ]
         },
         {

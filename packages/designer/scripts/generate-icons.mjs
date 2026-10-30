@@ -42,6 +42,7 @@
  * Run: node scripts/generate-icons.mjs
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -107,8 +108,16 @@ mkdirSync(outDir, { recursive: true });
 
 const exportLines = [];
 
-for (const [kebabName, node] of Object.entries(data)) {
-  const constName = NAME_MAP[kebabName];
+// The shell owns paint. Upstream half-unit dot circles remain the same geometry;
+// omit their redundant currentColor fill under the shell's currentColor stroke.
+const featureNode = node => node.map(([tag, attrs]) => {
+  const copy = { ...attrs };
+  if (tag === "circle" && copy.r === ".5" && copy.fill === "currentColor") delete copy.fill;
+  return [tag, copy];
+});
+for (const [kebabName, originalNode] of Object.entries(data)) {
+  const node = kebabName.startsWith("feature-") ? featureNode(originalNode) : originalNode;
+  const constName = NAME_MAP[kebabName] ?? (kebabName.startsWith("feature-") ? kebabName.split("-").map(part => part[0].toUpperCase() + part.slice(1)).join("") : undefined);
   if (!constName) {
     throw new Error(`No export name mapped for source icon "${kebabName}"`);
   }
@@ -142,3 +151,44 @@ export type { IconNode } from "./types.js";
 writeFileSync(join(outDir, "index.ts"), indexContents);
 
 console.log(`Generated ${Object.keys(data).length} icon data modules + index.ts`);
+
+// Feature glyphs are isolated from the original semantic glyph pins.
+const featureEntries = Object.entries(data).filter(([name]) => name.startsWith("feature-")).map(([name, node]) => [name, featureNode(node)]);
+const pascal = name => name.split("-").map(part => part[0].toUpperCase() + part.slice(1)).join("");
+const registry = '// GENERATED FILE — do not edit by hand. Run node scripts/generate-icons.mjs.\nimport type { IconNode } from "./types.js";\n' +
+  'export const featureGlyphs = ' + JSON.stringify(Object.fromEntries(featureEntries.map(([name, node]) => ['assets.icon-set.glyph.' + name.slice(8), node])), null, 2) + ' as const satisfies Readonly<Record<string, IconNode>>;\n';
+writeFileSync(join(outDir, "feature-glyphs.ts"), registry);
+const iconSet = {
+  $extensions: { "com.clossys.fill": {
+    id: "lucide/assets.icon-set", slot: "assets.icon-set", source: "lucide", mode: "implementation",
+    sourceAddress: "lucide-react@1.23.0/dist/esm/icons/", relation: "same-contract", builtOn: [], conforms: [], evidence: [],
+    author: "third-party", trust: "pinned-upstream", license: "ISC",
+    pin: { package: "lucide-react", version: "1.23.0", file: "src/icons/feature-glyphs.ts", sha256: createHash("sha256").update(registry).digest("hex") },
+    status: "draft", reads: { tokens: [], assets: [] }
+  } },
+  assets: { "icon-set": { glyph: Object.fromEntries(featureEntries.map(([name, node]) => [name.slice(8), { $type: "glyph", $value: node }])) } }
+};
+writeFileSync(join(root, "src/catalog/fills/lucide/assets.icon-set.json"), JSON.stringify(iconSet, null, 2) + "\n");
+
+// Semantic seats can share an existing, pinned glyph without duplicating its source.
+const rosterPath = join(root, "src/importers/lucide-pin.json");
+const roster = JSON.parse(readFileSync(rosterPath, "utf8"));
+const byExport = Object.fromEntries(Object.entries(NAME_MAP).map(([name, exported]) => [exported, data[name]]));
+for (const row of roster) {
+  const node = byExport[row.export];
+  if (!node) throw new Error(`Unknown pinned icon export ${row.export}`);
+  const fill = {
+    $extensions: { "com.clossys.fill": {
+      id: `lucide/${row.leaf}`, slot: row.leaf, source: "lucide", mode: "implementation",
+      sourceAddress: `lucide-react@${row.pin.version}/dist/esm/icons/${row.upstream}.js`,
+      relation: "same-contract", builtOn: [], conforms: [], evidence: [], author: "third-party",
+      trust: "pinned-upstream", license: "ISC", pin: row.pin, status: "draft", reads: { tokens: [], assets: [] },
+    } },
+    assets: { [row.leaf.slice(7)]: { default: { $type: "glyph", $value: node } } },
+  };
+  writeFileSync(join(root, `src/catalog/fills/lucide/${row.leaf}.json`), JSON.stringify(fill, null, 2) + "\n");
+}
+const sourcePath = join(root, "src/catalog/sources/lucide.json");
+const source = JSON.parse(readFileSync(sourcePath, "utf8"));
+source.pin.sha256 = createHash("sha256").update(readFileSync(rosterPath)).digest("hex");
+writeFileSync(sourcePath, JSON.stringify(source, null, 2) + "\n");

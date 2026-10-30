@@ -449,5 +449,60 @@
       "file": "src/icons/PanelLeft.ts",
       "sha256": "dd3c0b171cb38e6c3c773aa6e1d9eb5eaf2d84f7ab983abb6dbef6bfa4d4e512"
     }
+  },
+  {
+    "leaf": "assets.icon-explorer",
+    "export": "Folder",
+    "upstream": "folder",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/Folder.ts",
+      "sha256": "5f10987d0993f001109aaf7d553706b504ee8b92adaaabdf430a3be6f6617902"
+    }
+  },
+  {
+    "leaf": "assets.icon-inspector",
+    "export": "Info",
+    "upstream": "info",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/Info.ts",
+      "sha256": "ead0c9f1d9e45f0c181d93364f563f01876d03f27956565722b68dbc042388b5"
+    }
+  },
+  {
+    "leaf": "assets.icon-source",
+    "export": "FileText",
+    "upstream": "file-text",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/FileText.ts",
+      "sha256": "64a84d19799a4300dafca2175cc2ef9da054708f92a2fa18e7c95a40b39ab59f"
+    }
+  },
+  {
+    "leaf": "assets.icon-checks",
+    "export": "FileCheck",
+    "upstream": "file-check",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.24.0",
+      "file": "src/icons/FileCheck.ts",
+      "sha256": "93cb25323e680b6e02d37fe076b9672cc2cf91c4f7bb9cf9d41757ba16344f82"
+    }
+  },
+  {
+    "leaf": "assets.icon-needs",
+    "export": "List",
+    "upstream": "list",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/List.ts",
+      "sha256": "41a9f16bbf2cea86eb4a8d2039efce4cf87fb58c6ef7a23d120dea45985bd4c2"
+    }
   }
 ]
