@@ -10,6 +10,8 @@ if (args.includes("--help") && separator < 0) {
   process.exit(0);
 }
 const gateArgs = separator < 0 ? args : args.slice(0, separator), command = separator < 0 ? [] : args.slice(separator + 1);
+const candidates = spawnSync(process.execPath, [path.join(directory, "check-default-candidates.mjs")], { stdio: ["ignore", "inherit", "inherit"] });
+if (candidates.error || candidates.signal || candidates.status !== 0) process.exit([1, 2].includes(candidates.status) ? candidates.status : 2);
 const checked = spawnSync(process.execPath, [path.join(directory, "check-process-gates.mjs"), ...gateArgs], { stdio: ["ignore", "inherit", "inherit"] });
 if (checked.error || checked.signal || checked.status !== 0) process.exit([1, 2].includes(checked.status) ? checked.status : 2);
 if (!command.length) { console.error("Compose requires a designer-library command after --"); process.exit(2); }

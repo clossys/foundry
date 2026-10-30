@@ -1,0 +1,304 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [
+        "tailwind-default/tokens.breakpoint",
+        "foundry/tokens.breakpoint"
+      ],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "derivation": {
+        "from": "dtcg#alias",
+        "rule": "Retain Tailwind4.3.3 sm/md/lg/xl/2xl scale. Foundry-authored roles: mobile=375px; mobile-lg=480px; tablet=md=48rem; tablet-lg=lg=64rem; desktop=xl=80rem; wide=1440px."
+      },
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "shadcn@aria/tokens.breakpoint",
+      "license": "MIT",
+      "mode": "derived",
+      "pin": {
+        "file": "theme.css",
+        "package": "tailwindcss",
+        "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+        "version": "4.3.3"
+      },
+      "relation": "derived",
+      "slot": "tokens.breakpoint",
+      "source": "shadcn@aria",
+      "sourceAddress": "tailwindcss/theme.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "breakpoint": {
+      "sm": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "40rem"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Tailwind4.3.3",
+            "sourceAddress": "tailwindcss/theme.css",
+            "sourceVariable": "--breakpoint-sm",
+            "pin": {
+              "package": "tailwindcss",
+              "version": "4.3.3",
+              "file": "theme.css",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167"
+            }
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 40
+        }
+      },
+      "md": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "48rem"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Tailwind4.3.3",
+            "sourceAddress": "tailwindcss/theme.css",
+            "sourceVariable": "--breakpoint-md",
+            "pin": {
+              "package": "tailwindcss",
+              "version": "4.3.3",
+              "file": "theme.css",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167"
+            }
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 48
+        }
+      },
+      "lg": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "64rem"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Tailwind4.3.3",
+            "sourceAddress": "tailwindcss/theme.css",
+            "sourceVariable": "--breakpoint-lg",
+            "pin": {
+              "package": "tailwindcss",
+              "version": "4.3.3",
+              "file": "theme.css",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167"
+            }
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 64
+        }
+      },
+      "xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "80rem"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Tailwind4.3.3",
+            "sourceAddress": "tailwindcss/theme.css",
+            "sourceVariable": "--breakpoint-xl",
+            "pin": {
+              "package": "tailwindcss",
+              "version": "4.3.3",
+              "file": "theme.css",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167"
+            }
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 80
+        }
+      },
+      "2xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "96rem"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Tailwind4.3.3",
+            "sourceAddress": "tailwindcss/theme.css",
+            "sourceVariable": "--breakpoint-2xl",
+            "pin": {
+              "package": "tailwindcss",
+              "version": "4.3.3",
+              "file": "theme.css",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167"
+            }
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 96
+        }
+      },
+      "mobile": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "375px"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "src/catalog/fills/foundry/tokens.breakpoint.json",
+            "mappingLabel": "Foundry-authored",
+            "pin": {
+              "file": "src/catalog/fills/foundry/tokens.breakpoint.json",
+              "sha256": "a3501158b119c5066d458b736038ab9c1cc32be498e3c034286f6631e48b64a4"
+            },
+            "note": "Retained Foundry-authored custom threshold; no matching Tailwind default threshold."
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 375
+        }
+      },
+      "mobile-lg": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "480px"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "src/catalog/fills/foundry/tokens.breakpoint.json",
+            "mappingLabel": "Foundry-authored",
+            "pin": {
+              "file": "src/catalog/fills/foundry/tokens.breakpoint.json",
+              "sha256": "a3501158b119c5066d458b736038ab9c1cc32be498e3c034286f6631e48b64a4"
+            },
+            "note": "Retained Foundry-authored custom threshold; no matching Tailwind default threshold."
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 480
+        }
+      },
+      "wide": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1440px"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "src/catalog/fills/foundry/tokens.breakpoint.json",
+            "mappingLabel": "Foundry-authored",
+            "pin": {
+              "file": "src/catalog/fills/foundry/tokens.breakpoint.json",
+              "sha256": "a3501158b119c5066d458b736038ab9c1cc32be498e3c034286f6631e48b64a4"
+            },
+            "note": "Retained Foundry-authored custom threshold; no matching Tailwind default threshold."
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 1440
+        }
+      },
+      "tablet": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "48rem"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "tailwindcss/theme.css",
+            "mappingLabel": "Foundry-authored",
+            "pin": {
+              "package": "tailwindcss",
+              "version": "4.3.3",
+              "file": "theme.css",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167"
+            },
+            "sourceVariable": "--breakpoint-md",
+            "note": "Foundry-authored semantic alias tablet maps to the upstream --breakpoint-md value."
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 48
+        }
+      },
+      "tablet-lg": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "64rem"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "tailwindcss/theme.css",
+            "mappingLabel": "Foundry-authored",
+            "pin": {
+              "package": "tailwindcss",
+              "version": "4.3.3",
+              "file": "theme.css",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167"
+            },
+            "sourceVariable": "--breakpoint-lg",
+            "note": "Foundry-authored semantic alias tablet-lg maps to the upstream --breakpoint-lg value."
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 64
+        }
+      },
+      "desktop": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "80rem"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "tailwindcss/theme.css",
+            "mappingLabel": "Foundry-authored",
+            "pin": {
+              "package": "tailwindcss",
+              "version": "4.3.3",
+              "file": "theme.css",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167"
+            },
+            "sourceVariable": "--breakpoint-xl",
+            "note": "Foundry-authored semantic alias desktop maps to the upstream --breakpoint-xl value."
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 80
+        }
+      }
+    }
+  }
+}
