@@ -10676,9 +10676,11 @@ Studio, `readOnly={false}` enables the Tiptap editor; `onChange` receives its
 JSON document. Controlled value changes synchronize without firing `onChange`.
 Headings, lists and marks use the consumer's prose scale; links, badges and
 tables compose Designer components, and code/callout are document parts of
-this leaf. JSON supports the standard StarterKit/table schema plus `callout`
-nodes and `badge` marks. Table cells currently render a rectangular grid;
-merged-cell presentation is not supported.
+this leaf. The same Designer parts render editable engine marks and nodes.
+`Table.Document` supplies semantic document table parts and an engine-compatible
+content container while the existing interactive `Table` API remains available.
+JSON supports the standard StarterKit/table schema plus `callout` nodes and
+`badge` marks; document tables preserve row and column spans.
 
 React Aria has no rich-text editor. The leaf records that specific engine gap
 and uses only the four MIT Tiptap 3 direct packages listed in
