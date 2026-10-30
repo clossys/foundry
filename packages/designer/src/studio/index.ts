@@ -53,6 +53,9 @@ export type { ComponentSpecimenProbeState } from "./component-specimen-samples.j
 export { DesignerSpecimen } from "./DesignerSpecimen.js";
 export type { DesignerSpecimenContext, DesignerSpecimenProps, DesignerSpecimenNeed, DesignerSurfaceSpecimen } from "./DesignerSpecimen.js";
 export { emittedDesignerSpecimenContext } from "./emitted-specimens.js";
+export { contentSpecimenLeaves, SpecimenRichPassage, SpecimenCopyInContext, SpecimenPageViewports, contentSpecimenNeeds, richPassageItems, copyInContextItems, pageViewportItems, pageViewportCases } from "./specimen-content.js";
+export type { RichPassageValue, CopyInContextValue, PageViewportValue } from "./specimen-content.js";
+export type { SpecimenPagePreviewPort, SpecimenPublishedPage } from "./specimen-content-ports.js";
 export type { EmittedDesignerSpecimenRuntime } from "./emitted-specimens.js";
 
 // The complete-page constructor is private; hosts compose Studio through their route.

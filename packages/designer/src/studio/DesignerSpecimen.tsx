@@ -12,14 +12,18 @@ import { componentSpecimenPreview, type ComponentSpecimenBinding, type Component
 import { specimenDataset } from "./specimen-dataset.js";
 import { PreviewOutcomeContext, type PreviewFailureReason } from "./preview-outcome.js";
 import { packageSurfacePreview } from "./planned-surface-previews.js";
+import type { SpecimenPagePreviewPort } from "./specimen-content-ports.js";
 
 /** A source surface is executable only through a host binding to its exact resolved descriptor. */
 export interface DesignerSurfaceSpecimen {
+  /** Native selected surface API for caller-owned content, independent of fixtures. */
+  readonly renderContent?: (props: Readonly<Record<string, unknown>>) => ReactNode;
   readonly descriptorHash: string;
   readonly render: (options: { readonly width: number; readonly state: string }) => ReactNode;
   readonly states?: readonly string[];
 }
 export interface DesignerSpecimenContext {
+  readonly pagePreview?: SpecimenPagePreviewPort;
   /** The consumer's native resolution, including any native default selections. Never a catalog snapshot. */
   readonly profile: CompositeResolved;
   /** Exact module addresses from that resolution, including consumer source entries. */

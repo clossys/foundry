@@ -118,8 +118,8 @@ export function emittedDesignerSpecimenContext(profile: CompositeResolved, runti
     const Selected = runtime.surfaces[surfacePrimary(leaf)];
     if (!renderable(Selected)) continue;
     const sample = packageSurfacePreview(selected.document);
-    if ("reason" in sample) continue;
-    surfaces[leaf] = { descriptorHash: selected.descriptorHash, render: () => {
+    surfaces[leaf] = { descriptorHash: selected.descriptorHash, renderContent: props => createElement(Selected, props), render: () => {
+      if ("reason" in sample) throw new Error(`NEED: ${leaf}: ${sample.reason}`);
       const root = sample.render();
       if (!isValidElement<Record<string, unknown>>(root)) throw new Error(`NEED: ${leaf} has no root fixture props`);
       const props = Object.fromEntries(Object.entries(root.props).map(([key, value]) => [key, isValidElement(value) || Array.isArray(value) ? remap(value as ReactNode) : value]));
