@@ -166,3 +166,37 @@ The draft Aria rail additions use the official Aria source at commit
 `96da9cc7f1aa10580a3741664e2a77c721206c00`, under the shadcn MIT notice
 above. Individual fill descriptors retain the upstream addresses, file hashes,
 and the generated source license notice.
+
+## Tiptap 3 and ProseMirror
+
+The RichText component uses only Tiptap's open-source MIT document engine.
+React Aria has no rich-text editor; this is a per-component engine exception
+for `components.rich-text`. No Tiptap Pro or Cloud package is used.
+
+| Direct package | License | Purpose |
+| --- | --- | --- |
+| `@tiptap/react` | MIT | React editor lifecycle and ProseMirror schema |
+| `@tiptap/starter-kit` | MIT | Standard document nodes and marks |
+| `@tiptap/extension-table` | MIT | Document table schema |
+| `@tiptap/markdown` | MIT | Shared Markdown parser |
+
+Tiptap: Copyright (c) 2025, Tiptap GmbH.
+ProseMirror: Copyright (c) 2015-2017 by Marijn Haverbeke and others.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

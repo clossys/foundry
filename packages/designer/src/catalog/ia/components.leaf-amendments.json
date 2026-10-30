@@ -12,6 +12,7 @@
     "components.empty",
     "components.item",
     "components.scroll-area",
-    "components.dropdown-menu"
+    "components.dropdown-menu",
+    "components.rich-text"
   ]
 }
