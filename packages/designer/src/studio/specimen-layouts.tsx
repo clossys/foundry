@@ -50,6 +50,34 @@ type LayoutProps = SpecimenLeafProps & {
   readonly layout: SpecimenLayout;
   readonly renderItem: (item: SpecimenItem) => ReactNode;
 };
+export function specimenLayoutNeeds({ id, layout, items, axes = [], context, expanded }: SpecimenLeafProps & { readonly id: SpecimenLeafId; readonly layout: SpecimenLayout }): readonly DesignerSpecimenNeed[] {
+  const needs: DesignerSpecimenNeed[] = [];
+  const add = (reason: string) => needs.push({ leaf: id, reason });
+  if (!items.length) add("A specimen requires at least one cell-authored item.");
+  if (new Set(items.map(item => item.id)).size !== items.length) add("Specimen item ids must be unique.");
+  const semantic = specimenComponent(context, "components.semantic-content");
+  if ("reason" in semantic) needs.push(semantic);
+  if (items.length <= 1) return needs;
+  if (layout === "single") add("A single-layout specimen cannot accept multiple items.");
+  const list = specimenComponent(context, "components.grid-list");
+  if ("reason" in list) needs.push(list);
+  else if (!specimenPart(list, "Item", "GridListItem")) add("The selected grid-list has no native item part.");
+  let disclosureRequired = items.length > 12;
+  if (layout === "matrix") {
+    if (axes.length < 2 || axes.some(axis => !axis.values.length || new Set(axis.values.map(value => value.id)).size !== axis.values.length)) add("A matrix needs two nonempty, uniquely labelled axes.");
+    if (items.some(item => axes.some(axis => !axis.values.some(value => value.id === item.coordinates?.[axis.id])))) add("Every matrix item must name a registered value on each axis.");
+    if (axes.length >= 2) disclosureRequired = items.some(item => axes.filter((_, index) => index !== 1).some(axis => item.coordinates?.[axis.id] !== items[0]!.coordinates?.[axis.id]));
+    const table = specimenComponent(context, "components.table");
+    if ("reason" in table) needs.push(table);
+    else if (![["Header", "TableHeader"], ["Column", "TableHead"], ["Body", "TableBody"], ["Row", "TableRow"], ["Cell", "TableCell"]].every(([foundry, shadcn]) => specimenPart(table, foundry!, shadcn!))) add("The selected table has no complete native header, row and cell API.");
+  }
+  if (!expanded && disclosureRequired) {
+    const disclosure = specimenComponent(context, "components.disclosure");
+    if ("reason" in disclosure) needs.push(disclosure);
+    else if (disclosure.source === "shadcn@aria" && !["AccordionItem", "AccordionTrigger", "AccordionContent"].every(name => component(disclosure.exports[name]))) add("The selected accordion has no native item, trigger and content API.");
+  }
+  return needs;
+}
 export function specimenComponent(context: DesignerSpecimenContext, leaf: string): ComponentSpecimenBinding | DesignerSpecimenNeed {
   const bound = componentSpecimenPreview({ modules: context.modules }).bind(leaf, context.profile);
   return "binding" in bound ? bound.binding : { leaf, reason: `${bound.refusal.code}: ${bound.refusal.detail}` };
