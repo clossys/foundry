@@ -30,6 +30,8 @@ export interface SpecimenLeafDefinition {
   readonly id: SpecimenLeafId;
   readonly layout: SpecimenLayout;
   readonly compatible: readonly { readonly kind: string; readonly layer?: string }[];
+  readonly requirements?: readonly string[];
+  validate?(props: SpecimenLeafProps): readonly DesignerSpecimenNeed[];
   /** Executable implementation owned by the leaf; Studio only dispatches its id and data. */
   render(props: SpecimenLeafProps): ReactNode;
 }
@@ -94,7 +96,7 @@ export function SpecimenLayoutSection(props: LayoutProps): ReactNode {
   </List>;
   const axes = props.axes ?? [];
   let first: readonly SpecimenItem[] = items.slice(0, 12), rest: readonly SpecimenItem[] = items.slice(12);
-  let draw = (entries: readonly SpecimenItem[]) => listOf(entries, layout === "grid");
+  let draw: (entries: readonly SpecimenItem[]) => ReactNode = entries => listOf(entries, layout === "grid");
   if (layout === "matrix") {
     if (axes.length < 2 || axes.some(axis => !axis.values.length || new Set(axis.values.map(value => value.id)).size !== axis.values.length)) return fail("A matrix needs two nonempty, uniquely labelled axes.");
     if (items.some(item => axes.some(axis => !axis.values.some(value => value.id === item.coordinates?.[axis.id])))) return fail("Every matrix item must name a registered value on each axis.");
