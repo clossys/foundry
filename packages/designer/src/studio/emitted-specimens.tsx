@@ -127,5 +127,13 @@ export function emittedDesignerSpecimenContext(profile: CompositeResolved, runti
       return createElement(Selected, props);
     } };
   }
-  return { profile, modules, surfaces, surfaceBindingsOnly: true };
+  return { profile, modules, surfaces, surfaceBindingsOnly: true, selectedComponents: runtime.components };
+}
+
+/** Source-kind specimen leaves verify their static component bindings against this exact emitted revision. */
+export function bindNativeSpecimenContext(context: DesignerSpecimenContext, ports: Readonly<Record<string, unknown>>): DesignerSpecimenContext | { readonly leaf: string; readonly reason: string } {
+  for (const [name, Component] of Object.entries(ports)) {
+    if (!context.selectedComponents || context.selectedComponents[name] !== Component) return { leaf: "sections.specimen", reason: `The native specimen binding ${name} does not belong to this emitted consumer revision.` };
+  }
+  return context;
 }

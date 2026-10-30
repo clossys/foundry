@@ -2,6 +2,15 @@
   "layer": "sections",
   "nodes": [
     {
+      "id": "specimens",
+      "label": "Specimens",
+      "children": [{
+        "id": "specimens-content",
+        "label": "Content and presentation",
+        "leaves": ["sections.specimen-swatch","sections.specimen-color-ramp","sections.specimen-type-ladder","sections.specimen-spacing-ladder","sections.specimen-radius-ladder","sections.specimen-motion-player","sections.specimen-asset-grid","sections.specimen-icon-grid","sections.specimen-variant-matrix","sections.specimen-section-viewports","sections.specimen-frame-viewports","sections.specimen-rich-passage","sections.specimen-copy-in-context","sections.specimen-page-viewports"]
+      }]
+    },
+    {
       "id": "parts",
       "label": "Parts",
       "children": [

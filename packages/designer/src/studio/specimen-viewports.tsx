@@ -6,6 +6,7 @@ import { componentSpecimenPreview, type ComponentSpecimenMember } from "./compon
 import { PreviewOutcomeContext, type PreviewFailureReason } from "./preview-outcome.js";
 import { SpecimenLayoutSection, specimenComponent, type SpecimenAxis, type SpecimenItem, type SpecimenLeafDefinition, type SpecimenLeafProps } from "./specimen-layouts.js";
 import type { DesignerSpecimenContext, DesignerSpecimenNeed } from "./DesignerSpecimen.js";
+import { NativeSpecimenStateClone, type SpecimenInteraction } from "./specimen-state-clone.js";
 
 export interface ComponentVariantItem { readonly leaf: string; readonly members: readonly string[]; readonly state: string }
 export interface SurfaceViewportItem { readonly leaf: string; readonly width: number; readonly state: string }
@@ -75,8 +76,13 @@ function ComponentItem({ item, context, need }: { item: SpecimenItem; context: D
   if (intrinsic) {
     const forced = context.componentStates?.[value.leaf];
     const descriptor = context.profile.components.components[value.leaf]!;
-    if (!forced || forced.descriptor !== descriptor) return need({ leaf: value.leaf, reason: `The selected native renderer has no forced-state clone port for ${intrinsic.member}.` });
-    return <><Badge data-ds-leaf="components.badge">{bound.source}</Badge>{forced.render({ members: value.members, state: intrinsic.member, props, interactive: false })}</>;
+    if (forced?.descriptor === descriptor) return <><Badge data-ds-leaf="components.badge">{bound.source}</Badge>{forced.render({ members: value.members, state: intrinsic.member, props, interactive: false })}</>;
+    const state = intrinsic.member.slice("state.".length);
+    if (!["hover", "focus-visible", "pressed"].includes(state)) return need({ leaf: value.leaf, reason: `No native interaction capture for ${intrinsic.member}.` });
+    const semantic = specimenComponent(context, "components.semantic-content");
+    if ("reason" in semantic) return need(semantic);
+    const node = componentSpecimenPreview({ ...context.componentOptions, restOnly: true, modules: context.modules, probes: { [value.leaf]: { props } } }).preview(value.leaf, context.profile);
+    return <><Badge data-ds-leaf="components.badge">{bound.source}</Badge><NativeSpecimenStateClone Content={semantic.Component} state={state as SpecimenInteraction} unavailable={reason => need({ leaf: value.leaf, reason })}>{node}</NativeSpecimenStateClone></>;
   }
   const node = componentSpecimenPreview({ ...context.componentOptions, restOnly: true, modules: context.modules, probes: { [value.leaf]: { props } } }).preview(value.leaf, context.profile);
   const semantic = specimenComponent(context, "components.semantic-content");

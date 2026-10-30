@@ -28,6 +28,8 @@ export interface DesignerSpecimenContext {
   readonly surfaces?: Readonly<Record<string, DesignerSurfaceSpecimen>>;
   /** Emitted hosts must supply an executable selected port; package samples cannot become render fallbacks. */
   readonly surfaceBindingsOnly?: boolean;
+  /** Actual emitted consumer exports, retained for source-kind specimen component-binding verification. */
+  readonly selectedComponents?: Readonly<Record<string, unknown>>;
   /** A selected implementation may expose a library-private, descriptor-bound static interaction renderer. */
   readonly componentStates?: Readonly<Record<string, {
     readonly descriptor: CompositeResolved["components"]["components"][string];
