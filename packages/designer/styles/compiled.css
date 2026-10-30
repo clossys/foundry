@@ -1175,6 +1175,9 @@
     font-size: var(--text-caption, 12px);
     color: var(--color-ink-secondary, oklch(0.36 0 0));
   }
+  .my-lg {
+    margin-block: var(--spacing-lg, 16px);
+  }
   .my-sm {
     margin-block: var(--spacing-sm, 8px);
   }
