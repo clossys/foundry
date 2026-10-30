@@ -86,7 +86,7 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
       </> : undefined}
       secondary={<SiteFooter.Legal
         entity={footer.legal.entity}
-        links={[...footer.links, ...footer.legal.links]}
+        links={[...footer.links, ...footer.legal.links, ...(footer.privacyChoices ? [footer.privacyChoices] : [])]}
         linksLabel={footer.legal.linksLabel}
         icons={footer.brandBand ? undefined : footer.social?.links.map(link => ({ label: link.label, href: link.href, icon: link.image ? <Logomark src={link.image.src} size="sm" /> : <Icon glyph={link.icon} decorative /> }))}
         iconsLabel={!footer.brandBand && footer.social?.links.length ? footer.social.label : undefined}

@@ -4,16 +4,16 @@ import { SITE_CHROME_GROUNDS } from "./viewChromeGround.js";
 export const HEADER_LINK_LIMIT = 5;
 export const HEADER_ACTION_LIMIT = 3;
 export const HEADER_ACTION_VARIANTS = Object.freeze(["secondary", "ghost", "primary"] as const);
-/** Flat footer row: `shell.footer.links` then `shell.footer.legal.links`; more links belong in labelled `columns`. */
+/** Flat footer row: `shell.footer.links`, `shell.footer.legal.links` and the optional privacyChoices control; more links belong in labelled `columns`. */
 export const FOOTER_LINK_LIMIT = 5;
 /** Footer icon slots, counting the `shell.brand` mark that always takes the last one. */
 export const FOOTER_ICON_LIMIT = 5;
 export type SiteFooterContractErrorCode = "footer-link-limit" | "footer-icon-limit" | "footer-duplicate-link" | "footer-privacy-choices";
 const FOOTER_CONTRACT_REASONS: Readonly<Record<SiteFooterContractErrorCode, string>> = Object.freeze({
-  "footer-link-limit": "permits at most five flat links across links and legal links; group further links into labelled columns.",
+  "footer-link-limit": "permits at most five flat links across links, legal links and the privacy choices control; group further links into labelled columns.",
   "footer-icon-limit": "permits at most four icons; the brand mark takes the fifth and last slot.",
   "footer-duplicate-link": "repeats the home or a header navigation destination.",
-  "footer-privacy-choices": "must not carry the privacy-choices control; it stays on the privacy policy page.",
+  "footer-privacy-choices": "must not carry the privacy-choices control through a generic link; use shell.footer.privacyChoices.",
 });
 /**
  * Over-cap or excluded footer input, refused at the contract boundary and never truncated.
@@ -31,8 +31,8 @@ export const SITE_FRAME_CONFIG_SCHEMA = Object.freeze({
   footerGround: Object.freeze({ values: SITE_CHROME_GROUNDS, default: "base" as const }),
   footerPlacement: Object.freeze({ values: Object.freeze(["flow", "overlay"] as const), default: "flow" as const }),
   footerRule: Object.freeze({ values: Object.freeze(["none", "top"] as const), default: "none" as const }),
-  headerSurface: Object.freeze({ values: Object.freeze(["solid", "transparent", "glass"] as const), default: "solid" as const }),
   headerPosition: Object.freeze({ values: Object.freeze(["sticky", "static"] as const), default: undefined }),
+  headerSurface: Object.freeze({ values: Object.freeze(["solid", "transparent", "glass"] as const), default: "solid" as const }),
   headerTone: Object.freeze({ values: Object.freeze(["base", "inverse"] as const), default: "base" as const }),
 });
 export interface SiteFramePresentationConfig {
@@ -84,11 +84,11 @@ export const SITE_FRAME_NAV_DEFAULTS = Object.freeze({
 });
 /**
  * Composition references identify exports; they confer no qualification.
- * Revision 4 uses one header surface and one ordered actions list; environment-only headers retain direct ghost links.
+ * Revision 5 adds an explicit fixed-destination privacy choices control; generic links retain their exclusions.
  * Pack owns route placement and Instance pairs Frame with View.
  */
 export const SITE_FRAME_CONTRACT = freeze({
-  identity: "site-frame", role: "frame", revision: 4, medium: "web",
+  identity: "site-frame", role: "frame", revision: 5, medium: "web",
   use: ["persistent public-site chrome surrounding one chrome-free View"],
   avoid: ["route placement", "document bootstrap", "content sections", "application navigation focus bridge"],
   config: SITE_FRAME_CONFIG_SCHEMA,
@@ -100,7 +100,7 @@ export const SITE_FRAME_CONTRACT = freeze({
   required: ["dark-footer", "accessible-navigation", "document-scroll", "sole-main"],
   constituents: {
     Header: { owner: "@clossys/designer", subpath: "shell/server", export: "SiteHeader", config: ["headerSurface", "headerTone", "headerPosition"] },
-    Footer: { owner: "@clossys/designer", subpath: "shell/server", export: "SiteFooter", config: ["footerGround", "footerPlacement", "footerRule"], content: ["columns", "links", "social", "legal"], required: ["dark-in-both-themes", "centered-links", "home-inline-end", "mobile-links-icons-copyright", "named-icons", "external-rel", "safe-area", "44px-targets", "privacy-link-only"], constraints: { links: FOOTER_LINK_LIMIT, linksLayout: "one flat row of shell.footer.links then shell.footer.legal.links", grouping: "shell.footer.columns: labelled columns for links beyond the flat row", icons: FOOTER_ICON_LIMIT, brandMark: "shell.brand, always the last icon slot", excludes: ["home", "header-navigation", "privacy-choices"], error: "SiteFooterContractError", accessibility: "mandatory" } },
+    Footer: { owner: "@clossys/designer", subpath: "shell/server", export: "SiteFooter", config: ["footerGround", "footerPlacement", "footerRule"], content: ["columns", "links", "social", "legal", "privacyChoices"], required: ["dark-in-both-themes", "centered-links", "home-inline-end", "mobile-links-icons-copyright", "named-icons", "external-rel", "safe-area", "44px-targets", "explicit-privacy-choices-control"], constraints: { links: FOOTER_LINK_LIMIT, linksLayout: "one flat row of shell.footer.links, shell.footer.legal.links, then the optional privacyChoices control", grouping: "shell.footer.columns: labelled columns for links beyond the flat row", icons: FOOTER_ICON_LIMIT, brandMark: "shell.brand, always the last icon slot", excludes: ["home", "header-navigation", "privacy-choices"], privacyChoices: "explicit label CopyRef; fixed same-document #privacy-choices destination; host owns consent behavior", error: "SiteFooterContractError", accessibility: "mandatory" } },
   },
 } as const);
 

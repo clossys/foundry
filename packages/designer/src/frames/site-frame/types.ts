@@ -88,8 +88,11 @@ export type { SiteChromeGround } from "./viewChromeGround.js";
  *
  * Contract (`SITE_FRAME_CONTRACT.constituents.Footer.constraints`): `links` and
  * `legal.links` together form one flat row of at most five; further links go in
- * labelled `columns`. `social` takes at most four icons, because the `shell.brand` mark always fills the fifth and last slot. No footer link may
- * repeat home, a `shell.nav` destination or the `#privacy-choices` control.
+ * labelled `columns`. An explicit `privacyChoices` control counts toward that
+ * row and always targets the same document. `social` takes at most four icons,
+ * because the `shell.brand` mark always fills the fifth and last slot. No footer link may
+ * repeat home, a `shell.nav` destination or the `#privacy-choices` control
+ * through a generic link; use the dedicated `privacyChoices` port.
  * Breaches throw a `SiteFooterContractError` (`name` and `code`), never truncate.
  */
 interface SiteFooterFields {
@@ -99,6 +102,12 @@ interface SiteFooterFields {
   readonly rule?: "none" | "top";
   readonly columns?: readonly { readonly heading: CopyRef; readonly links: readonly PlainSiteLinkInput[] }[];
   readonly links?: readonly PlainSiteLinkInput[];
+  /**
+   * Opt in to the host's existing consent reopen behavior. Renders a fixed
+   * same-document `#privacy-choices` link after legal links; the host owns
+   * consent state, events, focus and dialog behavior. No callback or URL slot.
+   */
+  readonly privacyChoices?: { readonly label: CopyRef };
   readonly social?: { readonly label?: CopyRef; readonly links: readonly (SiteIconLinkInput | SiteImageLinkInput)[] };
   readonly legal: {
     readonly entity: CopyRef;
