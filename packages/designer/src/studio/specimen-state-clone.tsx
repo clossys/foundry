@@ -2,7 +2,6 @@
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
-import type { ComponentSpecimenComponent } from "./component-specimens.js";
 
 export type SpecimenInteraction = "hover" | "focus-visible" | "pressed";
 const attribute: Record<SpecimenInteraction, string> = { hover: "data-hovered", "focus-visible": "data-focus-visible", pressed: "data-pressed" };
@@ -36,12 +35,12 @@ function capturedStateCss(document: Document, scope: string): string {
 }
 
 /**
- * Library-private native-state capture: dispatches the peer's real interaction, snapshots its resulting DOM,
+ * Studio native-state capture: dispatches the peer's real interaction, snapshots its resulting DOM,
  * then removes the live staging instance. The visible clone has no event listeners and is inert. A peer that
  * does not actually expose the requested state refuses; a label or manually added data attribute is no proof.
  */
-export function NativeSpecimenStateClone({ Content, state, children, unavailable }: { Content: ComponentSpecimenComponent; state: SpecimenInteraction; children: ReactNode; unavailable: (reason: string) => ReactNode }): ReactNode {
-  const source = useRef<HTMLElement>(null), output = useRef<HTMLElement>(null);
+export function NativeSpecimenStateClone({ Content, state, children, unavailable }: { Content: typeof import("../components/SemanticContent.js").SemanticContent; state: SpecimenInteraction; children: ReactNode; unavailable: (reason: string) => ReactNode }): ReactNode {
+  const source = useRef<HTMLDivElement>(null), output = useRef<HTMLDivElement>(null);
   const cloneId = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const [result, setResult] = useState<"capturing" | "ready" | string>("capturing");
   useEffect(() => {

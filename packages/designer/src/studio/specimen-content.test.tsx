@@ -1,7 +1,11 @@
 import { afterEach, beforeAll, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render as renderUi, screen } from "@testing-library/react";
+import { isValidElement, Suspense, type ReactNode } from "react";
+import { ConsumerComponentProvider } from "../runtime/component-leaf.client.js";
+import { componentDescriptorHash } from "../catalog-core/resolve-components.js";
 import * as components from "../components/index.js";
 import * as blocks from "../blocks/index.js";
+import { producerPagePreview } from "../../../producer/studio/lib/producer-page-preview.js";
 import { loadCatalog, loadComponentRegistry, loadSectionRegistry } from "../catalog-core/index.js";
 import { applyLibraryChange, libraryHash } from "../catalog-core/api.js";
 import { resolveComposite } from "../catalog-core/library-components.js";
@@ -16,14 +20,31 @@ import type { SurfaceCandidateDocument } from "../catalog-core/surface-types.js"
 import { emittedDesignerSpecimenContext } from "./emitted-specimens.js";
 import type { DesignerSpecimenContext } from "./DesignerSpecimen.js";
 import { contentSpecimenLeaves, contentSpecimenNeeds, copyInContextItems, pageViewportCases, richPassageItems, SpecimenCopyInContext, SpecimenPageViewports, SpecimenRichPassage, type CopyInContextValue } from "./specimen-content.js";
-import type { SpecimenAxis, SpecimenItem, SpecimenLeafProps } from "./specimen-layouts.js";
+import type { SpecimenAxis, SpecimenItem, SpecimenLeafProps, SpecimenRenderParts } from "./specimen-layouts.js";
 
 let context: DesignerSpecimenContext;
+function SelectedComponents({ children }: { readonly children?: ReactNode }) {
+  const selected = isValidElement<{ readonly context?: DesignerSpecimenContext }>(children) ? children.props.context ?? context : context;
+  const descriptors = Object.fromEntries(Object.entries(selected.profile.components.components).map(([leaf, chosen]) => [leaf, componentDescriptorHash(chosen.descriptor)]));
+  return <ConsumerComponentProvider value={{ profile: selected.profile, selectionHash: selected.profile.components.selectionHash, modules: selected.modules, descriptors }}><Suspense>{children}</Suspense></ConsumerComponentProvider>;
+}
+function render(ui: ReactNode) {
+  const wrap = (children: ReactNode) => <SelectedComponents>{children}</SelectedComponents>;
+  const view = renderUi(wrap(ui));
+  return { ...view, rerender: (next: ReactNode) => view.rerender(wrap(next)) };
+}
 const labels = { showAllVariants: (count: number) => `All ${count}` };
 const need: SpecimenLeafProps["need"] = value => <components.SemanticContent as="p" role="status">{value.leaf}: {value.reason}</components.SemanticContent>;
 const visible = (root: Element, selector: string) => [...root.querySelectorAll(selector)].filter(node => !node.closest("[hidden]"));
-const base = (items: readonly SpecimenItem[], axes?: readonly SpecimenAxis[], selected = context): SpecimenLeafProps => ({ items, axes, context: selected, labels, need });
-beforeAll(() => {
+const base = (items: readonly SpecimenItem[], axes?: readonly SpecimenAxis[], selected = context): SpecimenLeafProps => ({ items, axes, context: selected, labels, need, renderParts: {
+  "sections.specimen-copy-in-context": { renderContent: ({ leaf, ...input }) => selected.surfaces![leaf]!.renderContent!(input) },
+} });
+function nativePagePreview(emitted = true) {
+  const port = producerPagePreview({ state: "ready", publication: "publication", publications: ["publication"], manifest: { schemaVersion: 1, publication: "publication", sourceApp: "web", format: "web.page.responsive", routes: [{ id: "page", path: "/actual-route", source: { file: "pages/page.tsx", export: "default" } }], contentMap: { version: 1, publicationId: "publication", entries: [{ id: "page", title: "Actual page", kind: "page", path: "/actual-route" }] } }, pages: [{ id: "page", route: "/actual-route", emitted, previewUrl: "/preview/publication/pages/page.html" }] }, "http://127.0.0.1:4300");
+  if (!port) throw new Error("The actual Producer emitted-page port is required.");
+  return port;
+}
+beforeAll(async () => {
   const valuesCatalog = loadCatalog(), candidates = importFoundryComponents().fills;
   const rich = loadCatalogBundles().componentFills.find(doc => doc.$extensions["com.clossys.fill"].slot === "components.rich-text");
   if (!rich) throw new Error("The actual RichText candidate is required.");
@@ -52,6 +73,10 @@ beforeAll(() => {
   const profile = resolveComposite({ catalog, library: selected, componentOptions });
   const emitted = emittedDesignerSpecimenContext(profile, { components, surfaces: blocks });
   context = { ...emitted, modules: { "@clossys/designer/components": components } };
+  // Resolve the real lazy selected-component boundary before synchronous DOM assertions.
+  render(<SpecimenRichPassage {...base(passages(1))} />);
+  await screen.findByText("Final paragraph 0.");
+  cleanup();
 }, 60_000);
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
@@ -71,14 +96,14 @@ it.each([1, 3, 15])("renders %i complete passages in the intrinsic ladder and ex
   expect(view.container.querySelectorAll("[data-ds-specimen-item]")).toHaveLength(count);
   expect(screen.queryByRole("button", { name: `All ${count}` })).toBeNull();
 });
-it("uses the native disclosure for the full clamped passage and expands it in the full tab", () => {
+it("shows the complete passage in canvas and full tabs when caller clamp metadata is present", () => {
   const props = base([{ id: "strategy", label: "Strategy", value: { passage: Array.from({ length: 20 }, (_, index) => `Paragraph ${index}.`).join("\n\n"), clamp: { lines: 12, showMore: "Read the full strategy" } } }]);
   const view = render(<SpecimenRichPassage {...props} />);
-  expect(view.container.querySelector("[style*='line-clamp: 12']")).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "Read the full strategy" }));
-  expect(screen.getAllByText("Paragraph 19.")).toHaveLength(2);
+  expect(screen.getByText("Paragraph 19.")).toBeVisible();
+  expect(view.container.querySelector("[style*='line-clamp'],[style*='-webkit-box']")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Read the full strategy" })).toBeNull();
   view.rerender(<SpecimenRichPassage {...props} expanded />);
-  expect(screen.getAllByText("Paragraph 19.")).toHaveLength(1);
+  expect(screen.getByText("Paragraph 19.")).toBeVisible();
   expect(screen.queryByRole("button")).toBeNull();
 });
 it("renders a full valid JSON document and refuses malformed document content", () => {
@@ -87,6 +112,28 @@ it("renders a full valid JSON document and refuses malformed document content", 
   expect(screen.getByText("Full JSON paragraph")).toBeVisible();
   view.rerender(<SpecimenRichPassage {...base([{ id: "bad", label: "Invalid", value: { passage: { type: "doc", content: [{ type: "not-a-node" }] } } }])} />);
   expect(view.container.querySelector("[data-ds-specimen-need='true']")).toBeTruthy();
+});
+
+it("preserves headings, lists, links, escaped code and tables through the selected RichText API", () => {
+  const passage = { type: "doc", content: [
+    { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "Actual document heading" }] },
+    { type: "bulletList", content: [{ type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "Actual list item" }] }] }] },
+    { type: "paragraph", content: [{ type: "text", text: "Actual reference", marks: [{ type: "link", attrs: { href: "/reference" } }] }] },
+    { type: "codeBlock", content: [{ type: "text", text: "<script>actualCode()</script>" }] },
+    { type: "table", content: [
+      { type: "tableRow", content: [{ type: "tableHeader", content: [{ type: "paragraph", content: [{ type: "text", text: "Actual column" }] }] }] },
+      { type: "tableRow", content: [{ type: "tableCell", content: [{ type: "paragraph", content: [{ type: "text", text: "Actual cell" }] }] }] },
+    ] },
+  ] };
+  const view = render(<SpecimenRichPassage {...base([{ id: "actual-document", label: "Actual document", value: { passage } }])} />);
+  expect(screen.getByRole("heading", { name: "Actual document heading", level: 2 })).toBeVisible();
+  expect(screen.getByRole("listitem")).toHaveTextContent("Actual list item");
+  expect(screen.getByRole("link", { name: "Actual reference" })).toHaveAttribute("href", "/reference");
+  expect(view.container.querySelector("pre code")).toHaveTextContent("<script>actualCode()</script>");
+  expect(view.container.querySelector("script")).toBeNull();
+  expect(screen.getByRole("columnheader", { name: "Actual column" })).toBeVisible();
+  expect(screen.getByRole("cell", { name: "Actual cell" })).toBeVisible();
+  expect(view.container.querySelector("[data-readonly='true']")).toBeTruthy();
 });
 
 const roles: readonly CopyInContextValue["role"][] = ["headline", "body", "cta", "nav", "error", "empty"];
@@ -119,27 +166,54 @@ it.each([1, 3, 15])("renders %i Writer strings in their actual native role compo
     expect(view.container.querySelectorAll("[data-copy-role]")).toHaveLength(count);
   }
 });
-it("passes caller copy through the descriptor-matched selected surface port and refuses stale ports", () => {
+it("routes caller copy through the declared renderContent part and rejects stale or missing wiring", () => {
   const bound = context.surfaces?.["sections.section-header"];
-  if (!bound) throw new Error("The native selected heading port is required.");
-  const renderContent = vi.fn(bound.renderContent);
-  const selected = { ...context, surfaces: { ...context.surfaces, "sections.section-header": { ...bound, renderContent } } };
-  const cases = copyCases(1), props = base(cases.items, cases.axes, selected), view = render(<SpecimenCopyInContext {...props} />);
-  expect(renderContent).toHaveBeenCalledWith({ title: "Produced headline 0", level: 3 });
-  view.rerender(<SpecimenCopyInContext {...base(cases.items, cases.axes, { ...selected, surfaces: { "sections.section-header": { ...bound, descriptorHash: "stale" } } })} />);
+  if (!bound?.renderContent) throw new Error("The native selected heading port is required.");
+  const renderContent = vi.fn<NonNullable<NonNullable<SpecimenRenderParts["sections.specimen-copy-in-context"]>["renderContent"]>>(({ leaf, ...input }) => context.surfaces![leaf]!.renderContent!(input));
+  const obsoleteRenderContent = vi.fn(() => null);
+  const selected = { ...context, surfaces: { ...context.surfaces, "sections.section-header": { ...bound, renderContent: obsoleteRenderContent } } };
+  const cases = copyCases(1), props = { ...base(cases.items, cases.axes, selected), renderParts: { "sections.specimen-copy-in-context": { renderContent } } }, view = render(<SpecimenCopyInContext {...props} />);
+  expect(renderContent).toHaveBeenCalledWith({ leaf: "sections.section-header", title: "Produced headline 0", level: 3 });
+  expect(obsoleteRenderContent).not.toHaveBeenCalled();
+  const { renderContent: _obsolete, ...metadata } = bound;
+  view.rerender(<SpecimenCopyInContext {...props} context={{ ...selected, surfaces: { "sections.section-header": metadata } }} />);
+  expect(screen.getByRole("heading", { name: "Produced headline 0" })).toBeVisible();
+  view.rerender(<SpecimenCopyInContext {...props} context={{ ...selected, surfaces: { "sections.section-header": { ...bound, descriptorHash: "stale" } } }} />);
   expect(view.container.querySelector("[data-ds-specimen-need='true']")).toBeTruthy();
+  expect(screen.queryByRole("heading")).toBeNull();
+  view.rerender(<SpecimenCopyInContext {...props} renderParts={{}} />);
+  expect(screen.getByRole("status")).toHaveTextContent("The registered renderContent part is not wired.");
   expect(screen.queryByRole("heading")).toBeNull();
 });
 
+it("routes headline, error and empty copy values through the declared native surface part", () => {
+  const renderContent = vi.fn<NonNullable<NonNullable<SpecimenRenderParts["sections.specimen-copy-in-context"]>["renderContent"]>>(({ leaf, ...input }) => context.surfaces![leaf]!.renderContent!(input));
+  const cases = copyCases(6);
+  render(<SpecimenCopyInContext {...base(cases.items, cases.axes)} expanded renderParts={{ "sections.specimen-copy-in-context": { renderContent } }} />);
+  expect(renderContent).toHaveBeenCalledWith({ leaf: "sections.section-header", title: "Produced headline 0", level: 3 });
+  expect(renderContent).toHaveBeenCalledWith({ leaf: "sections.empty-state", title: "Produced error 4", role: "alert" });
+  expect(renderContent).toHaveBeenCalledWith({ leaf: "sections.empty-state", title: "Produced empty 5" });
+});
+
 const viewportCases = (count: number) => pageViewportCases({ id: "page", label: "Emitted page" }, Array.from({ length: count }, (_, index) => ({ id: `width-${index}`, label: index === 0 ? "Desktop" : index === 1 ? "Mobile" : `Width ${index}`, width: index === 0 ? 1440 : 390 + index, height: 900 })), { page: "Page", viewport: "Viewport" });
-it.each([1, 2, 15])("dispatches %i page viewport cases to the actual host engine port", count => {
-  const renderViewport = vi.fn(({ page, viewport, interactive, fullSize }) => <components.SemanticContent as="div" data-ds-leaf="components.semantic-content" data-engine-interactive={String(interactive)} data-engine-full-size={String(fullSize)}><iframe title={viewport.label} src={page.previewUrl} sandbox="" tabIndex={-1} width={viewport.width} height={viewport.height} style={{ pointerEvents: "none" }} /></components.SemanticContent>);
-  const selected: DesignerSpecimenContext = { ...context, pagePreview: { engine: "producer-emitted-page@1", origin: "http://127.0.0.1:4300", pages: [{ id: "page", route: "/actual-route", previewUrl: "/preview/publication/pages/page.html", emitted: true, stage: "preview" }], renderViewport } };
-  const cases = viewportCases(count), props = base(cases.items, cases.axes, selected), view = render(<SpecimenPageViewports {...props} />);
+it.each([1, 2, 15])("dispatches %i page viewport cases through the declared native engine part", count => {
+  const native = nativePagePreview(), renderViewport = vi.fn(native.renderViewport), obsoleteRenderViewport = vi.fn(() => null);
+  const selected: DesignerSpecimenContext = { ...context, pagePreview: { ...native, renderViewport: obsoleteRenderViewport } };
+  const cases = viewportCases(count), props = { ...base(cases.items, cases.axes, selected), renderParts: { "sections.specimen-page-viewports": { renderViewport } } }, view = render(<SpecimenPageViewports {...props} />);
   expect(view.container.querySelectorAll("iframe")).toHaveLength(count);
-  expect(view.container.querySelector("[data-publication-route='/actual-route'][data-publication-stage='preview']")).toBeTruthy();
-  for (const frame of view.container.querySelectorAll("iframe")) { expect(frame).toHaveAttribute("sandbox", ""); expect(frame).toHaveAttribute("tabindex", "-1"); expect(frame).toHaveStyle({ pointerEvents: "none" }); }
-  expect(renderViewport).toHaveBeenCalledWith(expect.objectContaining({ interactive: false, fullSize: false }));
+  expect(view.container.querySelector("[data-publication-route='/actual-route'][data-publication-stage='emitted']")).toBeTruthy();
+  for (const [index, frame] of [...view.container.querySelectorAll("iframe")].entries()) {
+    const viewport = cases.items[index]!.value.viewport;
+    expect(frame).toHaveAttribute("sandbox", "");
+    expect(frame).toHaveAttribute("referrerpolicy", "no-referrer");
+    expect(frame).toHaveAttribute("tabindex", "-1");
+    expect(frame).toHaveAttribute("width", String(viewport.width));
+    expect(frame).toHaveAttribute("height", String(viewport.height));
+    expect(frame).toHaveStyle({ pointerEvents: "none" });
+    expect(frame).toHaveAttribute("src", "http://127.0.0.1:4300/preview/publication/pages/page.html");
+  }
+  expect(renderViewport).toHaveBeenCalledWith({ page: native.pages[0], viewport: cases.items[0]!.value.viewport, interactive: false, fullSize: false });
+  expect(obsoleteRenderViewport).not.toHaveBeenCalled();
   if (count === 1) expect(view.container.querySelector("table,[role='grid'],button")).toBeNull();
   view.rerender(<SpecimenPageViewports {...props} expanded />);
   expect(renderViewport).toHaveBeenLastCalledWith(expect.objectContaining({ fullSize: true, interactive: false }));
@@ -149,17 +223,24 @@ it("fails missing emit, missing native engine, unsafe origin and URL-card-shaped
   expect(view.container.querySelector("iframe")).toBeNull();
   expect(view.container.querySelector("[data-ds-specimen-need='true']")).toBeTruthy();
   expect(contentSpecimenNeeds("sections.specimen-page-viewports", props)).not.toEqual([]);
+  const native = nativePagePreview(), renderViewport = vi.fn(native.renderViewport), renderParts = { "sections.specimen-page-viewports": { renderViewport } };
   for (const origin of ["http://localhost:4300", "https://example.invalid", "http://127.0.0.1:4300/path", "http://127.0.0.1:999999"]) {
-    const selected: DesignerSpecimenContext = { ...context, pagePreview: { engine: "producer-emitted-page@1", origin, pages: [{ id: "page", route: "/", previewUrl: "/preview/publication/pages/page.html", emitted: true, stage: "preview" }], renderViewport: () => null } };
-    expect(contentSpecimenNeeds("sections.specimen-page-viewports", base(cases.items, cases.axes, selected))).not.toEqual([]);
+    const selected: DesignerSpecimenContext = { ...context, pagePreview: { ...native, origin } };
+    const invalid = { ...base(cases.items, cases.axes, selected), renderParts };
+    expect(contentSpecimenNeeds("sections.specimen-page-viewports", invalid)).not.toEqual([]);
+    view.rerender(<SpecimenPageViewports {...invalid} />);
+    expect(view.container.querySelector("iframe")).toBeNull();
   }
-  const renderViewport = vi.fn(() => null);
-  const notEmitted: DesignerSpecimenContext = { ...context, pagePreview: { engine: "producer-emitted-page@1", origin: "http://127.0.0.1:4300", pages: [{ id: "page", route: "/", previewUrl: "/preview/publication/pages/page.html", emitted: false, stage: "preview" }], renderViewport } };
-  view.rerender(<SpecimenPageViewports {...base(cases.items, cases.axes, notEmitted)} />);
+  expect(renderViewport).not.toHaveBeenCalled();
+  const notEmitted: DesignerSpecimenContext = { ...context, pagePreview: nativePagePreview(false) };
+  view.rerender(<SpecimenPageViewports {...base(cases.items, cases.axes, notEmitted)} renderParts={renderParts} />);
   expect(renderViewport).not.toHaveBeenCalled();
   expect(view.container.querySelector("[data-ds-specimen-need='true']")).toBeTruthy();
-  view.rerender(<SpecimenPageViewports {...base([{ id: "url", label: "URL card", value: { url: "/preview/publication/pages/page.html" } }])} />);
+  view.rerender(<SpecimenPageViewports {...base([{ id: "url", label: "URL card", value: { url: "/preview/publication/pages/page.html" } }])} renderParts={renderParts} />);
   expect(view.container.querySelector("[data-ds-specimen-need='true']")).toBeTruthy();
+  view.rerender(<SpecimenPageViewports {...base(cases.items, cases.axes, { ...context, pagePreview: native })} renderParts={{}} />);
+  expect(screen.getByRole("status")).toHaveTextContent("The registered renderViewport part is not wired.");
+  expect(view.container.querySelector("iframe")).toBeNull();
 });
 it.each(contentSpecimenLeaves)("$id rejects zero items as failed coverage", leaf => {
   const props = base([]), view = render(<>{leaf.render(props)}</>);
