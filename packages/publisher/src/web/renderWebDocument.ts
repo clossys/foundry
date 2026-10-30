@@ -175,7 +175,7 @@
  * `content` either.
  */
 
-import { resolveDocument } from "../core/index.js";
+import { resolveDocument } from "../core/resolve.js";
 import type { ComposeDocument, ResolvedSurfaceGroup, ResolvedSurfaceGroupField, ResolvedSurfaceGroupItem, ResolvedSurfaceNode, WebMeta } from "../core/index.js";
 import type { ReactNode } from "react";
 import { createElement, version as reactVersion } from "react";

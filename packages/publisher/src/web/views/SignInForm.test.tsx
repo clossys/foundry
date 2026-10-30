@@ -14,8 +14,8 @@ import type { SignInFailure, SignInResult } from "./SignInForm.js";
 
 // Pass-through, except one id a test names reads as incomplete, so a test can prove an id is resolved on every render.
 const incomplete = vi.hoisted(() => ({ id: null as string | null }));
-vi.mock("@clossys/writer", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@clossys/writer")>();
+vi.mock("@clossys/writer/front-door/strict", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@clossys/writer/front-door/strict")>();
   return {
     ...actual,
     resolveFrontDoorCopy: (...args: Parameters<typeof actual.resolveFrontDoorCopy>) =>
@@ -88,7 +88,7 @@ async function reachCodeStep(user: ReturnType<typeof userEvent.setup>) {
 
 const MODULE_SPECIFIER =
   /^\s*(?:import\b[^;]*?|export\s+(?:type\s+)?(?:\*(?:\s+as\s+\w+)?|\{[^}]*\})\s*from\s*)["']([^"']+)["']/gm;
-const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+|@clossys\/writer|\.{1,2}\/.+)$/;
+const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+|@clossys\/writer(?:\/front-door\/strict)?|\.{1,2}\/.+)$/;
 
 describe("SignInForm :: steps", () => {
   it("stretches every step and keeps secondary actions before the primary in DOM and focus order", async () => {
@@ -184,7 +184,7 @@ describe("SignInForm :: steps", () => {
     const specifiers = [...source.matchAll(MODULE_SPECIFIER)].map((match) => match[1] as string);
     expect(specifiers.length).toBeGreaterThan(0);
     for (const specifier of specifiers) expect(specifier).toMatch(ALLOWED_IMPORT);
-    expect(specifiers).toContain("@clossys/writer");
+    expect(specifiers).toContain("@clossys/writer/front-door/strict");
     expect(source).not.toMatch(/\bwindow\b|\bfetch\s*\(|document\.cookie|location\./);
   });
 });

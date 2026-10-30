@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { sha256 } from "../planning/digest.js";
 import { isContentJson } from "./json.js";
 import type { CandidateContent } from "./model.js";
 
@@ -23,5 +23,5 @@ export function computeContentDigest(value: CandidateContent): string {
     if (v && typeof v === "object") return `{${Object.keys(v).sort().map(key => `${JSON.stringify(key)}:${canonical((v as Record<string, unknown>)[key])}`).join(",")}}`;
     return JSON.stringify(v);
   }
-  return createHash("sha256").update(canonical(content)).digest("hex");
+  return sha256(canonical(content));
 }
