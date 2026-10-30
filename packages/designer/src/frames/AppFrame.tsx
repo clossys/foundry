@@ -61,7 +61,7 @@ function SignedOutMenu({ sections, signedOutLabel, onRoute, markSrc, theme, cont
   return <Menu trigger={trigger} popoverClassName="mb-lg" controls={controls} controlsLabel={signedOutLabel}>{content()}</Menu>;
 }
 
-function FrameContent({ brand, navigation, account: { avatar = "initials", ...account }, commands, children, main: suppliedMain, pageModule, pageModuleLabel, headerTrail, headerActions, inspectorContext, state, stateViews, progress, toasts, rightPanel: suppliedRightPanel, theme, themeControl, footerLayout = "inline", fill = "host", dir: suppliedDir, onNavigate, layout: shellLayout = "standard", stage: stageInset = "contained", notices, dock, headerPosition, headerSurface, context, root, page, workspaces, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, pageActionsLabel,
+function FrameContent({ brand, navigation, account: { avatar = "initials", ...account }, showAccount = true, commands, children, main: suppliedMain, pageModule, pageModuleLabel, headerTrail, headerActions, inspectorContext, state, stateViews, progress, toasts, rightPanel: suppliedRightPanel, theme, themeControl, footerLayout = "inline", fill = "host", dir: suppliedDir, onNavigate, layout: shellLayout = "standard", stage: stageInset = "contained", notices, dock, headerPosition, headerSurface, context, root, page, workspaces, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, pageActionsLabel,
   /** @default "Skip to content" */
   skipLabel: suppliedSkipLabel, mainId }: AppFrameProps) {
   const rightPanel = suppliedRightPanel && inspectorContext !== undefined ? { ...suppliedRightPanel, children: inspectorContext } : suppliedRightPanel;
@@ -228,10 +228,10 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
   const themeSlot = themeControl == null ? undefined : <div data-application-frame-slot="theme-control" className="shrink-0">{themeControl}</div>;
   const accountTheme = themeControl === undefined ? { preferenceLabels: theme?.preferenceLabels, toggleLabel: theme?.toggleLabel, preferenceAnnouncement: theme?.preferenceAnnouncement } : undefined;
   // The full footer track belongs to the actor; theme controls are revealed in the account popup.
-  const accountControl = account.actor
+  const accountControl = !showAccount ? null : account.actor
     ? <AccountMenu {...account} menuContent={accountTheme && <AppFrameThemeSection {...accountTheme} />} controls={themeSlot} actor={{ ...account.actor, image: avatar === "initials" ? account.actor.image : markSrc }} />
     : <SignedOutMenu {...account} markSrc={markSrc} theme={accountTheme} controls={themeSlot} />;
-  const footer = <div data-application-frame-footer={footerLayout} className="w-full min-w-0">
+  const footer = !showAccount ? undefined : <div data-application-frame-footer={footerLayout} className="w-full min-w-0">
     <div data-application-frame-slot="account" className="w-full min-w-0">{accountControl}</div>
   </div>;
     const panelTrigger = rightPanel && (narrow ? <div className="contents" onFocusCapture={capturePanelFocus}><ModalContext.Provider value={{ style: { direction: dir } }}><Drawer fullViewport wide="sheet" placement="end" dismissAt={APP_FRAME_WIDE_QUERY}
