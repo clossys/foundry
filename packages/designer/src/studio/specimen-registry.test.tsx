@@ -25,6 +25,11 @@ it("aggregates the fourteen actual definitions and every data default resolves c
     expect("leaf" in binding && typeof binding.leaf.render).toBe("function");
   }
 });
+it("declares a valid card span on every actual leaf with full content and third-width swatches and assets", () => {
+  for (const leaf of studioSpecimenLeaves) expect(["full", "half", "third"], leaf.id).toContain(leaf.span);
+  const thirds = ["sections.specimen-swatch", "sections.specimen-asset-grid", "sections.specimen-icon-grid"];
+  for (const leaf of studioSpecimenLeaves) expect(leaf.span, leaf.id).toBe(thirds.includes(leaf.id) ? "third" : "full");
+});
 it("measures the complete actual native spacing registry and its expanded leaf DOM as fixture coverage", () => {
   const context = nativeContext();
   const leaf = studioSpecimenLeaves.find(leaf => leaf.id === "sections.specimen-spacing-ladder")!;

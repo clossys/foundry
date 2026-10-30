@@ -59,7 +59,7 @@ export type { SpecimenPagePreviewPort, SpecimenPublishedPage } from "./specimen-
 export type { EmittedDesignerSpecimenRuntime } from "./emitted-specimens.js";
 export { bindNativeSpecimenContext } from "./emitted-specimens.js";
 export { SpecimenLayoutSection, specimenLayoutNeeds } from "./specimen-layouts.js";
-export type { SpecimenLayout, SpecimenLeafId, SpecimenAxisValue, SpecimenAxis, SpecimenItem, SpecimenLabels, SpecimenLeafProps, SpecimenLeafDefinition, SpecimenSection } from "./specimen-layouts.js";
+export type { SpecimenLayout, SpecimenSpan, SpecimenLeafId, SpecimenAxisValue, SpecimenAxis, SpecimenItem, SpecimenLabels, SpecimenLeafProps, SpecimenLeafDefinition, SpecimenSection } from "./specimen-layouts.js";
 export { SpecimenVariantMatrix, SpecimenSectionViewports, SpecimenFrameViewports, designerViewportSpecimenLeaves, componentSpecimenItems, surfaceSpecimenItems } from "./specimen-viewports.js";
 export type { ComponentVariantItem, SurfaceViewportItem, SpecimenItemSet } from "./specimen-viewports.js";
 export { designerSpecimenCellData } from "./specimen-cell-data.js";

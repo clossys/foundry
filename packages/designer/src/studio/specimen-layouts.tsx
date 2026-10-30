@@ -6,6 +6,8 @@ import { componentSpecimenPreview, type ComponentSpecimenBinding, type Component
 
 /** Layout is an intrinsic property of a registered specimen leaf. */
 export type SpecimenLayout = "single" | "ladder" | "grid" | "matrix";
+/** Preferred desktop card width; the containing cards grid owns mobile full width. */
+export type SpecimenSpan = "full" | "half" | "third";
 export type SpecimenLeafId = `sections.specimen-${string}`;
 export interface SpecimenAxisValue { readonly id: string; readonly label: string }
 export interface SpecimenAxis { readonly id: string; readonly label: string; readonly values: readonly SpecimenAxisValue[] }
@@ -29,6 +31,7 @@ export interface SpecimenLeafProps<Value = unknown> {
 export interface SpecimenLeafDefinition {
   readonly id: SpecimenLeafId;
   readonly layout: SpecimenLayout;
+  readonly span: SpecimenSpan;
   readonly compatible: readonly { readonly kind: string; readonly layer?: string }[];
   readonly requirements?: readonly string[];
   validate?(props: SpecimenLeafProps): readonly DesignerSpecimenNeed[];

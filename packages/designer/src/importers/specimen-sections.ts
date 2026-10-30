@@ -163,12 +163,17 @@ export function specimenSectionSourceCatalog(packages: readonly SurfacePackageEv
     const ports = components.map(id => ({ id, name: publicName(id) }));
     const code = [
       '"use client";',
-      `import { ${registration.name} as RenderSpecimen, bindNativeSpecimenContext, type SpecimenLeafProps } from "@clossys/designer/studio";`,
+      `import { ${registration.name} as RenderSpecimen, bindNativeSpecimenContext, studioSpecimenLeaves, type SpecimenLeafProps } from "@clossys/designer/studio";`,
       ...ports.map(port => `import { ${port.name} } from "../../components/${port.id.slice(11)}/index.js";`),
       `export function ${registration.name}(props: SpecimenLeafProps) {`,
       `  const context = bindNativeSpecimenContext(props.context, { ${ports.map(port => port.name).join(", ")} });`,
       '  if ("reason" in context) return props.need(context);',
       '  return <RenderSpecimen {...props} context={context} />;',
+      '}',
+      'export function SpecimenLeaf() {',
+      `  const definition = studioSpecimenLeaves.find(leaf => leaf.id === ${JSON.stringify(registration.id)});`,
+      '  if (!definition) throw new Error("The native specimen definition is not registered.");',
+      `  return { ...definition, render: ${registration.name} };`,
       '}',
       '',
     ].join("\n");
@@ -178,7 +183,7 @@ export function specimenSectionSourceCatalog(packages: readonly SurfacePackageEv
     const candidate: SurfaceSectionEntry = {
       kind: "section", slot: registration.id, source: "foundry", impl: { kind: "source", entry, export: registration.name },
       rendering: "client", members: [], states: ["default"], reads: { tokens: ["tokens.spacing", "tokens.breakpoint"], assets: [] },
-      composes: components, parts: [], api: { version: 1, exports: [{ name: registration.name, export: registration.name }] },
+      composes: components, parts: [], api: { version: 1, exports: [{ name: registration.name, export: registration.name }, { name: "SpecimenLeaf", export: "SpecimenLeaf" }] },
       bindings: ports.map(port => ({ file: entry, module: `../../components/${port.id.slice(11)}/index.js`, name: port.name, local: port.name, slot: port.id })),
       dependencies, license: "MIT", pin, notice: `notices/surfaces/n-${sha256(notice)}.txt`,
       outputSha256: surfaceManifest([{ path: entry, content: code }, { path: `notices/surfaces/n-${sha256(notice)}.txt`, content: notice }]),
