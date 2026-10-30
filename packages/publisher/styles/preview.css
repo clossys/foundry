@@ -1190,6 +1190,9 @@
   .z-\(--ui-z-sticky\) {
     z-index: var(--ui-z-sticky);
   }
+  .z-\[var\(--ui-z-popover\)\] {
+    z-index: var(--ui-z-popover);
+  }
   .z-\[var\(--ui-z-sticky\)\] {
     z-index: var(--ui-z-sticky);
   }
@@ -2469,6 +2472,15 @@
   .resize-y {
     resize: vertical;
   }
+  .snap-x {
+    scroll-snap-type: x var(--tw-scroll-snap-strictness, proximity);
+  }
+  .snap-mandatory {
+    --tw-scroll-snap-strictness: mandatory;
+  }
+  .snap-start {
+    scroll-snap-align: start;
+  }
   .scroll-my-1 {
     scroll-margin-block: var(--spacing, 0.25rem);
   }
@@ -2489,6 +2501,12 @@
   }
   .list-none {
     list-style-type: none;
+  }
+  .columns-1 {
+    columns: 1;
+  }
+  .break-inside-avoid {
+    break-inside: avoid;
   }
   .ledger-columns-two {
     grid-template-columns: minmax(0, 1fr);
@@ -3737,6 +3755,9 @@
   }
   .pe-sm {
     padding-inline-end: var(--spacing-sm, 8px);
+  }
+  .pe-xl {
+    padding-inline-end: var(--spacing-xl, 24px);
   }
   .pe-xs {
     padding-inline-end: var(--spacing-xs, 4px);
@@ -6290,6 +6311,9 @@
     .tablet\:start-0 {
       inset-inline-start: calc(var(--spacing, 0.25rem) * 0);
     }
+    .tablet\:top-lg {
+      top: var(--spacing-lg, 16px);
+    }
     .tablet\:col-span-2 {
       grid-column: span 2 / span 2;
     }
@@ -6302,6 +6326,12 @@
     .tablet\:col-span-12 {
       grid-column: span 12 / span 12;
     }
+    .tablet\:col-start-1 {
+      grid-column-start: 1;
+    }
+    .tablet\:col-start-2 {
+      grid-column-start: 2;
+    }
     .tablet\:row-span-1 {
       grid-row: span 1 / span 1;
     }
@@ -6313,6 +6343,9 @@
     }
     .tablet\:row-span-4 {
       grid-row: span 4 / span 4;
+    }
+    .tablet\:row-start-1 {
+      grid-row-start: 1;
     }
     .tablet\:my-0 {
       margin-block: 0px;
@@ -6362,6 +6395,9 @@
     .tablet\:h-px {
       height: 1px;
     }
+    .tablet\:w-1\/2 {
+      width: calc(1 / 2 * 100%);
+    }
     .tablet\:w-\[var\(--ui-layout-sidebar-w\,256px\)\] {
       width: var(--ui-layout-sidebar-w,256px);
     }
@@ -6385,6 +6421,9 @@
     }
     .tablet\:rotate-0 {
       rotate: 0deg;
+    }
+    .tablet\:columns-2 {
+      columns: 2;
     }
     .tablet\:grid-cols-2 {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -6422,6 +6461,9 @@
     .tablet\:items-end {
       align-items: flex-end;
     }
+    .tablet\:items-start {
+      align-items: flex-start;
+    }
     .tablet\:justify-between {
       justify-content: space-between;
     }
@@ -6448,6 +6490,9 @@
     }
     .tablet\:gap-x-xl {
       column-gap: var(--spacing-xl, 24px);
+    }
+    .tablet\:self-start {
+      align-self: flex-start;
     }
     .tablet\:rounded-none {
       border-radius: 0;
@@ -6854,6 +6899,9 @@
     .desktop\:sticky {
       position: sticky;
     }
+    .desktop\:top-lg {
+      top: var(--spacing-lg, 16px);
+    }
     .desktop\:col-span-1 {
       grid-column: span 1 / span 1;
     }
@@ -6881,8 +6929,14 @@
     .desktop\:max-h-dvh {
       max-height: 100dvh;
     }
+    .desktop\:w-1\/3 {
+      width: calc(1 / 3 * 100%);
+    }
     .desktop\:rotate-0 {
       rotate: 0deg;
+    }
+    .desktop\:columns-3 {
+      columns: 3;
     }
     .desktop\:grid-cols-2 {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -6910,6 +6964,9 @@
     }
     .desktop\:gap-2xl {
       gap: var(--spacing-2xl, 32px);
+    }
+    .desktop\:self-start {
+      align-self: flex-start;
     }
     .desktop\:overflow-y-auto {
       overflow-y: auto;
@@ -7798,6 +7855,23 @@
   .\[\&\>kbd\]\:rounded-\(--radius-subtle\) > kbd {
     border-radius: var(--radius-subtle);
   }
+  .\[\&\>p\:first-of-type\:\:first-letter\]\:float-start > p:first-of-type::first-letter {
+    float: inline-start;
+  }
+  .\[\&\>p\:first-of-type\:\:first-letter\]\:font-display > p:first-of-type::first-letter {
+    font-family: var(--font-display, system-ui, ui-sans-serif, -apple-system, "Segoe UI", sans-serif);
+    font-style: var(--font-display-style, normal);
+    font-weight: var(--font-display-weight, 400);
+    font-stretch: var(--font-display-stretch, 100%);
+    letter-spacing: var(--tracking-tight, -0.02em);
+    transform: scaleX(var(--font-display-scale-x, 1));
+  }
+  .\[\&\>p\:first-of-type\:\:first-letter\]\:pe-xs > p:first-of-type::first-letter {
+    padding-inline-end: var(--spacing-xs, 4px);
+  }
+  .\[\&\>p\:first-of-type\:\:first-letter\]\:font-display > p:first-of-type::first-letter {
+    font-family: var(--font-display, system-ui, ui-sans-serif, -apple-system, "Segoe UI", sans-serif);
+  }
   .\[\&\>span\]\:text-\(length\:--text-xs\) > span {
     font-size: var(--text-xs);
   }
@@ -8024,6 +8098,11 @@
 @property --tw-skew-y {
   syntax: "*";
   inherits: false;
+}
+@property --tw-scroll-snap-strictness {
+  syntax: "*";
+  inherits: false;
+  initial-value: proximity;
 }
 @property --tw-space-y-reverse {
   syntax: "*";
@@ -8275,6 +8354,7 @@
       --tw-rotate-z: initial;
       --tw-skew-x: initial;
       --tw-skew-y: initial;
+      --tw-scroll-snap-strictness: proximity;
       --tw-space-y-reverse: 0;
       --tw-space-x-reverse: 0;
       --tw-divide-y-reverse: 0;

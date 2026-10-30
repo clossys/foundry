@@ -62,7 +62,7 @@
           },
           {
             "path": "packages/designer/src/blocks/LogoCloud/motion.ts",
-            "sha256": "967bef0e3de8f0a38d5ceb970b988689eb48fd1b876cd07d133fbc6d63868f34"
+            "sha256": "3461f076aeba952439b5531550d4beb305aba9b575da23d71a2998e0ebd12334"
           },
           {
             "path": "packages/designer/src/blocks/Stat.tsx",

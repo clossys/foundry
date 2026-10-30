@@ -1,3 +1,5 @@
+import { main as captureMain, probeHtml as probeReferenceHtml } from "../packages/publisher/test-fixtures/marketing-reference/capture.mjs";
+export { captureManifest, probeHtml, rehearse } from "../packages/publisher/test-fixtures/marketing-reference/capture.mjs";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
@@ -70,7 +72,14 @@ export async function rehearseMarketing() {
     const { serve } = await import(pathToFileURL(join(fixture, "serve.mjs")).href);
     server = await serve();
     const publication = JSON.parse(await readFile(join(fixture, "publication.json"), "utf8"));
-    const results = await probeMarketing(`http://127.0.0.1:${server.address().port}`, publication.entries);
+    const origin = `http://127.0.0.1:${server.address().port}`;
+    const writerValues = JSON.parse(await readFile(join(fixture, "dist/writer-values.json"), "utf8"));
+    const entries = [...publication.entries, ...Object.keys(writerValues).filter(path => path !== "/missing-reference-page" && !publication.entries.some(entry => entry.path === path)).map(path => ({ path }))];
+    const results = await probeMarketing(origin, entries);
+    for (const [path, values] of Object.entries(writerValues)) {
+      const html = await (await fetch(new URL(path, origin))).text();
+      assert.deepEqual(probeReferenceHtml(html, values), [], `${path} must retain real Writer DOM copy and decorative backdrops`);
+    }
     console.log(JSON.stringify({ installedTarballs: packages, runtimeTarballs: runtimeDependencies, fixtureExcluded: true, routes: results }, null, 2));
     return results;
   } finally {
@@ -79,4 +88,8 @@ export async function rehearseMarketing() {
   }
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await rehearseMarketing();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  if (process.argv.length === 2) await rehearseMarketing();
+  else try { process.exitCode = await captureMain(process.argv.slice(2)); }
+  catch (error) { console.error(error.message); process.exitCode = 2; }
+}

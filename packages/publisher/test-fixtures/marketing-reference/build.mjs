@@ -1,3 +1,4 @@
+import { routes as referenceRoutes, render as renderReference } from "./admitted-fixture.mjs";
 import { readFile, mkdir, writeFile, rm } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -21,8 +22,8 @@ const copy = {
 const resolver = createCopyResolver({
   id: "example.marketing.copy", locale: "en", revision: "1",
   source: { kind: "consumer", reference: "marketing-reference" },
-  entries: Object.entries(copy).map(([id, text]) => ({ id, text, context: "marketing reference", status: "approved" })),
-});
+  entries: Object.entries(copy).map(([id, text]) => ({ id, text, context: "marketing reference", status: "draft" })),
+}, { target: "preview" });
 const ref = id => ({ id });
 const escape = value => String(value).replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
 const document = (title, body, canonical, noindex = false) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escape(title)}</title><meta name="description" content="${escape(copy["site.description"])}"><link rel="canonical" href="${escape(canonical)}">${noindex ? '<meta name="robots" content="noindex">' : ""}<link rel="stylesheet" href="/site.css"></head><body>${body}</body></html>`;
@@ -30,7 +31,18 @@ const document = (title, body, canonical, noindex = false) => `<!doctype html><h
 await rm("dist", { recursive: true, force: true });
 await mkdir("dist", { recursive: true });
 const routes = [];
+const writerValues = {};
+const nativeCase = route => ({ route, theme: "light", width: 1440, height: 900, dir: "ltr", reducedMotion: false });
 for (const entry of publication.entries) {
+  if (referenceRoutes.some(route => route.path === entry.path)) {
+    const rendered = await renderReference(nativeCase(entry.path));
+    const title = resolver(ref(`page.${entry.id}`));
+    const html = rendered.html.replace("</head>", `<title>${escape(title.text)}</title></head>`);
+    await writeFile(`dist/${entry.id}.html`, html);
+    writerValues[entry.path] = rendered.writerValues;
+    routes.push({ path: entry.path, file: `${entry.id}.html`, type: "text/html; charset=utf-8", status: 200 });
+    continue;
+  }
   const surface = {
     id: `example.${entry.id}`, channel: "web", template: "MarketingView",
     meta: { channel: "web", title: ref(`page.${entry.id}`), description: ref("site.description") },
@@ -44,10 +56,20 @@ for (const entry of publication.entries) {
   };
   const resolved = resolveSurfaceDocument(surface, resolver);
   const rendered = renderWebDocument(resolved.document, { groups: resolved.groups });
+  writerValues[entry.path] = resolved.resolutions.map(resolution => resolution.text);
   const file = `${entry.id}.html`;
   await writeFile(`dist/${file}`, document(rendered.head.title, renderToStaticMarkup(rendered.element), new URL(entry.path, origin).href));
   routes.push({ path: entry.path, file, type: "text/html; charset=utf-8", status: 200 });
 }
+for (const route of referenceRoutes.filter(route => !publication.entries.some(entry => entry.path === route.path))) {
+  const rendered = await renderReference(nativeCase(route.path));
+  const file = `reference-${route.path.slice(1)}.html`;
+  await writeFile(`dist/${file}`, rendered.html);
+  writerValues[route.path] = rendered.writerValues;
+  routes.push({ path: route.path, file, type: "text/html; charset=utf-8", status: 200 });
+}
+writerValues["/missing-reference-page"] = [copy["site.missing"]];
+await writeFile("dist/writer-values.json", JSON.stringify(writerValues, null, 2));
 await writeFile("dist/not-found.html", document("404 | Example Co.", renderToStaticMarkup(createElement(StatusView, { status: "404", subtitle: copy["site.missing"] })), `${origin}/not-found`, true));
 const robots = projectRobots(publication, { origin, crawl: "allow" });
 const sitemap = projectSitemap(publication, { channel: "site", origin });

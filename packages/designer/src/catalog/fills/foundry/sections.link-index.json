@@ -37,7 +37,8 @@
         "components.icon",
         "components.link",
         "components.semantic-content",
-        "components.status-mark"
+        "components.status-mark",
+        "sections.section-header"
       ],
       "configs": {
         "roles": "config=roles"
@@ -51,7 +52,8 @@
           "components.icon",
           "components.link",
           "components.semantic-content",
-          "components.status-mark"
+          "components.status-mark",
+          "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
@@ -109,7 +111,7 @@
           },
           {
             "path": "packages/designer/src/blocks/NavGrid.tsx",
-            "sha256": "5f5f826e5a87ac928605bae0a3f04b4ae91a1063478dc742c632332939afdeef"
+            "sha256": "e41a44b73bcb676a90852a00d3b4d0ccf30dd45a861c6b24c827b6d45c75ecbc"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",

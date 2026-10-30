@@ -28,7 +28,9 @@
     "cards": {
       "composes": [
         "components.badge",
-        "components.card"
+        "components.card",
+        "components.semantic-content",
+        "sections.media"
       ],
       "configs": {
         "case-study": "config=case-study",
@@ -39,25 +41,35 @@
         "scanStatus": "lower-bound",
         "scannedComposes": [
           "components.badge",
-          "components.card"
+          "components.card",
+          "components.semantic-content",
+          "sections.media"
         ],
         "scannedReads": {
-          "assets": [],
+          "assets": [
+            "assets.image"
+          ],
           "components": [
             "components.badge",
-            "components.card"
+            "components.card",
+            "components.semantic-content"
           ],
           "tokens": [
             "tokens.body-size",
             "tokens.caption-size",
+            "tokens.heading-size",
             "tokens.spacing",
             "tokens.text-color"
           ]
         },
         "sourceFiles": [
           {
+            "path": "packages/designer/src/blocks/PageHeaderMetadata.tsx",
+            "sha256": "ac1814117a6c72746aa942c0a91565cf33c794dd55a80feb24649b01608d9138"
+          },
+          {
             "path": "packages/designer/src/blocks/RecordCards.tsx",
-            "sha256": "59e8212000d2b2e1ac6a62a5d1f0b237e3e4540fb625a519c99456069ff46567"
+            "sha256": "d13da3dfd3cd69fe68ecb6842faa48161697c1d3fad81375b18d2a7b39014b1d"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -69,6 +81,12 @@
           }
         ],
         "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved source export ../components/Link.js#Link",
+            "file": "packages/designer/src/blocks/PageHeaderMetadata.tsx",
+            "line": 4
+          },
           {
             "code": "DF2",
             "evidence": "unresolved source export ../components/Link.js#Link",
@@ -110,10 +128,13 @@
         "layout.list": "./blocks#RecordCards.layout=list"
       },
       "reads": {
-        "assets": [],
+        "assets": [
+          "assets.image"
+        ],
         "tokens": [
           "tokens.body-size",
           "tokens.caption-size",
+          "tokens.heading-size",
           "tokens.spacing",
           "tokens.text-color"
         ]

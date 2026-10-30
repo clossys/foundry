@@ -61,7 +61,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/LogoCloud/motion.ts",
-            "sha256": "967bef0e3de8f0a38d5ceb970b988689eb48fd1b876cd07d133fbc6d63868f34"
+            "sha256": "3461f076aeba952439b5531550d4beb305aba9b575da23d71a2998e0ebd12334"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -73,11 +73,11 @@
           },
           {
             "path": "packages/designer/src/blocks/Testimonial/Carousel.tsx",
-            "sha256": "221b64aa1537a4dce7af1f9f5fee8ee90ee0cea0c85f24c05cb92224d92c0a5f"
+            "sha256": "b864073bd118dc818f3b9184d93c393173d02b0562162ac2d512eca6e926d776"
           },
           {
             "path": "packages/designer/src/blocks/TestimonialSet.tsx",
-            "sha256": "b885efa64a6ca8b7679cc9468e490f6ab516b6206e1282cd5c700df76584967f"
+            "sha256": "dde5a0d3b48a2991fa070d3b0d990c3fc813913c47f83bfb9e04ec41cc8ff3d7"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

@@ -87,7 +87,7 @@
           },
           {
             "path": "packages/designer/src/shell/SiteHeader.tsx",
-            "sha256": "008e593324d160e9a41abd6623a3aa8104ca3fe219a1a3eae129dae3a8843c55"
+            "sha256": "6a4228ce211629e5a252a09f3b29403e6b3570750f19027cd4578b9ab1ac9f7a"
           }
         ],
         "unresolved": [

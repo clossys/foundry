@@ -32,6 +32,8 @@
   "sections": {
     "page-header": {
       "composes": [
+        "components.badge",
+        "components.semantic-content",
         "sections.section-header"
       ],
       "configs": {
@@ -41,20 +43,32 @@
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.badge",
+          "components.semantic-content",
           "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.badge",
+            "components.semantic-content"
+          ],
           "tokens": [
+            "tokens.body-size",
+            "tokens.caption-size",
             "tokens.heading-size",
-            "tokens.spacing"
+            "tokens.spacing",
+            "tokens.text-color"
           ]
         },
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/PageHeader.tsx",
-            "sha256": "d5a151e863db5c1295a23f52fad2065693cdca675789b539302790c13d423358"
+            "sha256": "fa45b7ba156dd40c49ecc8c425d27b39ec1722f398454f23ecb6be0e9fb033e4"
+          },
+          {
+            "path": "packages/designer/src/blocks/PageHeaderMetadata.tsx",
+            "sha256": "ac1814117a6c72746aa942c0a91565cf33c794dd55a80feb24649b01608d9138"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -66,6 +80,12 @@
           }
         ],
         "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved source export ../components/Link.js#Link",
+            "file": "packages/designer/src/blocks/PageHeaderMetadata.tsx",
+            "line": 4
+          },
           {
             "code": "DF2",
             "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
@@ -100,8 +120,11 @@
       "reads": {
         "assets": [],
         "tokens": [
+          "tokens.body-size",
+          "tokens.caption-size",
           "tokens.heading-size",
-          "tokens.spacing"
+          "tokens.spacing",
+          "tokens.text-color"
         ]
       },
       "slot": "sections.page-header",

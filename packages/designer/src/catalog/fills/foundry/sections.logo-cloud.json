@@ -66,15 +66,15 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/LogoCloud.tsx",
-            "sha256": "5a37106bfce75bdd465b774b3c484068ba64b1116a54a871c8f354395cc55bfe"
+            "sha256": "765b69165bf58392ed358d2dd8d046de49939dc082061452c4de2582f62d40fd"
           },
           {
             "path": "packages/designer/src/blocks/LogoCloud/Marquee.tsx",
-            "sha256": "d14cfa5304354db0c362dcdebf374cc65d141160f31b847430402b67aec39548"
+            "sha256": "468e6da8f67683a6026e718966f7be1779fc853efe239944149397bb1147844f"
           },
           {
             "path": "packages/designer/src/blocks/LogoCloud/motion.ts",
-            "sha256": "967bef0e3de8f0a38d5ceb970b988689eb48fd1b876cd07d133fbc6d63868f34"
+            "sha256": "3461f076aeba952439b5531550d4beb305aba9b575da23d71a2998e0ebd12334"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",

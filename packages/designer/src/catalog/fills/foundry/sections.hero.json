@@ -47,6 +47,7 @@
             "tokens.accent-color",
             "tokens.body-size",
             "tokens.border-color",
+            "tokens.border-width",
             "tokens.color-ramp",
             "tokens.content-size",
             "tokens.display-size",
@@ -84,7 +85,7 @@
           },
           {
             "path": "packages/designer/src/blocks/Hero.tsx",
-            "sha256": "841b2ae581c9c5fd131384d28e833ab7bcd0b5d1cacc62da67b48cc757136c78"
+            "sha256": "f2b9515ebfa6108056bb9b36a0877480b8d2023b63593e523b7afa8ee5d215b1"
           },
           {
             "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
@@ -101,6 +102,10 @@
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
             "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+          },
+          {
+            "path": "packages/designer/src/blocks/SectionFrame.tsx",
+            "sha256": "0b0b8477099f0ee05bc8655fc92ca86d9ff448d4e480a06e48181a96cdfddc57"
           },
           {
             "path": "packages/designer/src/catalog-assets/media.ts",
@@ -125,6 +130,10 @@
           {
             "path": "packages/designer/src/tokens/internal/resolve-token-value.ts",
             "sha256": "dfb52251355c0efcbb3c9211f2277b9d430654528479ee1dc457c1b4d2df71b1"
+          },
+          {
+            "path": "packages/designer/src/tokens/pattern.ts",
+            "sha256": "086eedb4d51373c9f84ba1e0b5310e0041792aebf14c964300fc669a7b028a38"
           }
         ],
         "unresolved": [
@@ -145,6 +154,12 @@
             "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
             "file": "packages/designer/src/blocks/hero/StillBackdrop.tsx",
             "line": 4
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/blocks/SectionFrame.tsx",
+            "line": 3
           },
           {
             "code": "DF2",
@@ -196,6 +211,7 @@
           "tokens.accent-color",
           "tokens.body-size",
           "tokens.border-color",
+          "tokens.border-width",
           "tokens.color-ramp",
           "tokens.content-size",
           "tokens.display-size",
