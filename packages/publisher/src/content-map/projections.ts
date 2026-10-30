@@ -3,35 +3,36 @@ import { isCompleteRouteMetadataKind } from "./complete-route-metadata.js";
 import type { CompleteRouteMetadata } from "./complete-route-metadata.js";
 import type { AnyRouteRegistration, RouteRegistration, RouteSourceExport } from "../core/route-registry.js";
 import { PUBLISHER_CHANNELS } from "../planning/channel-ids.js";
-import { checkedContentMap, contentMapPath } from "./check.js";
+import { checkedContentMap, contentMapPath, contentMapOrigin, contentMapLastModified } from "./check.js";
+import { projectContentMapRedirects } from "./redirects.js";
 import { projectPageOutline } from "../content/taxonomy.js";
 import type { PageOutlineHeading } from "../content/taxonomy.js";
-import type { ContentMap, ContentMapBreadcrumb, ContentMapCommand, ContentMapCommandGroup, ContentMapEntry, ContentMapNavigation, ContentMapNavigationNode, ContentMapOutlineNode, ContentMapTocEntry, ContentMapRouteOptions, ContentMapRoutes, ContentMapSitemapEntry, ContentMapSitemapOptions } from "./contract.js";
+import type { ContentMap, ContentMapBreadcrumb, ContentMapCommand, ContentMapCommandGroup, ContentMapEntry, ContentMapNode, ContentMapRedirect, ContentMapStaticParams, ContentMapNavigation, ContentMapNavigationNode, ContentMapOutlineNode, ContentMapTocEntry, ContentMapRouteOptions, ContentMapRoutes, ContentMapSitemapEntry, ContentMapSitemapOptions } from "./contract.js";
 
 const text = (value: unknown): value is string => typeof value === "string" && value.length > 0 && value.trim() === value;
 const equal = (left: unknown, right: unknown): boolean => JSON.stringify(left) === JSON.stringify(right);
 const sameBrand = (left: RouteRegistration["brand"], right: RouteRegistration["brand"]) => left.homeRouteId === right.homeRouteId && left.label === right.label;
-const navigable = (entry: ContentMapEntry) => entry.kind === "page" || entry.kind === "section";
+const navigable = (entry: ContentMapNode) => entry.kind === "page" || entry.kind === "section";
 function web(map: ContentMap): void {
   checkedContentMap(map);
   if (map.format !== "web.page.responsive") throw new TypeError("Web projection requires web.page.responsive");
 }
-function ordered(map: ContentMap, parentId?: string): ContentMapEntry[] {
+function ordered(map: ContentMap, parentId?: string): ContentMapNode[] {
   return map.entries.filter(entry => entry.parentId === parentId).sort((a, b) => a.order - b.order || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }
-function preorder(map: ContentMap): ContentMapEntry[] {
-  const visit = (parentId?: string): ContentMapEntry[] => ordered(map, parentId).flatMap(entry => [entry, ...visit(entry.id)]);
+function preorder(map: ContentMap): ContentMapNode[] {
+  const visit = (parentId?: string): ContentMapNode[] => ordered(map, parentId).flatMap(entry => [entry, ...visit(entry.id)]);
   return visit();
 }
-function ancestry(map: ContentMap, id: string): ContentMapEntry[] {
+function ancestry(map: ContentMap, id: string): ContentMapNode[] {
   const byId = new Map(map.entries.map(entry => [entry.id, entry]));
   let entry = byId.get(id);
   if (!entry) throw new TypeError(`Content-map entry is missing: ${id}`);
-  const rows: ContentMapEntry[] = [];
+  const rows: ContentMapNode[] = [];
   while (entry) { rows.unshift(entry); entry = entry.parentId === undefined ? undefined : byId.get(entry.parentId); }
   return rows;
 }
-function presentation(entry: ContentMapEntry) {
+function presentation(entry: ContentMapNode) {
   return { id: entry.id, label: entry.title, ...(entry.icon ? { icon: entry.icon } : {}) };
 }
 /** Data only: the complete group > page > section hierarchy is preserved.
@@ -44,7 +45,7 @@ export function projectNavigation(map: ContentMap, activeId: string): ContentMap
     if (!entry.pin) return [];
     const children = visit(entry.id);
     if (entry.kind === "group" && !children.length) return [];
-    return [{ ...presentation(entry), ...(navigable(entry) ? { href: contentMapPath(entry) } : {}), ...(children.length ? { children } : {}) }];
+    return [{ ...presentation(entry), ...(entry.kind === "external" ? { href: entry.href, external: true as const } : navigable(entry) ? { href: contentMapPath(entry) } : {}), ...(children.length ? { children } : {}) }];
   });
   return { tree: visit(), activeId };
 }
@@ -59,28 +60,27 @@ export function projectCommands(map: ContentMap): readonly ContentMapCommandGrou
     if (!value) { value = { id, label, items: [] }; groups.set(id, value); }
     return value;
   };
-  for (const entry of preorder(map).filter(navigable)) {
+  for (const entry of preorder(map).filter(entry => navigable(entry) || entry.kind === "external")) {
     const top = ancestry(map, entry.id).find(row => row.kind === "group");
-    group(top?.id ?? map.publicationId, top?.title ?? map.publicationId).items.push({ ...presentation(entry), href: contentMapPath(entry), ...(entry.description ? { description: entry.description } : {}) });
+    group(top?.id ?? map.publicationId, top?.title ?? map.publicationId).items.push({ ...presentation(entry), href: entry.kind === "external" ? entry.href : contentMapPath(entry), ...(entry.description ? { description: entry.description } : {}) });
   }
   for (const action of map.actions ?? []) group(action.group, action.group).items.push({ id: action.id, label: action.label, action: action.intent });
   return [...groups.values()];
 }
 export function projectBreadcrumbs(map: ContentMap, currentId: string): readonly ContentMapBreadcrumb[] {
   web(map);
-  return ancestry(map, currentId).map(entry => ({ id: entry.id, label: entry.title, ...(navigable(entry) ? { href: contentMapPath(entry) } : {}) }));
+  return ancestry(map, currentId).map(entry => ({ id: entry.id, label: entry.title, ...(entry.kind === "external" ? { href: entry.href } : navigable(entry) ? { href: contentMapPath(entry) } : {}) }));
 }
 /** Only public site page URLs enter a sitemap. Sections are query/subpath views
  * of their owning pages; admin, app and other channels cannot emit a sitemap. */
 export function projectSitemap(map: ContentMap, options: ContentMapSitemapOptions): readonly ContentMapSitemapEntry[] {
   web(map);
   if (options.channel !== "site") throw new TypeError(`Sitemap refused for ${options.channel} channel`);
-  const origin = new URL(options.origin);
-  if (!["http:", "https:"].includes(origin.protocol) || origin.username || origin.password || origin.pathname !== "/" || origin.search || origin.hash) throw new TypeError("An HTTP(S) site origin is required");
-  return preorder(map).filter(entry => entry.kind === "page").map(entry => {
+  const origin = contentMapOrigin(options.origin);
+  return preorder(map).filter(entry => entry.kind === "page" && entry.indexing?.mode !== "noindex").map(entry => {
     const url = new URL(contentMapPath(entry), origin);
     if (url.origin !== origin.origin) throw new TypeError("Sitemap target must stay on the publication origin");
-    return { url: url.href };
+    return { url: url.href, ...(entry.lastModified !== undefined ? { lastModified: contentMapLastModified(entry.lastModified) } : {}) };
   });
 }
 function sourceExport(value: RouteSourceExport): boolean {
@@ -110,7 +110,7 @@ export function projectRoutes(map: ContentMap, options: ContentMapRouteOptions):
   web(map);
   if (!text(options.consumer) || !PUBLISHER_CHANNELS.some(channel => channel.id === options.channel) || !options.brand || !text(options.brand.label)
     || !map.entries.some(entry => entry.kind === "page" && entry.id === options.brand.homeRouteId)) throw new TypeError("Actual consumer/channel and one mapped home page are required");
-  const routes = preorder(map).filter(entry => entry.kind === "page").map(entry => {
+  const routes = preorder(map).filter((entry): entry is ContentMapEntry => entry.kind === "page").map(entry => {
     const id = entry.source.planItemId;
     const source = id === undefined ? undefined : options.completeRoutes?.[id];
     const plans = id === undefined ? [] : (options.planItems ?? []).filter(item => item.id === id && item.completeRoute !== undefined);
@@ -134,9 +134,9 @@ export function projectOutline(map: ContentMap): readonly ContentMapOutlineNode[
     ...(value.children?.length ? { children: value.children.map(child => heading(entry, child)) } : {}),
   });
   const visit = (parentId?: string): ContentMapOutlineNode[] => ordered(map, parentId).map(entry => {
-    const headings = entry.manifest ? projectPageOutline({ fills: entry.constructs! }, entry.manifest).headings.map(value => heading(entry, value)) : [];
+    const headings = entry.kind !== "external" && entry.manifest ? projectPageOutline({ fills: entry.constructs! }, entry.manifest).headings.map(value => heading(entry, value)) : [];
     const children = [...headings, ...visit(entry.id)];
-    return { id: entry.id, label: entry.title, ...(entry.kind !== "group" ? { href: contentMapPath(entry) } : {}), ...(children.length ? { children } : {}) };
+    return { id: entry.id, label: entry.title, ...(entry.kind === "external" ? { href: entry.href } : entry.kind !== "group" ? { href: contentMapPath(entry) } : {}), ...(children.length ? { children } : {}) };
   });
   return visit();
 }
@@ -147,4 +147,16 @@ export function projectToc(map: ContentMap): readonly ContentMapTocEntry[] {
     { ...node, level }, ...visit(children ?? [], level + 1),
   ]);
   return visit(projectOutline(map), 1);
+}
+
+/** Next-compatible redirects from explicit declarations and external entries. */
+export function projectRedirects(map: ContentMap): readonly ContentMapRedirect[] {
+  web(map);
+  return projectContentMapRedirects(map);
+}
+/** Catch-all route parameters include noindex pages; external destinations and
+ * structural groups never acquire local executable routes. Root uses []. */
+export function projectStaticParams(map: ContentMap): readonly ContentMapStaticParams[] {
+  web(map);
+  return preorder(map).filter(entry => entry.kind === "page").map(entry => ({ slug: contentMapPath(entry).split("/").filter(Boolean) }));
 }

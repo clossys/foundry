@@ -1,3 +1,4 @@
+import richTextFill from "./catalog/fills/shadcn@aria/components.rich-text.json" with { type: "json" };
 import data from "./catalog-bundles.data.json" with { type: "json" };
 import starterData from "./rac-starter.data.json" with { type: "json" };
 import headlessPackage from "react-aria-components/package.json" with { type: "json" };
@@ -63,7 +64,7 @@ export function loadCatalogBundles() {
   return structuredClone({
     package: data.package,
     valueFills: [...data.valueFiles.map(file => file.document), ...importLucide().filter(doc => doc.$extensions["com.clossys.fill"].slot === "assets.icon-panel-left")] as unknown as FillDoc[],
-    componentFills: [...foundry.fills, ...shadcn.fills, ...starter.fills, ...rail.fills.filter(doc => newRail(doc.$extensions["com.clossys.fill"]))] as readonly ComponentCandidateDocument[],
+    componentFills: [richTextFill, ...foundry.fills, ...shadcn.fills, ...starter.fills, ...rail.fills.filter(doc => newRail(doc.$extensions["com.clossys.fill"]))] as readonly ComponentCandidateDocument[],
     foundryCoverage: foundry.coverage,
     sourceCandidates: [...sourceCandidates, ...starter.candidates, ...rail.candidates.filter(newRail)],
     sourceBundles: [...sourceBundles, ...starter.sourceBundles, ...rail.sourceBundles.filter(newRail)],

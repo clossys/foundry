@@ -14,7 +14,7 @@ const families: Record<string, readonly string[]> = {
   organize: ["cards", "resource-list", "task-list", "comparison", "pricing", "stats", "status-list", "usage", "account-summary", "data-table", "data-grid", "record-detail", "activity-feed", "audit-log"],
   collect: ["form", "newsletter", "sign-in-form", "wizard", "settings", "column-mapper", "access-matrix", "chat"],
   navigate: ["link-index", "table-of-contents", "explorer", "filter-builder"],
-  respond: ["empty-state", "error-state", "boundary-message", "error-message", "notices", "consent"],
+  respond: ["empty-state", "error-state", "boundary-message", "notices", "consent"],
 };
 const id = (leaf: string) => `sections.${leaf}`;
 const waveOneIds = ["account-summary", "boundary-message", "error-message", "legal-prose", "logo-mark", "sign-in-form"].map(id);
@@ -40,7 +40,7 @@ const reconciledComposes: Record<string, readonly string[]> = {
   form: ["form", "field", "text-field", "button", "banner", "checkbox", "combo-box", "select"],
   "record-detail": ["card", "tabs", "badge", "skeleton", "button", "link", "disclosure"],
   "data-table": ["table", "toolbar", "checkbox", "menu", "button", "dialog", "icon", "popover", "select", "text-field", "badge", "status-mark", "tooltip", "link", "skeleton"],
-  "link-index": ["link", "card", "icon", "badge", "button", "status-mark"],
+  "link-index": ["link", "card", "icon", "badge", "button", "status-mark", "semantic-content"],
   newsletter: ["text-field", "button", "icon"],
   "table-of-contents": ["link", "disclosure"],
   "task-list": ["checkbox", "avatar", "badge", "icon", "status-mark"],
@@ -86,19 +86,19 @@ describe("S2-1 bounded section composition reconciliation", () => {
         ...slot.contract.members, names: slot.contract.members.names.filter(name => !signInConfigs.includes(name)),
       } },
     } : slot).sort((a, b) => a.id.localeCompare(b.id));
-    expect(additions.map(slot => slot.id)).toEqual(waveOneIds);
+    expect(additions.map(slot => slot.id)).toEqual(waveOneIds.filter(slotId => slotId !== id("error-message")));
     expect(createHash("sha256").update(JSON.stringify(additions)).digest("hex"))
       .toBe("a007a3bb8e41f57372a3b3b3bb9066965fda134103bf9d3f8037b99b11c360ee");
   });
 });
 
 describe("section build IA registry", () => {
-  it("loads exactly the 52 permanent draft ids without claiming a freeze or runtime fill", () => {
+  it("loads exactly the 51 permanent draft ids without claiming a freeze or runtime fill", () => {
     const registry = loadSectionRegistry();
     expect(registry.status).toBe("build-unfrozen");
     expect(registry.slots.map(slot => slot.id)).toEqual(inventory);
-    expect(registry.slots).toHaveLength(52);
-    expect(new Set(registry.slots.map(slot => slot.id)).size).toBe(52);
+    expect(registry.slots).toHaveLength(51);
+    expect(new Set(registry.slots.map(slot => slot.id)).size).toBe(51);
     for (const slot of registry.slots) {
       expect(isValidId("slot", slot.id)).toBe(true);
       expect(slot.layer).toBe("sections");
@@ -127,7 +127,7 @@ describe("section build IA registry", () => {
     // Authenticated records, workflows and operational tools.
     const app = ["access-matrix", "audit-log", "activity-feed", "data-grid", "data-table", "resource-list", "record-detail", "task-list", "column-mapper", "filter-builder", "settings", "chat", "explorer", "usage", "sign-in-form", "boundary-message", "account-summary"];
     // Shared structure, content, input and feedback work on either surface.
-    const both = ["band", "section-header", "pagination", "page-header", "content", "media", "faq", "cards", "stats", "form", "wizard", "link-index", "empty-state", "error-state", "notices", "comparison", "error-message"];
+    const both = ["band", "section-header", "pagination", "page-header", "content", "media", "faq", "cards", "stats", "form", "wizard", "link-index", "empty-state", "error-state", "notices", "comparison"];
     const expected = Object.fromEntries([
       ...site.map(leaf => [id(leaf), "site"]),
       ...app.map(leaf => [id(leaf), "app"]),
@@ -135,7 +135,7 @@ describe("section build IA registry", () => {
     ]);
     expect(Object.keys(expected).sort()).toEqual(inventory);
     expect(Object.fromEntries(registry.slots.map(slot => [slot.id, slot.contract.surface]))).toEqual(expected);
-    expect(Object.fromEntries(["site", "app", "both"].map(surface => [surface, registry.slots.filter(slot => slot.contract.surface === surface).length]))).toEqual({ site: 18, app: 17, both: 17 });
+    expect(Object.fromEntries(["site", "app", "both"].map(surface => [surface, registry.slots.filter(slot => slot.contract.surface === surface).length]))).toEqual({ site: 18, app: 17, both: 16 });
   });
 
   it("declares consent as a site contract with host copy and lower-layer composition", () => {
@@ -228,11 +228,11 @@ describe("section build IA registry", () => {
 
   it("records legacy aliases separately without changing global retirement history", () => {
     const registry = loadSectionRegistry();
-    expect(registry.retired).toHaveLength(57);
-    expect(new Set(registry.retired.map(entry => entry.id)).size).toBe(57);
+    expect(registry.retired).toHaveLength(58);
+    expect(new Set(registry.retired.map(entry => entry.id)).size).toBe(58);
     for (const entry of registry.retired) {
       expect(inventory).toContain(entry.replacedBy);
-      expect(entry.retiredAt).toBe("2026-10-23");
+      expect(entry.retiredAt).toBe(entry.id === id("error-message") ? "2026-10-29" : "2026-10-23");
       expect(registry.aliases).toContainEqual({ id: entry.id, target: entry.replacedBy });
     }
     const targets = Object.fromEntries(registry.retired.map(entry => [entry.id, entry.replacedBy]));
@@ -243,6 +243,7 @@ describe("section build IA registry", () => {
       "matrix.grouped-table": id("data-table"), "items.record-ledger": id("record-detail"),
       "items.event-item": id("activity-feed"), "form.save-bar": id("settings"),
       "items.topics": id("link-index"), "items.nav-grid": id("link-index"), "form.load-more": id("pagination"),
+      "sections.error-message": id("error-state"),
     });
     for (const outside of ["items.raw", "matrix.raw", "form.toolbar", "items.app-navigation", "matrix.drawer", "items.specimen-stack", "items.relation-graph", "form.refresh-status"]) expect(targets).not.toHaveProperty(outside);
     expect(globalRetired).toEqual([]);
@@ -253,8 +254,8 @@ describe("section build IA registry", () => {
     const registry = loadSectionRegistry();
     (registry.slots as unknown as unknown[]).pop();
     (registry.aliases as unknown as unknown[]).pop();
-    expect(loadSectionRegistry().slots).toHaveLength(52);
-    expect(loadSectionRegistry().aliases).toHaveLength(57);
+    expect(loadSectionRegistry().slots).toHaveLength(51);
+    expect(loadSectionRegistry().aliases).toHaveLength(58);
   });
 });
 

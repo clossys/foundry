@@ -2,7 +2,8 @@ import { FORMAT_IDS } from "../formats/contract.js";
 import { isRegisteredContentRef } from "../core/instance-binding.js";
 import { projectPageOutline } from "../content/taxonomy.js";
 import { CONTENT_MAP_MAX_DEPTH } from "./contract.js";
-import type { ContentMap, ContentMapEntry, ContentMapFinding, ContentMapFindingCode } from "./contract.js";
+import type { ContentMap, ContentMapNode, ContentMapFinding, ContentMapFindingCode } from "./contract.js";
+import { checkContentMapRedirects } from "./redirects.js";
 
 const text = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0 && value.trim() === value;
 const record = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -38,19 +39,48 @@ function plain(value: unknown, seen = new Set<object>()): boolean {
   }
   seen.delete(value); return true;
 }
-export function contentMapPath(entry: ContentMapEntry): string {
+export function contentMapPath(entry: ContentMapNode): string {
   return entry.path ?? `/${entry.slug}`;
+}
+/** One HTTP(S) origin policy for sitemap and crawler protocol projections. */
+export function contentMapOrigin(value: string): URL {
+  if (typeof value !== "string" || /[\s\\\u0000-\u001f\u007f]/.test(value)) throw new TypeError("An HTTP(S) site origin is required");
+  const origin = new URL(value);
+  if (!["http:", "https:"].includes(origin.protocol) || origin.username || origin.password || origin.pathname !== "/" || origin.search || origin.hash) throw new TypeError("An HTTP(S) site origin is required");
+  return origin;
+}
+/** Explicit external destinations; protocol-relative and executable URLs fail. */
+export function isContentMapExternalHref(value: unknown): value is string {
+  if (typeof value !== "string" || !/^https?:\/\//i.test(value) || /[\s\\\u0000-\u001f\u007f]/.test(value) || /%(?:0[ad]|5c)/i.test(value)) return false;
+  try {
+    const url = new URL(value);
+    return ["http:", "https:"].includes(url.protocol) && !!url.hostname && !url.username && !url.password;
+  } catch { return false; }
+}
+/** Normalize only explicit, valid ISO calendar dates and zoned timestamps. */
+export function contentMapLastModified(value: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,9})?(Z|[+-]\d{2}:\d{2}))?$/.exec(value);
+  if (!match) throw new TypeError("An ISO lastModified date or zoned timestamp is required");
+  const year = Number(match[1]), month = Number(match[2]), day = Number(match[3]);
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  const zone = match[7];
+  if (month < 1 || month > 12 || day < 1 || day > days[month - 1]! || Number(match[4] ?? 0) > 23 || Number(match[5] ?? 0) > 59 || Number(match[6] ?? 0) > 59
+    || zone && zone !== "Z" && (Number(zone.slice(1, 3)) > 23 || Number(zone.slice(4)) > 59)) throw new TypeError("Invalid lastModified calendar date");
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) throw new TypeError("Invalid lastModified date");
+  return date.toISOString();
 }
 /** Every finding is blocking. An orphan is an entry whose parent chain cannot
  * reach a root, including descendants of missing-parent and cyclic branches. */
 export function checkContentMap(input: unknown): readonly ContentMapFinding[] {
   const findings: ContentMapFinding[] = [];
   const add = (code: ContentMapFindingCode, path: string, message: string, entryId?: string) => findings.push({ severity: "P0", code, path, ...(entryId ? { entryId } : {}), message });
-  if (!plain(input) || !record(input) || !fields(input, ["version", "publicationId", "format", "entries", "actions"]) || input.version !== 1 || !text(input.publicationId) || !Array.isArray(input.entries) || (input.actions !== undefined && !Array.isArray(input.actions))) {
+  if (!plain(input) || !record(input) || !fields(input, ["version", "publicationId", "format", "entries", "actions", "redirects"]) || input.version !== 1 || !text(input.publicationId) || !Array.isArray(input.entries) || (input.actions !== undefined && !Array.isArray(input.actions))) {
     add("contract", "map", "A versioned plain content map is required"); return findings;
   }
   if (!(FORMAT_IDS as readonly unknown[]).includes(input.format)) add("format", "format", "Unknown content-map format");
-  const entries = input.entries as ContentMapEntry[], byId = new Map<string, ContentMapEntry>();
+  const entries = input.entries as ContentMapNode[], byId = new Map<string, ContentMapNode>();
   const ids = new Set<string>(), paths = new Set<string>();
   const headingIds: { id: string; path: string; entryId: string }[] = [];
   for (const [index, entry] of entries.entries()) {
@@ -59,19 +89,26 @@ export function checkContentMap(input: unknown): readonly ContentMapFinding[] {
     const source = entry.source;
     const planSource = record(source) && fields(source, ["planItemId"]) && text(source.planItemId);
     const frameSource = record(source) && fields(source, ["frameId", "sectionIds"]) && text(source.frameId) && Array.isArray(source.sectionIds) && source.sectionIds.every(text) && new Set(source.sectionIds).size === source.sectionIds.length;
-    if (!fields(entry, ["id", "parentId", "order", "title", "path", "slug", "kind", "pin", "source", "icon", "description", "keywords", "manifest", "constructs", "pageConfig"]) || !text(entry.id) || !text(entry.title) || !Number.isSafeInteger(entry.order) || entry.order < 0
-      || !["page", "slide", "section", "group"].includes(entry.kind) || (entry.parentId !== undefined && !text(entry.parentId)) || (!planSource && !frameSource)
+    const external = entry.kind === "external";
+    if (!fields(entry, ["id", "parentId", "order", "title", "path", "slug", "kind", "pin", "source", "icon", "description", "keywords", "manifest", "constructs", "pageConfig", "href", "indexing", "lastModified"]) || !text(entry.id) || !text(entry.title) || !Number.isSafeInteger(entry.order) || entry.order < 0
+      || !["page", "slide", "section", "group", "external"].includes(entry.kind) || (entry.parentId !== undefined && !text(entry.parentId)) || (!external && !planSource && !frameSource)
+      || (external ? entry.source !== undefined || !text(entry.path) || !isContentMapExternalHref(entry.href) || entry.manifest !== undefined || entry.constructs !== undefined : Object.hasOwn(entry, "href"))
       || (entry.path === undefined) === (entry.slug === undefined) || !(text(entry.path) || text(entry.slug))
       || (entry.icon !== undefined && !text(entry.icon)) || (entry.description !== undefined && !text(entry.description)) || (entry.keywords !== undefined && (!Array.isArray(entry.keywords) || !entry.keywords.every(text)))) add("contract", at, "Invalid entry identity, content reference or metadata", entry.id);
+    if (entry.indexing !== undefined && (!record(entry.indexing) || !fields(entry.indexing, ["mode", "reason"]) || !["index", "noindex"].includes(entry.indexing.mode) || entry.indexing.reason !== undefined && !text(entry.indexing.reason))) add("contract", `${at}.indexing`, "An indexing mode and optional nonempty reason are required", entry.id);
+    if (entry.lastModified !== undefined) {
+      try { if (typeof entry.lastModified !== "string") throw new TypeError(); contentMapLastModified(entry.lastModified); }
+      catch { add("contract", `${at}.lastModified`, "A valid ISO lastModified date or zoned timestamp is required", entry.id); }
+    }
     if (ids.has(entry.id)) add("duplicate-id", at, "Duplicate entry identity", entry.id); ids.add(entry.id);
     if (text(entry.id) && !byId.has(entry.id)) byId.set(entry.id, entry);
     const path = entry.path ?? (text(entry.slug) ? `/${entry.slug}` : undefined);
     if (path !== undefined && paths.has(path)) add("duplicate-path", at, "Duplicate resolved path", entry.id);
     if (path !== undefined) paths.add(path);
     if (input.format === "web.page.responsive" && (typeof path !== "string" || !path.startsWith("/") || path.startsWith("//") || path.includes("\\") || /[\u0000-\u0020]/.test(path)
-      || (entry.kind === "page" && !canonicalPagePath(path)))) add("web-path", at, "Web targets must stay local; pages require canonical registered paths", entry.id);
+      || ((entry.kind === "page" || external) && !canonicalPagePath(path)))) add("web-path", at, "Web targets must stay local; pages and external redirect identities require canonical paths", entry.id);
     if (entry.pageConfig !== undefined && (entry.kind !== "page" || !text(entry.pageConfig))) add("contract", `${at}.pageConfig`, "Only pages may reference a nonempty consumer config", entry.id);
-    if (entry.pin !== undefined && (!record(entry.pin) || !fields(entry.pin, ["nav", "group"]) || entry.pin.nav !== true || !["page", "group", "section"].includes(entry.kind) || !text(entry.id) || (entry.pin.group !== undefined && !text(entry.pin.group)))) add("pin", `${at}.pin`, "Only an existing page, group or section can be pinned", entry.id);
+    if (entry.pin !== undefined && (!record(entry.pin) || !fields(entry.pin, ["nav", "group"]) || entry.pin.nav !== true || !["page", "group", "section", "external"].includes(entry.kind) || !text(entry.id) || (entry.pin.group !== undefined && !text(entry.pin.group)))) add("pin", `${at}.pin`, "Only an existing page, group, section or external destination can be pinned", entry.id);
     if (entry.manifest !== undefined || entry.constructs !== undefined) {
       try {
         if (!record(entry.constructs) || !Object.entries(entry.constructs).every(([slot, fills]) => text(slot) && Array.isArray(fills) && fills.every(fill => construct(fill)))) throw new TypeError("Slot-addressed Section constructs are required");
@@ -90,7 +127,7 @@ export function checkContentMap(input: unknown): readonly ContentMapFinding[] {
   for (const entry of entries) {
     if (!record(entry) || !text(entry.id)) continue;
     if (entry.parentId !== undefined && !byId.has(entry.parentId)) add("missing-parent", `entries.${entry.id}.parentId`, "Parent entry is missing", entry.id);
-    const chain: ContentMapEntry[] = [], seen = new Set<string>(); let current: ContentMapEntry | undefined = entry;
+    const chain: ContentMapNode[] = [], seen = new Set<string>(); let current: ContentMapNode | undefined = entry;
     let cyclic = false, reachesRoot = false;
     while (current) {
       if (seen.has(current.id)) { cyclic = true; break; }
@@ -118,6 +155,7 @@ export function checkContentMap(input: unknown): readonly ContentMapFinding[] {
     if (ids.has(action.id as string) || actionIds.has(action.id as string)) add("action-id", `actions.${index}.id`, "Action identity collides with an entry or action");
     actionIds.add(action.id as string);
   }
+  findings.push(...checkContentMapRedirects(input));
   return findings;
 }
 export function checkedContentMap(map: ContentMap): ContentMap {

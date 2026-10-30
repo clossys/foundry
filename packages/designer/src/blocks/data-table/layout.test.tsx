@@ -8,13 +8,30 @@ import { describe, expect, it } from "vitest";
 import { DataTable } from "../DataTable.js";
 import { DetailView } from "../DetailView.js";
 import { Matrix } from "../Matrix.js";
-import { Pagination } from "../Pagination.js";
+import { PAGINATION_COPY_REFS, Pagination } from "../Pagination.js";
 import { Button } from "../../components/Button.js";
 import { SearchField } from "../../components/SearchField.js";
 import { Select } from "../../components/Select.js";
 import { selectChromium } from "../../__fixtures__/chromium-discovery.js";
+import { ShellCopyProvider } from "../../components/Banner.copy-context.js";
+import type { ShellCopyResolver } from "../../components/Banner.copy.js";
+import { createCopyResolver } from "../../../../writer/src/resolve.js";
+import type { StringRecord } from "../../../../writer/src/model/types.js";
+import { withDeclaredCommonRecords } from "../../../../writer/src/catalog/__fixtures__/shared-records.fixture.js";
+import sectionCopy from "../../../../writer/src/catalog/records/section-defaults.r1.en.json" with { type: "json" };
 
 const packageRoot = resolve(import.meta.dirname, "../../..");
+const paginationIds = new Set<string>(Object.values(PAGINATION_COPY_REFS).map(ref => ref.id));
+const paginationRecords = withDeclaredCommonRecords(sectionCopy).filter((record): record is StringRecord => "text" in record && paginationIds.has(record.id));
+const resolvePaginationCopy = createCopyResolver({
+  id: "pagination-layout-fixture", locale: sectionCopy.locale, revision: String(sectionCopy.revision),
+  source: { kind: "generated", reference: "writer/section-defaults.r1.en.json" },
+  entries: paginationRecords.map(record => ({ ...record, placeholders: record.args?.map(arg => arg.name) })),
+}, { target: "preview" });
+const paginationCopyResolver: ShellCopyResolver = ref => {
+  const resolved = resolvePaginationCopy(ref);
+  return resolved ? { ref, text: resolved.text } : undefined;
+};
 
 // A real browser is required: jsdom has neither intrinsic table sizing nor container queries.
 async function measure(html: string, run: (evaluate: (expression: string) => Promise<any>, send: (method: string, params?: object) => Promise<any>) => Promise<void>) {
@@ -70,7 +87,7 @@ const rows = [{ id: "one", name: "Quarterly publication with a meaningful descri
 const model = { version: 2, table: { version: 1, collation: { locale: "en", sensitivity: "base", numeric: true }, columns: [{ id: "name", kind: "text" }], groupBy: [{ column: "name" }] }, mode: "grouped", density: "comfortable", sort: [], visibleColumns: ["name"] } as const;
 
 function fixture() {
-  return <>
+  return <ShellCopyProvider resolver={paginationCopyResolver}>
     <section data-proof="table"><DataTable aria-label="Publisher" columns={columns} rows={rows} rowKey={row => row.id}
       toolbar={<><SearchField label="Search publications" /><Select label="Status" options={[{ id: "all", label: "All publications" }]} selectedKey="all" /></>}
       footer={<Pagination page={4} pageCount={15} onPageChange={() => {}} />} /></section>
@@ -78,7 +95,7 @@ function fixture() {
     <section data-proof="detail"><DetailView title="Publication record" fields={[{ label: "Name", value: rows[0]!.name }]} actions={<><Button>Edit</Button><Button>Duplicate</Button></>} compactActions={<Button aria-haspopup="menu">Actions</Button>} /></section>
     <section data-proof="comparison"><Matrix arrangement="grid" featured={{ column: "b" }} featuredLabel="Recommended plan" columns={[{ id: "a", label: "Current" }, { id: "b", label: "Proposed" }]}
       rows={[{ id: "price", label: "Price", cells: { a: { type: "figure", value: "1,200" }, b: { type: "figure", value: "2,400" } } }, { id: "seats", label: "Seats", cells: { a: { type: "figure", value: "12" }, b: { type: "figure", value: "24" } } }]} /></section>
-  </>;
+  </ShellCopyProvider>;
 }
 
 const overflowProbe = `(() => [...document.querySelectorAll('[data-proof]')].flatMap(section => {
@@ -99,6 +116,8 @@ const overflowProbe = `(() => [...document.querySelectorAll('[data-proof]')].fla
 
 describe("section container fit, measured in Chromium", () => {
   it("fits 390 and 1440, preserves Configure, and detects missing intrinsic sizing or scroll", async () => {
+    expect(paginationRecords).toHaveLength(paginationIds.size);
+    expect(paginationRecords.every(record => record.status === "draft" && record.approval === undefined)).toBe(true);
     const css = readFileSync(join(packageRoot, "styles/compiled.css"), "utf8");
     await measure(`<!doctype html><meta charset="utf-8"><style>${css}body{margin:0}main{display:flex;flex-direction:column;gap:24px;padding:16px}[data-proof]{min-width:0;width:100%;max-width:100%}</style><main>${renderToStaticMarkup(fixture())}</main>`, async (evaluate, send) => {
       for (const viewport of [390, 1440]) {

@@ -1692,17 +1692,22 @@
           "as.div",
           "as.dl",
           "as.dt",
+          "as.figcaption",
+          "as.figure",
           "as.h1",
           "as.h2",
           "as.h3",
           "as.h4",
           "as.h5",
           "as.h6",
+          "as.img",
           "as.li",
           "as.main",
           "as.p",
+          "as.picture",
           "as.section",
           "as.small",
+          "as.source",
           "as.span",
           "as.strong",
           "as.time",
@@ -2610,6 +2615,60 @@
       },
       "composes": [
         "components.icon"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.rich-text",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "value.markdown",
+          "value.json",
+          "state.read-only",
+          "state.editable"
+        ]
+      },
+      "props": [
+        "value",
+        "readOnly",
+        "onChange",
+        "className",
+        "id",
+        "dir",
+        "aria-label",
+        "aria-labelledby"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.typeface",
+          "tokens.body-size",
+          "tokens.code-size",
+          "tokens.heading-size",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.line-height",
+          "tokens.spacing",
+          "tokens.radius",
+          "tokens.control-radius",
+          "tokens.border-width",
+          "tokens.border-color",
+          "tokens.surface-color",
+          "tokens.text-color"
+        ],
+        "assets": []
+      },
+      "composes": [
+        "components.badge",
+        "components.link",
+        "components.semantic-content",
+        "components.table"
       ]
     },
     "requires": [],

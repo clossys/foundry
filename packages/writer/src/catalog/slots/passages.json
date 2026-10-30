@@ -1935,68 +1935,6 @@
     "status": "draft"
   },
   {
-    "id": "passages.error-message",
-    "layer": "passages",
-    "contract": {
-      "kind": "passage",
-      "source": "writer",
-      "sectionId": "sections.error-message",
-      "passageSchema": "passages.error-message",
-      "copy": {
-        "sourceLocale": "en",
-        "fields": [
-          {
-            "key": "status",
-            "kind": "plain",
-            "required": true,
-            "maxLength": {
-              "en": 80
-            },
-            "dir": "auto"
-          },
-          {
-            "key": "title",
-            "kind": "plain",
-            "required": true,
-            "maxLength": {
-              "en": 160
-            },
-            "dir": "auto"
-          },
-          {
-            "key": "description",
-            "kind": "plain",
-            "required": true,
-            "maxLength": {
-              "en": 480
-            },
-            "dir": "auto"
-          },
-          {
-            "key": "actions[].label",
-            "kind": "plain",
-            "required": true,
-            "maxLength": {
-              "en": 120
-            },
-            "dir": "auto"
-          },
-          {
-            "key": "reference",
-            "kind": "plain",
-            "required": false,
-            "maxLength": {
-              "en": 160
-            },
-            "dir": "auto"
-          }
-        ]
-      }
-    },
-    "requires": [],
-    "status": "draft"
-  },
-  {
     "id": "passages.error-state",
     "layer": "passages",
     "contract": {
@@ -2532,6 +2470,24 @@
               "en": 120
             },
             "dir": "auto"
+          },
+          {
+            "key": "success.message",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "error.message",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
           }
         ]
       }
@@ -2991,6 +2947,33 @@
               "en": 160
             },
             "dir": "auto"
+          },
+          {
+            "key": "figure.chromeLabel",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "callouts.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "callouts.items[].body",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
           }
         ]
       }
@@ -3342,6 +3325,33 @@
           {
             "key": "total.label",
             "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "page.noResultsLabel",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "page.pageSizeLabel",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "total.rangeText",
+            "kind": "icu",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4680,6 +4690,15 @@
           },
           {
             "key": "labels.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "label",
             "kind": "plain",
             "required": false,
             "maxLength": {

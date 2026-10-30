@@ -1,3 +1,5 @@
+import { Link } from "../components/Link.server.js";
+import { SemanticContent } from "../components/SemanticContent.js";
 import type { HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
@@ -32,9 +34,9 @@ const COLUMN_CLASSES: Readonly<Record<number, string>> = {
 };
 
 const FOCUS_CLASSES: Readonly<Record<SectionGround, string>> = {
-  base: "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
-  sunken: "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
-  inverse: "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-on-inverse",
+  base: "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+  sunken: "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+  inverse: "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-on-inverse",
 };
 
 /** Decorative marks with authored accessible names and optional destinations. */
@@ -46,14 +48,14 @@ export function LogoCloud({ items, tone = "monochrome", ground = "base", classNa
   const monochromeClasses = monochrome ? "grayscale" : undefined;
   const anchorToneClasses = monochrome ? "grayscale hover:grayscale-0 focus-visible:grayscale-0" : undefined;
   return (
-    <ul {...SECTION_STAMP} {...rest} role="list" className={cx("m-0 grid list-none gap-x-xl gap-y-lg p-0", COLUMN_CLASSES[items.length], SECTION_GROUND_CLASSES[ground].primary, className)} style={style}>
+    <SemanticContent as="ul" {...SECTION_STAMP} {...rest} role="list" className={cx("m-0 grid list-none gap-x-xl gap-y-lg p-0", COLUMN_CLASSES[items.length], SECTION_GROUND_CLASSES[ground].primary, className)} style={style}>
       {items.map(item => {
         const markToneClasses = item.href === undefined ? monochromeClasses : undefined;
-        const mark = <><span aria-hidden="true" className={cx("inline-flex h-8 w-full max-w-40 overflow-hidden tablet:h-10", markToneClasses)}>{item.logo}</span><span className="sr-only">{item.name}</span></>;
-        return <li key={item.id} className="flex min-h-[3rem] min-w-0 items-center justify-center">
-          {item.href === undefined ? mark : <a href={item.href} className={cx("inline-flex w-full max-w-40 items-center rounded-control", FOCUS_CLASSES[ground], anchorToneClasses)} style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}>{mark}</a>}
-        </li>;
+        const mark = <><SemanticContent as="span" aria-hidden="true" className={cx("inline-flex h-8 w-full max-w-40 overflow-hidden tablet:h-10", markToneClasses)}>{item.logo}</SemanticContent><SemanticContent as="span" className="sr-only">{item.name}</SemanticContent></>;
+        return <SemanticContent as="li" key={item.id} className="flex min-h-[3rem] min-w-0 items-center justify-center">
+          {item.href === undefined ? mark : <Link variant="standalone" href={item.href} className={cx("inline-flex w-full max-w-40 items-center rounded-control", FOCUS_CLASSES[ground], anchorToneClasses)} style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}>{mark}</Link>}
+        </SemanticContent>;
       })}
-    </ul>
+    </SemanticContent>
   );
 }

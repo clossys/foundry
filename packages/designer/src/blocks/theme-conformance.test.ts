@@ -9,6 +9,7 @@ import { mergeDeclarations, registryFromDeclarations } from "../tokens/internal/
 import { resolveTokenValue } from "../tokens/internal/resolve-token-value.js";
 import { checkTokenContrast } from "../tokens/contrast-gate.js";
 import { CONTRAST_PAIRS, contrastPairsForTheme } from "../tokens/contrast-pairs.js";
+import { CANONICAL_SECTION_BLOCK_REGISTRATIONS } from "../catalog/blocks.js";
 import { BLOCK_THEME_CONFORMANCE, NON_BLOCK_THEME_EXPORTS, type BlockThemeRegistration } from "./theme-conformance.js";
 
 const packageRoot = resolve(import.meta.dirname, "../..");
@@ -353,6 +354,35 @@ describe("Block theme conformance", () => {
   it("every exported Block conforms in both themes", () => {
     const input = realInputs();
     expect(conformanceFindings(input)).toEqual([]);
+  });
+
+  it("registers canonical LegalProse once with its owned and delegated reading pairs", () => {
+    const input = realInputs();
+    const entries = input.registrations.filter(entry => entry.exportName === "LegalProse");
+    expect(entries).toHaveLength(1);
+    const entry = entries[0]!;
+    expect(CANONICAL_SECTION_BLOCK_REGISTRATIONS.filter(item => item.export === entry.exportName)).toEqual([
+      { id: "sections.legal-prose", export: "LegalProse", source: entry.source },
+    ]);
+    expect(entry.source).toBe("src/blocks/LegalProse.tsx");
+    expect(entry).not.toHaveProperty("exemptionReason");
+    expect(NON_BLOCK_THEME_EXPORTS).not.toHaveProperty("LegalProse");
+    expect(entry.contrastPairs).toEqual([
+      "ink-primary/surface-base", "ink-secondary/surface-base",
+      "ink-primary/surface-sunken", "ink-link/surface-base",
+    ]);
+    const graph = sourceGraph(entry.source, input.sources);
+    expect(graph).toContain("src/components/SemanticContent.tsx");
+    expect(graph).toContain("src/blocks/SectionHeader.tsx");
+    expect(graph).toContain("src/blocks/ArticleBody.tsx");
+    const source = input.sources.get(entry.source)!;
+    expect(source).toContain('dsAttrs("sections", "sections.legal-prose", "foundry/sections.legal-prose")');
+    expect(source).toContain('className="text-body-s text-ink-secondary"');
+    expect(sourceEvidence(entry.source, source).paintTokens).toContain("--color-ink-secondary");
+    const baseline = conformanceFindings(input);
+    expect(baseline.filter(finding => finding.includes(entry.exportName) || finding.includes(entry.source))).toEqual([]);
+    input.registrations = input.registrations.filter(item => item.exportName !== entry.exportName);
+    expect(conformanceFindings(input).sort()).toEqual([...baseline, "unregistered barrel export LegalProse"].sort());
   });
 
   it("follows real re-exports and nested runtime render helpers", () => {

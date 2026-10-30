@@ -32,9 +32,17 @@ type PlainSiteLinkInput = Omit<SiteLinkInput, "emphasis" | "icon">;
 export type SiteIconLinkInput = {
   readonly href: string;
   readonly label: CopyRef;
-  /** Plain SVG shape data validated against the same allowlist as environment icons. */
   readonly icon: IconNode;
+  readonly assetId?: never;
 };
+
+/** A consumer assets.image identity resolved through the frame's existing asset port. */
+export interface SiteImageLinkInput {
+  readonly href: string;
+  readonly label: CopyRef;
+  readonly assetId: string;
+  readonly icon?: never;
+}
 
 /**
  * The brand in the banner, as data: an asset id the frame resolves to an image
@@ -85,11 +93,13 @@ export type { SiteChromeGround } from "./viewChromeGround.js";
  * Breaches throw a `SiteFooterContractError` (`name` and `code`), never truncate.
  */
 interface SiteFooterFields {
+  /** Show the shell brand in a separate footer band, before the labelled link groups. */
+  readonly brandBand?: boolean;
   /** A top hairline on transparent flow footers; other grounds ignore it. @default "none" */
   readonly rule?: "none" | "top";
   readonly columns?: readonly { readonly heading: CopyRef; readonly links: readonly PlainSiteLinkInput[] }[];
   readonly links?: readonly PlainSiteLinkInput[];
-  readonly social?: { readonly label?: CopyRef; readonly links: readonly SiteIconLinkInput[] };
+  readonly social?: { readonly label?: CopyRef; readonly links: readonly (SiteIconLinkInput | SiteImageLinkInput)[] };
   readonly legal: {
     readonly entity: CopyRef;
     readonly links: readonly PlainSiteLinkInput[];
@@ -125,6 +135,8 @@ export interface SiteShellInput {
     readonly label: CopyRef;
     /** The disclosure toggle copy; defaults to the resolved navigation label. */
     readonly triggerLabel?: CopyRef;
+    /** Accessible name for the mobile drawer close action. Omitted reuses triggerLabel. */
+    readonly closeLabel?: CopyRef;
     readonly links: readonly (PlainSiteLinkInput & { readonly isCurrent?: boolean })[];
   };
   /** Calls to action at the trailing end of the banner. */
@@ -183,6 +195,7 @@ export interface SiteFrameConfig {
     readonly nav?: SiteShellInput["nav"];
     readonly actions?: SiteShellInput["actions"];
     readonly footerLinks?: SiteFooterInput["links"];
+    readonly footerBrandBand?: boolean;
     readonly social?: SiteFooterInput["social"];
     readonly navPlacement?: SiteShellInput["navPlacement"];
     readonly columns?: SiteFooterInput["columns"];
