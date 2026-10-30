@@ -46,15 +46,6 @@
       "instanceId": "publisher",
       "path": "/agents/publisher",
       "label": "Publisher"
-    },
-    {
-      "entry": {
-        "file": "studio/views/AppsView.tsx",
-        "export": "default"
-      },
-      "instanceId": "apps",
-      "path": "/apps",
-      "label": "Apps"
     }
   ]
 }

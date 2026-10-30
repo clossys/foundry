@@ -55,7 +55,6 @@ export const studioAgents = studioMap.entries.filter(row => row.kind === 'page' 
 export function studioRouteForPath(path: string) { return studioRoutes.find(row => row.path === path); }
 export function studioRouteForSegments(segments: readonly string[]) { return studioRouteForPath('/' + segments.join('/')); }
 export function studioAgentHref(agent: string) { return studioRoutes.find(row => row.instanceId === agent)?.path ?? studioHome.href; }
-export function studioPublicationHref(publicationId: string, entryId?: string) { const route = studioRoutes.find(row => row.instanceId === 'apps')!; const query = new URLSearchParams({ publication: publicationId }); if (entryId) query.set('entry', entryId); return route.path + '?' + query; }
 `;
   const bindings = `${banner}import type { ComponentType } from 'react';\n${routes.map((route, i) => `import View${i} from ${JSON.stringify(sourceModule(route.entry))};`).join('\n')}
 export const studioViewBindings: Record<string, ComponentType> = {\n${routes.map((route, i) => `  ${JSON.stringify(route.instanceId)}: View${i},`).join('\n')}\n};\n`;

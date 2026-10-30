@@ -251,17 +251,13 @@ async function main() {
       return route.fulfill({ contentType: 'application/json', body: JSON.stringify(body) });
     });
     const checks = [];
-    const routes = ['/', ...agents.map(agent => `/agents/${agent}`), '/apps'];
+    const routes = ['/', ...agents.map(agent => `/agents/${agent}`)];
     for (const route of routes) {
       const response = await page.goto(origin + route);
       assert.equal(response.status(), 200, route);
       await page.getByRole('heading', { level: 1 }).waitFor();
-      let sourceEvidence;
-      if (route === '/apps') await page.getByText('App browsing unavailable', { exact: true }).waitFor();
-      else {
-        await page.getByRole('link', { name: /^Current context/ }).first().waitFor();
-        sourceEvidence = await proveSourceDisclosure(page, 'context.current');
-      }
+      await page.getByRole('link', { name: /^Current context/ }).first().waitFor();
+      const sourceEvidence = await proveSourceDisclosure(page, 'context.current');
       const result = await page.evaluate(inspectStudioBody);
       assertCovered(result, route);
       const selectionEvidence = await page.evaluate(({ selection, requireNeeds }) => inspectStudioSelection(selection, requireNeeds), { selection, requireNeeds: route === '/agents/designer' });
@@ -280,15 +276,13 @@ async function main() {
       checks.push({ route, state: 'command-menu', ...commandBody, selection: commandSelection });
       await page.keyboard.press('Escape');
       await page.getByRole('dialog').waitFor({ state: 'hidden' });
-      if (route !== '/apps') {
-        await page.getByRole('link', { name: /^Market context/ }).first().click();
-        const sourceEvidence = await proveSourceDisclosure(page, 'context.market');
-        const selected = await page.evaluate(inspectStudioBody);
-        assertCovered(selected, `${route} selected cell`);
-        const selectedEvidence = await page.evaluate(({ selection, requireNeeds }) => inspectStudioSelection(selection, requireNeeds), { selection, requireNeeds: route === '/agents/designer' });
-        assertSelection(selectedEvidence, `${route} selected cell`);
-        checks.push({ route, state: 'selected', ...selected, source: sourceEvidence, selection: selectedEvidence });
-      }
+      await page.getByRole('link', { name: /^Market context/ }).first().click();
+      const selectedSourceEvidence = await proveSourceDisclosure(page, 'context.market');
+      const selected = await page.evaluate(inspectStudioBody);
+      assertCovered(selected, `${route} selected cell`);
+      const selectedEvidence = await page.evaluate(({ selection, requireNeeds }) => inspectStudioSelection(selection, requireNeeds), { selection, requireNeeds: route === '/agents/designer' });
+      assertSelection(selectedEvidence, `${route} selected cell`);
+      checks.push({ route, state: 'selected', ...selected, source: selectedSourceEvidence, selection: selectedEvidence });
     }
     for (const state of ['empty', 'error']) {
       mode = state;

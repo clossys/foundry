@@ -68,7 +68,7 @@ Their descendants are still visited. There is no blanket script, hidden,
 custom-element, class-name, or framework-wrapper exemption. Development overlay
 elements fail; use a production server.
 
-The runner covers Home, all four agent routes, and Apps, plus opened command
+The runner covers Home and all four agent routes, plus opened command
 menus, selected-cell, empty, and API-error states. On each route it proves that unstamped descendants
 of an existing Designer leaf pass, bare text passes, and both visible and hidden
 unstamped body siblings fail. It does not add leaf stamps for those proofs.
