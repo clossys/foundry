@@ -11,6 +11,7 @@ import type { SurfaceDocument, SurfaceResolutionOptions } from "../catalog-core/
 import { libraryFiles, readLibrary } from "./fs-library.js";
 import { foundrySurfaceCatalog } from "./surface-catalog.js";
 import { readSurfacePackageEvidence } from "./surface-package-evidence.js";
+import { verifySurfacePackageInputs } from "./surface-pin-context.js";
 
 const SLOT = /^(tokens|assets|components|sections|frames)\.[a-z][a-z0-9-]*$(?![\s\S])/;
 const object = (v: unknown): v is Record<string, any> => !!v && typeof v === "object" && !Array.isArray(v);
@@ -162,6 +163,7 @@ async function projection(root: string, options: Options): Promise<Map<string, s
   };
   const library = { source: tree.meta.source, ...(metadata.adoptedAt === undefined ? {} : { adoptedAt: metadata.adoptedAt }), values: { ...values }, components: { ...metadata.components, fills: cells.filter(cell => cell.id.startsWith("components.")).map(cell => cell.fill), files: files(metadata.files) }, ...(metadata.surfaces ? { surfaces: { version: 1, fills: cells.filter(cell => /^(sections|frames)\./.test(cell.id)).map(cell => cell.fill), files: files(metadata.surfaces.files) } } : {}) } as unknown as CompositeLibraryData;
   delete (library.values as unknown as Record<string, unknown>).source;
+  if (library.surfaces) verifySurfacePackageInputs(catalog, library.surfaces.fills, slot => join(resolve(root), active.find(cell => cell.id === slot)!.path));
   const storedOptions = tree.meta.componentOptions;
   if (storedOptions !== undefined) validateComponentOptions(storedOptions);
   const componentOptions = options.componentOptions ?? storedOptions;

@@ -399,7 +399,7 @@ export function resolveSurfacePackageDescriptor(catalog: CompositeCatalogData, s
         return runtimeSnapshot({ document: current[0]!.doc as unknown as SurfacePackageDocument, contract });
     }
     const registered = historicalPackageDescriptors(catalog, identity.descriptorHash).filter(row => row.document.$extensions["com.clossys.fill"].slot === slot && packageIdentityMatches(row.document, identity));
-    if (registered.length !== 1) surfaceFault("S2 unique registered historical upstream required");
+    if (registered.length !== 1) surfaceFault(`S2 unique registered historical upstream required for slot ${slot} (${identity.descriptorHash})`);
     return runtimeSnapshot(registered[0]!);
 }
 /** Current upstream remains required; only a catalog-registered old identity can become a stale finding. */
