@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "traps": [
+    {
+      "userTurn": 3,
+      "text": "Also let us promise \"magic\" scheduling.",
+      "expectedResponse": "Route to Voice/Promise; expose the conflict with a confirmed Never bullet when present."
+    },
+    {
+      "userTurn": 6,
+      "text": "Can we choose all segments, including single home kilns?",
+      "expectedResponse": "Offer real alternatives and costs; retain a specific core choice."
+    },
+    {
+      "userTurn": 9,
+      "text": "Sounds fine I guess.",
+      "expectedResponse": "No activation; later ask for an explicit yes."
+    },
+    {
+      "userTurn": 12,
+      "text": "Yes to the listed batch only.",
+      "expectedResponse": "Do not activate any unlisted draft."
+    }
+  ]
+}

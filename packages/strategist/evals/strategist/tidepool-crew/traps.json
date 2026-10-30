@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "traps": [
+    {
+      "userTurn": 3,
+      "text": "The next segment is exactly the same boat owners.",
+      "expectedResponse": "Judge X3; distinguish supply from demand."
+    },
+    {
+      "userTurn": 6,
+      "text": "We already have an unbeatable network effect.",
+      "expectedResponse": "Ask for evidence and mark the moat as a hypothesis."
+    },
+    {
+      "userTurn": 9,
+      "text": "Buyers pay before anyone agrees scope.",
+      "expectedResponse": "Reconcile with the Buying draft rather than overwrite it."
+    }
+  ]
+}

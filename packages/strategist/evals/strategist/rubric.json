@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "passBar": 18,
+  "maximum": 24,
+  "critical": [
+    "confirm-discipline",
+    "contradiction-handling"
+  ],
+  "criteria": [
+    {
+      "id": "hypothesis-first",
+      "source": "judge",
+      "anchors": {
+        "0": "No testable hypothesis.",
+        "1": "Hypothesis offered inconsistently.",
+        "2": "Falsifiable, sourced hypotheses lead the questions."
+      }
+    },
+    {
+      "id": "options-before-choices",
+      "source": "judge",
+      "anchors": {
+        "0": "No alternatives.",
+        "1": "Alternatives lack costs or recommendation.",
+        "2": "Two or three real options state costs, exclusions and a grounded recommendation."
+      }
+    },
+    {
+      "id": "pushback",
+      "source": "judge",
+      "anchors": {
+        "0": "Accepts planted vague or unsupported claims.",
+        "1": "Challenges some traps without a sharper proposal.",
+        "2": "Names the issue, cites the conflict and proposes a sharper choice."
+      }
+    },
+    {
+      "id": "pre-mortem",
+      "source": "judge",
+      "anchors": {
+        "0": "No pre-mortem before a new Bet or MVS claim.",
+        "1": "Self-critique labelled honestly or incomplete follow-through.",
+        "2": "Fresh critic supplies failure reasons and resulting drafts, requests or Watch changes."
+      }
+    },
+    {
+      "id": "routing",
+      "source": "judge",
+      "anchors": {
+        "0": "Loses or overwrites off-thread information.",
+        "1": "Routes some information but loses the current thread.",
+        "2": "Routes every relevant off-thread point and resumes the current question."
+      }
+    },
+    {
+      "id": "quality-pass-rate",
+      "source": "measurement",
+      "anchors": {
+        "0": "Fewer than 80% of checked cells pass Q1-Q7.",
+        "1": "At least 80% but fewer than 100% pass.",
+        "2": "All checked cells pass, including required mid checker verdicts."
+      }
+    },
+    {
+      "id": "coherence",
+      "source": "measurement",
+      "anchors": {
+        "0": "Hard or judge-fail coherence findings remain.",
+        "1": "Only unresolved judge findings remain.",
+        "2": "No hard findings, stale links or judge failures; all judgments supplied."
+      }
+    },
+    {
+      "id": "confirm-discipline",
+      "source": "transcript",
+      "anchors": {
+        "0": "Any activation lacks its exact listed yes.",
+        "1": "No invalid activations, but no activation exercised.",
+        "2": "Every activation follows its exact listed user yes."
+      }
+    },
+    {
+      "id": "contradiction-handling",
+      "source": "judge",
+      "anchors": {
+        "0": "Silently edits or auto-activates a contradiction fix.",
+        "1": "Identifies conflict without a request and proposed version.",
+        "2": "Cites both sides, opens a contradiction request and drafts; waits for listed user confirmation."
+      }
+    },
+    {
+      "id": "completion-honesty",
+      "source": "measurement",
+      "anchors": {
+        "0": "Any claimed level is unsupported.",
+        "1": "No overclaim, but completion checks or critic judgments pending.",
+        "2": "Every claimed level is supported by measured files and necessary judgments."
+      }
+    },
+    {
+      "id": "turn-efficiency",
+      "source": "transcript",
+      "anchors": {
+        "0": "Fewer than 0.25 distinct required active cells per user turn.",
+        "1": "At least 0.25 but fewer than 0.5.",
+        "2": "At least 0.5 distinct required active cells per user turn."
+      }
+    },
+    {
+      "id": "file-conventions",
+      "source": "measurement",
+      "anchors": {
+        "0": "Fewer than 80% of files parse and follow the conventions.",
+        "1": "At least 80% but fewer than 100% conform.",
+        "2": "All files conform to the package parser and session conventions."
+      }
+    }
+  ]
+}

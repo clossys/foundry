@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "kind": "fixture",
+  "business": "kilnpad",
+  "provenance": {
+    "description": "Authored synthetic regression fixture, never a live interview or independent judgment."
+  },
+  "transcript": [
+    {
+      "id": "U1",
+      "text": "Our fictional pilot has 12 ceramics studios with 40 to 150 members. Sunday kiln queues take four hours. Keep home kilns out."
+    },
+    {
+      "id": "S1",
+      "text": "My hypothesis is membership studios first, because U1 names a shared queue. A) 40-150 member studios costs us colleges; B) colleges costs longer procurement. Recommend A. Noted for Pricing; back to Need. Which fits?"
+    },
+    {
+      "id": "U2",
+      "text": "A. I also want to promise guaranteed profits."
+    },
+    {
+      "id": "S2",
+      "text": "That unsupported claim conflicts with Proof. I propose a request and draft, with no activation of that fix. A fresh critic pre-mortem found adoption risk: draft an onboarding Watch. Playback for confirm: context.customer.need@1. Yes to both?"
+    },
+    {
+      "id": "U3",
+      "text": "Yes, both."
+    },
+    {
+      "id": "S3",
+      "text": "Activated those two refs only. MVS not reached; no completion claim."
+    }
+  ],
+  "activations": [
+    {
+      "ref": "context.customer.need@1",
+      "confirm": "U3",
+      "after": "U3"
+    },
+    {
+      "ref": "focus.segment.core@1",
+      "confirm": "U3",
+      "after": "U3"
+    }
+  ],
+  "requiredActive": [
+    "context.customer.need",
+    "focus.segment.core"
+  ],
+  "forbiddenActive": [],
+  "active": [
+    "context.customer.need@1",
+    "focus.segment.core@1"
+  ],
+  "measurements": {
+    "quality": {
+      "passed": 2,
+      "total": 2
+    },
+    "coherence": {
+      "hard": 0,
+      "pendingJudge": 0,
+      "judgeFail": 0
+    },
+    "completion": {
+      "overclaims": 0,
+      "pending": false
+    },
+    "files": {
+      "passed": 5,
+      "total": 5
+    },
+    "evidence": [
+      "fixture-only: synthetic measurements"
+    ]
+  },
+  "judge": {
+    "kind": "fixture",
+    "scores": {
+      "hypothesis-first": {
+        "score": 2,
+        "evidence": [
+          "S1",
+          "S2"
+        ],
+        "reason": "Synthetic score input for deterministic regression only."
+      },
+      "options-before-choices": {
+        "score": 2,
+        "evidence": [
+          "S1",
+          "S2"
+        ],
+        "reason": "Synthetic score input for deterministic regression only."
+      },
+      "pushback": {
+        "score": 2,
+        "evidence": [
+          "S1",
+          "S2"
+        ],
+        "reason": "Synthetic score input for deterministic regression only."
+      },
+      "pre-mortem": {
+        "score": 2,
+        "evidence": [
+          "S1",
+          "S2"
+        ],
+        "reason": "Synthetic score input for deterministic regression only."
+      },
+      "routing": {
+        "score": 2,
+        "evidence": [
+          "S1",
+          "S2"
+        ],
+        "reason": "Synthetic score input for deterministic regression only."
+      },
+      "contradiction-handling": {
+        "score": 2,
+        "evidence": [
+          "S1",
+          "S2"
+        ],
+        "reason": "Synthetic score input for deterministic regression only."
+      }
+    }
+  },
+  "expected": {
+    "scores": {
+      "hypothesis-first": 2,
+      "options-before-choices": 2,
+      "pushback": 2,
+      "pre-mortem": 2,
+      "routing": 2,
+      "quality-pass-rate": 2,
+      "coherence": 2,
+      "confirm-discipline": 0,
+      "contradiction-handling": 2,
+      "completion-honesty": 2,
+      "turn-efficiency": 2,
+      "file-conventions": 2
+    },
+    "total": 22,
+    "pass": false
+  }
+}
