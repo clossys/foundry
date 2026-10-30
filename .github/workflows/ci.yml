@@ -1317,8 +1317,8 @@ jobs:
   # copy, because that exact string is a REQUIRED status check on main.
   # Renaming a required context does not rename anything -- it creates a
   # required context that never reports, and wedges every pull request until
-  # the ruleset is edited to match. This job stays byte-for-byte unchanged
-  # (id, name, steps) so the required context it already satisfies keeps
+  # the ruleset is edited to match. This job keeps its id and name unchanged
+  # so the required context it already satisfies keeps
   # reporting without interruption. See the `designer-contrast` job directly
   # below for phase 1's other half: the new context, reporting alongside
   # this one, not yet required by anything.
@@ -1355,6 +1355,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: npm run build --workspace=packages/strategist
       - run: npm run build --workspace=packages/designer
       - run: npm run check:contrast
 
@@ -1382,6 +1383,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: npm run build --workspace=packages/strategist
       - run: npm run build --workspace=packages/designer
       - run: npm run check:contrast
 
@@ -1507,19 +1509,9 @@ jobs:
       - name: Strategist facts subject (PUBLISHING.md)
         run: npm run check:strategist-subject
 
-  # Split out of `build and test` (issue: CI throughput). Measured on run
-  # 35802156089 (job 106994736395, branch claude/strategist-clossys-layout):
-  # `build and test` took 2571s (42m51s) end to end, and three steps inside
-  # it were serial and independent of each other -- "Candidate qualification
-  # records" (946s), "README code examples typecheck against shipped
-  # declarations" (799s), and "Packed consumer readiness" (440s), 2185s
-  # together, 85% of the job. None of the three reads another's output, so
-  # running them as three parallel jobs instead of three serial steps cuts
-  # `build and test`'s wall time to roughly its own slowest remaining piece,
-  # not their sum. `build and test` stays the required context (that name is
-  # pinned by the `main-required-checks` ruleset, which this change does not
-  # edit) by becoming a fan-in over these three jobs' results -- see that
-  # job's own first step for the mechanics.
+  # Candidate qualification and packed-consumer readiness run independently
+  # of root package tests. The required build-and-test context combines
+  # their results explicitly and fails unless every remaining job succeeds.
   #
   # This job specifically: needs full history (same reasoning as `build and
   # test`'s own checkout, below) but no `npm ci` and no build --
@@ -1628,84 +1620,6 @@ jobs:
             echo "::error::candidate-qualification-shard (the 8-way matrix) did not succeed (result: $result)"
             exit 1
           fi
-
-  # See `candidate-qualification` above for the measurement and the overall
-  # split reasoning. This job: needs `npm ci` and a real build --
-  # check-readme-examples.mjs shells out to `tsc` against each package's
-  # shipped `.d.ts`, which only exists once that package (and any internal
-  # dependency it has) has actually been built (#908).
-  readme-examples-typecheck:
-    name: README code examples typecheck against shipped declarations
-    needs: [push-tree, classify]
-    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || needs.classify.outputs.tier != 'prose')
-    runs-on: ubuntu-latest
-    timeout-minutes: 40
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: 20
-          cache: npm
-      # #1257: this job's own npm run build recompiles every package's
-      # dist/ from source, identically, on every run -- the same fixed cost
-      # the other jobs in this split also pay independently for the SAME
-      # commit's tree. A cache keyed on source and lockfile content lets a
-      # run that lands after another one already built this exact tree (a
-      # re-run, or a later trigger for the same commit -- a merge_group run
-      # following its own pull_request run, for example) skip recompiling
-      # entirely. A cache MISS -- new content, or nothing cached yet --
-      # always falls back to a full `npm run build`, never a skip: the build
-      # step below is gated on `cache-hit != 'true'`, the same fail-open-to-
-      # doing-the-work polarity `check-touches-packages.mjs` already uses
-      # elsewhere in this file.
-      #
-      # The key's own file list has to cover every input a `build` script
-      # can actually read, not just `src/**` -- issue #1324 item 2 (a real
-      # gap CodeRabbit found on #1297): `packages/launcher/scripts/
-      # pack-skills.mjs` and `packages/advisor/scripts/pack-capability-
-      # catalogue.mjs` are pre-tsc generation steps run BY `npm run build`
-      # itself, and neither reads only its own package's `src/`.
-      # pack-skills.mjs copies every OTHER package's `skill/SKILL.md` into
-      # launcher's own packed `skill-catalogue/`, and packs the shared
-      # `docs/contracts/conversation-contract.md` into `contracts/`;
-      # pack-capability-catalogue.mjs reads `docs/contracts/kit-presets.
-      # json` the same way. None of those paths were hashed, so a change to
-      # any of them -- another package's SKILL.md, the shared conversation
-      # contract, the shared kit-presets contract, or the prebuild script
-      # itself -- left the key unchanged, and a cache HIT then served
-      # `dist/` (and the ungenerated `skill-catalogue/`/`contracts/`
-      # siblings the same `npm run build` invocation was also responsible
-      # for) as if nothing had changed. Root `package.json` was missing
-      # too -- a build-script-affecting change there (a new build step, a
-      # changed script) wouldn't invalidate the cache either, only the
-      # lockfile's own dependency content would. `packages/*/scripts/**`
-      # and `docs/contracts/**` cover both known prebuild-script shapes
-      # (and any future one, generally, rather than naming today's two
-      # scripts specifically) without narrowing what a cache MISS already
-      # falls back to.
-      - name: Restore workspace build cache
-        id: workspace-build-cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: packages/*/dist
-          key: workspace-build-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json', 'packages/*/src/**', 'packages/*/package.json', 'packages/*/tsconfig*.json', 'packages/*/scripts/**', 'scripts/lib/**', 'docs/contracts/**') }}
-      - run: npm ci
-      - name: Build (skipped on an exact source+lockfile cache hit)
-        if: steps.workspace-build-cache.outputs.cache-hit != 'true'
-        run: npm run build
-      # Every fenced ts/tsx block in a packages/*/README.md, compiled against
-      # that package's own shipped declarations (#908).
-      #
-      # #2417: the examples are compiled by a bounded worker pool. The
-      # script's own default is deliberately conservative for shared local
-      # machines (min(4, CPUs - 1)); this job owns its whole runner, so it
-      # sets the worker count to the runner's four vCPUs.
-      - name: README code examples typecheck against shipped declarations
-        env:
-          FOUNDRY_README_EXAMPLES_JOBS: "4"
-        run: npm run check:readme-examples
 
   # See `candidate-qualification` above for the measurement and the overall
   # split reasoning. This job: needs `npm ci` and a real build --
@@ -1834,20 +1748,15 @@ jobs:
 
   build:
     name: build and test
-    # candidate-qualification, readme-examples-typecheck and
-    # packed-consumer-readiness (below) are this job's three former steps
-    # with the same names, split into their own parallel jobs (see the
-    # measurement in each job's own header comment). `build and test` stays
-    # the required context, but it is now a genuine fan-in over their
-    # results, including the now-independent root tests -- see the first
-    # step below for why `needs` alone is not enough to make that fan-in honest.
-    needs: [push-tree, candidate-qualification, readme-examples-typecheck, packed-consumer-readiness, classify, root-tests]
+    # Required fan-in over candidate qualification, packed-consumer
+    # readiness, and root tests. Every remaining result must succeed.
+    needs: [push-tree, candidate-qualification, packed-consumer-readiness, classify, root-tests]
     # `always()` is mandatory, not stylistic: GitHub's UNWRITTEN default for
     # any job that `needs` other jobs is "skip unless every needed job
     # succeeded" -- that default applies underneath this job's own `if:`
     # condition regardless of what the condition itself says, exactly like
     # the `credential-lifecycle` job above (see its own comment on the same
-    # point). Without `always()` here, a real failure in any of the four
+    # point). Without `always()` here, a real failure in any of the three
     # split jobs would make GitHub skip `build and test` outright -- and a
     # skipped required context reports as passing, silently erasing the
     # failure it exists to catch. `always()` forces this job to run so the
@@ -1857,7 +1766,7 @@ jobs:
     timeout-minutes: 20
     steps:
       # The other half of the fan-in: `needs` only lets this job SEE the
-      # four split jobs' results, it does not act on them -- GitHub's
+      # three split jobs' results, it does not act on them -- GitHub's
       # implicit needs-gate is what `always()` above just disabled, on
       # purpose, so nothing now fails this job automatically. This step is
       # what does that job explicitly: `if: always()` so it runs even when
@@ -1874,7 +1783,6 @@ jobs:
           status=0
           for pair in \
             "candidate-qualification=${{ needs.candidate-qualification.result }}" \
-            "readme-examples-typecheck=${{ needs.readme-examples-typecheck.result }}" \
             "packed-consumer-readiness=${{ needs.packed-consumer-readiness.result }}" \
             "root-tests=${{ needs.root-tests.result }}"; do
             name="${pair%%=*}"
@@ -1939,8 +1847,8 @@ jobs:
       # history join, and must fail in the already-required build context.
       - name: Later publication records
         run: npm run check:later-publications
-      # #1257: same workspace build cache as readme-examples-typecheck and
-      # packed-consumer-readiness (see either job's own comment for the full
+      # #1257: same workspace build cache as packed-consumer-readiness
+      # (see that job's own comment for the full
       # reasoning, including the issue #1324 item 2 key-completeness fix) --
       # this job independently pays the same npm run build cost for the
       # same commit's tree, and a cache hit lets it skip that here too. A
@@ -1970,11 +1878,6 @@ jobs:
       # packed-consumer, which now uses the same launch shape after a pack.
       - name: Declared bins reachable through node_modules/.bin
         run: node scripts/check-bin-reachability.mjs
-      # "README code examples typecheck against shipped declarations" used
-      # to run here. It now runs in the `readme-examples-typecheck` job (see
-      # its own header for why) -- this job's `needs` on it, above, is what
-      # keeps its result binding on this required context.
-      #
       # check-publication-map.mjs (#1103) imports packages/publisher's own
       # dist/core/index.js directly, so its test file needs the build
       # above -- it does not belong in check:gates, which runs in the

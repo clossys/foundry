@@ -59,7 +59,9 @@
     "README.md",
     "LICENSE",
     "skill",
-    "strategy-brief.json"
+    "strategy-brief.json",
+    "!dist/**/__fixtures__/**",
+    "!src/**/__fixtures__/**"
   ],
   "sideEffects": false,
   "foundry": {

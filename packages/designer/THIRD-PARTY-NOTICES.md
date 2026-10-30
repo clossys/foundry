@@ -1,9 +1,8 @@
 # Third-party notices
 
 This package does not depend on `lucide-react` (or any other icon library)
-at runtime — see README.md, "Icon glyph data" → "A subpath of `ui`, not a
-separate package", for the tree-shaking and upstream-churn/rename
-reasoning (this glyph set previously shipped as this scope's own standalone
+at runtime. See the [Designer documentation](https://clossys.com/docs/designer)
+for usage and package boundaries (this glyph set previously shipped as this scope's own standalone
 `icons` package; this notice, and the data it covers, moved into this
 package's own `./icons` subpath along with it — see this package's changelog).
 The 41 glyphs at `@clossys/designer/icons` are, however, **visually
@@ -19,7 +18,7 @@ data, per both licenses that cover it below.
 Four of this package's glyph names resolve to a Lucide glyph published
 under a different (but still current) name in Lucide 1.23.0 — the semantic
 name here matches this repository's own consumer-evidence naming (see
-README.md, "Icon glyph data" → "How the 40 were chosen"), not a renaming
+the [Designer documentation](https://clossys.com/docs/designer)), not a renaming
 of the underlying artwork:
 
 | This package | Lucide 1.23.0 source name |

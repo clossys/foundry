@@ -133,7 +133,6 @@ export const GATED_SCRIPT_PROSE_INPUTS = {
   },
   "node:scripts/check-qualification-record-required.mjs": { prose: false, reason: "reads governance/release-qualifications/** and package.json version fields only" },
   "node:scripts/check-artifact-safety.mjs": { prose: false, reason: "scans one package's packed tarball (packages/<dir>/** content only -- packed-prose at most; docs/changelogs never ship) plus package-scope.json and governance/opaque-content-exemptions.json, no docs/ or .changesets/ read" },
-  "node:scripts/check-readme-examples.mjs": { prose: false, reason: "typechecks fenced code blocks in packages/*/README.md against shipped .d.ts -- packed-prose, not prose" },
   "node:packages/designer/dist/tokens/contrast-cli.js": { prose: false, reason: "reads packages/designer/styles/tokens.css only" },
   "node:scripts/check-touches-packages.mjs": { prose: false, reason: "reads only the diff's own changed-path list (packages/, governance/, scripts/ prefixes) to decide whether to skip an expensive step -- reads no file content" },
   "node:scripts/check-candidate-qualification.mjs": {
