@@ -417,7 +417,9 @@
         "components.logo",
         "components.resize-handle",
         "components.tabs",
-        "components.tooltip"
+        "components.tooltip",
+        "components.sidebar",
+        "components.semantic-content"
       ],
       "skipTarget": "main-content",
       "stage": {
