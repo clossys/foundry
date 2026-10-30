@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import type { RichTextValue } from "../components/RichText.js";
 import { richTextDocument } from "../components/rich-text/schema.js";
 import type { DesignerSpecimenNeed } from "./DesignerSpecimen.js";
+import type { ComponentSpecimenBinding, ComponentSpecimenComponent } from "./component-specimens.js";
 import { SpecimenLayoutSection, specimenComponent, specimenPart, specimenLayoutNeeds, type SpecimenAxis, type SpecimenItem, type SpecimenLeafDefinition, type SpecimenLeafProps } from "./specimen-layouts.js";
 
 export interface RichPassageValue {
@@ -30,6 +31,17 @@ export interface PageViewportValue {
 }
 const object = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 const text = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0;
+const renderable = (value: unknown): value is ComponentSpecimenComponent => typeof value === "function" || typeof value === "object" && value !== null && "$$typeof" in value;
+function loopbackOrigin(value: string): boolean {
+  if (!/^http:\/\/127\.0\.0\.1:[1-9][0-9]*$/.test(value)) return false;
+  try { return new URL(value).origin === value; } catch { return false; }
+}
+/** Navigation exposes real named exports, rather than the GridList compound API. */
+function navigationParts(binding: ComponentSpecimenBinding) {
+  const item = binding.exports[binding.source === "shadcn@aria" ? "TreeItem" : "NavigationTreeItem"];
+  const content = binding.exports[binding.source === "shadcn@aria" ? "TreeItemContent" : "NavigationTreeItemContent"];
+  return renderable(item) && renderable(content) ? { Item: item, ItemContent: content } : undefined;
+}
 const passage = (value: unknown): value is RichTextValue => {
   if (!text(value) && !(object(value) && value.type === "doc" && Array.isArray(value.content) && value.content.length > 0)) return false;
   try { return Boolean(richTextDocument(value)); } catch { return false; }
@@ -89,13 +101,14 @@ export function contentSpecimenNeeds(id: string, props: SpecimenLeafProps): read
       if (value.role === "nav") {
         const nav = specimenComponent(props.context, "components.navigation-tree");
         if ("reason" in nav) needs.push(nav);
-        else if (!specimenPart(nav, "Item", "TreeItem") || !specimenPart(nav, "ItemContent", "TreeItemContent")) needs.push({ leaf: id, reason: "The selected navigation tree has no native item and content parts." });
+        else if (!navigationParts(nav)) needs.push({ leaf: id, reason: "The selected navigation tree has no native item and content parts." });
       }
     } else if (id === "sections.specimen-page-viewports") {
+      needs.push(...componentNeeds(props, ["components.badge"]));
       const value = item.value;
       if (!isPageViewportValue(value)) { needs.push({ leaf: id, reason: `Page viewport data is unavailable: ${item.id}` }); continue; }
       const port = props.context.pagePreview, page = port?.pages.find(page => page.id === value.pageId);
-      if (!port || port.engine !== "producer-emitted-page@1" || !/^http:\/\/127\.0\.0\.1:[1-9][0-9]*$/.test(port.origin) || !page?.emitted || !text(page.stage) || !/^\/(?!\/)/.test(page.route) || !/^\/preview\/[a-z][a-z0-9.-]*\/pages\/[a-z][a-z0-9.-]*\.html$/.test(page.previewUrl) || page.previewUrl.includes("..")) needs.push({ leaf: id, reason: `No live native emitted-page renderer is available: ${value.pageId}` });
+      if (!port || port.engine !== "producer-emitted-page@1" || !loopbackOrigin(port.origin) || !page?.emitted || !text(page.stage) || !/^\/(?!\/)/.test(page.route) || !/^\/preview\/[a-z][a-z0-9.-]*\/pages\/[a-z][a-z0-9.-]*\.html$/.test(page.previewUrl) || page.previewUrl.includes("..")) needs.push({ leaf: id, reason: `No live native emitted-page renderer is available: ${value.pageId}` });
     }
   }
   if (id === "sections.specimen-page-viewports" && new Set(props.items.flatMap(item => isPageViewportValue(item.value) ? [item.value.pageId] : [])).size > 1) needs.push({ leaf: id, reason: "A Publisher row must describe one emitted page at its viewport cases." });
@@ -110,7 +123,7 @@ function richNode(props: SpecimenLeafProps, value: RichPassageValue, label: stri
   if ("reason" in semantic) return props.need(semantic);
   if ("reason" in disclosure) return props.need(disclosure);
   const Content = semantic.Component, Disclosure = disclosure.Component;
-  const preview = <Content as="div" style={{ display: "-webkit-box", WebkitLineClamp: 12, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{full}</Content>;
+  const preview = <Content as="div" aria-hidden="true" style={{ display: "-webkit-box", WebkitLineClamp: 12, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{full}</Content>;
   if (disclosure.source === "shadcn@aria") {
     const Item = specimenPart(disclosure, "Item", "AccordionItem"), Trigger = specimenPart(disclosure, "Trigger", "AccordionTrigger"), Panel = specimenPart(disclosure, "Panel", "AccordionContent");
     if (!Item || !Trigger || !Panel) return failure(props, "sections.specimen-rich-passage", "The selected disclosure has no native item, trigger and content parts.");
@@ -138,9 +151,10 @@ function copyNode(props: SpecimenLeafProps, item: SpecimenItem, value: CopyInCon
     const Root = selected.Component;
     if (value.role === "cta") specimen = <Root>{value.text}</Root>;
     else {
-      const Item = specimenPart(selected, "Item", "TreeItem"), ItemContent = specimenPart(selected, "ItemContent", "TreeItemContent");
-      if (!Item || !ItemContent) return failure(props, "sections.specimen-copy-in-context", "Native navigation parts are unavailable.");
-      specimen = <Root aria-label={value.context}><Item id={item.id} textValue={value.text}><ItemContent>{value.text}</ItemContent></Item></Root>;
+      const parts = navigationParts(selected);
+      if (!parts) return failure(props, "sections.specimen-copy-in-context", "Native navigation parts are unavailable.");
+      const { Item, ItemContent } = parts;
+      specimen = <Root data-ds-leaf="components.navigation-tree" aria-label={value.context}><Item id={item.id} textValue={value.text}><ItemContent>{value.text}</ItemContent></Item></Root>;
     }
   }
   return <Content as="div" lang={value.locale} dir={value.dir} data-copy-role={value.role} data-copy-context={value.context}>{specimen}</Content>;
@@ -156,14 +170,15 @@ export function SpecimenPageViewports(props: SpecimenLeafProps): ReactNode {
   return <SpecimenLayoutSection {...props} id={id} label={props.items[0]!.label} layout="matrix" renderItem={item => {
     if (!isPageViewportValue(item.value)) return null;
     const value = item.value, port = props.context.pagePreview!, page = port.pages.find(page => page.id === value.pageId)!;
-    const semantic = specimenComponent(props.context, "components.semantic-content");
+    const semantic = specimenComponent(props.context, "components.semantic-content"), badge = specimenComponent(props.context, "components.badge");
     if ("reason" in semantic) return props.need(semantic);
-    const Content = semantic.Component;
-    return <Content as="section" data-publication-route={page.route} data-publication-stage={page.stage}>{port.renderViewport({ page, viewport: value.viewport, interactive: false, fullSize: props.expanded === true })}</Content>;
+    if ("reason" in badge) return props.need(badge);
+    const Content = semantic.Component, Badge = badge.Component;
+    return <Content as="section" data-publication-route={page.route} data-publication-stage={page.stage}><Content as="p">{page.route}</Content><Badge>{page.stage}</Badge>{port.renderViewport({ page, viewport: value.viewport, interactive: false, fullSize: props.expanded === true })}</Content>;
   }} />;
 }
 export const contentSpecimenLeaves: readonly SpecimenLeafDefinition[] = [
   { id: "sections.specimen-rich-passage", layout: "ladder", compatible: [{ kind: "passage" }], requirements: ["components.rich-text"], validate: props => contentSpecimenNeeds("sections.specimen-rich-passage", props), render: SpecimenRichPassage },
   { id: "sections.specimen-copy-in-context", layout: "matrix", compatible: [{ kind: "copy" }], requirements: ["components.rich-text", "components.button", "components.navigation-tree", "sections.section-header", "sections.empty-state"], validate: props => contentSpecimenNeeds("sections.specimen-copy-in-context", props), render: SpecimenCopyInContext },
-  { id: "sections.specimen-page-viewports", layout: "matrix", compatible: [{ kind: "page" }], requirements: ["producer-emitted-page@1"], validate: props => contentSpecimenNeeds("sections.specimen-page-viewports", props), render: SpecimenPageViewports },
+  { id: "sections.specimen-page-viewports", layout: "matrix", compatible: [{ kind: "page" }], requirements: ["components.badge", "producer-emitted-page@1"], validate: props => contentSpecimenNeeds("sections.specimen-page-viewports", props), render: SpecimenPageViewports },
 ];
