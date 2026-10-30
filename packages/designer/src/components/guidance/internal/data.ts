@@ -1664,45 +1664,17 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
   "options": [
     {
-      "prop": "ground",
-      "label": "Surrounding ground",
-      "purpose": "Surrounding ground selects the existing Card ground behavior.",
+      "prop": "size",
+      "label": "Size",
+      "purpose": "Select the pinned native Card size.",
       "values": [
         {
-          "value": "base",
-          "purpose": "Page ground."
+          "value": "default",
+          "purpose": "Default size."
         },
         {
-          "value": "sunken",
-          "purpose": "Sunken section ground."
-        },
-        {
-          "value": "inverse",
-          "purpose": "Inverse section ground."
-        }
-      ],
-      "applicability": "Accepted but ignored for raised; read by plate and outline.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
-    },
-    {
-      "prop": "variant",
-      "label": "Surface treatment",
-      "purpose": "Surface treatment selects the existing Card variant behavior.",
-      "values": [
-        {
-          "value": "raised",
-          "purpose": "Raised fill and elevation."
-        },
-        {
-          "value": "plate",
-          "purpose": "Opposite ground without an edge."
-        },
-        {
-          "value": "outline",
-          "purpose": "Panel edge without a shadow."
+          "value": "sm",
+          "purpose": "Small size."
         }
       ],
       "applicability": "Effective for this component when supplied.",
@@ -1712,29 +1684,8 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
       }
     }
   ],
-  "constraints": [
-    {
-      "kind": "effective-when",
-      "props": [
-        "ground",
-        "variant"
-      ],
-      "reason": "raised ignores ground; plate and outline consume it.",
-      "enforcement": "ignored",
-      "evidence": {
-        "source": "src/components/Card.tsx",
-        "evidence": "PLATE_CLASSES[ground]"
-      },
-      "effectiveWhen": {
-        "prop": "variant",
-        "values": [
-          "plate",
-          "outline"
-        ]
-      }
-    }
-  ]
-}, "src/components/Card.tsx"),
+  "constraints": []
+}, "src/components/preview-runtime/components/card/card.tsx"),
   "group.grid-list": entry({
     purpose: "Work through interactive records with independent selection and actions.",
     useWhen: "Records have flexible content, selection controls or secondary actions within each row.",
@@ -3916,42 +3867,23 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "group.card": {
     "exportName": "Card",
-    "source": "src/components/Card.tsx",
+    "source": "src/components/Card.types.ts",
     "options": [
       {
-        "prop": "ground",
+        "prop": "size",
         "values": [
-          "base",
-          "sunken",
-          "inverse"
+          "default",
+          "sm"
         ],
         "default": {
           "kind": "value",
-          "value": "base",
-          "source": "src/components/Card.tsx",
-          "evidence": "ground = \"base\""
+          "value": "default",
+          "source": "src/components/preview-runtime/components/card/card.tsx",
+          "evidence": "size = \"default\""
         },
         "forwarding": {
-          "source": "src/components/Card.tsx",
-          "evidence": "PLATE_CLASSES[ground]"
-        }
-      },
-      {
-        "prop": "variant",
-        "values": [
-          "raised",
-          "plate",
-          "outline"
-        ],
-        "default": {
-          "kind": "value",
-          "value": "raised",
-          "source": "src/components/Card.tsx",
-          "evidence": "variant = \"raised\""
-        },
-        "forwarding": {
-          "source": "src/components/Card.tsx",
-          "evidence": "variant === \"plate\""
+          "source": "src/components/preview-runtime/components/card/card.tsx",
+          "evidence": "data-size={size}"
         }
       }
     ],
@@ -3960,14 +3892,14 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--ui-border-panel",
+          "property": "--color-surface-raised",
           "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-border-panel,",
+          "source": "styles/shadcn-native.css",
+          "evidence": "--card: var(--color-surface-raised)",
           "via": [
             {
-              "source": "src/components/Card.tsx",
-              "evidence": "borderWidth: UI_BORDER_PANEL"
+              "source": "src/components/preview-runtime/components/card/card.tsx",
+              "evidence": "cn-card group/card flex flex-col"
             }
           ]
         }
@@ -4779,7 +4711,7 @@ export const COMPONENT_COMPARISON = Object.freeze({
   "inform.meter": comparison("inform.meter", "tone", "emphasis"),
   "inform.progress-bar": comparison("inform.progress-bar", "isIndeterminate"),
   "inform.spinner": comparison("inform.spinner", "size"),
-  "group.card": comparison("group.card", "variant"),
+  "group.card": comparison("group.card", "size"),
   "group.table": comparison("group.table", "selectionMode"),
   "group.separator": comparison("group.separator", "orientation"),
   "depict.avatar": comparison("depict.avatar", "size"),

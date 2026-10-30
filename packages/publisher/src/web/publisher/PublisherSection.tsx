@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Banner, Button, Card, Link, Select } from '@clossys/designer/components';
+import { Banner, Button, Link, Select } from '@clossys/designer/components';
 import { DataTable, DetailView, EmptyState, Form, NoticeList, SectionHeader, Toolbar } from '@clossys/designer/blocks';
 import type { InstanceRegistries } from '../../core/instance-binding.js';
 import type { PublisherConfiguration } from '../../planning/configuration.js';

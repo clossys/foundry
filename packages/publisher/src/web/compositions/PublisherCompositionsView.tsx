@@ -1,6 +1,6 @@
 "use client";
 import { Link } from "@clossys/designer/components";
-import { Button, Card, Select } from "@clossys/designer/components";
+import { Button, Card, CardContent, Select } from "@clossys/designer/components";
 
 import { DetailView, Panel, SectionHeader } from "@clossys/designer/blocks";
 import { useId, useState } from "react";
@@ -56,7 +56,7 @@ export function PublisherCompositionsView({ library, breakpointValues, designerH
       <p>Read-only layout contracts. Previews contain slot placeholders only.</p>
     </div>
     <div className="grid min-w-0 gap-lg desktop:grid-cols-[var(--ui-layout-sidebar-w)_minmax(0,1fr)_var(--ui-layout-aside-w)]">
-      <Card variant="outline"><nav aria-label="Composition arrangements">
+      <Card><CardContent><nav aria-label="Composition arrangements">
         <ul className="grid gap-lg">
           {LAYOUT_IA.nodes.filter(node => allowedLayoutIds === undefined || node.children.some(family => family.leaves.some(id => offered.some(leaf => leaf.id === id)))).map(node => <li key={node.id}>
             {node.id !== "page" ? <Button variant="secondary" type="button" isDisabled>{node.label} · concept only</Button> : <>
@@ -77,15 +77,15 @@ export function PublisherCompositionsView({ library, breakpointValues, designerH
             </>}
           </li>)}
         </ul>
-      </nav></Card>
+      </nav></CardContent></Card>
       <Panel><section aria-labelledby={`${id}-preview`} className="grid content-start gap-lg">
         <SectionHeader id={`${id}-preview`} level={3} title={`Skeleton preview · ${selection.config}`} />
         <p>Contract preview · no consumer sections rendered</p>
         {([320, 1280] as const).flatMap(width => (["light", "dark"] as const).map(theme => <figure key={`${width}-${theme}`} className="min-w-0 grid gap-sm">
           <figcaption>{width} px · {theme}</figcaption>
-          <Card variant="outline" role="region" aria-label={`${width} px ${theme} skeleton`} tabIndex={0} className="min-w-0 overflow-x-auto">
+          <Card role="region" aria-label={`${width} px ${theme} skeleton`} tabIndex={0} className="min-w-0 overflow-x-auto"><CardContent>
             <CompositionSkeletonFrame leaf={leaf.id} config={selection.config} width={width} theme={theme} breakpointValues={breakpointValues} />
-          </Card>
+          </CardContent></Card>
         </figure>))}
       </section></Panel>
       <Panel><aside aria-labelledby={`${id}-contract`} className="grid content-start gap-lg">

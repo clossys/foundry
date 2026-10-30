@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Card, mergeUiClasses } from "@clossys/designer/components/server";
+import { Card, CardContent, mergeUiClasses } from "@clossys/designer/components/server";
 import { SectionHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { PAGE_COLUMN_CLASSES, PageColumn, hasContent } from "../internal/PageLayout.js";
@@ -147,7 +147,7 @@ export function BoundaryView({
         <h1 className="text-display-l font-display text-ink-primary">{status}</h1>
         <SectionHeader density="standard" level={2} title={title} description={description} />
       </div>
-      {action ? <Card className="flex flex-col gap-lg">{action}</Card> : null}
+      {action ? <Card className="flex flex-col gap-lg"><CardContent>{action}</CardContent></Card> : null}
       {hasContent(notes) ? <div className="flex flex-col gap-xs text-body-s text-ink-secondary">{notes}</div> : null}
     </>
   );

@@ -68,8 +68,8 @@ export type { BadgeProps, BadgeVariant } from "./Badge.types.js";
 export { Banner } from "./Banner.server.js";
 export type { BannerProps, BannerVariant } from "./Banner.js";
 
-export { Card } from "./Card.js";
-export type { CardProps, CardVariant, CardGround } from "./Card.js";
+export { Card, CardHeader, CardTitle, CardDescription, CardAction, CardContent, CardFooter } from "./preview-runtime/components/card/card.js";
+export type { CardProps } from "./Card.types.js";
 
 export { Field } from "./Field.server.js";
 export type { FieldProps, FieldRenderProps } from "./Field.js";

@@ -1,6 +1,6 @@
 "use client";
 import { Link } from "@clossys/designer/components";
-import { Badge, Button, Card } from "@clossys/designer/components";
+import { Badge, Button, Card, CardContent } from "@clossys/designer/components";
 import { CanvasSurface, SectionHeader, type CanvasItem } from "@clossys/designer/blocks";
 
 import { useId, useState } from "react";
@@ -35,7 +35,7 @@ export function ItemAssemblyView({ item, registries, designerHref, ownerHref, on
   const renderId = `${targetPrefix}-render`;
   return <section aria-labelledby={`${id}-title`} className="grid min-w-0 gap-lg">
     <SectionHeader id={`${id}-title`} level={3} title="Item assembly" actions={<Link href={designerHref}>Open Designer</Link>} description="Owner inputs → instance → checks → render. Status describes supplied evidence; registration and placeholder rendering do not prove runtime qualification." />
-    <Card variant="outline" role="region" aria-label="Scrollable item assembly" tabIndex={0} className="min-w-0 overflow-x-auto">
+    <Card role="region" aria-label="Scrollable item assembly" tabIndex={0} className="min-w-0 overflow-x-auto"><CardContent>
       <CanvasSurface aria-label="Item assembly diagram" viewport={viewport} onViewportChange={setViewport} selection={[]} onSelectionChange={() => {}}
         itemInteraction="content" viewSize={{ width: 1232, height: 1648 }} worldBounds={{ x: 0, y: 0, width: 1232, height: 1648 }}
         items={[
@@ -54,19 +54,19 @@ export function ItemAssemblyView({ item, registries, designerHref, ownerHref, on
           if (node && canvasItem.id.startsWith("owner.")) return <SectionHeader level={4} title={node.owner} />;
           if (node) {
             const href = node.owner === "Format" ? undefined : ownerHref?.(node);
-            return <Card variant="outline" className={`h-full overflow-y-auto ${card}`}>
+            return <Card className={`h-full overflow-y-auto ${card}`}><CardContent>
               <SectionHeader level={4} title={node.summary} actions={<StatusChip status={node.status} />} />
               {node.references.length > 0 && <ul className="grid gap-xs text-sm">{node.references.map(reference => <li key={reference}>{reference}</li>)}</ul>}
               <p className="text-sm">{node.detail}</p>
               {node.findings.length > 0 && <ul className="text-sm">{node.findings.map((finding, i) => <li key={i}>{finding.code} · {finding.path}: {finding.message}</li>)}</ul>}
               {node.owner === "Format" ? <Button variant="secondary" type="button" onPress={onOpenFormats} aria-controls={`${targetPrefix}-formats`}>Open Formats</Button> : href ? <Link href={href}>Open {node.owner} in Designer</Link> : null}
-            </Card>;
+            </CardContent></Card>;
           }
-          if (canvasItem.id === "instance") return <Card variant="outline" className={card}><SectionHeader level={4} title="Instance" /><StatusChip status={instanceStatus} /><p>{item.binding.label}</p><p className="text-sm">{item.binding.instanceId}</p><p className="text-sm">{item.binding.path ?? "No route path"}</p><Link href={`#${inspectorId}`}>Open item inspector</Link></Card>;
-          if (canvasItem.id === "checks") return <Card variant="outline" className={card}><SectionHeader level={4} title="Checks" /><StatusChip status={checks.status} /><p>{item.findings.length} static findings</p><ul className="text-sm">{checks.findings.map((finding, index) => <li key={index}>{finding.code} · {finding.path}: {finding.message}</li>)}{checks.pending.map((reason, index) => <li key={`pending-${index}`}>{reason}</li>)}</ul><Link href={`#${checksId}`}>Open check evidence</Link></Card>;
-          if (canvasItem.id === "render") return <Card variant="outline" className={card}><SectionHeader level={4} title="Render" /><StatusChip status="pending" /><p>Placeholder preview only</p><p className="text-sm">Frame and section runtime qualification unavailable. Ready remains pending.</p><Link href={`#${renderId}`}>Open placeholder render</Link></Card>;
+          if (canvasItem.id === "instance") return <Card className={card}><CardContent><SectionHeader level={4} title="Instance" /><StatusChip status={instanceStatus} /><p>{item.binding.label}</p><p className="text-sm">{item.binding.instanceId}</p><p className="text-sm">{item.binding.path ?? "No route path"}</p><Link href={`#${inspectorId}`}>Open item inspector</Link></CardContent></Card>;
+          if (canvasItem.id === "checks") return <Card className={card}><CardContent><SectionHeader level={4} title="Checks" /><StatusChip status={checks.status} /><p>{item.findings.length} static findings</p><ul className="text-sm">{checks.findings.map((finding, index) => <li key={index}>{finding.code} · {finding.path}: {finding.message}</li>)}{checks.pending.map((reason, index) => <li key={`pending-${index}`}>{reason}</li>)}</ul><Link href={`#${checksId}`}>Open check evidence</Link></CardContent></Card>;
+          if (canvasItem.id === "render") return <Card className={card}><CardContent><SectionHeader level={4} title="Render" /><StatusChip status="pending" /><p>Placeholder preview only</p><p className="text-sm">Frame and section runtime qualification unavailable. Ready remains pending.</p><Link href={`#${renderId}`}>Open placeholder render</Link></CardContent></Card>;
           throw new TypeError("Unknown assembly canvas item");
         }} />
-    </Card>
+    </CardContent></Card>
   </section>;
 }

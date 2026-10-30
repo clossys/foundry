@@ -1,6 +1,6 @@
 "use client";
 import { Link } from "@clossys/designer/components";
-import { Button, Card, Select } from "@clossys/designer/components";
+import { Button, Card, CardContent, Select } from "@clossys/designer/components";
 
 import { DetailView, Panel, SectionHeader } from "@clossys/designer/blocks";
 import { useEffect, useId, useMemo, useState } from "react";
@@ -149,9 +149,9 @@ export function PublisherInstancesView({ instances, library, registries, compile
             <Select label="Theme" selectedKey={theme} onSelectionChange={key => { if (key != null) setTheme(String(key) as typeof theme); }} options={[{ id: "light", label: "light" }, { id: "dark", label: "dark" }]} />
             <Select label="State" selectedKey={state ?? ""} onSelectionChange={key => setChosenState(key ? String(key) : undefined)} options={[{ id: "", label: "default" }, ...(binding.states?.filter(value => value !== "default").map(value => ({ id: value, label: value })) ?? [])]} />
           </div>
-          <Card variant="outline" role="region" aria-label="Scrollable instance render" tabIndex={0} className="min-w-0 overflow-x-auto">
+          <Card role="region" aria-label="Scrollable instance render" tabIndex={0} className="min-w-0 overflow-x-auto"><CardContent>
             <InstanceRuntimeRender binding={binding} routes={runtimeRoutes} width={width} theme={theme} state={state} />
-          </Card>
+          </CardContent></Card>
         </section></Panel>
         </div>
         <Panel><aside id={assemblyTargetPrefix ? `${assemblyTargetPrefix}-inspector` : undefined} tabIndex={assemblyTargetPrefix ? -1 : undefined} aria-label="Instance inspector" className="grid content-start gap-lg">

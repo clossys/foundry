@@ -20,23 +20,23 @@ function PublisherSelectionNeeds({ ui }: { ui: UI }) {
 }
 
 function PreviewMetadata({ ui, page, publication }: { ui: UI; page: PublicationPage; publication: string }) {
-  const { Card, SectionHeader, Link, ContentSection } = ui;
-  if (!Card) return <ui.EmptyState title="Selected cards unavailable" description="The selected Designer runtime does not expose its Card component." />;
+  const { Card, CardContent, SectionHeader, Link, ContentSection } = ui;
+  if (!Card || !CardContent) return <ui.EmptyState title="Selected cards unavailable" description="The selected Designer runtime does not expose its Card component." />;
   let image: string | undefined;
   if (page.ogImage) {
     if (/^https?:\/\//.test(page.ogImage)) image = page.ogImage;
     else if (!page.ogImage.includes('..') && !/[\\%?#:]/.test(page.ogImage)) image = `/preview/${encodeURIComponent(publication)}/assets/${page.ogImage.replace(/^\//, '')}`;
   }
   return <ContentSection aria-label={`Search and social previews for ${page.route}`}>
-    <Card aria-label="Search preview">
+    <Card aria-label="Search preview"><CardContent>
       <SectionHeader eyebrow="Search preview" title={page.title ?? 'Title not provided'} description={page.description ?? 'Description not provided'} />
       <Link variant="standalone" href={page.previewUrl}>{page.route}</Link>
-    </Card>
-    <Card aria-label="Social preview">
+    </CardContent></Card>
+    <Card aria-label="Social preview"><CardContent>
       {image ? <img src={image} alt={page.title ? `${page.title} — social image` : 'Published social image'} style={{ maxWidth: '100%', height: 'auto' }} /> : null}
       <SectionHeader eyebrow="Social preview" title={page.title ?? 'Title not provided'} description={page.description ?? 'Description not provided'} />
       {!page.ogImage ? <SectionHeader description="Open Graph image not provided" /> : !image ? <SectionHeader description={`Open Graph image: ${page.ogImage}`} /> : null}
-    </Card>
+    </CardContent></Card>
   </ContentSection>;
 }
 

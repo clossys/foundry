@@ -1,6 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
-import { Card, mergeUiClasses } from "@clossys/designer/components/server";
+import { Card, CardContent, mergeUiClasses } from "@clossys/designer/components/server";
 import { PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import type { SiteFooterLegalProps } from "@clossys/designer/shell/server";
@@ -85,9 +85,9 @@ export function ContactView({
   return (
     <ContactViewFrame {...rest} className={className} style={style} brand={brand} headerAction={headerAction} secondaryAction={secondaryAction} nav={nav} ground={ground} legal={legal}>
       <PageHeader title={heading} description={description} />
-      <Card>
+      <Card><CardContent>
         <ContactForm resolveCopyId={resolveCopyId} copy={copy} topics={topics} initialTopic={initialTopic} honeypotField={honeypotField} onSubmit={onSubmit} devPreview={devPreview} />
-      </Card>
+      </CardContent></Card>
     </ContactViewFrame>
   );
 }

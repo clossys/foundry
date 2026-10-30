@@ -7,7 +7,7 @@
 
 import type { ReactNode } from "react";
 import { createElement } from "react";
-import { Card } from "@clossys/designer/components/server";
+import { Card, CardContent } from "@clossys/designer/components/server";
 import { MarketingChapter, PageHeader, Stat } from "@clossys/designer/blocks/server";
 import type { ResolvedWebGroupItem, WebTemplateBlockSpec } from "../types.js";
 
@@ -67,7 +67,7 @@ function renderBlock(
               : content[block.title],
           ...(block.description === undefined ? {} : { description: content[block.description] }),
         },
-        createElement(Card, { className: "p-lg" }, content[block.node]),
+        createElement(Card, { className: "p-lg" }, createElement(CardContent, null, content[block.node])),
       );
     case "stat-grid":
       return createElement(

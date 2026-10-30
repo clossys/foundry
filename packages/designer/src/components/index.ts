@@ -77,8 +77,8 @@ export type { TextFieldProps } from "./TextField.js";
 export { Badge, badgeVariants } from "./preview-runtime/components/badge/badge.js";
 export type { BadgeProps, BadgeVariant } from "./Badge.types.js";
 
-export { Card } from "./Card.js";
-export type { CardProps, CardVariant, CardGround } from "./Card.js";
+export { Card, CardHeader, CardTitle, CardDescription, CardAction, CardContent, CardFooter } from "./preview-runtime/components/card/card.js";
+export type { CardProps } from "./Card.types.js";
 
 export { Breadcrumb } from "./Breadcrumb.js";
 export type { BreadcrumbProps, BreadcrumbItemProps } from "./Breadcrumb.js";

@@ -253,8 +253,7 @@ describe("shared component guidance", () => {
     for (const variant of ["tonal", "quiet"]) expect(effective(find("act.button", "ground"), { variant })).toBe(true);
     expect(effective(find("act.button", "trailingIcon"), { variant: "quiet" })).toBe(true);
     expect(effective(find("act.button", "trailingIcon"), { variant: "tonal" })).toBe(false);
-    expect(effective(find("group.card", "ground"), { variant: "raised" })).toBe(false);
-    for (const variant of ["plate", "outline"]) expect(effective(find("group.card", "ground"), { variant })).toBe(true);
+    expect(guidance()["group.card"].media.web.implementation.constraints).toEqual([]);
     expect(effective(find("inform.meter", "direction"), {})).toBe(false);
     expect(effective(find("inform.meter", "direction"), { limit: 0 })).toBe(true);
     expect(effective(find("act.link", "variant"), {})).toBe(true);
@@ -477,9 +476,9 @@ const comparisonGolden: Record<string, {
     retainedCells: 3,
   },
   "group.card": {
-    columns: {"option": "variant", "values": ["raised", "plate", "outline"]},
-    maxCells: 3,
-    retainedCells: 3,
+    columns: {"option": "size", "values": ["default", "sm"]},
+    maxCells: 2,
+    retainedCells: 2,
   },
   "group.table": {
     columns: {"option": "selectionMode", "values": ["none", "single", "multiple"]},
@@ -596,18 +595,18 @@ describe("finite component comparisons", () => {
 
   it("retains Card's raised default and Link's three text appearances", () => {
     const card = comparisons()!["group.card"];
-    expect(comparisonCells(card)).toEqual([{ variant: "raised" }, { variant: "plate" }, { variant: "outline" }]);
+    expect(comparisonCells(card)).toEqual([{ size: "default" }, { size: "sm" }]);
     expect(comparisonCells(comparisons()!["act.link"])).toEqual([
       { variant: "default" }, { variant: "muted" }, { variant: "standalone" },
     ]);
-    expect(comparisonViolations(card.constraints, { variant: "raised", ground: "base" })).toEqual([]);
+    expect(comparisonViolations(card.constraints, { size: "default" })).toEqual([]);
   });
 
   it("never excludes cells for applicability, derivation or data guidance", () => {
     const fixtures = [
       ["act.button", { variant: "primary", ground: "base", trailingIcon: null }],
       ["act.link", { variant: "muted", buttonVariant: "primary" }],
-      ["group.card", { variant: "raised", ground: "base" }],
+      ["group.card", { size: "default" }],
       ["inform.meter", { direction: "higher-is-better" }],
       ["inform.banner", { variant: "danger" }],
       ["inform.status-mark", { tone: "warning" }],

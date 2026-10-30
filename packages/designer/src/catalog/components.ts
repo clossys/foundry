@@ -614,7 +614,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
   }),
 
   // Containment / Structure
-  onMain("Card", ["src/components/Card.tsx"], {
+  onMain("Card", ["src/components/preview-runtime/components/card/card.tsx"], {
     id: "group.card",
     label: "Card",
     racBase: none("presentational"),

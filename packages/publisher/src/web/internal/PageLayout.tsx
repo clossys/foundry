@@ -1,6 +1,6 @@
 import { Children } from "react";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Card, mergeUiClasses } from "@clossys/designer/components/server";
+import { Card, CardContent, mergeUiClasses } from "@clossys/designer/components/server";
 import { SectionFrame } from "@clossys/designer/blocks/server";
 
 /**
@@ -93,7 +93,7 @@ export interface PageLayoutProps extends PageLayoutHeaderProps {
   notes?: ReactNode;
   /** When given, the card sits in a region with this accessible name. */
   cardLabel?: string;
-  /** Internal opt-in content plate. Omitted keeps the existing raised card. */
+  /** Internal opt-in page surface treatment around the native Card content. */
   surface?: "plate";
   /** Internal start alignment. Omitted keeps the existing centered header and notes. */
   alignment?: "start";
@@ -108,8 +108,8 @@ export interface PageLayoutProps extends PageLayoutHeaderProps {
  */
 export function PageLayout({ title, subtitle, children, notes, cardLabel, surface, alignment }: PageLayoutProps) {
   const card = surface === "plate"
-    ? <Card variant="plate" className="border border-line-panel flex flex-col gap-lg text-start">{children}</Card>
-    : <Card className="flex flex-col gap-lg text-start">{children}</Card>;
+    ? <Card className="border border-line-panel flex flex-col gap-lg text-start"><CardContent>{children}</CardContent></Card>
+    : <Card className="flex flex-col gap-lg text-start"><CardContent>{children}</CardContent></Card>;
   return (
     <>
       <PageLayoutHeader title={title} subtitle={subtitle} alignment={alignment} />
