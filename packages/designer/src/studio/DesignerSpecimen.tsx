@@ -17,6 +17,7 @@ import { packageSurfacePreview } from "./planned-surface-previews.js";
 export interface DesignerSurfaceSpecimen {
   readonly descriptorHash: string;
   readonly render: (options: { readonly width: number; readonly state: string }) => ReactNode;
+  readonly states?: readonly string[];
 }
 export interface DesignerSpecimenContext {
   /** The consumer's native resolution, including any native default selections. Never a catalog snapshot. */
@@ -27,6 +28,11 @@ export interface DesignerSpecimenContext {
   readonly surfaces?: Readonly<Record<string, DesignerSurfaceSpecimen>>;
   /** Emitted hosts must supply an executable selected port; package samples cannot become render fallbacks. */
   readonly surfaceBindingsOnly?: boolean;
+  /** A selected implementation may expose a library-private, descriptor-bound static interaction renderer. */
+  readonly componentStates?: Readonly<Record<string, {
+    readonly descriptor: CompositeResolved["components"]["components"][string];
+    readonly render: (options: { readonly members: readonly string[]; readonly state: string; readonly props: Readonly<Record<string, unknown>>; readonly interactive: false }) => ReactNode;
+  }>>;
 }
 export interface DesignerSpecimenNeed { readonly leaf: string; readonly reason: string }
 export interface DesignerSpecimenProps {
