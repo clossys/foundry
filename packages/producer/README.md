@@ -105,4 +105,41 @@ Director tries `@clossys/director` before `@clossys/strategist`. Designer, Write
 and Publisher each have one candidate. Dependencies pin the available agents
 to their workspace versions; `esbuild` is also pinned to an exact version.
 
+## Build and install a local sprint
+
+From the Foundry checkout, install its locked workspace dependencies with `npm ci`,
+then pack the current sprint into a fresh directory outside the checkout:
+
+```sh
+node packages/producer/scripts/pack-five.mjs --out-dir <tarball-directory>
+```
+
+The script clean-builds the mapped agents, their local dependencies, and Producer,
+then runs native `npm pack` for the five packages. It preserves their current
+versions and Producer's private flag. When Studio App Router source and a Next config are present, it
+also runs `scripts/build-studio.mjs` and includes the standalone Studio output.
+`--help` describes the interface. Build logs use stderr; stdout and the output
+directory's `summary.json` contain the package names, versions, filenames,
+integrities, source Git head, and dirty-state evidence. Existing tarballs are
+never overwritten.
+
+Use a complete sprint head containing the Studio source for consumer installation.
+Check that `summary.json` reports `complete: true` and `studio.status: "built"`.
+An earlier scaffold-only checkout can still produce five tarballs, but explicitly
+reports `complete: false` and `studio.status: "missing-source"`; that result does
+not establish Studio readiness.
+
+At the consumer repository's root, install all five generated tarballs into its
+existing `clossys/` npm workspace in one command. Set `PACK_DIR` to the absolute
+output directory from the pack step:
+
+```sh
+PACK_DIR=<tarball-directory>
+npm install --workspace ./clossys "$PACK_DIR"/*.tgz
+```
+
+The fresh output directory contains exactly the four resolved agent tarballs and
+the private Producer tarball. This uses local files and publishes nothing; it
+does not change the consumer's workspace layout.
+
 [Changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/producer.md)
