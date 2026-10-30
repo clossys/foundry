@@ -311,6 +311,9 @@ const exportNames: Record<string, string> = { toggle: "Toggle", "dropdown-menu":
  * Dialog: the three naming parts of a host-labelled command dialog (API-D1).
  */
 const secondaryExportApprovals: Readonly<Record<string, readonly { name: string; export: string }[]>> = {
+  button: [{ name: "LinkButton", export: "LinkButton" }],
+  tabs: ["TabsList", "TabsTrigger", "TabsContent"].map(name => ({ name, export: name })),
+  card: ["CardHeader", "CardTitle", "CardAction", "CardContent", "CardFooter"].map(name => ({ name, export: name })),
   select: ["SelectContent", "SelectGroup", "SelectItem", "SelectTrigger", "SelectValue"].map(name => ({ name, export: name })),
   "dropdown-menu": [{ name: "MenuGroup", export: "DropdownMenuGroup" }, { name: "MenuItem", export: "DropdownMenuItem" }, { name: "MenuLabel", export: "DropdownMenuLabel" }],
   dialog: ["DialogDescription", "DialogHeader", "DialogTitle"].map(name => ({ name, export: name })),

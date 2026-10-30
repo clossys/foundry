@@ -30,6 +30,14 @@ interface Token { text: string; quoted?: true }
  * or component qualification; unknown output still uses the bounded parser.
  */
 const selectedFunctionSources: Readonly<Record<string, { sha256: string; functions: readonly string[] }>> = {
+  "components/tabs/tabs.tsx": {
+    sha256: "463fa0a0dfed07c77607a747e163fe4cdf7eccf1d7abf4d1fe34bb992717e5c2",
+    functions: ["Tabs", "TabsList", "TabsTrigger", "TabsContent"],
+  },
+  "components/button/button.tsx": {
+    sha256: "81c519436afe48770064f8b942d58195dcd0133ffbcd18743b60191ff17cfd21",
+    functions: ["Button", "LinkButton"],
+  },
   "components/sidebar/sidebar.tsx": {
     sha256: "e196cce6931a381a3cfe63fecbd019550a960cee62411363ee2d0c85f7d3c8e5",
     functions: ["Sidebar", "SidebarContent", "SidebarFooter", "SidebarGroup", "SidebarGroupAction", "SidebarGroupContent", "SidebarGroupLabel", "SidebarHeader", "SidebarInput", "SidebarInset", "SidebarMenu", "SidebarMenuAction", "SidebarMenuBadge", "SidebarMenuButton", "SidebarMenuItem", "SidebarMenuSkeleton", "SidebarMenuSub", "SidebarMenuSubButton", "SidebarMenuSubItem", "SidebarProvider", "SidebarRail", "SidebarSeparator", "SidebarTrigger"],
@@ -60,7 +68,7 @@ const selectedFunctionSources: Readonly<Record<string, { sha256: string; functio
   },
 };
 /**
- * Only directives, named imports, concrete named functions and local identity
+ * Only directives, named/namespace imports, concrete named functions and local identity
  * export lists are admitted. Templates, regexes, ambient/overloaded functions,
  * source aliases and other top-level declarations are deliberately unsupported.
  * Function bodies are balanced lexically, with JSX text kept out of JS tokens.
@@ -153,8 +161,10 @@ function sourceValues(source: string) {
     if (token.quoted || token.text === ";") continue;
     if (token.text === "import") {
       let binding = next(); if (binding?.text === "type") binding = next();
-      if (binding?.text !== "{") return refuse();
-      group("{", false); take("from"); if (!next()?.quoted) return refuse();
+      if (binding?.text === "{") group("{", false);
+      else if (binding?.text === "*") { take("as"); localName(); }
+      else return refuse();
+      take("from"); if (!next()?.quoted) return refuse();
     } else if (token.text === "function") concreteFunction(false);
     else if (token.text === "export") {
       let item = next();

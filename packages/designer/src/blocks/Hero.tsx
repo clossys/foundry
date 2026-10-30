@@ -1,4 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
+import type { SemanticContent as SemanticContentComponent } from "../components/SemanticContent.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
 import { cx } from "../components/internal/cx.js";
 import type { SectionIntroProps } from "./SectionIntro.js";
 import { HeroIntro } from "./hero/HeroIntro.js";
@@ -7,6 +9,8 @@ import type { StillBackdropArt } from "../backdrop/consumer-art.js";
 export type { HeroBackdropScrim } from "./hero/StillBackdrop.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+const SemanticContent = componentLeaf<typeof SemanticContentComponent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.hero", "foundry/sections.hero");
 
@@ -134,7 +138,7 @@ export function Hero({
   );
 
   return (
-    <section
+    <SemanticContent as="section"
       {...SECTION_STAMP} {...rest}
       className={cx(
         colors.surface,
@@ -148,8 +152,8 @@ export function Hero({
       style={style}
     >
       {backdrop ? <StillBackdrop art={backdrop} scrim={backdropScrim} /> : null}
-      {backdrop ? <div className="relative">{content}</div> : content}
-      {media ? <div className={cx("w-full", backdrop ? "relative" : "", splitLayout ? "" : "max-w-display", centred && !splitLayout ? "mx-auto" : "")}>{media}</div> : null}
-    </section>
+      {backdrop ? <SemanticContent as="div" className="relative">{content}</SemanticContent> : content}
+      {media ? <SemanticContent as="div" className={cx("w-full", backdrop ? "relative" : "", splitLayout ? "" : "max-w-display", centred && !splitLayout ? "mx-auto" : "")}>{media}</SemanticContent> : null}
+    </SemanticContent>
   );
 }
