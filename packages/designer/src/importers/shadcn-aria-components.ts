@@ -380,6 +380,19 @@ export function bindSiblingLeafModules(content: string, leafByItem: Readonly<Rec
   });
   return { content: bound, ambiguous };
 }
+
+/** Native Badge retains its source API and classes; theme values bind through standard shadcn variables. */
+function nativeBadgeSource(original: SourceFile): RewriteResult {
+  const file = { path: "components/badge/badge.tsx", content: original.content.replace('from "cn"', 'from "../_parts/utils/index.js"') };
+  const properties = ["primary", "primary-foreground", "secondary", "secondary-foreground", "border", "foreground", "muted", "muted-foreground", "destructive", "ring", "radius"] as const;
+  return {
+    transform: "shadcn-aria-rewrite@1", files: [file],
+    outputSha256: [{ path: file.path, sha256: sha256(file.content) }],
+    reads: { tokens: sorted(properties.map(property => adapter.bindings[property].member)), assets: [], components: [] },
+    parts: ["utils"], issues: [],
+  };
+}
+
 export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnComponentImport {
   if (input.styles.path !== STYLE || input.notice.path !== "LICENSE.md") throw new Error("shadcn-components: missing style or licence input");
   verifyShadcnSource(input.styles); verifyShadcnSource(input.notice);
@@ -431,7 +444,8 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
     // pinned provenance, but its dialog/input-group imports never ship.
     if (command) verifyShadcnSource(command);
     const selected = name === "dialog" ? dialogExecutableSource(original) : name === "dropdown-menu" ? menuExecutableSource(original, command!) : name === "toggle" || name === "toggle-group" ? toggleExecutableSource(name, original) : original;
-    const aria = rewriteShadcnAria({ item: name, leaf, files: [selected, ...privateFiles], styles: input.styles.content, leafByItem: SHADCN_COMPONENT_ITEMS, styleDefaults: true });
+    const aria = name === "badge" ? nativeBadgeSource(original)
+      : rewriteShadcnAria({ item: name, leaf, files: [selected, ...privateFiles], styles: input.styles.content, leafByItem: SHADCN_COMPONENT_ITEMS, styleDefaults: true });
     // The selected tooltip profile binds its delay and close timing to these behavior-timing leaves.
     const result: RewriteResult = name === "tooltip" ? { ...aria, reads: { ...aria.reads, tokens: sorted([...aria.reads.tokens, ...tooltipExecutableReads]) } } : aria;
     const files: SourceFile[] = result.files.map(file => {
