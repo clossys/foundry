@@ -417,7 +417,7 @@ export function relativeSurfacePath(file: string, module: string, paths: readonl
             stack.push(part);
     }
     const exact = stack.join("/");
-    const alternatives = [exact, ...(exact.endsWith(".js") ? [exact.slice(0, -3) + ".ts", exact.slice(0, -3) + ".tsx"] : [])].filter(path => paths.includes(path));
+    const alternatives = [exact, ...(exact.endsWith(".js") ? [exact.slice(0, -3) + ".ts", exact.slice(0, -3) + ".tsx"] : !/\.[^/]+$/.test(exact) ? [exact + ".ts", exact + ".tsx"] : [])].filter(path => paths.includes(path));
     return alternatives.length === 1 ? alternatives[0] : undefined;
 }
 export function analyzeSurfaceSource(input: {

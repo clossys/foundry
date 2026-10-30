@@ -49,7 +49,9 @@
       "license": "MIT",
       "members": [
         "current",
-        "expand"
+        "expand",
+        "part.item",
+        "part.item-content"
       ],
       "pin": {
         "export": "./components#NavigationTree",
@@ -58,7 +60,9 @@
       },
       "propMap": {
         "current": "./components#NavigationTree",
-        "expand": "./components#NavigationTree"
+        "expand": "./components#NavigationTree",
+        "part.item": "./components#NavigationTree.Item",
+        "part.item-content": "./components#NavigationTree.ItemContent"
       },
       "props": [
         "aria-label",

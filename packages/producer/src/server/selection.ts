@@ -10,6 +10,7 @@ import { themeHash } from "./theme-default.js";
 import { prepareStudioSelection } from "./selection-defaults.js";
 import { selectionCss } from "./selection-css.js";
 import { selectionShadcnTokens, type SelectionShadcnTokenContract } from "./selection-shadcn-tokens.js";
+import { studioComponentProviderSource } from './selection-component-provider.js';
 
 export interface StudioSelectionLeaf {
   leaf: string;
@@ -41,7 +42,7 @@ async function inspectedSourceExports(source: string, module: string): Promise<s
 }
 
 /** Selected source may share React, RAC and Designer contexts with its host. */
-function projectionPlugin(files: ReadonlyMap<string, string>, root: string, componentModules: ReadonlyMap<string, ComponentModule>, iconAssets: Readonly<Record<string, string>>): Plugin {
+function projectionPlugin(files: ReadonlyMap<string, string>, root: string, componentModules: ReadonlyMap<string, ComponentModule>, iconAssets: Readonly<Record<string, string>>, implementationImports: ReadonlyMap<string, { leaf: string; module: string }>): Plugin {
   const designerRoot = resolveAgent("designer").packageRoot;
   const designerModule = (path: string, owner: string) => ({ path: JSON.stringify([owner, path]), namespace: "studio-designer" });
   const sharedContext = new Map<string, boolean>();
@@ -49,6 +50,16 @@ function projectionPlugin(files: ReadonlyMap<string, string>, root: string, comp
   return {
     name: "studio-selected-library",
     setup(context) {
+      context.onResolve({ filter: /^studio-component-implementation:/ }, async args => {
+        const selected = implementationImports.get(args.path);
+        if (args.namespace !== 'studio-projection' || !selected) throw new Error('Selected component implementation import is unavailable');
+        if (files.has(selected.module)) return { path: selected.module, namespace: 'studio-projection' };
+        const options = { kind: args.kind, pluginData: { ordinaryPackage: true } };
+        const consumer = await context.resolve(selected.module, { ...options, resolveDir: root });
+        const resolved = consumer.errors.length ? await context.resolve(selected.module, { ...options, resolveDir: designerRoot }) : consumer;
+        if (resolved.errors.length || resolved.external) return resolved;
+        return selected.module.startsWith('@clossys/designer/') ? designerModule(resolved.path, selected.leaf) : resolved;
+      });
       context.onResolve({ filter: SINGLETON }, args => ({ path: args.path, namespace: "studio-singleton" }));
       context.onLoad({ filter: /.*/, namespace: "studio-singleton" }, async args => {
         const namespace = await import(args.path);
@@ -169,6 +180,15 @@ export async function compileSelection(root: string, input: CompositeEngineInput
   };
   for (const fill of input.catalog.values.fills) if (fill.$extensions["com.clossys.fill"].slot.startsWith("assets.icon-")) collectGlyphs((fill as any).assets, fill.$extensions["com.clossys.fill"].slot);
   const files = new Map<string, string>(components.emitComponents(profile.components, ["component-index"], { glyphModule: { path: "adapters/glyphs.ts", glyphs } }).map((file: { path: string; content: string }) => [file.path, file.content]));
+  const implementationImports = new Map<string, { leaf: string; module: string }>();
+  const componentParts = Object.values(profile.components.components).filter(component => component.impl.kind === 'source');
+  // This provider is compiled in the same graph as the selected surfaces. Its
+  // context and implementation modules therefore cannot diverge from theirs.
+  files.set("studio-component-provider.ts", await studioComponentProviderSource(profile, files, (leaf, module) => {
+    const specifier = `studio-component-implementation:${JSON.stringify([leaf, module])}`;
+    implementationImports.set(specifier, { leaf, module });
+    return specifier;
+  }));
   if (profile.surfaces) for (const file of surfaces.emitSurfaces(profile.surfaces, ["surface-index"])) files.set(file.path, file.contents);
   let tree = "export const tree = {};\n";
   if (files.has("components/navigation-tree/index.ts")) {
@@ -232,11 +252,11 @@ export async function compileSelection(root: string, input: CompositeEngineInput
     const module = selectedTable.impl.kind === "source" ? "./" + selectedTable.impl.entry : selectedTable.impl.module;
     table = `import * as tableParts from ${JSON.stringify(module)};\nimport { Table as SelectedTable } from "./components/table/index.ts";\nexport const table = {...tableParts, Table:SelectedTable};\n`;
   }
-  files.set("studio-entry.ts", 'export * as components from "./component-index.ts";\n' + (files.has("surface-index.ts") ? 'export * as surfaces from "./surface-index.ts";\n' : "export const surfaces = {};\n") + tree + disclosure + table + (selectedDialog ? 'export * as dialog from "./studio-compat/dialog.ts";\n' : "export const dialog = {};\n") + (selectedTooltip ? 'export * as tooltip from "./studio-compat/tooltip.ts";\n' : "export const tooltip = {};\n"));
+  files.set("studio-entry.ts", componentParts.map((component, index) => `import * as SelectedParts${index} from ${JSON.stringify(`./components/${component.slot.slice(11)}/index.ts`)};`).join('\n') + `\nexport const componentParts = { ${componentParts.map((component, index) => `${JSON.stringify(component.slot)}: SelectedParts${index}`).join(', ')} };\n` + 'export { ComponentProvider, componentModules, componentSourceIdentities, matchesComponentSource } from "./studio-component-provider.ts";\nexport * as components from "./component-index.ts";\n' + (files.has("surface-index.ts") ? 'export * as surfaces from "./surface-index.ts";\n' : "export const surfaces = {};\n") + tree + disclosure + table + (selectedDialog ? 'export * as dialog from "./studio-compat/dialog.ts";\n' : "export const dialog = {};\n") + (selectedTooltip ? 'export * as tooltip from "./studio-compat/tooltip.ts";\n' : "export const tooltip = {};\n"));
   const tokenContract: SelectionShadcnTokenContract = (await agentModule("designer", "catalog-core/token-contract.js")).tokenContract;
   const shadcnTokens = selectionShadcnTokens(profile.values, tokenContract);
   const css = await selectionCss(files, undefined, shadcnTokens);
-  const bundled = await build({ entryPoints: ["studio-entry.ts"], bundle: true, write: false, format: "esm", platform: "browser", target: "es2022", jsx: "automatic", minify: true, define: { "process.env.NODE_ENV": '"production"' }, sourcemap: false, legalComments: "none", logLevel: "silent", plugins: [projectionPlugin(files, root, componentModules, iconAssets)] });
+  const bundled = await build({ entryPoints: ["studio-entry.ts"], bundle: true, write: false, format: "esm", platform: "browser", target: "es2022", jsx: "automatic", minify: true, define: { "process.env.NODE_ENV": '"production"' }, sourcemap: false, legalComments: "none", logLevel: "silent", plugins: [projectionPlugin(files, root, componentModules, iconAssets, implementationImports)] });
   const code = bundled.outputFiles?.[0]?.text;
   if (!code) throw new Error("Selected runtime was not emitted");
   await emit?.({ input, profile, files, runtime: code, css });

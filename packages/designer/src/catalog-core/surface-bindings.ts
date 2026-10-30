@@ -6,6 +6,20 @@ import { isSurfacePackageEntry, surfaceDigest, surfaceEntryOf, surfaceOf } from 
 import type { CompositeEngineInput, CompositeResolved } from "./types.js";
 import type { WiringFinding } from "./wiring.js";
 import type { SurfaceCandidate, SurfaceFile, SurfacePackageEvidence } from "./surface-types.js";
+import { STUDIO_SPECIMEN_HOST_PARTS } from './studio-host-parts.js';
+
+/** Existing S4 import/export and installed artifact proof supplies exact S5 identities. */
+export function surfaceDogfoodImportBindings(fill: SurfaceCandidate, bound: ReturnType<typeof bindSurfaceSource>): Record<string, string> {
+    if (bound.proof.findings.length) return {};
+    return Object.fromEntries(bound.proof.imports.flatMap(edge => {
+        const selected = fill.bindings.find(row => row.file === edge.file && row.local === edge.local);
+        if (selected) return [[`${edge.file}:${edge.module}#${edge.name}`, selected.slot]];
+        const constructor = Object.values(STUDIO_SPECIMEN_HOST_PARTS).find(part => part.styleConstructor.module === edge.module && part.styleConstructor.export === edge.name)?.styleConstructor;
+        const dependency = bound.packages.filter(row => row.module === edge.module);
+        return constructor && dependency.length === 1 && /^[a-f0-9]{64}$/.test(dependency[0]!.artifactSha256) && dependency[0]!.values.includes(edge.name)
+            ? [[`${edge.file}:${edge.module}#${edge.name}`, `${constructor.module}#${constructor.export}`]] : [];
+    }));
+}
 export function bindSurfaceSource(fill: SurfaceCandidate, files: readonly SurfaceFile[], profile: CompositeResolved, packages: readonly SurfacePackageEvidence[]) {
     const glyphs: Record<string, unknown> = {};
     for (const member of Object.values(profile.values.members).filter(row => row.$type === "glyph" && row.slot.startsWith("assets.icon-"))) {
@@ -55,7 +69,7 @@ export function bindSurfaceSource(fill: SurfaceCandidate, files: readonly Surfac
                 add(`unproven selected dependency ${module}`);
                 continue;
             }
-            for (const value of edge[2]!.split(",")) {
+            for (const value of edge[2]!.replace(/,\s*$/, "").split(",")) {
                 const binding = value.trim(), erased = !!edge[1] || binding.startsWith("type "), name = binding.replace(/^type\s+/, "").split(/\s+as\s+/)[0]!;
                 if (!(erased ? evidence[0]!.types : evidence[0]!.values).includes(name))
                     add(`unproven selected dependency export ${module}#${name}`);

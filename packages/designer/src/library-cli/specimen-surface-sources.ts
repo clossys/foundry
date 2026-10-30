@@ -4,6 +4,8 @@ import { stableStringify } from "../catalog-core/stable.js";
 import { materializeSurfaceSourceFill } from "../catalog-core/surface-materialize.js";
 import { surfaceDescriptorHash, surfaceDerivationHash, surfaceEntryOf, isSurfacePackageEntry, surfaceManifest } from "../catalog-core/surface-library.js";
 import { SPECIMEN_SECTION_EXPORTS, specimenSectionSourceCatalog } from "../importers/specimen-sections.js";
+import { resolve } from "../catalog-core/api.js";
+import { bindSurfaceSource } from "../catalog-core/surface-bindings.js";
 import type { CompositeEngineInput } from "../catalog-core/types.js";
 import type { SurfaceBase, SurfaceMaterializationReceipt, SurfaceSlot, SurfaceSourceBundle, SurfaceDependency } from "../catalog-core/surface-types.js";
 
@@ -11,8 +13,17 @@ import type { SurfaceBase, SurfaceMaterializationReceipt, SurfaceSlot, SurfaceSo
 export async function prepareSpecimenSurfaceSources(input: CompositeEngineInput, leaves: readonly SurfaceSlot[] = SPECIMEN_SECTION_EXPORTS.map(row => row.id), selectedDependencies: readonly SurfaceDependency[] = []): Promise<{ readonly input: CompositeEngineInput; readonly bundles: readonly SurfaceSourceBundle[] }> {
   if (!input.catalog.surfaces || !input.library.adoptedAt) throw new Error("Native specimen source preparation requires a surface catalog and adoption date.");
   const registry = specimenSectionSourceCatalog(input.surfaceOptions?.packages, selectedDependencies);
+  const profile = selectedDependencies.length ? resolve(input) : undefined;
   const wanted = new Set(leaves);
-  const fills = registry.fills.filter(doc => wanted.has(doc.$extensions["com.clossys.fill"].slot as SurfaceSlot));
+  const fills = registry.fills.filter(doc => wanted.has(doc.$extensions["com.clossys.fill"].slot as SurfaceSlot)).map(document => {
+    if (!profile) return document;
+    const candidate = surfaceEntryOf(document);
+    if (isSurfacePackageEntry(candidate) || candidate.kind !== "section") throw new Error("A specimen source candidate must retain its section source.");
+    const files = registry.upstream.filter(file => file.path === candidate.impl.entry);
+    const bound = bindSurfaceSource(candidate, files, profile, input.surfaceOptions!.packages);
+    const used = new Set(bound.packages.map(row => row.module));
+    return { $extensions: document.$extensions, sections: { [candidate.slot.slice(9)]: { ...candidate, dependencies: candidate.dependencies.filter(row => used.has(row.module)) } } };
+  });
   if (fills.length !== wanted.size) throw new Error("A requested specimen leaf is not registered.");
   const existing = input.catalog.surfaces;
   const catalog = { ...input.catalog, surfaces: { ...existing, fills: [...existing.fills.filter(doc => !wanted.has(doc.$extensions["com.clossys.fill"].slot as SurfaceSlot)), ...fills], transforms: [...existing.transforms.filter(transform => !registry.transforms.some(row => row.identity.id === transform.identity.id)), ...registry.transforms], materializations: [...existing.materializations] } };

@@ -1,6 +1,11 @@
 import * as React from "react";
+import type { GridListProps } from "../components/GridList.js";
 const SelectedComponentLeaf = React.lazy(async () => ({ default: (await import("./component-leaf.client.js")).SelectedComponentLeaf }));
 export type { ConsumerComponentBinding, ConsumerComponentSelection } from "./component-leaf.client.js";
+
+/** The selected GridList contract maps layout.list to the native stack geometry. */
+export type GridListLeaf = (<T extends object>(props: Omit<GridListProps<T>, "layout"> & { readonly layout?: "list" | "grid" }) => React.ReactElement)
+  & Pick<typeof import("../components/GridList.js").GridList, "Item" | "SelectionCheckbox">;
 
 /** Server-safe facade: its client boundary resolves only the consumer's selected component leaf. */
 export function componentLeaf<T>(leaf: `components.${string}`, part?: string): T {
