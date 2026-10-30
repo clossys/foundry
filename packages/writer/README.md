@@ -158,22 +158,62 @@ For text records this belongs in the one-line JSON metadata; for textless
 records it belongs in the fenced JSON record. Do not add unsupported
 frontmatter keys or a second cell format.
 
+Run these commands from the admitted consumer root containing
+`clossys/clossys.config.ts`, using its installed pins. Producer's optional
+`--root <consumer-root>` identifies that root; the native Writer cell CLI's
+`--root` identifies the cell directory instead. Its default follows the nearest
+repository boundary, which can differ for a nested consumer.
+
+Before editing, assemble the session brief from the actual `directorInputs`,
+`obligations` and canonical `leaves`. A nonempty `missingInputs` blocks drafting
+even if the brief command succeeds. Keep cell ids (for example `site.home`)
+distinct from record leaf ids (for example `strings.page-titles`), and preserve
+existing record ids, contexts, bindings and compile output mappings. Map each
+voice/personality obligation only to records that realise it, with rationale;
+coverage checks compare identities and cannot judge the creative interpretation.
+See the skill's working-brief procedure for the full handoff.
+
 Use the installed native cell CLI for the existing draft lifecycle:
 
 ```bash
-node node_modules/@clossys/writer/dist/cells/cli.js propose <cell.id>
+node node_modules/@clossys/writer/dist/cells/cli.js propose <cell.id> --root clossys/agents/writer
 # Edit the returned native draft; do not edit active bodies or tree pointers.
 clossys write --check
-node node_modules/@clossys/writer/dist/cells/cli.js activate <cell.id>@<N> --out clossys/agents/writer/compiled --confirm 'msg:<session>#U<n>'
+node node_modules/@clossys/writer/dist/cells/cli.js activate <cell.id>@<N> --root clossys/agents/writer --out clossys/agents/writer/compiled --confirm 'msg:<session>#U<n>'
 clossys write --check
 clossys write
 ```
 
+Inspect existing versions and reuse a matching unfinished draft before calling
+`propose` again. The command returns a stored-cell object: its `path` is relative
+to the explicit Writer root. Every call copies the active version into a fresh
+version; it does not copy or resume an existing draft. The derivation check
+selects the latest non-retired version per cell, so confirm that the version
+checked is the version being presented for approval.
+
 These placeholders identify the actual draft and genuine owner confirmation;
 they are not confirmation evidence. `propose` copies an existing active cell
-to an unused draft version. Initial cells use the established migration/setup
-flow with a compile output mapping. Activation validates the Writer profile;
-native cell activation does not replace copy-record approval. Re-read the
+to an unused draft version. This revision flow requires existing mapped cells, records and locales.
+The derivation check does not read `compile.json` or establish mapping validity.
+Missing sections, records or bindings need owner-led setup before activation.
+`migrate` creates active v1 cells and refuses an existing `tree.json`; it is not
+a draft-creation route. Native `compile --write` maintains `compile.json` from
+active records in existing mapped sections/locales, not drafts or new sections.
+Do not activate additions merely to expose them to that mode: activation changes
+pointers before its subsequent compilation, so a compile failure can follow a
+successful activation. See the skill's initial-setup limit. Activation validates the Writer profile;
+native cell activation does not replace copy-record approval. Preserve native
+locale/ICU evaluation limits and missing translation provenance as limits;
+locale coverage is not a language-quality verdict. The derivation CLI reads
+`tree.meta.libraryManifest.defaultLocale` and `.locales` when present, otherwise
+using the first current cell's first locale and the union of current cell
+locales. Compare that evaluated set with the required consumer languages; it
+does not automatically read arbitrary application locale configuration.
+`checks.checks.localeCoverage` in CLI JSON distinguishes `checkedLocales` from
+`skippedLocales`; missing target registries produce incomplete evaluation and
+exit 2, while a present target missing a record produces a finding. The native
+library ICU check can separately emit `WR8` with `incomplete: true` for unsupported
+plural-rule evaluation; do not describe that as a language pass. Re-read the
 brief after Director activation and fix stale citations before proceeding.
 The existing strategy handoff, approval and pre-auth keep requirements still
 apply. A deterministic pass proves traceability, not taste: the planner judges
