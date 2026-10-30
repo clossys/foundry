@@ -183,17 +183,17 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   /* ════════════════════════════════════════════════════════════════
    * COLOR · INK (7 · text on surfaces)
    * ════════════════════════════════════════════════════════════════ */
-  --color-ink-primary:            oklch(0.2178 0 0);
-  --color-ink-secondary:          oklch(0.36 0 0);
-  --color-ink-muted:              oklch(0.54 0 0);      /* must hit WCAG AA on --color-surface-base —
+  --color-ink-primary:            #0A0A0A;
+  --color-ink-secondary:          #262626;
+  --color-ink-muted:              #595959;      /* must hit WCAG AA on --color-surface-base —
                                                             was oklch(0.5658 0 0): src/contrast.test.ts
                                                             measured that at 4.17:1, below the 4.5:1 this
                                                             token's own comment promises. Darkened to the
                                                             minimum change that clears AA with margin
                                                             (4.64:1); see the changelog. */
-  --color-ink-link:                oklch(0.36 0 0);
-  --color-ink-on-inverse:          oklch(0.9702 0 0);
-  --color-ink-on-inverse-muted:    oklch(0.7763 0 0);
+  --color-ink-link:                #6E3FC7;
+  --color-ink-on-inverse:          #FAFAFA;
+  --color-ink-on-inverse-muted:    #D4D4D4;
   /* Label ink on an accent-filled control (primary button, checked control).
    * Aliases --color-ink-on-inverse rather than shipping its own value: the
    * label on an accent fill and the label on the inverse plate are usually
@@ -228,11 +228,11 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --color-action-pressed: #404040;
   --color-action-on-inverse: #FAFAFA;
   --color-action-on-inverse-hover: #E5E5E5;
-  --color-accent:                 oklch(0.4748 0 0);
-  --color-accent-text:            oklch(0.36 0 0);
-  --color-accent-hover:           oklch(0.36 0 0);
-  --color-accent-tint:            oklch(0.4748 0 0 / 0.1);
-  --color-accent-on-inverse:      oklch(0.7763 0 0);
+  --color-accent:                 #8250DF;
+  --color-accent-text:            #6E3FC7;
+  --color-accent-hover:           #6E3FC7;
+  --color-accent-tint:            #F2EBFC;
+  --color-accent-on-inverse:      #B18CF9;
 
   /* ════════════════════════════════════════════════════════════════
    * COLOR · CONTROL (5 · the tonal and quiet button tiers)
@@ -414,7 +414,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
 
   /* Display typography tuning — brandable in a consumer overlay */
   --font-display-style:           normal;
-  --font-display-weight:          400;
+  --font-display-weight:          600;
   --font-display-stretch:         100%;
   --font-display-scale-x:         1;
   --ui-width-display-max:         var(--ui-width-wide-max, 72rem);

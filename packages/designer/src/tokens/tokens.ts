@@ -132,12 +132,12 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--color-surface-glass-inverse": { property: "--color-surface-glass-inverse", family: "surface", value: "oklch(0.2178 0 0 / 0.85)", brandable: true, themeDependent: true },
 
   // ── COLOR · INK ──────────────────────────────────────────────────────
-  "--color-ink-primary": { property: "--color-ink-primary", family: "ink", value: "oklch(0.2178 0 0)", brandable: true, themeDependent: true },
-  "--color-ink-secondary": { property: "--color-ink-secondary", family: "ink", value: "oklch(0.36 0 0)", brandable: true, themeDependent: true },
-  "--color-ink-muted": { property: "--color-ink-muted", family: "ink", value: "oklch(0.54 0 0)", brandable: true, themeDependent: true },
-  "--color-ink-link": { property: "--color-ink-link", family: "ink", value: "oklch(0.36 0 0)", brandable: true, themeDependent: true },
-  "--color-ink-on-inverse": { property: "--color-ink-on-inverse", family: "ink", value: "oklch(0.9702 0 0)", brandable: true, themeDependent: true },
-  "--color-ink-on-inverse-muted": { property: "--color-ink-on-inverse-muted", family: "ink", value: "oklch(0.7763 0 0)", brandable: true, themeDependent: true },
+  "--color-ink-primary": { property: "--color-ink-primary", family: "ink", value: "#0A0A0A", brandable: true, themeDependent: true },
+  "--color-ink-secondary": { property: "--color-ink-secondary", family: "ink", value: "#262626", brandable: true, themeDependent: true },
+  "--color-ink-muted": { property: "--color-ink-muted", family: "ink", value: "#595959", brandable: true, themeDependent: true },
+  "--color-ink-link": { property: "--color-ink-link", family: "ink", value: "#6E3FC7", brandable: true, themeDependent: true },
+  "--color-ink-on-inverse": { property: "--color-ink-on-inverse", family: "ink", value: "#FAFAFA", brandable: true, themeDependent: true },
+  "--color-ink-on-inverse-muted": { property: "--color-ink-on-inverse-muted", family: "ink", value: "#D4D4D4", brandable: true, themeDependent: true },
   "--color-ink-on-action": { property: "--color-ink-on-action", family: "ink", value: "var(--color-ink-on-inverse, oklch(0.9702 0 0))", brandable: false, themeDependent: false },
   "--color-ink-on-accent": { property: "--color-ink-on-accent", family: "ink", value: "var(--color-ink-on-inverse, oklch(0.9702 0 0))", brandable: false, themeDependent: false },
 
@@ -158,11 +158,11 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--color-action-pressed": { property: "--color-action-pressed", family: "action", value: "#404040", brandable: true, themeDependent: true },
   "--color-action-on-inverse": { property: "--color-action-on-inverse", family: "action", value: "#FAFAFA", brandable: true, themeDependent: true },
   "--color-action-on-inverse-hover": { property: "--color-action-on-inverse-hover", family: "action", value: "#E5E5E5", brandable: true, themeDependent: true },
-  "--color-accent": { property: "--color-accent", family: "accent", value: "oklch(0.4748 0 0)", brandable: true, themeDependent: true },
-  "--color-accent-text": { property: "--color-accent-text", family: "accent", value: "oklch(0.36 0 0)", brandable: true, themeDependent: true },
-  "--color-accent-hover": { property: "--color-accent-hover", family: "accent", value: "oklch(0.36 0 0)", brandable: true, themeDependent: true },
-  "--color-accent-tint": { property: "--color-accent-tint", family: "accent", value: "oklch(0.4748 0 0 / 0.1)", brandable: true, themeDependent: true },
-  "--color-accent-on-inverse": { property: "--color-accent-on-inverse", family: "accent", value: "oklch(0.7763 0 0)", brandable: true, themeDependent: true },
+  "--color-accent": { property: "--color-accent", family: "accent", value: "#8250DF", brandable: true, themeDependent: true },
+  "--color-accent-text": { property: "--color-accent-text", family: "accent", value: "#6E3FC7", brandable: true, themeDependent: true },
+  "--color-accent-hover": { property: "--color-accent-hover", family: "accent", value: "#6E3FC7", brandable: true, themeDependent: true },
+  "--color-accent-tint": { property: "--color-accent-tint", family: "accent", value: "#F2EBFC", brandable: true, themeDependent: true },
+  "--color-accent-on-inverse": { property: "--color-accent-on-inverse", family: "accent", value: "#B18CF9", brandable: true, themeDependent: true },
 
   // ── COLOR · CONTROL ──────────────────────────────────────────────────
   // The tonal (T3) and quiet (T4) button tiers. Tonal is the primary ink
@@ -295,7 +295,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   // ── UI · WIDTH (no Tailwind namespace — raw var() only) ───────────
   "--ui-width-content-max": { property: "--ui-width-content-max", family: "width", value: "64rem", brandable: true, themeDependent: false },
   "--font-display-style": { property: "--font-display-style", family: "font", value: "normal", brandable: true, themeDependent: false },
-  "--font-display-weight": { property: "--font-display-weight", family: "font", value: "400", brandable: true, themeDependent: false },
+  "--font-display-weight": { property: "--font-display-weight", family: "font", value: "600", brandable: true, themeDependent: false },
   "--font-display-stretch": { property: "--font-display-stretch", family: "font", value: "100%", brandable: true, themeDependent: false },
   "--font-display-scale-x": { property: "--font-display-scale-x", family: "font", value: "1", brandable: true, themeDependent: false },
   "--ui-width-display-max": { property: "--ui-width-display-max", family: "width", value: "var(--ui-width-wide-max, 72rem)", brandable: true, themeDependent: false },

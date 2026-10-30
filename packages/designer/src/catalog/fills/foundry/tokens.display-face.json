@@ -64,11 +64,11 @@
       "weight": {
         "$extensions": {
           "com.clossys.css": {
-            "raw": "400"
+            "raw": "600"
           }
         },
         "$type": "fontWeight",
-        "$value": 400
+        "$value": 600
       }
     }
   }

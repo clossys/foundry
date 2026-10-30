@@ -38,7 +38,7 @@
       "default": {
         "$extensions": {
           "com.clossys.css": {
-            "raw": "oklch(0.4748 0 0)"
+            "raw": "#8250DF"
           },
           "com.clossys.modes": {
             "dark": {
@@ -53,18 +53,19 @@
         },
         "$type": "color",
         "$value": {
-          "colorSpace": "oklch",
+          "colorSpace": "srgb",
           "components": [
-            0.4748,
-            0,
-            0
-          ]
+            0.509804,
+            0.313725,
+            0.87451
+          ],
+          "hex": "#8250DF"
         }
       },
       "hover": {
         "$extensions": {
           "com.clossys.css": {
-            "raw": "oklch(0.36 0 0)"
+            "raw": "#6E3FC7"
           },
           "com.clossys.modes": {
             "dark": "oklch(0.70 0 0)"
@@ -72,18 +73,19 @@
         },
         "$type": "color",
         "$value": {
-          "colorSpace": "oklch",
+          "colorSpace": "srgb",
           "components": [
-            0.36,
-            0,
-            0
-          ]
+            0.431373,
+            0.247059,
+            0.780392
+          ],
+          "hex": "#6E3FC7"
         }
       },
       "on-inverse": {
         "$extensions": {
           "com.clossys.css": {
-            "raw": "oklch(0.7763 0 0)"
+            "raw": "#B18CF9"
           },
           "com.clossys.modes": {
             "dark": {
@@ -98,18 +100,19 @@
         },
         "$type": "color",
         "$value": {
-          "colorSpace": "oklch",
+          "colorSpace": "srgb",
           "components": [
-            0.7763,
-            0,
-            0
-          ]
+            0.694118,
+            0.54902,
+            0.976471
+          ],
+          "hex": "#B18CF9"
         }
       },
       "text": {
         "$extensions": {
           "com.clossys.css": {
-            "raw": "oklch(0.36 0 0)"
+            "raw": "#6E3FC7"
           },
           "com.clossys.modes": {
             "dark": {
@@ -124,18 +127,19 @@
         },
         "$type": "color",
         "$value": {
-          "colorSpace": "oklch",
+          "colorSpace": "srgb",
           "components": [
-            0.36,
-            0,
-            0
-          ]
+            0.431373,
+            0.247059,
+            0.780392
+          ],
+          "hex": "#6E3FC7"
         }
       },
       "tint": {
         "$extensions": {
           "com.clossys.css": {
-            "raw": "oklch(0.4748 0 0 / 0.1)"
+            "raw": "#F2EBFC"
           },
           "com.clossys.modes": {
             "dark": {
@@ -151,13 +155,13 @@
         },
         "$type": "color",
         "$value": {
-          "alpha": 0.1,
-          "colorSpace": "oklch",
+          "colorSpace": "srgb",
           "components": [
-            0.4748,
-            0,
-            0
-          ]
+            0.94902,
+            0.921569,
+            0.988235
+          ],
+          "hex": "#F2EBFC"
         }
       }
     }
