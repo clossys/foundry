@@ -5,8 +5,9 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { contentMapFromCells, compileContentMaps } from '@clossys/publisher/content-map/cells';
-import { projectNavigation, projectCommands, projectBreadcrumbs } from '@clossys/publisher/content-map';
+import { projectNavigation, projectCommands, projectBreadcrumbs, projectPageBody } from '@clossys/publisher/content-map';
 import { generateStudioMap } from './generate-studio-map.mjs';
+import { transform } from 'esbuild';
 
 const root = fileURLToPath(new URL('../../../clossys/agents/publisher/', import.meta.url));
 async function fixture(t) {
@@ -147,4 +148,65 @@ test('removed Apps page stays absent from every generated discovery surface', as
   assert.ok(!projection.commands.flatMap(group => group.items).some(entry => entry.id === 'apps'));
   const bindings = await readFile(join(options.outputDir, 'view-bindings.ts'), 'utf8');
   assert.doesNotMatch(bindings, /AppsView/);
+});
+
+
+// Execute the generated TypeScript wrapper against its real Publisher export.
+// Inline its JSON input as a bundler does, without a second projection schema.
+async function loadGenerated(outputDir, projection) {
+  const source = (await readFile(join(outputDir, 'studio-map.ts'), 'utf8'))
+    .replaceAll("from '@clossys/publisher/content-map'", `from ${JSON.stringify(import.meta.resolve('@clossys/publisher/content-map'))}`)
+    .replace("import projection from './studio-map.json';", `const projection = ${JSON.stringify(projection)};`);
+  const compiled = await transform(source, { loader: 'ts', format: 'esm' });
+  return import(`data:text/javascript;base64,${Buffer.from(compiled.code).toString('base64')}`);
+}
+
+test('agent page bodies come from the same map with an unresolved specimen port', async t => {
+  const options = await fixture(t), projection = await generateStudioMap(options);
+  const map = await contentMapFromCells(options.cellRoot, 'studio');
+  const runtime = await loadGenerated(options.outputDir, projection);
+  assert.deepEqual(runtime.studioPageBodies, projection.pageBodies);
+  const body = {
+    template: 'ia-scroll',
+    bands: { L0: 'sections.section-header', L1: 'sections.section-header', L2: 'sections.data-table' },
+    row: { columns: ['title', 'specimen', 'status', 'version', 'usedBy', 'linkOut'] },
+  };
+  assert.deepEqual(Object.keys(projection.pageBodies), ['director', 'designer', 'writer', 'publisher']);
+  assert.equal(projection.pageBodies.home, undefined);
+  assert.equal(map.entries.find(page => page.id === 'home').body, undefined);
+  for (const pageId of Object.keys(projection.pageBodies)) {
+    assert.deepEqual(projection.pageBodies[pageId], body);
+    assert.deepEqual(projection.pageBodies[pageId], map.entries.find(page => page.id === pageId).body);
+    assert.equal(Object.hasOwn(projection.pageBodies[pageId].row, 'specimen'), false);
+    assert.throws(() => runtime.studioPageBody(pageId));
+    for (const specimen of ['sections.specimen-fixture-first', 'sections.specimen-fixture-second']) {
+      assert.deepEqual(runtime.studioPageBody(pageId, specimen), {
+        ...body, row: { specimen, columns: body.row.columns },
+      });
+    }
+    assert.throws(() => runtime.studioPageBody(pageId, 'sections.data-table'));
+  }
+  assert.throws(() => runtime.studioPageBody('home', 'sections.specimen-fixture-first'));
+  const generated = await readFile(join(options.outputDir, 'studio-map.ts'), 'utf8');
+  assert.match(generated, /export type \{ ContentMapPageBody, ContentMapProjectedBody \} from '@clossys\/publisher\/content-map'/);
+  assert.match(generated, /import \{ projectPageBody \} from '@clossys\/publisher\/content-map'/);
+  assert.match(generated, /studioPageBody\(pageId: string, boundSpecimenId: string\): ContentMapProjectedBody \{ return projectPageBody\(studioMap, pageId, boundSpecimenId\); \}/);
+  await generateStudioMap({ ...options, check: true });
+});
+
+test('authored body binding edits fail drift and retain native binding conflicts', async t => {
+  const options = await fixture(t);
+  await generateStudioMap(options);
+  const cell = join(options.cellRoot, 'cells/page.designer/v1.md');
+  await replace(cell, '"columns": [', '"specimen": "sections.specimen-fixture-bound",\n    "columns": [');
+  await assert.rejects(generateStudioMap({ ...options, check: true }), /drift/i);
+  const changed = await generateStudioMap(options);
+  assert.equal(changed.pageBodies.designer.row.specimen, 'sections.specimen-fixture-bound');
+  assert.deepEqual(changed.pageBodies.designer, changed.map.entries.find(page => page.id === 'designer').body);
+  assert.deepEqual(projectPageBody(changed.map, 'designer'), changed.pageBodies.designer);
+  assert.deepEqual(projectPageBody(changed.map, 'designer', 'sections.specimen-fixture-bound'), changed.pageBodies.designer);
+  assert.throws(() => projectPageBody(changed.map, 'designer', 'sections.specimen-fixture-conflict'));
+  await generateStudioMap({ ...options, check: true });
+  await replace(join(options.outputDir, 'studio-map.json'), '"specimen": "sections.specimen-fixture-bound"', '"specimen": "sections.specimen-fixture-stale"');
+  await assert.rejects(generateStudioMap({ ...options, check: true }), /drift/i);
 });

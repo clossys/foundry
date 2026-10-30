@@ -21,11 +21,24 @@ an `assets.*` icon, and `defaultOpen`, plus either a `module` with a `sections.*
 Intent actions require `defaultOpen: false`. Module references do not register
 Sections; the host reports unavailable modules as NEEDs. These page controls
 are separate from publication-wide command actions. CELL-P stores them in one
-`## Actions` fenced JSON block, after `Manifest` and before `Route` when present.
+`## Actions` fenced JSON block, after `Manifest` and before `Body` or `Route` when present.
+
+Pages may declare an `ia-scroll` `body` with exact bands
+`{ L0: "sections.section-header", L1: "sections.section-header", L2: "sections.data-table" }`
+and row columns `["title", "specimen", "status", "version", "usedBy", "linkOut"]`.
+`row.specimen` may be omitted as an unresolved port or authored as a
+`sections.specimen-*` identity. `projectPageBody(map, pageId, specimenId?)`
+returns a body for one cell with a required specimen. It accepts an already
+bound Designer identity; it supplies no mapping or fallback. An authored
+identity must agree with a supplied identity. Missing bindings, missing page
+bodies and invalid identity syntax are refused. Designer's consuming checker
+still owns specimen registration. CELL-P stores the declaration in one
+`## Body` fenced JSON block after `Actions` and before `Route` when present.
 
 | Function | Output |
 | --- | --- |
 | `projectRoutes(map, options)` | Registered local page metadata; external entries are excluded. |
+| `projectPageBody(map, pageId, specimenId?)` | One page body with a resolved per-cell specimen identity. |
 | `projectSitemap(map, { channel: "site", origin })` | Local indexable page URLs, with optional normalized ISO `lastModified`. |
 | `projectStaticParams(map)` | Catch-all `{ slug: string[] }` rows for local pages; the root uses `[]`. |
 | `projectRedirects(map)` | Next-compatible `{ source, destination, permanent }` rows. |

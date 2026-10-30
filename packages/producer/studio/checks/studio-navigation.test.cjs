@@ -1,9 +1,9 @@
 'use strict';
 const assert = require('node:assert/strict');
-const { test } = require('node:test');
+const { test, before } = require('node:test');
+const { pathToFileURL } = require('node:url');
 const path = require('node:path');
 const fs = require('node:fs');
-const Module = require('node:module');
 const React = require('react');
 const { renderToStaticMarkup } = require('react-dom/server');
 const { buildSync } = require('esbuild');
@@ -12,14 +12,14 @@ const studio = path.resolve(__dirname, '..');
 const projection = JSON.parse(fs.readFileSync(path.join(studio, 'generated/studio-map.json'), 'utf8'));
 
 // Exercise the real frame and generated projection with only runtime ports substituted.
-function frameModule() {
+async function frameModule() {
   const mocks = {
     'next/navigation': `export const usePathname=()=>globalThis.__studioFrameTest.path; export const useRouter=()=>({push(){}});`,
     './StudioSelection': `export const useStudioSelection=()=>({selection:{leaves:[]}}); export const useStudioUI=()=>({Icon:()=>null,AppFrame:props=>{globalThis.__studioFrameTest.frame=props;return props.children;}});`,
     './StudioBrand': `export const useStudioBrand=()=>({source:'consumer'});`,
   };
   const source = fs.readFileSync(path.join(studio, 'components/StudioFrame.tsx'), 'utf8');
-  const scratch = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'studio-frame-test-'));
+  const scratch = fs.mkdtempSync(path.join(__dirname, '.studio-frame-test-'));
   try {
     const rewritten = source.replace(/from ('[^']+')/g, (match, quoted) => {
       const name = quoted.slice(1, -1);
@@ -28,15 +28,14 @@ function frameModule() {
       fs.writeFileSync(file, mocks[name]);
       return `from ${JSON.stringify(file)}`;
     });
-    const output = buildSync({ stdin: { contents: rewritten, resolveDir: path.join(studio, 'components'), loader: 'tsx' }, bundle: true, platform: 'node', format: 'cjs', packages: 'external', jsx: 'automatic', write: false }).outputFiles[0].text;
-    const compiled = new Module(path.join(studio, 'checks/frame-test.cjs'), module);
-    compiled.filename = path.join(studio, 'checks/frame-test.cjs');
-    compiled.paths = Module._nodeModulePaths(studio);
-    compiled._compile(output, compiled.filename);
-    return compiled.exports.StudioFrame;
+    const output = buildSync({ stdin: { contents: rewritten, resolveDir: path.join(studio, 'components'), loader: 'tsx' }, bundle: true, platform: 'node', format: 'esm', packages: 'external', jsx: 'automatic', write: false }).outputFiles[0].text;
+    const entry = path.join(scratch, 'frame.mjs');
+    fs.writeFileSync(entry, output);
+    return (await import(pathToFileURL(entry).href)).StudioFrame;
   } finally { fs.rmSync(scratch, { recursive: true, force: true }); }
 }
-const Frame = frameModule();
+let Frame;
+before(async () => { Frame = await frameModule(); });
 function render(pathname) {
   globalThis.__studioFrameTest = { path: pathname };
   renderToStaticMarkup(React.createElement(Frame, { page: { title: 'Fixture' } }, 'Content'));

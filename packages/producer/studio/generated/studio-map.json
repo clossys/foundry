@@ -107,7 +107,25 @@
               "source": "director.open-requests"
             }
           }
-        ]
+        ],
+        "body": {
+          "template": "ia-scroll",
+          "bands": {
+            "L0": "sections.section-header",
+            "L1": "sections.section-header",
+            "L2": "sections.data-table"
+          },
+          "row": {
+            "columns": [
+              "title",
+              "specimen",
+              "status",
+              "version",
+              "usedBy",
+              "linkOut"
+            ]
+          }
+        }
       },
       {
         "id": "designer",
@@ -171,7 +189,25 @@
               "source": "designer.open-requests"
             }
           }
-        ]
+        ],
+        "body": {
+          "template": "ia-scroll",
+          "bands": {
+            "L0": "sections.section-header",
+            "L1": "sections.section-header",
+            "L2": "sections.data-table"
+          },
+          "row": {
+            "columns": [
+              "title",
+              "specimen",
+              "status",
+              "version",
+              "usedBy",
+              "linkOut"
+            ]
+          }
+        }
       },
       {
         "id": "writer",
@@ -235,7 +271,25 @@
               "source": "writer.open-requests"
             }
           }
-        ]
+        ],
+        "body": {
+          "template": "ia-scroll",
+          "bands": {
+            "L0": "sections.section-header",
+            "L1": "sections.section-header",
+            "L2": "sections.data-table"
+          },
+          "row": {
+            "columns": [
+              "title",
+              "specimen",
+              "status",
+              "version",
+              "usedBy",
+              "linkOut"
+            ]
+          }
+        }
       },
       {
         "id": "publisher",
@@ -299,7 +353,25 @@
               "source": "publisher.open-requests"
             }
           }
-        ]
+        ],
+        "body": {
+          "template": "ia-scroll",
+          "bands": {
+            "L0": "sections.section-header",
+            "L1": "sections.section-header",
+            "L2": "sections.data-table"
+          },
+          "row": {
+            "columns": [
+              "title",
+              "specimen",
+              "status",
+              "version",
+              "usedBy",
+              "linkOut"
+            ]
+          }
+        }
       }
     ]
   },
@@ -791,6 +863,80 @@
         }
       }
     ]
+  },
+  "pageBodies": {
+    "director": {
+      "template": "ia-scroll",
+      "bands": {
+        "L0": "sections.section-header",
+        "L1": "sections.section-header",
+        "L2": "sections.data-table"
+      },
+      "row": {
+        "columns": [
+          "title",
+          "specimen",
+          "status",
+          "version",
+          "usedBy",
+          "linkOut"
+        ]
+      }
+    },
+    "designer": {
+      "template": "ia-scroll",
+      "bands": {
+        "L0": "sections.section-header",
+        "L1": "sections.section-header",
+        "L2": "sections.data-table"
+      },
+      "row": {
+        "columns": [
+          "title",
+          "specimen",
+          "status",
+          "version",
+          "usedBy",
+          "linkOut"
+        ]
+      }
+    },
+    "writer": {
+      "template": "ia-scroll",
+      "bands": {
+        "L0": "sections.section-header",
+        "L1": "sections.section-header",
+        "L2": "sections.data-table"
+      },
+      "row": {
+        "columns": [
+          "title",
+          "specimen",
+          "status",
+          "version",
+          "usedBy",
+          "linkOut"
+        ]
+      }
+    },
+    "publisher": {
+      "template": "ia-scroll",
+      "bands": {
+        "L0": "sections.section-header",
+        "L1": "sections.section-header",
+        "L2": "sections.data-table"
+      },
+      "row": {
+        "columns": [
+          "title",
+          "specimen",
+          "status",
+          "version",
+          "usedBy",
+          "linkOut"
+        ]
+      }
+    }
   },
   "breadcrumbs": {
     "home": [
