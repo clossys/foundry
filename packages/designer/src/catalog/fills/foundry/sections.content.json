@@ -27,17 +27,20 @@
   "sections": {
     "content": {
       "composes": [
+        "components.card",
         "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.card",
           "components.semantic-content"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
+            "components.card",
             "components.semantic-content"
           ],
           "tokens": [
@@ -61,7 +64,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/ContentSection.tsx",
-            "sha256": "1a8d3f0cd0835a9842eef51f303bff1a3adfbea4ee9de6297f2de0ae5532006b"
+            "sha256": "6a90522c76468a0853eeb005662ebe62921ee9d2bf476cefc128b36cc8f4593a"
           },
           {
             "path": "packages/designer/src/blocks/internal/block-vars.ts",
@@ -111,7 +114,8 @@
       "license": "MIT",
       "notes": [
         "Header is spread across heading, eyebrow, description and actions; there is no single section-header region prop. Source uses SectionIntro rather than the frozen section-header fill.",
-        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters.",
+        "Summary pairs are caller supplied and use the selected components.card CardContent secondary export. Consumer component selection and the optional aside contract contribution must be installed by the host."
       ],
       "parts": [],
       "pin": {
@@ -149,7 +153,8 @@
         "body": "./blocks#ContentSection.children",
         "footnote": "./blocks#ContentSection.footnote",
         "header": "./blocks#ContentSection.heading,eyebrow,description,actions",
-        "media": "./blocks#ContentSection.media"
+        "media": "./blocks#ContentSection.media",
+        "aside": "./blocks#ContentSection.aside"
       },
       "source": "foundry"
     }
