@@ -12,6 +12,9 @@ import { loadCatalogBundles } from "../catalog-bundles.js";
 import { checkDefaultCandidates, type DefaultCandidatesInput } from "../library-cli/default-candidates-gate.js";
 import { nativeDefaultSources } from "../library-cli/default-candidates-cli.js";
 import { loadNativeCompositeCatalog } from "../library-cli/native-catalog.js";
+import { applyAgentChange } from "../library-cli/reselect.js";
+import { CONTRAST_PAIRS } from "../tokens/contrast-pairs.js";
+import { contrastRatio } from "../tokens/color.js";
 import { tokenCatalog } from "./__fixtures__/token-catalog.js";
 
 const root = fileURLToPath(new URL("../../../../", import.meta.url));
@@ -67,10 +70,72 @@ describe("approved native token defaults", () => {
     for (const [id, member] of Object.entries(p)) if (id.startsWith("tokens.sequential-color.") || ["tokens.diverging-color.negative", "tokens.diverging-color.positive"].includes(id)) expect(member.css.dark).toBe(member.css.light);
   });
 
-  it("retains all prior sixteen approved family files byte for byte", () => {
+  it("retains prior family values except the three explicit focus and quiet corrections", () => {
     const paths = execFileSync("git", ["ls-tree", "-r", "--name-only", sourceHead, "packages/designer/src/catalog/fills/shadcn-aria"], { cwd: root, encoding: "utf8" }).trim().split("\n").filter(path => !slots.has(path.split("/").at(-1)!.slice(0, -5)));
     expect(paths).toHaveLength(16);
-    for (const path of paths) expect(readFileSync(pathResolve(root, path))).toEqual(execFileSync("git", ["show", `${sourceHead}:${path}`], { cwd: root }));
+    const overrides: Record<string, string[]> = { "tokens.control-color": ["quiet"], "tokens.focus-color": ["default", "on-inverse"] };
+    for (const path of paths) {
+      const previous = execFileSync("git", ["show", `${sourceHead}:${path}`], { cwd: root }), current = readFileSync(pathResolve(root, path));
+      const slot = path.split("/").at(-1)!.slice(0, -5), approved = overrides[slot];
+      if (!approved) { expect(current).toEqual(previous); continue; }
+      const before = JSON.parse(previous.toString()), after = JSON.parse(current.toString());
+      for (const member of approved) {
+        expect(after.tokens[slot.slice(7)][member]).not.toEqual(before.tokens[slot.slice(7)][member]);
+        delete before.tokens[slot.slice(7)][member]; delete after.tokens[slot.slice(7)][member];
+      }
+      expect(after).toEqual(before);
+    }
+  });
+
+  it("passes every declared focus and quiet pair in both modes using the native profile", () => {
+    const input = adopted(), profile = resolve(input), properties = new Set(["--color-control-quiet", "--color-focus-ring", "--color-focus-ring-on-inverse"]);
+    const members = new Map(Object.values(profile.members).filter(member => member.emit).map(member => [member.emit!, member]));
+    const pairs = CONTRAST_PAIRS.filter(pair => properties.has(pair.foreground));
+    expect(pairs).toHaveLength(9);
+    for (const pair of pairs) for (const mode of ["light", "dark"] as const) {
+      const foreground = members.get(pair.foreground)!, background = members.get(pair.background)!;
+      expect(contrastRatio(foreground.css[mode] ?? foreground.css.light, background.css[mode] ?? background.css.light), `${pair.id}/${mode}`).toBeGreaterThanOrEqual(pair.minimumRatio);
+    }
+    expect(check(input).findings.filter(finding => finding.code === "C9" && properties.has(finding.subject))).toEqual([]);
+    expect(profile.members["tokens.control-color.quiet"]!.css).toMatchObject({ light: "oklch(0.439 0 0)", dark: "oklch(0.708 0 0)" });
+    expect(profile.members["tokens.focus-color.default"]!.css).toMatchObject({ light: "oklch(0.556 0 0)", dark: "oklch(0.556 0 0)" });
+    // Adjacent published neutral stops fail the actual native ground; these corrections do not invent a shade.
+    const published = readFileSync(pathResolve(root, "node_modules/tailwindcss/theme.css"), "utf8");
+    expect(createHash("sha256").update(published).digest("hex")).toBe(tailwindHash);
+    for (const [slot, member, mode, step, scalar, property] of [
+      ["tokens.control-color", "quiet", "light", "500", "0.556", "--color-control-quiet"],
+      ["tokens.control-color", "quiet", "dark", "500", "0.556", "--color-control-quiet"],
+      ["tokens.focus-color", "default", "light", "400", "0.708", "--color-focus-ring"],
+      ["tokens.focus-color", "default", "dark", "600", "0.439", "--color-focus-ring"],
+    ] as const) {
+      const percent = String(Number((Number(scalar) * 100).toFixed(3)));
+      expect(published).toContain(`--color-neutral-${step}: oklch(${percent}% 0 none)`);
+      const c = tokenCatalog(loadCatalog()), token = flatten(candidate(c, slot))[`${slot}.${member}`]!, value = `oklch(${scalar} 0 0)`;
+      if (mode === "light") { token.$value = value; token.$extensions!["com.clossys.css"] = { raw: value }; }
+      else token.$extensions!["com.clossys.modes"]!.dark = value;
+      expect(check(adopted(c)).findings.some(finding => finding.code === "C9" && finding.subject === property && finding.message.includes(`in ${mode}`))).toBe(true);
+    }
+  });
+
+  it("reselects focus and quiet over separately owned text without malformed inverse colors", async () => {
+    const catalog = tokenCatalog(loadCatalog());
+    const empty: LibraryData = { source: { id: "reselect-consumer", kind: "consumer", author: "consumer", license: "MIT" }, adoptedAt: "2026-10-30", fills: [] };
+    const library = applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes: [{ op: "adopt", slot: "tokens.surface-color", source }, { op: "adopt", slot: "tokens.text-color", source: "foundry" }] });
+    for (const leaf of ["tokens.control-color", "tokens.focus-color"]) {
+      const result = await applyAgentChange({ root: "", catalog: loadNativeCompositeCatalog(catalog), leaf, write: false }, library, { op: "adopt", slot: leaf, source }, { command: "designer-library reselect", inputs: { leaf, source } });
+      expect(result.verdict.findings.filter(finding => ["C1", "C9"].includes(finding.code))).toEqual([]);
+    }
+    const profile = resolve({ catalog, library: applyLibraryChange(catalog, library, { baseHash: libraryHash(library), changes: [{ op: "adopt", slot: "tokens.focus-color", source }] }) });
+    expect(profile.members["tokens.focus-color.on-inverse"]!.css).toMatchObject({ light: "oklch(0.9702 0 0)", dark: "oklch(0.2178 0 0)" });
+    const inverse = flatten(candidate(catalog, "tokens.focus-color"))["tokens.focus-color.on-inverse"]!;
+    expect(inverse.$value).toBe("{tokens.text-color.on-inverse}");
+    expect(inverse.$extensions!["com.clossys.modes"]!.dark).toBe("{tokens.text-color.on-inverse}");
+    const raw = inverse.$extensions!["com.clossys.css"]!;
+    expect(raw.raw).toBe("oklch(0.9702 0 0)");
+    delete inverse.$extensions!["com.clossys.css"];
+    const damaged = await applyAgentChange({ root: "", catalog: loadNativeCompositeCatalog(catalog), leaf: "tokens.focus-color", write: false }, library, { op: "adopt", slot: "tokens.focus-color", source }, { command: "designer-library reselect", inputs: { leaf: "tokens.focus-color", source } });
+    expect(damaged.verdict.findings.some(finding => finding.code === "C1" && finding.message.includes("tokens.focus-color.on-inverse has a malformed color value"))).toBe(true);
+    inverse.$extensions!["com.clossys.css"] = raw;
   });
 
   it("keeps the Carbon scalar receipt reachable through exact pinned evidence", () => {
