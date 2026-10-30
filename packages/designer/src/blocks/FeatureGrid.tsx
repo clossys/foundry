@@ -1,5 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { CompatFeatureGrid } from "./items/compat-features.js";
+import { FeatureLayouts } from "./features/FeatureLayouts.js";
+import type { ItemSpan } from "./items/types.js";
 import type { SectionGround } from "./section-ground.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -7,7 +9,8 @@ const SECTION_STAMP = dsAttrs("sections", "sections.features", "foundry/sections
 
 export type FeatureGridHeadingLevel = 2 | 3 | 4 | 5 | 6;
 /** How the features are laid out: the responsive grid, one feature per row, or the heading region beside the grid. */
-export type FeatureGridLayout = "grid" | "list" | "split";
+export type FeatureGridLegacyLayout = "grid" | "list" | "split";
+export type FeatureGridLayout = FeatureGridLegacyLayout | "bento" | "tabs" | "alternating" | "scroll";
 
 export interface FeatureGridItem {
   /** Stable identifier — the React key. */
@@ -18,6 +21,10 @@ export interface FeatureGridItem {
   heading: ReactNode;
   /** Supporting copy under the item's heading. */
   description?: ReactNode;
+  /** Existing media leaf or other host-resolved visual. */
+  visual?: ReactNode;
+  /** Ordered twelve-unit span, for bento only. */
+  span?: ItemSpan;
 }
 
 export interface FeatureGridProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
@@ -53,4 +60,7 @@ export interface FeatureGridProps extends Omit<HTMLAttributes<HTMLDivElement>, "
 }
 
 /** Published feature copy keeps its original count, heading and presence policy. */
-export function FeatureGrid({ ground = "base", ...props }: FeatureGridProps) { return <CompatFeatureGrid {...SECTION_STAMP} {...props} ground={ground} />; }
+export function FeatureGrid({ ground = "base", layout = "grid", ...props }: FeatureGridProps) {
+  if (layout === "bento" || layout === "tabs" || layout === "alternating" || layout === "scroll") return <FeatureLayouts {...SECTION_STAMP} {...props} layout={layout} ground={ground} />;
+  return <CompatFeatureGrid {...SECTION_STAMP} {...props} layout={layout} ground={ground} />;
+}

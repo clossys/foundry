@@ -97,7 +97,7 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "SectionFrame alone widens its ground with transparent (no surface, inherited ink); block grounds stay the closed SectionGround. Rhythm is fixed in source, with no specified contract member values.",
+        "SectionFrame alone widens its ground with transparent (no surface, inherited ink); block grounds stay the closed SectionGround. Wash reads tokens.gradient.wash; texture reads assets.pattern. Fluid heading properties are scoped to the section; global token defaults remain fixed. Reveal is opt-in and uses the shared reduced-motion policy. Rhythm is fixed in source, with no specified contract member values.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.band",
@@ -107,9 +107,15 @@
         "ground.inverse",
         "ground.sunken",
         "ground.transparent",
+        "ground.wash",
         "measure.content",
         "measure.prose",
-        "measure.wide"
+        "measure.wide",
+        "reveal.false",
+        "reveal.true",
+        "texture.grain",
+        "texture.noise",
+        "texture.topo"
       ],
       "supportedSlots": [],
       "unresolvedMemberAxes": [
@@ -160,7 +166,15 @@
       ],
       "slot": "sections.call-to-action",
       "status": "candidate",
-      "supportedMembers": [],
+      "supportedMembers": [
+        "ground.base",
+        "ground.inverse",
+        "ground.sunken",
+        "ground.wash",
+        "texture.grain",
+        "texture.noise",
+        "texture.topo"
+      ],
       "supportedSlots": [
         "actions",
         "header"
@@ -426,17 +440,22 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "The layout prop selects the column grid, a one-per-row list with the icon beside the copy, or the heading region beside a two-column grid from desktop. Items have icon, heading and description but no per-item link prop.",
+        "The layout prop selects grid, list, split, bento, tabs, alternating or scroll. Bento delegates ordered 12-unit spans and the 2-6 item bound to the existing Items engine. Tabs delegates keyboard and panel semantics to components.tabs without autoplay; its authored header heading names the list. Alternating media uses logical grid columns and stacks below tablet. Scroll enhances a complete static list only when JavaScript, scroll-driven animation support and no reduced-motion preference are present; token animation timings, the shared section reveal and local sticky keyframes drive sticky media and stepped copy. Optional item.figure uses an existing image resource through sections.media; copy is supplied through the existing Writer header and item fields.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.features",
       "status": "subset",
       "supportedMembers": [
+        "layout.alternating",
+        "layout.bento",
         "layout.grid",
         "layout.list",
-        "layout.split"
+        "layout.scroll",
+        "layout.split",
+        "layout.tabs"
       ],
       "supportedSlots": [
+        "header",
         "items"
       ],
       "unresolvedMemberAxes": []

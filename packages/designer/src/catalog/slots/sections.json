@@ -1043,6 +1043,12 @@
           "ground.sunken",
           "ground.inverse",
           "ground.transparent",
+          "ground.wash",
+          "texture.grain",
+          "texture.noise",
+          "texture.topo",
+          "reveal.true",
+          "reveal.false",
           "measure.prose",
           "measure.content",
           "measure.wide"
@@ -1054,19 +1060,25 @@
       "parts": [],
       "allowedReads": {
         "tokens": [
+          "tokens.display-size",
+          "tokens.heading-size",
+          "tokens.border-width",
           "tokens.spacing",
           "tokens.gutter",
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
           "tokens.surface-color",
+          "tokens.gradient",
           "tokens.animation",
           "tokens.shift-distance",
           "tokens.border-color",
           "tokens.status-color",
           "tokens.text-color"
         ],
-        "assets": []
+        "assets": [
+          "assets.pattern"
+        ]
       },
       "data": "host-injected",
       "surface": "both",
@@ -1235,7 +1247,15 @@
       ],
       "members": {
         "mode": "closed",
-        "names": []
+        "names": [
+          "ground.base",
+          "ground.sunken",
+          "ground.inverse",
+          "ground.wash",
+          "texture.grain",
+          "texture.noise",
+          "texture.topo"
+        ]
       },
       "allowedComposes": [
         "components.button",
@@ -1248,12 +1268,16 @@
       ],
       "allowedReads": {
         "tokens": [
+          "tokens.display-size",
+          "tokens.heading-size",
+          "tokens.border-width",
           "tokens.spacing",
           "tokens.gutter",
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
           "tokens.surface-color",
+          "tokens.gradient",
           "tokens.animation",
           "tokens.shift-distance",
           "tokens.border-color",
@@ -1262,7 +1286,9 @@
           "tokens.surface-radius",
           "tokens.text-color"
         ],
-        "assets": []
+        "assets": [
+          "assets.pattern"
+        ]
       },
       "data": "host-injected",
       "surface": "site",
@@ -3434,6 +3460,11 @@
           "name": "items",
           "type": "records",
           "required": true
+        },
+        {
+          "name": "header",
+          "type": "records",
+          "required": false
         }
       ],
       "members": {
@@ -3442,6 +3473,10 @@
           "layout.grid",
           "layout.list",
           "layout.split",
+          "layout.bento",
+          "layout.tabs",
+          "layout.alternating",
+          "layout.scroll",
           "about.features"
         ]
       },
@@ -3449,7 +3484,10 @@
         "components.card",
         "components.icon",
         "components.link",
-        "components.semantic-content"
+        "components.item",
+        "components.tabs",
+        "components.semantic-content",
+        "sections.media"
       ],
       "parts": [
         "sections.band",
@@ -4141,6 +4179,7 @@
       ],
       "allowedReads": {
         "tokens": [
+          "tokens.border-width",
           "tokens.spacing",
           "tokens.gutter",
           "tokens.content-size",
