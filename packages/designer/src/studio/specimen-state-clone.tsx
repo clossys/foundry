@@ -59,7 +59,12 @@ export function NativeSpecimenStateClone({ Content, state, children, unavailable
             target.focus({ preventScroll: true });
           } else if (typeof view.PointerEvent === "function") {
             target.dispatchEvent(new view.PointerEvent(state === "hover" ? "pointerover" : "pointerdown", { bubbles: true, pointerId: 1, pointerType: "mouse", button: 0, buttons: state === "pressed" ? 1 : 0 }));
-          } else target.dispatchEvent(new view.MouseEvent(state === "hover" ? "mouseover" : "mousedown", { bubbles: true, button: 0, buttons: state === "pressed" ? 1 : 0 }));
+          } else target.dispatchEvent(new view.MouseEvent(state === "hover" ? "mouseover" : "mousedown", { bubbles: true, composed: true, relatedTarget: document.body, button: 0, buttons: state === "pressed" ? 1 : 0 }));
+          if (state === "hover" && !target.hasAttribute("data-hovered")) {
+            const over = new view.MouseEvent("pointerover", { bubbles: true, composed: true, relatedTarget: document.body });
+            Object.defineProperties(over, { pointerType: { value: "mouse" }, pointerId: { value: 1 } });
+            target.dispatchEvent(over);
+          }
         });
         if (!staging.querySelector(`[${attribute[state]}]`)) throw new Error(`The selected fixture did not enter its native ${state} state.`);
         const copy = staging.cloneNode(true) as HTMLElement;

@@ -83,12 +83,20 @@ it("enumerates the native descriptor's full variant×state×size universe and ho
   const variants = descriptor.members.filter(member => member.startsWith("variant."));
   expect(cases.axes[0]!.values.map(value => value.id)).toEqual(["default", ...variants]);
   expect(cases.items).toHaveLength(cases.axes.reduce((count, axis) => count * axis.values.length, 1));
-  const first = cases.items.find(item => item.value.members.includes("variant.secondary") && item.value.state === "default")!;
+  const first = { id: "registered-secondary", label: "Secondary", value: { leaf: "components.button", members: ["variant.secondary"], state: "default" } };
   const view = render(<SpecimenVariantMatrix items={[first]} context={selected} need={need} labels={labels} />);
   expect(screen.getByRole("button")).toHaveClass("border-line-control");
   expect(view.container.textContent).not.toMatch(/originKinds:|\$extensions|```/);
 });
 it.each(["hover", "focus-visible", "pressed"] as const)("captures a real native %s state into an inert eventless clone", async state => {
+  if (state === "hover") {
+    class NativePointerEvent extends MouseEvent {
+      readonly pointerType: string;
+      readonly pointerId: number;
+      constructor(type: string, init: PointerEventInit = {}) { super(type, init); this.pointerType = init.pointerType ?? "mouse"; this.pointerId = init.pointerId ?? 1; }
+    }
+    vi.stubGlobal("PointerEvent", NativePointerEvent);
+  }
   const onPress = vi.fn();
   const view = render(<NativeSpecimenStateClone Content={components.SemanticContent as never} state={state} unavailable={reason => <components.SemanticContent as="p" role="status">{reason}</components.SemanticContent>}><components.Button onPress={onPress}>Native action</components.Button></NativeSpecimenStateClone>);
   await waitFor(() => expect(view.container.querySelector('[data-ds-specimen-capture="ready"]')).toBeTruthy());
