@@ -1,0 +1,115 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.page-header",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#PageHeader",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "sections.page-header",
+      "source": "foundry",
+      "sourceAddress": "./blocks#PageHeader",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "slot.meta",
+        "config.record",
+        "config.standard",
+        "contact.header"
+      ]
+    }
+  },
+  "sections": {
+    "page-header": {
+      "composes": [
+        "sections.section-header"
+      ],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "sections.section-header"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "tokens": [
+            "tokens.heading-size",
+            "tokens.spacing"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/PageHeader.tsx",
+            "sha256": "d5a151e863db5c1295a23f52fad2065693cdca675789b539302790c13d423358"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
+      "impl": {
+        "export": "PageHeader",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "No record/standard config or meta API. Source composes the shared SectionHeader at level 1 for its real h1 and preserves the public breadcrumb, title, description and actions inputs.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#PageHeader",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.heading-size",
+          "tokens.spacing"
+        ]
+      },
+      "slot": "sections.page-header",
+      "slotMap": {
+        "actions": "./blocks#PageHeader.actions",
+        "breadcrumbs": "./blocks#PageHeader.breadcrumb",
+        "description": "./blocks#PageHeader.description",
+        "title": "./blocks#PageHeader.title"
+      },
+      "source": "foundry"
+    }
+  }
+}

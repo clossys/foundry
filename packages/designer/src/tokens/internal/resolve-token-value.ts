@@ -41,7 +41,7 @@
  *     offset anywhere in this function's world.
  *
  * A concrete case that shows why conflating them would be wrong:
- * `atoms/Icon.tsx`'s `"var(--ui-icon-sm, var(--spacing-lg, 16px))"` is
+ * `components/Icon.tsx`'s `"var(--ui-icon-sm, var(--spacing-lg, 16px))"` is
  * SOURCE TEXT `resolveFallbackChain` resolves (its `16px` is `--spacing-lg`'s
  * fallback, structurally, at that exact character range). `--color-chart-
  * surface`'s registry entry, `"var(--color-surface-raised, oklch(1 0 0))"`,

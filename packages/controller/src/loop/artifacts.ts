@@ -18,17 +18,23 @@
  */
 import { computeDigest } from "../policy/digest.js";
 
-const ROLE_FOLDER_PREFIX = (role: string): string => `clossys/${role.split("/").pop()}/`;
+/** Repository-relative ownership root, shared by artifact, discovery and heartbeat paths. */
+export function roleFolderPrefix(role: string): string {
+  const name = role.split("/").pop() as string;
+  const agent = name === "director" || name === "designer" || name === "writer" || name === "publisher";
+  return `clossys/${agent ? "agents/" : ""}${name}/`;
+}
 
 /**
  * A path a role is about to write falls under that role's own
- * `clossys/<role>/` folder -- the one boundary every operation here shares.
+ * agent folder (`clossys/agents/<agent>/`) or non-agent role folder
+ * (`clossys/<role>/`) -- the one boundary every operation here shares.
  * Backslashes count as separators too, so a Windows-style `..\` segment
  * cannot escape the folder where a caller applies the path on Windows.
  */
 export function isOwnedByRole(role: string, path: string): boolean {
   const normalized = path.replace(/\\/g, "/");
-  return normalized.startsWith(ROLE_FOLDER_PREFIX(role)) && !normalized.split("/").includes("..");
+  return normalized.startsWith(roleFolderPrefix(role)) && !normalized.split("/").includes("..");
 }
 
 export interface CreateOrUpdatePlan {
@@ -64,7 +70,7 @@ export function planCreateOrUpdate(input: {
 }): CreateOrUpdatePlan | RefusedPlan {
   const { role, path, existing } = input;
   if (!isOwnedByRole(role, path)) {
-    return { kind: "refused", role, path, reason: `path is not under this role's own clossys/${role.split("/").pop()}/ folder` };
+    return { kind: "refused", role, path, reason: `path is not under this role's own ${roleFolderPrefix(role)} folder` };
   }
   if (existing === null) {
     return { kind: "create", role, path, requiresMerge: false, reason: "no file exists at this path yet" };
@@ -106,10 +112,10 @@ export function planMove(input: {
 }): MovePlan | RefusedPlan {
   const { role, fromPath, toPath, candidateReferrers } = input;
   if (!isOwnedByRole(role, fromPath)) {
-    return { kind: "refused", role, path: fromPath, reason: `source is not under this role's own clossys/${role.split("/").pop()}/ folder` };
+    return { kind: "refused", role, path: fromPath, reason: `source is not under this role's own ${roleFolderPrefix(role)} folder` };
   }
   if (!isOwnedByRole(role, toPath)) {
-    return { kind: "refused", role, path: toPath, reason: `destination is not under this role's own clossys/${role.split("/").pop()}/ folder` };
+    return { kind: "refused", role, path: toPath, reason: `destination is not under this role's own ${roleFolderPrefix(role)} folder` };
   }
   const referencesToFix = candidateReferrers
     .filter((referrer) => referrer.path !== fromPath && referrer.content.includes(fromPath))
@@ -136,7 +142,7 @@ export interface SupersedePlan {
 export function planSupersede(input: { readonly role: string; readonly path: string; readonly supersededEntryId: string }): SupersedePlan | RefusedPlan {
   const { role, path, supersededEntryId } = input;
   if (!isOwnedByRole(role, path)) {
-    return { kind: "refused", role, path, reason: `path is not under this role's own clossys/${role.split("/").pop()}/ folder` };
+    return { kind: "refused", role, path, reason: `path is not under this role's own ${roleFolderPrefix(role)} folder` };
   }
   return { kind: "supersede", role, path, supersededEntryId, reason: `appends a new entry superseding ${supersededEntryId}; the superseded entry is kept, never deleted` };
 }

@@ -1,0 +1,806 @@
+{
+  "coverage": [
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.avatar",
+      "status": "candidate",
+      "supported": [
+        "content.image",
+        "content.initials",
+        "size.lg",
+        "size.md",
+        "size.sm"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.badge",
+      "status": "candidate",
+      "supported": [
+        "tone.danger",
+        "tone.neutral"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.banner",
+      "status": "candidate",
+      "supported": [
+        "tone.danger",
+        "tone.info"
+      ]
+    },
+    {
+      "missing": [
+        "collapsed"
+      ],
+      "notes": [
+        "No collapsed trail API is exported.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.breadcrumbs",
+      "status": "subset",
+      "supported": [
+        "current"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.button",
+      "status": "candidate",
+      "supported": [
+        "ground.base",
+        "shape.icon-only",
+        "shape.text",
+        "size.lg",
+        "size.md",
+        "size.sm",
+        "state.disabled",
+        "state.focus-visible",
+        "state.hover",
+        "variant.danger",
+        "variant.ghost",
+        "variant.outline",
+        "variant.primary",
+        "variant.secondary"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.calendar",
+      "status": "candidate",
+      "supported": [
+        "selection.range",
+        "selection.single"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.card",
+      "status": "candidate",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.chart-area",
+      "status": "candidate",
+      "supported": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.chart-bar",
+      "status": "candidate",
+      "supported": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.chart-heatmap",
+      "status": "candidate",
+      "supported": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.chart-line",
+      "status": "candidate",
+      "supported": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available.",
+        "Frozen reads omit source-consumed tokens.status-color; the contract's allowedReads must widen before this is enforced.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.chart-range",
+      "status": "candidate",
+      "supported": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available.",
+        "Frozen reads omit source-consumed tokens.body-size, tokens.spacing; the contract's allowedReads must widen before this is enforced.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.chart-scatter",
+      "status": "candidate",
+      "supported": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Axes, legend and tooltip are opt-in (off by default, so the bare inline trend is unchanged). The tooltip reuses the shared ChartFrame.Tooltip part; accessibility and browser behavior remain unmeasured, static CSS inspection has no Escape dismissal, and long labels may clip. The complete table remains available.",
+        "Frozen reads omit source-consumed tokens.caption-size, tokens.spacing; the contract's allowedReads must widen before this is enforced.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.chart-sparkline",
+      "status": "candidate",
+      "supported": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.chart-status-strip",
+      "status": "candidate",
+      "supported": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.chart-waterfall",
+      "status": "candidate",
+      "supported": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Group scope dispatches to Checkbox.Group (RAC CheckboxGroup); each member Checkbox takes a value.",
+        "Frozen reads omit source-consumed tokens.caption-size, tokens.typeface; the contract's allowedReads must widen before this is enforced.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.checkbox",
+      "status": "candidate",
+      "supported": [
+        "scope.single",
+        "state.checked",
+        "state.indeterminate",
+        "state.invalid"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.color-picker",
+      "status": "candidate",
+      "supported": [
+        "part.area",
+        "part.field",
+        "part.slider",
+        "part.swatch-picker",
+        "part.wheel"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.combo-box",
+      "status": "candidate",
+      "supported": [
+        "allows-custom",
+        "state.invalid"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.date-field",
+      "status": "candidate",
+      "supported": [
+        "content.date",
+        "content.time",
+        "granularity",
+        "state.invalid"
+      ]
+    },
+    {
+      "missing": [
+        "selection.range",
+        "selection.single"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.date-picker",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "role=alertdialog keeps the modal surface and Escape, and ignores a scrim press unless isDismissable is set.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.dialog",
+      "status": "candidate",
+      "supported": [
+        "dismissable",
+        "role.modal"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Group scope dispatches to Disclosure.Group (RAC DisclosureGroup); members are addressed by id.",
+        "Frozen reads omit source-consumed tokens.border-color; the contract's allowedReads must widen before this is enforced.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.disclosure",
+      "status": "candidate",
+      "supported": [
+        "scope.group"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Client Field uses RAC Label/Text/FieldError; the server entry preserves its static arbitrary-control render bridge.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.field",
+      "status": "candidate",
+      "supported": [
+        "part.description",
+        "part.error",
+        "part.label",
+        "state.disabled",
+        "state.invalid",
+        "state.required"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.file-trigger",
+      "status": "candidate",
+      "supported": [
+        "accept",
+        "directory",
+        "multiple"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.form",
+      "status": "candidate",
+      "supported": [
+        "validation.aria",
+        "validation.native"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Frozen reads omit source-consumed tokens.control-color; the contract's allowedReads must widen before this is enforced.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.grid-list",
+      "status": "candidate",
+      "supported": [
+        "layout.grid",
+        "layout.list",
+        "selection"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.icon",
+      "status": "candidate",
+      "supported": [
+        "size.lg",
+        "size.md",
+        "size.sm"
+      ]
+    },
+    {
+      "missing": [
+        "scope.chord",
+        "scope.single"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.keyboard",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.link",
+      "status": "candidate",
+      "supported": [
+        "appearance.button",
+        "appearance.inline"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Mark uses Logomark; lockup dispatches to the shell Brandmark export.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.logo",
+      "status": "candidate",
+      "supported": [
+        "content.lockup",
+        "content.mark",
+        "ground.base",
+        "ground.inverse",
+        "size.lg",
+        "size.md",
+        "size.sm"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Menu is the trigger-owned popup; Menu.Inline presents the same menu inline. Root selectionMode applies to both; selected items show the check glyph.",
+        "Frozen reads omit source-consumed tokens.accent-color; the contract's allowedReads must widen before this is enforced.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.menu",
+      "status": "candidate",
+      "supported": [
+        "presentation.inline",
+        "presentation.popup",
+        "selection.multiple",
+        "selection.none",
+        "selection.single"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.meter",
+      "status": "candidate",
+      "supported": [
+        "emphasis",
+        "tone"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.navigation-tree",
+      "status": "candidate",
+      "supported": [
+        "current",
+        "expand"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.number-field",
+      "status": "candidate",
+      "supported": [
+        "format",
+        "state.invalid",
+        "step"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "The arrow is opt-in (arrow=false by default) and decorative; it follows the resolved placement.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.popover",
+      "status": "candidate",
+      "supported": [
+        "placement"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.progress-bar",
+      "status": "candidate",
+      "supported": [
+        "progress.determinate",
+        "progress.indeterminate"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.radio-group",
+      "status": "candidate",
+      "supported": [
+        "orientation.horizontal",
+        "orientation.vertical",
+        "state.invalid"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.resize-handle",
+      "status": "candidate",
+      "supported": [
+        "orientation.horizontal",
+        "orientation.vertical"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.search-field",
+      "status": "candidate",
+      "supported": [
+        "part.clear",
+        "part.submit",
+        "state.empty",
+        "state.filled"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.select",
+      "status": "candidate",
+      "supported": [
+        "selection.single",
+        "size.lg",
+        "size.md",
+        "size.sm",
+        "state.invalid"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.separator",
+      "status": "candidate",
+      "supported": [
+        "orientation.horizontal",
+        "orientation.vertical"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.skeleton",
+      "status": "candidate",
+      "supported": [
+        "shape.block"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "A range is a value array with one thumbLabels name per thumb; the fill spans the selected range. Source and runtime qualification remain unmeasured.",
+        "Frozen reads omit source-consumed tokens.body-size, tokens.radius, tokens.text-color, tokens.typeface; the contract's allowedReads must widen before this is enforced.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.slider",
+      "status": "candidate",
+      "supported": [
+        "orientation.horizontal",
+        "orientation.vertical",
+        "selection.range",
+        "selection.single"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.spinner",
+      "status": "candidate",
+      "supported": [
+        "size.lg",
+        "size.md",
+        "size.sm"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.status-mark",
+      "status": "candidate",
+      "supported": [
+        "tone.danger",
+        "tone.info",
+        "tone.neutral",
+        "tone.success",
+        "tone.warning"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.switch",
+      "status": "candidate",
+      "supported": [
+        "state.disabled",
+        "state.off",
+        "state.on"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Column resizing: wrap in Table.ResizableContainer and set allowsResizing (with defaultWidth/minWidth/maxWidth) on Table.Column.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.table",
+      "status": "candidate",
+      "supported": [
+        "selection",
+        "sort"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Frozen reads omit source-consumed tokens.caption-size; the contract's allowedReads must widen before this is enforced.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.tabs",
+      "status": "candidate",
+      "supported": [
+        "orientation.horizontal",
+        "orientation.vertical"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.tag-group",
+      "status": "candidate",
+      "supported": [
+        "removable",
+        "selection.multiple",
+        "selection.none",
+        "selection.single"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Size applies to the single-line TextField; multiline dispatches independently to Textarea.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.text-field",
+      "status": "candidate",
+      "supported": [
+        "line.multiline",
+        "line.single-line",
+        "size.lg",
+        "size.md",
+        "size.sm",
+        "state.disabled",
+        "state.invalid",
+        "state.read-only"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Toaster is the region; tone, timeout and authored action dispatch through shell toast.",
+        "Frozen reads omit source-consumed tokens.body-size, tokens.control-radius, tokens.elevation, tokens.spacing, tokens.status-color, tokens.text-color, tokens.typeface, tokens.z-index; the contract's allowedReads must widen before this is enforced.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.toast",
+      "status": "candidate",
+      "supported": [
+        "action",
+        "timeout",
+        "tone.danger",
+        "tone.info",
+        "tone.success",
+        "tone.warning"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.toggle-button",
+      "status": "candidate",
+      "supported": [
+        "size.lg",
+        "size.md",
+        "size.sm",
+        "state.disabled",
+        "state.focus-visible",
+        "state.hover",
+        "state.selected",
+        "variant.ghost",
+        "variant.outline"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "ToggleGroupItem renders its own RAC ToggleButton with the shared toggle variants; it does not dispatch to the toggle-button leaf, so no composition is claimed.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.toggle-group",
+      "status": "candidate",
+      "supported": [
+        "orientation.horizontal",
+        "orientation.vertical",
+        "selection.multiple",
+        "selection.single"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.toolbar",
+      "status": "candidate",
+      "supported": [
+        "orientation.horizontal",
+        "orientation.vertical"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.tooltip",
+      "status": "candidate",
+      "supported": [
+        "placement"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Frozen reads omit source-consumed tokens.control-color, tokens.control-size; the contract's allowedReads must widen before this is enforced.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.tree",
+      "status": "candidate",
+      "supported": [
+        "expand",
+        "selection"
+      ]
+    }
+  ],
+  "package": "@clossys/designer",
+  "source": "foundry",
+  "version": "0.12.0"
+}

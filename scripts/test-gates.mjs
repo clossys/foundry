@@ -4231,7 +4231,7 @@ try {
           version: "1.0.0",
           exports: {
             ".": { types: "./dist/index.d.ts", import: "./dist/index.js" },
-            "./atoms": { types: "./dist/atoms/index.d.ts", import: "./dist/atoms/index.js" },
+            "./components": { types: "./dist/components/index.d.ts", import: "./dist/components/index.js" },
             "./blocks": { types: "./dist/blocks/index.d.ts", import: "./dist/blocks/index.js" },
           },
         },
@@ -4250,7 +4250,7 @@ try {
     // D1 (positive): an explicit `./name` mention that isn't a real key in
     // this package's own "exports" — the row documents a subpath that does
     // not exist, the root-README mirror of check-readme-parity's CHECK C.
-    writeGammaReadme("Ships \`./atoms\` and \`./blocks\`, plus \`./nonexistent\` for legacy imports.");
+    writeGammaReadme("Ships \`./components\` and \`./blocks\`, plus \`./nonexistent\` for legacy imports.");
     const nonexistent = run("node", [ROOT_README, dir]);
     check(
       "D1: catches an explicit ./subpath mention that is not a real exports key",
@@ -4263,7 +4263,7 @@ try {
     // phrase, while that subpath actually IS a real key. This is the exact
     // shape of the real @example/ui defect, reproduced with a
     // synthetic package and a synthetic subpath name.
-    writeGammaReadme("Ships the \`atoms\` layer only; \`blocks\` is a planned future subpath, not built yet.");
+    writeGammaReadme("Ships the \`components\` layer only; \`blocks\` is a planned future subpath, not built yet.");
     const falseAbsence = run("node", [ROOT_README, dir]);
     check(
       "D2: catches a bare mention of a REAL subpath negated by a curated 'not built yet' phrase (issue #28's actual historical shape)",
@@ -4273,20 +4273,20 @@ try {
 
     // Precision: the negation phrase sits in a LATER clause than a
     // correctly-described real subpath in the same cell. The clause-scoped
-    // match must not cross-contaminate — `atoms` is truthfully described as
+    // match must not cross-contaminate — `components` is truthfully described as
     // shipped and must not be flagged just because `blocks` is falsely
     // negated two clauses later in the same row.
     check(
       "D2 is clause-scoped: a truthfully-described subpath earlier in the same cell is not flagged by a later clause's negation",
-      !falseAbsence.out.includes('describes "atoms"'),
-      `atoms was incorrectly flagged: ${falseAbsence.out.slice(0, 300)}`,
+      !falseAbsence.out.includes('describes "components"'),
+      `components was incorrectly flagged: ${falseAbsence.out.slice(0, 300)}`,
     );
 
     // Sanity (real coverage): the same real subpaths, truthfully described
     // with no negation phrase anywhere, passes — proving D1/D2 read the
     // real "exports" map and the real README prose rather than flagging
     // unconditionally once a negation-shaped fixture exists.
-    writeGammaReadme("Ships \`./atoms\` and \`./blocks\`, the two layers this package has today.");
+    writeGammaReadme("Ships \`./components\` and \`./blocks\`, the two layers this package has today.");
     const clean = run("node", [ROOT_README, dir]);
     check(
       "sanity: truthfully describing real subpaths with no negation phrase passes",

@@ -1,0 +1,437 @@
+{
+  "avatar": [],
+  "badge": [
+    "tokens.caption-size",
+    "tokens.letter-spacing",
+    "tokens.radius",
+    "tokens.spacing",
+    "tokens.status-color",
+    "tokens.surface-color",
+    "tokens.text-color",
+    "tokens.typeface"
+  ],
+  "banner": [],
+  "breadcrumbs": [
+    "tokens.body-size",
+    "tokens.spacing",
+    "tokens.text-color",
+    "tokens.typeface"
+  ],
+  "button": [],
+  "calendar": [
+    "tokens.accent-color",
+    "tokens.action-color",
+    "tokens.caption-size",
+    "tokens.control-radius",
+    "tokens.focus-shadow",
+    "tokens.spacing",
+    "tokens.state-opacity",
+    "tokens.surface-color",
+    "tokens.text-color"
+  ],
+  "card": [
+    "tokens.border-color",
+    "tokens.control-radius",
+    "tokens.elevation",
+    "tokens.spacing",
+    "tokens.surface-color",
+    "tokens.surface-radius"
+  ],
+  "chart-area": [],
+  "chart-bar": [
+    "tokens.border-width",
+    "tokens.chart-color",
+    "tokens.radius",
+    "tokens.text-color"
+  ],
+  "chart-heatmap": [],
+  "chart-line": [
+    "tokens.chart-color"
+  ],
+  "chart-range": [
+    "tokens.border-width",
+    "tokens.radius",
+    "tokens.status-color",
+    "tokens.text-color"
+  ],
+  "chart-scatter": [
+    "tokens.body-size",
+    "tokens.border-width",
+    "tokens.chart-color",
+    "tokens.spacing",
+    "tokens.surface-color",
+    "tokens.text-color",
+    "tokens.typeface"
+  ],
+  "chart-sparkline": [
+    "tokens.caption-size",
+    "tokens.chart-color",
+    "tokens.radius",
+    "tokens.spacing",
+    "tokens.text-color",
+    "tokens.typeface"
+  ],
+  "chart-status-strip": [],
+  "chart-waterfall": [
+    "tokens.border-width",
+    "tokens.chart-color",
+    "tokens.diverging-color",
+    "tokens.radius",
+    "tokens.surface-color",
+    "tokens.text-color"
+  ],
+  "checkbox": [
+    "tokens.action-color",
+    "tokens.body-size",
+    "tokens.border-color",
+    "tokens.caption-size",
+    "tokens.control-size",
+    "tokens.focus-shadow",
+    "tokens.radius",
+    "tokens.spacing",
+    "tokens.state-opacity",
+    "tokens.status-color",
+    "tokens.surface-color",
+    "tokens.text-color",
+    "tokens.typeface"
+  ],
+  "color-picker": [
+    "tokens.body-size",
+    "tokens.border-color",
+    "tokens.caption-size",
+    "tokens.control-radius",
+    "tokens.control-size",
+    "tokens.focus-shadow",
+    "tokens.spacing",
+    "tokens.state-opacity",
+    "tokens.surface-color",
+    "tokens.text-color",
+    "tokens.touch-target",
+    "tokens.typeface"
+  ],
+  "combo-box": [
+    "tokens.accent-color",
+    "tokens.body-size",
+    "tokens.border-color",
+    "tokens.caption-size",
+    "tokens.control-radius",
+    "tokens.elevation",
+    "tokens.focus-shadow",
+    "tokens.radius",
+    "tokens.spacing",
+    "tokens.state-opacity",
+    "tokens.status-color",
+    "tokens.surface-color",
+    "tokens.text-color",
+    "tokens.typeface",
+    "tokens.z-index"
+  ],
+  "date-field": [
+    "tokens.body-size",
+    "tokens.border-color",
+    "tokens.caption-size",
+    "tokens.control-radius",
+    "tokens.control-size",
+    "tokens.focus-shadow",
+    "tokens.radius",
+    "tokens.spacing",
+    "tokens.state-opacity",
+    "tokens.status-color",
+    "tokens.surface-color",
+    "tokens.text-color",
+    "tokens.typeface"
+  ],
+  "dialog": [
+    "tokens.body-size",
+    "tokens.border-color",
+    "tokens.control-radius",
+    "tokens.elevation",
+    "tokens.heading-size",
+    "tokens.scrim-color",
+    "tokens.spacing",
+    "tokens.surface-color",
+    "tokens.text-color",
+    "tokens.typeface",
+    "tokens.z-index"
+  ],
+  "disclosure": [
+    "tokens.body-size",
+    "tokens.border-color",
+    "tokens.radius",
+    "tokens.spacing",
+    "tokens.text-color"
+  ],
+  "field": [
+    "tokens.body-size",
+    "tokens.caption-size",
+    "tokens.spacing",
+    "tokens.state-opacity",
+    "tokens.status-color",
+    "tokens.text-color",
+    "tokens.typeface"
+  ],
+  "file-trigger": [],
+  "form": [],
+  "grid-list": [
+    "tokens.accent-color",
+    "tokens.body-size",
+    "tokens.border-color",
+    "tokens.control-color",
+    "tokens.focus-shadow",
+    "tokens.spacing",
+    "tokens.state-opacity",
+    "tokens.text-color",
+    "tokens.touch-target"
+  ],
+  "icon": [
+    "tokens.icon-size",
+    "tokens.icon-stroke"
+  ],
+  "link": [
+    "tokens.accent-color",
+    "tokens.body-size",
+    "tokens.text-color",
+    "tokens.typeface"
+  ],
+  "logo": [
+    "tokens.accent-color",
+    "tokens.text-color",
+    "tokens.touch-target"
+  ],
+  "menu": [
+    "tokens.accent-color",
+    "tokens.body-size",
+    "tokens.border-color",
+    "tokens.caption-size",
+    "tokens.control-radius",
+    "tokens.elevation",
+    "tokens.radius",
+    "tokens.spacing",
+    "tokens.status-color",
+    "tokens.surface-color",
+    "tokens.text-color",
+    "tokens.typeface",
+    "tokens.z-index"
+  ],
+  "meter": [
+    "tokens.body-size",
+    "tokens.heading-size",
+    "tokens.text-color"
+  ],
+  "native-action": [
+    "tokens.action-color",
+    "tokens.focus-color",
+    "tokens.focus-outline",
+    "tokens.state-opacity"
+  ],
+  "navigation-tree": [],
+  "number-field": [
+    "tokens.body-size",
+    "tokens.border-color",
+    "tokens.caption-size",
+    "tokens.control-radius",
+    "tokens.control-size",
+    "tokens.focus-shadow",
+    "tokens.spacing",
+    "tokens.state-opacity",
+    "tokens.status-color",
+    "tokens.surface-color",
+    "tokens.text-color",
+    "tokens.touch-target",
+    "tokens.typeface"
+  ],
+  "popover": [
+    "tokens.border-color",
+    "tokens.control-radius",
+    "tokens.elevation",
+    "tokens.spacing",
+    "tokens.surface-color",
+    "tokens.z-index"
+  ],
+  "progress-bar": [
+    "tokens.accent-color",
+    "tokens.body-size",
+    "tokens.radius",
+    "tokens.spacing",
+    "tokens.surface-color",
+    "tokens.text-color",
+    "tokens.typeface"
+  ],
+  "radio-group": [
+    "tokens.action-color",
+    "tokens.body-size",
+    "tokens.border-color",
+    "tokens.caption-size",
+    "tokens.focus-shadow",
+    "tokens.radius",
+    "tokens.spacing",
+    "tokens.state-opacity",
+    "tokens.status-color",
+    "tokens.surface-color",
+    "tokens.text-color",
+    "tokens.typeface"
+  ],
+  "resize-handle": [
+    "tokens.accent-color",
+    "tokens.border-color",
+    "tokens.border-width",
+    "tokens.touch-target"
+  ],
+  "search-field": [
+    "tokens.body-size",
+    "tokens.border-color",
+    "tokens.caption-size",
+    "tokens.control-radius",
+    "tokens.control-size",
+    "tokens.spacing",
+    "tokens.status-color",
+    "tokens.surface-color",
+    "tokens.text-color",
+    "tokens.typeface"
+  ],
+  "select": [
+    "tokens.accent-color",
+    "tokens.body-size",
+    "tokens.border-color",
+    "tokens.caption-size",
+    "tokens.control-radius",
+    "tokens.control-size",
+    "tokens.elevation",
+    "tokens.radius",
+    "tokens.spacing",
+    "tokens.status-color",
+    "tokens.surface-color",
+    "tokens.text-color",
+    "tokens.typeface",
+    "tokens.z-index"
+  ],
+  "semantic-content": [],
+  "separator": [
+    "tokens.border-color"
+  ],
+  "skeleton": [
+    "tokens.control-radius",
+    "tokens.radius",
+    "tokens.surface-color"
+  ],
+  "slider": [
+    "tokens.action-color",
+    "tokens.body-size",
+    "tokens.control-size",
+    "tokens.radius",
+    "tokens.spacing",
+    "tokens.surface-color",
+    "tokens.text-color",
+    "tokens.typeface"
+  ],
+  "spinner": [
+    "tokens.text-color"
+  ],
+  "status-mark": [
+    "tokens.body-size",
+    "tokens.spacing",
+    "tokens.status-color",
+    "tokens.text-color",
+    "tokens.typeface"
+  ],
+  "switch": [
+    "tokens.action-color",
+    "tokens.body-size",
+    "tokens.border-color",
+    "tokens.control-size",
+    "tokens.focus-shadow",
+    "tokens.radius",
+    "tokens.spacing",
+    "tokens.state-opacity",
+    "tokens.surface-color",
+    "tokens.text-color"
+  ],
+  "table": [
+    "tokens.accent-color",
+    "tokens.body-size",
+    "tokens.border-color",
+    "tokens.focus-shadow",
+    "tokens.spacing",
+    "tokens.text-color",
+    "tokens.typeface"
+  ],
+  "tabs": [
+    "tokens.accent-color",
+    "tokens.body-size",
+    "tokens.border-color",
+    "tokens.border-width",
+    "tokens.caption-size",
+    "tokens.spacing",
+    "tokens.text-color",
+    "tokens.typeface"
+  ],
+  "tag-group": [
+    "tokens.accent-color",
+    "tokens.body-size",
+    "tokens.caption-size",
+    "tokens.control-size",
+    "tokens.focus-color",
+    "tokens.focus-outline",
+    "tokens.focus-shadow",
+    "tokens.radius",
+    "tokens.spacing",
+    "tokens.state-opacity",
+    "tokens.surface-color",
+    "tokens.text-color",
+    "tokens.typeface"
+  ],
+  "text-field": [
+    "tokens.body-size",
+    "tokens.border-color",
+    "tokens.caption-size",
+    "tokens.control-radius",
+    "tokens.control-size",
+    "tokens.spacing",
+    "tokens.status-color",
+    "tokens.surface-color",
+    "tokens.text-color",
+    "tokens.typeface"
+  ],
+  "toast": [
+    "tokens.body-size",
+    "tokens.control-radius",
+    "tokens.elevation",
+    "tokens.spacing",
+    "tokens.status-color",
+    "tokens.text-color",
+    "tokens.typeface",
+    "tokens.z-index"
+  ],
+  "toggle-button": [
+    "tokens.action-color",
+    "tokens.control-size",
+    "tokens.text-color"
+  ],
+  "toggle-group": [],
+  "toolbar": [
+    "tokens.border-color",
+    "tokens.spacing"
+  ],
+  "tooltip": [
+    "tokens.border-color",
+    "tokens.caption-size",
+    "tokens.control-radius",
+    "tokens.elevation",
+    "tokens.spacing",
+    "tokens.surface-color",
+    "tokens.text-color",
+    "tokens.z-index"
+  ],
+  "tree": [
+    "tokens.accent-color",
+    "tokens.body-size",
+    "tokens.border-color",
+    "tokens.control-color",
+    "tokens.control-size",
+    "tokens.focus-shadow",
+    "tokens.spacing",
+    "tokens.state-opacity",
+    "tokens.text-color",
+    "tokens.touch-target"
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "foundry/assets.lockup",
+      "slot": "assets.lockup",
+      "source": "foundry",
+      "mode": "derived",
+      "sourceAddress": "catalog-assets/identity.ts",
+      "relation": "derived",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "foundry",
+      "trust": "foundry",
+      "license": "MIT",
+      "status": "draft",
+      "reads": {
+        "tokens": [
+          "tokens.text-color"
+        ],
+        "assets": [
+          "assets.lockup"
+        ]
+      },
+      "derivation": {
+        "from": "asset-identity#consumer-seed",
+        "rule": "identity-lockup@1"
+      }
+    }
+  },
+  "assets": {
+    "lockup": {
+      "reversed": {
+        "$type": "svg",
+        "$value": "{{assets.lockup.positive}}"
+      }
+    }
+  }
+}

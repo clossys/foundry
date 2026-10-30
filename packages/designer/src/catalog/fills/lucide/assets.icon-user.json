@@ -1,0 +1,54 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-user",
+      "slot": "assets.icon-user",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/user.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/User.ts",
+        "sha256": "4713de5f47d186c42e871932ddc90f71f88e8edb927071b718830c7eeece9050"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-user": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2",
+              "key": "975kel"
+            }
+          ],
+          [
+            "circle",
+            {
+              "cx": "12",
+              "cy": "7",
+              "r": "4",
+              "key": "17ys0d"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

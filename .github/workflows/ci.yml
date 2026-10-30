@@ -1317,8 +1317,8 @@ jobs:
   # copy, because that exact string is a REQUIRED status check on main.
   # Renaming a required context does not rename anything -- it creates a
   # required context that never reports, and wedges every pull request until
-  # the ruleset is edited to match. This job stays byte-for-byte unchanged
-  # (id, name, steps) so the required context it already satisfies keeps
+  # the ruleset is edited to match. This job keeps its id and name unchanged
+  # so the required context it already satisfies keeps
   # reporting without interruption. See the `designer-contrast` job directly
   # below for phase 1's other half: the new context, reporting alongside
   # this one, not yet required by anything.
@@ -1355,6 +1355,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: npm run build --workspace=packages/strategist
       - run: npm run build --workspace=packages/designer
       - run: npm run check:contrast
 
@@ -1382,6 +1383,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: npm run build --workspace=packages/strategist
       - run: npm run build --workspace=packages/designer
       - run: npm run check:contrast
 

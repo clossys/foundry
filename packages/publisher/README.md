@@ -1,13 +1,10 @@
 # @clossys/publisher
 
-**The publisher role — did we put it out to an audience, and can we prove
-what shipped?** This package is named for the job, not the artifact: it is
-recut from two donor packages, `@example/surface` (the composer half
-— eight subpaths, unchanged) and `@example/ledger` (the record half,
-now the `./record` subpath), per
-[decision 10](../../docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages).
-The vocabulary inside each half is unchanged: renaming the role does not
-rename what it composes or what it records.
+Publisher assembles content from registered Designer frames and sections,
+checks it, records owner approval and hands an immutable release to the system
+that lands it. The v1 content contract pairs Designer visuals with hand-written
+copy. The package and its agent guide provide generic capability; the consumer
+owns its workspace data and library selections.
 
 ```bash
 npm install @clossys/publisher
@@ -15,6 +12,173 @@ npm install @clossys/publisher
 
 This package is published to `https://registry.npmjs.org` with public
 access; installing it requires no authentication.
+
+## Content contract
+
+The slot-and-candidate model below is the new content contract. It describes the
+intended workflow; it does not claim that the new model, stage engine, canvas,
+renderers or handover are complete. The shipped API reference later in this
+README remains available while the older surface and pack modules retire.
+Those modules have not been deleted by this documentation change.
+
+### Fixed hierarchy and permanent slots
+
+A workspace is the scope, not another hierarchy level. There are exactly three
+L1 groups and nine L2 kinds, in this order. Adding a group or kind requires
+owner sign-off.
+
+| L1 | L2 kinds | One L3 slot |
+| --- | --- | --- |
+| `websites` | `site`, `app`, `admin`, `demo`, `internal` | one URL |
+| `documents` | `slides`, `docs` | one deck or document file |
+| `communications` | `messages`, `videos` | one message or video file |
+
+An L3 slot is a permanent publishable position. Its id is issued from its
+original address, such as `websites/site/home`, and stays unchanged when its
+L1, L2 or position changes. A deploy target or destination is a field on the
+slot, not a level. Slides and scenes are sections inside a candidate, not slots.
+Images are Designer assets used by sections, not standalone slots.
+`websites/internal` is development-only and its Publish stage is Not applicable.
+Milestones and bundles are free tags, such as `milestone:launch`.
+
+### Candidates and immutable revisions
+
+A candidate is an agent draft, alternative, rewrite or import for one slot.
+A slot has at most one active candidate. Candidates progress through draft,
+in review, approved, active and retired; a retired candidate can become active
+again only by rollback to a previously released revision. A slot without an
+active candidate says "No active candidate" rather than implying a release.
+
+A content change creates the next immutable candidate revision (`r1`, `r2`,
+and so on). The digest covers the candidate name, brief, composition, links,
+type settings and open questions. It excludes approval, history, state and
+tags. Tags are mutable filters and do not create a content revision.
+For redirects, `redirectTarget` replaces composition in the digest; changing
+the destination creates a new revision and invalidates approval.
+A new revision of an approved or active candidate returns it to draft and
+invalidates its approval. Other candidates remain unchanged.
+
+Approval records its source (`owner` or `imported-baseline`), revision and
+digest. Activation requires an approval for the current revision and digest
+from either source. An imported baseline can preserve an existing active
+candidate, but Publish still requires current owner-source approval. Imported
+status never substitutes for that approval.
+
+### Designer composition and hand-written copy
+
+Every content or status candidate consists of one registered Designer frame
+and ordered Designer sections. Publisher owns the brief, section order and
+intents, links between slots, and inline copy. Designer owns visual authoring:
+frames, sections, configs, assets and layout. Publisher stores their references,
+resolves them against the consumer library at Assemble and Review, and pins the
+resolved library version. It does not copy Designer implementations or invent
+layout. Only a redirect slot may omit composition; it must name its redirect
+target.
+
+The composition has a `frame` reference (`frameId`, `configId`), ordered
+`sections` (`key`, `sectionId`, `configId`, `intent`, `fields` and an optional
+pinned section reference), and `libraryVersion`. Each copy field carries
+`field`, `text`, `source: "handwritten"`, optional `locale` and optional
+Designer asset references. Text is plain unless the registered section schema
+allows rich marks. The brief records audience, goal, key message, call to
+action, tone, constraints and source answers.
+
+Hand-written copy is real content, authored through the coding agent and
+stored inline. It can pass Review, receive approval and be published. A missing
+Writer never blocks it. A missing required field is Needs input and names the
+section key and field. Writer is a future seam on this field shape, not a CMS
+or copy-generation pipeline required by v1. Existing legacy Writer-based APIs
+below retain their own contracts during retirement.
+
+A reused section pins `{ candidateId, sectionKey, revision }`. Following a newer
+source revision is an explicit agent change that creates a revision of the
+receiving candidate and requires Review and Approve again. Nothing follows a
+newer revision silently. Frame, section, config and asset references must all
+resolve in the registered consumer library; otherwise Review fails.
+
+### Five stages per candidate
+
+Each candidate runs Define → Assemble → Review → Approve → Publish. Approval
+and publishing are per candidate, not per board or workspace.
+
+| Stage | Exit condition |
+| --- | --- |
+| Define | Brief complete; frame, section order and intents chosen; links valid; no blocking open question |
+| Assemble | Words, Visuals and Assembly all Done: required hand-written fields present, Designer references resolve, and the medium render is stored by digest |
+| Review | Closed-world references, frame/section compatibility, rendered evidence and the applicable medium checks pass |
+| Approve | Owner approval recorded against the current revision and digest |
+| Publish | Active candidate's release frozen and handed over; destination readback is live and matches the manifest digest |
+
+Stage values are Failing, Needs input, Waiting, Done and Not applicable.
+Roll-up is worst-wins: Failing > Needs input > Waiting > Done; Not applicable
+is ignored. An empty or all-Not-applicable group rolls up to Not applicable.
+Assemble shows Words as "handwritten" when its required fields are complete;
+that counts as Done. A missing frame or renderer is Waiting with its reason,
+not a successful render. A non-active candidate's Publish is Waiting "not active".
+
+### Read-only canvas and consumer data
+
+The planned Publisher page uses Designer's shared Studio canvas inside
+`frames.app-shell`: one lane per L1, one board per L2 and one row per slot.
+All nine boards remain visible, including empty boards. The slot inspector
+compares candidates and shows composition, copy sources, stages, findings,
+questions, releases and revision history. The page is read-only. Every content
+change, candidate switch, approval and saved-view change goes through the
+coding agent; page controls do not edit the source of record.
+
+The capability package owns the fixed hierarchy, schemas, checks, rendering
+and handover contracts, and agent guide. The consumer owns its slots,
+candidates, copy, library selection, saved views and route bindings. Consumer
+records belong in the consumer's repository or database, not in this package.
+Rendered binaries belong in a content-addressed object store, not git.
+A view resolves system preset → consumer default → session URL settings;
+filters and sorting do not change the fixed hierarchy.
+
+### Release and handover contract
+
+The planned release freezes one active candidate revision as slot release N.
+Its manifest pins the candidate digest, section-reference revisions, Designer
+library and renderer versions, approval and artifact hashes. Website releases
+are batched into a target build manifest covering the active non-internal slots
+of that deploy target. A slot is live only when the deployed build contains its
+release at the matching digest. Rollback reactivates a previously released
+candidate and reuses its release; it does not re-render. Re-publish uses the
+same release for another destination.
+
+Publisher never holds destination credentials, deploys, sends or uploads.
+Builder owns website deployment, Distributor owns artifact landing and external
+connectors, and Messenger owns message sending. Publisher only renders, freezes,
+hands over and reads destination status. An unknown readback is Waiting; a
+mismatching digest is Failing. A missing destination system remains Waiting
+with its name. Package publication through npm or GitHub Releases is outside
+this content workflow.
+
+### Implementation status
+
+| Capability | Status in this documentation base |
+| --- | --- |
+| Legacy surface, pack, record and channel APIs | Existing implementation; reference retained below during retirement |
+| Slot/candidate model and public content entry points | New contract; implementation and public export integration pending |
+| Five-stage engine, read-only shared canvas and inspector | Planned; the legacy channel workspace below is not this canvas |
+| Composition-based web renderer and per-target build manifest | Planned; existing web renderers do not prove this pipeline |
+| Composition-based paged, message and video renderers | Planned; missing frames/renderers must report Waiting |
+| Release freeze, destination handover and matching live readback | Planned; existing ledger APIs do not establish destination landing |
+| Distributor connectors and Builder deploy operation | Future work; no deployment, sending or upload is claimed |
+
+The planned public split is `@clossys/publisher/content` for runtime-neutral
+contracts and validation, and `@clossys/publisher/content/node` for Node-only
+digest and revision helpers. Neither entry point is available in this
+documentation base; source and export integration are pending. Check the
+installed manifest before using either path.
+
+## Retained API reference
+
+The following sections document the existing APIs and their evidence limits.
+Surface documents, Writer registries, launch packs, templates and channel tabs
+are legacy contracts being retired. They remain implemented and documented;
+they do not override the content contract above or establish that its new
+pipeline is built. Use the installed version's manifest to determine available
+entry points and commands.
 
 ## Verified publication rate
 
@@ -151,6 +315,7 @@ Use explicit subpaths:
 - `@clossys/publisher/web/consent` — the client-only browser consent assembly: `ConsentExperience`, `bindTransport`, `useAnalyticsAllowed` and `useConsentStatus`. Under `react-server` it resolves a module that throws at import. See "Browser consent," below.
 - `@clossys/publisher/web/consent/preview` — the fixed-clock consent preview for development review. It resolves only under the `development` condition; every other condition, and `react-server`, resolves a module that throws at import.
 - `@clossys/publisher/consent-copy` — server-only consent copy resolution, `resolveConsentCopy`. Under the `browser` condition it resolves a module that throws at import.
+- Pending integration: `@clossys/publisher/web/registered-route-wiring` — server-only `registeredRouteWiringRoutes`, providing Designer `checkWiring` route input with tamper-evident proof only for a provider that passed the registered-route check at the exact emitted mount. The planned `browser` target throws at import. This entry point is not available in this documentation base; check the installed manifest before using it.
 - `@clossys/publisher/document` — the product-neutral structured-document contract (sections, paragraphs, lists, tables, callouts, safe links) and its renderer.
 - `@clossys/publisher/email`, `/print`, `/image`, `/slides` — channel renderers.
 - `@clossys/publisher/record` — the append-only, content-addressed publication ledger and its drift checker. See "`record` — the append-only publication ledger," below.
@@ -178,6 +343,9 @@ both targets.
 
 ## Why `publisher` is one package, not two
 
+The historical package recut is recorded in
+[decision 10](../../docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages).
+
 Composition without a record is unprovable, and every time the publisher
 runs, the record runs — there is no publish that legitimately skips it. That
 argues for one install and one version, which one package with a `./record`
@@ -192,37 +360,14 @@ see "`record` — the append-only publication ledger," below, for the half
 that proves it: a publication record is a DOCUMENT the composer never
 imports.
 
-## Scope: this package renders and validates. It does not compose.
+## Legacy SurfaceDocument scope
 
-Stated plainly because evaluating it and discovering this costs real time:
-**there is no compose step here, and there will not be one.** Nothing in this
-package takes an intent, a brief, or a content plan and *selects* a template
-to put it in. Every export is a `render*`, a `resolve*`, or a `validate*`.
-
-The boundary is: a caller authors a `SurfaceDocument` — naming its template
-explicitly — and this package validates it, resolves its copy and assets
-against real approved registries, renders it for a channel, and reports what
-it did. Deciding *which* document to build, from *what* intent, is the
-consumer's job and stays there.
-
-This is a scope decision, not a gap awaiting a contributor. Template selection
-is where product judgement lives: which page shape serves which audience at
-which moment is exactly the reasoning a shared package cannot hold for someone
-else, and a `compose(intent, target)` that guessed would be wrong in a way
-that is expensive to discover and impossible to override cleanly. Drawing the
-line at "you name the template, we guarantee everything after it" is what lets
-this package promise something real — validated content, resolved copy
-provenance, deterministic output — instead of promising judgement it does not
-have.
-
-What that leaves the consumer owning: intent-to-template selection, and any
-catalog of their own templates worth selecting from. What it leaves this
-package owning: everything from a named template onward.
-
-Making the *set* of selectable web templates extensible is a separate and
-genuinely open question — see the template-registry proposal in this
-repository's issues. That is about who may add a template, not about who picks
-one; extensibility does not imply composition.
+The existing SurfaceDocument renderer validates a caller-authored document,
+resolves its copy and assets, and renders the named template. It does not
+select a template from an intent or brief. Its existing APIs and examples below
+remain valid during retirement. This boundary applies to that legacy renderer;
+the new candidate contract gives Publisher the brief, narrative and assembly
+responsibilities described above.
 
 ## SurfaceDocument and renderer boundary
 
@@ -786,7 +931,7 @@ rendering described above, including when its optional fields are omitted.
   fragment, a one-origin path, an `http(s)` URL, or a `mailto:` link. It stays
   data: there is no node, class, or handler slot, and the view renders
   underlined `<a href>` elements into the Designer `Hero` block's existing
-  `actions` slot (not `Button` atoms — the wire model stays href-shaped).
+  `actions` slot (not `Button` components — the wire model stays href-shaped).
 - **`media` on the hero section.** An optional `{ assetId, alt }` pair:
   `alt` is a `CopyRef` (provenance-complete) and `assetId` resolves at render
   time through `SectionedView`'s `resolveAssetId`, the same seam
@@ -1168,7 +1313,7 @@ staged and is not part of these publisher shells.
 `HeroView`, exported from `@clossys/publisher/web`, is a single-screen
 landing page: a transparent banner, one hero centred both ways, and a
 locally dark legal footer, over an optional backdrop. It is server-safe (it
-imports only Designer's `/shell/server`, `/atoms/server` and `/blocks/server`
+imports only Designer's `/shell/server`, `/components/server` and `/blocks/server`
 barrels) and ships no wording of its own: every visible word comes from a prop.
 
 ```tsx
@@ -1225,7 +1370,7 @@ import { HeroView } from "@clossys/publisher/web";
 
 declare const brand: React.ReactNode; // the caller's brand mark, for example a Designer `Brandmark`
 declare const backdrop: React.ReactNode; // a dark visual, for example a scrimmed image
-declare const Link: React.FC<{ href: string; buttonVariant: "primary"; children: React.ReactNode }>; // Designer's `Link`, from its `/atoms` barrel
+declare const Link: React.FC<{ href: string; buttonVariant: "primary"; children: React.ReactNode }>; // Designer's `Link`, from its `/components` barrel
 
 export function DarkHomePage() {
   return (
@@ -1260,236 +1405,22 @@ to action that carries its own fill, such as a `primary` Designer `Button` or
 `Link`; a bare link inherits the on-inverse ink. Keep focusable content out of
 `backdrop`.
 
-### `LandingView`
+### Retired `LandingView` value
 
-The core hero contract uses `size: "compact"` for section-scale copy and
-`size: "display"` for its default. Compact hero media is refused, and
-`checkSectionVariety` warns for a lone compact hero unless known trailing
-content is supplied. The web views and gallery fixtures use the canonical size field.
+The executable `LandingView` alias is no longer exported from Publisher's web
+entries. Render checked `SectionedViewDocument` data with `SectionedView`;
+its `react-server` entry selects native server blocks. Closing content belongs
+in the document as a content section with CopyRefs for its text and actions.
 
-`LandingView`, exported from `@clossys/publisher/web`, is a sectioned landing
-page. The entry's `react-server` condition selects the server implementation.
-The page has a hero block that fills the first screen, the document's other sections as full-bleed
-bands, and an optional closing call to action. Every band's content, the hero
-copy and the call to action sit in one centred column (Designer
-`SectionFrame`'s `measure`, default `"wide"`); grounds run the full width. It
-is server-safe and ships no visible wording of its own: every visible word
-comes from the resolved documents or a prop. The only built-in string is the
-scroll cue's accessible name, which `cueLabel` replaces.
+The historical catalog now renders all 27 sections through that data renderer.
+Its four historical closing strings are draft preview Writer records, with their
+provenance retained. Captions are preview chrome between native section nodes.
 
-```tsx
-import { resolveSectionedViewDocument, type ResolvedSectionedViewDocument } from "@clossys/publisher/core";
-import { LandingView } from "@clossys/publisher/web";
-
-declare const page: ResolvedSectionedViewDocument; // from resolveSectionedViewDocument; its first section is a hero
-declare const faq: ResolvedSectionedViewDocument; // a shared FAQ document
-declare const screenshot: React.ReactNode; // for example a Designer `MediaFigure`
-declare const resolveCopy: Parameters<typeof resolveSectionedViewDocument>[1];
-
-// One content-section band: topics beside a one-panel specimen.
-const records = resolveSectionedViewDocument({
-  id: "records",
-  sectionGroundRhythm: "view",
-  sections: [{
-    id: "records",
-    kind: "content-section",
-    heading: { id: "records.heading" },
-    layout: "split-end",
-    block: { type: "items", recipe: "topics", items: [
-      { id: "kept", icon: "folder", heading: { id: "records.kept" } },
-      { id: "shared", icon: "users", heading: { id: "records.shared" } },
-    ] },
-    media: { type: "specimen", label: { id: "records.label" }, panel: {
-      id: "record",
-      title: { id: "records.panel" },
-      parts: [{ id: "fields", type: "fields", items: [
-        { id: "owner", label: { id: "records.owner" }, value: { id: "records.owner.value" } },
-      ] }],
-    } },
-  }],
-}, resolveCopy);
-
-export function ProductPage() {
-  return (
-    <LandingView
-      document={page}
-      trailing={[records, faq]}
-      afterSection={{ features: screenshot }}
-      callToAction={{ copy: "hero", action: <a href="/start">Start</a> }}
-    />
-  );
-}
-```
-
-Props, in addition to the standard `<main>` attributes (minus `children`),
-`className` and `style`:
-
-- `document`: the page's resolved document. Its first section must be a
-  `hero`; it renders as the hero block and the page's only `<h1>`.
-- `trailing` (optional): further resolved documents rendered as more bands
-  after `document`, for example a shared FAQ.
-- `afterSection` (optional): content placed in a section's content slot,
-  after its own content, keyed by section id. An id that names no rendered
-  section is refused with a `RenderError`, not dropped. This node seam is
-  separate from the checked, data-only `asset` media slot.
-- `callToAction` (optional): the closing band: `id`, `eyebrow`, `heading`
-  (an `<h2>`), `description`, and one required `action` slot (pass a
-  button-styled link; it is not restyled). Add `copy: "hero"` to reuse the
-  first main hero's heading and description; heading can then be omitted.
-  Own copy values win, including `null` and `false`; only `undefined` falls
-  back. The close retains its own eyebrow and action. A trailing hero is
-  not a copy source. A valid nonempty main document without an opening hero
-  is refused with `RenderError` reason `missing-hero-copy`; malformed input
-  and unknown copy options use `resolution-failed`. Omitting `copy` retains
-  the close's authored copy. The exported `LandingViewCallToAction` interface
-  retains its required heading and action for existing consumers. As an
-  alternative to the `action` slot, pass `actions` containing one or two
-  resolved `{ id, label, href, emphasis? }` records with the hero emphasis
-  subset and effective-primary rules. The two props are mutually exclusive.
-  `footnote` takes resolved `{ text, link?: { label, href } }` copy. Labels and
-  note copy accept visible composed ReactNodes, including nested arrays; empty
-  collections and unresolved copy references are refused. Hero and
-  closing groups use one size for every emphasis: `lg` for a display hero or
-  close, and `md` for a compact hero. Pairs put the primary first in DOM order;
-  their primary and
-  secondary buttons stack full width below the tablet breakpoint, while quiet
-  actions keep automatic width.
-- `backdrop` (optional): decoration behind the hero block, `aria-hidden` and
-  inert to the pointer, over the hero section's own ground.
-- `header` (`LandingViewHeader`: `"overlay"` or `"reserved"`, default
-  `"overlay"`): whether the site header floats over the hero block or sits
-  in flow above the view.
-- `fit` (`"viewport"` or `"frame"`, default `"viewport"`): when an overlay
-  header accompanies a non-compact hero alone, `"frame"` gives the view root
-  and hero `flex-1` and leaves the hero's `minHeight` unset. Use it with
-  `landmark="none"` inside `SiteFrame` to fill the frame's remaining space.
-  With content after the hero, the existing peek height and scroll cue apply.
-  Reserved headers and compact heroes ignore `fit`.
-- `peek` (default `true`): with an overlay header and content after the hero,
-  the hero block stops short of the fold so the next band shows, and a
-  scroll cue links to that band (see **Scroll cue**).
-- `cueLabel` (default `"Scroll to next section"`): the scroll cue's
-  accessible name. Pass translated copy; a blank label is refused with a
-  `RenderError`.
-- `align` (Designer `HeroAlign`, default `"center"`) and `measure` (Designer
-  `SectionMeasure`, default `"wide"`).
-- `landmark` (`"main"` or `"none"`, default `"main"`), `resolveAssetId` and
-  `prefersReducedMotion`, as for `SectionedView`.
-
-**Scroll cue.** When the hero peeks, the view renders a real link,
-`href="#<first band's section id>"`, styled as a circular Designer icon button
-(`iconButtonLinkClassName`). If no band follows the hero, it links to the
-`callToAction`'s `id` instead. With neither, no cue renders. The cue is fixed to
-the bottom of the browser window, centred and clear of the safe-area inset, so
-it does not slide with the page; it sits over the peeking band, whose ground it
-takes: the inverse treatment on an `inverse` band, otherwise the base
-treatment. It carries `data-landing-cue`.
-
-Clicking the cue uses native fragment scrolling, with no client script.
-Scrolling is smooth only under `prefers-reduced-motion: no-preference`. Each
-band section has a scroll margin equal to its own top padding (`scroll-mt-4xl`,
-or `scroll-mt-5xl` from `tablet-lg`). Combined with the `scroll-padding-top`
-that a sticky or fixed site header sets on the root, this lands the band's top
-edge flush under the header. The view does not set `scroll-padding-top`
-itself. The cue fades out over the first 132px of page scroll (three tap
-targets; the fade follows the scroll position, not the clock) and is then
-hidden, so it leaves the tab order and ignores the pointer (Designer
-`scroll-cue`). Under reduced motion it hides in one step rather than fading.
-Browsers without scroll-driven animations (`animation-timeline`) instead
-centre the cue on the hero's bottom edge, in a zero-height rail between the
-hero and the next band at `--ui-z-sticky` (below a site header at
-`--ui-z-shell`), where it scrolls away with the page; it is never fixed
-without the fade.
-
-**Section anatomy.** Every band with a feature grid, ordered steps, a status
-list, an FAQ, a hero or a `content-section` is one Designer `ContentSection`: the section's
-eyebrow, heading and description as the header group (held to the prose
-measure), then the content as a block rendered without its own
-heading region, then the `afterSection` content. A hero in a later band is a
-header group (an `<h2>`, never a second display heading) with its actions,
-and its media as the block. Other section kinds keep their block's own
-header region inside the same slot.
-
-**Canonical content-section rendering (bounded integration).** The web views
-render canonical `items` with `order: "none"` and `reveal: "all"` through
-Designer `Items`, preserving icons, eyebrow, meta, badge, links, spans,
-group membership and static specimen visuals. The frame forwards its
-resolved `standard` or `display` size and `stacked`,
-`split-start` or `split-end` layout. Item headings remain one level below the
-section heading. Frame size controls rhythm without a statement heuristic.
-Actions use the shared emphasis ladder at one `md` group size; a footnote
-supports text, one link, or both.
-
-Single-panel specimen media, its optional anatomy key, record groups and the
-three scene templates forward their resolved visible copy to the available
-Designer blocks. Matrix forwards optional labels, headings, lead descriptions,
-points, specimen visuals and the featured side. Its presentation IDs encode
-the section and each original side ID injectively, preserving authored identities and the featured relation.
-Panel badges remain independent of metadata and status; status-row mobile
-limits retain all authored rows, and Meter previous values keep their visible
-text and marker. Numbered, connected and disclosed Items use the collection
-renderer. Ordinary disclosure uses React Aria controls; the server entry uses
-native details. A supplied continuing end label stays visible; an omitted
-label retains the consumer-resolved continuation copy as hidden text.
-The published `faq` section renders the Index function’s Items-based `faq`
-recipe through the canonical content-section path: one column of rows with
-`reveal: "disclose"`. Its authored `{ id, question, answer }` items and copy
-provenance are retained, with the recipe’s four-to-six-row budget checked at
-authoring and rendering. Omitted or `stacked` layout selects a stacked band;
-`split` selects `split-end`. SectionedView and LandingView use React Aria
-controls in the ordinary entry and native disclosure in the server entry. Scene text limits stay local to media; inverse Scene media gets an opaque base plate and base ink. Record, Scene and anatomy identities are namespaced by section instance without changing authored copy or provenance. Canonical Landing fragments align with the unpadded band edge; published bands retain their padding offsets.
-
-The resolved boundary requires explicit canonical axes and closed plain data
-before reading discriminators. It checks the structural contract and text
-budgets without calling a consumer resolver or changing caller provenance.
-`afterSection` content follows the block. The content preview uses canonical
-collection and media data, including connected and disclosed examples.
-Standalone preview pages select the native server entry so disclosures work
-without hydration.
-Single-panel recomposition retains sample copy and state while changing the
-former multi-panel anatomy.
-
-**Measure and rhythm.** Centred copy, in the hero block and the call to
-action, is held to the prose measure (`--ui-width-prose-max`) inside the
-column, so its lines wrap sooner than the column. Body bands take `py-4xl`
-(`py-5xl` from `tablet-lg`); the call to action stands one step above them
-at every width, `py-5xl` (`py-6xl` from `tablet-lg`); the hero block takes
-`py-5xl` under an overlay header. Both copy blocks are Designer
-`SectionIntro`: the hero at the `display` emphasis (the page's one `<h1>`),
-the call to action at the `section` emphasis like every band heading. A
-hero section's document actions render through the primary, outline and
-quiet ladder;
-omit a hero's `actions` for a message-only opening.
-The view paints the base surface on its root, so a band on the `base`
-ground shows the base surface whatever the page behind it is.
-
-**Grounds.** The view plans automatic canonical bands and legacy bands
-under the `"view"` rhythm across the page:
-
-- the hero keeps its own ground;
-- the last automatic body band defaults to `base`; with a `callToAction`,
-  a final legacy band is forced to `base` (`LANDING_VIEW_CLOSING_GROUND`),
-  while an explicit canonical `inverse` remains its anchor;
-- the call to action is on `inverse` (`LANDING_VIEW_CALL_TO_ACTION_GROUND`);
-- canonical omitted grounds and legacy omissions under `sectionGroundRhythm: "view"`
-  resolve with `viewGrounds`; counting upward, an automatic band above `base`
-  takes `sunken`, and one above `sunken` or `inverse` takes `base`;
-- explicit grounds win except for the final legacy band before a call to action.
-
-The view draws no rule at either edge of the call to action: the ground
-change from the band above is its top seam, and the site footer's own top
-hairline (Designer `SiteFooter`) is its foot, so the seam is drawn once.
-
-`planLandingViewGrounds(document, trailing, { callToAction })` returns the
-same plan as a `LandingViewGroundPlan`: each band's `id`, `role`
-(`LandingViewBandRole`), `ground` and whether the view `assigned` it, plus
-`repeats`, the neighbouring bands left on the same ground (only possible
-through explicit grounds). A consumer can assert `repeats` is empty in its
-own tests.
-
-What it does not do: check the contrast of the hero copy over your
-backdrop, restyle the action you pass, or decide the grounds of a site
-header or footer around it.
+Designer also retires the executable `LandingView` and `ServerLandingView`
+exports and their prop types. Ground-planning data and role-pair evidence retain
+their historical contracts; neither admits the retired renderer. Other LandingView
+examples in this document are historical. Native overlay composition uses the
+registered Designer `SiteFrame` and one direct `Hero` from `@clossys/designer/blocks/server`.
 
 ### `ContactView`
 
@@ -1687,7 +1618,7 @@ path around validation:
 **Rich-node slots are the dangerous surface, so they are the narrow one.**
 A `"node"`-kind slot accepts a real `ReactNode` the caller's *own trusted
 code* already constructed — a composed `AuthView` form, a widget built from
-`@clossys/designer` atoms, a small caller-authored component. It never
+`@clossys/designer` components, a small caller-authored component. It never
 accepts and never interprets a raw HTML string, and there is no
 `dangerouslySetInnerHTML` anywhere on this path — React's own
 child-rendering already escapes text/attribute values by default, and a
@@ -2904,14 +2835,14 @@ export function SignInPage() {
   viewport when enlarged copy or footer links need more room. The footer
   scrolls with that scene instead of covering the hero's action or its focus.
   Use `header: { surface: "glass", tone: "inverse" }` with a hero-only
-  `<LandingView header="overlay" fit="frame" landmark="none" />` for a
+  `<Hero heading="Welcome" />` from `@clossys/designer/blocks/server` for a
   one-viewport composition, and `footer: { placement: "overlay", legal }`.
   Mount the frame as the page's scene; the anchor is this frame, rather than
   a viewport-height box measured from content elsewhere on the page. The
-  child must be a direct ordinary or server `LandingView`, with one
-  noncompact hero. Wrappers, fragments, additional bands, trailing documents,
-  a closing call to action, `afterSection` content and view layout overrides
-  are refused. Use flow placement for those compositions; overlay mode does
+  child must be one direct registered Designer `Hero`, with a nonblank text
+  heading at level 1 and display or default size. The frame owns its growing
+  layout. Wrappers, fragments, multiple nodes, extra children, compact size,
+  a closing call to action, `afterSection` content and layout overrides are refused. Use flow placement for those compositions; overlay mode does
   not render a next-band peek or scroll cue.
   Overlay defaults to an opaque inverse ground; explicit `"base"` or
   `"inverse"` grounds work too. `"transparent"` is refused in overlay mode so
@@ -3423,7 +3354,8 @@ Props (`GlobalErrorDocumentFramedProps`):
 
 | Prop | Required | What it does |
 | --- | --- | --- |
-| `lang` | yes | The `lang` of `<html>`. |
+| `lang` | yes | Canonicalized by Writer and rendered as the `lang` of `<html>`. |
+| `localeManifest` | yes | Writer's declared `locales`; `directionFor` resolves the root `dir` from the matching declaration. |
 | `documentTitle` | yes | `{ page, brand }`, joined by `formatPageTitle`. |
 | `icon` | yes | `{ href, type? }` for the one `<link rel="icon">`. |
 | `htmlClassName` | no | A class on `<html>`, rendered only when non-empty. |
@@ -3436,7 +3368,10 @@ Props (`GlobalErrorDocumentFramedProps`):
 | `notes` | no | A quiet line for a secondary link. |
 | `routes` | no | Caller-labelled destinations, forwarded unchanged to `StatusView`. |
 
-`GlobalErrorDocumentHeadProps` names the first five, which both shapes share.
+`GlobalErrorDocumentHeadProps` names the document head props, which both shapes share.
+Both shapes require `localeManifest`: pass the authoritative Writer manifest
+(or its `locales` projection) alongside `lang`. An undeclared locale or an
+invalid direction throws; there is no inferred direction or default manifest.
 The frame fails closed here as everywhere: a shell the frame refuses throws.
 
 No theme script runs in this document, so it is pinned to the light theme
@@ -3456,6 +3391,9 @@ layout. Pass that class as the optional `htmlClassName` prop; it is rendered as
 
 import { GlobalErrorDocument } from "@clossys/publisher/web";
 import type { SiteFrameInput } from "@clossys/publisher/web";
+import type { WriterManifest } from "@clossys/writer";
+
+declare const localeManifest: Pick<WriterManifest, "locales">; // the configured Writer locales
 
 declare const frame: SiteFrameInput; // the same shell and resolvers the root layout passes to SiteFrame
 
@@ -3463,6 +3401,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
   return (
     <GlobalErrorDocument
       lang="en"
+      localeManifest={localeManifest}
       documentTitle={{ page: "Something went wrong", brand: "Example Studio" }}
       icon={{ href: "/icon.svg", type: "image/svg+xml" }}
       shell={frame.shell}
@@ -3535,7 +3474,7 @@ frame resolves its copy through the `resolveCopy` you pass, so it renders the
 same markup with no context at all. It has no hooks and is not a client
 module, so a server file renders it directly.
 
-Props (`NotFoundDocumentProps`): `lang`, `documentTitle`, `icon`,
+Props (`NotFoundDocumentProps`): `lang`, `localeManifest`, `documentTitle`, `icon`,
 `htmlClassName` and `stylesheets` as on `GlobalErrorDocument`; `shell`,
 `resolveCopy` and `resolveAsset` (`SiteFrameInput`); and `status`,
 `subtitle`, `action`, `notes` and `routes` as on `StatusView`. An unmatched
@@ -3545,6 +3484,9 @@ address has no diagnostic, so `reference` throws, and so do the deprecated
 ```tsx
 import { NotFoundDocument } from "@clossys/publisher/web";
 import type { SiteFrameInput } from "@clossys/publisher/web";
+import type { WriterManifest } from "@clossys/writer";
+
+declare const localeManifest: Pick<WriterManifest, "locales">; // the configured Writer locales
 
 declare const frame: SiteFrameInput; // built from the configured copy, not from the request
 
@@ -3552,6 +3494,7 @@ export default function GlobalNotFound() {
   return (
     <NotFoundDocument
       lang="en"
+      localeManifest={localeManifest}
       documentTitle={{ page: "Page not found", brand: "Example Studio" }}
       icon={{ href: "/icon.svg", type: "image/svg+xml" }}
       stylesheets={["/site.css"]}
@@ -4069,17 +4012,20 @@ about it, more than any function signature below:
 
 Concretely:
 
-- **This package does not depend on `@clossys/strategist`.** Every fact
-  a `PublicationEntry` cites is a plain, opaque `factRef` string — the same
-  seam `@clossys/writer/voice`'s `Claim.factRef`,
-  `@clossys/writer`'s `CopyEntry.factRef`, and
-  `@clossys/strategist`'s own `Market.factRefs`/`Audience.factRefs`
-  already use one layer up. `@clossys/strategist` is not in this package's
-  `dependencies`, and nothing in `src/` imports it. Resolving a `factRef`
-  against a real fact registry — reading `@clossys/strategist`'s
-  `readStrategy` bundle
-  and reducing it to `{ [fact.key]: fact.value }` — is a caller's job,
-  happening in code this package has no visibility into.
+- **The record subpath reads caller-supplied evidence values.** A
+  `PublicationEntry` still cites opaque `factRef` strings. Strategy findings
+  live in `findings/<id>.md`; the caller reads their `value` fields and builds
+  `{ [finding.id]: finding.value }` for `checkLedgerDrift`. The record library
+  performs no strategy I/O. For launch readiness, open the strategy root with
+  `openStrategy(root, { contracts })` and call `getBrief("publisher.launch")`.
+  The Publisher-owned `strategy-brief.json` (also exported as
+  `@clossys/publisher/strategy-brief.json`) requires `focus.reach.channel`
+  and `focus.offer.included`, with `execution.roadmap.release` optional.
+  A missing brief blocks pack review; a stale brief carries a visible flag.
+  Output-manifest `StrategyProvenance` is `{ contract, refs: [{ cell,
+  version }], fingerprint }`, copied from the compiled brief. Legacy
+  `{strategyId, revision, records}` provenance is refused with a migration
+  diagnostic by `validateStrategyProvenance` and `createOutputManifest`.
 - **`checkLedgerDrift` has no opinion about whether an outcome is good.** There is no
   `score`, `threshold`, or `verdict` field on `PublicationEntry`, and no
   function here computes one. `checkLedgerDrift` answers exactly one
@@ -4119,9 +4065,9 @@ ledger = appendEntry(ledger, entry); // returns a NEW, deep-frozen ledger
 
 ```ts
 import { checkLedgerDrift } from "@clossys/publisher/record";
-// readStrategy comes from @clossys/strategist — the caller's job, not this package's
+// Strategy findings are read by the caller; this pure record API receives their current values.
 
-const currentValues = { "active-customers": 5000 }; // read from the caller's own facts.json, not from this package
+const currentValues = { "active-customers": 5000 }; // read from findings/active-customers.md by the caller
 
 const report = checkLedgerDrift(ledger, currentValues);
 if (!report.ok) {
@@ -4712,8 +4658,8 @@ console.log(findings.map((finding) => `${finding.rule} ${finding.path}`));
 
 Issue #1205: Publisher authors the in-tree `SectionedView`/`MarketingView`
 page document — which template, which sections, which copy ids and asset
-ids, all by reference — under `clossys/publisher/surfaces/`. Designer and
-Writer own everything a surface document references (tokens, atoms, blocks,
+ids, all by reference — under `clossys/agents/publisher/surfaces/`. Designer and
+Writer own everything a surface document references (tokens, components, blocks,
 copy) in their own folders; they propose changes and review renders, but
 they never edit a Publisher surface file directly. Every file under
 `clossys/` now has exactly one owner.
@@ -4723,14 +4669,14 @@ own record of the path it owns) and `validateSurfaceOwnership`, a pure
 check — the same shape as `checkWebRoutes.ts`'s `evaluateWebRouteManifest`
 — over a flat list of `{ path, owner }` ownership claims (normally assembled
 from every role's own folder manifest under `clossys/`). It flags any path
-more than one role claims, and any path under `clossys/publisher/surfaces/`
-that Publisher itself never claimed.
+more than one role claims, and any path under `clossys/agents/publisher/surfaces/`
+that Publisher itself never claimed. Retired `clossys/publisher/surfaces/`
+claims are accepted for read-only migration, reported in `legacyPaths` and
+`notices`; claims under both prefixes are refused as indeterminate.
 
 The shared consumer layout contract (issue #1171) lists
-`clossys/publisher/surfaces` as a Publisher-owned folder, and this package's
-`package.json` declares it under `foundry.outputs` and `foundry.feeds`
-(Customer judges the surfaces Publisher feeds it). `PUBLISHER_SURFACES_DIR`
-is the runtime value of the same path; the two must agree. A gate that
+`clossys/agents/publisher/surfaces` as a Publisher-owned folder. `PUBLISHER_SURFACES_DIR` is the runtime value
+of that default path; the two agree. A gate that
 checks one owner per file across every role's folder under `clossys/` is
 still a follow-up.
 
@@ -4871,7 +4817,7 @@ and the catalog copy registries in `src/preview/catalog/` (never hardcoded in a 
 
 - **Web views** (`gallery.html`) — every shipped view: `MarketingView`,
   `SectionedView`, `AuthView`, `ErrorView`, `CaptureView`, `DocumentView`,
-  `CollectionView`, and `LandingView (hero-compact)`.
+  `CollectionView`, and `SectionedView (hero-compact)`.
 - **Content catalog** (`content-catalog.html`): choose Introduce, Show,
   Explain, Index, Sequence or Compare, then use a recipe and configuration
   reference. Overview shows a six-band page. Frame covers shared layout,
@@ -5068,6 +5014,32 @@ Three further usage requirements, not numbered in the specification:
   is not allowed, because a visitor who cannot see the notice cannot
   withdraw. Copy that lacks only `privacyLinkLabel` omits the policy link.
 
+## Site identity
+
+The `@clossys/publisher/content/node` server subpath owns
+`clossys/publisher/site-identity.json`: the legal entity, brand casing,
+domains, canonical origin, contact addresses and tagline copy IDs. Seed the
+name from `identity.naming.name`; keep the record and all consumer content in
+the consumer repository. The site template reads this path and
+`clossys/strategist/briefs/publisher.launch.json` with no legacy file fallback.
+
+`readSiteIdentity(publisherRoot)` validates the record and reports `ok`,
+`missing` or `invalid`. `validateSiteIdentity` validates unknown data;
+`checkSiteIdentityDrift(files, identity, { copyEntries })` performs the former
+brand-facts drift check, with the same findings and indeterminate behavior.
+The existing `brand-facts:ignore` comment marker retains its meaning.
+`copyEntriesFromRegistry` and `resolveBrandTaglines` resolve tagline IDs
+through approved Writer entries. The server entry uses Node builtins and
+refuses browser bundling; the drift function itself is pure.
+
+Exports: `SITE_IDENTITY_FILE`, `readSiteIdentity`, `validateSiteIdentity`,
+`checkSiteIdentityDrift`, `copyEntriesFromRegistry`, `resolveBrandTaglines`;
+types `SiteIdentity`, `SiteIdentityRead`, `SiteIdentityReadIssue`,
+`SiteIdentitySurface`, `SiteIdentityDriftKind`, `SiteIdentityDriftFinding`,
+`SiteIdentityDriftOptions`, `SiteIdentityDriftState`, `SiteIdentityDriftResult`,
+`BrandIdentity`, `BrandLegalEntity`, `BrandTagline`, `CopyEntryLike` and
+`ResolvedTagline`.
+
 ## API
 
 
@@ -5077,7 +5049,7 @@ Three further usage requirements, not numbered in the specification:
   Not `publisher-media-check` or `publisher-record-check`.
 - `core`: `CHANNELS`, `ELEMENT_KINDS`, `validateComposeDocument`,
   `validateSurfaceDocument`, `isSurfaceRepeatingSlotBinding`,
-  `createOutputManifest`,
+  `createOutputManifest`, `validateStrategyProvenance`,
   `collectCopyProvenance`, `createResolvedOutputManifest`,
   `resolveSurfaceDocument`, `validateSectionedViewDocument`,
   `resolveSectionedViewDocument`, `checkSectionVariety`, `CONTENT_ICON_NAMES`,
@@ -5572,7 +5544,7 @@ It does not provide:
 - Timing equalisation: a honeypot hit skips delivery and may answer faster.
 
 Known limits on input shape: the email check is conservative because the value
-becomes a `replyTo` address. It requires an ASCII dot-atom local part of at most
+becomes a `replyTo` address. It requires an ASCII dot-component local part of at most
 64 characters and a domain of two or more ASCII labels, so internationalised
 addresses and quoted local parts are refused as `malformed`. Phone accepts only
 ASCII digits, space and `+ - ( ) . / # * x X`, with at least one digit. Bidirectional
@@ -6267,7 +6239,7 @@ and verifies membership in both directions between `packIds` and `instanceIds`.
 Refusals expose a stable reason and field path without echoing host values.
 
 `STANDARD_WEBSITE_INSTANCES` and `STANDARD_WEBSITE_PACK` provide the deeply frozen
-`pack.standard-website`: home (LandingView), about (MarketingView), contact
+`pack.standard-website`: home (SectionedView under the registered Designer SiteFrame), about (MarketingView), contact
 (ContactView), terms and privacy (LegalView), sign-in (AuthView), and not-found
 and error (StatusView). Sign-in declares default, submit-error and
 provider-unavailable View states and uses the front-door frame; the other pages
@@ -6404,7 +6376,7 @@ export const element = createElement(LandingView, {
 
 ## Block role descriptors
 
-The catalog has five tiers: Tokens, Atoms, Blocks, Instances and Packs. Frame and
+The catalog has five tiers: Tokens, Components, Blocks, Instances and Packs. Frame and
 View are Block roles. Existing `SiteFrame`, `LandingView`, `LegalView`, internal `PageLayout`
 and canvas `Frame` contracts and imports keep their existing meaning.
 
@@ -6550,7 +6522,7 @@ Publisher/core exports `validateRelations(input)`, `RelationsInput`,
 `RelationsResult` and `RelationsGraph`. `RelationNodeKind`, `RelationNode`,
 `RelationRouteBinding` and `RelationEndpoint` describe nodes, auxiliary route
 bindings and typed edge endpoints. Supply five node kinds (assembly,
-instance, block, atom, token), separate auxiliary `routeBindings`, forward
+instance, block, component, token), separate auxiliary `routeBindings`, forward
 `RelationEdge` records and known adapter declarations. `RelationIdentity` keeps
 an opaque complete configured reference, opaque source revision and closed
 consumer/brand/medium context; different configurations need distinct identities.
@@ -6578,30 +6550,66 @@ PackManifest and the publication map remain separate contracts.
 
 ## Application frame — `AppFrame`
 
-`AppFrame` is a client-only application assembly exported from
-`@clossys/publisher/web/client`, alongside `AppFrameSpecimen`, `AppFrameProps`,
+`AppFrame` is a client-only application assembly owned and exported from
+`@clossys/designer/frames`, alongside `AppFrameSpecimen`, `AppFrameProps`,
 `AppFrameBrand`, `AppFrameAccount`, `AppFrameRightPanel`, and immutable
 `APP_FRAME_CONTRACT` metadata and `APP_FRAME_CONFIG_SCHEMA`. Import it inside a client boundary. The ordinary
 web and server entries continue to serve their existing page compositions.
 The application frame's page bar is the Designer `PageBar` block.
+
+Supply a definite-height host. The frame reserves header, navigation, right-panel
+and bottom-dock space; its positioned, isolated stage uses the remaining width
+and height. Navigation and right panels push the stage. Narrow panels are mutually
+exclusive full-width Drawers. There is no page-width preference or immersive overlay mode.
+
+`header` accepts `{title, nav?, actions?}`. `title` is the plain page name, rendered
+as the sole h1; `nav` contains `{label, items: [{id, label, href}], activeId}`;
+`actions.render({compact})` supplies the same action in full or icon form. Navigation
+stays centered on the stage, independent of the outer slots. The frame measures
+header capacity and compacts actions before replacing navigation with a title menu.
+The two sidebar controls flank the header. The existing brand mark appears in the
+profile Avatar. Optional `onNavigate(href)` lets a host flush and navigate after an
+ordinary self-target link activation; modified/download links retain native behavior.
+A rejected callback keeps the current page.
+
+A page may lease the header through Designer's `PageHeaderModule` under AppFrame.
+Its `header` uses the same title/nav/actions contract as the host `header` prop.
+Frame owns the single heading, centered navigation and narrow menu; leased actions
+receive the measured `compact` boolean while retaining page providers and state.
+Only one page header owner may be active, and unmount restores the host header.
+Raw header slot content cannot bypass the responsive header contract.
+
+Pages register modules through Designer's `SlotModule` under the AppFrame provider:
+`dock-tab` for tabbed content and `dock-strip` for controls. The bottom dock occupies
+layout space and reduces stage height at every width, including narrow frames;
+it does not open a modal or cover the stage. Its existing horizontal ResizablePane
+uses `tokens.content-size` members `dock-min`, `dock-default`, and `dock-max`,
+emitted as `--ui-layout-dock-min-block` (160px),
+`--ui-layout-dock-default-block` (240px), and `--ui-layout-dock-max-block` (480px).
+The runtime subtracts the measured header, notices and collapsed strip from the
+actual frame height, then clamps both resize bounds and current height to that
+capacity. If capacity is below the normal minimum, the minimum contracts with it.
+Optional `dock: {label, handleLabel, min?, max?, defaultValue?, value?, onChange?}`
+overrides the height policy or controls its value; it cannot exceed frame capacity.
+Modules retain the providers in
+their original page tree. The frame owns placement; modules supply content only.
+
+`notices` contains oldest-first `{id, severity, text, action?, dismissible?}` records.
+The dock message band uses existing Banner components, selects at most three by
+severity and recency, and remembers dismissed IDs in sessionStorage. Errors remain
+while supplied; other messages dismiss unless explicitly disabled. Transient action
+messages use the existing `toasts` viewport and Designer `toast` service, including
+action callbacks and timer pause on hover/focus.
 
 The application frame composes Designer's `AppNavigation`, `AccountMenu`,
 `CommandMenu`, brand primitives, theme controls and optional
 `ResizablePane`. It owns one focusable main landmark and its skip target;
 its children supply the route body without another `main`, banner or sidebar.
 
-The contract points to a real, interactive whole-frame specimen. Mount it
-directly in a client route or a frame-capable catalog canvas:
-
-```tsx
-"use client";
-
-import { AppFrameSpecimen } from "@clossys/publisher/web/client";
-
-export default function ExampleWorkspace() {
-  return <AppFrameSpecimen />;
-}
-```
+The contract points to a real, interactive whole-frame specimen owned by Designer.
+The runnable [Application Frames example](https://github.com/clossys/foundry/tree/main/packages/designer#application-frames)
+uses the canonical Designer export; mount it directly in a client route or a
+frame-capable catalog canvas.
 
 The specimen uses a public, inline Example brand mark and local host state.
 Its navigation links update route content and the active navigation index;
@@ -6617,30 +6625,27 @@ already owns a main landmark.
 
 ### Host-owned data and behavior
 
-AppFrame and its stateful specimen are explicit `web/client` islands; SiteFrame and the default/server entries retain their hook-free, server-import boundary, with AppFrame exceptions pinned per file and shared contract imports restricted to types.
+AppFrame and its stateful specimen are client-only exports of `@clossys/designer/frames`. Publisher's SiteFrame and default/server entries retain their hook-free server-module boundary; shared Frame header contracts are type-only imports.
 
 Supply `brand` with resolved `markSrc`, `wordmark` and accessible `label` strings.
-The label must contain the brand name. The floating bar starts with a small
-accent-mask home mark; the breadcrumb root supplies the brand name, without a
-second wordmark. Hosts that need multicolor source artwork choose
-`markInk: "image"`, which uses the existing small `Logomark`. An optional `href`
-makes the mark a host-owned destination.
+The label must contain the brand name. The existing mark appears in the
+profile Avatar in the navigation footer. The page-level header contains the
+short page title, centered navigation and actions supplied through `header`.
 
-Supply `page` for the frame-owned page header: `title`, `breadcrumb`, `status`,
-`description`, `updatedAt`, `meta`, `actions`, `scope` and `width`. Its title is
-the bar's single page `h1`; route content then supplies no page header. Ancestor
-breadcrumbs may have `siblings` destinations. The optional last crumb matching
-`title` supplies alternatives for the current page. On narrow screens the
-middle levels and their sibling destinations remain reachable in a menu.
-`workspaces` makes the brand root a workspace menu; without it the root is a
-plain link. Semantic breadcrumb containers compose the existing Link and Menu
-atoms; no second menu lifecycle is implemented.
+For document-style pages, `page` retains `title`, `breadcrumb`, `status`,
+`description`, `updatedAt`, `meta`, `actions` and `scope`. Its title supplies the
+single page `h1` when `header` is absent; route content then supplies no second
+page heading. Ancestor breadcrumbs may have `siblings` destinations. The
+optional last crumb matching `title` supplies alternatives for the current page.
+On narrow screens middle levels and sibling destinations remain reachable in
+a menu. `workspaces` makes the breadcrumb root a workspace menu; otherwise the
+root is a plain link. These menus compose the existing Link and Menu components.
 
 The optional information caret opens page status, description, update time,
-metadata and scope in a dismissible overlay, without moving the route body.
-Host actions remain on the right; only the first `primary` request receives
-primary presentation. Narrow layouts move secondary actions to a menu. The
-width toggle follows a divider at the right edge of the action group.
+metadata and scope in a dismissible overlay. Host document actions remain on
+the right; only the first `primary` request receives primary presentation.
+Narrow layouts move secondary document actions to a menu. Stage width follows
+the remaining frame space after its side regions.
 
 Supply `navigation.tree`, an `activeId` or `activeHref`, and a `navigationKey`
 that changes on route transitions. Navigation nodes support destinations and
@@ -6678,12 +6683,9 @@ shortcut remains active even when the navigation is closed.
 Logical corner controls open and close the navigation and optional work panel.
 Docked panel widths are reserved before centering the stage. If a panel would
 leave less than the existing 480px minimum stage, it opens as a sheet instead;
-below 900px both panels use sheets. The contained stage uses the existing
-72rem maximum; full width uses the remaining space. `page.width` defaults to
-`"contained"` until an in-memory user override. Controlled `width` and
-`onWidthChange` let the host own the choice; the frame adds no width storage.
-The stage scrolls beneath its sticky glass bar with scroll clearance. Unsupported
-blur, reduced transparency and forced colors use the opaque surface fallback.
+below the existing wide-layout threshold both panels use sheets. The stage always
+uses the remaining width. Unsupported blur, reduced transparency and forced colors
+use the opaque surface fallback.
 
 The frame assembles a Designer `ThemeProvider` and the existing `ThemeToggle`,
 whose single button cycles System → Light → Dark → System. The control updates
@@ -6882,7 +6884,7 @@ collection and the page title.
 
 Supply either an ordered `sections` list or `tabs` with a required `tab`,
 `onTabChange` and a nonempty accessible `tabsLabel`, independent of the page title.
-`DetailsViewTab` is `{ id, label, sections }`. Tabs uses Designer's Tabs atom for arrow-key focus and tab/panel
+`DetailsViewTab` is `{ id, label, sections }`. Tabs uses Designer's Tabs component for arrow-key focus and tab/panel
 relationships. Selection changes are reported; the selected content changes when
 the host supplies the new `tab`. The host reads the selected ID from its URL and
 updates that URL in `onTabChange`; the View reads no URL and owns no router. A
@@ -6992,3 +6994,135 @@ link and single main landmark; PageView supplies one h1 and no frame landmarks.
 Use StatusView for a cardless status page with a call to action. See
 [PageView slots and migration guidance](../../docs/design/page-view.md) for
 content, form and date examples. Existing views remain available unchanged.
+
+
+## Legacy Publisher channel workspace
+
+This is the existing channel-based page, pending replacement by the read-only
+slot canvas described above. Its current local UI choices are not the new
+agent-only content workflow.
+
+The internal Publisher workspace mounts inside
+`AppFrame` from `@clossys/designer/frames`. It leases one `PageHeaderModule`;
+the Frame owns the page title, channel navigation, compact menu and actions.
+The page body has no separate page header or tab strip.
+
+Channels appear in this order when populated: Site, App, Admin, Content,
+Messages, Documents. Commerce is an item filter. Brand assets remain Designer
+inputs, shown as requirement checks on each item. Each channel contains an
+M1–M4 alignment strip, items grouped by milestone with output format and
+delivery state, and item details containing Configure and Evidence. Plan and
+Formats are not separate tabs; format inspection stays inside item details.
+
+The host controls `activeChannel: PublisherChannelId` when multiple channels
+are present. The default channel href is `#publisher-channel=ID`. In the Frame's
+existing `onNavigate`, pass the href to `publisherChannelFromHref`: update
+`activeChannel` for a recognized channel and delegate every other href to the
+host's existing navigation callback. The Frame retains native modified-click
+behavior. A custom `channelHref` requires the host's corresponding href parser.
+
+Supply `routeChannels: PublisherRouteChannels` to classify existing route ids
+as App or Admin. This changes presentation, never route identity, plan history,
+source bindings or their evidence. Supply the registry projection through `registeredRoutes` to compare an Admin
+item with its exact adopted Frame binding. Audience does not select another Frame. No route inventory is fabricated by the
+page. Planned media format and delivery choices are local UI choices; they do
+not establish a renderer, artifact, export, deployment or clearance.
+
+
+## Registered application routes
+
+`RouteRegistry` from `@clossys/publisher/core` is a finite versioned JSON overlay
+on existing plan items and `InstanceBinding` records. Each entry binds its real
+route id, path, plan-item id, generated entry, selected runtime hook and one
+header lease. `brand: { homeRouteId, label }` references exactly one row in the
+same registry; the home href is projected from that row's path. Row order never
+selects a default destination.
+
+`projectRouteRegistry` retains the plan's pack, milestone and causative answer
+identities. Its Admin projection contains every registered Admin row, with no
+built-in route count. `planned`, `built` and `reviewed` are derived from joined
+alignment, source, fresh runtime and exact review evidence. Authored status
+fields, retained JSON receipts and matching generated template bytes cannot
+promote a route. A trusted host must revalidate persisted source against its
+immutable tree, obtain fresh runtime evidence and validate review evidence.
+
+Use `emitRegisteredRoutePage` and `emitRegisteredRouteAdapter` from
+`@clossys/publisher/web/registered-route-check` to produce the checked entry
+shape. The public `RegisteredRoutePage` binder accepts a typed state/library
+hook and bounded compact header actions. It executes the selected Frame and
+Sections through exact registered flow Layout source/configuration; there is
+no host body callback. Flow Layouts consume a pure measured Stage plan and
+consumer-emitted container-query CSS. Missing selected implementations, CSS,
+measurements stay pending. The fixed `designer.layer-boards@1` adapter invokes
+Designer’s pure query on each current original-provider projection and
+materializes the same canonical binding. Ready bodies use the shared Canvas
+Stage; registered loading/error/empty bodies require their actual selected flow
+Layout and state Sections. Neither a host query callback nor a caller-authored
+result is accepted. Query/provider source, current library/selection, Edit state,
+body, labels and content participate in the joined receipt identity.
+
+### Pending route bootstrap and loader integration
+
+The following loader/bootstrap contract is awaiting source integration and
+qualification; it is not available in this documentation base. Existing
+registered-route APIs above do not establish it.
+
+Derived execution additionally requires same-context source revalidation and
+the mounted original provider hooks. Branded source receipts cannot be copied
+through JSON or transferred from server to browser. The server may pass the
+plain `bootstrap` data from `prepareRegisteredNodeRoute` instead; the browser's
+one path back is `materializeRegisteredRouteSourceEvidence`, which re-runs the
+fixed query and checks the library hash, materialization id and source match
+before minting evidence. The bootstrap is unsigned, so that evidence is
+client-only and display-only: the live binder accepts it, while the Node,
+lifecycle and bootstrap paths accept only Node-minted evidence. Actual consumer
+qualification and Canvas lifecycle promotion remain pending; package source
+fixtures do not establish them.
+
+A route may register one server data loader as `composition.loader`
+(`{ file, export }`, a consumer module separate from the entry, page, runtime,
+action and provider modules). The emitted entry then becomes the server page: it
+imports only that zero-argument loader, awaits it and passes the result through
+`registeredRouteServerData` (from `@clossys/publisher/core`, refusing
+non-serializable data at compile time and at runtime) to the emitted client
+page's `RegisteredServerDataRoutePage`, whose runtime hook receives the typed
+data. Routes without a loader keep their exact emitted bytes. The checker admits
+only the registered export under the closed lexical policy shared with the
+provider seam (no `\u` escapes, `eval`, global object or reflection access, or
+non-literal bracket keys), so loader modules spell their types out rather than
+using indexed access types.
+
+### Registered route checks
+
+`checkRegisteredRoutes` and `publisher-registered-route-check` discover entries
+under explicitly admitted route roots and compare them with the registry and
+exact generated source. The strict version-2 contract contains `sources`,
+`registry` and `routeRoots`; the original strict version-1 Designer source
+contract remains separate. Only closed document wrappers, literal redirects
+and explicit HTTP handlers receive infrastructure classifications. Implicit
+visual layout wrappers are refused. Every reachable implementation is scanned,
+including Publisher Layout source. The Node API's optional `styling` input
+joins the exact selected engine/manifest and actually reached CSS files;
+missing inputs and unresolved utilities remain findings or pending evidence.
+Source checks do not establish browser qualification or actual adoption.
+
+### Retired complete routes
+
+Executable `composition.complete` registrations and the three kind-based route
+pages are retired. `projectRouteRegistry` reports a finding, and registry-module,
+page and adapter emission refuse them. The old `DesignerRoutePage`,
+`WriterRoutePage`, `PublisherRoutePage`, `PublisherPage` and complete-navigation
+exports are unavailable. `emitCompleteRoutePage` remains a refusal boundary.
+
+Use consumer-owned configuration through
+`@clossys/publisher/web/admin-pages`, registered region pages, and the existing
+selected Frame and Section runtime. Source checks and producer previews do not
+establish actual consumer adoption.
+
+`projectRoutes` still reads `completeRoutes` and historical `planItems` as pure
+publication metadata so retained PX-6 snapshots reproduce their original bytes.
+That result is a `ContentMapRoutes` topology, not an executable `RouteRegistry`.
+Passing its complete descriptors to branding, registry checks or any page emitter
+is refused. New plan commands reject `completeRoute`, and
+`projectPlanCompleteRoutes` is unavailable. Layout maturity, Writer provenance,
+copy approvals and publication history checks continue to apply.

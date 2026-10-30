@@ -138,7 +138,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   content: "No brand binding — rendering greyscale primitives. See @clossys/designer/brand-template.css";
   position: fixed;
   top: 0;
-  right: 0;
+  inset-inline-end: 0;
   z-index: 99999;
   background: #2a2a2a;
   color: #f5f5f5;
@@ -199,14 +199,23 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
    * label on an accent fill and the label on the inverse plate are usually
    * the same ink, and this alias means overriding one brand slot in your
    * brand.css keeps both in sync automatically. */
+  --color-ink-on-action: var(--color-ink-on-inverse, oklch(0.9702 0 0));
   --color-ink-on-accent:           var(--color-ink-on-inverse, oklch(0.9702 0 0));
 
   /* ════════════════════════════════════════════════════════════════
-   * COLOR · LINE (4 · hairlines and dividers)
+   * COLOR · LINE (5 · hairlines, dividers and the control boundary)
    * ════════════════════════════════════════════════════════════════ */
   --color-line-base:              oklch(0.8761 0 0);
   --color-line-strong:            oklch(0.7763 0 0);
   --color-line-on-inverse:        oklch(0.9702 0 0 / 0.14);
+  /* Control boundary: the RESTING edge of a form control or outlined button
+   * (text, select, combo box, checkbox, radio, switch, number and date
+   * fields). Unlike the decorative hairlines above it must clear 3:1 (WCAG
+   * 1.4.11) against every surface a control sits on — base, sunken, raised
+   * and aside, in both themes — so --color-line-base can stay a light
+   * hairline. The lightest value that clears 3:1 on the sunken well
+   * (3.06:1); src/tokens/visual-pass-contrast.test.ts pins it. */
+  --color-line-control:           oklch(0.62 0 0);
   /* Panel identity: the edge colour of an outlined card or product panel.
    * Brandable; an alias of the base line, so it follows the theme. */
   --color-line-panel:             var(--color-line-base, oklch(0.8761 0 0));
@@ -214,6 +223,11 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   /* ════════════════════════════════════════════════════════════════
    * COLOR · ACCENT (5 · the interactive brand color)
    * ════════════════════════════════════════════════════════════════ */
+  --color-action: #0A0A0A;
+  --color-action-hover: #262626;
+  --color-action-pressed: #404040;
+  --color-action-on-inverse: #FAFAFA;
+  --color-action-on-inverse-hover: #E5E5E5;
   --color-accent:                 oklch(0.4748 0 0);
   --color-accent-text:            oklch(0.36 0 0);
   --color-accent-hover:           oklch(0.36 0 0);
@@ -281,7 +295,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
 
   /* ════════════════════════════════════════════════════════════════
    * COLOR · OVERLAY (3 · Modal/Popover/Menu/Tooltip/Toast surface bundle)
-   * An overlay atom composes against its own --color-overlay-* role
+   * An overlay component composes against its own --color-overlay-* role
    * rather than reaching into --color-surface-raised directly, so the
    * overlay vocabulary stays legible and independently rebindable.
    * These are aliases: rebinding --color-surface-raised / --color-line-base
@@ -418,7 +432,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
    * ramp stays font-size only, so a heading names its leading role)
    * ════════════════════════════════════════════════════════════════ */
   --leading-display:              1.05;     /* display steps: hero headings */
-  --leading-heading:              1.15;     /* section titles and smaller headings */
+  --leading-heading:              1.2;      /* section titles and smaller headings */
 
   /* ════════════════════════════════════════════════════════════════
    * SPACING (10 · 4px-rooted scale, t-shirt names — deliberately NOT
@@ -450,6 +464,9 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   /* ════════════════════════════════════════════════════════════════
    * UI · LAYOUT (5 · chrome dimensions — no Tailwind namespace)
    * ════════════════════════════════════════════════════════════════ */
+  --ui-layout-dock-min-block: 160px;
+  --ui-layout-dock-default-block: 240px;
+  --ui-layout-dock-max-block: 480px;
   --ui-layout-sidebar-w:          256px;   /* expanded left nav */
   --ui-layout-sidebar-rail-w:     64px;    /* collapsed icon-only nav */
   --ui-layout-aside-w:            320px;   /* right-rail panel */
@@ -465,7 +482,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
 
   /* ════════════════════════════════════════════════════════════════
    * UI · ICON (4 · the render contract for @clossys/designer's Icon
-   * atom — no Tailwind namespace. sm/md/lg ALIAS the same three
+   * component — no Tailwind namespace. sm/md/lg ALIAS the same three
    * --spacing-* steps @clossys/designer's own glyph data already
    * rendered at (16/24/32px) before this family existed — coherent with
    * the padding scale by default, the same alias-with-fallback shape
@@ -552,19 +569,19 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
    * UI · RING (2 · focus + on-inverse rings — no Tailwind namespace)
    * ════════════════════════════════════════════════════════════════ */
   --ui-ring-focus:                0 0 0 2px var(--color-accent, oklch(0.4748 0 0));
-  --ui-ring-on-inverse:           0 0 0 1px rgba(245, 245, 245, 0.12);
+  --ui-ring-on-inverse:           0 0 0 2px var(--color-focus-ring-on-inverse, oklch(0.9702 0 0));
 
   /* ════════════════════════════════════════════════════════════════
    * UI · DURATION (6 · no Tailwind namespace)
    * ════════════════════════════════════════════════════════════════ */
   --ui-duration-instant:          80ms;
-  --ui-duration-fast:             160ms;
+  --ui-duration-fast:             120ms;
   --ui-duration-default:          240ms;
   --ui-duration-deliberate:       500ms;
   --ui-duration-flash:            1200ms;
   /* Overlay open/close reads as the same "fast" tier as hover/reveal, under
    * its own role name so overlay CSS never reaches past its own vocabulary. */
-  --ui-duration-overlay:          var(--ui-duration-fast, 160ms);
+  --ui-duration-overlay:          var(--ui-duration-fast, 120ms);
 
   /* ════════════════════════════════════════════════════════════════
    * EASING (6 · Tailwind `--ease-*` namespace)
@@ -607,9 +624,9 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
 
   --ui-alpha-disabled:            0.5;
   /* Shared control, focus, motion and state roles. */
-  --ui-control-h-sm: 32px;
-  --ui-control-h-md: var(--ui-layout-tap-target, 44px);
-  --ui-control-h-lg: 52px;
+  --ui-control-h-sm: 28px;
+  --ui-control-h-md: 32px;
+  --ui-control-h-lg: 36px;
   --ui-control-row-h: 36px;
   --ui-control-mark: 16px;
   --ui-control-switch-w: 36px;
@@ -636,6 +653,9 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --ui-table-row-compact: 36px;
   --ui-duration-confirm-hold: 2000ms;
   --ui-table-max-block-default: min(70vh, 40rem);
+  --ui-layout-inspector-w: 280px;
+  --ui-layout-inspector-min-w: 220px;
+  --ui-layout-inspector-max-w: 420px;
 
 }
 }
@@ -672,7 +692,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
     /* ── COLOR · INK ────────────────────────────────────────────── */
     --color-ink-primary:            oklch(0.97 0 0);      /* flips: near-black to near-white */
     --color-ink-secondary:          oklch(0.82 0 0);
-    --color-ink-muted:              oklch(0.66 0 0);
+    --color-ink-muted:              oklch(0.7763 0 0);
     --color-ink-link:               oklch(0.86 0 0);
     --color-ink-on-inverse:         oklch(0.2178 0 0);    /* flips with --color-surface-inverse */
     --color-ink-on-inverse-muted:   oklch(0.42 0 0);
@@ -681,8 +701,14 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
     --color-line-base:              oklch(0.30 0 0);
     --color-line-strong:            oklch(0.40 0 0);
     --color-line-on-inverse:        oklch(0.2178 0 0 / 0.14); /* flips with --color-surface-inverse */
+    --color-line-control:           oklch(0.54 0 0);      /* 3:1 on the raised panel, the lightest dark surface */
 
     /* ── COLOR · ACCENT ─────────────────────────────────────────── */
+    --color-action: #FAFAFA;
+    --color-action-hover: #E5E5E5;
+    --color-action-pressed: #D4D4D4;
+    --color-action-on-inverse: #0A0A0A;
+    --color-action-on-inverse-hover: #262626;
     --color-accent:                 oklch(0.62 0 0);
     --color-accent-text:            oklch(0.74 0 0);
     --color-accent-hover:           oklch(0.70 0 0);
@@ -777,7 +803,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   /* ── COLOR · INK ──────────────────────────────────────────────── */
   --color-ink-primary:            oklch(0.97 0 0);
   --color-ink-secondary:          oklch(0.82 0 0);
-  --color-ink-muted:              oklch(0.66 0 0);
+  --color-ink-muted:              oklch(0.7763 0 0);
   --color-ink-link:               oklch(0.86 0 0);
   --color-ink-on-inverse:         oklch(0.2178 0 0);
   --color-ink-on-inverse-muted:   oklch(0.42 0 0);
@@ -786,8 +812,14 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --color-line-base:              oklch(0.30 0 0);
   --color-line-strong:            oklch(0.40 0 0);
   --color-line-on-inverse:        oklch(0.2178 0 0 / 0.14);
+  --color-line-control:           oklch(0.54 0 0);
 
   /* ── COLOR · ACCENT ───────────────────────────────────────────── */
+  --color-action: #FAFAFA;
+  --color-action-hover: #E5E5E5;
+  --color-action-pressed: #D4D4D4;
+  --color-action-on-inverse: #0A0A0A;
+  --color-action-on-inverse-hover: #262626;
   --color-accent:                 oklch(0.62 0 0);
   --color-accent-text:            oklch(0.74 0 0);
   --color-accent-hover:           oklch(0.70 0 0);

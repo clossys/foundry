@@ -1,5 +1,10 @@
+import { SectionHeader } from "./SectionHeader.js";
 import type { HTMLAttributes, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { SemanticContent } from "../components/SemanticContent.js";
+import { cx } from "../components/internal/cx.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.empty-state", "foundry/sections.empty-state");
 
 export interface EmptyStateProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   /** Slot for an icon or illustration, rendered above the title. */
@@ -9,7 +14,7 @@ export interface EmptyStateProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
   /** A line of supporting copy under the title. */
   description?: ReactNode;
   /**
-   * Slot for the recovery action — typically a `Button` atom ("Create your
+   * Slot for the recovery action — typically a `Button` component ("Create your
    * first prompt", "Clear filters"). Not every empty state has one (a
    * genuinely empty inbox has nothing to do about it), so it's optional.
    */
@@ -37,19 +42,16 @@ export function EmptyState({
   ...rest
 }: EmptyStateProps) {
   return (
-    <div
-      {...rest}
+    <SemanticContent as="div"
+      {...SECTION_STAMP} {...rest}
       className={cx(
         "flex flex-col justify-center gap-sm p-2xl text-center",
         className,
       )}
     >
-      {icon ? <div className="text-ink-muted">{icon}</div> : null}
-      <h2 className="text-h2 font-display text-ink-primary">{title}</h2>
-      {description ? (
-        <p className="text-body text-ink-secondary">{description}</p>
-      ) : null}
-      {action ? <div className="mt-sm">{action}</div> : null}
-    </div>
+      {icon ? <SemanticContent as="div" className="text-ink-muted">{icon}</SemanticContent> : null}
+      <SectionHeader density="standard" align="center" level={2} title={title} description={description} />
+      {action ? <SemanticContent as="div" className="mt-sm">{action}</SemanticContent> : null}
+    </SemanticContent>
   );
 }

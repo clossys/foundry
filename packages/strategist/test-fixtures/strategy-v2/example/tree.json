@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "catalog": "@clossys/strategist#strategy-v1",
+  "archetype": "default",
+  "core": "archetype",
+  "active": {
+    "focus.segment.core": 2
+  }
+}

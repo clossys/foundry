@@ -3,7 +3,7 @@
  * guard in this package compares against — copied from `package.json`'s
  * own `peerDependencies` block once here, instead of re-typed as a string
  * literal at each of the (many) call sites `react`/`react-aria-components`
- * are guarded from (`atoms/index.ts`, `blocks/index.ts`, `shell/index.ts`,
+ * are guarded from (`components/index.ts`, `blocks/index.ts`, `shell/index.ts`,
  * `charts/index.ts`, `theme/index.ts`). `declared-peer-ranges.test.ts`
  * asserts every constant below matches `package.json` exactly, so drift
  * between the two fails a real test rather than silently going stale —

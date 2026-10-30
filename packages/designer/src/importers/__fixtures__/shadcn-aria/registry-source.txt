@@ -1,0 +1,5 @@
+import { type Registry } from "shadcn/schema"
+
+// Only registry UI item fixtures are read by the importer tests.
+// The adapter retains the original registry source revision and SHA-256.
+export const ui: Registry["items"] = []

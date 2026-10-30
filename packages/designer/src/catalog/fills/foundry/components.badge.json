@@ -1,0 +1,103 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.badge",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#Badge",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.badge",
+      "source": "foundry",
+      "sourceAddress": "./components#Badge",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "badge": {
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "Badge",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "tone.danger",
+        "tone.neutral"
+      ],
+      "pin": {
+        "export": "./components#Badge",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "tone.danger": "./components#Badge.variant=danger",
+        "tone.neutral": "./components#Badge.variant=neutral"
+      },
+      "props": [
+        "children",
+        "className",
+        "variant"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.caption-size",
+          "tokens.control-color",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.letter-spacing",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
+      },
+      "root": "presentational",
+      "slot": "components.badge",
+      "source": "foundry"
+    }
+  }
+}

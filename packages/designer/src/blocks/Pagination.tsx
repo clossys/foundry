@@ -1,7 +1,26 @@
 import type { CSSProperties, HTMLAttributes } from "react";
-import { Button } from "../atoms/Button.js";
-import { Select } from "../atoms/Select.js";
-import { cx } from "../atoms/internal/cx.js";
+import { Button } from "../components/Button.js";
+import { Select } from "../components/Select.js";
+import { Icon } from "../components/Icon.js";
+import { SemanticContent } from "../components/SemanticContent.js";
+import { useShellCopy } from "../components/Banner.copy-context.js";
+import type { ShellCopyResolver } from "../components/Banner.copy.js";
+import { useGlyph } from "../components/glyph-context.js";
+import { cx } from "../components/internal/cx.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.pagination", "foundry/sections.pagination");
+
+/** Stable Writer references; the host owns locale, approval and message formatting. */
+export const PAGINATION_COPY_REFS = Object.freeze({
+  previousPageLabel: Object.freeze({ id: "st.96qkp2bzpm" }),
+  nextPageLabel: Object.freeze({ id: "st.kb8ve83tjp" }),
+  noResultsLabel: Object.freeze({ id: "st.asj8g1mcjn" }),
+  rangeSummaryMessage: Object.freeze({ id: "st.pzmpksy76x" }),
+  pageSummaryMessage: Object.freeze({ id: "st.vxwx1e3xwq" }),
+  pageSizeLabel: Object.freeze({ id: "st.bhhba11w6f" }),
+  "aria-label": Object.freeze({ id: "st.s13b3hwkta" }),
+});
 
 export interface PaginationProps extends Omit<HTMLAttributes<HTMLElement>, "onChange"> {
   /** The current page, 1-indexed. */
@@ -10,7 +29,7 @@ export interface PaginationProps extends Omit<HTMLAttributes<HTMLElement>, "onCh
   pageCount: number;
   /** Fired with the requested page when a page control is activated. Controlled only — `Pagination` never advances `page` itself. */
   onPageChange: (page: number) => void;
-  /** Total item count, for the range summary ("Showing 1–10 of 42"). Omit for a plain "Page X of Y" summary. */
+  /** Total item count for the range summary. Omit for a page/count summary. */
   totalItems?: number;
   /** Items per page, required alongside `totalItems` to compute the range summary. */
   pageSize?: number;
@@ -19,39 +38,38 @@ export interface PaginationProps extends Omit<HTMLAttributes<HTMLElement>, "onCh
   onPageSizeChange?: (pageSize: number) => void;
   /** How many page numbers to show on each side of the current page before truncating with an ellipsis. @default 1 */
   siblingCount?: number;
-  /** Accessible name for the previous-page control. @default "Previous page" */
+  /** Accessible name for the previous-page control; omitted means resolve its Writer reference. */
   previousPageLabel?: string;
-  /** Accessible name for the next-page control. @default "Next page" */
+  /** Accessible name for the next-page control; omitted means resolve its Writer reference. */
   nextPageLabel?: string;
-  /** Summary when there are no pages or no items. @default "No results" */
+  /** Summary when there are no pages or no items; omitted means resolve its Writer reference. */
   noResultsLabel?: string;
   /**
    * Range summary when `totalItems` and `pageSize` are set.
-   * @default `Showing ${start}–${end} of ${total}`
+   * Omitted means resolve its Writer reference with the live range values.
    */
   rangeSummaryMessage?: (start: number, end: number, total: number) => string;
   /**
    * Summary when the range summary inputs are omitted.
-   * @default `Page ${page} of ${pageCount}`
+   * Omitted means resolve its Writer reference with the live page values.
    */
   pageSummaryMessage?: (page: number, pageCount: number) => string;
-  /** Label on the optional page-size selector. @default "Rows per page" */
+  /** Label on the optional page-size selector; omitted means resolve its Writer reference. */
   pageSizeLabel?: string;
   /**
    * Accessible name for the pagination `<nav>` landmark.
-   * @default "Pagination"
+   * Omitted means resolve its Writer reference.
    */
   "aria-label"?: string;
+  /** Host-configured Writer resolver; otherwise inherited from ShellCopyProvider. */
+  copyResolver?: ShellCopyResolver;
   className?: string;
   style?: CSSProperties;
 }
 
-function defaultRangeSummaryMessage(start: number, end: number, total: number): string {
-  return `Showing ${start}–${end} of ${total}`;
-}
-
-function defaultPageSummaryMessage(page: number, pageCount: number): string {
-  return `Page ${page} of ${pageCount}`;
+function copyText(value: string, field: string): string {
+  if (typeof value !== "string" || !value.trim()) throw new TypeError(`Pagination: ${field} requires nonempty text`);
+  return value;
 }
 
 type PageItem = number | "ellipsis";
@@ -102,7 +120,7 @@ function buildPageItems(page: number, pageCount: number, siblingCount: number): 
  *
  * Wrapped in a `<nav>` landmark (real navigation, not a generic list), the
  * current page carries `aria-current="page"`, and every control is a real
- * `<button>` (via this package's own `Button` atom) rather than an anchor
+ * Button component rather than an anchor
  * styled to look pressable — there is nowhere for a page control to
  * navigate to as a URL in a controlled component like this one, so a link
  * would be the wrong element regardless of styling.
@@ -116,17 +134,21 @@ export function Pagination({
   pageSizeOptions,
   onPageSizeChange,
   siblingCount = 1,
-  previousPageLabel = "Previous page",
-  nextPageLabel = "Next page",
-  noResultsLabel = "No results",
-  rangeSummaryMessage = defaultRangeSummaryMessage,
-  pageSummaryMessage = defaultPageSummaryMessage,
-  pageSizeLabel = "Rows per page",
+  previousPageLabel,
+  nextPageLabel,
+  noResultsLabel,
+  rangeSummaryMessage,
+  pageSummaryMessage,
+  pageSizeLabel,
+  copyResolver,
   className,
   style,
-  "aria-label": ariaLabel = "Pagination",
+  "aria-label": ariaLabel,
   ...rest
 }: PaginationProps) {
+  const copy = useShellCopy(copyResolver);
+  const previousGlyph = useGlyph("assets.icon-chevron-left");
+  const nextGlyph = useGlyph("assets.icon-chevron-right");
   const clampedCount = Math.max(pageCount, 0);
   const items = clampedCount > 0 ? buildPageItems(page, clampedCount, siblingCount) : [];
   const isFirstPage = page <= 1;
@@ -135,40 +157,41 @@ export function Pagination({
   const showPageSizeSelector = Boolean(
     pageSizeOptions && pageSizeOptions.length > 0 && onPageSizeChange,
   );
+  const summary = clampedCount === 0 || totalItems === 0
+    ? noResultsLabel ?? copy(PAGINATION_COPY_REFS.noResultsLabel)
+    : totalItems !== undefined && pageSize !== undefined
+      ? rangeSummaryMessage
+        ? rangeSummaryMessage((page - 1) * pageSize + 1, Math.min(page * pageSize, totalItems), totalItems)
+        : copy(PAGINATION_COPY_REFS.rangeSummaryMessage, { start: (page - 1) * pageSize + 1, end: Math.min(page * pageSize, totalItems), total: totalItems })
+      : pageSummaryMessage
+        ? pageSummaryMessage(page, clampedCount)
+        : copy(PAGINATION_COPY_REFS.pageSummaryMessage, { page, pageCount: clampedCount });
 
   return (
     <nav
-      {...rest}
-      aria-label={ariaLabel}
+      {...SECTION_STAMP} {...rest}
+      aria-label={copyText(ariaLabel ?? copy(PAGINATION_COPY_REFS["aria-label"]), "aria-label")}
       className={cx("flex flex-wrap items-center justify-between gap-md", className)}
       style={style}
     >
-      <p className="text-body-s text-ink-secondary">
-        {clampedCount === 0 || totalItems === 0
-          ? noResultsLabel
-          : totalItems !== undefined && pageSize !== undefined
-            ? rangeSummaryMessage(
-                (page - 1) * pageSize + 1,
-                Math.min(page * pageSize, totalItems),
-                totalItems,
-              )
-            : pageSummaryMessage(page, clampedCount)}
-      </p>
-      <div className="flex items-center gap-xs">
+      <SemanticContent as="p" className="text-body-s text-ink-secondary">
+        {copyText(summary, "summary")}
+      </SemanticContent>
+      <div className="flex min-w-0 flex-wrap items-center gap-xs">
         <Button
           variant="ghost"
           size="sm"
-          aria-label={previousPageLabel}
+          aria-label={copyText(previousPageLabel ?? copy(PAGINATION_COPY_REFS.previousPageLabel), "previousPageLabel")}
           isDisabled={isFirstPage}
           onPress={() => onPageChange(page - 1)}
         >
-          ‹
+          <Icon glyph={previousGlyph} decorative size="sm" />
         </Button>
         {items.map((item, index) =>
           item === "ellipsis" ? (
-            <span key={`ellipsis-${index}`} aria-hidden="true" className="px-xs text-ink-muted">
+            <SemanticContent as="span" key={`ellipsis-${index}`} aria-hidden="true" className="px-xs text-ink-muted">
               …
-            </span>
+            </SemanticContent>
           ) : (
             <Button
               key={item}
@@ -184,16 +207,16 @@ export function Pagination({
         <Button
           variant="ghost"
           size="sm"
-          aria-label={nextPageLabel}
+          aria-label={copyText(nextPageLabel ?? copy(PAGINATION_COPY_REFS.nextPageLabel), "nextPageLabel")}
           isDisabled={isLastPage}
           onPress={() => onPageChange(page + 1)}
         >
-          ›
+          <Icon glyph={nextGlyph} decorative size="sm" />
         </Button>
       </div>
       {showPageSizeSelector ? (
         <Select
-          label={pageSizeLabel}
+          label={copyText(pageSizeLabel ?? copy(PAGINATION_COPY_REFS.pageSizeLabel), "pageSizeLabel")}
           className="w-auto"
           options={(pageSizeOptions ?? []).map((size) => ({ id: String(size), label: String(size) }))}
           selectedKey={pageSize !== undefined ? String(pageSize) : null}

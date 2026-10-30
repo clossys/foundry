@@ -1,0 +1,29 @@
+{
+  "consumer": "writer-library-fixture",
+  "messageSyntax": "icu-mf1",
+  "defaultLocale": "en",
+  "locales": [
+    {
+      "tag": "en",
+      "dir": "ltr",
+      "state": "active"
+    },
+    {
+      "tag": "fr",
+      "dir": "ltr",
+      "state": "active"
+    }
+  ],
+  "fallback": {},
+  "strategy": {
+    "root": "strategy",
+    "contract": "writer.messaging"
+  },
+  "leafFreeze": {
+    "lexicon": "",
+    "strings": "1111111111111111111111111111111111111111",
+    "patterns": "",
+    "passages": "",
+    "narratives": ""
+  }
+}

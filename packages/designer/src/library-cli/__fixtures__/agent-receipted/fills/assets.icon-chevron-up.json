@@ -1,0 +1,65 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "example/assets.icon-chevron-up",
+      "license": "ISC",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "file": "src/icons/ChevronUp.ts",
+        "package": "lucide-react",
+        "sha256": "c36ddd23fcd3e3fa1a9d33723e69dafab41f96ed318c591daf1767534d973d55",
+        "version": "1.23.0"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": []
+      },
+      "relation": "same-contract",
+      "slot": "assets.icon-chevron-up",
+      "source": "example",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/chevron-up.js",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "assets": {
+    "icon-chevron-up": {
+      "default": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "lucide/assets.icon-chevron-up",
+            "kind": "adopted",
+            "license": "ISC",
+            "member": "assets.icon-chevron-up.default",
+            "pin": {
+              "file": "src/icons/ChevronUp.ts",
+              "package": "lucide-react",
+              "sha256": "c36ddd23fcd3e3fa1a9d33723e69dafab41f96ed318c591daf1767534d973d55",
+              "version": "1.23.0"
+            },
+            "sha256": "ee08d86cb7f6e213aade097e61373f1f91dff0eaeb0e42d03a677195078546ac",
+            "source": "lucide"
+          }
+        },
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "m18 15-6-6-6 6",
+              "key": "153udz"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "id": "phosphor",
+  "kind": "external",
+  "author": "third-party",
+  "license": "MIT",
+  "pin": {
+    "url": "https://github.com/phosphor-icons/core/tree/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular",
+    "commit": "fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f",
+    "file": "src/importers/phosphor-pin.json",
+    "sha256": "a39097144afe46742bf111bb51e826e99c05421e7c5e273ae1b87efb20888988"
+  },
+  "homepage": "https://phosphoricons.com"
+}

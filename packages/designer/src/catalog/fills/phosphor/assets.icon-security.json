@@ -1,0 +1,49 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "phosphor/assets.icon-security",
+      "slot": "assets.icon-security",
+      "source": "phosphor",
+      "mode": "implementation",
+      "sourceAddress": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/shield-check.svg",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "pin": {
+        "url": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/shield-check.svg",
+        "commit": "fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f",
+        "sha256": "216ebbec5e36460e68aba36491f219c278e28e685ceda153fa498e42e9ec780b"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-security": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M 20.25 10.5 V 5.25 a 0.75 0.75 0 0 0 -0.75 -0.75 H 4.5 a 0.75 0.75 0 0 0 -0.75 0.75 v 5.25 c 0 9 8.25 11.25 8.25 11.25 S 20.25 19.5 20.25 10.5 Z"
+            }
+          ],
+          [
+            "polyline",
+            {
+              "points": "8.25 12.75 10.5 15 15.75 9.75"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

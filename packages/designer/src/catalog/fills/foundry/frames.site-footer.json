@@ -1,0 +1,187 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.site-footer",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./shell/server#SiteFooter",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "frames.site-footer",
+      "source": "foundry",
+      "sourceAddress": "./shell/server#SiteFooter",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "overlay.off",
+        "overlay.on",
+        "slot.legal",
+        "slot.links",
+        "slot.social"
+      ]
+    }
+  },
+  "frames": {
+    "site-footer": {
+      "composes": [
+        "components.icon",
+        "components.logo",
+        "components.semantic-content"
+      ],
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.icon",
+          "components.logo",
+          "components.semantic-content"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.icon",
+            "components.logo",
+            "components.semantic-content"
+          ],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.action-color",
+            "tokens.body-size",
+            "tokens.border-color",
+            "tokens.border-width",
+            "tokens.brandmark-size",
+            "tokens.control-color",
+            "tokens.control-radius",
+            "tokens.duration",
+            "tokens.easing",
+            "tokens.focus-color",
+            "tokens.focus-outline",
+            "tokens.gutter",
+            "tokens.spacing",
+            "tokens.state-opacity",
+            "tokens.status-color",
+            "tokens.surface-color",
+            "tokens.text-color",
+            "tokens.touch-target",
+            "tokens.typeface",
+            "tokens.z-index"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/catalog-assets/media.ts",
+            "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/button-classes.ts",
+            "sha256": "b8ebd6d815a52769cd0e02ca091f4c81d81e31f9558e1df767bfcf07dcc5f2a6"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/components/internal/ui-vars.ts",
+            "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+          },
+          {
+            "path": "packages/designer/src/components/Link.server.tsx",
+            "sha256": "716f8c4a4057c2d78fe87465080a8c874c83c7788e4d7da8fd26692146d0ad7b"
+          },
+          {
+            "path": "packages/designer/src/components/Link.styles.ts",
+            "sha256": "d8467b36dc0716227896837f1aecf9f3e44c0fdb42c63ba359f3420249f77328"
+          },
+          {
+            "path": "packages/designer/src/internal/brandmark.ts",
+            "sha256": "8373e807f383bdf12d9f325223df75316b99ea60fa3d2e020991b283eb24c16a"
+          },
+          {
+            "path": "packages/designer/src/shell/internal/shell-ground.ts",
+            "sha256": "e04a3d0244d866b417cf3feebe8cc8a7d2815f54652f0feeacab07b9b4762be2"
+          },
+          {
+            "path": "packages/designer/src/shell/internal/shell-vars.ts",
+            "sha256": "662ffc7e288f722504186d2fcb01fc4c20f3a4e4186971c29f3901be84b4513b"
+          },
+          {
+            "path": "packages/designer/src/shell/SiteFooter.tsx",
+            "sha256": "6a10abd3dd944517371ea878d0319f1adef150b1c5edee69e8d4a334a3ca1286"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
+      "impl": {
+        "export": "SiteFooter",
+        "kind": "package",
+        "module": "@clossys/designer/shell/server"
+      },
+      "members": [
+        "ground.base",
+        "ground.inverse",
+        "rule.off",
+        "rule.on"
+      ],
+      "propMap": {
+        "ground.base": "ground=base",
+        "ground.inverse": "ground=inverse",
+        "rule.off": "rule=none",
+        "rule.on": "rule=top"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.brandmark-size",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.gutter",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.touch-target",
+          "tokens.typeface",
+          "tokens.z-index"
+        ]
+      },
+      "slot": "frames.site-footer",
+      "slots": {
+        "columns": "columns"
+      },
+      "statePorts": {}
+    }
+  }
+}

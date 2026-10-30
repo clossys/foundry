@@ -1,0 +1,73 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-legal",
+      "slot": "assets.icon-legal",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.24.0/dist/esm/icons/scale.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.24.0",
+        "file": "src/icons/Scale.ts",
+        "sha256": "714f4f993e88b1f58945144d4767f9bec3876e52be5bdac1ae212a7ee5372df6"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-legal": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M12 3v18",
+              "key": "108xh3"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m19 8 3 8a5 5 0 0 1-6 0zV7",
+              "key": "zcdpyk"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1",
+              "key": "1yorad"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m5 8 3 8a5 5 0 0 1-6 0zV7",
+              "key": "eua70x"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M7 21h10",
+              "key": "1b0cd5"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

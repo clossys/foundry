@@ -1,0 +1,58 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "derivation": {
+        "from": "dtcg#alias",
+        "rule": "materialize only retired-source references from historical Foundry token cells; retain live aliases"
+      },
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "foundry/tokens.surface-radius",
+      "license": "MIT",
+      "mode": "derived",
+      "pin": {
+        "file": "historical Foundry token cells",
+        "sha256": "ccc1f47619299450e9461e414fd832c76bb4436ef32355e0e45e28f89c201081"
+      },
+      "relation": "same-contract",
+      "slot": "tokens.surface-radius",
+      "source": "foundry",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "surface-radius": {
+      "default": {
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 3
+        }
+      },
+      "overlay": {
+        "$type": "dimension",
+        "$value": "{tokens.control-radius.default}"
+      },
+      "panel": {
+        "$type": "dimension",
+        "$value": "{tokens.surface-radius.default}"
+      }
+    }
+  }
+}

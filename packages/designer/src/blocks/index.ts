@@ -1,15 +1,15 @@
 /**
  * @clossys/designer/blocks — the second rung of a three-layer component
- * reusable ladder (atoms → blocks). A block owns
+ * reusable ladder (components → blocks). A block owns
  * the internal layout of MULTIPLE NAMED REGIONS — `PageHeader` (title /
  * description / actions / breadcrumb), `EmptyState` (icon / title /
  * description / action). See this package's README, "Placement rules",
- * for the block/atom test this ladder is built on. Blocks may import from
- * `../atoms/`; the reverse is a layering violation, and `ladder.test.ts`
+ * for the block/component test this ladder is built on. Blocks may import from
+ * `../components/`; the reverse is a layering violation, and `ladder.test.ts`
  * enforces that structurally rather than by convention.
  *
  * A block never reaches outside this package for data or routing — it
- * takes what it needs through props and slots, same as an atom.
+ * takes what it needs through props and slots, same as an component.
  */
 
 import { version as reactVersion } from "react";
@@ -19,14 +19,14 @@ import { REACT_ARIA_COMPONENTS_DECLARED_RANGE, REACT_DECLARED_RANGE } from "../i
 
 /**
  * `react` and `react-aria-components` are two of this package's optional
- * peers — see `atoms/index.ts`'s own, longer version of this comment for
+ * peers — see `components/index.ts`'s own, longer version of this comment for
  * the full #182 rationale and why each is read the way it is (a pure
  * export for `react`, a static JSON import of `react-aria-components`'s
  * own `package.json` for the other, neither touching `node:fs`). This
- * barrel needs its own guard call, independent of `atoms/index.ts`'s:
+ * barrel needs its own guard call, independent of `components/index.ts`'s:
  * `Toolbar.tsx` and `DataTable.tsx` import `react-aria-components`
  * directly, and a consumer who imports only `@clossys/designer/blocks`
- * (never `@clossys/designer/atoms`) would otherwise get no signal at
+ * (never `@clossys/designer/components`) would otherwise get no signal at
  * all.
  */
 assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: reactVersion });
@@ -56,7 +56,7 @@ export { DataTable } from "./DataTable.js";
 export type { DataTableProps, DataTableColumn, DataTableSelectionMode } from "./DataTable.js";
 
 export { CanvasSurface } from "./canvas/CanvasSurface.js";
-export type { CanvasSurfaceProps } from "./canvas/CanvasSurface.js";
+export type { CanvasSurfaceProps, CanvasSurfaceActions, CanvasOverlayInsets, CanvasOverlay, CanvasEdge } from "./canvas/CanvasSurface.js";
 export { panBy, zoomAt, fitTo, clamp, toWorld, toScreen, selectSingle, toggleSelection, selectRange, selectMarquee, clearSelection, navigate, minimapModel } from "./canvas/models.js";
 export type { CanvasPoint, CanvasSize, CanvasRect, Viewport, Selection, CanvasItem, CanvasDirection, CanvasMinimapModel } from "./canvas/models.js";
 
@@ -71,6 +71,8 @@ export type { PaginationProps } from "./Pagination.js";
 
 export { UsageMeter } from "./UsageMeter.js";
 export type { UsageMeterProps, UsageMeterThreshold } from "./UsageMeter.js";
+export { UsageSummary } from "./UsageSummary.js";
+export type { UsageSummaryProps, UsageSummaryMeter } from "./UsageSummary.js";
 
 export { Stat } from "./Stat.js";
 export type { StatProps, StatTrend } from "./Stat.js";
@@ -180,6 +182,12 @@ export type {
 export { StatusList } from "./StatusList.js";
 export { EventItem } from "./EventItem.js";
 export type { EventActor, EventChange, EventRecord, EventLabels, EventItemProps } from "./EventItem.js";
+export { ActivityFeed } from "./ActivityFeed.js";
+export type { ActivityFeedProps, ActivityFeedGroup } from "./ActivityFeed.js";
+export { AuditLog } from "./AuditLog.js";
+export type { AuditLogProps, AuditLogEntry, AuditLogLabels } from "./AuditLog.js";
+export { Timeline } from "./Timeline.js";
+export type { TimelineProps, TimelineEvent, TimelineHeadingLevel } from "./Timeline.js";
 export { TaskList } from "./TaskList.js";
 export type { TaskStatus, TaskListItem, TaskListProps } from "./TaskList.js";
 export type {
@@ -223,6 +231,18 @@ export type { SectionFrameProps, SectionMeasure } from "./SectionFrame.js";
 
 export { ConsentBanner } from "./ConsentBanner.js";
 export type { ConsentBannerProps } from "./ConsentBanner.js";
+export { ErrorState } from "./ErrorState.js";
+export type { ErrorStateProps, ErrorStateKind } from "./ErrorState.js";
+export { StatGroup } from "./StatGroup.js";
+export type { StatGroupProps, StatGroupItem, StatGroupLayout } from "./StatGroup.js";
+export { RecordCards } from "./RecordCards.js";
+export type { RecordCardsProps, RecordCardsRecord, RecordCardsLayout, RecordCardsHeadingLevel } from "./RecordCards.js";
+export { CallToAction } from "./CallToAction.js";
+export type { CallToActionProps } from "./CallToAction.js";
+export { NoticeList } from "./NoticeList.js";
+export type { NoticeListProps, NoticeListItem } from "./NoticeList.js";
+export { Gallery } from "./Gallery.js";
+export type { GalleryProps, GalleryImage } from "./Gallery.js";
 export { Panel } from "./Panel.js";
 export type { PanelProps } from "./Panel.js";
 export { Drawer } from "./Drawer.js";
@@ -235,7 +255,7 @@ export type { CommandMenuProps, CommandMenuItem, CommandMenuGroup, CommandMenuSh
 export { AppNavigation } from "./AppNavigation.js";
 export type { AppNavigationProps } from "./AppNavigation.js";
 export { PageBar } from "./PageBar.js";
-export type { PageBarProps, PageBarPage, PageBarCrumb, PageBarAction, PageBarDestination, PageBarLabels, PageBarWidth } from "./PageBar.js";
+export type { PageBarProps, PageBarPage, PageBarCrumb, PageBarAction, PageBarDestination, PageBarLabels, PageBarHeader, PageBarHeaderNav, PageBarHeaderActions } from "./PageBar.js";
 export { validateAppNavigationTree, getAppNavigationAncestry, getAppNavigationBreadcrumbs } from "./app-navigation-tree.js";
 export type { AppNavigationNode, AppNavigationLeaf, AppNavigationDestination, AppNavigationTarget, AppNavigationBreadcrumb } from "./app-navigation-tree.js";
 export { RelationGraph } from "./RelationGraph.js";
@@ -287,7 +307,29 @@ export { AccessMatrix } from "./AccessMatrix.js";
 export type { AccessCellValue, AccessRole, AccessPermission, AccessGroup, AccessMatrixValue, AccessMatrixChange, AccessMatrixLabels, AccessMatrixProps } from "./AccessMatrix.js";
 export { ColumnMapper } from "./ColumnMapper.js";
 export type { ColumnMapperTarget, ColumnMapperSource, ColumnMapping, ColumnMapperIssue, ColumnMapperLabels, ColumnMapperProps } from "./ColumnMapper.js";
+export { FilterBuilder } from "./FilterBuilder.js";
+export type { FilterBuilderField, FilterBuilderOperator, FilterBuilderCondition, FilterBuilderMatch, FilterBuilderGroup, FilterBuilderLabels, FilterBuilderProps } from "./FilterBuilder.js";
+export { SettingsSection } from "./SettingsSection.js";
+export type { SettingsSectionGroup, SettingsSectionLabels, SettingsSectionProps } from "./SettingsSection.js";
+export { FormWizard } from "./FormWizard.js";
+export type { FormWizardStep, FormWizardLabels, FormWizardProps } from "./FormWizard.js";
 export { NewsletterBand } from "./NewsletterBand.js";
 export type { NewsletterBandProps, NewsletterStatus } from "./NewsletterBand.js";
 export { ResourceList } from "./ResourceList.js";
 export type { ResourceListProps, ResourceListItem, ResourceListAction } from "./ResourceList.js";
+export { frameLinkNavigation } from "./frame-navigation.js";
+export type { FrameNavigate } from "./frame-navigation.js";
+
+export { LibraryBoardSection } from "./library-board/LibraryBoardSection.js";
+export type { LibraryBoardSectionProps, LibraryBoardPreviewPort } from "./library-board/LibraryBoardSection.js";
+export { assertLibraryBoardRecords, assertLibraryBoardCommand } from "./library-board/model.js";
+export type { LibraryBoardRecords, LibraryBoardRow, LibraryBoardCandidate, LibraryBoardCommand, LibraryPreviewIdentity } from "./library-board/model.js";
+export type { LibraryBoardLabels } from "./library-board/types.js";
+export { LIBRARY_BOARD_CONFIG } from "./Matrix.js";
+
+export { LogoHero, type LogoHeroProps } from "./LogoHero.js";
+
+export { ChunkHost, CHUNK_ROOT_MARGIN, type ScrollChunk, type ChunkHostProps, type ChunkHostHandle } from "./chunk-host/ChunkHost.js";
+export { useHeadingScrollSpy, HEADING_ROOT_MARGIN, type HeadingScrollSpyOptions } from "./TableOfContents.scroll-spy.js";
+
+export { LegalProse, type LegalProseProps, type LegalProseRevision } from "./LegalProse.js";

@@ -1,0 +1,590 @@
+[
+  {
+    "id": "layouts.stack",
+    "layer": "layouts",
+    "contract": {
+      "kind": "layout",
+      "arrangement": "page",
+      "surface": "both",
+      "slots": [
+        {
+          "id": "lead",
+          "accepts": [
+            "sections.hero",
+            "sections.page-header"
+          ],
+          "min": 0,
+          "max": 1,
+          "position": "first",
+          "previewShape": "bar"
+        },
+        {
+          "id": "body",
+          "accepts": [
+            "sections.hero",
+            "sections.page-header",
+            "sections.content",
+            "sections.band",
+            "sections.section-header",
+            "sections.article",
+            "sections.features",
+            "sections.testimonials",
+            "sections.logo-cloud",
+            "sections.people",
+            "sections.media",
+            "sections.gallery",
+            "sections.faq",
+            "sections.steps",
+            "sections.timeline",
+            "sections.call-to-action",
+            "sections.cards",
+            "sections.resource-list",
+            "sections.task-list",
+            "sections.comparison",
+            "sections.pricing",
+            "sections.stats",
+            "sections.status-list",
+            "sections.usage",
+            "sections.data-table",
+            "sections.data-grid",
+            "sections.record-detail",
+            "sections.activity-feed",
+            "sections.audit-log",
+            "sections.form",
+            "sections.newsletter",
+            "sections.wizard",
+            "sections.settings",
+            "sections.column-mapper",
+            "sections.access-matrix",
+            "sections.chat",
+            "sections.link-index",
+            "sections.explorer",
+            "sections.filter-builder",
+            "sections.empty-state",
+            "sections.error-state",
+            "sections.notices"
+          ],
+          "min": 1,
+          "max": 24,
+          "position": "any",
+          "previewShape": "bar"
+        },
+        {
+          "id": "close",
+          "accepts": [
+            "sections.call-to-action",
+            "sections.newsletter"
+          ],
+          "min": 0,
+          "max": 1,
+          "position": "last",
+          "previewShape": "bar"
+        }
+      ],
+      "members": {
+        "measure": [
+          "full",
+          "wide",
+          "content",
+          "prose",
+          "form"
+        ],
+        "align": [
+          "start",
+          "center"
+        ],
+        "lead": [
+          "required",
+          "optional"
+        ]
+      },
+      "configs": [
+        {
+          "id": "stack.landing",
+          "members": {
+            "lead": "required"
+          },
+          "slotOverrides": {
+            "lead": {
+              "accepts": [
+                "sections.hero"
+              ],
+              "min": 1
+            }
+          }
+        },
+        {
+          "id": "stack.document",
+          "members": {
+            "measure": "prose"
+          },
+          "slotOverrides": {
+            "lead": {
+              "accepts": [
+                "sections.page-header"
+              ]
+            },
+            "body": {
+              "accepts": [
+                "sections.article"
+              ]
+            }
+          }
+        },
+        {
+          "id": "stack.focus",
+          "members": {
+            "align": "center",
+            "measure": "form"
+          },
+          "slotOverrides": {
+            "body": {
+              "accepts": [
+                "sections.form",
+                "sections.wizard",
+                "sections.empty-state",
+                "sections.error-state",
+                "sections.content"
+              ],
+              "max": 1
+            }
+          }
+        },
+        {
+          "id": "stack.index",
+          "members": {},
+          "slotOverrides": {
+            "lead": {
+              "accepts": [
+                "sections.page-header"
+              ]
+            },
+            "body": {
+              "accepts": [
+                "sections.data-table",
+                "sections.resource-list",
+                "sections.cards",
+                "sections.data-grid"
+              ],
+              "max": 1
+            }
+          }
+        },
+        {
+          "id": "stack.workspace",
+          "members": {
+            "align": "start",
+            "measure": "full"
+          },
+          "slotOverrides": {
+            "lead": {
+              "max": 0
+            },
+            "body": {
+              "accepts": [
+                "sections.comparison",
+                "sections.band",
+                "sections.section-header",
+                "sections.explorer",
+                "sections.data-table",
+                "sections.form",
+                "sections.record-detail",
+                "sections.empty-state",
+                "sections.error-state",
+                "sections.notices"
+              ]
+            },
+            "close": {
+              "max": 0
+            }
+          }
+        }
+      ],
+      "reflow": [],
+      "allowedReads": [
+        "tokens.spacing",
+        "tokens.gutter",
+        "tokens.content-size",
+        "tokens.region-width",
+        "tokens.breakpoint"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "layouts.split",
+    "layer": "layouts",
+    "contract": {
+      "kind": "layout",
+      "arrangement": "page",
+      "surface": "both",
+      "slots": [
+        {
+          "id": "lead",
+          "accepts": [
+            "sections.page-header"
+          ],
+          "min": 0,
+          "max": 1,
+          "position": "first",
+          "previewShape": "bar"
+        },
+        {
+          "id": "start",
+          "accepts": [
+            "sections.content",
+            "sections.media",
+            "sections.article",
+            "sections.testimonials",
+            "sections.stats",
+            "sections.people",
+            "sections.hero"
+          ],
+          "min": 1,
+          "max": 1,
+          "position": "any",
+          "previewShape": "panel"
+        },
+        {
+          "id": "end",
+          "accepts": [
+            "sections.form",
+            "sections.newsletter",
+            "sections.wizard",
+            "sections.media",
+            "sections.content",
+            "sections.record-detail"
+          ],
+          "min": 1,
+          "max": 1,
+          "position": "any",
+          "previewShape": "panel"
+        }
+      ],
+      "members": {
+        "ratio": [
+          "1:1",
+          "3:2",
+          "2:3"
+        ],
+        "collapse": [
+          "start-first",
+          "end-first"
+        ],
+        "align": [
+          "top",
+          "center"
+        ]
+      },
+      "configs": [
+        {
+          "id": "split.default",
+          "members": {}
+        }
+      ],
+      "reflow": [
+        {
+          "at": "tokens.breakpoint.tablet",
+          "columns": 2
+        }
+      ],
+      "allowedReads": [
+        "tokens.spacing",
+        "tokens.gutter",
+        "tokens.content-size",
+        "tokens.region-width",
+        "tokens.breakpoint"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "layouts.sidebar-content",
+    "layer": "layouts",
+    "contract": {
+      "kind": "layout",
+      "arrangement": "page",
+      "surface": "both",
+      "slots": [
+        {
+          "id": "lead",
+          "accepts": [
+            "sections.page-header"
+          ],
+          "min": 0,
+          "max": 1,
+          "position": "first",
+          "previewShape": "bar"
+        },
+        {
+          "id": "main",
+          "accepts": [
+            "sections.hero",
+            "sections.page-header",
+            "sections.content",
+            "sections.article",
+            "sections.features",
+            "sections.testimonials",
+            "sections.logo-cloud",
+            "sections.people",
+            "sections.media",
+            "sections.gallery",
+            "sections.faq",
+            "sections.steps",
+            "sections.timeline",
+            "sections.call-to-action",
+            "sections.cards",
+            "sections.resource-list",
+            "sections.task-list",
+            "sections.comparison",
+            "sections.pricing",
+            "sections.stats",
+            "sections.status-list",
+            "sections.usage",
+            "sections.data-table",
+            "sections.data-grid",
+            "sections.record-detail",
+            "sections.activity-feed",
+            "sections.audit-log",
+            "sections.form",
+            "sections.newsletter",
+            "sections.wizard",
+            "sections.settings",
+            "sections.column-mapper",
+            "sections.access-matrix",
+            "sections.chat",
+            "sections.empty-state",
+            "sections.error-state",
+            "sections.notices"
+          ],
+          "min": 1,
+          "max": 12,
+          "position": "any",
+          "previewShape": "panel"
+        },
+        {
+          "id": "aside",
+          "accepts": [
+            "sections.stats",
+            "sections.status-list",
+            "sections.usage",
+            "sections.activity-feed",
+            "sections.notices",
+            "sections.record-detail",
+            "sections.table-of-contents",
+            "sections.link-index",
+            "sections.people"
+          ],
+          "min": 0,
+          "max": 6,
+          "position": "any",
+          "previewShape": "rail"
+        }
+      ],
+      "members": {
+        "side": [
+          "start",
+          "end"
+        ],
+        "aside-width": [
+          "region",
+          "third"
+        ],
+        "sticky": [
+          "none",
+          "aside"
+        ],
+        "stacked-aside": [
+          "before",
+          "after"
+        ],
+        "breakpoint": [
+          "tablet",
+          "tablet-lg"
+        ]
+      },
+      "configs": [
+        {
+          "id": "sidebar-content.record",
+          "members": {
+            "side": "end",
+            "aside-width": "third",
+            "sticky": "none",
+            "stacked-aside": "after",
+            "breakpoint": "tablet"
+          },
+          "slotOverrides": {}
+        },
+        {
+          "id": "sidebar-content.docs",
+          "members": {
+            "side": "start",
+            "aside-width": "region",
+            "sticky": "aside",
+            "stacked-aside": "before",
+            "breakpoint": "tablet-lg"
+          },
+          "slotOverrides": {
+            "aside": {
+              "accepts": [
+                "sections.table-of-contents"
+              ]
+            }
+          }
+        }
+      ],
+      "reflow": [
+        {
+          "at": "tokens.breakpoint.tablet-lg",
+          "columns": 2
+        }
+      ],
+      "allowedReads": [
+        "tokens.spacing",
+        "tokens.gutter",
+        "tokens.content-size",
+        "tokens.region-width",
+        "tokens.breakpoint"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "layouts.bento",
+    "layer": "layouts",
+    "contract": {
+      "kind": "layout",
+      "arrangement": "page",
+      "surface": "both",
+      "slots": [
+        {
+          "id": "lead",
+          "accepts": [
+            "sections.hero",
+            "sections.page-header"
+          ],
+          "min": 0,
+          "max": 1,
+          "position": "first",
+          "previewShape": "bar"
+        },
+        {
+          "id": "tiles",
+          "accepts": [
+            "sections.stats",
+            "sections.media",
+            "sections.features",
+            "sections.testimonials",
+            "sections.usage",
+            "sections.status-list",
+            "sections.cards",
+            "sections.call-to-action",
+            "sections.logo-cloud"
+          ],
+          "min": 3,
+          "max": 12,
+          "position": "any",
+          "previewShape": "tile",
+          "tile": {
+            "spans": [
+              "1x1",
+              "2x1",
+              "1x2",
+              "2x2"
+            ]
+          }
+        }
+      ],
+      "members": {
+        "density": [
+          "airy",
+          "standard",
+          "dense"
+        ],
+        "rhythm": [
+          "uniform",
+          "feature-first"
+        ]
+      },
+      "configs": [
+        {
+          "id": "bento.default",
+          "members": {}
+        }
+      ],
+      "reflow": [
+        {
+          "at": "tokens.breakpoint.tablet",
+          "columns": 2,
+          "spans": "clamp"
+        },
+        {
+          "at": "tokens.breakpoint.tablet-lg",
+          "columns": 3,
+          "spans": "clamp"
+        },
+        {
+          "at": "tokens.breakpoint.desktop",
+          "columns": 4,
+          "spans": "clamp"
+        }
+      ],
+      "allowedReads": [
+        "tokens.spacing",
+        "tokens.gutter",
+        "tokens.content-size",
+        "tokens.region-width",
+        "tokens.breakpoint"
+      ],
+      "requiresSection": {
+        "container": "adaptive"
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "layouts.staggered-grid",
+    "layer": "layouts",
+    "contract": {
+      "kind": "layout",
+      "arrangement": "page",
+      "surface": "both",
+      "slots": [
+        {
+          "id": "items",
+          "accepts": [
+            "sections.testimonials",
+            "sections.media",
+            "sections.cards"
+          ],
+          "min": 4,
+          "max": 24,
+          "position": "any",
+          "previewShape": "tile"
+        }
+      ],
+      "members": {
+        "columns": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "configs": [],
+      "reflow": [],
+      "allowedReads": [
+        "tokens.spacing",
+        "tokens.gutter",
+        "tokens.content-size",
+        "tokens.region-width",
+        "tokens.breakpoint"
+      ]
+    },
+    "requires": [],
+    "status": "held"
+  }
+]

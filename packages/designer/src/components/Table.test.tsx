@@ -1,0 +1,386 @@
+import { useState } from "react";
+import { describe, expect, it, vi } from "vitest";
+import { act, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import type { ColumnSize, Key, SortDescriptor } from "react-aria-components";
+import { parseDate } from "@internationalized/date";
+import { DateField } from "./DateField.js";
+import { Table } from "./Table.js";
+
+interface PromptRow {
+  id: string;
+  name: string;
+  runs: number;
+}
+
+const ROWS: PromptRow[] = [
+  { id: "1", name: "Ada", runs: 12 },
+  { id: "2", name: "Grace", runs: 4 },
+  { id: "3", name: "Alan", runs: 9 },
+];
+
+function BasicTable({
+  sortDescriptor,
+  onSortChange,
+}: {
+  sortDescriptor?: SortDescriptor;
+  onSortChange?: (descriptor: SortDescriptor) => void;
+} = {}) {
+  return (
+    <Table aria-label="Prompts" sortDescriptor={sortDescriptor} onSortChange={onSortChange}>
+      <Table.Header>
+        <Table.Column id="name" isRowHeader allowsSorting>
+          Name
+        </Table.Column>
+        <Table.Column id="runs" allowsSorting>
+          Runs
+        </Table.Column>
+      </Table.Header>
+      <Table.Body>
+        {ROWS.map((row) => (
+          <Table.Row key={row.id} id={row.id}>
+            <Table.Cell>{row.name}</Table.Cell>
+            <Table.Cell>{row.runs}</Table.Cell>
+          </Table.Row>
+        ))}
+      </Table.Body>
+    </Table>
+  );
+}
+
+function SelectableTable({
+  selectedKeys,
+  onSelectionChange,
+}: {
+  selectedKeys: "all" | Iterable<Key>;
+  onSelectionChange: (keys: "all" | Set<Key>) => void;
+}) {
+  return (
+    <Table
+      aria-label="Prompts"
+      selectionMode="multiple"
+      selectedKeys={selectedKeys}
+      onSelectionChange={onSelectionChange as (keys: unknown) => void}
+    >
+      <Table.Header>
+        <Table.Column>
+          <Table.SelectAllCheckbox />
+        </Table.Column>
+        <Table.Column isRowHeader>Name</Table.Column>
+      </Table.Header>
+      <Table.Body>
+        {ROWS.map((row) => (
+          <Table.Row key={row.id} id={row.id}>
+            <Table.Cell>
+              <Table.SelectionCheckbox />
+            </Table.Cell>
+            <Table.Cell>{row.name}</Table.Cell>
+          </Table.Row>
+        ))}
+      </Table.Body>
+    </Table>
+  );
+}
+
+describe("Table", () => {
+  it("renders real table semantics: a table, a columnheader per column, a row per data row, a cell per row/column pair", () => {
+    render(<BasicTable />);
+    const table = screen.getByRole("grid", { name: "Prompts" });
+    expect(table).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Name" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Runs" })).toBeInTheDocument();
+    expect(screen.getAllByRole("row")).toHaveLength(4); // 1 header row + 3 data rows
+    const adaRow = screen.getByRole("row", { name: /Ada/ });
+    expect(within(adaRow).getByText("Ada")).toBeInTheDocument();
+    expect(within(adaRow).getByText("12")).toBeInTheDocument();
+  });
+
+  it("marks a sortable column with aria-sort, and reports the toggled direction via onSortChange", async () => {
+    const onSortChange = vi.fn();
+    const user = userEvent.setup();
+    render(<BasicTable sortDescriptor={{ column: "name", direction: "ascending" }} onSortChange={onSortChange} />);
+
+    const nameColumn = screen.getByRole("columnheader", { name: "Name" });
+    expect(nameColumn).toHaveAttribute("aria-sort", "ascending");
+    const runsColumn = screen.getByRole("columnheader", { name: "Runs" });
+    expect(runsColumn).toHaveAttribute("aria-sort", "none");
+
+    // Clicking the already-ascending column reports descending next.
+    await user.click(nameColumn);
+    expect(onSortChange).toHaveBeenCalledWith({ column: "name", direction: "descending" });
+
+    // Clicking a different column reports ascending on that new column.
+    await user.click(runsColumn);
+    expect(onSortChange).toHaveBeenCalledWith({ column: "runs", direction: "ascending" });
+  });
+
+  it("navigates between rows and cells with the arrow keys", async () => {
+    const user = userEvent.setup();
+    render(<BasicTable />);
+    const table = screen.getByRole("grid", { name: "Prompts" });
+    table.focus();
+    // Focusing the grid itself lands on the first ROW (react-aria-components'
+    // default `keyboardNavigationBehavior: 'arrow'` row-first focus target),
+    // not a cell — ArrowRight is what steps focus into that row's cells.
+    expect(document.activeElement).toBe(screen.getByRole("row", { name: /Ada/ }));
+
+    await user.keyboard("{ArrowRight}");
+    expect(document.activeElement?.textContent).toBe("Ada");
+    await user.keyboard("{ArrowRight}");
+    expect(document.activeElement?.textContent).toBe("12");
+    // Arrow-down from a cell moves to the SAME column in the next row.
+    await user.keyboard("{ArrowDown}");
+    expect(document.activeElement?.textContent).toBe("4");
+  });
+
+  it("keeps a plain-text cell's text value, so typing a row's first letter jumps to that row", async () => {
+    const user = userEvent.setup();
+    render(
+      <Table aria-label="People">
+        <Table.Header>
+          <Table.Column id="name" isRowHeader>
+            Name
+          </Table.Column>
+        </Table.Header>
+        <Table.Body>
+          {["Ada", "Grace", "Mary"].map((name) => (
+            <Table.Row key={name} id={name}>
+              <Table.Cell>{name}</Table.Cell>
+            </Table.Row>
+          ))}
+        </Table.Body>
+      </Table>,
+    );
+    screen.getByRole("grid", { name: "People" }).focus();
+    expect(document.activeElement).toBe(screen.getByRole("row", { name: "Ada" }));
+    // Type-to-jump matches each row's text value, so every row is reached by its own first letter: none is empty.
+    for (const [key, name] of [["g", "Grace"], ["m", "Mary"], ["a", "Ada"]] as const) {
+      await user.keyboard(key);
+      expect(document.activeElement, name).toBe(screen.getByRole("row", { name }));
+      // Let the typeahead buffer reset before the next letter starts a fresh search.
+      await act(() => new Promise((resolve) => setTimeout(resolve, 1100)));
+    }
+  });
+
+  it("select-all reaches the indeterminate state with a partial selection, and full selection clears it", async () => {
+    function Controlled() {
+      const [selected, setSelected] = useState<"all" | Set<Key>>(new Set());
+      return <SelectableTable selectedKeys={selected} onSelectionChange={setSelected} />;
+    }
+    const user = userEvent.setup();
+    render(<Controlled />);
+
+    const selectAll = screen.getByRole("checkbox", { name: "Select all rows" });
+    expect(selectAll).not.toBeChecked();
+    expect((selectAll as HTMLInputElement).indeterminate).toBe(false);
+
+    // react-aria-components additionally wires each row checkbox's
+    // aria-labelledby to that row's own row-header cell, so the fully
+    // computed accessible name is "Select row Ada" (this component's own
+    // "Select row" default `aria-label`, plus the row's own name) rather
+    // than the bare `aria-label` string alone — a substring match is the
+    // right tool here, not an exact one.
+    await user.click(screen.getByRole("checkbox", { name: /Select row.*Ada/ }));
+    expect((selectAll as HTMLInputElement).indeterminate).toBe(true);
+    expect(selectAll).not.toBeChecked();
+
+    await user.click(screen.getByRole("checkbox", { name: /Select row.*Grace/ }));
+    await user.click(screen.getByRole("checkbox", { name: /Select row.*Alan/ }));
+    expect((selectAll as HTMLInputElement).indeterminate).toBe(false);
+    expect(selectAll).toBeChecked();
+  });
+
+  it("select-all toggles every row's checkbox at once", async () => {
+    function Controlled() {
+      const [selected, setSelected] = useState<"all" | Set<Key>>(new Set());
+      return <SelectableTable selectedKeys={selected} onSelectionChange={setSelected} />;
+    }
+    const user = userEvent.setup();
+    render(<Controlled />);
+
+    await user.click(screen.getByRole("checkbox", { name: "Select all rows" }));
+    expect(screen.getByRole("checkbox", { name: /Select row.*Ada/ })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /Select row.*Grace/ })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /Select row.*Alan/ })).toBeChecked();
+  });
+
+  it("forwards className onto the table, and the consumer's conflicting class wins the merge", () => {
+    render(
+      <Table aria-label="Prompts" className="bg-status-danger">
+        <Table.Header>
+          <Table.Column isRowHeader>Name</Table.Column>
+        </Table.Header>
+        <Table.Body>
+          <Table.Row id="1">
+            <Table.Cell>Ada</Table.Cell>
+          </Table.Row>
+        </Table.Body>
+      </Table>,
+    );
+    const table = screen.getByRole("grid", { name: "Prompts" });
+    expect(table.className).toContain("bg-status-danger");
+  });
+
+  it("forwards a consumer style prop onto the table, and the consumer's conflicting property wins the merge", () => {
+    render(
+      <Table aria-label="Prompts" style={{ borderCollapse: "separate", padding: "4px" }}>
+        <Table.Header>
+          <Table.Column isRowHeader>Name</Table.Column>
+        </Table.Header>
+        <Table.Body>
+          <Table.Row id="1">
+            <Table.Cell>Ada</Table.Cell>
+          </Table.Row>
+        </Table.Body>
+      </Table>,
+    );
+    const table = screen.getByRole("grid", { name: "Prompts" });
+    expect(table.style.borderCollapse).toBe("separate");
+    expect(table.style.padding).toBe("4px");
+  });
+});
+
+function ResizableTable({ onResize, onResizeEnd }: { onResize?: (widths: Map<Key, ColumnSize>) => void; onResizeEnd?: (widths: Map<Key, ColumnSize>) => void } = {}) {
+  return (
+    <Table.ResizableContainer onResize={onResize} onResizeEnd={onResizeEnd}>
+      <Table aria-label="Prompts">
+        <Table.Header>
+          <Table.Column id="name" isRowHeader allowsResizing defaultWidth={200} minWidth={120} resizerLabel="Resize">
+            Name
+          </Table.Column>
+          <Table.Column id="runs" defaultWidth={160}>
+            Runs
+          </Table.Column>
+        </Table.Header>
+        <Table.Body>
+          {ROWS.map((row) => (
+            <Table.Row key={row.id} id={row.id}>
+              <Table.Cell>{row.name}</Table.Cell>
+              <Table.Cell>{row.runs}</Table.Cell>
+            </Table.Row>
+          ))}
+        </Table.Body>
+      </Table>
+    </Table.ResizableContainer>
+  );
+}
+
+/** Two rows whose second column holds a text-entry control: a DateField, then a plain text input. */
+function EditableTable() {
+  return (
+    <Table aria-label="Schedule">
+      <Table.Header>
+        <Table.Column id="name" isRowHeader>Name</Table.Column>
+        <Table.Column id="due">Due</Table.Column>
+      </Table.Header>
+      <Table.Body>
+        <Table.Row id="a">
+          <Table.Cell>Ada</Table.Cell>
+          <Table.Cell><DateField label="Due" defaultValue={parseDate("2026-10-27")} /></Table.Cell>
+        </Table.Row>
+        <Table.Row id="b">
+          <Table.Cell>Grace</Table.Cell>
+          <Table.Cell><input aria-label="Note" defaultValue="later" /></Table.Cell>
+        </Table.Row>
+        <Table.Row id="c">
+          <Table.Cell>Alan</Table.Cell>
+          <Table.Cell>9</Table.Cell>
+        </Table.Row>
+      </Table.Body>
+    </Table>
+  );
+}
+
+describe("Table text entry inside a cell", () => {
+  it("a DateField segment in a cell keeps ArrowUp/ArrowDown: the value changes and focus stays in its row", async () => {
+    const user = userEvent.setup();
+    render(<EditableTable />);
+    const field = screen.getByRole("group", { name: "Due" });
+    const day = within(field).getAllByRole("spinbutton").find(segment => /day/i.test(segment.getAttribute("aria-label") ?? ""))!;
+    expect(day).toHaveAttribute("aria-valuenow", "27");
+    await user.click(day);
+    expect(day).toHaveFocus();
+    await user.keyboard("{ArrowUp}");
+    expect(day).toHaveAttribute("aria-valuenow", "28");
+    expect(day).toHaveFocus();
+    await user.keyboard("{ArrowDown}{ArrowDown}");
+    expect(day).toHaveAttribute("aria-valuenow", "26");
+    expect(day).toHaveFocus();
+  });
+
+  it("a text input in a cell keeps its arrow keys; leaving it restores the grid's row navigation", async () => {
+    const user = userEvent.setup();
+    render(<EditableTable />);
+    const note = screen.getByRole("textbox", { name: "Note" });
+    await user.click(note);
+    await user.keyboard("{ArrowUp}");
+    expect(note).toHaveFocus();
+    await user.keyboard("{ArrowDown}");
+    expect(note).toHaveFocus();
+    // Focus on the cell itself, outside the input: arrows move between rows again.
+    const cell = note.closest<HTMLElement>("[role=gridcell]")!;
+    act(() => cell.focus());
+    await user.keyboard("{ArrowDown}");
+    expect(document.activeElement?.textContent).toBe("9");
+    await user.keyboard("{ArrowUp}");
+    expect(screen.getByRole("row", { name: /Grace/ })).toContainElement(document.activeElement as HTMLElement);
+  });
+});
+
+describe("Table column resizing", () => {
+  it("renders a labelled resizer only on columns that allow resizing", () => {
+    render(<ResizableTable />);
+    const resizers = screen.getAllByRole("slider");
+    expect(resizers).toHaveLength(1);
+    // Named by the resizer label plus its own column header.
+    expect(resizers[0]).toHaveAccessibleName("Resize Name");
+    const header = screen.getByRole("columnheader", { name: /Name/ });
+    expect(header.contains(resizers[0]!)).toBe(true);
+    expect(screen.getByRole("columnheader", { name: "Runs" }).querySelector("[data-table-resizer]")).toBeNull();
+  });
+
+  it("keyboard: Enter on the header starts resizing, arrows change the width, Escape finishes with the committed width", async () => {
+    const onResize = vi.fn();
+    const onResizeEnd = vi.fn();
+    const user = userEvent.setup();
+    render(<ResizableTable onResize={onResize} onResizeEnd={onResizeEnd} />);
+    const header = screen.getByRole("columnheader", { name: /Name/ });
+    header.focus();
+    await user.keyboard("{Enter}");
+    expect(document.activeElement).toBe(screen.getByRole("slider"));
+    await user.keyboard("{ArrowRight}");
+    expect(onResize).toHaveBeenCalled();
+    const widths = onResize.mock.lastCall![0] as Map<Key, ColumnSize>;
+    expect(widths.get("name")).toBeGreaterThan(200);
+    await user.keyboard("{Escape}");
+    expect(onResizeEnd).toHaveBeenCalledTimes(1);
+    expect((onResizeEnd.mock.lastCall![0] as Map<Key, ColumnSize>).get("name")).toBe(widths.get("name"));
+  });
+
+  it("the resizer sits on the logical inline-end edge and marks the active state with the accent", () => {
+    render(<ResizableTable />);
+    const resizer = document.querySelector<HTMLElement>("[data-table-resizer]")!;
+    expect(resizer).not.toBeNull();
+    expect(resizer.className).toContain("end-0");
+    expect(resizer.className).not.toMatch(/\bright-0\b/);
+    expect(resizer.querySelector("[aria-hidden='true']")!.getAttribute("class")).toContain("group-data-resizing:bg-accent");
+  });
+
+  it("a table outside a resizable container keeps its non-resizing markup", () => {
+    render(<BasicTable />);
+    expect(screen.queryByRole("slider")).toBeNull();
+  });
+});
+
+describe("Table visual pass (VF-1 components-07, sf-15)", () => {
+  it("sets column headers in the medium weight, never the browser's bold th", () => {
+    render(<BasicTable />);
+    expect(screen.getByRole("columnheader", { name: "Name" })).toHaveClass("font-medium");
+  });
+
+  it("paints a selected row with the accent tint", () => {
+    render(<SelectableTable selectedKeys={[ROWS[0]!.id]} onSelectionChange={() => {}} />);
+    const selected = screen.getAllByRole("row").find((row) => row.getAttribute("aria-selected") === "true");
+    expect(selected).toHaveClass("bg-accent-tint");
+  });
+});

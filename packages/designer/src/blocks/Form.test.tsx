@@ -4,7 +4,7 @@ import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { TextField } from "../atoms/TextField.js";
+import { TextField } from "../components/TextField.js";
 import { Form, type FormError } from "./Form.js";
 
 // Every summary heading is consumer copy — `Form` ships none of its own.
@@ -331,7 +331,7 @@ describe("Form actions layout", () => {
 
 describe("shared internal action rows", () => {
   it("ships every helper class in canonical CSS without changing the scanner", async () => {
-    const { actionRowClassName } = await import("../atoms/internal/action-row.js");
+    const { actionRowClassName } = await import("../components/internal/action-row.js");
     const compiled = readFileSync(resolve(import.meta.dirname, "../../styles/compiled.css"), "utf8");
     for (const classes of [actionRowClassName("form", 2), actionRowClassName("dialog", 2), actionRowClassName("dialog", 3)]) {
       for (const token of classes.split(" ")) {
@@ -341,17 +341,17 @@ describe("shared internal action rows", () => {
   });
 
   it.each([2, 3, 4])("keeps %s form actions stacked until tablet and primary last", async (count) => {
-    const { actionRowClassName } = await import("../atoms/internal/action-row.js");
+    const { actionRowClassName } = await import("../components/internal/action-row.js");
     expect(actionRowClassName("form", count)).toBe("flex flex-col items-stretch gap-sm");
   });
 
   it("gives exactly two dialog actions an equal grid with an end-aligned tablet row", async () => {
-    const { actionRowClassName } = await import("../atoms/internal/action-row.js");
+    const { actionRowClassName } = await import("../components/internal/action-row.js");
     expect(actionRowClassName("dialog", 2)).toBe("grid grid-cols-2 gap-sm tablet:flex tablet:items-center tablet:justify-end");
   });
 
   it.each([3, 4])("stacks %s dialog actions with primary last, then uses an end-aligned tablet row", async (count) => {
-    const { actionRowClassName } = await import("../atoms/internal/action-row.js");
+    const { actionRowClassName } = await import("../components/internal/action-row.js");
     expect(actionRowClassName("dialog", count)).toBe("flex flex-col items-stretch gap-sm tablet:flex-row tablet:items-center tablet:justify-end");
   });
 
@@ -359,7 +359,7 @@ describe("shared internal action rows", () => {
     const source = readFileSync(resolve(import.meta.dirname, "Form.tsx"), "utf8");
     const props = source.slice(source.indexOf("export interface FormProps"), source.indexOf("export function Form"));
     expect(props).not.toMatch(/\bmode\??:/);
-    for (const barrel of ["../atoms/index.ts", "./index.ts", "../index.ts"]) {
+    for (const barrel of ["../components/index.ts", "./index.ts", "../index.ts"]) {
       expect(readFileSync(resolve(import.meta.dirname, barrel), "utf8")).not.toContain("action-row");
     }
   });

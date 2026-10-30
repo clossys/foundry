@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
-import type { StatusMarkTone } from "../atoms/StatusMark.js";
-import { cx } from "../atoms/internal/cx.js";
+import type { StatusMarkTone } from "../components/StatusMark.js";
+import { cx } from "../components/internal/cx.js";
 import { ChartFrame, type ChartFrameProps } from "./ChartFrame.js";
 import { assignCategoricalColor, CHART_FONT_BODY } from "./internal/chart-vars.js";
 import { CHART_HAIRLINE, CHART_INLINE_AXIS_LABEL, CHART_MARK_RADIUS } from "./internal/marks.js";
@@ -65,7 +65,7 @@ function wrapLabel(text: string, width: number): string[] {
   return lines;
 }
 
-/** No hover state: authored labels and native table retain all interval and status information. */
+/** Authored intervals with server-safe focus/hover inspection and a complete table. */
 export function RangeChart({ rows, ticks, labels, title, description, fit = "fluid", width = 360,
   height: authoredHeight, className, style,
 }: RangeChartProps) {
@@ -102,7 +102,7 @@ export function RangeChart({ rows, ticks, labels, title, description, fit = "flu
   if (numbered && (width - 64) / ticks.length < String(ticks.length).length * 7 + 4) throw new RangeError("RangeChart width must retain distinct ordinal tick labels.");
   const color = assignCategoricalColor(0);
   const headers = [labels.category, labels.from, labels.to, ...(hasStatus ? [labels.status!] : [])];
-  return <ChartFrame title={title} description={description} fit={fit} width={width} height={height}
+  return <ChartFrame interactive title={title} description={description} fit={fit} width={width} height={height}
     table={{ headers, rows: rows.map(row => [row.label, row.from, row.to, ...(hasStatus ? [row.status?.label ?? ""] : [])]) }}
     tableFallbackLabel={labels.table} showSingleSeriesLegend legend={ticks.map((tick, index) => ({ label: `${index + 1} ${tick}`, color }))}
     className={cx("wrap-anywhere", className)} style={style}>
@@ -118,7 +118,9 @@ export function RangeChart({ rows, ticks, labels, title, description, fit = "flu
           offset += pitch;
           const statusY = top + name.length * 14;
           const barY = statusY + (status.length ? 18 + (status.length - 1) * 14 : 0) + 4;
-          return <g key={row.id} data-chart-part="range-row" data-chart-row-id={row.id} aria-hidden="true">
+          return <ChartFrame.Tooltip key={row.id} plot={plot} x={x(row.from)} y={barY}
+            text={`${row.label}: ${labels.from} ${row.from}; ${labels.to} ${row.to}${row.status ? `; ${labels.status} ${row.status.label}` : ""}`}>
+            <g data-chart-part="range-row" data-chart-row-id={row.id} aria-hidden="true">
             <text data-chart-part="row-label" x={plot.x} y={top + 9} fill={CHART_INLINE_AXIS_LABEL} fontFamily={CHART_FONT_BODY} fontSize={11}>
               {name.map((line, index) => <tspan key={index} x={plot.x} dy={index ? 14 : 0}>{line}</tspan>)}
             </text>
@@ -133,7 +135,7 @@ export function RangeChart({ rows, ticks, labels, title, description, fit = "flu
             </g> : null}
             <rect data-chart-part="range" x={x(row.from)} y={barY} width={x(row.to) - x(row.from)} height={8}
               fill={color} style={{ rx: CHART_MARK_RADIUS } as CSSProperties} />
-          </g>;
+          </g></ChartFrame.Tooltip>;
         })}
       </>;
     }}

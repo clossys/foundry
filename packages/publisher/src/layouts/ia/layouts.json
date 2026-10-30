@@ -1,0 +1,49 @@
+{
+  "layer": "layouts",
+  "nodes": [
+    {
+      "id": "page",
+      "label": "Page",
+      "children": [
+        {
+          "id": "flow",
+          "label": "Flow",
+          "leaves": [
+            "layouts.stack"
+          ]
+        },
+        {
+          "id": "columns",
+          "label": "Partition",
+          "leaves": [
+            "layouts.split",
+            "layouts.sidebar-content"
+          ]
+        },
+        {
+          "id": "grid",
+          "label": "Tiling",
+          "leaves": [
+            "layouts.bento",
+            "layouts.staggered-grid"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "canvas",
+      "label": "Canvas",
+      "children": []
+    },
+    {
+      "id": "paged",
+      "label": "Paged",
+      "children": []
+    },
+    {
+      "id": "panes",
+      "label": "Panes",
+      "children": []
+    }
+  ]
+}

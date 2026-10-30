@@ -1,0 +1,269 @@
+{
+  "layer": "components",
+  "nodes": [
+    {
+      "id": "actions",
+      "label": "Actions",
+      "children": [
+        {
+          "id": "actions-buttons",
+          "label": "Buttons",
+          "leaves": [
+            "components.button",
+            "components.native-action",
+            "components.toggle-button"
+          ]
+        },
+        {
+          "id": "actions-menus",
+          "label": "Menus",
+          "leaves": [
+            "components.menu",
+            "components.command",
+            "components.dropdown-menu"
+          ]
+        },
+        {
+          "id": "actions-toolbars",
+          "label": "Toolbars",
+          "leaves": [
+            "components.toolbar"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inputs",
+      "label": "Inputs",
+      "children": [
+        {
+          "id": "inputs-form",
+          "label": "Form",
+          "leaves": [
+            "components.field",
+            "components.form"
+          ]
+        },
+        {
+          "id": "inputs-text",
+          "label": "Text",
+          "leaves": [
+            "components.text-field",
+            "components.search-field"
+          ]
+        },
+        {
+          "id": "inputs-choice",
+          "label": "Choice",
+          "leaves": [
+            "components.checkbox",
+            "components.radio-group",
+            "components.switch",
+            "components.select",
+            "components.combo-box",
+            "components.toggle-group"
+          ]
+        },
+        {
+          "id": "inputs-tags",
+          "label": "Tags",
+          "leaves": [
+            "components.tag-group"
+          ]
+        },
+        {
+          "id": "inputs-number",
+          "label": "Number",
+          "leaves": [
+            "components.number-field",
+            "components.slider"
+          ]
+        },
+        {
+          "id": "inputs-date",
+          "label": "Date",
+          "leaves": [
+            "components.date-field",
+            "components.date-picker",
+            "components.calendar"
+          ]
+        },
+        {
+          "id": "inputs-color",
+          "label": "Color",
+          "leaves": [
+            "components.color-picker"
+          ]
+        },
+        {
+          "id": "inputs-files",
+          "label": "Files",
+          "leaves": [
+            "components.file-trigger"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "display",
+      "label": "Display",
+      "children": [
+        {
+          "id": "display-data",
+          "label": "Data",
+          "leaves": [
+            "components.table",
+            "components.grid-list",
+            "components.tree",
+            "components.meter"
+          ]
+        },
+        {
+          "id": "display-labels",
+          "label": "Labels",
+          "leaves": [
+            "components.badge",
+            "components.keyboard"
+          ]
+        },
+        {
+          "id": "display-media",
+          "label": "Media",
+          "leaves": [
+            "components.avatar"
+          ]
+        },
+        {
+          "id": "display-assets",
+          "label": "Assets",
+          "leaves": [
+            "components.icon",
+            "components.logo"
+          ]
+        },
+        {
+          "id": "charts-core",
+          "label": "Core charts",
+          "leaves": [
+            "components.chart-bar",
+            "components.chart-line",
+            "components.chart-area"
+          ]
+        },
+        {
+          "id": "charts-compact",
+          "label": "Compact charts",
+          "leaves": [
+            "components.chart-sparkline",
+            "components.chart-status-strip"
+          ]
+        },
+        {
+          "id": "charts-analytic",
+          "label": "Analytic charts",
+          "leaves": [
+            "components.chart-scatter",
+            "components.chart-heatmap",
+            "components.chart-range",
+            "components.chart-waterfall"
+          ]
+        },
+        {
+          "id": "display-content",
+          "label": "Content",
+          "leaves": [
+            "components.semantic-content",
+            "components.item"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "feedback",
+      "label": "Feedback",
+      "children": [
+        {
+          "id": "feedback-messages",
+          "label": "Messages",
+          "leaves": [
+            "components.banner",
+            "components.toast",
+            "components.empty"
+          ]
+        },
+        {
+          "id": "feedback-indicators",
+          "label": "Indicators",
+          "leaves": [
+            "components.status-mark"
+          ]
+        },
+        {
+          "id": "feedback-progress",
+          "label": "Progress",
+          "leaves": [
+            "components.progress-bar",
+            "components.spinner",
+            "components.skeleton"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "navigation",
+      "label": "Navigation",
+      "children": [
+        {
+          "id": "navigation-links",
+          "label": "Links",
+          "leaves": [
+            "components.link",
+            "components.breadcrumbs"
+          ]
+        },
+        {
+          "id": "navigation-panels",
+          "label": "Panels",
+          "leaves": [
+            "components.tabs"
+          ]
+        },
+        {
+          "id": "navigation-trees",
+          "label": "Trees",
+          "leaves": [
+            "components.navigation-tree",
+            "components.sidebar"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "containment",
+      "label": "Containment",
+      "children": [
+        {
+          "id": "containment-structure",
+          "label": "Structure",
+          "leaves": [
+            "components.card",
+            "components.separator",
+            "components.disclosure",
+            "components.resize-handle",
+            "components.scroll-area"
+          ]
+        },
+        {
+          "id": "containment-overlays",
+          "label": "Overlays",
+          "leaves": [
+            "components.dialog",
+            "components.popover",
+            "components.tooltip",
+            "components.sheet"
+          ]
+        }
+      ]
+    }
+  ]
+}

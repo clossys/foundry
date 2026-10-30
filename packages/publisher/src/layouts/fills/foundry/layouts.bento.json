@@ -1,0 +1,33 @@
+{
+  "leaf": "layouts.bento",
+  "library": "foundry",
+  "origin": "authored",
+  "pin": {
+    "kind": "files",
+    "files": [
+      {
+        "path": "src/layouts/ids.ts",
+        "sha256": "bde2165cbde45266ce6ff6fbfad2a54bb2a1847c1f4e08f13efb827d4330c44f"
+      },
+      {
+        "path": "src/layouts/resolve.ts",
+        "sha256": "3ee2833802beba32c38f39b93fa177746a59465acb9cccd066ee164e47e14fb5"
+      },
+      {
+        "path": "src/layouts/slots/layouts.json",
+        "sha256": "d5c5e8f6a1f11f5d81637fe49e1a08bf27a84fb344a676fa8bf0f55868cbbc6e"
+      },
+      {
+        "path": "src/web/layouts/Bento.tsx",
+        "sha256": "64ba406bc42ee6051717d4ff9d9ce4de4058ba7ae63cb0bc065ac2be7662864e"
+      },
+      {
+        "path": "src/web/layouts/preview/structure.tsx",
+        "sha256": "1a8372f23572539640783b4e052f0cbfe04b2ebe6e3e1305e295f9ba22a9d9e4"
+      }
+    ]
+  },
+  "configs": [
+    "bento.default"
+  ]
+}

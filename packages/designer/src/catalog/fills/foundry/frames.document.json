@@ -1,0 +1,81 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.document",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./frames#DocumentFrame",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "frames.document",
+      "source": "foundry",
+      "sourceAddress": "./frames#DocumentFrame",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "frames": {
+    "document": {
+      "composes": [],
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "tokens": [
+            "tokens.accent-color"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/frames/site-frame/types.ts",
+            "sha256": "5082a75480ef118eda6c17d091d966bceb23e0b42555fe20930cd5c24437359b"
+          },
+          {
+            "path": "packages/designer/src/runtime/frames/document.tsx",
+            "sha256": "57ae877432f27fd700501aeb4930e4220dec33a30090f1a4fd5409acc74f016a"
+          }
+        ],
+        "unresolved": []
+      },
+      "impl": {
+        "export": "DocumentFrame",
+        "kind": "package",
+        "module": "@clossys/designer/frames"
+      },
+      "members": [
+        "variant.page",
+        "variant.status"
+      ],
+      "propMap": {
+        "variant.page": "variant=page",
+        "variant.status": "variant=status"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color"
+        ]
+      },
+      "slot": "frames.document",
+      "slots": {
+        "body": "children",
+        "critical-css": "criticalCss",
+        "head": "title/lang/dir/icon/meta/links/stylesheets"
+      },
+      "statePorts": {}
+    }
+  }
+}

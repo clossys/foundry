@@ -1,9 +1,14 @@
+import { SectionHeader } from "./SectionHeader.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Badge } from "../atoms/Badge.js";
-import { Card } from "../atoms/Card.js";
-import { cx } from "../atoms/internal/cx.js";
-import { Matrix, type MatrixCellData, type MatrixGridProps } from "./Matrix.js";
+import { Badge } from "../components/Badge.js";
+import { Card } from "../components/Card.js";
+import { cx } from "../components/internal/cx.js";
+import { Matrix } from "./Matrix.server.js";
+import type { MatrixCellData, MatrixGridProps } from "./Matrix.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.pricing", "foundry/sections.pricing");
 
 export type PricingTableHeadingLevel = 2 | 3 | 4 | 5 | 6;
 
@@ -16,7 +21,7 @@ interface PricingTierBase {
   description?: ReactNode;
   /** This tier's own feature list, one entry per list item. */
   features: readonly ReactNode[];
-  /** Slot for this tier's own call to action — typically a `Button` atom. */
+  /** Slot for this tier's own call to action — typically a `Button` component. */
   cta: ReactNode;
   /**
    * Marks this tier as the recommended one with an accent border and,
@@ -146,7 +151,7 @@ function comparisonRows(group: PricingComparisonGroup): MatrixGridProps["rows"] 
 /**
  * A set of pricing tiers — an optional heading region above a grid of tier
  * cards below: two regions that differ in kind, which is what makes this a
- * block and not an atom (this package's README, "Placement rules", test 2),
+ * block and not an component (this package's README, "Placement rules", test 2),
  * even though the TIERS are a homogeneous repeat (each plays the same
  * "one plan" role, the same shape `FeatureGrid`'s items and `NavGrid`'s
  * cards already are). A page can hold two `PricingTable`s (a monthly/annual
@@ -170,7 +175,7 @@ function comparisonRows(group: PricingComparisonGroup): MatrixGridProps["rows"] 
  * carries the meaning) into a feature node is ordinary consumer code, not
  * something this block needs a prop for.
  *
- * **Built on this package's own `Card` atom** (blocks may compose atoms —
+ * **Built on this package's own `Card` component** (blocks may compose components —
  * see this package's README) for each tier's raised surface; an
  * `isHighlighted` tier layers an accent border on top via `className`,
  * merged last so it always wins over `Card`'s own default styling. When
@@ -191,7 +196,6 @@ export function PricingTable({
   ...rest
 }: PricingTableProps) {
   assertPrices(tiers, interval);
-  const HeadingTag = `h${headingLevel}` as `h${PricingTableHeadingLevel}`;
   const hasHeadingRegion = heading !== undefined || description !== undefined;
   const colors = SECTION_GROUND_CLASSES[ground];
   const groupHeadingLevel = Math.min(headingLevel + 1, 6) as PricingTableHeadingLevel;
@@ -207,16 +211,9 @@ export function PricingTable({
   }
 
   return (
-    <div {...rest} className={cx("flex flex-col gap-lg", className)} style={style}>
+    <div {...SECTION_STAMP} {...rest} className={cx("flex flex-col gap-lg", className)} style={style}>
       {hasHeadingRegion ? (
-        <div className="flex flex-col gap-xs">
-          {heading ? (
-            <HeadingTag className={cx("text-h2 font-display", colors.primary)}>{heading}</HeadingTag>
-          ) : null}
-          {description ? (
-            <p className={cx("text-body", colors.secondary)}>{description}</p>
-          ) : null}
-        </div>
+        <SectionHeader density="standard" level={headingLevel} ground={ground} description={description} {...(heading ? { title: heading } : {})} />
       ) : null}
       {controls !== undefined ? <div className="flex justify-center">{controls}</div> : null}
       <div className="grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3">

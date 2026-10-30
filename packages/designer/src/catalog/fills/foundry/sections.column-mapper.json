@@ -1,0 +1,128 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.column-mapper",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#ColumnMapper",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.column-mapper",
+      "source": "foundry",
+      "sourceAddress": "./blocks#ColumnMapper",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "column-mapper": {
+      "composes": [
+        "components.select"
+      ],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.select"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.select"
+          ],
+          "tokens": [
+            "tokens.body-size",
+            "tokens.caption-size",
+            "tokens.spacing",
+            "tokens.surface-color",
+            "tokens.text-color"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/access-matrix/summary.ts",
+            "sha256": "fc91b0b809a347d177f03ff546bc6ff87d1ab784efb909408186937b056e5e94"
+          },
+          {
+            "path": "packages/designer/src/blocks/access-matrix/validate.ts",
+            "sha256": "c8bb9454a3f19068cc4e27c7370cdacadb4431a3f731aa74af242d6d5dc68a32"
+          },
+          {
+            "path": "packages/designer/src/blocks/column-mapper/issues.ts",
+            "sha256": "d7884b1f73b0560f7fa33fe8aa241d7ad525fcfb0d835258da531798d715f981"
+          },
+          {
+            "path": "packages/designer/src/blocks/ColumnMapper.tsx",
+            "sha256": "cb313dfd7108bb177ef2ba1f05dc992c75d212313402192b6b185840b05da5ce"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
+      "impl": {
+        "export": "ColumnMapper",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Host additionally supplies onMappingChange and labels; source uses Select and native fieldset layout.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#ColumnMapper",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.body-size",
+          "tokens.caption-size",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color"
+        ]
+      },
+      "slot": "sections.column-mapper",
+      "slotMap": {
+        "mapping": "./blocks#ColumnMapper.mapping",
+        "source-columns": "./blocks#ColumnMapper.sourceColumns",
+        "target-fields": "./blocks#ColumnMapper.targets"
+      },
+      "source": "foundry"
+    }
+  }
+}

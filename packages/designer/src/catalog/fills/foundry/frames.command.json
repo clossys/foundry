@@ -1,0 +1,139 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.command",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./blocks#CommandMenu",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "frames.command",
+      "source": "foundry",
+      "sourceAddress": "./blocks#CommandMenu",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "shortcut.off",
+        "shortcut.on"
+      ]
+    }
+  },
+  "frames": {
+    "command": {
+      "composes": [
+        "components.button",
+        "components.dialog",
+        "components.icon",
+        "components.search-field",
+        "components.tooltip"
+      ],
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.button",
+          "components.dialog",
+          "components.icon",
+          "components.search-field",
+          "components.tooltip"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.button",
+            "components.dialog",
+            "components.icon",
+            "components.search-field",
+            "components.tooltip"
+          ],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.body-size",
+            "tokens.border-color",
+            "tokens.caption-size",
+            "tokens.control-color",
+            "tokens.control-radius",
+            "tokens.focus-color",
+            "tokens.focus-outline",
+            "tokens.spacing",
+            "tokens.state-opacity",
+            "tokens.text-color"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/CommandMenu.tsx",
+            "sha256": "a6aed4bf309c563a34e3548263253163e1e6454007dbdeb4a27887c5f8065274"
+          },
+          {
+            "path": "packages/designer/src/components/Banner.copy-context.tsx",
+            "sha256": "fa058a7f7655c4968b4930010d57be56f1136b4c5eda4c6544dca26088edc55a"
+          },
+          {
+            "path": "packages/designer/src/components/Banner.copy.ts",
+            "sha256": "9a37518f0d4ab5d04c55cfd4706daaecaad2a490b9a36d83db9108215d48e658"
+          },
+          {
+            "path": "packages/designer/src/components/button-classes.ts",
+            "sha256": "b8ebd6d815a52769cd0e02ca091f4c81d81e31f9558e1df767bfcf07dcc5f2a6"
+          },
+          {
+            "path": "packages/designer/src/components/internal/ui-vars.ts",
+            "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+          },
+          {
+            "path": "packages/designer/src/icons/X.ts",
+            "sha256": "8f72143caaadd154476c699ee02546dd60ca49217afc4215220b8fbe9867f29e"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/X.js#X",
+            "file": "packages/designer/src/blocks/CommandMenu.tsx",
+            "line": 11
+          }
+        ]
+      },
+      "impl": {
+        "export": "CommandMenu",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "members": [],
+      "propMap": {},
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.text-color"
+        ]
+      },
+      "slot": "frames.command",
+      "slots": {
+        "empty": "emptyMessage",
+        "groups": "groups",
+        "search": "searchLabel"
+      },
+      "statePorts": {
+        "open": "isOpen/onOpenChange",
+        "query": "query/onQueryChange"
+      }
+    }
+  }
+}

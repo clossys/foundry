@@ -1,8 +1,12 @@
+import { SemanticContent } from "../components/SemanticContent.js";
 import type { HTMLAttributes, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
-import { UI_LAYOUT_TAP_TARGET } from "../atoms/internal/ui-vars.js";
+import { cx } from "../components/internal/cx.js";
+import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { assertNoNestedInteractive, CardLinkTitle, cardLinkContainerClassName } from "./stretched-link.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.people", "foundry/sections.people");
 
 export interface PeopleGridPerson {
   id: string;
@@ -54,16 +58,16 @@ function PersonCard({ person, media, headingLevel, ground }: {
   if (linked) assertNoNestedInteractive("PeopleGrid", person.id, [person.name, person.bio, person.role]);
   const linkedClasses = linked ? cardLinkContainerClassName("plain", ground) : undefined;
   const fallbackClasses = person.portrait == null ? initialsClasses : undefined;
-  return <li className={cx(itemClasses, linkedClasses)} style={{ minBlockSize: linked ? UI_LAYOUT_TAP_TARGET : undefined }}>
-    <span aria-hidden="true" className={cx(mediaClasses, fallbackClasses)}>{person.portrait ?? person.initials}</span>
-    <div className="flex min-w-0 flex-col gap-xs">
-      <Heading className={cx("m-0 text-body-l font-medium", colors.primary)}>
+  return <SemanticContent as="li" className={cx(itemClasses, linkedClasses)} style={{ minBlockSize: linked ? UI_LAYOUT_TAP_TARGET : undefined }}>
+    <SemanticContent as="span" aria-hidden="true" className={cx(mediaClasses, fallbackClasses)}>{person.portrait ?? person.initials}</SemanticContent>
+    <SemanticContent as="div" className="flex min-w-0 flex-col gap-xs">
+      <SemanticContent as={Heading} className={cx("m-0 text-body-l font-medium", colors.primary)}>
         {person.href === undefined ? person.name : <CardLinkTitle href={person.href} frame="plain" ground={ground}>{person.name}</CardLinkTitle>}
-      </Heading>
-      {person.role != null ? <p className={cx("m-0 text-body-s", colors.secondary)}>{person.role}</p> : null}
-      {person.bio != null ? <div className={cx("text-body-s", colors.primary)}>{person.bio}</div> : null}
-    </div>
-  </li>;
+      </SemanticContent>
+      {person.role != null ? <SemanticContent as="p" className={cx("m-0 text-body-s", colors.secondary)}>{person.role}</SemanticContent> : null}
+      {person.bio != null ? <SemanticContent as="div" className={cx("text-body-s", colors.primary)}>{person.bio}</SemanticContent> : null}
+    </SemanticContent>
+  </SemanticContent>;
 }
 
 /** People with decorative media and one optional stretched name link per card. */
@@ -77,8 +81,8 @@ export function PeopleGrid({ people, media = "avatar", columns = 3, headingLevel
   const photo = media === "photo";
   const baseColumns = photo ? "grid-cols-2" : "grid-cols-1";
   return (
-    <ul {...rest} role="list" className={cx("m-0 grid list-none gap-x-lg gap-y-xl p-0", baseColumns, COLUMN_CLASSES[columns], colors.primary, className)} style={style}>
+    <SemanticContent as="ul" {...SECTION_STAMP} {...rest} role="list" className={cx("m-0 grid list-none gap-x-lg gap-y-xl p-0", baseColumns, COLUMN_CLASSES[columns], colors.primary, className)} style={style}>
       {people.map(person => <PersonCard key={person.id} person={person} media={media} headingLevel={headingLevel} ground={ground} />)}
-    </ul>
+    </SemanticContent>
   );
 }

@@ -11,7 +11,7 @@ const pair = assessed.identity;
 const identity = (ref: string) => ({ ref, sourceRevision: witness.sourceRevision, context: { ...binding.context } });
 const provenance = { kind: "declared", sourceDocument: "example-source", sourceRevision: witness.sourceRevision, evidenceRef: "example-evidence" } as const;
 const source = { kind: "block", key: "nested" } as const;
-const use = { kind: "block-atom", from: source, to: { kind: "atom", key: "atom-small" }, provenance } as const;
+const use = { kind: "block-component", from: source, to: { kind: "component", key: "component-small" }, provenance } as const;
 function fixture(): RelationsInput {
   return structuredClone({
     knownAdapters: [structuredClone(binding.frameBlockRef), structuredClone(binding.viewBlockRef)],
@@ -22,8 +22,8 @@ function fixture(): RelationsInput {
       { key: "frame", kind: "block", identity: identity("example-frame"), roleIdentity: pair.frameBlockRef },
       { key: "view", kind: "block", identity: identity("example-view"), roleIdentity: pair.viewBlockRef },
       { key: "nested", kind: "block", identity: identity("example-nested") },
-      { key: "atom-small", kind: "atom", identity: identity("example-atom?size=small") },
-      { key: "atom-large", kind: "atom", identity: identity("example-atom?size=large") },
+      { key: "component-small", kind: "component", identity: identity("example-component?size=small") },
+      { key: "component-large", kind: "component", identity: identity("example-component?size=large") },
       { key: "token", kind: "token", identity: identity("example-token") },
     ],
     edges: [
@@ -33,7 +33,7 @@ function fixture(): RelationsInput {
       { kind: "instance-frame", from: { kind: "instance", key: "instance" }, to: { kind: "block", key: "frame" }, provenance },
       { kind: "instance-view", from: { kind: "instance", key: "instance" }, to: { kind: "block", key: "view" }, provenance },
       { kind: "block-block", from: { kind: "block", key: "view" }, to: source, provenance }, use,
-      { kind: "atom-token", from: { kind: "atom", key: "atom-small" }, to: { kind: "token", key: "token" },
+      { kind: "component-token", from: { kind: "component", key: "component-small" }, to: { kind: "token", key: "token" },
         provenance: { kind: "derived", extractor: "example-measurer", version: "1", sourceRevision: witness.sourceRevision, evidenceRef: "example-extraction" } },
     ],
   }) as RelationsInput;
@@ -52,7 +52,7 @@ function refused(input: unknown, reason: string) {
 }
 describe("exact declared membership and measured source use", () => {
   it("exports the synchronous contract", () => expect(core.validateRelations).toBeTypeOf("function"));
-  it("preserves nested edges, two placements and configured Atom identities in exact inverse projections", () => {
+  it("preserves nested edges, two placements and configured Component identities in exact inverse projections", () => {
     const input = fixture(), before = structuredClone(input), result = graph(validate(input));
     expect(input).toEqual(before);
     expect(result.qualification).toBe("unverified");
@@ -63,19 +63,19 @@ describe("exact declared membership and measured source use", () => {
       expect(result.reverse[edge.to.key]).toContainEqual(edge);
     }
     expect(result.reverse.instance!.filter(edge => edge.kind === "placement")).toEqual(input.edges.slice(1, 3));
-    expect(result.reverse["atom-small"]).toEqual([use]);
+    expect(result.reverse["component-small"]).toEqual([use]);
     expect(result.reverse.token).toEqual([input.edges[7]]);
-    expect(result.reverse["atom-large"]).toEqual([]);
+    expect(result.reverse["component-large"]).toEqual([]);
     expect(result.forward.view).toEqual([input.edges[5]]);
     expect(result.nodes).toEqual(input.nodes);
-    expect(Object.isFrozen(result.reverse["atom-small"])).toBe(true);
+    expect(Object.isFrozen(result.reverse["component-small"])).toBe(true);
     input.nodes[5]!.identity.ref = "changed";
-    expect(result.nodes[5]!.identity.ref).toBe("example-atom?size=small");
+    expect(result.nodes[5]!.identity.ref).toBe("example-component?size=small");
     input.edges.splice(0);
     expect(result.edges).toHaveLength(8);
   });
   it("refuses unknown endpoints and illegal pairs", () => {
-    let input = fixture(); input.edges[6] = { ...use, to: { kind: "atom", key: "absent" } }; refused(input, "endpoint");
+    let input = fixture(); input.edges[6] = { ...use, to: { kind: "component", key: "absent" } }; refused(input, "endpoint");
     input = fixture(); input.edges[6] = { ...use, to: { kind: "block", key: "nested" } } as unknown as RelationEdge; refused(input, "endpoint");
   });
   it.each(["from", "to"] as const)("requires exact %s endpoint kind labels", endpoint => {
@@ -165,7 +165,7 @@ describe("exact declared membership and measured source use", () => {
       const input = fixture(); Object.assign(input.edges[6]!, change); refused(input, "provenance");
     }
     const missing = fixture(); delete (missing.edges[6] as Partial<RelationEdge>).provenance; refused(missing, "provenance");
-    refused({ ...fixture(), reverse: { "atom-small": [] } }, "unknown-field");
+    refused({ ...fixture(), reverse: { "component-small": [] } }, "unknown-field");
   });
   it.each([
     ["declared", "sourceDocument", 6],
@@ -186,9 +186,9 @@ describe("exact declared membership and measured source use", () => {
     } });
     refused(input, "provenance");
   });
-  it("refuses a source-side Atom in a Block-to-Atom edge", () => {
+  it("refuses a source-side Component in a Block-to-Component edge", () => {
     const input = fixture();
-    input.edges[6] = { ...input.edges[6]!, from: { kind: "atom", key: "atom-large" } } as unknown as RelationEdge;
+    input.edges[6] = { ...input.edges[6]!, from: { kind: "component", key: "component-large" } } as unknown as RelationEdge;
     refused(input, "endpoint");
   });
   it.each(["instance-frame", "instance-view"] as const)("requires exactly one %s edge per Instance", kind => {
@@ -218,7 +218,7 @@ describe("exact declared membership and measured source use", () => {
     const result = graph(validate(input));
     expect(result.edges).toEqual(input.edges);
     expect(result.forward.nested).toEqual([input.edges[6], input.edges[8]]);
-    expect(result.reverse["atom-small"]).toEqual([input.edges[6], input.edges[8]]);
+    expect(result.reverse["component-small"]).toEqual([input.edges[6], input.edges[8]]);
   });
   it.each([0, 2])("requires exactly one route edge, refusing %s", count => {
     const input = fixture();

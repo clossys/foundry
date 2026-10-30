@@ -10,7 +10,7 @@
 /**
  * Class names `Hero` and primary `Button` emit — see `src/blocks/Hero.tsx`
  * (its heading is `SectionIntro`'s display step: display-m on a phone,
- * display-l from tablet) and `src/atoms/Button.tsx`.
+ * display-l from tablet) and `src/components/Button.tsx`.
  */
 export const HERO_BUTTON_REQUIRED_UTILITIES = [
   "text-display-m",

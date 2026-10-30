@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
   type ReactNode,
@@ -11,6 +12,7 @@ import {
 import {
   DEFAULT_STORAGE_KEY,
   applyThemeDom,
+  suppressThemeTransitions,
   readStoredPreference,
   resolveTheme,
   writeStoredPreference,
@@ -58,6 +60,16 @@ export interface ThemeProviderProps {
    * @default "system"
    */
   defaultPreference?: ThemePreference;
+  /**
+   * Controlled preference: the host owns the value (the frames.app-shell
+   * `theme` state port). It wins over storage and the provider's own state;
+   * `setPreference` still persists the choice for the head script and reports
+   * it through `onPreferenceChange`, and the provider renders the host's next
+   * value.
+   */
+  preference?: ThemePreference;
+  /** Called with every preference a consumer sets, controlled or not. */
+  onPreferenceChange?: (preference: ThemePreference) => void;
 }
 
 function subscribeToPrefersDark(onStoreChange: () => void): () => void {
@@ -132,8 +144,11 @@ export function ThemeProvider({
   children,
   storageKey = DEFAULT_STORAGE_KEY,
   defaultPreference = "system",
+  preference: controlledPreference,
+  onPreferenceChange,
 }: ThemeProviderProps) {
-  const [preference, setPreferenceState] = useState<ThemePreference>(defaultPreference);
+  const [ownPreference, setPreferenceState] = useState<ThemePreference>(controlledPreference ?? defaultPreference);
+  const preference = controlledPreference ?? ownPreference;
 
   // The one-tick correction described in this component's own doc comment
   // above — client-only, runs after mount and when the key or fallback changes.
@@ -145,7 +160,13 @@ export function ThemeProvider({
   // every change, including the one-tick correction effect above and any
   // later `setPreference` call. Idempotent against what the head script
   // already applied, so this never produces a visible change on its own.
+  // A later change also drops transitions for that switch (see
+  // `suppressThemeTransitions`); the first sync, which changes nothing
+  // visible, does not.
+  const synced = useRef(false);
   useEffect(() => {
+    if (synced.current) suppressThemeTransitions(document.documentElement);
+    synced.current = true;
     applyThemeDom(document.documentElement, preference);
   }, [preference]);
 
@@ -153,8 +174,9 @@ export function ThemeProvider({
     (next: ThemePreference) => {
       writeStoredPreference(storageKey, next);
       setPreferenceState(next);
+      onPreferenceChange?.(next);
     },
-    [storageKey],
+    [storageKey, onPreferenceChange],
   );
 
   const prefersDark = useSyncExternalStore(
@@ -193,4 +215,9 @@ export function useTheme(): ThemeContextValue {
     throw new Error("useTheme() must be called within a <ThemeProvider>.");
   }
   return context;
+}
+
+/** The nearest provider's value, or undefined outside one (for host-controlled controls). */
+export function useOptionalTheme(): ThemeContextValue | undefined {
+  return useContext(ThemeContext);
 }

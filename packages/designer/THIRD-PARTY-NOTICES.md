@@ -6,7 +6,7 @@ separate package", for the tree-shaking and upstream-churn/rename
 reasoning (this glyph set previously shipped as this scope's own standalone
 `icons` package; this notice, and the data it covers, moved into this
 package's own `./icons` subpath along with it — see this package's changelog).
-The 40 glyphs at `@clossys/designer/icons` are, however, **visually
+The 41 glyphs at `@clossys/designer/icons` are, however, **visually
 derived from [Lucide](https://lucide.dev)**: their SVG path data was
 copied from `lucide-react`'s published source (version 1.23.0 for the
 original 32; version 1.24.0 for `arrow-right`, `briefcase`, `file-check`,
@@ -87,7 +87,7 @@ SOFTWARE.
 SPDX-License-Identifier: MIT
 
 `styles/compiled.css` is output of a Tailwind CSS v4 `compile()` over the
-class names this package's atoms, blocks and shell use (see its header).
+class names this package's components, blocks and shell use (see its header).
 
 MIT License
 
@@ -110,3 +110,59 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+## shadcn/ui theme registry
+
+SPDX-License-Identifier: MIT
+
+The seven base-color preset values and the vendored registry snapshots
+`src/importers/vendor/shadcn-themes.ts.txt` and
+`src/importers/vendor/shadcn-base-colors.ts.txt` derive from shadcn/ui commit
+`96da9cc7f1aa10580a3741664e2a77c721206c00`. The MIT license and shadcn
+copyright notice reproduced below also apply to these registry files and values.
+
+## shadcn/ui Toggle and ToggleGroup
+
+SPDX-License-Identifier: MIT
+
+The adopted toggle modules derive from shadcn/ui commit
+`daaf156ee00ed91cc7e6bdd937c1b4973152d141`, Aria base, Nova style.
+Their design reads are rewritten onto the selected token contract; refs and
+render props continue to the React Aria primitives.
+
+Local divergence from the C15 source snapshot (`0d04b4c23`), approved by
+owner decision D7: Toggle and ToggleGroup use logical icon padding, inline
+corner radii and inline borders for right-to-left rendering. Vertical block
+edges, React Aria behavior and the upstream attribution remain unchanged.
+
+MIT License
+
+Copyright (c) 2023 shadcn
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+The draft `PanelLeft` glyph also uses the exact `panel-left` path nodes from
+`lucide-react` 1.24.0, under the ISC notice above. Its content pin is retained
+in the Lucide importer roster.
+
+The draft Aria rail additions use the official Aria source at commit
+`96da9cc7f1aa10580a3741664e2a77c721206c00`, under the shadcn MIT notice
+above. Individual fill descriptors retain the upstream addresses, file hashes,
+and the generated source license notice.

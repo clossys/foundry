@@ -42,7 +42,7 @@
 // Neither catches a row whose name is exactly right but whose PROSE is a
 // lie. That is the actual defect that motivated this gate: the historical
 // `ui` row named the real package correctly and then said "Ships the
-// `atoms` layer only ... `blocks` and `views` are a planned future
+// `components` layer only ... `blocks` and `views` are a planned future
 // subpath, not built yet" months after both had shipped. A row can pass
 // CHECK A/B perfectly and still assert something false about the one
 // package it names.
@@ -273,7 +273,7 @@ const NEGATION_MARKERS = [
 const bareCandidateRe = /^[A-Za-z][A-Za-z0-9_.-]*$/;
 
 // Splits `text` into clause-like spans on "." / ";" that fall OUTSIDE any
-// backtick-quoted span, so a literal "." inside `` `./atoms` `` or
+// backtick-quoted span, so a literal "." inside `` `./components` `` or
 // `` `tokens.css` `` never fractures a subpath token in two. Each backtick
 // token is then attributed to the clause its position falls in, which is
 // what lets D2 require a negation phrase to share a clause with the

@@ -1,0 +1,69 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/assets.image-ratio",
+      "license": "MIT",
+      "mode": "implementation",
+      "reads": {
+        "assets": [],
+        "tokens": []
+      },
+      "relation": "same-contract",
+      "slot": "assets.image-ratio",
+      "source": "foundry",
+      "sourceAddress": "importers/image-ratio.ts",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "assets": {
+    "image-ratio": {
+      "cinema": {
+        "$type": "rules",
+        "$value": {
+          "height": 9,
+          "width": 21
+        }
+      },
+      "landscape": {
+        "$type": "rules",
+        "$value": {
+          "height": 3,
+          "width": 4
+        }
+      },
+      "portrait": {
+        "$type": "rules",
+        "$value": {
+          "height": 4,
+          "width": 3
+        }
+      },
+      "share": {
+        "$type": "rules",
+        "$value": {
+          "height": 100,
+          "width": 191
+        }
+      },
+      "square": {
+        "$type": "rules",
+        "$value": {
+          "height": 1,
+          "width": 1
+        }
+      },
+      "wide": {
+        "$type": "rules",
+        "$value": {
+          "height": 9,
+          "width": 16
+        }
+      }
+    }
+  }
+}

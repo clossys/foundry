@@ -2,7 +2,7 @@
 
 **The designer role — is it well made?** This package is named for the job,
 not the artifact. What it ships is still a visual system, and the vocabulary
-inside it (`tokens`, `atoms`, `blocks`, `shell`, `charts`, `theme`, icon glyph
+inside it (`tokens`, `components`, `blocks`, `shell`, `charts`, `theme`, icon glyph
 data, and every gate name they compose into) is unchanged: a role owns
 artifacts, and renaming the role does not rename what it reasons about.
 
@@ -17,16 +17,19 @@ This package is published to the public npm registry, `https://registry.npmjs.or
 Installing it needs no authentication: no npm token, no `.npmrc` registry
 override, and no GitHub credential of any kind.
 
-## Shared atom selection
+## Shared component selection
 
-`ATOM_GUIDANCE`, `ATOM_API_FACTS`, `ATOM_DISPLAY_GROUPS` and `ATOM_COMPARISON` are additive data
-exports from `@clossys/designer/atoms`. The barrel remains client-only. Read
-the packed [atom selection guide](skill/atoms-guide.md) for purpose, use and
+`COMPONENT_GUIDANCE`, `COMPONENT_API_FACTS` and `COMPONENT_COMPARISON` are additive data
+exports from `@clossys/designer/components`. The barrel remains client-only. Read
+the packed [component selection guide](skill/components-guide.md) for purpose, use and
 avoidance, alternatives, content, anatomy, block composition, accessibility,
 medium evidence, represented configurations and partial token dependencies.
-Four display groups and ten families place forty-six established atom/chart leaves
-exactly once. Groups and families are navigation; only leaves are selectable.
-Existing IDs such as `act.link` and `reveal.tabs` remain unchanged.
+`COMPONENT_DISPLAY_TREE`, `ComponentDisplayTree`, `resolveComponentId` and `componentSelection`
+come from `@clossys/designer/catalog`. Display groups, families and canonical leaves come directly from `catalog/ia/components.json`.
+Groups and families are navigation; only leaves are selectable. `resolveComponentId` maps
+legacy IDs such as `act.link` to their registered leaf; `componentSelection` accepts
+canonical IDs and pinned legacy IDs. Legacy guidance without a registered leaf stays
+metadata outside navigation. Blocks use the section IA through the block-to-section map.
 
 Stable conceptual guidance is separate from each medium’s implementation.
 Web is implemented with source evidence; email, print and video are unassessed.
@@ -37,9 +40,9 @@ from consumer preview defaults, and package support differs from consumer-owned
 demonstration coverage. Callbacks, arbitrary children and styles are not config
 axes. Direct and transitive token claims carry partial source evidence.
 
-`ATOM_COMPARISON` declares preferred finite `columns: { option, values }`,
+`COMPONENT_COMPARISON` declares preferred finite `columns: { option, values }`,
 optional `rows` of the same shape, and `maxCells` bounded at 24. Each axis uses
-an existing option and its declared scalar values; atoms without finite options
+an existing option and its declared scalar values; components without finite options
 have no entry. `maxCells` equals the raw axis product before any exclusions.
 Its `constraints` is the original guidance rule array by identity, and
 `constraintPolicy: "skip-violations"` skips only `requires`, `exclusive` and `paired`
@@ -55,37 +58,37 @@ cells: every axis cell supplies an explicit scalar value. Consumers must still
 author valid content, callbacks and data; this declaration supplies no renderer
 or general-purpose validator.
 
-The lookup has finite keys: only some atoms have a represented comparison.
-For a dynamic string ID, narrow it to `keyof typeof ATOM_COMPARISON` with an
+The lookup has finite keys: only some components have a represented comparison.
+For a dynamic string ID, narrow it to `keyof typeof COMPONENT_COMPARISON` with an
 ownership guard before indexing, and handle an unlisted ID as no entry:
 
 ```ts
-import { ATOM_COMPARISON } from "@clossys/designer/atoms";
+import { COMPONENT_COMPARISON } from "@clossys/designer/components";
 
-type ComparisonKey = keyof typeof ATOM_COMPARISON;
+type ComparisonKey = keyof typeof COMPONENT_COMPARISON;
 
 function isComparisonKey(key: string): key is ComparisonKey {
-  return Object.hasOwn(ATOM_COMPARISON, key);
+  return Object.hasOwn(COMPONENT_COMPARISON, key);
 }
 
-function findComparison(atomId: string) {
-  if (isComparisonKey(atomId)) {
-    return ATOM_COMPARISON[atomId];
+function findComparison(componentId: string) {
+  if (isComparisonKey(componentId)) {
+    return COMPONENT_COMPARISON[componentId];
   }
-  return undefined; // No represented comparison for this atom.
+  return undefined; // No represented comparison for this component.
 }
 ```
 
-The public types are `AtomGuidance`, `AtomApiFacts`, `AtomDisplayGroup`, `AtomComparison`,
-`AtomMedium`, `AtomMediumState`, `AtomScalar`, `AtomEvidence`,
-`AtomOptionGuidance`, `AtomCondition`, `AtomConstraint`, `AtomWebImplementation` and
-`AtomMediumGuidance`. Import these from the same existing atoms entry point.
-The installed guide is at `node_modules/@clossys/designer/skill/atoms-guide.md`;
+The public types are `ComponentGuidance`, `ComponentApiFacts`, `ComponentDisplayTree`, `ComponentComparison`,
+`ComponentMedium`, `ComponentMediumState`, `ComponentScalar`, `ComponentEvidence`,
+`ComponentOptionGuidance`, `ComponentCondition`, `ComponentConstraint`, `ComponentWebImplementation` and
+`ComponentMediumGuidance`. Import guidance types from the components entry point and `ComponentDisplayTree` from the catalog entry point.
+The installed guide is at `node_modules/@clossys/designer/skill/components-guide.md`;
 the launcher copies the selection essentials from `skill/SKILL.md`, not that
 companion file. Consumers should reference the shared records.
 
-Regenerate with `node scripts/generate-atom-docs.mjs` and check with
-`node scripts/check-atom-docs.mjs`. These commands are repository tooling and
+Regenerate with `node scripts/generate-component-docs.mjs` and check with
+`node scripts/check-component-docs.mjs`. These commands are repository tooling and
 do not ship in the installed package. The generator reads source, never dist,
 and writes the guide and selection section deterministically.
 
@@ -143,26 +146,26 @@ remains the only required first-day assessment.
 ## Package structure
 
 ```
-tokens → icons → atoms → blocks
+tokens → icons → components → blocks
                        ↘ shell
                        ↘ charts
                        ↘ theme
 ```
 
-`atoms`, `blocks`, `shell`, `charts`, and `theme` all ship today, alongside
-`icons` — pure glyph DATA sitting BELOW `atoms`, not a sixth rung of content
+`components`, `blocks`, `shell`, `charts`, and `theme` all ship today, alongside
+`icons` — pure glyph DATA sitting BELOW `components`, not a sixth rung of content
 (see "Icon glyph data" below for the full reasoning; the short version: a
 `[tag, attrs]` tuple has no rendering logic and depends on nothing else in
-this package, so it sits even more foundational than `atoms` itself, the
+this package, so it sits even more foundational than `components` itself, the
 same way `tokens` sits below all of `ui`). See "Placement rules" below for
-what distinguishes reusable atoms and blocks. Whole-page compositions are
+what distinguishes reusable components and blocks. Whole-page compositions are
 surfaces and live in `@clossys/publisher/web`.
 
-**Stack boundary.** This package offers only Clossys tokens, atoms and
-blocks, with the shell, charts and theme alongside them. Atoms are built on
+**Stack boundary.** This package offers only Clossys tokens, components and
+blocks, with the shell, charts and theme alongside them. Components are built on
 React Aria Components (`react-aria-components`); no other headless or
 component-kit library is used anywhere in the package. Blocks build on
-atoms, tokens, icons and other blocks, and import `react-aria-components`
+components, tokens, icons and other blocks, and import `react-aria-components`
 only for types, except three listed blocks that still import it directly:
 `Toolbar`, `CommandMenu` and the internal disclosure row
 (`src/blocks/internal/disclosure-row.tsx`). A package test enforces this,
@@ -177,25 +180,25 @@ and its exception list can only shrink.
   `Plug`, `Receipt`, `Scale`, `Search`, `Settings`, `ShieldCheck`, `Sun`,
   `User`, `Users`, `X`, `XCircle`) — each a
   `ReadonlyArray<readonly [tag: string, attrs: Record<string, string>]>`,
-  meant to be passed to the `Icon` atom's `glyph` prop. See "Icon glyph
+  meant to be passed to the `Icon` component's `glyph` prop. See "Icon glyph
   data" below.
-- **`atoms`** — single-purpose: composes no other atom, or its parts are
+- **`components`** — single-purpose: composes no other component, or its parts are
   homogeneous repeats rather than named regions. Thirty-seven ship:
-  `Button`, `IconButton`, `Icon`, `TextField`, `Badge`,
+  `Button`, `NativeAction`, `IconButton`, `Icon`, `TextField`, `Badge`,
   `Card`, `Breadcrumb`, `Link`, `Checkbox`, `Switch`, `Select`, `Textarea`,
   `Avatar`, `Spinner`, `Menu`, `Dialog`, `Tabs`, `Table`, `Field`,
   `Skeleton`, `Tooltip`, `Banner`, `RadioGroup`, `Popover`, `DateField`,
   `ComboBox`, `SearchField`, `FileTrigger`, `Disclosure`, `ProgressBar`,
-  `Separator`, `Chip`, `StatusMark`, `Meter`, `ResizeHandle`, `Logomark`, `GridList`.
+  `Separator`, `Chip`, `SemanticContent`, `StatusMark`, `Meter`, `ResizeHandle`, `Logomark`, `GridList`.
 - **`blocks`** — owns the internal layout of multiple named regions,
-  typically by composing one or more atoms (and/or layout) into something
+  typically by composing one or more components (and/or layout) into something
   with a real job on a page. Shipped blocks include: `AccountMenu`, `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`,
-  `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
+  `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `LogoHero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
-  `PricingTable`, `Testimonial`, `TableOfContents`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `ArticleBody`, `ConsentBanner`, `NewsletterBand`, `Panel`, `Drawer`,
-  `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `GroupedTable`, `Lockup`, `Explorer`, `CatalogWorkspace`, `CatalogBrowser`, `Chat`, `ResourceList`, `RelationGraph`, `TaskList` and `EventItem` (see "Blocks" below). Current leaf, group and lifecycle
+  `PricingTable`, `Testimonial`, `TableOfContents`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `ArticleBody`, `ConsentBanner`, `ErrorState`, `StatGroup`, `RecordCards`, `CallToAction`, `NoticeList`, `Gallery`, `NewsletterBand`, `Panel`, `Drawer`,
+  `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `GroupedTable`, `Lockup`, `Explorer`, `CatalogWorkspace`, `CatalogBrowser`, `Chat`, `ResourceList`, `RelationGraph`, `TaskList`, `EventItem`, `ActivityFeed`, `AuditLog`, `Timeline` and `UsageSummary` (see "Blocks" below). Current leaf, group and lifecycle
   counts are derived from the shared catalog in the repository check
   `src/catalog/catalog.coverage.test.ts` (a repository test, not shipped in the installed package).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
@@ -219,21 +222,21 @@ and its exception list can only shrink.
   self-contained head script that stamps `data-theme` before first paint;
   `ThemeProvider`/`useTheme`, which hold and persist the three-state
   preference at runtime; and `ThemeToggle`, an accessible control built
-  from this package's own `Button`/`Icon` atoms. A sibling of `shell` and
+  from this package's own `Button`/`Icon` components. A sibling of `shell` and
   `charts`, not a sixth rung — see "Theme" below.
 
 A layer may only import toward something more foundational: blocks may
-import atoms, never the reverse. `shell`, `charts`, and `theme` are
+import components, never the reverse. `shell`, `charts`, and `theme` are
 narrower sibling domains built from those primitives. `charts` is a
-narrower sibling: it may import `atoms`, and nothing else in this package
-imports from it. `theme` is the same shape: it may import `atoms` and
-`icons` (its `Button`/`Icon` atoms and `Sun`/`Moon`/`Monitor` glyphs), and
+narrower sibling: it may import `components`, and nothing else in this package
+imports from it. `theme` is the same shape: it may import `components` and
+`icons` (its `Button`/`Icon` components and `Sun`/`Moon`/`Monitor` glyphs), and
 nothing else in this package imports from it. `icons` sits at the very
-bottom: `atoms` may import `icons` (and does — `atoms/Icon.tsx` imports the
+bottom: `components` may import `icons` (and does — `src/components/Icon.tsx` imports the
 `IconNode` type from `icons/types.ts`), and nothing under `icons/` may
 import from anywhere else in this package. `src/ladder.test.ts` enforces
 every one of these directions structurally, not just by convention: it
-scans every file under `src/atoms/`, `src/blocks/`, `src/shell/`,
+scans every file under `src/components/`, `src/blocks/`, `src/shell/`,
 `src/charts/`, `src/theme/`, and `src/icons/` for an import referencing a
 layer it isn't allowed to reach, and fails the build if it finds one.
 
@@ -255,12 +258,12 @@ smallest stable subpath that owns what you need:
 | `@clossys/designer/tokens/server` | Node-only `readBrandCss`, `assertTailwindMergeVersion`, and file-reading result types. Neither helper runs automatically on import. |
 | `@clossys/designer/tokens.css` | Neutral primitive custom-property defaults; works without Tailwind. |
 | `@clossys/designer/theme.css` | Optional Tailwind v4 wiring; imports `tokens.css` itself. |
-| `@clossys/designer/compiled.css` | GENERATED, precompiled utility CSS for `atoms`, `blocks`, and `shell` — the default path for a pre-auth page without Tailwind. Imports nothing itself; load after `tokens.css`. See "Framework-portable components, without Tailwind" below. |
+| `@clossys/designer/compiled.css` | GENERATED, precompiled utility CSS for `components`, `blocks`, and `shell` — the default path for a pre-auth page without Tailwind. Imports nothing itself; load after `tokens.css`. See "Framework-portable components, without Tailwind" below. |
 | `@clossys/designer/utilities.css` | GENERATED run of `@source inline(...)` directives, one per line, listing the class candidates this package's components use. Import it after `theme.css` in a Tailwind v4 entry to generate this package's utilities without a path `@source` on `dist`. See "Setup" below. |
 | `@clossys/designer/brand-template.css` | Copy-and-fill template for a consumer brand binding. |
 | `@clossys/designer/icons` | Tree-shakeable glyph data. |
-| `@clossys/designer/atoms`, `/blocks`, `/shell`, `/charts` | Reusable React visual primitives. |
-| `@clossys/designer/atoms/server`, `/blocks/server`, `/shell/server`, `/charts/server`, `/theme/server` | The server-safe subset of each sibling subpath, importable from a React Server Component. See "Server Components" below. |
+| `@clossys/designer/components`, `/blocks`, `/shell`, `/charts` | Reusable React visual primitives. |
+| `@clossys/designer/components/server`, `/blocks/server`, `/shell/server`, `/charts/server`, `/theme/server` | The server-safe subset of each sibling subpath, importable from a React Server Component. See "Server Components" below. |
 | `@clossys/designer/theme` | `getThemeInitScript`, `ThemeProvider`/`useTheme`, `ThemeToggle` — the runtime half of theming. Not to be confused with the CSS `/theme.css` subpath above. |
 | `@clossys/designer/gate` | Token-purity scanner/gate and the environment-conformance gate (`checkEnvironmentConformance`). |
 | `@clossys/designer/render-environment` | `RENDER_ENVIRONMENT` — a plain data declaration of every subpath's render environment (`"server-safe"` \| `"client-only"`). See "Server Components" below. |
@@ -278,7 +281,7 @@ legacy source families remain authoritative in `TOKENS`.
 with each property appearing once. Group and Family are navigation only;
 they do not imply usage or value type, and regrouping does not change legacy
 `oldGroup.sourceFamily@token` references or bookmarks. Call the inspector
-"Token details"; configurable components start at Atoms. Equal values and
+"Token details"; configurable components start at Components. Equal values and
 aliases do not make two roles interchangeable. Consumers import the shared
 guidance instead of keeping another prose registry.
 
@@ -289,6 +292,20 @@ See [TOKENS.md](TOKENS.md) for the generated property-by-property reference.
 Regenerate it with `node scripts/generate-token-docs.mjs` and verify it with
 `node scripts/check-token-docs.mjs` from the repository root. These repository
 tools are not shipped in the installed package.
+
+### Node catalog readers and source scanning
+
+Use `@clossys/designer/catalog/node` for `readLibrary` and
+`readSurfacePackageEvidence`. This reader entry exports those two functions
+without the CLI or source scanner. The existing `catalog/server` tooling entry
+remains available.
+
+Source scanning uses `@clossys/designer/catalog/dogfood/node`, which exports
+`consumerDogfoodSources`, `parseConsumerDogfoodContract`, `runConsumerDogfood`,
+and the `ConsumerDogfoodContract` type. A bundling host must keep these exact
+Node subpaths external when it uses them, so filesystem reads and
+package-relative source paths resolve in the installed Designer package.
+Designer UI entries can remain bundled with the host's React runtime.
 
 ### Node token helper migration
 
@@ -445,8 +462,8 @@ animation or transition has a Tailwind `motion-reduce` override.
 ### Server Components
 
 SSR-safe and importable-from-a-Server-Component are different guarantees.
-Every atom, block, and shell component avoids browser globals at render time
-(the "React SSR, hydration, and accessibility" section above), but `atoms`,
+Every component, block, and shell component avoids browser globals at render time
+(the "React SSR, hydration, and accessibility" section above), but `components`,
 `blocks`, `shell`, `charts`, and `theme` are each a SINGLE barrel that
 re-exports every one of its members eagerly from one module — importing even
 one noninteractive member (`Card`, say) pulls in whatever interactive
@@ -456,7 +473,7 @@ import under React's `react-server` module-resolution condition, which is
 exactly what blocks a React Server Component from reaching `Card` at all —
 not because `Card` itself is unsafe, but because of how it's packaged.
 
-Five narrower subpaths exist for exactly this: `@clossys/designer/atoms/server`,
+Five narrower subpaths exist for exactly this: `@clossys/designer/components/server`,
 `/blocks/server`, `/shell/server`, `/charts/server`, and `/theme/server`. Each
 re-exports ONLY the members of its sibling barrel confirmed, empirically, to
 import cleanly under `--conditions=react-server` — never a name inferred from
@@ -465,16 +482,23 @@ source file's own header for the exact probe and its result). Today that's:
 
 | Subpath | Server-safe members |
 | --- | --- |
-| `@clossys/designer/atoms/server` | `Logomark`, `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `EventItem`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TableOfContents`, `TaskList`, `Testimonial`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `Tree`, `UsageMeter` |
+| `@clossys/designer/components/server` | `NativeAction`, `SemanticContent`, `Logomark`, `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
+| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `CallToAction`, `DetailView`, `EmptyState`, `ErrorState`, `EventItem`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `LogoHero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatGroup`, `StatusList`, `TableOfContents`, `TaskList`, `Testimonial`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `Tree`, `UsageMeter` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart` (static), `Heatmap` (static), `StatusStrip` (static), `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
 
+The `Matrix` export from `blocks/server` accepts only the static `sides` and
+`grid` arrangements, with the same output and validation as the ordinary entry.
+Its `MatrixProps` is the finite union of `MatrixQuadrantProps` and
+`MatrixGridProps`; interactive `choices` and `library-board` arrangements throw
+at runtime and are excluded from the server types. Import those arrangements
+from the ordinary `blocks` entry, whose full contract is unchanged.
+
 `Banner`, `Meter` and `Spinner` are server-safe through their own plain
 variants (`Banner.server.tsx`, `Meter.server.tsx`, `Spinner.server.tsx`), the
 way `Avatar` is: the same props, classes and visible markup as the client
-atom exported from `@clossys/designer/atoms`, which is built on
+component exported from `@clossys/designer/components`, which is built on
 react-aria-components. The server `Meter` has no `meter` role, the server
 `Spinner` names a labelled ring with `role="status"`, and the server
 `Banner` dismiss control is a native `<button>`. `UsageMeter` follows the same
@@ -520,6 +544,42 @@ verify the claim itself (that a `"server-safe"` subpath truly resolves
 safely under the `react-server` condition) — read that section before
 treating a passing gate as more than it is.
 
+### Selected token definitions in source checks
+
+`emittedTokenManifest(profile, targets, options)` from `@clossys/designer/catalog`
+(and `catalog/server`) describes selected token ids, their actual CSS output names,
+light/dark resolved values, and the exact declaration contexts produced by `emit`.
+Both outputs share one materializer. This manifest describes expected source CSS;
+it does not establish observed computed styles, rendering or qualification.
+
+For consumer source checks, pass `tokenLibrary: { catalog, library }` to
+`runConsumerDogfood` alongside its actual source closure. The checker freshly
+checks and resolves that selected value library; submitted expected manifests,
+CSS strings or hashes do not authorize definitions. Without selected inputs,
+custom-property definitions remain DF2. A definition must have a selected
+registered name, the exact resolved value and registered alias references, and
+one canonical theme activation context. The same token/property/config/theme
+may occur once in each of the library's OS-dark and explicit-dark contexts;
+repeating it in the same context across files fails. Preview selectors,
+component rules and token-like `@layer`/`@utility` blocks cannot mint consumer
+definitions. `@theme` is legal only for the exact selected declaration tuples
+that the same materializer emits there; the at-rule alone grants no authority.
+Undeclared variants such as `@theme inline`, unknown names and wrong values
+remain DF2. Ordinary property literals and inline styles remain DF2.
+
+Import exported package CSS and actual selected library output through one
+source cascade; remove copied definitions rather than adding exceptions.
+`consumerDogfoodSources` follows stylesheet imports, including exported package
+CSS, and scans their declarations. Mixed `@utility` bodies and nested conditions
+use the CSS parser's native style-block grammar; unparsed final syntax is refused.
+Missing or unsupported conditional imports, including stylesheet imports that
+resolve to JavaScript, are refused. `designer-library dogfood-consumer --root`
+reads the actual selected library through its validated reader. Without library
+metadata it grants no definition authority; malformed input is refused.
+The package's neutral defaults are not evidence of a consumer's
+selected values. Preserve the existing setup order below and never import two
+token roots on the same mount.
+
 ### Framework-portable components, without Tailwind (default for pre-auth pages)
 
 **Default CSS path** — one mount, no Tailwind, no `@source`:
@@ -541,13 +601,13 @@ never both" below). Do not also import `theme.css` or run a Tailwind
 `@source` scan on the same page — pick this path OR the advanced path, not
 both.
 
-**Scope.** `compiled.css` is generated from `src/atoms/`, `src/blocks/`, and
+**Scope.** `compiled.css` is generated from `src/components/`, `src/blocks/`, and
 `src/shell/` — enough for Hero, feature blocks, and site chrome on a pre-auth
 marketing page. `charts` and `theme` remain Tailwind-native only.
 
 **`className` on this path.** Nothing compiles your own markup here, so a
 class passed through `className` takes effect only when it is already in
-`styles/compiled.css` (which holds the utilities the package's own atoms,
+`styles/compiled.css` (which holds the utilities the package's own components,
 blocks and shell use) or is defined in your own CSS. Any other utility class
 does nothing. Search `compiled.css` for a class before relying on it, or
 style the wrapper with your own CSS.
@@ -579,7 +639,7 @@ drift automatically) and regenerated with `npm run generate:compiled-css`.
 It is produced by a REAL Tailwind v4 compile (`src/compiled-css/generate.ts`,
 using the real `tailwindcss` package's own `compile()` API) of every class
 candidate `src/compiled-css/scan-sources.ts` finds by statically scanning
-`src/atoms/`, `src/blocks/`, and `src/shell/`.
+`src/components/`, `src/blocks/`, and `src/shell/`.
 It is not a second, hand-maintained approximation of what `bg-accent` means:
 it is Tailwind's own real compiled answer for the SAME tokens, precomputed
 once instead of recompiled at every consumer's own build time.
@@ -597,9 +657,9 @@ regardless of import order). Per the CSS Cascading Layers spec:
 - A consumer's own CSS inside a **named layer declared after**
   `foundry-ui-compiled` wins too.
 - A consumer's own `className` prop is merged the same way it always is on
-  this package's atoms — via the internal `cx()`/`tailwind-merge` helper —
+  this package's components — via the internal `cx()`/`tailwind-merge` helper —
   independent of which stylesheet path is loaded; this behavior is already
-  covered by every atom's own tests (e.g. `Button.test.tsx`) and does not
+  covered by every component's own tests (e.g. `Button.test.tsx`) and does not
   change under the compiled-CSS path.
 
 **Base layer.** Ahead of `foundry-ui-compiled`, `compiled.css` emits a
@@ -632,7 +692,7 @@ real browser, the same cost this repository already declined elsewhere for
 `@clossys/designer`'s own test setup; see the introducing PR).
 
 **What is and is not verified.** `src/compiled-css/coverage.test.tsx` renders
-real atoms and cross-checks every class actually in the DOM against a fresh
+real components and cross-checks every class actually in the DOM against a fresh
 `compiled.css`; `override.test.ts` proves — structurally, from the text of
 the generated CSS itself — that 100% of its declarations sit inside the
 named layer, which is what makes the override precedence above a spec
@@ -661,7 +721,7 @@ this package's own CI today.
 | `@example/tokens/brand-template.css` | `@clossys/designer/brand-template.css` |
 | `@clossys/designer/views` | `@clossys/publisher/web` for generic rendered views, or compose UI primitives in a Publisher surface. |
 
-`atoms`, `blocks`, `icons`, `charts`, `shell`, and `gate` retain their UI
+`components`, `blocks`, `icons`, `charts`, `shell`, and `gate` retain their UI
 subpaths. There is no compatibility root barrel: importing the owning
 subpath keeps dependencies and bundle boundaries explicit.
 
@@ -674,18 +734,18 @@ it — run it through these tests, in order.
 **1. Does it survive a route change?** If a component's whole job is to
 still be on screen after the route underneath it changes — a nav rail, a
 top bar, an app frame — it belongs to the **shell** layer, not to content.
-The shell provides slots; views (and the blocks/atoms inside them) fill
+The shell provides slots; views (and the blocks/components inside them) fill
 those slots. A component whose entire point is to be *replaced* on every
 navigation is never shell.
 
 **2. Does it own multiple named regions?** If a component lays out several
 regions that differ **in kind** — a title region, a description region, an
 actions region, each doing a different job from the others — it's a
-**block**. Otherwise it's an **atom**. The trap: a *list* of similar things
+**block**. Otherwise it's an **component**. The trap: a *list* of similar things
 is not "multiple regions." A breadcrumb trail is a list of crumbs; a tab
 bar is a list of tabs. Every item in that list plays the same role as
 every other item — swap two crumbs and nothing about the component's job
-changes. That's a homogeneous repeat, and it stays one atom no matter how
+changes. That's a homogeneous repeat, and it stays one component no matter how
 many items are in it. A page header's title, description, and actions
 aren't interchangeable that way — each is a different kind of thing, and
 the component's job is specifically to keep those different kinds apart.
@@ -717,7 +777,7 @@ stack, a modal manager, a global tooltip layer — anything that renders
 outside the normal component tree, queues its own items, and is driven by
 an imperative call rather than by props in the render tree — is a
 **runtime service**, not a layout component. It doesn't sit on the
-atoms/blocks/views/shell ladder at all; it needs its own home.
+components/blocks/views/shell ladder at all; it needs its own home.
 
 **The variant rule — does the variant change the SET of named regions?**
 If yes, it is a different component, not a prop. A slim header (just a
@@ -733,7 +793,7 @@ difference shows up — and once it does, the prop has to keep absorbing
 every future consumer's divergence as a new named mode. The prop grows
 without bound, and the component's internals accrete conditionals for
 combinations that were never meant to compose and that nothing tests. Two
-components that each compose the same atoms, in two separate files, share
+components that each compose the same components, in two separate files, share
 no logic that can break that way — there's no shared branch for an
 untested combination to hide in, because there's no shared branch.
 
@@ -875,7 +935,7 @@ depend on a path `@source` resolving through a pnpm symlink (step 2), and the
 consumer keeps no class list.
 
 Only the repository root declares `@clossys/designer`. When an application
-cannot resolve `@clossys/designer/atoms/server`, `blocks/server`, or
+cannot resolve `@clossys/designer/components/server`, `blocks/server`, or
 `shell/server` from that dependency under pnpm, add a workspace package that
 depends on `@clossys/designer` and re-exports those entries and
 the CSS entries `theme.css` and `utilities.css`; applications depend on that
@@ -919,7 +979,7 @@ component peer used to fail silently too — the same #182 gap
 `assertTokenStylesLoaded` closes for the token CSS, extended to
 `react`, `react-aria-components`, and `tailwindcss`. You don't call
 anything for these three: importing any component subpath
-(`@clossys/designer/atoms`, `/blocks`, `/shell`, `/charts`, `/theme`) or
+(`@clossys/designer/components`, `/blocks`, `/shell`, `/charts`, `/theme`) or
 running `generateCompiledCss` checks the relevant peers' installed
 versions automatically, and throws a named error — which peer, the range
 this package declares, and the version actually found — the moment an
@@ -929,7 +989,7 @@ inside a component's own render.
 `tailwind-merge` is the one exception, and it needs an explicit call.
 Unlike the peers above, it has no way to report its own installed version
 that doesn't require Node's filesystem — and the one file that imports it,
-`cx.ts`, is reachable from every atom, so checking it automatically would
+`cx.ts`, is reachable from every component, so checking it automatically would
 break bundling this package's components for the browser. Call
 `assertTailwindMergeVersion` yourself, once, from Node-side tooling (a
 build script, a setup step, or a test — never from component code):
@@ -949,7 +1009,7 @@ installed" if it is ever called from real browser code. See
 **You do not have to call it just to avoid a crash — but a missing peer is
 never fully silent either.** Before #749, an absent `tailwind-merge`
 crashed the moment `cx` (this package's internal class-merge helper,
-reachable from every atom and therefore from the server-safe barrels too)
+reachable from every component and therefore from the server-safe barrels too)
 was imported at all — `Cannot find package 'tailwind-merge'`, even on a
 purely server-rendered path that never mentioned styling. `cx` now
 resolves `tailwind-merge` lazily, so importing any component subpath
@@ -1039,7 +1099,7 @@ function HeaderActions() {
 }
 ```
 
-Publisher's client-only `AppFrame` supplies this provider and toggle together.
+Designer Frames' client-only `AppFrame` supplies this provider and toggle together.
 Its header `themeControl` slot accepts a replacement node, including a
 customized `ThemeToggle`; pass `null` to omit the control. A replacement can
 use `useTheme()` from the frame's existing provider. Match `AppFrame`'s
@@ -1067,7 +1127,7 @@ to another. Also match the script's `defaultTheme` with the provider's
 
 ## Why these dependencies
 
-- **`react-aria-components`** — every interactive atom (`Button`,
+- **`react-aria-components`** — every interactive component (`Button`,
   `TextField`, `Link`, `Checkbox`, `Switch`, `Select`, `Textarea`, `Menu`,
   `Dialog`, `Tabs`, `Table`, `Tooltip`, `RadioGroup`, `Popover`, `DateField`,
   `ComboBox`, `SearchField`, `FileTrigger`, `Disclosure`, `ProgressBar`, and
@@ -1080,7 +1140,7 @@ to another. Also match the script's `defaultTheme` with the provider's
   rest), and disabled-state semantics — the kind of behavior that is easy to
   get subtly wrong by hand and hard to notice is wrong without a screen
   reader or a keyboard-only pass. `Badge`, `Card`, `Avatar`, and
-  `Skeleton` compose no other atom and aren't interactive, so
+  `Skeleton` compose no other component and aren't interactive, so
   they're plain markup — there's no react-aria-components primitive for any
   of them. `Meter` is built on its `Meter`, a labelled `Spinner` on its
   `ProgressBar` with `isIndeterminate`, and the `Banner` dismiss control on its
@@ -1102,7 +1162,7 @@ to another. Also match the script's `defaultTheme` with the provider's
   for roving-tabindex arrow-key navigation between panels; `Table` builds on
   `Table`/`TableHeader`/`TableBody`/`Column`/`Row`/`Cell` for real grid
   semantics, sorting, and row selection (including the indeterminate
-  select-all state, via this package's own `Checkbox` atom — see `Table`'s
+  select-all state, via this package's own `Checkbox` component — see `Table`'s
   own section below); `Tooltip` builds on `TooltipTrigger`/`Tooltip` for
   hover-AND-focus opening, Escape-to-dismiss, and the warm-up/cool-down
   delay between tooltips shown in quick succession; `RadioGroup` builds on
@@ -1129,7 +1189,7 @@ to another. Also match the script's `defaultTheme` with the provider's
   (vertical) rather than a `<div>` styled to look like a rule. None of that
   behavior is reimplemented here — it would be easy to get subtly wrong
   hand-rolled, which is the whole reason this package leans on
-  react-aria-components for every interactive atom rather than building any
+  react-aria-components for every interactive component rather than building any
   of it from scratch.
 - **`@internationalized/date`** — `DateField`'s `value`/`defaultValue` are
   react-stately `DateValue`s (a `CalendarDate`, `CalendarDateTime`, or
@@ -1142,7 +1202,7 @@ to another. Also match the script's `defaultTheme` with the provider's
   (`parseDate("2024-01-15")`, `new CalendarDate(2024, 1, 15)`) means a
   consumer of `DateField` needs it too, so it is a documented optional peer
   rather than an unlisted transitive of `react-aria-components`.
-- **`tailwind-merge`** — every atom accepts a `className` prop (the one
+- **`tailwind-merge`** — every component accepts a `className` prop (the one
   documented exception is `FileTrigger`, which does not — see its own entry
   below), and a consumer's value has to reliably win over this package's own
   default classes. Two Tailwind utilities that set the same CSS property have
@@ -1163,18 +1223,70 @@ the component runtime. A component consumer must install the matching peers
 alongside `@clossys/designer`; npm can then report a missing peer instead
 of allowing a hidden transitive dependency to decide the runtime version.
 
-No `class-variance-authority` or similar: each atom's variants are a plain
+No `class-variance-authority` or similar: each component's variants are a plain
 object literal mapping a variant name to a class string.
 
-## Atoms
+## Components
+
+### SemanticContent
+
+`SemanticContent` renders exactly the explicitly selected native content element,
+with no wrapper, generated attributes or default paint. `as` is required and
+accepts `article`, `aside`, `code`, `dd`, `div`, `dl`, `dt`, `h1`–`h6`, `li`,
+`main`, `p`, `section`, `small`, `span`, `strong`, `time` or `ul`. The tag determines native attributes and the ref
+target through `SemanticContentProps<T>` and `SemanticContentTag`. Heading rank,
+`id`, `tabIndex`, description associations, children, classes, styles and events
+stay on the selected element. Interactive controls and document roots are outside
+this capability.
+
+```tsx
+import { SemanticContent } from "@clossys/designer/components/server";
+
+<SemanticContent as="div">
+  <SemanticContent as="h1" aria-describedby="description">Title</SemanticContent>
+  <SemanticContent as="p" id="description">Description</SemanticContent>
+</SemanticContent>
+```
+
+The `components.semantic-content` catalog entry is a local draft addition pending
+ratification, with an explicit package descriptor; it is not adopted or
+runtime-qualified. The component itself reads no tokens or assets; consumer-supplied classes and styles still need
+their own source and read associations.
+
 
 Every example below assumes the setup above is done. `variant`/`size` are
 shown at their defaults for clarity; omitting them is equivalent.
 
+### NativeAction
+
+`NativeAction` renders one native button with the existing primary, medium, base
+Button appearance. Import the same component and `NativeActionProps` from the
+root, `components`, or `components/server` entry. Its own closure and the server
+entry need React; the ordinary root and components barrels retain their other
+peer requirements.
+
+```tsx
+import { NativeAction } from "@clossys/designer/components/server";
+
+<NativeAction type="button" onClick={save}>Save</NativeAction>
+```
+
+`type` is required: choose `button`, `submit`, or `reset`. Native attributes,
+events, caller content, string classes, object styles and an HTMLButtonElement
+ref are forwarded. Caller styles and classes take precedence. Native `disabled`
+prevents activation and focus; `aria-disabled` alone is an annotation and leaves
+activation enabled. The component has no `onPress`, pending, variant, size,
+ground, polymorphic tag, replacement role or render-function API. Keyboard,
+pointer and form behavior belong to the browser.
+
+`components.native-action` is an additive local draft pending owner
+ratification and runtime qualification. Its descriptor contains no conformance
+or runtime observations.
+
 ### `Button`
 
 ```tsx
-import { Button } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/components";
 
 function SaveButton() {
   return (
@@ -1221,7 +1333,7 @@ move. `trailingIcon` swaps the glyph (any `@clossys/designer/icons` data) or,
 as `null`, removes it; other variants ignore it.
 
 ```tsx
-import { Button } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/components";
 
 function SupportingActions() {
   return (
@@ -1248,12 +1360,12 @@ focus ring replaces the edge while it shows; a link keeps both.
 
 A call to action that navigates is a link, not a button. Give a plain `<a>`
 the button look with `buttonLinkClassName(variant, size, ground)` (server-safe, from
-`@clossys/designer/atoms` or `/atoms/server`): the same variant and size
+`@clossys/designer/components` or `/components/server`): the same variant and size
 classes, the package-standard `focus-visible` outline, and none of the
 disabled styling a link never needs.
 
 ```tsx
-import { buttonLinkClassName } from "@clossys/designer/atoms/server";
+import { buttonLinkClassName } from "@clossys/designer/components/server";
 
 <a href="/contact" className={buttonLinkClassName("primary", "lg")}>Book a call</a>;
 ```
@@ -1275,7 +1387,7 @@ surface, so it reads where the circle overlaps a ground of the other tone.
 It ships no copy: give the link an accessible name.
 
 ```tsx
-import { Icon, iconButtonLinkClassName } from "@clossys/designer/atoms/server";
+import { Icon, iconButtonLinkClassName } from "@clossys/designer/components/server";
 import { ChevronDown } from "@clossys/designer/icons";
 
 <a href="#next" aria-label="Scroll to next section" className={iconButtonLinkClassName("base")}>
@@ -1299,7 +1411,7 @@ away with the page, so it is never fixed without a fade.
 ### `IconButton`
 
 ```tsx
-import { IconButton } from "@clossys/designer/atoms";
+import { IconButton } from "@clossys/designer/components";
 import { ChevronRight } from "@clossys/designer/icons";
 
 function NextSlide({ onNext }: { onNext: () => void }) {
@@ -1320,13 +1432,13 @@ state fills the box with the ground's opposite surface. Colours ease on
 `--ui-duration-fast`, instantly under reduced motion.
 
 The look is `iconButtonClassName({ size, shape, ground })` (server-safe,
-from `@clossys/designer/atoms` or `/atoms/server`), for a plain element that
+from `@clossys/designer/components` or `/components/server`), for a plain element that
 needs it; that element still needs an accessible name.
 
 ### `Icon`
 
 ```tsx
-import { Icon } from "@clossys/designer/atoms";
+import { Icon } from "@clossys/designer/components";
 import { Clock } from "@clossys/designer/icons";
 
 function LastUpdated({ label }: { label: string }) {
@@ -1392,7 +1504,7 @@ own pre-merge, standalone `icons` package's own contract:
 ```
 
 `decorative: true` and `label` are mutually exclusive (also a compile
-error together). `src/atoms/internal/icon-contract.check.tsx` is a small
+error together). `src/components/internal/icon-contract.check.tsx` is a small
 file, compiled by the same `tsc` run as everything else in this package
 (unlike a `*.test.tsx` file — see that file's own header comment, and
 issue #24, for why that distinction matters here), that fails the build if
@@ -1400,12 +1512,12 @@ either the accessibility contract or the `glyph`/`children` content
 contract ever regresses.
 
 `className`/`style` merge with `Icon`'s own defaults the same way every
-other atom's do — a consumer's value always wins on conflict.
+other component's do — a consumer's value always wins on conflict.
 
 ### `TextField`
 
 ```tsx
-import { TextField } from "@clossys/designer/atoms";
+import { TextField } from "@clossys/designer/components";
 
 function EmailField() {
   return (
@@ -1428,7 +1540,7 @@ by id — not a `placeholder` standing in for it. `description` and
 ### `Badge`
 
 ```tsx
-import { Badge } from "@clossys/designer/atoms";
+import { Badge } from "@clossys/designer/components";
 
 function Status() {
   return <Badge variant="success">Active</Badge>;
@@ -1441,7 +1553,7 @@ function Status() {
 ### `Card`
 
 ```tsx
-import { Card } from "@clossys/designer/atoms";
+import { Card } from "@clossys/designer/components";
 
 function Panel() {
   return <Card>Plain content, raised off the page.</Card>;
@@ -1467,11 +1579,11 @@ to the surface radius and a hairline in the base line, so a brand that
 leaves them unset looks exactly as before.
 
 `ground` (`"base" | "sunken" | "inverse"`, default `"base"`) names the
-section the card sits on. An atom cannot see its section, so the block
+section the card sits on. An component cannot see its section, so the block
 that places a plate passes the ground it already knows.
 
 ```tsx
-import { Card } from "@clossys/designer/atoms/server";
+import { Card } from "@clossys/designer/components/server";
 
 function Plates() {
   return (
@@ -1486,7 +1598,7 @@ function Plates() {
 ### `Breadcrumb`
 
 ```tsx
-import { Breadcrumb } from "@clossys/designer/atoms";
+import { Breadcrumb } from "@clossys/designer/components";
 
 function PromptTrail() {
   return (
@@ -1517,7 +1629,7 @@ A genuinely data-driven trail can still `.map()` an array into
 `Breadcrumb.Item`s — ordinary React, nothing about this API needs to change
 to support it.
 
-`Breadcrumb` ships as an atom, not a block, even though it's composable and
+`Breadcrumb` ships as an component, not a block, even though it's composable and
 built from a `.Item` sub-component: its items are a homogeneous repeat (any
 crumb plays the same role as any other) rather than a set of regions that
 differ in kind. See "Placement rules" above.
@@ -1525,7 +1637,7 @@ differ in kind. See "Placement rules" above.
 ### `Link`
 
 ```tsx
-import { Link } from "@clossys/designer/atoms";
+import { Link } from "@clossys/designer/components";
 
 function PromptsLink() {
   return (
@@ -1567,7 +1679,7 @@ framework link in button style, pass them alongside `render`:
 ### `Checkbox`
 
 ```tsx
-import { Checkbox } from "@clossys/designer/atoms";
+import { Checkbox } from "@clossys/designer/components";
 
 function SelectAllRows({ isAllSelected, isSomeSelected, onToggle }: {
   isAllSelected: boolean;
@@ -1592,7 +1704,7 @@ reason `Checkbox` was prioritized ahead of it.
 ### `Switch`
 
 ```tsx
-import { Switch } from "@clossys/designer/atoms";
+import { Switch } from "@clossys/designer/components";
 
 function EmailNotificationsToggle() {
   return <Switch onChange={(isOn) => save(isOn)}>Email notifications</Switch>;
@@ -1609,7 +1721,7 @@ rather than `Checkbox` with different styling.
 ### `Select`
 
 ```tsx
-import { Select } from "@clossys/designer/atoms";
+import { Select } from "@clossys/designer/components";
 
 function FavoriteFruitField() {
   return (
@@ -1634,7 +1746,7 @@ instead of free text. `options` is a plain array (`{ id, label, isDisabled?,
 textValue? }`) rather than JSX children: a select's option set is close to
 always already data, rather than something a consumer hand-writes as
 markup. Built on react-aria-components' `Select` + `Button` (its OWN
-`Button`, not this package's atom — see "Atoms compose no other atom"
+`Button`, not this package's component — see "Components compose no other component"
 below) + `Popover` + `ListBox`/`ListBoxItem`, which supply opening on click
 or ArrowUp/ArrowDown/Enter/Space, closing on Escape or an outside click,
 arrow-key navigation that skips disabled options, typeahead, and the
@@ -1644,7 +1756,7 @@ needs.
 ### `Textarea`
 
 ```tsx
-import { Textarea } from "@clossys/designer/atoms";
+import { Textarea } from "@clossys/designer/components";
 
 function DescriptionField() {
   return (
@@ -1669,7 +1781,7 @@ visual one (see the README's "variant rule").
 ### `Avatar`
 
 ```tsx
-import { Avatar } from "@clossys/designer/atoms";
+import { Avatar } from "@clossys/designer/components";
 
 function UserAvatar() {
   return <Avatar src={user.imageUrl} alt={user.fullName} size="md" />;
@@ -1678,10 +1790,10 @@ function UserAvatar() {
 
 `size`: `"sm" | "md" | "lg"` (default `"md"`). Shows the image at `src`; if
 `src` is omitted, or the image fails to load, falls back to initials
-derived from `alt`. Not interactive and composes no other atom — plain
+derived from `alt`. Not interactive and composes no other component — plain
 markup, like `Badge`/`Card`.
 
-`@clossys/designer/atoms/server` exports a hook-free `Avatar` with the same
+`@clossys/designer/components/server` exports a hook-free `Avatar` with the same
 props and markup. It shows the image when `src` is given and the initials
 otherwise; it cannot switch to initials when an image fails to load (that
 needs state), so use the client `Avatar` for image URLs that may break.
@@ -1689,7 +1801,7 @@ needs state), so use the client `Avatar` for image URLs that may break.
 ### `Spinner`
 
 ```tsx
-import { Spinner } from "@clossys/designer/atoms";
+import { Spinner } from "@clossys/designer/components";
 
 function LoadingPrompts() {
   return <Spinner label="Loading prompts" size="md" />;
@@ -1712,14 +1824,14 @@ the ring.
 Omit it when the spinner is purely decorative (e.g. next
 to a button's own "Saving…" text, which already announces the state) — it
 then renders the bare `<svg>` with `aria-hidden="true"` instead. The
-`Spinner` from `@clossys/designer/atoms/server` is the same `<svg>` without
+`Spinner` from `@clossys/designer/components/server` is the same `<svg>` without
 react-aria-components, and names a labelled ring with `role="status"`.
 
 ### `Menu`
 
 ```tsx
-import { Menu } from "@clossys/designer/atoms";
-import { Button } from "@clossys/designer/atoms";
+import { Menu } from "@clossys/designer/components";
+import { Button } from "@clossys/designer/components";
 
 function RowActionsMenu() {
   return (
@@ -1777,24 +1889,24 @@ same link:
 </Menu>
 ```
 
-`Menu` composes no other atom of its own, even though its `trigger` slot is
-commonly filled with this package's own `Button` atom by a consumer (as
+`Menu` composes no other component of its own, even though its `trigger` slot is
+commonly filled with this package's own `Button` component by a consumer (as
 above): that's the consumer's own composition, in their code, the same way
 a `Button` can be passed into `PageHeader`'s `actions` slot without
 `PageHeader` importing `Button` itself.
 
-`Menu` ships as an atom, not a block, despite composing a trigger and a
+`Menu` ships as an component, not a block, despite composing a trigger and a
 list of items: unlike `PageHeader`'s simultaneously-visible title/
 description/actions regions, `Menu`'s trigger and its item list are never
 both "on" at once — closed shows only the trigger, open shows only the
 popover — the same single-control-with-two-states shape as `Select` (also
-an atom here), not a layout of multiple simultaneous named regions.
+an component here), not a layout of multiple simultaneous named regions.
 
 ### `Dialog`
 
 ```tsx
-import { Dialog } from "@clossys/designer/atoms";
-import { Button } from "@clossys/designer/atoms";
+import { Dialog } from "@clossys/designer/components";
+import { Button } from "@clossys/designer/components";
 
 function SettingsDialog() {
   return (
@@ -1851,7 +1963,7 @@ trigger is rendered:
 </Dialog>
 ```
 
-`Dialog` ships as an atom, not a block, for the same reason `Menu` does:
+`Dialog` ships as an component, not a block, for the same reason `Menu` does:
 its trigger and its content are never both "on" at once (closed shows the
 trigger, open shows the dialog), not a layout of simultaneously-visible
 named regions. `ConfirmDialog` — `Dialog` composed with a fixed heading +
@@ -1862,7 +1974,7 @@ block by the same test; see "Blocks" below.
 ### `Tabs`
 
 ```tsx
-import { Tabs } from "@clossys/designer/atoms";
+import { Tabs } from "@clossys/designer/components";
 
 function PromptSections() {
   return (
@@ -1895,7 +2007,7 @@ between each tab and its panel — none of it reimplemented here. A
 `Tabs.Tab`'s `id` must match the `id` of the `Tabs.Panel` it controls;
 react-aria-components derives the ARIA pairing from that shared id.
 
-`Tabs` ships as an atom, not a block: its `Tabs.Tab` children are a
+`Tabs` ships as an component, not a block: its `Tabs.Tab` children are a
 homogeneous repeat — any tab plays the same role as any other, a label
 that selects a panel — the same shape as `Breadcrumb`'s crumbs, not a set
 of regions that differ in kind. See "Placement rules" above, test 2 (the
@@ -1920,7 +2032,7 @@ content through `renderEmptyState` to keep it within the grid.
 ### `Table`
 
 ```tsx
-import { Table } from "@clossys/designer/atoms";
+import { Table } from "@clossys/designer/components";
 
 interface PromptRun {
   id: string;
@@ -2005,22 +2117,22 @@ reimplemented here.
 `Table.SelectAllCheckbox` (place inside a `Table.Column`) and
 `Table.SelectionCheckbox` (place inside a `Table.Cell`, one per
 `Table.Row`) are thin wrappers that render this package's own `Checkbox`
-atom with `slot="selection"` — react-aria-components' `Table` provides
+component with `slot="selection"` — react-aria-components' `Table` provides
 `isSelected`/`isIndeterminate`/`onChange` for exactly that slot, computed
 from the real selection state, so neither wrapper reads or recomputes any
 of it. `Checkbox` already supports the `isIndeterminate` state a
 select-all control needs (see `Checkbox`'s own section above) — reusing it
 here, rather than a second hand-rolled checkbox, is exactly what that
-support was built for. This makes `Table` the one atom in this package
-that composes ANOTHER atom of its own; see "Atoms compose no other atom"
+support was built for. This makes `Table` the one component in this package
+that composes ANOTHER component of its own; see "Components compose no other component"
 above for why that's the ladder's explicitly-permitted direction (a
-sibling atom, not a `blocks/` import) rather than an exception carved out
+sibling component, not a `blocks/` import) rather than an exception carved out
 for it.
 
 ### `Field`
 
 ```tsx
-import { Field } from "@clossys/designer/atoms";
+import { Field } from "@clossys/designer/components";
 
 function SignatureField() {
   return (
@@ -2033,7 +2145,7 @@ function SignatureField() {
 
 The general form of the label/description/error surface `TextField`
 bundles with its own `<input>` — for a control this package doesn't ship an
-atom for (a third-party rich-text editor, a `<canvas>`-based signature pad,
+component for (a third-party rich-text editor, a `<canvas>`-based signature pad,
 any future control not yet built here). `children` is a render prop, not a
 fixed element cloned via `React.cloneElement`: an arbitrary control has no
 guaranteed prop shape a blind clone could safely merge into, so `Field`
@@ -2043,12 +2155,12 @@ code, onto whichever element actually needs them — the same function-prop
 shape `Dialog`'s children and `Table.Body`'s `renderEmptyState` already use
 in this package. Id generation uses React's own `useId()`, since `Field`
 renders no react-aria-components primitive of its own to generate one for
-free the way every other field atom here does.
+free the way every other field component here does.
 
 ### `Skeleton`
 
 ```tsx
-import { Skeleton } from "@clossys/designer/atoms";
+import { Skeleton } from "@clossys/designer/components";
 
 function LoadingPromptCard() {
   return (
@@ -2073,7 +2185,7 @@ in for a whole loading region (not on every piece inside it) and it renders
 ### `Tooltip`
 
 ```tsx
-import { Tooltip, Button } from "@clossys/designer/atoms";
+import { Tooltip, Button } from "@clossys/designer/components";
 
 function InfoTooltip() {
   return (
@@ -2102,7 +2214,7 @@ way.
 ### `Banner`
 
 ```tsx
-import { Banner } from "@clossys/designer/atoms";
+import { Banner } from "@clossys/designer/components";
 
 function TrialEndingBanner({ onDismiss }: { onDismiss: () => void }) {
   return (
@@ -2124,13 +2236,13 @@ mapping `Toaster`'s own `ToasterContent` already uses. `onDismiss` is
 optional — supplying it renders a dismiss control (react-aria-components'
 `Button`, called through its `onPress`), but `Banner` never
 removes itself from the tree on its own; the caller decides whether/when it
-stops rendering. The `Banner` from `@clossys/designer/atoms/server` has the
+stops rendering. The `Banner` from `@clossys/designer/components/server` has the
 same markup with a plain `<button>` for the dismiss control.
 
 ### `RadioGroup`
 
 ```tsx
-import { RadioGroup } from "@clossys/designer/atoms";
+import { RadioGroup } from "@clossys/designer/components";
 
 function DeliverySpeedField() {
   return (
@@ -2163,7 +2275,7 @@ that reads more naturally as hand-written markup, the same reasoning
 ### `Popover`
 
 ```tsx
-import { Popover, Button } from "@clossys/designer/atoms";
+import { Popover, Button } from "@clossys/designer/components";
 
 function FiltersPopover() {
   return (
@@ -2184,7 +2296,7 @@ positioned relative to a trigger, for anything `Menu`/`Select`/`Tooltip`'s
 own specific content shapes don't already fit (a filter panel with several
 controls, a small inline form). Built on react-aria-components'
 `DialogTrigger` + `Popover` + `Dialog` — the same composition this
-package's own `Dialog` atom uses, with an anchored, scrim-less `Popover`
+package's own `Dialog` component uses, with an anchored, scrim-less `Popover`
 standing in for `Dialog`'s centered `ModalOverlay`+`Modal`. Supplies a
 focus trap, automatic focus-move into the content on open, focus
 restoration to `trigger` on close, Escape to dismiss, and dismissal on any
@@ -2201,7 +2313,7 @@ general-purpose overlay primitive is not).
 ### `DateField`
 
 ```tsx
-import { DateField } from "@clossys/designer/atoms";
+import { DateField } from "@clossys/designer/components";
 import { CalendarDate } from "@internationalized/date";
 
 function StartDateField() {
@@ -2231,18 +2343,17 @@ a native JS `Date` — see "Why these dependencies" above for why that
 package ships as a real dependency of this one rather than an unlisted
 transitive of `react-aria-components`.
 
-A full `DatePicker` (this field plus a calendar-grid popover) was
-considered and deliberately NOT built instead: react-aria-components' own
-`DatePicker` composes a `Calendar` internally, and `Calendar` isn't one of
-this package's atoms (see "What's deliberately not here") — shipping
-`DatePicker` would mean building that calendar grid as an unavoidable side
-effect of a component this package wasn't asked for. `DateField` alone —
-direct keyboard entry, no calendar — is already complete on its own.
+`DateField` itself is direct keyboard entry with no calendar, and is
+complete on its own. A calendar-grid picker is composed rather than
+exported: `Calendar` ships as its own component (single date or range),
+and the catalog's registered `compose:date-picker@1` rule wires
+`DateField`, `Popover` and `Calendar` into a consumer-owned `DatePicker`
+source file.
 
 ### `ComboBox`
 
 ```tsx
-import { ComboBox } from "@clossys/designer/atoms";
+import { ComboBox } from "@clossys/designer/components";
 
 function AssigneeField() {
   return (
@@ -2260,7 +2371,7 @@ A searchable, filterable single-choice field — `Select`'s sibling for an
 option set too large to scan as a closed list. Built on
 react-aria-components' `ComboBox` composed with its OWN `Input`, `Button`,
 `Popover`, and `ListBox`/`ListBoxItem` (not this package's own `Button`
-atom — see "Atoms compose no other atom" below). `options` is a plain array
+component — see "Components compose no other component" below). `options` is a plain array
 (`{ id, label, isDisabled?, textValue? }`), the same shape `Select`'s own
 `options` uses, passed to react-aria-components as `defaultItems` so its
 built-in language-sensitive "contains" filter narrows the list as the user
@@ -2271,7 +2382,7 @@ its accessible name to `"Show suggestions"`, overridable via `triggerLabel`.
 ### `SearchField`
 
 ```tsx
-import { SearchField } from "@clossys/designer/atoms";
+import { SearchField } from "@clossys/designer/components";
 
 function PromptSearch() {
   return <SearchField label="Search prompts" onChange={(value) => setQuery(value)} />;
@@ -2290,7 +2401,7 @@ the field.
 ### `FileTrigger`
 
 ```tsx
-import { FileTrigger, Button } from "@clossys/designer/atoms";
+import { FileTrigger, Button } from "@clossys/designer/components";
 
 function AttachmentPicker() {
   return (
@@ -2310,7 +2421,7 @@ beyond that — it has no visual surface of its own; every visible
 affordance, including any disabled state, belongs to whichever trigger
 element (this package's own `Button`, as above, or react-aria-components'
 own) the consumer supplies. `className` is deliberately NOT accepted here,
-unlike every other atom in this package — see `FileTrigger.tsx`'s own doc
+unlike every other component in this package — see `FileTrigger.tsx`'s own doc
 comment for why accepting it would be a silent no-op.
 
 Deliberately out of scope: upload progress, drag-and-drop, and any preview
@@ -2321,7 +2432,7 @@ and stops there — a block built on top of this (and this package's own
 ### `Disclosure`
 
 ```tsx
-import { Disclosure } from "@clossys/designer/atoms";
+import { Disclosure } from "@clossys/designer/components";
 
 function AdvancedOptions() {
   return (
@@ -2341,13 +2452,13 @@ id (with `aria-labelledby` the other direction), toggling on Enter/Space in
 addition to a click, and keeping the panel's content in the DOM at all
 times (toggling its `hidden` attribute rather than mounting/unmounting).
 The trigger is react-aria-components' own `Button`, given `slot="trigger"`
-— not this package's own `Button` atom, the same layering reasoning
+— not this package's own `Button` component, the same layering reasoning
 `Select`'s and `ComboBox`'s own sections above document.
 
 ### `ProgressBar`
 
 ```tsx
-import { ProgressBar } from "@clossys/designer/atoms";
+import { ProgressBar } from "@clossys/designer/components";
 
 function UploadProgress({ percentComplete }: { percentComplete: number }) {
   return <ProgressBar label="Uploading" value={percentComplete} />;
@@ -2370,7 +2481,7 @@ same way `TextField`'s own `Label` does.
 ### `Separator`
 
 ```tsx
-import { Separator } from "@clossys/designer/atoms";
+import { Separator } from "@clossys/designer/components";
 
 function SectionDivider() {
   return <Separator />;
@@ -2396,7 +2507,7 @@ rule is needed.
 ### `Chip`
 
 ```tsx
-import { Chip } from "@clossys/designer/atoms";
+import { Chip } from "@clossys/designer/components";
 
 function TeamFilter({ teams, onRemove }: { teams: string[]; onRemove: (team: string) => void }) {
   return (
@@ -2419,11 +2530,11 @@ are two different components rather than one with a `removable` prop:
 AND a remove-affordance region, each doing a different job — so the region
 SET differs, a structural difference rather than a purely visual one.
 
-Still ships as an ATOM, not a block, despite having two simultaneously-
+Still ships as an COMPONENT, not a block, despite having two simultaneously-
 visible regions: the label and the remove control are one small,
 indivisible interactive unit — removing the chip removes the whole thing,
 label included — the same way `Checkbox`'s box + label text, or `Switch`'s
-track + thumb + label, already stay one atom despite each having multiple
+track + thumb + label, already stay one component despite each having multiple
 visually distinct parts. Neither is an independently composable named
 region the way `PageHeader`'s title/description/actions are (see
 "Placement rules", test 2).
@@ -2435,14 +2546,14 @@ tabbing through several at once — the accessible name has to identify the
 chip (`"Remove Engineering"`), not just the action. Omit `onRemove`
 entirely for a label-only chip with no remove affordance at all. The remove
 control is react-aria-components' own `Button` (not this package's own
-`Button` atom, the same layering reasoning `Select`'s and `Disclosure`'s
+`Button` component, the same layering reasoning `Select`'s and `Disclosure`'s
 own sections already document), for the same keyboard/focus-visible
 handling every other interactive control in this package gets.
 
 ### `StatusMark`
 
 ```tsx
-import { StatusMark } from "@clossys/designer/atoms/server";
+import { StatusMark } from "@clossys/designer/components/server";
 
 function ReportState() {
   return <StatusMark tone="success">Received</StatusMark>;
@@ -2465,7 +2576,7 @@ several states sit close together. Server-safe.
 ### `Meter`
 
 ```tsx
-import { Meter } from "@clossys/designer/atoms/server";
+import { Meter } from "@clossys/designer/components/server";
 
 function LeverageRow() {
   return (
@@ -2493,14 +2604,14 @@ panel: `text-h1`, `text-h0` via `@md:text-h0` at container widths of 28rem or mo
 tabular, with the limit beside it in secondary ink and the bar under both.
 
 The bar is `aria-hidden`: the visible text carries the meaning for every
-reader. From `@clossys/designer/atoms` the root is react-aria-components'
+reader. From `@clossys/designer/components` the root is react-aria-components'
 `Meter` (`role="meter progressbar"` with `aria-valuenow`, `aria-valuemin`
 and `aria-valuemax`), named by the visible `valueText` and announcing it as
 its value text, so a screen reader hears the words a sighted reader sees.
 An optional `label` names the meter instead (as its `aria-label`), leaving
 `valueText` as the visible text and the value text (an empty or blank
 `label` counts as omitted); the server `Meter`
-accepts `label` and ignores it. From `@clossys/designer/atoms/server` (server-safe, no react-aria-components)
+accepts `label` and ignores it. From `@clossys/designer/components/server` (server-safe, no react-aria-components)
 the markup is identical except that the root carries no role and no value
 attributes. The client `Meter` forwards `id`, `data-*`, the `aria-label`,
 `aria-labelledby`, `aria-describedby` and `aria-details` attributes, `dir`,
@@ -2516,11 +2627,11 @@ value beyond `scaleMax` draws a full bar. A non-finite or non-positive
 
 A block owns the internal layout of multiple named regions — regions that
 differ in kind, not a repeated list of interchangeable items (that's an
-atom; see "Placement rules" above). A block typically composes one or more
-atoms and/or layout to do it, but doesn't have to: neither block below
-imports an atom — their regions are consumer-supplied slots. A block never
+component; see "Placement rules" above). A block typically composes one or more
+components and/or layout to do it, but doesn't have to: neither block below
+imports an component — their regions are consumer-supplied slots. A block never
 reaches outside this package for data or routing — everything it needs
-comes in through props, same as an atom.
+comes in through props, same as an component.
 
 ### Both themes are required
 
@@ -2551,7 +2662,7 @@ for it. See "Placement rules" above ("Slots beat mode props") for why.
 
 ```tsx
 import { PageHeader } from "@clossys/designer/blocks";
-import { Button } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/components";
 
 function PromptsPageHeader() {
   return (
@@ -2566,14 +2677,14 @@ function PromptsPageHeader() {
 
 `title` (required `ReactNode`) renders as the page's `<h1>`. `description`
 and `actions` are both optional. `breadcrumb` is a third optional slot,
-rendered above the title — typically a `Breadcrumb` atom (see "Atoms"
+rendered above the title — typically a `Breadcrumb` component (see "Components"
 above), but any `ReactNode` works.
 
 ### `EmptyState`
 
 ```tsx
 import { EmptyState } from "@clossys/designer/blocks";
-import { Button } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/components";
 
 function EmptyPromptsList() {
   return (
@@ -2639,7 +2750,7 @@ doesn't provide: five regions that differ in kind — an optional `toolbar`
 slot, the grid itself (built on `Table`'s primitives), an empty-state
 region (reusing `EmptyState` rather than reimplementing it), a loading
 region, and an optional `footer` slot for something like `Pagination` — is
-what makes this a **block**, not an atom (see "Placement rules", test 2).
+what makes this a **block**, not an component (see "Placement rules", test 2).
 A page can hold two `DataTable`s side by side, which is what makes it a
 block and not a view (test 3) despite being the largest, most intricate
 component this package ships.
@@ -2667,10 +2778,10 @@ same wiring `Table`'s own section above describes; `selectionMode="none"`
 `isLoading` renders `loadingRowCount` (default 5) skeleton placeholder rows
 in place of `rows`, for a consumer's own fetch in flight — `DataTable`
 never tracks that state itself, it only reads the prop. This should read
-`Skeleton` cells from this package's own atoms layer; as of this block's
-own PR, no `Skeleton` atom ships yet (a concurrent branch may add one), so
+`Skeleton` cells from this package's own components layer; as of this block's
+own PR, no `Skeleton` component ships yet (a concurrent branch may add one), so
 the loading state uses a plain `animate-pulse` placeholder div instead.
-Swapping that placeholder for a real `Skeleton` atom, once one exists, is
+Swapping that placeholder for a real `Skeleton` component, once one exists, is
 a deliberate follow-up.
 
 
@@ -2678,7 +2789,7 @@ a deliberate follow-up.
 
 ```tsx
 import { Form, useFormValidation } from "@clossys/designer/blocks";
-import { TextField, Button } from "@clossys/designer/atoms";
+import { TextField, Button } from "@clossys/designer/components";
 import { useState } from "react";
 
 // With useFormValidation: timing, focus and pending state come from the hook.
@@ -2937,7 +3048,7 @@ generated, inside the form's own document or shadow root.
 
 **Pending state.** The submit button is never disabled. While an async
 `onSubmit` is pending, `isSubmitting` is true and `getSubmitButtonProps()`
-returns `{ type: "submit", isPending }`, which the `Button` atom maps to a
+returns `{ type: "submit", isPending }`, which the `Button` component maps to a
 pending state that stays focusable and is announced by
 react-aria-components. A second submit while one is pending is ignored,
 including two submits in the same tick before a re-render. Handle a send
@@ -2957,9 +3068,9 @@ only, never for field errors.
 
 **Accessible error association.** `getFieldProps(name)` returns `id`,
 `name`, `value`, `onChange`, `onBlur`, `isInvalid`, `errorMessage` and
-`validationBehavior: "aria"`. Spread it on a designer field atom
+`validationBehavior: "aria"`. Spread it on a designer field component
 (`TextField`, `Textarea`, `Select`, ...) and react-aria-components wires
-`aria-invalid` and the `aria-describedby` link to the atom's own error
+`aria-invalid` and the `aria-describedby` link to the component's own error
 element. `"aria"` keeps the browser's native constraint validation out of
 the way, since the hook owns when an error shows. For a plain `<input>`,
 `<textarea>` or `<select>`, `getNativeInputProps(name)` gives the same
@@ -2988,7 +3099,7 @@ is programmatically associated with its field), and 2.4.3 Focus Order
 
 ```tsx
 import { FieldGroup } from "@clossys/designer/blocks";
-import { TextField } from "@clossys/designer/atoms";
+import { TextField } from "@clossys/designer/components";
 
 function ShippingAddressGroup() {
   return (
@@ -3037,7 +3148,7 @@ components under this README's variant rule.
 
 ```tsx
 import { ConfirmDialog } from "@clossys/designer/blocks";
-import { Button } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/components";
 
 function DeletePromptButton() {
   return (
@@ -3053,10 +3164,10 @@ function DeletePromptButton() {
 }
 ```
 
-A confirmation prompt built on the `Dialog` atom: a heading region, a
+A confirmation prompt built on the `Dialog` component: a heading region, a
 message region, and an actions region (Cancel/Confirm) — three regions
 that always render together and differ in kind, which is what makes this
-a block rather than an atom. `Dialog` itself deliberately stops short of
+a block rather than an component. `Dialog` itself deliberately stops short of
 this fixed shape — see its own section above for exactly where its scope
 ends and this block's begins.
 
@@ -3099,7 +3210,7 @@ primary action" expectation an ordinary OK/Cancel dialog already sets.
 
 ```tsx
 import { Toolbar } from "@clossys/designer/blocks";
-import { Button, TextField } from "@clossys/designer/atoms";
+import { Button, TextField } from "@clossys/designer/components";
 
 function PromptsToolbar() {
   return (
@@ -3200,7 +3311,7 @@ renders a separate title link without a stretched overlay. The title link
 has its own focus outline; description controls retain their own hit areas
 and keyboard stops. Interactive content in a linked item's title or icon
 throws a `TypeError`. An item with `onSelect` renders through the package's
-`Button` atom (`variant="ghost"`), with its icon, title and description inside
+`Button` component (`variant="ghost"`), with its icon, title and description inside
 the one button. `href` and `onSelect` are mutually exclusive at the type
 level. Icons are decorative reinforcement for the title.
 
@@ -3215,7 +3326,7 @@ raised, bordered button style.
 
 ```tsx
 import { SectionHeader } from "@clossys/designer/blocks";
-import { Button } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/components";
 
 function NotificationsSection() {
   return (
@@ -3300,7 +3411,7 @@ remains an `h1` by default; `headingLevel={2}` still supports a later hero.
 
 ```tsx
 import { Hero } from "@clossys/designer/blocks";
-import { Button } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/components";
 
 function LandingHero() {
   return (
@@ -3345,7 +3456,7 @@ when supplied, and stays a single centered column when it's omitted:
 `<img>` — it's just as often a video embed or an SVG illustration, neither
 of which shares one `alt`-shaped contract. If what you place there IS a
 plain image, give it real alt text yourself (as above), or compose this
-package's own `Avatar`/`Icon` atom, both of which already enforce an
+package's own `Avatar`/`Icon` component, both of which already enforce an
 accessible name at the type level.
 
 `headingLevel` (`1 | 2`, default `1`) picks `heading`'s element — `1`
@@ -3562,7 +3673,7 @@ import { ArticleBody } from "@clossys/designer/blocks";
 function FoldChapter() {
   return (
     <MarketingChapter title="Chapter heading" description="Supporting line.">
-      <ArticleBody>{/* long-form prose */}</ArticleBody>
+      <ArticleBody><p>Long-form chapter content.</p></ArticleBody>
     </MarketingChapter>
   );
 }
@@ -3613,7 +3724,7 @@ icons use secondary ink. Eyebrow,
 badge and meta share a wrapping row in every treatment. The four status tones
 use a rounded opaque base-surface backing, preserving the Badge text and tint
 pairing on each ground. Neutral keeps its own opaque fill. Badge tone maps to
-the existing Badge atom: neutral (default), success, warning, danger or info.
+the existing Badge component: neutral (default), success, warning, danger or info.
 The item-level featured field is retired; select the collection treatment.
 
 An optional `figure` makes an item's measurement prominent: `{ value, delta?,
@@ -3626,7 +3737,7 @@ or on none. They cannot share an item with `visual`, or use bento, statement
 scale or disclosure.
 
 Use `status: { tone, label }` for a lighter state marker instead of a badge.
-The existing `StatusMark` atom supplies its tone-specific shape beside the
+The existing `StatusMark` component supplies its tone-specific shape beside the
 visible label in the meta row. Its tones are `success`, `warning`, `danger`,
 `info` and `neutral`; the label carries the meaning in greyscale and print.
 On rows the status moves to the meta row's end from tablet width. Status is
@@ -4167,7 +4278,7 @@ import { Specimen } from "@clossys/designer/blocks/server";
 Native product-UI evidence for a marketing band, in place of screenshots
 and iframes: a `<figure>` named by the required `label` (its
 `aria-label`: what the specimen shows, 12 to 25 words, no claims), holding
-1 to 3 `SpecimenPanel`s built from atoms and tokens and rendered on the
+1 to 3 `SpecimenPanel`s built from components and tokens and rendered on the
 server. Every word and number arrives through props, so the specimen is
 real text, the size of its content, and reflows at 390px.
 
@@ -4184,7 +4295,7 @@ product UI on a stage: a title row (`title` at `text-body-l`, `meta`,
 `status`, optional `badge`), 1 to 3 `parts` and an optional `footer` (an assignee's initials
 on an accent-tint disc beside their name, a note), each separated by a
 hairline. Body text is `text-body`, labels and secondary lines
-`text-body-s`; part labels are sentence case. Badge labels use the atom's
+`text-body-s`; part labels are sentence case. Badge labels use the component's
 `text-caption` scale. Secondary lines use secondary ink, which holds AA
 on the raised fill. A badge has an authored
 `label` and optional existing Badge `tone`: neutral (the default), success,
@@ -4202,7 +4313,7 @@ Parts (`SpecimenPart`, by `type`): `"fields"` (a `<dl>` in 1, 2 or 4
 columns, default 2, with `@lg:grid-cols-4` only at container widths of 32rem or more); `"status-rows"`
 (a `<ul>` of label, detail and `StatusMark`; optional `mobileRows: 3` hides
 later rows below the 768px viewport breakpoint while retaining them in the
-DOM); `"meter"` (the `Meter` atom
+DOM); `"meter"` (the `Meter` component
 at `emphasis="figure"`, the value as the panel's focal number, with its
 label, state and note, forwarding optional paired `previous`/`previousText`
 to the same Meter); `"table"` (a real `<table>` of at most 4
@@ -4289,7 +4400,7 @@ and a product-specific one further down the page), which is what makes it
 a block rather than a view (test 3).
 
 **Built on react-aria-components' own `Disclosure`/`DisclosurePanel`, one
-per item** — the primitives the `Disclosure` atom wraps, with the same
+per item** — the primitives the `Disclosure` component wraps, with the same
 accessibility contract (real `aria-expanded`/`aria-controls` wiring,
 Enter/Space-and-click toggling, collapsed content kept in the DOM rather
 than unmounted). `Faq` composes them directly so each row takes the FAQ
@@ -4319,7 +4430,7 @@ Both also accept the same optional `eyebrow`, the label slot `Hero` and
 
 ```tsx
 import { PricingTable } from "@clossys/designer/blocks";
-import { Button } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/components";
 
 function ProductPricing() {
   return (
@@ -4364,8 +4475,8 @@ colour-is-never-the-only-channel reasoning `Stat`'s trend indicator
 documents. `badge` has no built-in default text ("Recommended" or
 similar) — this package ships no copy of its own, so there is nothing
 sensible to default it to. Built on this package's own `Card` and `Badge`
-atoms and, when `comparison` is supplied, the `Matrix` block, with the
-shared section `ground` inks (blocks may compose atoms and other blocks).
+components and, when `comparison` is supplied, the `Matrix` block, with the
+shared section `ground` inks (blocks may compose components and other blocks).
 
 See [interval and comparison examples](#pricingtable-interval-and-comparison-examples)
 for interval prices, grouped comparisons, ground inks and host controls.
@@ -4403,7 +4514,7 @@ testimonial with no avatar; supply `avatarSrc` and TypeScript requires
 `avatarAlt` in the same edit, the identical "no way to supply an image
 without its alt text" enforcement `Chip`'s own `onRemove`/`removeLabel`
 pairing already establishes elsewhere in this package. Rendered through
-this package's own `Avatar` atom, which independently requires `alt` at
+this package's own `Avatar` component, which independently requires `alt` at
 its own type level too.
 
 The `/blocks/server` variant uses the server Avatar; use the ordinary block when you need its image-load-failure fallback.
@@ -4510,6 +4621,69 @@ const event: EventRecord = {
 const labels: EventLabels = { unread: "Unread", changedFrom: "changed from", changedTo: "to", cleared: "cleared" };
 
 <EventItem event={event} labels={labels} />;
+```
+
+### `ActivityFeed`
+
+A server-safe feed of `EventItem` rows in authored order. Optional groups put
+every event under exactly one heading (an unknown or ungrouped event throws);
+a host filter region renders above the list, and the supplied empty state
+replaces it when there are no events.
+
+```tsx
+import { ActivityFeed, type EventLabels, type EventRecord } from "@clossys/designer/blocks";
+
+const activityEvent: EventRecord = {
+  id: "evt_1042", at: "2026-10-19T14:32:00Z", timeText: "Oct 19, 14:32 UTC",
+  actor: { name: "Example Editor" },
+  summary: "Example Editor approved the draft.",
+};
+const activityLabels: EventLabels = {
+  unread: "Unread", changedFrom: "changed from", changedTo: "to", cleared: "cleared",
+};
+
+<ActivityFeed aria-label="Activity" events={[activityEvent]} labels={activityLabels}
+  groups={[{ id: "today", label: "Today", eventIds: [activityEvent.id] }]}
+  emptyState={{ title: "No activity yet" }} />;
+```
+
+### `AuditLog`
+
+A read-only audit trail on `DataTable` with fixed time, actor, action and
+target columns. The time cell is a `<time>` row header; a host filter and an
+export action share the toolbar above the grid.
+
+```tsx
+import { AuditLog } from "@clossys/designer/blocks";
+
+<AuditLog aria-label="Audit log"
+  labels={{ time: "Time", actor: "Actor", action: "Action", target: "Target" }}
+  entries={[{ id: "a1", at: "2026-10-19T14:32:00Z", timeText: "Oct 19, 14:32", actor: "Ada Park", action: "Published page", target: "Pricing" }]}
+  exportAction={<Button>Export</Button>} />;
+```
+
+### `Timeline`
+
+A server-safe dated sequence: one ordered list of `<time>` dates and event
+headings joined by a decorative marker rail. Events must not be empty.
+
+```tsx
+import { Timeline } from "@clossys/designer/blocks";
+
+<Timeline aria-label="Company history" headingLevel={3}
+  events={[{ id: "founded", at: "2019-04", dateText: "April 2019", heading: "Founded" }]} />;
+```
+
+### `UsageSummary`
+
+Several limits at once: a responsive list of `UsageMeter` records, each
+carrying its own `id`. An empty list needs an `emptyState`.
+
+```tsx
+import { UsageSummary } from "@clossys/designer/blocks";
+
+<UsageSummary aria-label="Plan usage"
+  meters={[{ id: "seats", label: "Seats", used: 12, limit: 25, usedText: "12 seats", limitText: "of 25", periodText: "This period" }]} />;
 ```
 
 ### `SectionFrame`
@@ -4715,7 +4889,7 @@ An empty collection renders `EmptyState` directly, with no grid rows.
 
 ```tsx
 import { useState } from "react";
-import { Badge } from "@clossys/designer/atoms";
+import { Badge } from "@clossys/designer/components";
 import { ResourceList, type ResourceListItem } from "@clossys/designer/blocks";
 
 const notes: ResourceListItem[] = [
@@ -4879,7 +5053,7 @@ function; the block does not retain the address.
 
 ```tsx
 import { ConsentBanner } from "@clossys/designer/blocks";
-import { Link } from "@clossys/designer/atoms";
+import { Link } from "@clossys/designer/components";
 
 function PageConsent({ onAccept, onReject, status }: { onAccept: () => void; onReject: () => void; status?: string }) {
   return (
@@ -4917,7 +5091,7 @@ The root is a `<section>` named by its own title heading, so assistive
 tech announces it as a region landmark. It is deliberately not a dialog: no
 `role="dialog"`, no `aria-modal`, no autofocus, no focus trap, no Escape
 handling, no portal and no timer, so keyboard users move past it with Tab
-like any other content. Accept and reject are both `Button` atoms with the
+like any other content. Accept and reject are both `Button` components with the
 same `variant` and `size`, which gives the two choices equal prominence
 (rejecting is a button, not a link). No form control renders inside it.
 
@@ -4946,11 +5120,61 @@ tap targets whose labels may wrap. Pass `selectedChoice="granted"` or `"denied"`
 host state to show a decorative check and `aria-pressed`; the component
 stores no choice. The live region stays mounted in either presentation.
 
+### Section blocks: `ErrorState`, `StatGroup`, `RecordCards`, `CallToAction`, `NoticeList`, `Gallery`
+
+```tsx
+import { CallToAction, ErrorState, Gallery, NoticeList, RecordCards, StatGroup } from "@clossys/designer/blocks";
+import type { NoticeListItem } from "@clossys/designer/blocks";
+import { Button, Link } from "@clossys/designer/components";
+
+function SectionExamples({ notices, onRetry, onDismiss }: { notices: readonly NoticeListItem[]; onRetry: () => void; onDismiss: (id: string) => void }) {
+  return (
+    <>
+      <ErrorState kind="failure" code="Error code" title="Error title" description="Error description." retry={<Button variant="primary" onPress={onRetry}>Retry label</Button>} report={<Link href="/status">Report label</Link>} />
+      <StatGroup layout="grid" items={[{ id: "a", label: "Stat label", value: "10", delta: "+2%", trend: "up" }]} />
+      <RecordCards layout="grid" records={[{ id: "a", title: "Record title", href: "/a", description: "Record description.", badge: { label: "Badge", variant: "success" }, meta: "Record meta" }]} />
+      <CallToAction eyebrow="Eyebrow" title="Call title" description="Call description." primaryAction={<Link href="/start" buttonVariant="primary">Primary</Link>} secondaryAction={<Link href="/sales" buttonVariant="secondary">Secondary</Link>} />
+      <NoticeList label="Notices label" notices={notices} onDismiss={onDismiss} />
+      <Gallery label="Gallery label" images={[{ id: "i", label: "Image name", media: <img src="/image.png" alt="Image name" />, caption: "Caption" }]} />
+    </>
+  );
+}
+```
+
+Each is a props-only section with no state, storage, timer or network call of
+its own; every word arrives through props.
+Their prop types are exported alongside them: `ErrorStateProps`, `ErrorStateKind`,
+`StatGroupProps`, `StatGroupItem`, `StatGroupLayout`, `RecordCardsProps`,
+`RecordCardsRecord`, `RecordCardsLayout`, `RecordCardsHeadingLevel`, `CallToActionProps`,
+`NoticeListProps`, `NoticeListItem`, `GalleryProps` and `GalleryImage`.
+
+- `ErrorState` is a `<section>` named by its title. It composes the centred
+  `SectionHeader` with `code` as the eyebrow, then `retry` before `report`.
+  `kind` (`not-found`, `failure`, `forbidden`, `offline`) renders as
+  `data-error-kind`. It is not a live region: the host moves focus or
+  announces the change when it replaces content with it.
+- `StatGroup` renders a list of `Stat`s, in a responsive grid (`layout="grid"`,
+  one, two then four columns) or a wrapping row (`layout="row"`).
+- `RecordCards` renders a list of outline `Card`s. A record's title is its one
+  link (when `href` is set), with an optional `Badge` and a muted meta line;
+  `layout` is `grid` or `list`, and `headingLevel` sets the title heading.
+- `CallToAction` is a `<section>` named by its title, on a section ground
+  (`sunken` by default), with a centred `SectionHeader` and at most a primary
+  and a secondary action, so the two-action limit is structural.
+- `NoticeList` is a labelled region holding one `Banner` per notice. The tone
+  sets the banner's live-region role, and `onDismiss(id)` reports a dismissal
+  for the host to remove; `dismissible: false` pins a notice.
+- `Gallery` is a labelled grid of figures. With `lightbox` on (the default)
+  each image is a React Aria button that opens the image in a modal `Dialog`
+  named by its `label`, with its caption and a close action; with it off the
+  images are plain figures. The host supplies every image node and its
+  alternative text.
+
 ### Composing chrome and blocks
 
 Marketing/site chrome (`shell`) and marketing content blocks compose
 cleanly — `shell` and `blocks` are independent sibling layers built on
-`atoms`, neither depending on the other (see "Package structure" above),
+`components`, neither depending on the other (see "Package structure" above),
 so a real page just renders both together:
 
 `SiteFooter` keeps a dark local surface in light and dark page themes. Its
@@ -4966,7 +5190,7 @@ Legacy `ground` controls divider policy without switching the page theme.
 ```tsx
 import { SiteHeader, SiteFooter } from "@clossys/designer/shell";
 import { Hero, FeatureGrid } from "@clossys/designer/blocks";
-import { Button, Link } from "@clossys/designer/atoms";
+import { Button, Link } from "@clossys/designer/components";
 
 function MarketingPage() {
   return (
@@ -5048,7 +5272,7 @@ assuming one.
 
 ```tsx
 // ErrorView is exported by @clossys/publisher/web.
-import { Button } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/components";
 
 function ServerErrorPage() {
   return (
@@ -5083,7 +5307,7 @@ page) is a text link inside `description`, not a second button.
 
 ```tsx
 import { DetailView } from "@clossys/designer/blocks";
-import { Badge, Button } from "@clossys/designer/atoms";
+import { Badge, Button } from "@clossys/designer/components";
 
 function OrderDetail({ order }: { order: { id: string; owner: string; status: string; notes: string } }) {
   return (
@@ -5130,7 +5354,7 @@ own title region rather than repeating the same text twice.
 
 ```tsx
 // AuthView is exported by @clossys/publisher/web.
-import { Link } from "@clossys/designer/atoms";
+import { Link } from "@clossys/designer/components";
 
 function SignInPage() {
   return (
@@ -5149,7 +5373,7 @@ function SignInPage() {
 A full-page authentication shell — sign-in, sign-up, password reset, email
 verification. In order: a site header (`SiteHeader`, holding the required
 `brand`), a page header (`heading` plus the required `description`), a card
-(built on `atoms/Card`) holding only the `form` slot, the `secondaryAction`
+(built on `components/Card`) holding only the `form` slot, the `secondaryAction`
 lines below the card, an optional `footnote`, and a site footer (`SiteFooter`, fed by
 `footerSecondary`). `heading` (required) renders as the page's `<h1>`;
 `description` (required) renders directly under it, so every step decides on
@@ -5209,7 +5433,7 @@ function PromptsPagination({ totalPrompts }: { totalPrompts: number }) {
 ```
 
 Page navigation — a range summary, the page controls themselves, and an
-optional page-size selector (built on the `Select` atom, rendered only when
+optional page-size selector (built on the `Select` component, rendered only when
 both `pageSizeOptions` and `onPageSizeChange` are given), three regions
 that differ in kind. A page can hold two `Pagination`s (two independent
 lists side by side), which is what makes it a block rather than a view.
@@ -5224,7 +5448,7 @@ otherwise), the same reason `DataTable` above never paginates its own
 Wrapped in a real `<nav aria-label="Pagination">` landmark (override the
 label via the same `aria-label` prop for a page with more than one
 `Pagination`), the current page carries `aria-current="page"`, and every
-control is a real `<button>` (this package's own `Button` atom) — there is
+control is a real `<button>` (this package's own `Button` component) — there is
 nowhere for a page control in a controlled component like this one to
 navigate to as a URL, so a link styled to look like a button would be the
 wrong element regardless of styling. A large `pageCount` truncates to
@@ -5305,7 +5529,7 @@ A single metric — a label, the value itself, an optional delta/trend, and
 an optional description, regions that differ in kind. A page routinely
 holds several `Stat`s in a row (a metrics dashboard, a summary strip above
 a table), which is exactly why this is a block and not a view, and not an
-atom either: `label` and `value` play different roles (a metric's name vs.
+component either: `label` and `value` play different roles (a metric's name vs.
 its measurement), not a homogeneous repeat.
 
 `trend` (`"up" | "down" | "neutral"`, default `"neutral"`) drives the
@@ -5318,12 +5542,12 @@ screen reader with no color channel at all.
 
 ## Shell
 
-`atoms`, `blocks`, and `views` are **content**: a `Button`, a `PageHeader`,
+`components`, `blocks`, and `views` are **content**: a `Button`, a `PageHeader`,
 an `ErrorView` — whatever fills the page for the route currently on screen.
 `shell` is the **frame** that content is rendered inside of. The two differ
 on three axes:
 
-| | Content (`atoms`, `blocks`, `views`) | `shell` |
+| | Content (`components`, `blocks`, `views`) | `shell` |
 | --- | --- | --- |
 | Lifetime | remounts on every route change | persists across navigation |
 | Cardinality | many per app | exactly one per app |
@@ -5344,7 +5568,7 @@ toast that was queued a moment before the user clicked a link.
 // Your Next.js app's root layout (the "layout.tsx" file in the App
 // Router's "app" directory)
 import { Shell } from "@clossys/designer/shell";
-import { Link } from "@clossys/designer/atoms";
+import { Link } from "@clossys/designer/components";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -5436,7 +5660,7 @@ files:
 ```
 
 `MarketingNav`, `MemberAccountControl`, `MemberNav`, `StaffToolbar`, `StaffNav`, and
-`AuditLog` are each the CONSUMER's own composition of atoms — `Shell.Header`
+`AuditLog` are each the CONSUMER's own composition of components — `Shell.Header`
 itself stays a plain, unopinionated slot, and ships no `AppHeader` block of
 its own. A header is where brand lives, and shipping a pre-built one INTO
 `Shell` would recreate, one layer up, exactly the `mode`-prop failure
@@ -5473,7 +5697,7 @@ own regions do, which is what puts all four here rather than in `blocks`.
 // Your Next.js app's root layout (the "layout.tsx" file in the App
 // Router's "app" directory)
 import { NavShell, SiteFooter, SiteHeader, SkipLink } from "@clossys/designer/shell";
-import { Link } from "@clossys/designer/atoms";
+import { Link } from "@clossys/designer/components";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -5619,6 +5843,13 @@ from both `@clossys/designer/shell` and `@clossys/designer/shell/server`.
 
 `surface` is the single header surface setting. `"solid"` (default) is an
 in-flow plate with a hairline. `"transparent"` never paints a plate or border.
+`position="sticky"` keeps either surface at the scroll edge and reads the sticky
+layer token. `position="static"` keeps it in document flow without a sticky
+layer read. Omission preserves the existing relative positioning. A solid
+header uses the 1px hairline token. These are the closed `position.sticky` and
+`position.static` members of `frames.site-header` and `frames.app-header`;
+instance members override consumer library defaults on the same axis.
+Glass always stays fixed; combining glass with static is rejected.
 `"glass"` fixes the header over the first block, taking no document height:
 transparent at the scroll origin, then translucent and blurred after scrolling
 or while a menu is open. The glass is `--color-surface-glass` (or
@@ -5786,8 +6017,8 @@ handling and focus return.
 breakpoint switching, no JS media-query state, so the correct layout is
 already there on first paint before hydration ever runs. The drawer is
 built on the same react-aria-components `DialogTrigger`/`ModalOverlay`/
-`Modal`/`Dialog` primitives this package's own `Dialog` atom uses (see
-that atom's own doc comment for the underlying mechanism), which is what
+`Modal`/`Dialog` primitives this package's own `Dialog` component uses (see
+that component's own doc comment for the underlying mechanism), which is what
 gives it, for free: focus moves into the drawer on open and is trapped
 there; Escape always closes it; the trigger exposes `aria-expanded`/
 `aria-haspopup` automatically; focus returns to the trigger on close;
@@ -5952,7 +6183,7 @@ behavior is independent and unchanged.
 
 ### `Logomark` and `Lockup`
 
-`Logomark` from `@clossys/designer/atoms` renders one decorative glyph image.
+`Logomark` from `@clossys/designer/components` renders one decorative glyph image.
 Supply `src` as a URL and choose `size="sm" | "md" | "lg"`. The caller selects
 light, dark or mono artwork through that URL. `plate="self"` (the default)
 preserves its aspect ratio; `plate="shared"` insets it inside the shared square.
@@ -5971,7 +6202,7 @@ the wordmark's `tone`; omitted, it is Logomark's default (`"auto"`), whatever
 `tone` is.
 
 ```tsx
-import { Logomark } from "@clossys/designer/atoms";
+import { Logomark } from "@clossys/designer/components";
 import { Lockup } from "@clossys/designer/blocks";
 
 function Identity() {
@@ -6261,13 +6492,13 @@ this package's chart-color family (`--color-chart-*`, added in
 that package's `0.4.0`) so every chart follows the active theme the same
 way every other token-driven surface in this package does.
 
-`charts` is a **sibling** of `shell`, not a rung of the `atoms → blocks →
+`charts` is a **sibling** of `shell`, not a rung of the `components → blocks →
 views` ladder — the same reasoning "Shell" above gives for why `shell`
 sits beside `views` rather than above it applies here too, one layer
 further: a chart is neither persistent frame nor route content, it's a
 different domain of primitive entirely (marks, scales, a plot coordinate
-space) built directly on `atoms`. `charts` may import from `atoms` (its
-`cx` class-merge helper); nothing in `atoms`, `blocks`, `views`, or `shell`
+space) built directly on `components`. `charts` may import from `components` (its
+`cx` class-merge helper); nothing in `components`, `blocks`, `views`, or `shell`
 imports from `charts` — see `src/ladder.test.ts`.
 
 **Non-negotiables every component here follows:**
@@ -6694,9 +6925,9 @@ their labels; these charts do not resolve label collisions automatically.
 
 ### `Sparkline`
 
-A bare inline trend — no axes, no grid, no legend, and (the one exception
-in this layer) no hover layer, meant to sit inline in running text or a
-stat tile at a size too small for a crosshair to make sense:
+A compact inline trend. By default it is bare — no axes, no grid, no
+legend and no hover layer — so it can sit inline in running text or a stat
+tile:
 
 ```tsx
 import { Sparkline } from "@clossys/designer/charts";
@@ -6707,6 +6938,13 @@ import { Sparkline } from "@clossys/designer/charts";
 Still ships its table-view fallback — that requirement has no exception —
 collapsed behind the same `<details>` pattern `ChartFrame` uses, so it
 costs no layout space until opened.
+
+Three optional parts, all off by default, add chrome when a sparkline
+stands alone: `axes` draws the zero baseline and labels the plotted range
+with `valueFormat`; `legend="…"` shows a one-item series legend; `tooltip`
+makes each point inspectable on hover and keyboard focus through the
+shared `ChartFrame.Tooltip` part (one tab stop per point, so leave it off
+for sparklines repeated in running text).
 
 ### The categorical palette, and what happens past 8 series
 
@@ -6843,7 +7081,7 @@ import { ThemeToggle } from "@clossys/designer/theme";
 ```
 
 A single control that cycles System → Light → Dark → System, built from
-this package's own `Button`/`Icon` atoms — see `ThemeToggle.tsx`'s own
+this package's own `Button`/`Icon` components — see `ThemeToggle.tsx`'s own
 doc comment for the full reasoning, summarized here: a theme preference is
 one of three values, not a bit, so a two-state `Switch` plus a separate
 "reset to system" control would need two controls to do one job, and the
@@ -6856,7 +7094,7 @@ building their own three-option segmented control or menu would use
 instead of `ThemeToggle`.
 
 Keyboard-operable and screen-reader accessible via this package's own
-`Button` atom (react-aria-components underneath — see "Why these
+`Button` component (react-aria-components underneath — see "Why these
 dependencies"): `aria-label` states both the current preference and what
 activating the control does next, and a visually hidden
 `role="status"`/`aria-live="polite"` region announces every change, since
@@ -6866,14 +7104,14 @@ not every screen reader/browser combination reliably re-announces an
 ## Icon glyph data (`@clossys/designer/icons`)
 
 ```tsx
-import { Icon } from "@clossys/designer/atoms";
+import { Icon } from "@clossys/designer/components";
 import { Search } from "@clossys/designer/icons";
 
 <Icon glyph={Search} label="Search" />;
 ```
 
 40 `IconNode` exports — plain data, no components, no rendering logic of
-any kind. See "Icon" (above, under "Atoms") for the render contract that
+any kind. See "Icon" (above, under "Components") for the render contract that
 consumes this data; this section covers the data itself: where it came
 from, how the 40 were chosen, and how to keep it current.
 
@@ -6888,7 +7126,7 @@ components) never had to accept `ui`'s own dependency graph
 
 That reasoning doesn't survive being checked against how ES module
 bundlers actually behave, once the render CONTRACT (this package's own
-`Icon` atom) is what a consumer needs alongside the data anyway: `ui` is
+`Icon` component) is what a consumer needs alongside the data anyway: `ui` is
 `"sideEffects": false`, and `@clossys/designer/icons` ships one ES module
 per glyph — importing `Search` from it bundles exactly `Search`, the same
 elimination `src/icons/tree-shake.test.ts` measures against a real
@@ -6967,7 +7205,7 @@ documents a three-state theme toggle (`"system" | "light" | "dark"`), and
 `Sun`/`Moon`/`Monitor` — all three of its canonical icons — are already in
 the 22. The token layer also ships exactly four status colors
 (`success`/`warning`/`danger`/`info`), already exposed as a `variant` prop
-on this package's own `Banner`/`Badge` atoms, and two of the four —
+on this package's own `Banner`/`Badge` components, and two of the four —
 `Info` (`info`) and `AlertTriangle` (`warning`) — are already in the 22 as
 well. The other two color-family members are NOT in the 22 (neither
 consumer registry with the narrow, independent 31-icon set had a matching
@@ -6978,10 +7216,10 @@ than shipping it two-fifths done: `CheckCircle` (success) and `XCircle`
 beyond the raw intersection number.
 
 A second, separate tier addresses the universal interaction primitives this
-package's own atoms currently stand in for with plain text: `Select` and
+package's own components currently stand in for with plain text: `Select` and
 `ComboBox` render a literal `▾` character instead of a chevron icon, and
 `Chip`/`Banner` render a literal `×` instead of a close icon — deliberately
-(see those atoms' own sections above; migrating them to `Icon` is explicit
+(see those components' own sections above; migrating them to `Icon` is explicit
 follow-up work, not this data set's job). `ChevronDown`/`ChevronUp`/
 `ChevronLeft`/`ChevronRight` and `X` are the real glyphs those placeholders
 stand in for — present in both full `lucide`-based registries (2-way
@@ -7095,14 +7333,14 @@ not a grab-bag).
 | `IconNode` | type | `ReadonlyArray<readonly [tag: string, attrs: Record<string, string>]>` — also re-exported from `@clossys/designer/icons`. |
 | `TextField` | component | Labeled single-line text input built on react-aria-components' `TextField` + `Label` + `Input` + `FieldError`. |
 | `TextFieldProps` | type | Props for `TextField`: `label`, `description`, `errorMessage`, `placeholder`, `className`, `inputClassName`, plus everything react-aria-components' own `TextField` accepts. |
-| `Badge` | component | Small status/label pill. Plain markup — not interactive, composes no other atom. |
+| `Badge` | component | Small status/label pill. Plain markup — not interactive, composes no other component. |
 | `BadgeProps` | type | Props for `Badge`: `variant`, plus every native `<span>` attribute. |
 | `BadgeVariant` | type | `"neutral" \| "success" \| "warning" \| "danger" \| "info"`. |
-| `Card` | component | Content surface: `raised` (default), `plate` (ground-relative fill) or `outline` (hairline panel). Plain markup — not interactive, composes no other atom. |
+| `Card` | component | Content surface: `raised` (default), `plate` (ground-relative fill) or `outline` (hairline panel). Plain markup — not interactive, composes no other component. |
 | `CardProps` | type | Props for `Card`: `variant`, `ground`, plus every native `<div>` attribute. |
 | `CardVariant` | type | `"raised" \| "plate" \| "outline"`. |
 | `CardGround` | type | `"base" \| "sunken" \| "inverse"`: the section ground a `Card` sits on. |
-| `Breadcrumb` | component | Breadcrumb trail built on react-aria-components' `Breadcrumbs`/`Breadcrumb`/`Link`. Carries `Breadcrumb.Item`. An atom: its items are a homogeneous repeat, not distinct named regions. |
+| `Breadcrumb` | component | Breadcrumb trail built on react-aria-components' `Breadcrumbs`/`Breadcrumb`/`Link`. Carries `Breadcrumb.Item`. An component: its items are a homogeneous repeat, not distinct named regions. |
 | `BreadcrumbProps` | type | Props for `Breadcrumb`: `children`, `className`, `aria-label`, plus react-aria-components' own `Breadcrumbs` props. |
 | `BreadcrumbItemProps` | type | Props for `Breadcrumb.Item`: `href`, `children`, `className`. |
 | `Link` | component | Navigable link built on react-aria-components' `Link`. |
@@ -7117,7 +7355,7 @@ not a grab-bag).
 | `SelectOption` | type | One option: `id`, `label`, `isDisabled?`, `textValue?`. |
 | `Textarea` | component | Labeled multi-line text input built on react-aria-components' `TextField` + `Label` + `TextArea` + `FieldError`. |
 | `TextareaProps` | type | Props for `Textarea`: `label`, `description`, `errorMessage`, `placeholder`, `rows`, `className`, `textareaClassName`, plus everything react-aria-components' own `TextField` accepts. |
-| `Avatar` | component | Person/thing picture with an initials fallback. Plain markup — not interactive, composes no other atom. |
+| `Avatar` | component | Person/thing picture with an initials fallback. Plain markup — not interactive, composes no other component. |
 | `AvatarProps` | type | Props for `Avatar`: `alt`, `src`, `size`, plus every native `<span>` attribute except `children`. |
 | `AvatarSize` | type | `"sm" \| "md" \| "lg"`. |
 | `Spinner` | component | Indeterminate loading indicator. A labelled spinner is react-aria-components' `ProgressBar` around the SVG ring; a decorative one is the bare SVG. |
@@ -7149,10 +7387,10 @@ not a grab-bag).
 | `TableCellProps` | type | Props for `Table.Cell`: `children`, `className`, `style`, plus everything react-aria-components' own `Cell` accepts. |
 | `TableSelectAllCheckboxProps` | type | Props for `Table.SelectAllCheckbox`: `aria-label` (default `"Select all rows"`), `className`. |
 | `TableSelectionCheckboxProps` | type | Props for `Table.SelectionCheckbox`: `aria-label` (default `"Select row"`), `className`. |
-| `Field` | component | Label/description/error wrapper for a control this package doesn't ship an atom for. `children` is a render prop receiving `FieldRenderProps` to spread onto that control. |
+| `Field` | component | Label/description/error wrapper for a control this package doesn't ship an component for. `children` is a render prop receiving `FieldRenderProps` to spread onto that control. |
 | `FieldProps` | type | Props for `Field`: `label`, `description`, `errorMessage`, `isInvalid`, `isRequired`, `children`, `className`, `style`. |
 | `FieldRenderProps` | type | The `{ id, "aria-describedby"?, "aria-invalid"?, "aria-required"? }` shape `Field`'s `children` render prop receives. |
-| `Skeleton` | component | Loading placeholder. Plain markup — not interactive, composes no other atom. |
+| `Skeleton` | component | Loading placeholder. Plain markup — not interactive, composes no other component. |
 | `SkeletonProps` | type | Props for `Skeleton`: `shape`, `aria-label`, plus every native `<div>` attribute except `children`/`role`. |
 | `SkeletonShape` | type | `"text" \| "block" \| "circle"`. |
 | `Tooltip` | component | Hover/focus description built on react-aria-components' `TooltipTrigger`/`Tooltip`. |
@@ -7182,10 +7420,13 @@ not a grab-bag).
 | `SeparatorProps` | type | Props for `Separator`: `orientation`, `decorative`, `className`, `style`, plus most of react-aria-components' own `Separator` props. |
 | `Chip` | component | A removable label: a label region plus a remove-affordance region. Distinct from `Badge`, which is static. |
 | `ChipProps` | type | Props for `Chip`: `children`, `isDisabled`, `className`, `style`, plus `onRemove`/`removeLabel` (typed together — `removeLabel` is required whenever `onRemove` is supplied). |
+| `SemanticContent` | component | One explicit native text, heading, list or container element, with no wrapper or default paint. Server-safe. |
+| `SemanticContentTag` | type | Closed content tags: `article`, `aside`, `code`, `dd`, `div`, `dl`, `dt`, `h1`–`h6`, `li`, `main`, `p`, `section`, `small`, `span`, `strong`, `time`, `ul`. |
+| `SemanticContentProps` | type | Required `as` plus the selected tag’s native attributes and ref. |
 | `StatusMark` | component | A tone mark (a shape per tone) and a visible label for one data state. Server-safe. |
 | `StatusMarkProps` | type | Props for `StatusMark`: `tone`, `children` (required), plus every native `<span>` attribute. |
 | `StatusMarkTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
-| `Meter` | component | A value against a scale and an optional limit, with visible value and limit text and a decorative bar. Built on react-aria-components' `Meter`; the `atoms/server` export is the same markup without the meter role. |
+| `Meter` | component | A value against a scale and an optional limit, with visible value and limit text and a decorative bar. Built on react-aria-components' `Meter`; the `components/server` export is the same markup without the meter role. |
 | `MeterProps` | type | Props for `Meter`: `value`, `scaleMax`, `limit`, `direction`, `tone`, `valueText`, `limitText`, `emphasis`, optional `label`, optional paired `previous`/`previousText`, plus every native `<div>` attribute except `children`. |
 | `MeterTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral" \| "accent"`. |
 | `MeterDirection` | type | `"max" \| "min"`: whether the limit is a cap or a floor. |
@@ -7254,7 +7495,7 @@ not a grab-bag).
 | `FieldValidator` | type | `(value, values) => ReactNode`: returns the error to show, or `undefined`/`null`/`false`/`""` when valid. |
 | `FormFieldName` | type | The string keys of a form's values type; each becomes part of a DOM id. |
 | `FormStringFieldName` | type | The field names whose value is a string, the ones `getNativeInputProps` accepts. |
-| `FormFieldProps` | type | Props `getFieldProps` returns for a designer field atom: `id`, `name`, `value`, `onChange`, `onBlur`, `isInvalid`, `errorMessage`, `validationBehavior`. |
+| `FormFieldProps` | type | Props `getFieldProps` returns for a designer field component: `id`, `name`, `value`, `onChange`, `onBlur`, `isInvalid`, `errorMessage`, `validationBehavior`. |
 | `FormNativeInputProps` | type | Props `getNativeInputProps` returns for a plain input: `id`, `name`, `value`, `onChange`, `onBlur`, `aria-invalid`, `aria-describedby`. |
 | `FormSubmitButtonProps` | type | Props `getSubmitButtonProps` returns for the submit `Button`: `type: "submit"`, `isPending`. |
 | `FieldGroup` | component | A related set of fields under a shared `<fieldset>`/`<legend>`: legend, optional description, the fields. |
@@ -7464,7 +7705,7 @@ not a grab-bag).
 | `SiteFooterProps` | type | Props for `SiteFooter`: `columns`, `secondary`, legacy `ground` divider policy, optional `rule="top"` on transparent ground, plus native `<footer>` attributes except `children`. Paint remains locally dark. |
 | `SiteFooterColumnProps` | type | Props for `SiteFooter.Column`: `heading`, `children` (the column's own links), `className`. |
 | `Toaster` | component | The toast viewport — mount once, anywhere in the same tree as `Shell`. |
-| `ToasterProps` | type | Props for `Toaster`: `aria-label` (default `"Notifications"`), `className`. |
+| `ToasterProps` | type | Props for `Toaster`: `aria-label` (default `"Notifications"`), `className`, `queue` (default: the app-wide `toast()` queue) and `placement` (`"viewport"`, the default, or `"container"` to draw in place). |
 | `toast` | value | Imperative toast API: `toast(title, options?)`, `toast.success`/`.error`/`.warning`/`.info`, `toast.dismiss`, `toast.dismissAll`. |
 | `ToastFunction` | type | The callable shape of `toast` itself. |
 | `ToastHandle` | type | Returned by every `toast(...)` call: `{ id, dismiss() }`. |
@@ -7499,7 +7740,7 @@ not a grab-bag).
 | `StatusStrip` | component | Proportional patterned status intervals with explicit unknown gaps and a native table. |
 | `StatusStripProps` | type | Required `title`, `segments`; optional `domain: readonly [number \| Date, number \| Date]`, `intervalFormat`, and shared chart inspection/selection, loading, description, dimensions, table and style props. |
 | `StatusStripSegment` | type | `{ from: number \| Date, to: number \| Date, status: "ok" \| "warn" \| "error" \| "unknown" }`. |
-| `Sparkline` | component | A bare inline trend — no axes/grid/legend/hover, still ships a table-view fallback. |
+| `Sparkline` | component | A compact inline trend — bare by default, with opt-in axes, legend and tooltip; always ships a table-view fallback. |
 | `SparklineProps` | type | Props for `Sparkline`: `values`, `title`, `width`, `height`, `color`, `valueFormat`, `tableFallbackLabel` (default `"View as table"`), `valueColumnLabel` (default `"Value"`), `className`, `style`. |
 | `getThemeInitScript` | function | Returns a self-contained head script (string) that stamps `data-theme` before first paint. Takes `{ storageKey?, defaultTheme? }`. |
 | `ThemeInitScriptOptions` | type | Options for `getThemeInitScript`: `storageKey?` (default `"ui-theme"`) and `defaultTheme?` (default `"system"`). |
@@ -7511,7 +7752,7 @@ not a grab-bag).
 | `ResolvedTheme` | type | `"light" \| "dark"` — never `"system"`. |
 | `THEME_PREFERENCES` | value | `["system", "light", "dark"] as const` — the three valid preference strings. |
 | `DEFAULT_STORAGE_KEY` | value | `"ui-theme"` — the default `localStorage` key `ThemeProvider` and `getThemeInitScript` both use. |
-| `ThemeToggle` | component | Accessible control cycling System → Light → Dark → System, built from this package's own `Button`/`Icon` atoms. |
+| `ThemeToggle` | component | Accessible control cycling System → Light → Dark → System, built from this package's own `Button`/`Icon` components. |
 | `ThemeToggleProps` | type | Props for `ThemeToggle`: `preferenceLabels`, `toggleLabel`, `preferenceAnnouncement`, plus everything `Button` accepts except `children`/`onPress`. |
 
 ## Tests
@@ -7519,7 +7760,7 @@ not a grab-bag).
 `WaterfallChart.test.tsx` covers accumulated totals, signed labels, connectors,
 and static fallback behavior. This source test does not ship with the package.
 
-Beyond render/interaction/keyboard/ARIA tests per atom (`Button.test.tsx`,
+Beyond render/interaction/keyboard/ARIA tests per component (`Button.test.tsx`,
 `TextField.test.tsx`, `Badge.test.tsx`, `Card.test.tsx`,
 `Breadcrumb.test.tsx`, `Link.test.tsx`, `Checkbox.test.tsx`,
 `Switch.test.tsx`, `Select.test.tsx`, `Textarea.test.tsx`, `Avatar.test.tsx`,
@@ -7548,7 +7789,7 @@ resolution logic), and the
 `tailwind-merge` regression tests described above (`internal/cx.test.ts`),
 three tests are worth calling out specifically:
 
-- **`token-parity.test.ts`** scans every atom's, block's, AND shell
+- **`token-parity.test.ts`** scans every component's, block's, AND shell
   component's source (everything under `src/`) for candidate Tailwind
   classes — extracted from a `className="..."` JSX attribute, a `cx(...)`
   call's arguments, and a `Record<Variant, string>` "variant map" object
@@ -7576,25 +7817,25 @@ three tests are worth calling out specifically:
   see the test file's own header comment for the four real workarounds this
   approach let this package undo, and how the previous, allow-list-based
   version of this check forced them in the first place.
-- **`ladder.test.ts`** scans every file under `src/atoms/`, `src/blocks/`,
+- **`ladder.test.ts`** scans every file under `src/components/`, `src/blocks/`,
   `src/views/`, `src/shell/`, `src/charts/`, and `src/theme/` for import
   specifiers that climb UP the ladder (or, for `charts`/`theme`, out of
   their narrow sibling lane), and fails the build if it finds one — the
-  ladder invariant (`atoms` →
+  ladder invariant (`components` →
   `blocks` → `views`, with `shell` as the frame `views` fill and `charts`
   as a second, narrower sibling, down only) enforced structurally rather
   than left as a comment that can silently drift. It checks every
-  forbidden direction: an atom importing `blocks/`, `views/`, `shell/`, or
+  forbidden direction: an component importing `blocks/`, `views/`, `shell/`, or
   `charts/`; a block importing `views/`, `shell/`, or `charts/`; `shell`
   importing `views/` or `charts/`; `views` importing `shell/` or `charts/`
   — the last two making `views` and `shell` mutually exclusive peers that
-  both build on `atoms`/`blocks` without depending on each other; and
+  both build on `components`/`blocks` without depending on each other; and
   `charts` importing `blocks/`, `views/`, or `shell/`. It also runs the
-  same scan for the PERMITTED directions (`blocks` importing `atoms`;
-  `views` importing `atoms`; `views` importing `blocks`; `shell` importing
-  `atoms`; `charts` importing `atoms`) as a sanity check — proving the
+  same scan for the PERMITTED directions (`blocks` importing `components`;
+  `views` importing `components`; `views` importing `blocks`; `shell` importing
+  `components`; `charts` importing `components`) as a sanity check — proving the
   scan inspects real code rather than passing on zero coverage, without
-  asserting those lists are empty, since importing atoms (and, for
+  asserting those lists are empty, since importing components (and, for
   `views`, blocks too) is correct and expected in every one of those
   places. Verified by hand, not just by the sanity checks: a temporary
   import from `views/` into `blocks/index.ts` was added, confirmed to fail
@@ -7662,7 +7903,7 @@ its own subpath and an installable CLI:
   mirroring `copy-gate:ignore` exactly) or — the one legitimate exception —
   a Tailwind arbitrary-value class that is a bare `var(--custom-property)`
   reference with no fallback, the documented "no Tailwind namespace, raw
-  `var()` only" escape hatch `atoms/internal/ui-vars.ts` describes. THREE
+  `var()` only" escape hatch `src/components/internal/ui-vars.ts` describes. THREE
   rules, not one: a BARE literal (no `var()` at all — the token system is
   never consulted at this call site) is `severity: "error"`
   (`"hardcodes-token-value"` if it matches a real token's value exactly,
@@ -7856,56 +8097,6 @@ model's output — the `found` -> adopted path #1210 names. Neither path does
 free-hand drawing: both compose the same small set of primitives (a glyph, a
 badge wrapper, `recolorSvg`), the "deterministic mechanics" split #1187's
 "who does what" table draws for this package's role.
-
-**Measure and normalize a supplied mark.** `measureMarkGeometry(svg)` returns
-its `viewBox`, plate presence and horizontal/vertical radius shares, painted
-`glyphBox` shares, `centreOffset`, and `declaredClearSpace`. A leading filled
-square `rect` matching the canvas height is recognized as the plate when
-other artwork follows; wrap a full-canvas glyph in a `g` to distinguish it.
-`normalizeMark({ glyphSvg, tokens })` replaces that plate with the token accent
-plate, radius 7/32, and fits the painted glyph into a 64% box on a 48-unit
-canvas with 0.2 declared clear space. Scaling preserves aspect and centres
-the bounding box. `plate: false` omits the plate; plate conformance then
-reports its absence. `optical: true` uses the painted-area centroid, limits
-the correction vector to 3% of the side, and declares the optical mode so
-conformance can verify the correction from measured geometry.
-
-Accepted XML whitespace is TAB, LF, CR, and SPACE; unsupported separators throw `MarkGeometryError`.
-Supported geometry is `rect`, `circle`, `ellipse`, `polygon`, and SVG paths
-with absolute or relative `M L H V C S Q T A Z`, under `translate`, `rotate`,
-and `scale` transforms. Bounds include strokes, caps, and joins. Curves are
-subdivided to one millionth of the canvas size; optical area integrates the
-painted union over 4096 horizontal strips, including holes and overlaps.
-Unsupported elements, transforms, and rendering effects such as masks or
-opacity throw `MarkGeometryError` naming the feature. Attribute names must use
-XML name syntax and canonical case. Only measured geometry/paint attributes,
-root SVG namespace, and inert id, role, data-* and aria-* metadata are accepted;
-only paint attributes inherit. Conditional, namespaced and unknown attributes
-are refused. Measurement limits nesting to 64 open elements, generated
-geometry to 100,000 points, winding work to 2,000,000 aggregate weighted edge operations
-(including edge/level setup and 16 times the edge-sort estimate), and optical sampling to 20,000,000
-point-by-strip operations. Point limits precede geometry expansion; work limits precede expensive scans.
-Paint literals and inherited paint attributes are limited to 4096 characters.
-Intricate curves can exceed these limits even with few source commands: the
-two-arc crescent `M60 10 A40 40 0 1 0 60 90 A30 30 0 1 1 60 10 Z` is deliberately
-refused with a typed paint work complexity error rather than guessed bounds.
-
-`checkMarkConformance(svg)` returns ordered radius, inset, centring, clear
-space, lockup gap, and wordmark-size findings with `measured` and `expected`
-values (0.005 share tolerance). A direct, untransformed lockup `text` element
-contributes its declared position and font size; its font outline is not
-measured. `adoptSuppliedMark({ brand, suppliedSvg, tokens, normalize: true })`
-opts into normalization; omitted or false preserves the legacy variant bytes.
-Normalized adoption constructs plate-versus-glyph knockouts for all accepted glyph
-paints, including mixed fill/stroke, multiple colors and metadata wrappers. Marks
-exceeding knockout recognition limits or carrying transparent/explicit-alpha paints
-receive a typed refusal, preserving the measured paint boundary. This recognition
-is private to the opt-in; public `recolorSvg` and default adoption retain their
-existing subset.
-`judgeIdentityKit` adds mark-conformance findings for adopted directions,
-reporting unsupported supplied geometry as indeterminate. Generated live-text
-directions retain their existing four checks without claiming measured mark
-geometry.
 
 **Seven variant roles**, every direction: `primary` (the flagship lockup,
 for light surfaces), `mark` (icon/monogram alone), `mono` (`mark`
@@ -8130,32 +8321,32 @@ over the IDENTICAL fixture in the same test, exits `0`.
 
 ## What's deliberately not here
 
-**Atoms:** thirty-seven ship —
-`Button`, `IconButton`, `Icon`, `TextField`, `Badge`, `Card`, `Breadcrumb`, `Link`,
+**Components:** forty-one ship —
+`Button`, `NativeAction`, `IconButton`, `Icon`, `TextField`, `Badge`, `Card`, `Breadcrumb`, `Link`,
 `Checkbox`, `Switch`, `Select`, `Textarea`, `Avatar`, `Spinner`, `Menu`,
 `Dialog`, `Tabs`, `Table`, `Field`, `Skeleton`, `Tooltip`, `Banner`,
-`RadioGroup`, `Popover`, `DateField`, `ComboBox`, `SearchField`,
+`RadioGroup`, `Popover`, `DateField`, `Calendar`, `ComboBox`, `SearchField`,
 `FileTrigger`, `Disclosure`, `ProgressBar`, `Separator`, `Chip`,
-`StatusMark`, `Meter`, `ResizeHandle`, `Logomark` and `GridList`. No `Modal` exposed as a public atom of
+`StatusMark`, `Meter`, `ResizeHandle`, `Logomark`, `GridList`, `ToggleButton` and `Slider`. No `Modal` exposed as a public component of
 its own beyond what `Dialog` and `Popover` already compose internally —
 that gets added here only once something real needs a bare modal overlay
 with neither `Dialog`'s fixed trigger/content shape nor `Popover`'s
-anchored one, not speculatively. `Slider`, `Calendar`, `NumberField`,
-`Toolbar`, and `Accordion` are all deliberately NOT here either — each is a
-real, plausible future atom, but none was asked for by this rung; `Calendar`
-in particular is why `DateField` ships alone rather than as a full
-`DatePicker` (see `DateField`'s own section above) — adding it
+anchored one, not speculatively. `Toolbar` and
+`Accordion` are deliberately NOT here either — each is a real,
+plausible future component, but none was asked for by this rung. Adding one
 speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
-up. They get added here only once something real needs them.
+up. They get added here only once something real needs them, as `Calendar`,
+`ToggleButton` and `Slider` were when the catalog's date-picker, toggle-button
+and slider slots needed Foundry implementations.
 
-**Blocks:** shipped blocks include `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `CanvasSurface`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `TableOfContents`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `CatalogBrowser`, `Chat`, `NewsletterBand`, `ResourceList`, `RelationGraph`, `TaskList` and `EventItem`. Current inventory counts come from the shared catalog
+**Blocks:** shipped blocks include `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `CanvasSurface`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `LogoHero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `TableOfContents`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `CatalogBrowser`, `Chat`, `NewsletterBand`, `ResourceList`, `RelationGraph`, `TaskList` and `EventItem`. Current inventory counts come from the shared catalog
 in the repository check `src/catalog/catalog.coverage.test.ts` (not shipped in the installed package). No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
 deliberately plain `ReactNode`s, not a block with its own opinion about
 what a filter bar contains — a consumer composes filter controls from
-this package's own atoms (`Select`, `TextField`, `Popover`) directly into
+this package's own components (`Select`, `TextField`, `Popover`) directly into
 whichever slot fits.
 
 **Views:** `ErrorView` and `AuthView` moved to `@clossys/publisher/web`; the list is meant to stay
@@ -8171,14 +8362,14 @@ its own baked into `Shell.Header`/`Shell.Footer`, no nav-item component,
 and no PER-ITEM icon assignment of its own (that's still true even though
 this package as a whole now ships a glyph set at `./icons` — `Shell`
 doesn't reach for it on a consumer's behalf; a consumer picks and places an
-`Icon` in whichever slot needs one, same as any other atom). An
+`Icon` in whichever slot needs one, same as any other component). An
 authenticated app's own header/nav are where brand and product-specific
-structure live; a consumer composes those from atoms and passes them into
+structure live; a consumer composes those from components and passes them into
 the relevant `Shell` slot (see "Shell" → "How differing chrome is handled"
 above). No modal/dialog manager and no command palette either, despite
 both being named as runtime-service examples in "Placement rules" above
 alongside the toast stack that DOES ship — added only once something real
-needs them, the same policy this README states for atoms and blocks.
+needs them, the same policy this README states for components and blocks.
 
 This package DOES now ship `SiteHeader`/`SiteFooter` — at the narrower,
 public-SITE-chrome scope "Site chrome" above describes, alongside
@@ -8191,7 +8382,7 @@ absorbing every consumer's structural divergence; a public site's own
 header/footer are close to always the same three-or-two regions,
 site to site, which is what makes THEM worth shipping as real components.
 No `AppNavItem`/`AppFooterColumn` or similar per-item component beyond
-`SiteFooter.Column` either, for the same reason atoms/blocks stay this
+`SiteFooter.Column` either, for the same reason components/blocks stay this
 short elsewhere in this README: added only once something real needs it.
 
 **Charts:** ten ship — `ChartFrame`, `BarChart`, `LineChart`, `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart`, `Heatmap`, `StatusStrip`, `Sparkline`
@@ -8204,7 +8395,7 @@ omission is not a gap to fill later, it's the one hard rule this layer
 does not bend on. No charting library is a dependency, and the scale/color
 helpers under `charts/internal/` stay unexported — this ships ten
 components, not a general-purpose numerical or color library (see
-`atoms/internal/cx.ts`/`ui-vars.ts` for the same precedent one layer down).
+`src/components/internal/cx.ts`/`src/components/internal/ui-vars.ts` for the same precedent one layer down).
 
 ## Requirements
 
@@ -8220,9 +8411,9 @@ a whole.
 - No peers on import: `tokens`, `tokens/server`, every CSS subpath (`tokens.css`, `theme.css`,
   `compiled.css`, `utilities.css`, `brand-template.css`), `icons`, `gate`, and
   `render-environment`.
-- `react`: `atoms`, `blocks`, `shell`, `charts`, `theme`, and each `/server`
+- `react`: `components`, `blocks`, `shell`, `charts`, `theme`, and each `/server`
   component subpath. `tokens/server` does not require React.
-- `react-aria-components`: `atoms`, `blocks`, and `shell` only — `charts`
+- `react-aria-components`: `components`, `blocks`, and `shell` only — `charts`
   and `theme` render without it.
 - `tailwind-merge`: imported by every React component subpath through the
   shared class-merge helper; a missing install degrades to an unmerged
@@ -8480,7 +8671,7 @@ const specimen = <TokenPreview property="--color-chart-surface" />;
 
 Load the token CSS and desired theme/brand overrides in the host. The preview
 uses live `var(--property, authored-value)` references so host overrides remain primary. This React subpath is
-selection tooling; configurable components begin at Atoms. `/tokens` stays
+selection tooling; configurable components begin at Components. `/tokens` stays
 React-free. Unknown properties and unsupported applications are refused.
 
 Optional copy props are `sampleText` (default "Aa 0123") and
@@ -8508,15 +8699,15 @@ interactive subpath requires a client boundary; `/tokens` remains React-free.
 
 ## Application panels
 
-Choose a Material Block before assembling its underlying Atoms. `Panel`,
+Choose a Material Block before assembling its underlying Components. `Panel`,
 `Drawer` and `ResizablePane` are exported from `@clossys/designer/blocks`;
-`ResizeHandle` is exported from `@clossys/designer/atoms`. These additions stay
+`ResizeHandle` is exported from `@clossys/designer/components`. These additions stay
 outside the server subsets. They do not assemble an application frame or
 persist preferences.
 
 ```tsx
 import { Panel, Drawer, ResizablePane } from "@clossys/designer/blocks";
-import { Button } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/components";
 
 export function WorkspaceTools() {
   return (
@@ -8546,7 +8737,7 @@ unmounted. Its default `dismissAt="(min-width: 768px)"` matches the structural
 tablet breakpoint; supply another media query when the host's wide layout
 starts elsewhere. Changing `navigationKey` or entering that query dismisses
 an open drawer, as does ordinary in-panel link navigation. No motion is added.
-The close control renders the `X` glyph through the `Icon` atom as decoration;
+The close control renders the `X` glyph through the `Icon` component as decoration;
 `closeLabel` supplies the control's accessible name. The optional
 `closeButtonStyle` layout hook positions that same control from a measured opener
 rectangle and direction; it accepts only position, logical insets and direction.
@@ -8564,7 +8755,7 @@ an open sheet back to `"dismiss"` while the query matches closes it.
 
 ```tsx
 import { Drawer } from "@clossys/designer/blocks";
-import { Button } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/components";
 
 export function InspectorSheet() {
   return (
@@ -8683,7 +8874,7 @@ export function CommandExample() {
 }
 ```
 
-The general `Popover` atom also accepts an optional `anchorRef` positioning
+The general `Popover` component also accepts an optional `anchorRef` positioning
 reference. Omission keeps its actual trigger as the anchor. A different anchor
 changes positioning only: the trigger still owns opening, Escape, outside
 interaction and focus restoration. AppFrame uses its bar reference to align the
@@ -8699,7 +8890,7 @@ destinations and empty parents. An empty tree displays `emptyMessage`.
 
 ```tsx
 import { AppNavigation, getAppNavigationBreadcrumbs, type AppNavigationNode } from "@clossys/designer/blocks";
-import { Button } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/components";
 
 const navigation: readonly AppNavigationNode[] = [
   { id: "catalogs", label: "Catalogs", href: "/catalogs", children: [
@@ -8735,6 +8926,13 @@ icon rail. `defaultCollapsed` supplies its initial local state and
 corner control; reopening retains the active ancestry. Long labels keep their
 complete accessible names.
 
+`onNavigate(href)` lets a host await its own flush before routing an ordinary
+link activation; native hrefs and modified activations remain available.
+`retainMounted` lets a frame animate a closed docked region without discarding
+its contents. A frame that places its custom `trigger` in a separate header can
+supply `triggerContainer`: the complete measured control is portaled into that
+DOM host, preserving the Drawer context, opener measurement and focus return.
+
 The narrow layout uses the existing Drawer with full rows. `dismissAt` defaults
 to `(min-width: 768px)`. Escape returns focus; route changes, actions and entering
 the wide layout close it and release modal state. A held `drawerOpen={true}`
@@ -8748,26 +8946,40 @@ legacy aliases for the wide open/close labels; the default control uses
 `openLabel` and `closeLabel`. Disclosure defaults retain the English
 expand/collapse announcements. All message props are optional.
 
-Arrow Up/Down and Home/End move among visible navigation controls. Logical
-Left/Right expand or collapse a parent, reversing in RTL. Enter/Space activate
-destinations or disclosure. Native forced-color adjustment and reduced motion
-remain supported. The interactive Material and helpers use the existing client
+Arrow Up/Down move among visible navigation controls. After keyboard navigation,
+logical Left/Right expand or collapse a parent, reversing in RTL. After
+programmatic focus restoration, the native peer may retain its previous
+navigation item, so Left/Right may not act on the focused link. Enter activates
+destination links; Enter/Space activate action buttons or disclosure. In the
+current native navigation-tree peer, Home/End do not move focus while a
+destination link owns focus. These keyboard limitations remain unresolved. Native forced-color
+adjustment and reduced motion remain supported. The interactive Material and helpers use the existing client
 blocks entry; no server-subset export or application-frame assembly is added.
 
 ### PageBar
 
 `PageBar` is the draft standalone page bar that AppFrame composes. It owns a
-page trail, current heading, information popover, actions and width control.
-Supply `root`, `width`, `onWidthChange` and all six `labels`; `brand` is an
+page trail, current heading, information popover and actions.
+Supply `root` and all four `labels`; `brand` is an
 optional leading slot. `narrow` collapses ancestors and secondary actions,
 while `reserveStart` and `reserveEnd` leave room for host corner controls.
-`onHeightChange` reports measured bar height. PageBar uses the explicit `width`
-prop; `page.width` carries AppFrame's optional page default.
+`onHeightChange` reports measured bar height. Stage sizing belongs to the frame.
+
+`position` accepts `"sticky"` or `"static"`. Explicit `surface="solid"` renders
+a full-width opaque bar with a bottom hairline; `"transparent"` paints no plate
+or rule. A sticky bar reads the sticky layer token; a static bar omits that
+read. `surface="glass"` is a fixed overlay and refuses `position="static"`.
+Omitting both options preserves the floating sticky bar and its existing
+transparency fallback. Library defaults and instance overrides belong to the
+consumer; the header preview resolves each instance axis ahead of its default.
 
 `PageBarProps` describes the host inputs. `PageBarPage`, `PageBarCrumb`,
 `PageBarAction` and `PageBarDestination` describe the authored data;
-`PageBarLabels` requires the six strings, and `PageBarWidth` is
-`"contained" | "full"`.
+`PageBarLabels` requires four strings. `PageBarHeader` supplies `title`, `nav`
+and `actions` for an application header: equal outer grid columns center navigation
+on the stage. Measured capacity compacts actions first, then navigation into an
+existing Menu. A truncated title has a Tooltip. `onNavigate(href)` optionally
+lets the host await a flush before navigation; modified and non-self links remain native.
 
 ```tsx
 import { useState } from "react";
@@ -8791,13 +9003,37 @@ const page: PageBarPage = {
 };
 
 export function ReportBar() {
-  const [width, setWidth] = useState<"contained" | "full">("contained");
-  return <PageBar root={{ label: "Workspace", href: "/" }} page={page} width={width} onWidthChange={setWidth}
+  return <PageBar root={{ label: "Workspace", href: "/" }} page={page}
     workspaces={[{ id: "operations", label: "Operations", href: "/operations" }, { id: "research", label: "Research", href: "/research" }]}
     labels={{ breadcrumb: "Breadcrumb", collapsedBreadcrumb: "More breadcrumb levels", pageInfo: "Page information",
-      fullWidth: "Use full width", containedWidth: "Use contained width", pageActions: "More page actions" }} />;
+      pageActions: "More page actions" }} />;
 }
 ```
+
+### Frame module leases
+
+`FrameSlotProvider`, `SlotModule`, `useSlotLease`, `FrameSlotOutlet`,
+`FrameModuleOutlet`, `useFrameSlotModules` and `FRAME_SLOT_IDS` are exported
+from `@clossys/designer/shell`. The frame declares outlets; a page leases content
+by a stable module ID. Available slots are `header-start`, `header-center`,
+`header-end`, `left-sidebar`, `right-panel`, `dock-tab`, and `dock-strip`.
+`SlotModule` renders its children through a portal, preserving the page's original
+providers and state. `useSlotLease(module)` returns that portal for callers that
+use the hook directly. Modules supply `id`, `slot`, `label`, `children` and optional
+`order` and `summary`; they do not position themselves. Duplicate IDs, unsupported
+slots and a missing provider fail visibly. Mounting precedes outlet availability
+normally, and unmounting releases the lease. Standalone pages must supply their own
+provider and frame outlets.
+
+`PageHeaderModule({id, header})` and `useFramePageHeader(fallback)` share the
+neutral `FramePageHeader` contract: `title`, optional `nav: {label, items:
+[{id, label, href}], activeId}`, and optional `actions.render({compact})`.
+A frame accepts one active page header owner. The frame renders the title,
+navigation and narrow menu; the module renders actions in its original provider
+context through the frame's actions outlet. Inline descriptor objects and new
+callbacks update without replacing the lease. Unmount restores the host fallback.
+AppFrame rejects raw header slot replacements; use `PageHeaderModule` for its
+mandatory responsive header. A missing outlet during mounting is normal.
 
 ### Account menu composition example
 
@@ -9466,7 +9702,7 @@ const restored = parseDataTableViewModel(encoded);
 Supply a `tree` and accessible `label`; use `selectedId` and `onSelect` for
 controlled single selection. Node IDs are retained verbatim. A node's optional
 `children` marks a folder, including an empty folder. Rows can supply an `href`
-or an `onSelect` callback. Default folder and file marks use distinct Icon atoms;
+or an `onSelect` callback. Default folder and file marks use distinct Icon components;
 `icon` accepts custom decorative content and `renderDetails` supplies descriptive
 metadata separately from each row's accessible name.
 
@@ -9530,7 +9766,7 @@ prices. The host owns the interval control and passes its current value:
 
 ```tsx
 import { PricingTable } from "@clossys/designer/blocks";
-import { Button } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/components";
 
 function IntervalAmounts() {
   return <PricingTable heading="Tier amounts" interval="second" tiers={[
@@ -9561,7 +9797,7 @@ share these labels while only mark-bearing groups render a key.
 
 ```tsx
 import { PricingTable } from "@clossys/designer/blocks";
-import { Button } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/components";
 
 function EntitlementComparison() {
   return <PricingTable heading="Tier entitlements" tiers={[
@@ -9581,7 +9817,7 @@ function EntitlementComparison() {
 
 ```tsx
 import { PricingTable } from "@clossys/designer/blocks";
-import { Button } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/components";
 
 function TextComparison() {
   return <PricingTable heading="Tier details" tiers={[
@@ -9710,7 +9946,7 @@ PageDown/PageUp visits every node in authored order, wrapping at either end,
 including disconnected nodes and every branch.
 Enter activates and reports the id through `onSelectionChange`; `selectedId`
 remains controlled and is announced through `aria-current`. RTL uses the same
-edge-direction keys. Motion is not required; existing Atom focus treatment and
+edge-direction keys. Motion is not required; existing Component focus treatment and
 a forced-colors outline remain available.
 
 Only same-origin relative paths and HTTPS URLs without credentials become links.
@@ -10064,3 +10300,371 @@ center. Zoom controls report the supplied viewport percentage. Fit can animate
 using the existing motion duration; `prefers-reduced-motion` disables the fit
 transition, including when the preference changes while mounted. Pan, wheel,
 pinch and ordinary zoom requests use immediate transforms.
+
+### Consumer component libraries
+
+The public `catalog` and `catalog/server` entrypoints accept a typed composite
+without changing the token/asset value engine. `CompositeCatalogData` has
+`values` and `components` catalogs. `CompositeLibraryData` has one consumer
+`source`, an optional `adoptedAt`, a `values` portion (value fills and selection
+context), and a `components` portion (whole-component fills and source files).
+The existing value-only calls remain supported.
+
+```ts
+import { applyLibraryChange, libraryHash, check, resolve, emit,
+  type CompositeEngineInput } from "@clossys/designer/catalog";
+
+declare const input: CompositeEngineInput;
+const library = applyLibraryChange(input.catalog, input.library, {
+  baseHash: libraryHash(input.library),
+  changes: [{ portion: "components", change: {
+    op: "adopt", slot: "components.button", source: "foundry",
+  } }],
+});
+const next = { ...input, library };
+const result = check(next);
+if (result.ok) {
+  const files = emit(resolve(next), [
+    "css-brand", "component-index", "components-consumption", "notices",
+  ]);
+}
+```
+
+Each change names its `values` or `components` portion. One base hash includes
+both portions, source bytes and consumer context; a failed operation leaves the
+input whole. Components support whole-slot adopt, author, derive, compose and
+remove operations; member-scoped component operations are refused. Source
+adoption requires verified bundles supplied through `bundles` on the changeset;
+`materializeSourceFill` uses explicit fetch and transform ports.
+
+`componentOptions` supplies required members, independently inspected package
+exports, and measured observations. Checks always resolve fresh consumer token
+values and asset availability, then retain component K/CC findings alongside
+value C/asset A findings. A fill with no supplied observation is runtime-pending:
+its K2/K4/K5/K6/K7/K10/K12 findings are notices rather than errors, so the
+selection is accepted and its code emits with consumption status
+`runtime-pending`, never `observations-pass`. Runtime assembly still refuses a
+pending component, and qualification still requires measured observations.
+Supplied observations that fail, or that omit a mapped member, stay errors. Code
+emission refuses failed findings; diagnostic reports remain available. Generated glyph bindings
+map S2 leaf keys such as `icon-close` to `assets.icon-close` using consumer glyph
+bytes, with no candidate or default-glyph fallback. The `notices` target retains
+both engines' records in combined `notices.json` and `notices/components.json`.
+
+Sections and Frames adopted as package pointers own no bytes. When a host passes
+a composite catalog without a `surfaces` portion, the `catalog/server` disk calls
+(`readLibrary`, `checkLibrary`, `writeCompositeLibrary`, `emitLibrary` and
+`isCompositeChangeSet`) use this package's own Section and Frame contracts; a
+host-supplied `surfaces` portion is used as given. When a host passes no surface
+options and surfaces are in play, those calls read package-pointer export
+evidence from the installed package barrels and supply no measurements. Hosts
+that resolve in memory can read the same evidence themselves with
+`readSurfacePackageEvidence(documents)` (documents typed `SurfaceAnyDocument`),
+exported from `catalog/server`.
+
+Synthetic integration tests demonstrate dispatch and refusal behavior. They are
+not shipped-component conformance evidence. The real source corpus still has
+26 of 26 blocked descriptors and no real positive golden. Runtime frame/section
+ports and whole-assembly rendered evidence are separate work.
+
+`buildComponentsConsumption` and `scanComponentReads` expose CL5's static
+inventory and source-scan lower bounds. They describe candidates and declared
+reads; they do not establish adoption, required runtime members, or conformance.
+The emitted `components-consumption.json` instead describes this resolved
+consumer's component fills, reads and measured-check findings. Keep those
+reports separate when presenting coverage or adoption evidence.
+
+### Live component specimens in Studio
+
+Studio draws a chosen component cell live only when the host's
+`CompositeStudioSnapshot.preview` returns content for that leaf; otherwise the
+cell reads `data-preview-state="unavailable"`. The runtime manifest ports below
+cover frames and sections, not components. For components, the
+`@clossys/designer/studio` entry exports `componentSpecimenPreview`, which
+binds each chosen leaf to modules the host has already imported.
+
+```tsx
+import * as components from "@clossys/designer/components";
+import * as charts from "@clossys/designer/charts";
+import { componentSpecimenPreview, type CompositeStudioAdapter } from "@clossys/designer/studio";
+
+const specimens = componentSpecimenPreview({
+  modules: { "@clossys/designer/components": components, "@clossys/designer/charts": charts },
+  // Optional: your own content for a leaf (it replaces the designer sample), and the library's provider.
+  specimens: { "components.chart-bar": ({ Component }) => <Component title="Sample" categories={["A", "B"]} series={[{ name: "Count", values: [3, 5] }]} /> },
+});
+
+declare const base: CompositeStudioAdapter;
+const adapter: CompositeStudioAdapter = { ...base, load: async () => ({
+  ...(await base.load()),
+  preview: (leaf, profile) => specimens.preview(leaf, profile) ?? otherPreview(leaf, profile),
+}) };
+declare function otherPreview(...args: Parameters<typeof specimens.preview>): ReturnType<typeof specimens.preview>;
+```
+
+`modules` is keyed by the exact specifier each adopted descriptor names: the
+package module, `<package>/<subpath>` for a member pointer such as
+`./charts#BarChart`, or a source fill's library entry path. Nothing is imported,
+guessed or substituted. Each member is dispatched by the same pointer rule as
+the emitted component index. By default the export renders once, then once for
+each member that has a literal value (`Button.size=sm`) or a `state.*` flag
+(`Button.isDisabled`). Hover, press and focus-visible states are skipped, and so
+is any member whose pointer the dispatcher cannot express; those are listed in
+`binding.unbound`.
+
+Data-driven Foundry components (charts, table, tree, field, menus and other
+overlays) draw with neutral sample content from one shared, deterministic
+synthetic dataset (a fixed seed and anchor date, never the clock or a random
+source), so every Foundry package component renders without host data. That
+content is preview material only, never adoption or conformance evidence.
+
+A measurer sets a specimen's state and content through `probes`, keyed by leaf,
+instead of mutating the drawn DOM: `{ states: ["disabled", "selected"], props,
+children }`. Each state in `COMPONENT_SPECIMEN_PROBE_STATES` is forced through
+the component's own prop (`disabled` is `isDisabled`, `open` on a disclosure is
+`isExpanded`). A state the component has no prop for, such as hover,
+focus-visible or a momentary press that the fills style with CSS
+pseudo-classes, is listed on the set's `data-specimen-probe-unsupported` and
+never faked; the forced ones are on `data-specimen-probe-states`. A `specimens` entry for a
+leaf replaces it. Another library's data-driven component needs its own
+`specimens` entry. The binding also carries `specifier`, `exportName` and the
+whole module as `exports`, so that entry can draw compound parts.
+
+`bind(leaf, profile)` returns the binding or a named refusal: `not-a-component`,
+`not-chosen`, `module-unavailable` or `export-unavailable`. On a refusal,
+`preview` returns `undefined`, so the cell stays unavailable rather than showing
+a placeholder. A specimen that throws is replaced by a hidden
+`data-specimen-error` marker. The cell stays live while at least one specimen
+renders. Once every specimen of a leaf has thrown, or the provider has, the cell
+reads `data-preview-state="unavailable"` with `data-preview-reason="specimen-error"`.
+The toast region's specimen mounts `Toaster` with `placement="container"` and a
+queue owned by the cell, so the sample toast draws in place inside the cell and
+is dismissed by its own close button; a preview never pushes into the app-wide
+`toast()` queue.
+The vendored shadcn@aria dialog module exports its inner, non-modal
+`DialogContent` part, which `Dialog` wraps in its modal overlay; the specimen
+draws that part open inside its cell, so it never locks page scroll, hides the
+rest of Studio from assistive technology or contains focus.
+A logo's `content.lockup` member is drawn by the shell `Brandmark`, which needs
+the host's own mark asset and wordmark; without a host specimen that member is
+marked `data-specimen-unavailable="needs-brand-asset"` and the logo's other
+specimens draw. A component whose children are a collection (a table, grid
+list, list box, menu, tree or breadcrumbs) or a render function (the composed
+date pickers) is never handed its leaf label as children: without sample
+content or a host specimen, it is marked
+`data-specimen-unavailable="needs-sample-content"` instead of throwing.
+
+### Consumer runtime ports and responsive assembly evidence
+
+The existing `@clossys/designer/catalog` entry exports generic
+`ConsumerRuntimePorts<Node>`, `prepareRuntimeAssembly`,
+`runRuntimeAssemblyEvidence`, and `validateRuntimeAssemblyEvidence`.
+The catalog imports no React, Publisher, browser launcher, or bundler to use
+these APIs. A consumer supplies executable frame and section callbacks, an
+explicit layout port, and a measurement runner. Runtime manifests are plain
+serializable data; callbacks are separate. Frame and section declarations
+reuse the existing `FrameContract` and `SectionContract`.
+
+Each runtime fill names its consumer library, exact fill, leaf and config,
+supported slots/members/states, renderer source bytes, and dependency versions
+and artifact hashes. Renderer inputs include the exact chosen selection as
+well as the supported descriptor. Required content resolves through consumer
+references. A complete declared asset closure must have concrete asset bytes
+or freshly resolved glyph payloads. Frame section slots require a consumer
+reading-order callback that includes those fills; otherwise assembly is pending.
+There is no catalog fallback or conversion into the value engine's fill schema.
+
+Preparation freezes a snapshot binding the source head/tree or package
+artifact, whole composite library and selection, contracts and fill
+descriptors, resolved values/components, actual content, CSS and asset bytes,
+glyphs, runner identity, and the requested theme/state/viewport matrix. Its
+`ready` status means ready to render, not Publisher Ready or LK12 clearance.
+Widths include 320 and every resolved breakpoint minus one, at the breakpoint,
+and plus one, deduplicated. Non-pixel breakpoint units require explicit measured
+pixels and a source-bound measurement/environment basis; there is no assumed
+root font size. The runner must independently report the same resolved edges
+in every cell.
+
+The evidence producer invokes the runner against that snapshot and resolves
+again afterward. It validates raw finite element/text geometry, visibility,
+DOM ancestry and reading order, CSS reordering, and document, element and
+clipped-content overflow. Missing input or measurements remain pending;
+observed violations refuse. A synthetic runner can test this validation but
+always leaves LK12 pending. Retained evidence requires a fresh invocation in
+the current process, consumed once by validation; caller-authored records cannot
+supply that invocation.
+
+The runner remains a consumer trust boundary. The catalog binds its declared
+source, bundle and observations; it cannot authenticate that a callback really
+launched a browser, executed those bytes, or collected every DOM node. A
+`measured` result describes the exact assembly observed by that runner and
+requires the caller to establish that provenance. It does not qualify other
+instances, whole packs, accessibility, or deployment. The Standard M1 fixture
+renders real public section exports inside its own consumer frame; its SSR
+and synthetic geometry tests are not browser clearance.
+
+## Application Frames
+
+`APP_FRAME_CONTRACT` is the recursively frozen composition metadata exported from `@clossys/designer/frames`: frame identity, adapter, regions, host inputs, configuration and defaults. Its qualification remains `unverified` with `measurement-required`; the metadata does not establish runtime qualification. `APP_FRAME_CONFIG_SCHEMA` is the same immutable configuration schema referenced by that contract, recording accepted values, defaults and omission behavior for header presentation, commands, navigation, right panel, theme preference and direction.
+
+Three optional AppFrame inputs leave existing hosts unchanged when omitted. `brand.navigationMark` (`AppFrameBrandNavigationMark`, a visible `label`) puts the host mark and that name in the navigation's top corner row, above command search; the header bar still carries no brand. `account.avatar` (`AppFrameAccountAvatar`, `"mark"` by default) set to `"initials"` shows the signed-in actor's initials in the profile `Avatar`; a signed-out row keeps the mark. `footerLayout` (`AppFrameFooterLayout`, `"inline"` by default) set to `"stacked"` gives the theme control its own row above a full-width account row. Long account labels truncate in either layout.
+
+`AppFrame`, `AppFrameSpecimen`, their typed host contracts and immutable composition metadata are exported from `@clossys/designer/frames`. Publisher consumes this canonical implementation; it has no AppFrame compatibility export. PageHeaderModule remains a typed page lease inside the frame provider, preserving page context and live action callbacks while the frame owns responsive header presentation.
+
+
+### Interactive frame specimen
+
+Mount the canonical `AppFrameSpecimen` directly in a client route or a
+frame-capable catalog canvas. It supplies its own main landmark; do not nest
+it inside a section-only page that already owns one.
+
+```tsx
+"use client";
+
+import { AppFrameSpecimen } from "@clossys/designer/frames";
+
+export default function ExampleWorkspace() {
+  return <AppFrameSpecimen />;
+}
+```
+
+The specimen uses an inline Example brand mark and local host state. Its
+navigation, commands, account menu, task action and right panel demonstrate
+whole-frame behavior without authentication, routing or network services.
+
+### Consumer source dogfood boundary
+
+`designer-library dogfood-consumer <source...> --root <library> --contract <file> --json`
+checks explicit source roots and their reachable project modules. Its resolution
+contract is JSON, with paths relative to the contract file:
+
+```json
+{
+  "version": 1,
+  "sources": { "@example/product": "src/product/index.ts", "@/": "src" },
+  "pages": ["src/Page.tsx"]
+}
+```
+
+`sources` resolves exact module names or prefixes ending in `/` to real source.
+It cannot mark a project module safe or exclude its implementation. Local and
+mapped imports are scanned recursively; JSON imports must parse as data, and
+reachable CSS is checked for raw style values. Missing project imports and
+unreached page declarations fail input validation. Framework resolution has a
+narrow built-in `next/link` adapter for the registered Link capability. Other
+unknown visual exports remain findings. Public Designer primitive imports keep
+their normal registered boundaries. Package pages such as Publisher must map to
+their actual source, rather than being treated as primitives.
+
+This command accepts no exception manifest or suppression comments. It rejects
+raw controls, raw React Aria imports, raw colors and inline styles. Declared page
+components and their reachable helpers also reject raw `header`, `h1`, `nav` and
+hand-styled tab strips (DF7). Each declared page must render exactly one imported
+`PageHeaderModule` from the public shell contract, with `id` and `header` (DF8).
+Aliases and namespace imports retain their actual imported identity; a local
+function with that name supplies no lease evidence. This is static source
+analysis: mounting, conditional execution and header data still require runtime
+validation. The existing `dogfood` and library `check` commands retain their
+strict contracts. Exit codes are 0 for a clean result, 1 for findings and 2 for
+invalid or unavailable input; this command writes nothing.
+
+### Whole-library runtime proof
+
+`runFullLibraryRuntime(input, browserRunner, pageSerializer)` from
+`@clossys/designer/catalog` is the whole-library proof entry point. Supply an
+actual `RuntimeAssemblyInput`, a source-bound browser measurement runner, and a
+source-bound serializer whose `render(node, cell)` produces actual page markup.
+The serializer receives each freshly assembled node; the runner must request
+every matrix cell through the supplied render callback. Returned evidence retains
+the page bytes, cell identities, hashes, strict runtime result, inventory and
+elapsed milliseconds.
+
+Admission requires every registered token, asset and component leaf, actual
+component observations, and the owned selected Sections/Frames closure on the
+page. It does not adopt fills, invent measurements, or qualify candidate
+inventories. Missing qualification or broken ownership returns explicit findings.
+The existing assembly checks retain token/asset/component/surface reference,
+content, source and freshness checks. The fixed 5,000 ms budget covers full
+preparation, fresh browser invocation and page serialization; exceeding it is a
+refusal. Caller-owned runners must clean up their resources when the deadline
+expires. Synchronous callbacks cannot be preempted, but their elapsed time still
+fails the budget. Browser execution and DOM-collection completeness remain
+caller trust boundaries, as described by the underlying runtime evidence API.
+Synthetic assembly and geometry tests remain unit coverage and cannot supply
+whole-library proof. A pending or refused result supplies no performance pass.
+
+### Library candidate provenance
+
+The catalog roster distinguishes official `shadcn@aria` component candidates
+from the `shadcn-ui` anatomy reference. `componentLibraryColumns(sources,
+documents, slots, consumerSource)` projects actual component documents for a
+board; unsupported slots and sources without fills produce no columns. It is
+a pure data helper for renderers, not an activated Studio interaction.
+
+Each projected candidate retains its fill status, relation and unmapped members,
+plus the implementation descriptor's file pins, dependencies, transform and MIT
+notice. The existing 26 official Aria drafts retain the pinned Nova transform;
+13 describe the same contract and 13 describe subsets. These descriptions do
+not imply qualification. Normal engine checks still govern selection and
+adoption. No blocks or missing component fills are manufactured by the roster.
+
+`libraryItemProvenance` keeps the item pin and source address on `fill`. Its
+separate `sourceRecordPin` describes the source record: for `shadcn@aria`, that
+is the neutral token theme, not a component implementation pin. Item evidence
+never falls back to that theme pin. Token proposals remain Custom only, with
+the pinned Tailwind baseline available through `tokenBaseline`.
+
+### Complete native Designer route
+
+`DesignerRoutePage` from `@clossys/designer/studio/route` accepts only
+`serverData` and `initialSession`. Create finite data with
+`designerRouteServerData` from `@clossys/designer/studio/route/server` and the
+original checked session with `createWholeStudioInitialSession` from
+`@clossys/designer/studio/queries`. The component owns the original read-only
+Studio, provider, camera and navigation. Supply the committed snapshot, finite
+catalog, selected manifest/frame, content records and an explicit display cell.
+Executable surface rules need a package implementation before transport.
+
+A `rootFontSizeToken` names the selected profile member declaring the document
+root size in pixels. Without that declaration, rem thresholds stay pending until
+the mounted document provides an actual computed root size. The native view is
+local display; it creates no registered source or Node lifecycle evidence.
+
+### Section copy catalog
+
+`sectionCopyCatalog()` from `@clossys/designer/catalog` lists every section's
+`id`, draft `status`, paired `passageSchema`, `sourceLocale`, and copy `fields`.
+`loadSectionRegistry()` carries the same schema on `contract.copy` and refuses
+malformed schemas. Each `sections.<name>` pairs with `passages.<name>`; the
+structural band has an explicit zero-field schema.
+
+Fields use `{ key, kind, required, maxLength, dir }`. `kind` is `plain`, `rich`
+or `icu`; `maxLength` maps BCP-47 locales to positive Unicode code-point limits.
+The draft catalog declares English (`en`) limits. These are authored layout
+contracts; a declaration does not claim that translated text has been measured
+in a rendered page. Other locales require explicit limits. `dir` is `auto`,
+`ltr` or `rtl`. Dotted keys name content paths and `[]` addresses each collection value (an array item or keyed record). A required field is required when its containing optional region, item
+or state is present. `header` carries shared section-header copy, `labels`
+carries host-supplied chrome names, and `states.<state>` carries messages for
+the section's declared loading, empty and error states. Selection ids, URLs,
+numeric data and artwork sources are outside this authored-copy schema.
+
+The v1 bridge is the exported `CopyField` shape
+`{ key, locale, value, source: "handwritten" }`; `isCopyField()` checks this
+closed shape. Candidate binding, locale coverage and text-length evaluation
+belong to the consumer's content checks. The catalog contains no authored
+consumer text and performs no content migration.
+
+`LogoHero` from `@clossys/designer/blocks` (also `/blocks/server`) is the draft
+`sections.logo-hero` fill, block id `say.logo-hero`. Supply existing artwork as
+`mark` and its accessible `name`. It composes `SectionFrame` and `Logomark`,
+with no visible prose or action. Its registered copy schema contains only
+`name`; the runtime renderer refuses extra content slots. The public-site page
+frame remains `frames.site-shell`, whose registered package fill is Publisher's
+`SiteFrame`; Designer does not claim that renderer.
+
+```tsx
+import { LogoHero } from "@clossys/designer/blocks/server";
+
+<LogoHero mark="/brand/mark.svg" name="Example" />;
+```

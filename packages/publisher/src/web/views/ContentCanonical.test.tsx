@@ -6,8 +6,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { resolveSectionedViewDocument, validateSectionedViewDocument, type SectionedViewGround, type SectionedViewContentSection, type SectionedViewDocument, type SectionedViewItemsBlock, type ResolvedSectionedViewDocument, type SectionedViewMedia, type SectionedViewSpecimenPart } from "../../core/sectioned-view.js";
 import { previewSectionedDocument, previewCopyResolver } from "../../preview/fixture-documents.js";
-import { LandingView } from "./LandingView.js";
-import { LandingView as ServerLandingView } from "./LandingView.server.js";
 import { SectionedView } from "./SectionedView.js";
 import { SectionedView as ServerSectionedView } from "./SectionedView.server.js";
 import { assertRenderableSectionedViewDocument, renderSectionedViewSections } from "./SectionedViewContent.js";
@@ -353,28 +351,6 @@ describe("resolved Writer approval metadata", () => {
   });
 });
 
-describe("canonical LandingView integration", () => {
-  it.each(["standard", "display"] as const)("gives the %s canonical frame sole ownership of vertical padding", size => {
-    const authoredDoc: SectionedViewDocument = { id: "landing", sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: ref("heading") }, band({ size, block: columns(2) })] };
-    expect(validateSectionedViewDocument(authoredDoc)).toEqual([]); const doc = resolveSectionedViewDocument(authoredDoc, resolver);
-    const markup = renderToStaticMarkup(<LandingView document={doc} peek={false} />); expect(renderToStaticMarkup(<ServerLandingView document={doc} peek={false} />)).toBe(markup);
-    const root = dom(markup); const inner = root.querySelector("#content")!; const outer = inner.closest("[data-landing-ground]")!;
-    expect(["0", "0px"]).toContain(window.getComputedStyle(outer).paddingBlock);
-    expect(inner.classList.contains(size === "display" ? "py-5xl" : "py-4xl")).toBe(true);
-    expect(root.querySelectorAll("#content")).toHaveLength(1); expect(inner.parentElement?.closest("[data-content-section]")).toBeNull();
-  });
-  it("renders the published split FAQ through canonical LandingView collections", () => {
-    const authoredDoc: SectionedViewDocument = { id: "landing-faq", sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: ref("heading") }, { id: "faq", kind: "faq", ground: "base", layout: "split", heading: short, items: ["one", "two", "three", "four"].map(id => ({ id, question: short, answer: ref("detail") })) }] };
-    expect(validateSectionedViewDocument(authoredDoc)).toEqual([]); const doc = resolveSectionedViewDocument(authoredDoc, resolver);
-    for (const [View, server] of [[LandingView, false], [ServerLandingView, true]] as const) {
-      const root = dom(renderToStaticMarkup(<View document={doc} peek={false} afterSection={{ faq: <p data-faq-after="">After FAQ</p> }} />));
-      expect(root.querySelector("#faq")?.closest<HTMLElement>("[data-landing-ground]")?.style.paddingBlock).toBe("");
-      expect(root.querySelectorAll(`#faq [data-items] ${server ? "summary" : "button"}`)).toHaveLength(4);
-      expect(root.querySelector("#faq")?.textContent).toContain(copy.detail);
-      expect(root.querySelector("#faq [data-content-section-modules]")?.lastElementChild?.hasAttribute("data-faq-after")).toBe(true);
-    }
-  });
-});
 
 const availableParts: SectionedViewSpecimenPart[] = [
   { ...field, columns: 2 },
@@ -426,20 +402,11 @@ const reviewResolver = createCopyResolver({ ...registry, entries: [...registry.e
 function reviewDocument(sections: SectionedViewContentSection[]) {
   const doc: SectionedViewDocument = { id: "review", sections }; expect(validateSectionedViewDocument(doc).filter(f => f.severity === "error")).toEqual([]); return applyPalette(resolveSectionedViewDocument(doc, reviewResolver), sections);
 }
-function landingHtml(doc: ResolvedSectionedViewDocument, server = false) {
-  const page = { ...doc, sections: [{ id: "hero", kind: "hero" as const, ground: "inverse" as const, heading: copy.heading }, ...doc.sections] };
-  return renderToStaticMarkup(server ? <ServerLandingView document={page} peek={false} header="reserved" measure="prose" style={{ scrollPaddingTop: "var(--ui-height-site-header, 0px)" }} /> : <LandingView document={page} peek={false} header="reserved" measure="prose" style={{ scrollPaddingTop: "var(--ui-height-site-header, 0px)" }} />);
-}
 function expectCssZero(value: string) { expect(["0", "0px"]).toContain(value); }
 function cssUtility(name: string) {
   const css = readFileSync("../designer/styles/compiled.css", "utf8"); const found = [...css.matchAll(/\.[\w-]+\s*\{[^{}]+\}/g)].find(match => match[0].slice(0, match[0].indexOf("{")).trim() === `.${name}`); expect(found, name).toBeDefined(); return found![0];
 }
 describe("canonical renderer review regressions", () => {
-  it.each((["converge", "evidence", "approval"] as const).flatMap(name => (["heading", "meta"] as const).map(field => ({ name, field }))))("accepts long Items $field beside $name Scene through both entries", ({ name, field }) => {
-    const block = { ...columns(2), items: [{ ...item("first"), [field]: { id: "example.long" } }, item("second", "second")] };
-    const without = reviewDocument([band({ block })]); const withScene = reviewDocument([band({ block, media: { type: "scene", label: ref("scene"), input: scenes[name] } })]);
-    for (const server of [false, true]) { expect(html(without, server)).toContain(longCopy); expect(html(withScene, server)).toContain(longCopy); expect(landingHtml(withScene, server)).toContain(longCopy); }
-  });
   it.each(["converge", "evidence", "approval"] as const)("still refuses excessive $name Scene copy at the actual media path before Designer", name => {
     const doc: any = reviewDocument([band({ id: "before", block: columns(2) }), band({ block: columns(2), media: { type: "scene", label: ref("scene"), input: scenes[name] } })]);
     const input = doc.sections[1].media.input; let path: string;
@@ -449,62 +416,11 @@ describe("canonical renderer review regressions", () => {
     const called = vi.fn(); expect(() => renderSectionedViewSections(doc, { ...sectionedViewBlocks, ContentSection: called }, {})).toThrow(`sections.1.${path}`); expect(called).not.toHaveBeenCalled();
     for (const server of [false, true]) expect(() => html(doc, server)).toThrow(`sections.1.${path}`);
   });
-  it.each(["repeated", "concatenation"])("namespaces %s record instances without changing visible nodes or provenance", kind => {
-    const ids = kind === "repeated" ? [["first-record", "record"], ["second-record", "record"]] : [["a-b", "c"], ["a", "b-c"]];
-    const authored = ids.map(([id, mediaId], index) => band({ id: id!, media: { type: "record", id: mediaId!, columns: 2, head: { title: ref(index === 0 ? "first" : "second"), meta: ref("meta") }, caption: ref("detail"), groups: [{ id: "one", label: ref("group"), rows: [{ id: "row", label: ref("field"), detail: ref("detail") }] }, { id: "two", label: ref("group"), rows: [{ id: "row", label: ref("field"), detail: ref("detail") }] }] } }));
-    const authoredBefore = JSON.stringify(authored); const doc = reviewDocument(authored); const before = JSON.stringify(doc); const resolutions = doc.resolutions; const originalResolutions = [...resolutions]; const originalSources = resolutions.map(value => value.source);
-    for (const server of [false, true]) for (const view of ["section", "landing"]) {
-      const render = (value: ResolvedSectionedViewDocument) => view === "section" ? html(value, server) : landingHtml(value, server);
-      const root = dom(render(doc)); const allIds = [...root.querySelectorAll("[id]")].map(node => node.id); expect(new Set(allIds).size).toBe(allIds.length);
-      const figures = [...root.querySelectorAll('figure[data-record-ledger]')]; expect(figures).toHaveLength(2);
-      const reversed = dom(render({ ...doc, sections: [...doc.sections].reverse() }));
-      for (const [sectionId] of ids) expect(reversed.querySelector(`[id="${sectionId}"] figure[data-record-ledger]`)?.id).toBe(root.querySelector(`[id="${sectionId}"] figure[data-record-ledger]`)?.id);
-      figures.forEach((figure, index) => {
-        expect(figure.querySelectorAll('[data-ledger-group]')).toHaveLength(2); expect(figure.textContent).toContain(index === 0 ? copy.first : copy.second);
-        for (const named of [figure, ...figure.querySelectorAll('[aria-labelledby]')]) {
-          const id = named.getAttribute("aria-labelledby"); const label = [...named.querySelectorAll("[id]")].find(node => node.id === id); expect(label).toBeDefined(); expect(label?.textContent?.trim()).not.toBe("");
-          expect([...root.querySelectorAll("[id]")].filter(node => node.id === id)).toHaveLength(1);
-        }
-        for (const value of [copy.meta, copy.group, copy.field, copy.detail]) expect(figure.textContent).toContain(value);
-      });
-    }
-    expect(JSON.stringify(doc)).toBe(before); expect(doc.resolutions).toBe(resolutions); expect(JSON.stringify(authored)).toBe(authoredBefore); originalResolutions.forEach((value, index) => { expect(doc.resolutions[index]).toBe(value); expect(doc.resolutions[index]!.source).toBe(originalSources[index]); });
-  });
-  it.each((["converge", "evidence", "approval"] as const).flatMap(name => ["section", "landing"].map(view => ({ name, view }))))("backs inverse $name Scene with semantic base tokens in $view through both entries", ({ name, view }) => {
-    const doc = reviewDocument([band({ ground: "inverse", media: { type: "scene", label: ref("scene"), input: scenes[name] } })]); const before = JSON.stringify(doc);
-    for (const server of [false, true]) {
-      const root = dom(view === "landing" ? landingHtml(doc, server) : html(doc, server)); const scene = root.querySelector('.scene-root')!; const plate = scene.parentElement!;
-      expect(plate.hasAttribute("data-scene-plate")).toBe(true); expect(plate.getAttribute("data-ground")).toBe("base");
-      for (const cls of ["bg-surface-base", "text-ink-primary", "min-w-0", "w-full"]) expect(plate.classList.contains(cls)).toBe(true);
-      expect(cssUtility("bg-surface-base")).toContain("var(--color-surface-base"); expect(cssUtility("text-ink-primary")).toContain("var(--color-ink-primary");
-      expect(scene.classList.contains("scene-root")).toBe(true); expect(root.querySelectorAll('.scene-root')).toHaveLength(1); expect(scene.querySelector('[data-scene-linear]')).not.toBeNull();
-      expect(plate.getAttribute("style") ?? "").not.toMatch(/#[a-f0-9]{3,8}|rgb|oklch/i); expect(root.textContent).toContain(copy.scene);
-    }
-    expect(JSON.stringify(doc)).toBe(before);
-  });
   it.each((["converge", "evidence", "approval"] as const).flatMap(name => (["base", "sunken"] as const).map(ground => ({ name, ground }))))("keeps $name Scene on $ground free of an added plate", ({ name, ground }) => {
     const doc = reviewDocument([band({ ground, media: { type: "scene", label: ref("scene"), input: scenes[name] } })]);
     const media = doc.sections[0]!.kind === "content-section" ? doc.sections[0].media : undefined; if (media?.type !== "scene") throw new Error("Expected scene media");
     const direct = dom(renderToStaticMarkup(<Scene id="7:content:5:scene" input={media.input} label={media.label} relationLabel={media.relationLabel} />)).querySelector(".scene-root")!.outerHTML;
     for (const server of [false, true]) { const root = dom(html(doc, server)); expect(root.querySelector("[data-scene-plate]")).toBeNull(); expect(root.querySelector('.scene-root')?.outerHTML).toBe(direct); expect(root.querySelector('.scene-root')?.textContent).toContain(copy.scene); }
-  });
-  it.each(["standard", "display"] as const)("aligns the %s canonical fragment with its zero-padding outer band", size => {
-    const doc = reviewDocument([band({ size, block: columns(2) })]);
-    for (const server of [false, true]) {
-      const root = dom(landingHtml(doc, server)); const inner = root.querySelector<HTMLElement>("#content")!; const outer = inner.closest<HTMLElement>("[data-landing-ground]")!;
-      expectCssZero(inner.style.scrollMarginTop); expect(inner.className).not.toContain("scroll-mt-4xl"); expect(inner.className).not.toContain("scroll-mt-5xl");
-      expectCssZero(outer.style.paddingBlock); expect(inner.className).toContain(size === "display" ? "py-5xl" : "py-4xl");
-      expect(inner.parentElement?.style.maxWidth).toBe("var(--ui-width-prose-max, 48rem)"); expect(inner.parentElement?.style.paddingInline).toBe("var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))");
-      expect(root.querySelector('[data-landing-hero]')?.className).toContain("py-4xl"); expect(root.querySelector<HTMLElement>('[data-landing-view]')?.style.scrollPaddingTop).toBe("var(--ui-height-site-header, 0px)");
-    }
-  });
-  it("retains legacy FAQ fragment offsets and band measure for both entries", () => {
-    const authored: SectionedViewDocument = { id: "legacy-anchors", sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: short }, { id: "faq", kind: "faq", ground: "base", layout: "split", heading: short, items: ["one", "two", "three", "four"].map(id => ({ id, question: short, answer: ref("detail") })) }, { id: "features", kind: "feature-grid", ground: "base", heading: short, items: [item("first"), item("second", "second")] }] };
-    expect(validateSectionedViewDocument(authored)).toEqual([]); const doc = resolveSectionedViewDocument(authored, resolver);
-    for (const server of [false, true]) {
-      const root = dom(renderToStaticMarkup(server ? <ServerLandingView document={doc} peek={false} header="reserved" measure="prose" /> : <LandingView document={doc} peek={false} header="reserved" measure="prose" />));
-      for (const id of ["faq", "features"]) { const inner = root.querySelector<HTMLElement>(`#${id}`)!; expect(inner.className).toContain("scroll-mt-4xl"); expect(inner.className).toContain("tablet-lg:scroll-mt-5xl"); expect(inner.style.scrollMarginTop).toBe(""); expect(inner.closest<HTMLElement>("[data-landing-ground]")?.style.paddingBlock).toBe(""); }
-    }
   });
 });
 
@@ -524,33 +440,6 @@ describe("canonical matrix and specimen metadata integration", () => {
     expect([...root.querySelectorAll("[data-matrix-side]")].map(node => node.getAttribute("data-matrix-side"))).toEqual(["side-0063006f006e00740065006e0074-006c006500660074", "side-0063006f006e00740065006e0074-00720069006700680074"]);
     expect(root.querySelectorAll('[data-matrix-side]')[1]!.querySelector('[data-featured="true"]')).not.toBeNull(); expect(root.querySelectorAll("h3")).toHaveLength(2); const matrixRoot=root.querySelector("[data-matrix]")!;expect(matrixRoot.hasAttribute("aria-labelledby")).toBe(false);expect(root.querySelectorAll('[id="content:heading"]')).toHaveLength(1);expect(root.querySelector('[id="content:heading"]')?.textContent).toBe(copy.heading);
     const sides = [...root.querySelectorAll("[data-matrix-side]")]; sides.forEach((side, index) => { expect(side.querySelector("h3")?.textContent).toBe(index === 0 ? copy.first : copy.second); expect(side.textContent).toContain(index === 0 ? copy.first : copy.second); expect(side.textContent).toContain(index === 0 ? copy.detail : copy.meta); const plate = side.querySelector('[data-variant="plate"]')!; expect(plate.classList.contains(ground === "base" ? "bg-surface-sunken" : ground === "sunken" ? "bg-surface-raised" : "bg-surface-inverse-raised")).toBe(true); expect(side.querySelector("h3")!.classList.contains(ground === "inverse" ? "text-ink-on-inverse" : "text-ink-primary")).toBe(true); });
-  });
-  it.each(["points", "visual"] as const)("renders unlabeled Matrix %s headings and retained featured identity through both views", form => {
-    const section = matrix(form === "visual" ? field : undefined);
-    if (section.block?.type !== "matrix") throw new Error("Expected Matrix");
-    for (const side of section.block.sides) delete side.label;
-    const doc = resolve(section); const before = JSON.stringify(doc); const resolutions = doc.resolutions;
-    for (const server of [false, true]) for (const markup of [html(doc, server), landingHtml(doc, server)]) {
-      const root = dom(markup); const sides = [...root.querySelectorAll("[data-matrix-side]")];
-      expect(sides).toHaveLength(2);
-      expect(sides.map(side => side.querySelector("h3")?.textContent)).toEqual([copy.first, copy.second]);
-      for (const side of sides) { expect(side.querySelectorAll("h3")).toHaveLength(1); expect(side.querySelector("h3")!.classList.contains("text-h2")).toBe(true); }
-      expect(sides[0]!.querySelector("[data-featured]")).toBeNull(); expect(sides[1]!.querySelector('[data-featured="true"]')).not.toBeNull();
-      expect([...root.querySelectorAll("[data-matrix-description]")].map(node => node.textContent)).toEqual([copy.detail, copy.meta]);
-      expect(root.querySelectorAll(form === "visual" ? "[data-matrix-visual] figure" : "[data-matrix] li")).toHaveLength(form === "visual" ? 2 : 4);
-    }
-    expect(JSON.stringify(doc)).toBe(before); expect(doc.resolutions).toBe(resolutions);
-  });
-  it.each((["points", "visual"] as const).flatMap(form => [0, 1].map(unlabeledSide => ({ form, unlabeledSide }))))("refuses forged mixed labels on $form side $unlabeledSide before the adapter", ({ form, unlabeledSide }) => {
-    const doc: any = structuredClone(resolve(matrix(form === "visual" ? field : undefined)));
-    delete doc.sections[0].block.sides[unlabeledSide].label;
-    const called = vi.fn();
-    expect(() => renderSectionedViewSections(doc, { ...sectionedViewBlocks, ContentSection: called }, {})).toThrow(/Both sides must have labels or neither/);
-    expect(called).not.toHaveBeenCalled();
-    for (const server of [false, true]) {
-      expect(() => html(doc, server)).toThrow(/Both sides must have labels or neither/);
-      expect(() => landingHtml(doc, server)).toThrow(/Both sides must have labels or neither/);
-    }
   });
   it("refuses a forged description-only Matrix before either rendering entry invokes the adapter", () => {
     const doc: any = structuredClone(resolve(matrix()));
@@ -601,21 +490,6 @@ describe("canonical matrix and specimen metadata integration", () => {
 
 
 describe("media DOM identity namespace", () => {
-  it.each(["scene", "specimen"] as const)("keeps %s labels separate from valid section fragments through both entries", kind => {
-    const targets = kind === "scene" ? ["intro-scene-label"] : ["intro-specimen-label", "intro-specimen-key", "intro-specimen-key-name"];
-    const media: SectionedViewMedia = kind === "scene" ? { type: "scene", label: ref("scene"), input: scenes.converge } : { ...specimen, key: { label: short, items: ["header", "fields", "footer"].map((target, index) => ({ id: `marker-${index}`, target, heading: short, description: ref("detail") })) } };
-    const authored: SectionedViewDocument = { id: "namespaced-media", sections: [band({ id: "intro", media }), ...targets.map(id => band({ id, block: columns(2), footnote: { link: { label: ref("link"), href: `#${id}` } } }))] };
-    expect(validateSectionedViewDocument(authored).filter(f => f.severity === "error")).toEqual([]);
-    const resolved = resolveSectionedViewDocument(authored, resolver); const before = JSON.stringify(resolved); const resolutions = resolved.resolutions;
-    for (const ordered of [resolved, { ...resolved, sections: [...resolved.sections].reverse() }]) for (const server of [false, true]) for (const markup of [html(ordered, server), landingHtml(ordered, server)]) {
-      const root = dom(markup); const ids = [...root.querySelectorAll("[id]")].map(node => node.id);
-      expect(new Set(ids).size, "unique DOM IDs").toBe(ids.length);
-      for (const target of targets) { const matching = [...root.querySelectorAll("[id]")].filter(node => node.id === target); expect(matching).toHaveLength(1); expect(matching[0]?.matches("[data-content-section]")).toBe(true); expect(root.querySelector(`a[href="#${target}"]`)).not.toBeNull(); }
-      for (const node of root.querySelectorAll("[aria-labelledby]")) for (const id of node.getAttribute("aria-labelledby")!.split(/\s+/)) expect([...root.querySelectorAll("[id]")].filter(candidate => candidate.id === id)).toHaveLength(1);
-      expect(root.textContent).toContain(copy.heading); expect(root.textContent).toContain(kind === "scene" ? copy.short : copy.value);
-    }
-    expect(resolved.resolutions).toBe(resolutions); expect(JSON.stringify(resolved)).toBe(before);
-  });
 });
 
 
@@ -624,38 +498,6 @@ describe("automatic canonical body grounds", () => {
     { id: "hero", kind: "hero", ground: "inverse", heading: ref("heading") },
     ...Array.from({ length: count }, (_, index) => ({ id: `body-${index}`, kind: "content-section" as const, layout: "split-start" as const, heading: ref("heading"), ...(inverse && index === count - 1 ? { ground: "inverse" as const } : {}), block: { ...columns(2), treatment: "plate" as const }, actions: [{ id: "read", label: ref("link"), href: `/body-${index}`, emphasis: "quiet" as const }], footnote: { text: ref("detail") } })),
   ] }, resolver);
-  it.each(Array.from({ length: 8 }, (_, count) => count))("plans %i automatic body bands equally through both render paths", count => {
-    const doc = page(count); const before = JSON.stringify(doc);
-    const expected = Array.from({ length: count }, (_, index) => (count - index - 1) % 2 === 0 ? "base" : "sunken");
-    for (const server of [false, true]) for (const close of [false, true]) {
-      const View = server ? ServerLandingView : LandingView;
-      const root = dom(renderToStaticMarkup(<View document={doc} callToAction={close ? { heading: "Close", action: <a href="/close">Close</a> } : undefined} afterSection={count ? { "body-0": <span>Nested content</span> } : undefined} />));
-      const generic = dom(html(doc, server));
-      expected.forEach((ground, index) => {
-        const outer = root.querySelector(`#body-${index}`)!.closest("[data-landing-ground]")!;
-        expect(outer.getAttribute("data-landing-ground")).toBe(ground);
-        expect(outer.classList.contains("bg-surface-sunken")).toBe(ground === "sunken");
-        expect(outer.classList.contains("bg-surface-inverse")).toBe(false);
-        const ordinary = generic.querySelector(`#body-${index}`)!;
-        expect(ordinary.classList.contains("bg-surface-sunken")).toBe(ground === "sunken");
-        expect(ordinary.classList.contains("bg-surface-inverse")).toBe(false);
-        for (const host of [ordinary, root.querySelector(`#body-${index}`)!]) {
-          expect(host.querySelector("h2")!.classList.contains("text-ink-primary")).toBe(true);
-          expect(host.querySelector('[data-item][data-variant="plate"]')!.classList.contains(ground === "base" ? "bg-surface-sunken" : "bg-surface-raised")).toBe(true);
-          expect(host.querySelector('a[href="/body-' + index + '"]')!.classList.contains("text-control-quiet")).toBe(true);
-          expect(host.querySelector("[data-content-section-footnote]")?.classList.contains("text-ink-secondary")).toBe(true);
-        }
-      });
-    }
-    expect(JSON.stringify(doc)).toBe(before);
-  });
-  it("keeps canonical final inverse as the cadence anchor through CTA close", () => {
-    const doc = page(3, true);
-    for (const View of [LandingView, ServerLandingView]) {
-      const root = dom(renderToStaticMarkup(<View document={doc} callToAction={{ heading: "Close", action: <a href="/close">Close</a> }} />));
-      expect([0, 1, 2].map(index => root.querySelector(`#body-${index}`)!.closest("[data-landing-ground]")!.getAttribute("data-landing-ground"))).toEqual(["sunken", "base", "inverse"]);
-    }
-  });
 });
 
 
@@ -676,82 +518,4 @@ describe("canonical automatic ground seams", () => {
     const forged: any = structuredClone(resolved); forged.sections[0].block.columns = 1;
     for (const server of [false, true]) expect(() => html(forged, server)).toThrow(/columns/);
   });
-  it.each([false, true])("keeps mixed trailing-document cadence continuous with CTA=%s", close => {
-    const primary = resolveSectionedViewDocument({ id: "mixed", sectionGroundRhythm: "view", sections: [
-      { id: "hero", kind: "hero", ground: "inverse", heading: ref("heading") }, automatic("first-band"),
-      { id: "legacy", kind: "feature-grid", heading: ref("heading"), items: [item("one"), item("two", "second")] },
-    ] }, resolver);
-    const tail = resolveSectionedViewDocument({ id: "tail", sectionGroundRhythm: "view", sections: [
-      { id: "tail-hero", kind: "hero", heading: ref("heading") }, automatic("last-band"),
-    ] }, resolver);
-    const plan = planLandingViewGrounds(primary, [tail], { callToAction: close });
-    const expected = ["inverse", "sunken", "base", "sunken", "base", ...(close ? ["inverse"] : [])];
-    expect(plan.bands.map(band => band.ground)).toEqual(expected); expect(plan.repeats).toEqual([]);
-    for (const View of [LandingView, ServerLandingView]) {
-      const root = dom(renderToStaticMarkup(<View document={primary} trailing={[tail]} callToAction={close ? { heading: "Close", action: <a href="/close">Close</a> } : undefined} />));
-      expect([...root.querySelectorAll("[data-landing-ground]")].map(node => node.getAttribute("data-landing-ground"))).toEqual(expected);
-      expect(root.querySelectorAll("h1")).toHaveLength(1);
-    }
-    const legacyTail = { ...tail, sections: [{ id: "last-legacy", kind: "hero" as const, ground: "inverse" as const, heading: copy.heading }], viewGrounds: [] };
-    expect(planLandingViewGrounds(primary, [legacyTail], { callToAction: true }).bands.find(band => band.id === "last-legacy")!.ground).toBe("base");
-  });
-  it("keeps document-local eligibility when duplicate IDs are refused by Landing", () => {
-    const primary = resolveSectionedViewDocument({ id: "duplicate-primary", sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: ref("heading") }, automatic("shared-band")] }, resolver);
-    const explicit = resolveSectionedViewDocument({ id: "duplicate-tail", sections: [{ ...automatic("shared-band"), ground: "inverse" }] }, resolver);
-    expect(primary.viewGrounds).toEqual(["shared-band"]); expect(explicit.viewGrounds).toBeUndefined();
-    expect(planLandingViewGrounds(primary, [explicit]).bands.map(({ ground, assigned }) => ({ ground, assigned }))).toEqual([{ ground: "inverse", assigned: false }, { ground: "base", assigned: true }, { ground: "inverse", assigned: false }]);
-    for (const View of [LandingView, ServerLandingView]) expect(() => renderToStaticMarkup(<View document={primary} trailing={[explicit]} />)).toThrow(/earlier document already rendered that id/);
-    const overridden = { ...primary, sections: primary.sections.map(section => section.kind === "content-section" ? { ...section, ground: "inverse" as const } : section) };
-    expect(planLandingViewGrounds(overridden).bands.at(-1)).toMatchObject({ ground: "base", assigned: true });
-    expect(planLandingViewGrounds({ ...overridden, viewGrounds: [] }).bands.at(-1)).toMatchObject({ ground: "inverse", assigned: false });
-  });
-  it("sends one planned ground to specimen key, header, action and footnote", () => {
-    const keyMedia = { ...specimen, key: { label: ref("short"), items: ["header", "fields", "footer"].map((target, index) => ({ id: `mark-${index}`, target, heading: ref("short"), description: ref("detail") })) } };
-    const authored: SectionedViewDocument = { id: "grounded-key", sectionGroundRhythm: "view", sections: [
-      { id: "hero", kind: "hero", ground: "inverse", heading: ref("heading") },
-      { ...automatic("key-band"), layout: "split-start", media: keyMedia, actions: [{ id: "go", label: ref("link"), href: "/go", emphasis: "quiet" }], footnote: { text: ref("detail") } }, automatic("last-band"),
-    ] };
-    const doc = resolveSectionedViewDocument(authored, resolver);
-    for (const server of [false, true]) for (const view of ["section", "landing"]) {
-      const View = server ? ServerLandingView : LandingView;
-      const root = dom(view === "section" ? html(doc, server) : renderToStaticMarkup(<View document={doc} />));
-      const band = root.querySelector("#key-band")!;
-      expect(band.querySelector("[data-anatomy-key-number]")!.classList.contains("text-surface-sunken")).toBe(true);
-      expect(band.querySelector("[data-anatomy-callouts]")!.getAttribute("data-legend-side")).toBe("below");
-      expect(band.querySelector("h2")!.classList.contains("text-ink-primary")).toBe(true);
-      expect(band.querySelector('a[href="/go"]')!.classList.contains("text-control-quiet")).toBe(true);
-      expect(band.querySelector("[data-content-section-footnote]")!.classList.contains("text-ink-secondary")).toBe(true);
-    }
-  });
-});
-
-
-it("plans every retained top-level body kind across a document seam", () => {
-  const inherited = resolveSectionedViewDocument(previewSectionedDocument, previewCopyResolver);
-  const canonical = resolve(band({ id: "canonical-band", block: columns(2) }));
-  const sections = [...inherited.sections.slice(0, 4), canonical.sections[0]!, ...inherited.sections.slice(4)].map(section => ({ ...section, ground: section.kind === "hero" ? "inverse" as const : "base" as const }));
-  const combined = { ...inherited, sections, resolutions: [...inherited.resolutions, ...canonical.resolutions], viewGrounds: sections.slice(1).map(section => section.id) };
-  const primary = { ...combined, sections: sections.slice(0, 6), viewGrounds: sections.slice(1, 6).map(section => section.id) };
-  const tail = { ...combined, id: "all-kind-tail", sections: sections.slice(6), viewGrounds: sections.slice(6).map(section => section.id) };
-  const body = sections.slice(1), expected = body.map((_, index) => (body.length - index - 1) % 2 ? "sunken" : "base");
-  for (const server of [false, true]) {
-    const generic = dom(html(combined, server));
-    body.forEach((section, index) => expect(generic.querySelector(`#${section.id}`)!.classList.contains("bg-surface-sunken")).toBe(expected[index] === "sunken"));
-    for (const close of [false, true]) {
-      const View = server ? ServerLandingView : LandingView;
-      const root = dom(renderToStaticMarkup(<View document={primary} trailing={[tail]} callToAction={close ? { heading: "Close", action: <a href="/close">Close</a> } : undefined} />));
-      expect([...root.querySelectorAll("[data-landing-ground]")].map(node => node.getAttribute("data-landing-ground"))).toEqual(["inverse", ...expected, ...(close ? ["inverse"] : [])]);
-      expect(planLandingViewGrounds(primary, [tail], { callToAction: close }).bands.map(band => band.ground)).toEqual(["inverse", ...expected, ...(close ? ["inverse"] : [])]);
-    }
-  }
-});
-
-
-it("excludes an automatic initial Hero from body cadence", () => {
-  const authored: SectionedViewDocument = { id: "automatic-hero", sectionGroundRhythm: "view", sections: [
-    { id: "hero", kind: "hero", heading: ref("heading") }, ...[0, 1, 2].map(index => ({ id: `body-${index}`, kind: "content-section" as const, heading: ref("heading"), block: columns(2) })),
-  ] };
-  const doc = resolveSectionedViewDocument(authored, resolver);
-  expect(planLandingViewGrounds(doc).bands.map(band => ({ ground: band.ground, assigned: band.assigned }))).toEqual([{ ground: "base", assigned: false }, { ground: "base", assigned: true }, { ground: "sunken", assigned: true }, { ground: "base", assigned: true }]);
-  for (const View of [LandingView, ServerLandingView]) expect(dom(renderToStaticMarkup(<View document={doc} />)).querySelector('[data-landing-hero]')!.classList.contains("bg-surface-sunken")).toBe(false);
 });

@@ -64,6 +64,13 @@ describe("NavGrid", () => {
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
 
+  it("lets an onSelect card's title and description wrap instead of inheriting the button label's nowrap", () => {
+    render(<NavGrid items={[{ id: "invite", title: "Invite teammates", description: "Send invitations to everyone on the workspace", onSelect: vi.fn() }]} />);
+    const card = screen.getByRole("button", { name: /Invite teammates/ });
+    expect(card).toHaveClass("whitespace-normal");
+    expect(card).not.toHaveClass("whitespace-nowrap");
+  });
+
   it("an href card: one anchor on the title alone (its name), the icon and description outside it, the hit area stretched over the tile", () => {
     const { container } = render(
       <NavGrid

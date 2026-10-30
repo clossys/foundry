@@ -9,8 +9,8 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
 import { expectFrontDoorConformance, PRIMARY_ACTION_CLASS } from "../../testing/index.js";
-import { SITE_MAIN_ID } from "../frame/types.js";
-import type { SiteShellInput } from "../frame/types.js";
+import { SITE_MAIN_ID } from "@clossys/designer/frames";
+import type { SiteShellInput } from "@clossys/designer/frames";
 import { SiteMetadataError } from "../siteMetadata.js";
 import { NotFoundDocument } from "./NotFoundDocument.js";
 import type { NotFoundDocumentProps } from "./NotFoundDocument.js";
@@ -18,7 +18,7 @@ import * as ordinary from "../../../dist/web/index.js";
 import * as server from "../../../dist/web/server.js";
 import * as client from "../../../dist/web/client.js";
 
-const ALLOWED_IMPORTS = ["react", "../frame/SiteFrame.js", "../frame/types.js", "./GlobalErrorDocument.js", "./StatusView.js", "./statusDocument.js"];
+const ALLOWED_IMPORTS = ["react", "@clossys/designer/frames", "./GlobalErrorDocument.js", "./StatusView.js", "./statusDocument.js"];
 
 /** Every module specifier named by an `import` statement or an `export ... from` re-export. */
 const MODULE_SPECIFIER =
@@ -35,7 +35,7 @@ const COPY: Readonly<Record<string, string>> = {
 const ref = (id: string): CopyRef => ({ id });
 
 // A resolver that answers from a fixed map and ignores any locale: the document
-// must not need a locale, a request or a provider to render.
+// must not need a locale context, a request or a provider to render.
 const resolveCopy: CopyResolver = (copyRef) => {
   const text = COPY[copyRef.id];
   return text === undefined
@@ -62,6 +62,7 @@ const shell: SiteShellInput = {
 
 const props: NotFoundDocumentProps = {
   lang: "de-CH",
+  localeManifest: { locales: [{ tag: "de-CH", dir: "ltr", state: "active" }] },
   documentTitle: { page: "Page not found", brand: "Example Studio" },
   icon: { href: "/icon.svg", type: "image/svg+xml" },
   shell,
@@ -162,7 +163,7 @@ describe("NotFoundDocument", () => {
 
     it("imports only react, the frame, the status view and the shared status document head", () => {
       const specifiers = [...source.matchAll(MODULE_SPECIFIER)].map((m) => m[1] as string);
-      expect(specifiers).toEqual(expect.arrayContaining(["../frame/SiteFrame.js", "./StatusView.js", "./statusDocument.js"]));
+      expect(specifiers).toEqual(expect.arrayContaining(["@clossys/designer/frames", "./StatusView.js", "./statusDocument.js"]));
       for (const specifier of specifiers) expect(ALLOWED_IMPORTS).toContain(specifier);
       expect(source).not.toMatch(/\brequire\(|import\(/);
     });
@@ -188,7 +189,7 @@ describe("README unmatched-address example", () => {
     throw new Error(`Unexpected README example import: ${specifier}`);
   };
   // Run the documented component with the shared frame fixture, so the example is tested rather than restated.
-  new Function("require", "exports", "frame", compiled.outputText)(requireExample, exports, { shell, resolveCopy, resolveAsset });
+  new Function("require", "exports", "frame", "localeManifest", compiled.outputText)(requireExample, exports, { shell, resolveCopy, resolveAsset }, { locales: [{ tag: "en", dir: "ltr", state: "active" }] });
 
   it("renders one frame, one h1, the linked stylesheet and a conformant primary action", () => {
     const doc = new DOMParser().parseFromString(renderToStaticMarkup(exports.default!()), "text/html");

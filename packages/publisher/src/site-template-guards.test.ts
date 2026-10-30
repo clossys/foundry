@@ -735,7 +735,7 @@ describe("guard 2: custom properties", () => {
       refDirs: [
         TEMPLATE_DIR,
         join(PUBLISHER_DIR, "src", "web", "views"),
-        join(DESIGNER_DIR, "src", "atoms"),
+        join(DESIGNER_DIR, "src", "components"),
         join(DESIGNER_DIR, "src", "blocks"),
         join(DESIGNER_DIR, "src", "shell"),
       ],

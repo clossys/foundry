@@ -1,0 +1,240 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.app-sidebar",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./blocks#AppNavigation",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "frames.app-sidebar",
+      "source": "foundry",
+      "sourceAddress": "./blocks#AppNavigation",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "slot.account",
+        "slot.theme"
+      ]
+    }
+  },
+  "frames": {
+    "app-sidebar": {
+      "composes": [
+        "components.button",
+        "components.card",
+        "components.icon",
+        "components.tooltip",
+        "frames.sheet"
+      ],
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.button",
+          "components.card",
+          "components.icon",
+          "components.tooltip",
+          "frames.sheet"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.button",
+            "components.card",
+            "components.icon",
+            "components.tooltip"
+          ],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.body-size",
+            "tokens.border-color",
+            "tokens.border-width",
+            "tokens.control-color",
+            "tokens.control-radius",
+            "tokens.duration",
+            "tokens.easing",
+            "tokens.icon-size",
+            "tokens.region-width",
+            "tokens.spacing",
+            "tokens.surface-color",
+            "tokens.text-color"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/app-navigation-layout.ts",
+            "sha256": "02bed42a4e94ab8adaa692e2d6bc59d2095204b4ac1195b7e92281c9009294b9"
+          },
+          {
+            "path": "packages/designer/src/blocks/app-navigation-tree.ts",
+            "sha256": "cfb8fc62ad199c7c40961ccc6294e290cf85c7bdc64fd07979d43a87854a7a29"
+          },
+          {
+            "path": "packages/designer/src/blocks/AppNavigation.tsx",
+            "sha256": "c794f90745499e7771b4ccf38bd01ec64586a9b1156e13a44d31b0d68cf9d921"
+          },
+          {
+            "path": "packages/designer/src/blocks/frame-navigation.ts",
+            "sha256": "fd8e4f554ec87389b5c411e2624e2ccac29222eddd9e75ee7993962b071e40e9"
+          },
+          {
+            "path": "packages/designer/src/blocks/Panel.tsx",
+            "sha256": "472398e3a3e376cf2f63dbdba831f18ffad241507f15900f1dd54f5e9f2b5340"
+          },
+          {
+            "path": "packages/designer/src/blocks/tree-model.ts",
+            "sha256": "fc9061aa49bfd02431c16ebda6a119cbc395ebe793ec1a2ebece5ee34e7c3f8d"
+          },
+          {
+            "path": "packages/designer/src/components/Banner.copy-context.tsx",
+            "sha256": "fa058a7f7655c4968b4930010d57be56f1136b4c5eda4c6544dca26088edc55a"
+          },
+          {
+            "path": "packages/designer/src/components/Banner.copy.ts",
+            "sha256": "9a37518f0d4ab5d04c55cfd4706daaecaad2a490b9a36d83db9108215d48e658"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/icons/ChevronDown.ts",
+            "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
+          },
+          {
+            "path": "packages/designer/src/icons/ChevronLeft.ts",
+            "sha256": "3674c3670e0c34bdb78c075730560e17b6f6b698194010fd42efa76533415e4a"
+          },
+          {
+            "path": "packages/designer/src/icons/ChevronRight.ts",
+            "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+          },
+          {
+            "path": "packages/designer/src/icons/FileText.ts",
+            "sha256": "64a84d19799a4300dafca2175cc2ef9da054708f92a2fa18e7c95a40b39ab59f"
+          },
+          {
+            "path": "packages/designer/src/icons/Folder.ts",
+            "sha256": "5f10987d0993f001109aaf7d553706b504ee8b92adaaabdf430a3be6f6617902"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved source export ../components/Link.js#Link",
+            "file": "packages/designer/src/blocks/AppNavigation.tsx",
+            "line": 6
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved source export ../components/NavigationTree.js#NavigationTree",
+            "file": "packages/designer/src/blocks/AppNavigation.tsx",
+            "line": 9
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved source export ../components/NavigationTree.js#NavigationTreeItem",
+            "file": "packages/designer/src/blocks/AppNavigation.tsx",
+            "line": 9
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved source export ../components/NavigationTree.js#NavigationTreeItemContent",
+            "file": "packages/designer/src/blocks/AppNavigation.tsx",
+            "line": 9
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/FileText.js#FileText",
+            "file": "packages/designer/src/blocks/AppNavigation.tsx",
+            "line": 12
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/Folder.js#Folder",
+            "file": "packages/designer/src/blocks/AppNavigation.tsx",
+            "line": 13
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/ChevronDown.js#ChevronDown",
+            "file": "packages/designer/src/blocks/AppNavigation.tsx",
+            "line": 14
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/ChevronLeft.js#ChevronLeft",
+            "file": "packages/designer/src/blocks/AppNavigation.tsx",
+            "line": 15
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/ChevronRight.js#ChevronRight",
+            "file": "packages/designer/src/blocks/AppNavigation.tsx",
+            "line": 16
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
+      "impl": {
+        "export": "AppNavigation",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "members": [
+        "presentation.collapsed",
+        "presentation.docked",
+        "presentation.overlay"
+      ],
+      "propMap": {
+        "presentation.collapsed": "collapsed=true",
+        "presentation.docked": "collapsed=false",
+        "presentation.overlay": "drawerOpen=true"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.icon-size",
+          "tokens.region-width",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color"
+        ]
+      },
+      "slot": "frames.app-sidebar",
+      "slots": {
+        "header": "header",
+        "tree": "tree"
+      },
+      "statePorts": {
+        "collapsed": "collapsed/onCollapsedChange"
+      }
+    }
+  }
+}

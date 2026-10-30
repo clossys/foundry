@@ -1,0 +1,80 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-institution",
+      "slot": "assets.icon-institution",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.24.0/dist/esm/icons/landmark.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.24.0",
+        "file": "src/icons/Landmark.ts",
+        "sha256": "defe18c0251260c4f6e44882f36756daba7aaa6544b5c35794c59e0baefeb384"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-institution": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M10 18v-7",
+              "key": "wt116b"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M11.119 2.205a2 2 0 0 1 1.762 0l7.84 3.846A.5.5 0 0 1 20.5 7h-17a.5.5 0 0 1-.22-.949z",
+              "key": "yxxwt6"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M14 18v-7",
+              "key": "vav6t3"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M18 18v-7",
+              "key": "aexdmj"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 22h18",
+              "key": "8prr45"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M6 18v-7",
+              "key": "1ivflk"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

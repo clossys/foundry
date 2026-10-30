@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "layer": "tokens",
+  "baseSignedHead": "581e4fd70589fe072d9ce38fa159306d473c1754",
+  "status": "owner-signed",
+  "addedLeaves": [
+    {
+      "id": "tokens.container-width",
+      "placement": "space-layout",
+      "signed": "OWNER 2026-10-26T18:03Z ledger #44"
+    },
+    {
+      "id": "tokens.animation",
+      "placement": "motion-timing",
+      "signed": "OWNER 2026-10-26T18:03Z ledger #44"
+    }
+  ],
+  "recorded": [
+    {
+      "id": "tokens.scrim-color",
+      "change": "none",
+      "note": "Stays in Color > Surfaces as an extension leaf; membership and placement unchanged.",
+      "signed": "OWNER 2026-10-26T18:03Z ledger #44"
+    }
+  ],
+  "pending": {
+    "status": "pending-owner-ratification",
+    "source": "workspace#45 A131/A132 AUTO-DECIDED 2026-10-28",
+    "addedLeafIds": [
+      "tokens.gradient"
+    ],
+    "memberChanges": [
+      {
+        "id": "tokens.display-size",
+        "addedMembers": [
+          "2xl"
+        ]
+      },
+      {
+        "id": "tokens.heading-size",
+        "addedMembers": [
+          "2xl"
+        ]
+      },
+      {
+        "id": "tokens.display-face",
+        "addedMembers": [
+          "optical-size"
+        ]
+      },
+      {
+        "id": "tokens.shift-distance",
+        "addedMembers": [
+          "reveal"
+        ]
+      },
+      {
+        "id": "tokens.animation",
+        "addedMembers": [
+          "count",
+          "marquee",
+          "reveal",
+          "scroll-reveal",
+          "scroll-sticky",
+          "stagger"
+        ]
+      }
+    ]
+  }
+}

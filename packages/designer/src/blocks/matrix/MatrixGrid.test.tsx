@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Matrix, type MatrixProps } from "../Matrix.js";
+import { withoutDsAttrs } from "../../catalog-core/provenance-attrs.js";
 
 type Grid = Extract<MatrixProps, { arrangement: "grid" }>;
 type Cell = Grid["rows"][number]["cells"][string];
@@ -99,8 +100,10 @@ describe("Matrix grid", () => {
     const header = screen.getByRole("columnheader", { name: "Column 2 Selected measure" });
     const badge = within(header).getByText("Selected measure");
     expect(badge).toHaveClass("rounded-pill", "text-caption");
-    expect(header).toHaveClass("border-t-accent");
-    expect(header.style.borderBlockStartWidth).toBe("var(--ui-border-hairline, 1px)");
+    expect(badge).toHaveClass("whitespace-nowrap", "shrink-0");
+    expect(header).toHaveClass("text-end", "tabular-nums");
+    expect(header.className).not.toContain("border-t-accent");
+    expect(header.style.borderBlockStartWidth).toBe("");
     expect(() => html({ ...props, featuredLabel: undefined })).toThrow(/featuredLabel/);
   });
 
@@ -108,8 +111,8 @@ describe("Matrix grid", () => {
     const { container } = render(<Matrix {...grid()} featured={{ row: "row-1" }} featuredLabel="Selected row" headingLevel={5} />);
     const selected = screen.getByRole("rowheader", { name: /Previous record/ });
     expect(within(selected).getByText("Selected row")).toHaveClass("rounded-pill");
-    expect(selected).toHaveClass("border-s-accent");
-    expect(selected.style.borderInlineStartWidth).toBe("var(--ui-border-hairline, 1px)");
+    expect(selected.className).not.toContain("border-s-accent");
+    expect(selected.style.borderInlineStartWidth).toBe("");
     expect([...container.querySelectorAll("tbody th h5")].map(node => node.textContent)).toEqual(["Current record", "Previous record"]);
     expect(screen.getAllByRole("columnheader").map(node => node.textContent)).toEqual(["Column 1", "Column 2", "Column 3"]);
   });
@@ -133,7 +136,8 @@ describe("Matrix grid", () => {
 
   it.each(["base", "sunken", "inverse"] as const)("uses grounded tokens and checked status/delta backings (%s)", ground => {
     render(<Matrix {...grid()} ground={ground} featured={{ column: "column-1" }} featuredLabel="Selected" />);
-    expect(screen.getByRole("columnheader", { name: /Column 2/ })).toHaveClass(ground === "inverse" ? "border-t-accent-on-inverse" : "border-t-accent");
+    expect(screen.getByRole("columnheader", { name: /Column 2/ }).className).not.toMatch(/border-t-accent/);
+    expect(screen.getByRole("columnheader", { name: /Column 2/ }).style.borderBlockStartWidth).toBe("");
     const delta = screen.getByText("+12%");
     const status = screen.getByText("Reviewed").closest("[data-tone]");
     if (ground === "inverse") { expect(delta).toHaveClass("bg-surface-raised"); expect(status).toHaveClass("bg-surface-raised"); }
@@ -209,11 +213,26 @@ describe("Matrix unchanged sides", () => {
       const node = (name: string): ReactNode => nested ? <Authored name={name} /> : name;
       const sides = ["first", "second"].map((id, i) => ({ id, ...(labels ? { label: node(`Label ${i}`) } : {}), heading: node(`Heading ${i}`), ...(i === 0 ? { description: node("Supporting copy") } : {}), ...(form === "points" ? { points: [node(`Point ${i}a`), node(`Point ${i}b`)] } : { visual: node(`Visual ${i}`) }) })) as Extract<MatrixProps, { arrangement?: "sides" }>["sides"];
       const props = { sides, ground, headingLevel, featured: "second", id: "authored-matrix", "aria-label": "Authored comparison", "data-reference": "comparison", className: "authored-comparison", style: { inlineSize: "100%" }, ...(explicit ? { arrangement: "sides" as const } : {}) };
-      records.push({ key: `${ground}/${form}/${explicit}/${nested}/${labels}/${headingLevel}`, html: renderToStaticMarkup(<Matrix {...props} />) });
+      records.push({ key: `${ground}/${form}/${explicit}/${nested}/${labels}/${headingLevel}`, html: withoutDsAttrs(renderToStaticMarkup(<Matrix {...props} />)) });
     }
     expect(records).toHaveLength(96);
     // Captured from valid legacy inputs before implementation; both new sides modes
     // must consume arrangement and match that raw HTML without ID normalization.
     expect(createHash("sha256").update(JSON.stringify(records)).digest("hex")).toBe("8120b98c4b9fecf4c87bf90943ffa74e6aeddc406a48f72f71aa4d1a5e169a41");
   });
+});
+
+it("S4-6 preserves the grid table root, authored attributes and row heading outline", () => {
+  let clicks = 0;
+  const { container } = render(<Matrix {...grid()} id="grid" dir="rtl" data-host="yes" className="authored-grid" style={{ marginTop: 7 }} onClick={() => clicks++} />);
+  const root = container.firstElementChild as HTMLElement;
+  expect(root.tagName).toBe("TABLE");
+  expect(root).toHaveAttribute("id", "grid");
+  expect(root).toHaveAttribute("dir", "rtl");
+  expect(root).toHaveAttribute("data-host", "yes");
+  expect(root).toHaveClass("authored-grid");
+  expect(root.style.marginTop).toBe("7px");
+  expect(root.querySelectorAll("[data-designer-section-frame]")).toHaveLength(0);
+  expect(root.querySelectorAll("#grid")).toHaveLength(0);
+  root.click(); expect(clicks).toBe(1);
 });

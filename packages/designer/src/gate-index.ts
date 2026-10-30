@@ -3,7 +3,7 @@
  * token-purity scanner/gate, kept separate from `src/index.ts` (the
  * component ladder's own internal-tooling barrel — see that file's header
  * for why it has no `"."` package export) the same way this package's
- * `atoms`/`blocks`/`shell`/`charts`/`icons` subpaths are each their
+ * `components`/`blocks`/`shell`/`charts`/`icons` subpaths are each their
  * own barrel. `scripts/check-readme-parity.mjs` reads only `src/index.ts`
  * as this package's canonical export list, so this file is deliberately
  * NOT re-exported there — a consumer imports the scanner/gate from
@@ -78,3 +78,8 @@ export type {
   DesignConformanceRateFinding,
   DesignConformanceRateState,
 } from "./design-conformance-rate.js";
+
+export { runDogfood } from "./catalog-core/dogfood.js";
+export type { DogfoodCode, DogfoodFinding, DogfoodInput, DogfoodException, NeedRecord, NeedCandidate, NeedStatus } from "./catalog-core/dogfood.js";
+export { buildSurfaceConsumption } from "./catalog-core/surface-consumption.js";
+export type { SurfaceConsumptionInput, SurfaceConsumptionScan, SurfaceConsumptionSlot, SurfaceConsumptionFinding } from "./catalog-core/surface-consumption.js";

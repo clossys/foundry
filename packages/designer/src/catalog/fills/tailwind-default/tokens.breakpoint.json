@@ -1,0 +1,177 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "derivation": {
+        "from": "dtcg#alias",
+        "rule": "tablet=md; tablet-lg=lg; desktop=xl; Foundry supplies retained mobile/mobile-lg/wide subset"
+      },
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "tailwind-default/tokens.breakpoint",
+      "license": "MIT",
+      "mode": "derived",
+      "pin": {
+        "file": "theme.css",
+        "package": "tailwindcss",
+        "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+        "version": "4.3.3"
+      },
+      "relation": "derived",
+      "slot": "tokens.breakpoint",
+      "source": "tailwind-default",
+      "sourceAddress": "tailwindcss/theme.css",
+      "status": "draft",
+      "trust": "pinned-upstream",
+      "unmapped": [
+        "--aspect-video",
+        "--color-black",
+        "--color-white",
+        "--default-font-family",
+        "--default-font-feature-settings",
+        "--default-font-variation-settings",
+        "--default-mono-font-family",
+        "--default-mono-font-feature-settings",
+        "--default-mono-font-variation-settings",
+        "--default-transition-duration",
+        "--default-transition-timing-function",
+        "--drop-shadow",
+        "--drop-shadow-2xl",
+        "--drop-shadow-lg",
+        "--drop-shadow-md",
+        "--drop-shadow-sm",
+        "--drop-shadow-xl",
+        "--drop-shadow-xs",
+        "--font-serif",
+        "--inset-shadow-2xs",
+        "--inset-shadow-sm",
+        "--inset-shadow-xs",
+        "--max-width-prose",
+        "--perspective-distant",
+        "--perspective-dramatic",
+        "--perspective-midrange",
+        "--perspective-near",
+        "--perspective-normal",
+        "--radius",
+        "--text-shadow-2xs",
+        "--text-shadow-lg",
+        "--text-shadow-md",
+        "--text-shadow-sm",
+        "--text-shadow-xs"
+      ]
+    }
+  },
+  "tokens": {
+    "breakpoint": {
+      "2xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "96rem"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 96
+        }
+      },
+      "desktop": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "80rem"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 80
+        }
+      },
+      "lg": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "64rem"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 64
+        }
+      },
+      "md": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "48rem"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 48
+        }
+      },
+      "sm": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "40rem"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 40
+        }
+      },
+      "tablet": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "48rem"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 48
+        }
+      },
+      "tablet-lg": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "64rem"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 64
+        }
+      },
+      "xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "80rem"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 80
+        }
+      }
+    }
+  }
+}

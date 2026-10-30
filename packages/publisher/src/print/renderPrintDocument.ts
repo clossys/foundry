@@ -214,6 +214,8 @@ export function renderPrintDocument(doc: ComposeDocument, options: RenderPrintOp
 
   const html = buildHtmlDocument({
     doc,
+    locale: options.locale,
+    manifest: options.manifest,
     pageBox,
     pageAtRuleCss,
     pageColor,

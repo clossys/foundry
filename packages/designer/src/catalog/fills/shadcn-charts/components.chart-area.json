@@ -1,0 +1,134 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "shadcn-charts/components.chart-area",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+        "sha256": "1bbf2ff917b84dde3c715477618a244e374eaa490732c976dadf91c9b80328d7",
+        "url": "https://github.com/shadcn-ui/ui"
+      },
+      "relation": "same-contract",
+      "slot": "components.chart-area",
+      "source": "shadcn-charts",
+      "sourceAddress": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/bases/aria/ui/chart.tsx",
+      "status": "draft",
+      "trust": "pinned-upstream",
+      "unmapped": []
+    }
+  },
+  "components": {
+    "chart-area": {
+      "blockers": [],
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": "19.2.3"
+        },
+        {
+          "license": "MIT",
+          "name": "recharts",
+          "version": "3.8.0"
+        },
+        {
+          "license": "MIT",
+          "name": "clsx",
+          "version": "2.1.1"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "3.3.1"
+        }
+      ],
+      "impl": {
+        "entry": "components/chart-area/chart-area.tsx",
+        "export": "ChartArea",
+        "kind": "source"
+      },
+      "item": "chart",
+      "license": "MIT",
+      "members": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ],
+      "notice": "notices/THIRD-PARTY.md",
+      "outputSha256": [
+        {
+          "path": "components/_parts/utils/index.ts",
+          "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+        },
+        {
+          "path": "components/chart-area/chart-area.tsx",
+          "sha256": "627b171705165a3f06b783892f000d49f2616dfee89c439b03240294c12c3173"
+        },
+        {
+          "path": "components/chart/chart.tsx",
+          "sha256": "332cfd34270c6596893e18310f59a3224c27d3a8a79decedd4bd17fa928ecb89"
+        },
+        {
+          "path": "notices/THIRD-PARTY.md",
+          "sha256": "c20e375c7c425002d035b3442714ac64a03c4ff16a46fea7b0af5f524037feed"
+        }
+      ],
+      "parts": [
+        {
+          "item": "utils"
+        }
+      ],
+      "pin": {
+        "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+        "files": [
+          {
+            "path": "apps/v4/registry/bases/aria/ui/chart.tsx",
+            "sha256": "1bbf2ff917b84dde3c715477618a244e374eaa490732c976dadf91c9b80328d7"
+          },
+          {
+            "path": "LICENSE.md",
+            "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
+          }
+        ],
+        "url": "https://github.com/shadcn-ui/ui"
+      },
+      "propMap": {
+        "axes": "ChartArea.categoryKey: Recharts XAxis + CartesianGrid in ChartContainer",
+        "legend": "ChartArea: ChartLegend content=ChartLegendContent",
+        "series": "ChartArea.series: Recharts Area per ChartConfig key",
+        "tooltip": "ChartArea: ChartTooltip content=ChartTooltipContent"
+      },
+      "props": [
+        "categoryKey",
+        "className",
+        "data",
+        "initialDimension",
+        "isAnimationActive",
+        "series"
+      ],
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": [
+          "tokens.border-color",
+          "tokens.categorical-color",
+          "tokens.chart-color",
+          "tokens.surface-color",
+          "tokens.text-color"
+        ]
+      },
+      "rendering": "client",
+      "root": "engine:none",
+      "slot": "components.chart-area",
+      "source": "shadcn-charts",
+      "transform": "shadcn-registry-alias@1"
+    }
+  }
+}

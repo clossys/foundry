@@ -103,7 +103,12 @@ describe("styles/preview.css", () => {
     expect(missing).toEqual([]);
   }, 30_000);
 
-  it("covers Publisher's band rhythm, which Designer's compiled.css alone does not", () => {
-    for (const className of ["py-4xl", "tablet-lg:py-5xl"]) expect(hasRuleFor(committed, className), className).toBe(true);
+  it("covers the live ContentSection band rhythm rendered by Publisher's native catalog", () => {
+    const standardRhythm = ["py-4xl", "tablet:py-5xl", "desktop:py-6xl"];
+    const page = pages.find((page) => page.file === "catalog/introduce.html");
+    expect(page).toBeDefined();
+    const bands = JSDOM.fragment(page!.html).querySelectorAll("[data-content-section]");
+    expect([...bands].some((band) => standardRhythm.every((className) => band.classList.contains(className)))).toBe(true);
+    for (const className of standardRhythm) expect(hasRuleFor(committed, className), className).toBe(true);
   });
 });

@@ -4,12 +4,12 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 /**
- * UI exposes reusable visual vocabulary only. Atoms are foundational;
- * blocks may compose atoms; shell and charts are sibling domains built on
- * atoms/blocks. Page-level views live in `@example/surface/web`.
+ * UI exposes reusable visual vocabulary only. Components are foundational;
+ * blocks may compose components; shell and charts are sibling domains built on
+ * components/blocks. Page-level views live in `@example/surface/web`.
  */
 const srcDir = dirname(fileURLToPath(import.meta.url));
-const atomsDir = join(srcDir, "atoms");
+const componentsDir = join(srcDir, "components");
 const blocksDir = join(srcDir, "blocks");
 const shellDir = join(srcDir, "shell");
 const chartsDir = join(srcDir, "charts");
@@ -50,7 +50,7 @@ describe("ui layer dependencies", () => {
     const source = readFileSync(join(blocksDir, "AccountMenu.tsx"), "utf8");
     const imports = [...source.matchAll(IMPORT_RE)].map(match => match[1]);
     expect(imports.length).toBeGreaterThan(0);
-    expect(imports.filter(specifier => !/^(?:react|\.\/account-menu-types\.js|\.\.\/atoms\/(?:Avatar|Button|Icon|Menu|Tooltip)\.js|\.\.\/icons\/(?:Check|ChevronUp)\.js)$/.test(specifier!))).toEqual([]);
+    expect(imports.filter(specifier => !/^(?:react|\.\/account-menu-types\.js|\.\.\/components\/(?:Avatar|Button|Icon|Menu|Tooltip)\.js|\.\.\/icons\/(?:Check|ChevronUp)\.js)$/.test(specifier!))).toEqual([]);
     expect(source).not.toMatch(/\b(?:localStorage|sessionStorage|indexedDB|cookie|fetch)\b/);
   });
   it("keeps CommandMenu data and actions host-owned with no service imports", () => {
@@ -60,8 +60,8 @@ describe("ui layer dependencies", () => {
       expect(match[1]).not.toMatch(/auth|storage|fetch|theme|bouncer|node:/i);
     }
   });
-  it("atoms do not depend on blocks, shell, or charts", () => {
-    expect(violations(atomsDir, ["blocks", "shell", "charts"])).toEqual([]);
+  it("components do not depend on blocks, shell, or charts", () => {
+    expect(violations(componentsDir, ["blocks", "shell", "charts"])).toEqual([]);
   });
 
   it("blocks do not depend on shell or charts", () => {
@@ -81,21 +81,30 @@ describe("ui layer dependencies", () => {
   });
 
   it("icons remain pure glyph data", () => {
-    expect(violations(iconsDir, ["atoms", "blocks", "shell", "charts", "theme"])).toEqual([]);
+    expect(violations(iconsDir, ["components", "blocks", "shell", "charts", "theme"])).toEqual([]);
   });
 
   it("nothing outside theme depends on it — the same one-way sibling shape charts has", () => {
-    expect(violations(atomsDir, ["theme"])).toEqual([]);
+    expect(violations(componentsDir, ["theme"])).toEqual([]);
     expect(violations(blocksDir, ["theme"])).toEqual([]);
     expect(violations(shellDir, ["theme"])).toEqual([]);
     expect(violations(chartsDir, ["theme"])).toEqual([]);
   });
 
-  it("the permitted blocks-to-atoms direction has real coverage", () => {
-    expect(violations(blocksDir, ["atoms"]).length).toBeGreaterThan(0);
+  it("frames compose Designer layers without importing Publisher or self package entrypoints", () => {
+    const files = collectSourceFiles(join(srcDir, "frames"));
+    expect(files.some(file => file.endsWith("AppFrame.tsx"))).toBe(true);
+    for (const file of files) for (const match of readFileSync(file, "utf8").matchAll(IMPORT_RE)) {
+      expect(match[1]).not.toMatch(/@clossys\/(?:publisher|designer)(?:\/|$)/);
+    }
+    for (const dir of [componentsDir, blocksDir, shellDir, chartsDir, themeDir]) expect(violations(dir, ["frames"])).toEqual([]);
   });
 
-  it("the permitted theme-to-atoms direction has real coverage", () => {
-    expect(violations(themeDir, ["atoms"]).length).toBeGreaterThan(0);
+  it("the permitted blocks-to-components direction has real coverage", () => {
+    expect(violations(blocksDir, ["components"]).length).toBeGreaterThan(0);
+  });
+
+  it("the permitted theme-to-components direction has real coverage", () => {
+    expect(violations(themeDir, ["components"]).length).toBeGreaterThan(0);
   });
 });

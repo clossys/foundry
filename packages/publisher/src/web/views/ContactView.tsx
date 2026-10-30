@@ -1,6 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
-import { Card, mergeUiClasses } from "@clossys/designer/atoms/server";
+import { Card, mergeUiClasses } from "@clossys/designer/components/server";
 import { PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import type { SiteFooterLegalProps } from "@clossys/designer/shell/server";
@@ -98,7 +98,7 @@ function ContactViewFrame({ brand, headerAction, secondaryAction, nav, ground, l
   return (
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
       <SiteHeader {...siteHeaderPresentation(ground)} brand={brand} nav={nav} actions={<>{secondaryAction}{headerAction}</>} />
-      <main className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style={{ maxWidth: "var(--ui-width-prose-max, none)" }}>
+      <main className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl max-w-[var(--ui-width-prose-max,none)]">
         {children}
       </main>
       <SiteFooter ground={ground} secondary={<SiteFooter.Legal {...legal} />} />

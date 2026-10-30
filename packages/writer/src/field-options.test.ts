@@ -128,7 +128,7 @@ describe("both callers refuse options identically", () => {
         field: "pitch.elevator",
         id: "messaging.pitch.elevator",
         message:
-          'Messaging kit entry "messaging.pitch.elevator" must be literal text; its entry declares placeholders or contains text the resolver would rewrite.',
+          'Messaging kit entry "messaging.pitch.elevator" must be literal text; an entry that declares placeholders cannot be used.',
       },
     ]);
     const identity = resolveSiteIdentity(
@@ -141,7 +141,7 @@ describe("both callers refuse options identically", () => {
         field: "name",
         id: "site.name",
         message:
-          'Site identity "site.name" must be literal text; its entry declares placeholders or contains text the resolver would rewrite.',
+          'Site identity "site.name" must be literal text; an entry that declares placeholders cannot be used.',
       },
     ]);
   });

@@ -202,7 +202,7 @@ describe("flattenTokens", () => {
     const flat = flattenTokens();
     expect(flat.get("--spacing-lg")).toBe("16px");
     expect(flat.get("--radius-control")).toBe("6px");
-    expect(flat.get("--ui-duration-fast")).toBe("160ms");
+    expect(flat.get("--ui-duration-fast")).toBe("120ms");
     expect(flat.get("--font-mono")).toMatch(/mono/i);
   });
 

@@ -1,0 +1,23 @@
+/** The server condition of the existing Frames entry: no client-hook barrel is evaluated. */
+export { SiteFrame, siteShellFor, SITE_SURFACE_KINDS, SITE_PAGE_LAYERS, SITE_MAIN_ID, SITE_FRAME_CONTRACT, SITE_FRAME_CONFIG_SCHEMA, normalizeSiteFrameConfig, normalizeSiteFrameActions, type SiteBrandInput, type SiteChromeGround, type SiteEnvironmentLinkInput, type SiteFooterInput, type SiteFrameConfig, type SiteFrameInput, type SiteFrameProps, type SiteIconLinkInput, type SiteLinkInput, type SitePageLayer, type SiteShellInput, type SiteSurfaceKind, type SiteFramePresentationConfig } from "./site-frame/index.js";
+export { SITE_CHROME_GROUNDS } from "./site-frame/types.js";
+export { resolveShell as resolveSiteShell } from "./site-frame/internal/resolveShell.js";
+export { RenderError, type RenderErrorReason } from "./site-frame/landing/internal/errors.js";
+export { AuthFrame } from "./AuthFrame.js";
+export type { AuthFrameProps } from "./AuthFrame.js";
+export { siteShellProps, renderSiteShell, siteShellRuntimeRenderer, siteShellRuntimeRenderers, siteShellRuntimePointers, siteShellRuntimeCallbacks, SITE_SHELL_RUNTIME_POINTER } from "../runtime/frames/site-shell.js";
+export { DocumentFrame, documentRenderer, renderDocument, FRAME_CRITICAL_STYLE_ATTRIBUTE } from "../runtime/frames/document.js";
+export type { DocumentFrameProps } from "../runtime/frames/document.js";
+
+import { lazy } from "react";
+/** The actual client AppFrame stays behind its existing use-client module boundary. */
+export const AppFrame = lazy(async () => ({ default: (await import("./AppFrame.js")).AppFrame }));
+export type { AppFrameProps } from "./app-frame-types.js";
+export { SHELL_COPY_REFS } from "../components/Banner.copy.js";
+export { surfaceRuntimeRenderers, surfaceRuntimePointers, surfaceRuntimeCallbacks, SURFACE_RUNTIME_POINTER, surfaceRendererId } from "../runtime/server-registry.js";
+
+// Publisher imports these client references from the same public Frames entry.
+export const ShellCopyProvider = lazy(async () => ({ default: (await import("../components/Banner.copy-context.js")).ShellCopyProvider }));
+export const FrameStage = lazy(async () => ({ default: (await import("./FrameStage.js")).FrameStage }));
+export { frameSectionRefKey } from "./frame-stage-ref.js";
+export { APP_FRAME_RIGHT_PANEL_CONFIG } from "./right-panel-config.js";

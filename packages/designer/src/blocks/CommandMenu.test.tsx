@@ -2,12 +2,16 @@ import { act, useState } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Dialog } from "../atoms/Dialog.js";
-import { Button } from "../atoms/Button.js";
+import { Dialog } from "../components/Dialog.js";
+import { Button } from "../components/Button.js";
 import { X } from "../icons/X.js";
 import * as blocks from "./index.js";
+import { withShellCopy } from "../frames/__fixtures__/shell-copy.js";
 
-const CommandMenu = (blocks as any).CommandMenu ?? (() => null);
+
+
+
+const CommandMenu = withShellCopy((blocks as any).CommandMenu ?? (() => null));
 const useCommandMenuShortcut = (blocks as any).useCommandMenuShortcut ?? (() => {});
 const alpha = vi.fn();
 const bravo = vi.fn();
@@ -341,5 +345,31 @@ describe("CommandMenu", () => {
     document.body.append(wrapper);
     try { expect(modKey().defaultPrevented).toBe(true); expect(onOpen).toHaveBeenCalledOnce(); }
     finally { wrapper.remove(); }
+  });
+});
+
+describe("CommandMenu visual pass (VF-1 shell-12/13)", () => {
+  it("marks the active option with the accent tint and an inline-start accent edge, never an underline", async () => {
+    const { input } = await open();
+    await userEvent.keyboard("{ArrowDown}");
+    const active = screen.getAllByRole("option").find((option) => option.getAttribute("aria-selected") === "true")!;
+    expect(active).toHaveClass("bg-accent-tint", "border-s-accent", "no-underline");
+    expect(active).not.toHaveClass("underline");
+    const rest = screen.getAllByRole("option").filter((option) => option !== active);
+    for (const option of rest) expect(option).toHaveClass("border-s-transparent", "no-underline");
+    expect(input).toHaveClass("outline-none");
+  });
+
+  it("draws one offset token outline on keyboard focus and none on pointer focus", async () => {
+    const { input } = await open();
+    await userEvent.click(input);
+    expect(input).toHaveFocus();
+    expect(input.style.outline).toBe("");
+    expect(input.style.boxShadow).toBe("");
+    await userEvent.tab();
+    await userEvent.tab({ shift: true });
+    expect(input).toHaveFocus();
+    expect(input.style.outline).toContain("--color-focus-ring");
+    expect(input.style.outlineOffset).toContain("--ui-focus-offset");
   });
 });

@@ -1,4 +1,4 @@
-import { Icon, type IconNode } from "@clossys/designer/atoms/server";
+import { Icon, type IconNode } from "@clossys/designer/components/server";
 import { AnatomyCallouts, ContentSection, Items, Matrix, MediaFigure, RecordLedger, Scene, Specimen, SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
 import type { ItemData, ItemsProps, MatrixSide, SpecimenPanelItem, SpecimenPart } from "@clossys/designer/blocks/server";
 import { Briefcase, Building2, Calendar, Clock, FileCheck, FileText, Folder, Globe, Landmark, Layers, Lock, Receipt, Scale, Search, ShieldCheck, Users } from "@clossys/designer/icons";

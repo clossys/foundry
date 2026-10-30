@@ -16,7 +16,7 @@
  * ════════════════════════════════════════════════════════════════════ */
 
 @theme inline {
-  --default-transition-duration: var(--ui-duration-fast, 160ms);
+  --default-transition-duration: var(--ui-duration-fast, 120ms);
   --default-transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
   --color-focus-ring: var(--color-focus-ring, var(--color-accent, oklch(0.4748 0 0)));
   --color-focus-ring-on-inverse: var(--color-focus-ring-on-inverse, var(--color-ink-on-inverse, oklch(0.9702 0 0)));
@@ -46,9 +46,16 @@
   --color-line-base:              var(--color-line-base, oklch(0.8761 0 0));
   --color-line-strong:            var(--color-line-strong, oklch(0.7763 0 0));
   --color-line-on-inverse:        var(--color-line-on-inverse, oklch(0.9702 0 0 / 0.14));
+  --color-line-control:           var(--color-line-control, oklch(0.62 0 0));
   --color-line-panel:             var(--color-line-panel, var(--color-line-base, oklch(0.8761 0 0)));
 
   /* ── COLOR · ACCENT ───────────────────────────────────────────── */
+  --color-action: var(--color-action, #0A0A0A);
+  --color-action-hover: var(--color-action-hover, #262626);
+  --color-action-pressed: var(--color-action-pressed, #404040);
+  --color-action-on-inverse: var(--color-action-on-inverse, #FAFAFA);
+  --color-action-on-inverse-hover: var(--color-action-on-inverse-hover, #E5E5E5);
+  --color-ink-on-action: var(--color-ink-on-action, var(--color-ink-on-inverse, oklch(0.9702 0 0)));
   --color-accent:                 var(--color-accent, oklch(0.4748 0 0));
   --color-accent-text:            var(--color-accent-text, oklch(0.36 0 0));
   --color-accent-hover:           var(--color-accent-hover, oklch(0.36 0 0));
@@ -116,6 +123,11 @@
   --font-display:                 var(--font-display, system-ui, ui-sans-serif, -apple-system, "Segoe UI", sans-serif);
   --font-body:                    var(--font-body, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
   --font-mono:                    var(--font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
+  /* Tailwind's preflight reads these two for the document and for code, kbd,
+     samp and pre; routing them here makes the brand body/mono face the
+     inherited default everywhere, not only under the font-body utility. */
+  --default-font-family:          var(--font-body, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
+  --default-mono-font-family:     var(--font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
 
   /* ── TRACKING ─────────────────────────────────────────────────── */
   --tracking-tight:                var(--tracking-tight, -0.02em);
@@ -125,7 +137,7 @@
 
   /* ── LEADING ──────────────────────────────────────────────────── */
   --leading-display:               var(--leading-display, 1.05);
-  --leading-heading:               var(--leading-heading, 1.15);
+  --leading-heading:               var(--leading-heading, 1.2);
 
   /* ── SPACING ──────────────────────────────────────────────────── */
   --spacing-xs:                    var(--spacing-xs, 4px);
@@ -242,6 +254,16 @@
   overflow-y: clip;
   transition-property: block-size;
   transition-duration: var(--ui-duration-default, 240ms);
+  transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
+  @media (prefers-reduced-motion: reduce) {
+    transition-duration: 0s;
+  }
+}
+
+/* Frame chrome chevrons (dock toggle, sheet trigger) turn on the fast motion tier, property-specific, never `all`. */
+@utility frame-chevron-motion {
+  transition-property: transform, rotate;
+  transition-duration: var(--ui-duration-fast, 120ms);
   transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
   @media (prefers-reduced-motion: reduce) {
     transition-duration: 0s;
@@ -558,13 +580,18 @@
  */
 @utility quiet-action {
   min-block-size: var(--ui-layout-tap-target, 44px);
+  /* Button looks use the control scale; control-h-* retains the larger hit area.
+   * Other quiet anchors keep the tap-target floor above. */
+  &.control-h-sm { min-block-size: var(--ui-control-h-sm, 28px); }
+  &.control-h-md { min-block-size: var(--ui-control-h-md, 32px); }
+  &.control-h-lg { min-block-size: var(--ui-control-h-lg, 36px); }
   &:dir(rtl) > svg:last-child {
     scale: -1 1;
   }
   @media (prefers-reduced-motion: no-preference) {
     & > svg:last-child {
       transition-property: translate;
-      transition-duration: var(--ui-duration-fast, 160ms);
+      transition-duration: var(--ui-duration-fast, 120ms);
       transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
     }
     @media (hover: hover) {
@@ -602,28 +629,29 @@
 
 /*
  * Icon-only control boxes (`iconButtonClassName`). `icon-control-md` is the
- * 44px tap target. `icon-control-sm` is a 36px box (the tap target less
- * `--spacing-sm`) whose transparent `::before` reaches 4px past each edge,
- * so the hit area is still 44px. Both set the control colour transition to
+ * 44px tap target. `icon-control-sm` is a square on the small control
+ * height (`--ui-control-h-sm`, 28px) whose transparent `::before` reaches
+ * half the difference to the tap target past each edge, so the hit area is
+ * still 44px. Both set the control colour transition to
  * the fast motion tier.
  */
 @utility icon-control-md {
   inline-size: var(--ui-layout-tap-target, 44px);
   block-size: var(--ui-layout-tap-target, 44px);
-  --tw-duration: var(--ui-duration-fast, 160ms);
-  transition-duration: var(--ui-duration-fast, 160ms);
+  --tw-duration: var(--ui-duration-fast, 120ms);
+  transition-duration: var(--ui-duration-fast, 120ms);
 }
 
 @utility icon-control-sm {
   position: relative;
-  inline-size: calc(var(--ui-layout-tap-target, 44px) - var(--spacing-sm, 8px));
-  block-size: calc(var(--ui-layout-tap-target, 44px) - var(--spacing-sm, 8px));
-  --tw-duration: var(--ui-duration-fast, 160ms);
-  transition-duration: var(--ui-duration-fast, 160ms);
+  inline-size: var(--ui-control-h-sm, 28px);
+  block-size: var(--ui-control-h-sm, 28px);
+  --tw-duration: var(--ui-duration-fast, 120ms);
+  transition-duration: var(--ui-duration-fast, 120ms);
   &::before {
     content: "";
     position: absolute;
-    inset: calc(var(--spacing-sm, 8px) / -2);
+    inset: calc((var(--ui-control-h-sm, 28px) - var(--ui-layout-tap-target, 44px)) / 2);
   }
 }
 
@@ -815,6 +843,7 @@
     & .nav-disclosure-toggle { display: inline-flex; }
     & .nav-disclosure-panel { --site-header-action-hover: var(--color-surface-raised, oklch(1 0 0)); --site-header-focus: var(--color-ink-primary, oklch(0.2178 0 0)); display: none; position: absolute; inset-block-start: 100%; inset-inline: 0; max-block-size: calc(100dvb - var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))) - env(safe-area-inset-bottom, 0px)); overflow-y: auto; overscroll-behavior: contain; padding-block: var(--spacing-md, 12px) max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px)); padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); background-color: var(--color-overlay-surface, oklch(1 0 0)); color: var(--color-ink-primary, oklch(0.2178 0 0)); border-block-end: var(--ui-border-hairline, 1px) solid var(--color-overlay-border, oklch(0.8761 0 0)); }
     & .nav-disclosure-panel[data-expanded], & .nav-disclosure-panel[data-present] { display: flex; flex-direction: column; }
+    & .site-header-nav-inline { display: none !important; }
     & .site-header-nav-links, & .site-header-desktop-actions { flex-direction: column; align-items: stretch; white-space: normal; overflow-wrap: anywhere; }
 }
 @utility site-header-contract {
@@ -840,13 +869,45 @@
   }
   /* While NavDisclosure measures, each region takes its natural one-line
      width, so many links, many actions or long labels are counted unwrapped. */
+  &[data-measuring] .site-header-nav-inline { display: contents !important; }
   &[data-measuring] .site-header-brand, &[data-measuring] .site-header-nav-links, &[data-measuring] .site-header-desktop-actions, &[data-measuring] .site-header-actions { inline-size: max-content; max-inline-size: none; flex-shrink: 0; flex-wrap: nowrap; white-space: nowrap; }
   &[data-measuring] .site-header-nav-links > li, &[data-measuring] .site-header-desktop-actions > li, &[data-measuring] .site-header-brand > a, &[data-measuring] .site-header-nav-links a, &[data-measuring] .site-header-desktop-actions a, &[data-measuring] .site-header-actions > * { inline-size: max-content; max-inline-size: none; flex-shrink: 0; white-space: nowrap; }
   @media (scripting: none) {
     &:has(.nav-disclosure-panel) .site-header-row { display: flex; flex-wrap: wrap; }
     &:has(.nav-disclosure-panel) nav { inline-size: 100%; }
     &:has(.nav-disclosure-panel) .nav-disclosure-toggle[aria-expanded] { display: none; }
-    &:has(.nav-disclosure-panel) .nav-disclosure-panel { display: flex; position: static; max-block-size: none; }
+    &:has(.nav-disclosure-panel) .nav-disclosure-panel { display: flex !important; position: static; max-block-size: none; }
+  }
+}
+
+/* The registered Sheet is portalled outside the header; carry its token-based layout explicitly. */
+@utility site-header-nav-sheet {
+  &[data-slot="sheet-content"] {
+    inline-size: min(100%, var(--ui-layout-drawer-w, 20rem));
+    max-inline-size: 100%;
+    max-block-size: 100dvb;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  & .site-header-nav-sheet-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg, 16px);
+    padding-block: max(var(--spacing-md, 12px), env(safe-area-inset-top, 0px)) max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px));
+    padding-inline: max(var(--spacing-lg, 16px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+  }
+  & .site-header-nav-sheet-close { align-self: flex-end; }
+  & nav, & .site-header-nav-links, & .site-header-desktop-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm, 8px);
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  & a { min-block-size: var(--ui-layout-tap-target, 44px); }
+  @media (prefers-reduced-motion: reduce) {
+    &, & [data-slot="sheet-content"] { animation: none; transition: none; }
   }
 }
 
@@ -1009,7 +1070,7 @@
   backdrop-filter: blur(var(--blur-notice, 12px));
   & button {
     min-block-size: var(--ui-layout-tap-target, 44px);
-    transition-duration: var(--ui-duration-fast, 160ms);
+    transition-duration: var(--ui-duration-fast, 120ms);
     transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
   }
   @media (width >= 48rem) {
@@ -1088,9 +1149,18 @@
     &:focus-visible, &[data-focus-visible] { outline-color: Highlight; }
   }
 }
-@utility control-h-sm { @apply tap-target; min-block-size: var(--ui-control-h-sm, 32px); }
-@utility control-h-md { min-block-size: var(--ui-control-h-md, var(--ui-layout-tap-target, 44px)); }
-@utility control-h-lg { min-block-size: var(--ui-control-h-lg, 52px); }
+@utility control-h-sm { @apply tap-target; min-block-size: var(--ui-control-h-sm, 28px); }
+@utility control-h-md { @apply tap-target; min-block-size: var(--ui-control-h-md, 32px); }
+@utility control-h-lg { @apply tap-target; min-block-size: var(--ui-control-h-lg, 36px); }
+/* Disabled control dimming: the shared state-opacity token, for controls styled by class rather than an inline read. */
+@utility control-disabled { opacity: var(--ui-alpha-disabled, 0.5); cursor: not-allowed; }
+/* Slider geometry: rail thickness and vertical track length from the spacing scale, thumb from the control mark size. */
+@utility slider-rail { position: relative; flex: 1 1 auto; block-size: var(--spacing-xs, 4px); }
+@utility slider-rail-vertical { position: relative; flex: 1 1 auto; inline-size: var(--spacing-xs, 4px); }
+@utility slider-track-vertical { min-block-size: var(--spacing-6xl, 128px); min-inline-size: var(--ui-control-h-md, 32px); }
+@utility slider-thumb { inline-size: var(--ui-control-mark, 16px); block-size: var(--ui-control-mark, 16px); }
+/* Vertical thumb centre: the peer positions thumbs with a physical translate(-50%, -50%), so the matching cross-axis anchor is the physical centre, which is the same in either writing direction (as scroll-cue does). */
+@utility slider-thumb-vertical { left: 50%; }
 @utility control-row {
   min-block-size: var(--ui-control-row-h, 36px);
   @media (pointer: coarse) { min-block-size: var(--ui-layout-tap-target, 44px); }
@@ -1106,7 +1176,13 @@
   }
 }
 
-/* These recipes are defined without adopting them in any existing Atom. */
+/*
+ * Overlay motion recipes. `overlay-motion-pop` (anchored popovers, menus and the
+ * Dialog surface) and `overlay-motion-fade` (tooltips and the Dialog scrim) bind
+ * them to react-aria's entering and exiting states on the overlay tier
+ * (`--ui-duration-overlay`); reduced motion keeps the opacity step only, through
+ * the reduced keyframes below.
+ */
 @keyframes overlay-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes overlay-pop {
   from { opacity: 0; transform: translateY(var(--ui-motion-shift, 4px)); }
@@ -1120,11 +1196,39 @@
   from { opacity: 0; transform: translateX(calc(-1 * var(--ui-motion-shift, 4px))); }
   to { opacity: 1; transform: translateX(0); }
 }
+@keyframes sheet-slide-rtl {
+  from { opacity: 0; transform: translateX(var(--ui-motion-shift, 4px)); }
+  to { opacity: 1; transform: translateX(0); }
+}
 @media (prefers-reduced-motion: reduce) {
   @keyframes overlay-pop { from { opacity: 0; } to { opacity: 1; } }
   @keyframes overlay-zoom { from { opacity: 0; } to { opacity: 1; } }
   @keyframes sheet-slide { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes sheet-slide-rtl { from { opacity: 0; } to { opacity: 1; } }
 }
+@utility overlay-motion-pop {
+  &[data-entering] { animation: overlay-pop var(--ui-duration-overlay, 120ms) var(--ease-enter, cubic-bezier(0, 0, .2, 1)) both; }
+  &[data-exiting] { animation: overlay-fade var(--ui-duration-overlay, 120ms) var(--ease-exit, cubic-bezier(.4, 0, 1, 1)) reverse both; }
+}
+@utility overlay-motion-fade {
+  &[data-entering] { animation: overlay-fade var(--ui-duration-overlay, 120ms) var(--ease-enter, cubic-bezier(0, 0, .2, 1)) both; }
+  &[data-exiting] { animation: overlay-fade var(--ui-duration-overlay, 120ms) var(--ease-exit, cubic-bezier(.4, 0, 1, 1)) reverse both; }
+}
+
+/*
+ * Studio layer tab indicator (cross-16): the selected tab's underline is the
+ * rule thickness (`--ui-border-rule`) in the accent colour; unselected tabs keep
+ * the same transparent rule so selection never shifts the row.
+ */
+@utility layer-tab-indicator {
+  border-block-end-style: solid;
+  border-block-end-width: var(--ui-border-rule, 2px);
+  border-block-end-color: transparent;
+  &[data-selected] { border-block-end-color: var(--color-accent, currentColor); }
+}
+
+/* A theme switch flips every colour at once, not through each control's transition. */
+:root[data-theme-switching] *, :root[data-theme-switching] *::before, :root[data-theme-switching] *::after { transition: none !important; }
 
 @utility ui-loading-delayed { animation: ui-loading-reveal 1ms linear var(--ui-duration-loading-delay,150ms) both; }
 @keyframes ui-loading-reveal { from { opacity: 0; } to { opacity: 1; } }
@@ -1204,3 +1308,113 @@
 @container scene (min-width: 800px) { [data-template="converge"] > [data-scene-desk] { display: block; } [data-template="converge"] > [data-scene-linear] { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
 @container scene (min-width: 520px) { [data-template="evidence-trail"] > [data-scene-desk] { display: block; } [data-template="evidence-trail"] > [data-scene-linear] { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
 @container scene (min-width: 900px) { [data-template="approval-chain"] > [data-scene-desk] { display: block; } [data-template="approval-chain"] > [data-scene-linear] { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
+
+/* Bounded registry motion: React Aria keeps entering/exiting nodes mounted until
+ * these animations finish. Paint and time stay on the consumer token seam. */
+@keyframes library-transition {
+  from { opacity: var(--library-opacity, 1); transform: translate(var(--library-x, 0), var(--library-y, 0)) scale(var(--library-scale, 1)); }
+  to { opacity: 1; transform: translate(0, 0) scale(1); }
+}
+@utility library-enter {
+  animation: library-transition var(--ui-duration-fast, 120ms) var(--ease-enter, cubic-bezier(0, 0, .2, 1)) both;
+  @media (prefers-reduced-motion: reduce) { animation-duration: 0s; }
+}
+@utility library-exit {
+  animation: library-transition var(--ui-duration-fast, 120ms) var(--ease-exit, cubic-bezier(.4, 0, 1, 1)) reverse both;
+  @media (prefers-reduced-motion: reduce) { animation-duration: 0s; }
+}
+@utility library-fade { --library-opacity: 0; }
+@utility library-zoom { --library-scale: .95; }
+@utility library-slide-top { --library-y: calc(-1 * var(--ui-motion-shift, 4px)); }
+@utility library-slide-bottom { --library-y: var(--ui-motion-shift, 4px); }
+@utility library-slide-left { --library-x: calc(-1 * var(--ui-motion-shift, 4px)); }
+@utility library-slide-right { --library-x: var(--ui-motion-shift, 4px); }
+
+/* Named replacements for arbitrary-value classes the compiled-CSS scanner
+   cannot see (a leading `-` or `[`, parentheses, or a non-trailing bracket).
+   Each keeps the declarations the arbitrary class meant; tablet-lg is the
+   theme's --breakpoint-tablet-lg (1024px). */
+/* Identifier text binding: ids, versions, digests and codes set in the mono
+   family token with tabular figures, so columns of ids align. DataTable's
+   `format: "id"` columns bind to it. */
+@utility type-id { font-family: var(--font-mono, ui-monospace, monospace); font-variant-numeric: tabular-nums; }
+@utility frame-main-bleed { &:has([data-frame-bleed]) { padding: 0; } }
+/* App frame chrome spacing, named so the frame layer reads no spacing token itself.
+   px-frame-control (the chrome controls' inline inset) and p-frame-panel (the docked
+   panel's inset) join tailwind-merge's px and p groups in components/internal/cx.ts,
+   so they replace a Button's own px-md and a Card's own p-lg. */
+@utility px-frame-control { padding-inline: var(--spacing-sm, 8px); }
+@utility p-frame-panel { padding: var(--spacing-sm, 8px); }
+@utility frame-account-row { gap: var(--spacing-sm, 8px); padding-inline: var(--spacing-sm, 8px); padding-block: var(--spacing-sm, 8px); }
+@utility frame-brand-gap { gap: var(--spacing-sm, 8px); }
+@utility frame-footer-gap { gap: var(--spacing-xs, 4px); }
+@utility frame-header-row { gap: var(--spacing-xs, 4px); padding-inline: var(--spacing-sm, 8px); }
+@utility frame-main-gap { gap: var(--spacing-lg, 16px); }
+@utility frame-main-inset {
+  padding: var(--spacing-lg, 16px);
+  @media (width >= 1024px) { padding: var(--spacing-xl, 24px); }
+}
+@utility frame-region-closed { inline-size: 0; }
+/* The library column cap: the AppFrame right panel preset's maximum
+   (APP_FRAME_RIGHT_PANEL_CONFIG.max), pinned equal by choices.bounds.test.tsx. */
+@utility library-column-bound { max-inline-size: var(--ui-layout-inspector-max-w, 420px); }
+@utility frame-nav-width {
+  inline-size: 0;
+  @media (width >= 1024px) { inline-size: var(--ui-layout-sidebar-w); }
+}
+@utility frame-panel-width {
+  inline-size: 0;
+  @media (width >= 1024px) { inline-size: var(--frame-panel-w); }
+}
+@utility first-child-shrink { & > :first-child { min-width: 0; } }
+@utility prompt-actions-bleed {
+  margin-inline: calc(var(--spacing-lg, 16px) * -1);
+  margin-block-end: calc(var(--spacing-lg, 16px) * -1);
+}
+@utility canvas-domain-rail { width: var(--ui-layout-sidebar-rail-w); writing-mode: vertical-rl; }
+@utility canvas-map-rail-height { height: var(--ui-layout-sidebar-rail-w); }
+@utility candidate-variant-min-inline { min-width: var(--ui-control-h-lg); }
+/* FilterBuilder match select: caps the control at the aside measure (max-w-xs resolved to the 4px spacing token). */
+@utility filter-match-width { max-width: var(--ui-layout-aside-w, 320px); }
+/* Designer right rail: the Studio rail Section is one inspector measure wide. */
+@utility designer-rail-width { inline-size: var(--ui-layout-inspector-w); }
+/* A token specimen and its value text stay inside one token-bounded box at every zoom tier (VR2 studio-01). */
+@utility token-specimen-contain { max-inline-size: var(--ui-layout-sidebar-w); overflow: hidden; overflow-wrap: anywhere; }
+@utility calendar-cell-size { width: var(--ui-control-h-sm, 32px); height: var(--ui-control-h-sm, 32px); }
+@utility canvas-caption-zoom-floor { font-size: max(1em, calc(var(--text-caption) / var(--canvas-zoom, 1))); }
+@utility popover-arrow-rotate {
+  &:is(:where(.group)[data-placement="bottom"] *) { rotate: 180deg; }
+  &:is(:where(.group)[data-placement="left"] *) { rotate: -90deg; }
+  &:is(:where(.group)[data-placement="right"] *) { rotate: 90deg; }
+}
+
+/* Frames own region motion. Content stays mounted through open and closed states.
+   Navigation never animates a layout property: it snaps between its media-ruled widths,
+   so neither hydration nor a collapse reflows the stage over several frames. */
+@layer foundry-ui-compiled {
+.frame-docked-navigation[data-open="false"] { visibility: hidden; }
+.frame-docked-panel {
+  transition-property: inline-size, visibility;
+  transition-duration: var(--ui-duration-default), 0s;
+  transition-timing-function: var(--ease-enter);
+}
+.frame-docked-panel[data-open="false"] {
+  visibility: hidden;
+  transition-timing-function: var(--ease-exit);
+  transition-delay: 0s, var(--ui-duration-default);
+}
+.frame-header-container { contain: layout; }
+.frame-header-grid { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+.frame-header-grid[data-frame-header-overflow="navigation"] { grid-template-columns: minmax(0, 1fr) auto; }
+[data-drawer-placement="start"], [data-drawer-placement="end"] {
+  animation: sheet-slide var(--ui-duration-default) var(--ease-enter) both;
+}
+[data-drawer-placement="start"]:dir(rtl), [data-drawer-placement="end"]:dir(rtl) {
+  animation-name: sheet-slide-rtl;
+}
+@media (prefers-reduced-motion: reduce) {
+  .frame-docked-panel { transition: none; }
+  [data-drawer-placement="start"], [data-drawer-placement="end"],
+  [data-drawer-placement="start"]:dir(rtl), [data-drawer-placement="end"]:dir(rtl) { animation: none; }
+}
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "layer": "components",
+  "baseSignedHead": "581e4fd70589fe072d9ce38fa159306d473c1754",
+  "status": "pending-owner-ratification",
+  "addedLeafIds": [
+    "components.native-action",
+    "components.semantic-content",
+    "components.sidebar",
+    "components.command",
+    "components.sheet",
+    "components.empty",
+    "components.item",
+    "components.scroll-area",
+    "components.dropdown-menu"
+  ]
+}

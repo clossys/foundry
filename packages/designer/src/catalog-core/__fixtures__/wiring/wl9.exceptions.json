@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "exceptions": [
+    {
+      "name": "aside-band-region-width",
+      "file": "packages/example/sections/aside-band.tsx",
+      "elementId": "packages/example/sections/aside-band.tsx#section@139977062a4e",
+      "hash": "sha256:139977062a4e94f2fabd8f58e5ca1c1bbce3de40ffd87146042d945da6f2f19b",
+      "read": "tokens.region-width.aside",
+      "reasonCode": "layout-geometry",
+      "reason": "The band hands the aside width to its grid track.",
+      "owner": "designer-maintainers",
+      "expiry": "2027-06-30",
+      "status": "signed"
+    },
+    {
+      "name": "bad-reason-code",
+      "file": "packages/example/sections/aside-band.tsx",
+      "elementId": "packages/example/sections/aside-band.tsx#section@139977062a4e",
+      "hash": "sha256:139977062a4e94f2fabd8f58e5ca1c1bbce3de40ffd87146042d945da6f2f19b",
+      "read": "tokens.region-width.aside",
+      "reasonCode": "convenience",
+      "reason": "A reason code outside the closed A3 list.",
+      "owner": "designer-maintainers",
+      "expiry": "2027-06-30",
+      "status": "signed"
+    },
+    {
+      "name": "missing-owner",
+      "file": "packages/example/sections/aside-band.tsx",
+      "elementId": "packages/example/sections/aside-band.tsx#section@139977062a4e",
+      "hash": "sha256:139977062a4e94f2fabd8f58e5ca1c1bbce3de40ffd87146042d945da6f2f19b",
+      "read": "tokens.region-width.aside",
+      "reasonCode": "layout-geometry",
+      "reason": "A row with no owner.",
+      "expiry": "2027-06-30",
+      "status": "signed"
+    },
+    {
+      "name": "expired",
+      "file": "packages/example/sections/aside-band.tsx",
+      "elementId": "packages/example/sections/aside-band.tsx#section@139977062a4e",
+      "hash": "sha256:139977062a4e94f2fabd8f58e5ca1c1bbce3de40ffd87146042d945da6f2f19b",
+      "read": "tokens.region-width.aside",
+      "reasonCode": "layout-geometry",
+      "reason": "A row past its expiry.",
+      "owner": "designer-maintainers",
+      "expiry": "2026-01-31",
+      "status": "signed"
+    },
+    {
+      "name": "changed-hash",
+      "file": "packages/example/sections/aside-band.tsx",
+      "elementId": "packages/example/sections/aside-band.tsx#section@139977062a4e",
+      "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "read": "tokens.region-width.aside",
+      "reasonCode": "layout-geometry",
+      "reason": "A row whose element changed after it was recorded.",
+      "owner": "designer-maintainers",
+      "expiry": "2027-06-30",
+      "status": "signed"
+    },
+    {
+      "name": "proposed-surface-ground",
+      "file": "packages/example/sections/aside-band.tsx",
+      "elementId": "packages/example/sections/aside-band.tsx#section@139977062a4e",
+      "hash": "sha256:139977062a4e94f2fabd8f58e5ca1c1bbce3de40ffd87146042d945da6f2f19b",
+      "read": "tokens.surface-color.canvas",
+      "reasonCode": "surface-ground",
+      "reason": "A valid row the owner has not signed yet.",
+      "owner": "designer-maintainers",
+      "expiry": "2027-06-30",
+      "status": "proposed"
+    }
+  ]
+}

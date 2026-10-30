@@ -12,14 +12,14 @@
  *   1 — `--check` only: the on-disk file is STALE (differs from a fresh
  *       re-derivation) — never used for `--write`, which always either
  *       succeeds (0) or fails to run at all (2).
- *   2 — could not run at all: `src/atoms/` unreadable or matched zero
+ *   2 — could not run at all: `src/components/` unreadable or matched zero
  *       files, `tailwindcss` not resolvable, an unexpected exception, or
  *       (in `--check` mode) `styles/compiled.css` does not exist yet.
  *
  * This is a project-internal tool, not a general-purpose gate a consumer
  * would run against their own code (unlike `designer-token-check`, which accepts
  * an arbitrary `--tokens` registry) — it always checks THIS package's own
- * `styles/compiled.css` against THIS package's own `src/atoms/`. It is not
+ * `styles/compiled.css` against THIS package's own `src/components/`. It is not
  * published as a `bin` entry for exactly that reason (see the introducing
  * PR body): invoke it via `npm run generate:compiled-css` / `npm run
  * check:compiled-css` from within this package, or `node dist/compiled-
@@ -38,12 +38,12 @@ const USAGE = `Usage: ui-compiled-css-check [--write] [--package-root <path>]
 
   --check          (default) Verify styles/compiled.css and
                     styles/utilities.css match a fresh re-derivation from
-                    src/atoms/. Does not write anything.
+                    src/components/. Does not write anything.
   --write           Regenerate styles/compiled.css and styles/utilities.css
                     and write them to disk.
   --package-root <path>
                     This package's own root directory (containing styles/
-                    and src/atoms/). Defaults to two directories up from
+                    and src/components/). Defaults to two directories up from
                     this file's own compiled location (dist/compiled-css/).
   --help            Print this message and exit 0.
 
@@ -97,7 +97,7 @@ export async function main(argv: string[]): Promise<number> {
   }
   const packageRoot = resolve(args.packageRoot ?? defaultPackageRoot());
 
-  // A missing/unreadable src/atoms/ directory, a missing "tailwindcss", or
+  // A missing/unreadable src/components/ directory, a missing "tailwindcss", or
   // any other failure DURING scanning/generation is a "could not run"
   // outcome (exit 2), never an uncaught rejection — `scanClassCandidates`/
   // `generateCompiledCss`/`checkCompiledCssFreshness` all fail closed by
@@ -109,11 +109,11 @@ export async function main(argv: string[]): Promise<number> {
       const stylesDir = resolve(packageRoot, "styles");
       const scan = scanCompiledCssSources(packageRoot);
       if (scan.filesScanned === 0) {
-        console.error(`No files matched under src/atoms, src/blocks, or src/shell — nothing was scanned. Refusing to write a compiled.css derived from nothing.`);
+        console.error(`No files matched under src/components, src/blocks, or src/shell — nothing was scanned. Refusing to write a compiled.css derived from nothing.`);
         return 2;
       }
       console.log(
-        `Scanned ${scan.filesScanned} file(s) (atoms ${scan.byDir.atoms}, blocks ${scan.byDir.blocks}, shell ${scan.byDir.shell}), ${scan.candidates.length} class candidate(s) extracted.`,
+        `Scanned ${scan.filesScanned} file(s) (${Object.entries(scan.byDir).map(([dir, count]) => `${dir} ${count}`).join(", ")}), ${scan.candidates.length} class candidate(s) extracted.`,
       );
       const generated = await generateCompiledCss({ stylesDir, candidates: scan.candidates });
       const outPath = resolve(stylesDir, "compiled.css");

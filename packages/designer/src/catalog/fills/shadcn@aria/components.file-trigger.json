@@ -1,0 +1,93 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [
+        "components.button"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "id": "shadcn@aria/components.file-trigger",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "composed"
+      ],
+      "relation": "same-contract",
+      "slot": "components.file-trigger",
+      "source": "shadcn@aria",
+      "sourceAddress": "rules/components.file-trigger.json#compose:file-trigger@1",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "file-trigger": {
+      "composes": [
+        "components.button"
+      ],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "entry": "components/file-trigger/file-trigger.tsx",
+        "export": "FileTrigger",
+        "kind": "source"
+      },
+      "license": "MIT",
+      "members": [
+        "accept",
+        "directory",
+        "multiple"
+      ],
+      "notice": "notices/file-trigger.md",
+      "outputSha256": [
+        {
+          "path": "components/file-trigger/file-trigger.tsx",
+          "sha256": "44fd1b6e5ce3d0e736af2f12d5fb482c594968194b42297ab1c7380b9efcd3e1"
+        },
+        {
+          "path": "notices/file-trigger.md",
+          "sha256": "3d79ba26128a45b8a1904d84c06a15dfc8ce93a2146bafaac03fa04732766723"
+        }
+      ],
+      "propMap": {
+        "accept": "FileTrigger",
+        "directory": "FileTrigger",
+        "multiple": "FileTrigger"
+      },
+      "props": [
+        "label",
+        "acceptedFileTypes",
+        "allowsMultiple",
+        "acceptDirectory",
+        "defaultCamera",
+        "onSelect"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": false,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [],
+        "components": [
+          "components.button"
+        ],
+        "tokens": []
+      },
+      "root": "rac:FileTrigger",
+      "slot": "components.file-trigger",
+      "source": "shadcn@aria"
+    }
+  }
+}

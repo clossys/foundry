@@ -33,6 +33,13 @@ if (!existsSync(distDir)) {
 
 type ProbeResult = { ok: true } | { ok: false; message: string };
 
+it("resolves canonical Frames from its real compiled public entry and refuses the server condition", () => {
+  expect(RENDER_ENVIRONMENT["./frames"]).toBe("client-only");
+  expect(importKeysNormally("frames/index.js")).toEqual(expect.arrayContaining(["AppFrame", "AppFrameSpecimen", "APP_FRAME_CONTRACT"]));
+  expect(probeUnderReactServer("frames/index.js").ok).toBe(false);
+});
+
+
 it("retains the AccountMenu client export and typed host-data contract without a server export", () => {
   expect(importKeysNormally("blocks/index.js")).toContain("AccountMenu");
   expect(importKeysNormally("index.js")).toContain("AccountMenu");
@@ -91,7 +98,7 @@ function importKeysNormally(distRelPath: string): string[] {
 describe("server-safe entry points resolve under react-server (test 1)", () => {
   const serverEntries: Array<{ distRelPath: string; expectedExports: string[] }> = [
     { distRelPath: "tokens/server.js", expectedExports: ["readBrandCss", "assertTailwindMergeVersion"] },
-    { distRelPath: "atoms/server.js", expectedExports: ["Logomark", "Avatar", "Badge", "Banner", "Card", "Field", "Icon", "Meter", "Skeleton", "Spinner", "StatusMark", "buttonLinkClassName", "iconButtonClassName", "iconButtonLinkClassName", "mergeUiClasses"] },
+    { distRelPath: "components/server.js", expectedExports: ["Link", "NativeAction", "SemanticContent", "Logomark", "Avatar", "Badge", "Banner", "Card", "Field", "Icon", "Meter", "Skeleton", "Spinner", "StatusMark", "buttonLinkClassName", "iconButtonClassName", "iconButtonLinkClassName", "mergeUiClasses"] },
     {
       distRelPath: "blocks/server.js",
       expectedExports: [
@@ -154,6 +161,25 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
   }
 });
 
+it("proves the actual emitted queries/state environments and exports", () => {
+  expect(RENDER_ENVIRONMENT["./studio/queries"]).toBe("server-safe");
+  const queries = probeUnderReactServer("studio/designer-layer-boards.js");
+  expect(queries.ok, queries.ok ? undefined : queries.message).toBe(true);
+  expect(importKeysNormally("studio/designer-layer-boards.js")).toContain("deriveDesignerLayerBoardsV1");
+  expect(RENDER_ENVIRONMENT["./studio/state"]).toBe("client-only");
+  expect(importKeysNormally("studio/WholeStudioProvider.js")).toEqual(expect.arrayContaining(["WholeStudioProvider", "useWholeStudio", "useDesignerPreparedLibraryBoards"]));
+  expect(readFileSync(join(distDir, "studio/WholeStudioProvider.js"), "utf8")).toMatch(/^"use client";/);
+  const state = probeUnderReactServer("studio/WholeStudioProvider.js");
+  expect(state.ok).toBe(false);
+  if (!state.ok) expect(state.message).toMatch(/react|useContext|useState|createContext/i);
+});
+
+it.each(["catalog-core/index.js", "catalog-core/server.js"])("imports the compiled %s catalog graph under react-server", entry => {
+  const result = probeUnderReactServer(entry);
+  expect(result.ok, result.ok ? undefined : result.message).toBe(true);
+  expect(importKeysNormally(entry)).toContain("loadCatalog");
+});
+
 it("imports and calls the compiled Testimonial server graph with an avatar under react-server", () => {
   const result = probeUnderReactServer("blocks/Testimonial.server.js");
   expect(result.ok, result.ok ? undefined : result.message).toBe(true);
@@ -183,7 +209,7 @@ it("imports and calls TaskList and EventItem under react-server without browser 
 });
 
 it("keeps the interactive preview export exact and its emitted client boundary explicit", () => {
-  expect(importKeysNormally("tokens/preview/index.js")).toEqual(["TokenPreview"]);
+  expect(importKeysNormally("tokens/preview/index.js")).toEqual(["TokenPreview", "TokenValuePreview"]);
   expect(readFileSync(join(distDir, "tokens/preview/index.js"), "utf8")).toMatch(/^"use client";/);
   expect(RENDER_ENVIRONMENT["./tokens/preview"]).toBe("client-only");
 });
@@ -262,7 +288,7 @@ describe("compiled grouped Items SSR", () => {
 });
 
 describe("negative control: the original barrels still fail under react-server (test 2)", () => {
-  const originalBarrels = ["tokens/preview/index.js", "atoms/index.js", "blocks/index.js", "shell/index.js", "charts/index.js", "theme/index.js"];
+  const originalBarrels = ["tokens/preview/index.js", "components/index.js", "blocks/index.js", "shell/index.js", "charts/index.js", "theme/index.js", "studio/index.js", "studio/WholeStudioProvider.js"];
 
   for (const distRelPath of originalBarrels) {
     it(`${distRelPath} still fails under --conditions=react-server (proves the server entry is doing real work)`, () => {
@@ -304,7 +330,7 @@ describe("no regression: every existing subpath still resolves normally (test 3)
   const barrelSpotChecks: Array<[string, string]> = [
     ["blocks/index.js", "CommandMenu"],
     ["blocks/index.js", "useCommandMenuShortcut"],
-    ["atoms/index.js", "Button"],
+    ["components/index.js", "Button"],
     ["blocks/index.js", "DataTable"],
     ["shell/index.js", "NavShell"],
     ["charts/index.js", "BarChart"],
@@ -341,13 +367,13 @@ describe("render-environment declaration exhaustiveness (test 4)", () => {
     }
   });
 
-  it("marks server subpaths server-safe and keeps the pure tokens entry server-safe", () => {
+  it("marks server subpaths and their pure paired roots server-safe", () => {
     const serverSubpaths = [...realSubpaths].filter((subpath) => subpath.endsWith("/server"));
     expect(serverSubpaths.length).toBeGreaterThan(0);
     for (const subpath of serverSubpaths) {
       expect(RENDER_ENVIRONMENT[subpath]).toBe("server-safe");
       const original = subpath.slice(0, -"/server".length);
-      expect(RENDER_ENVIRONMENT[original]).toBe(original === "./tokens" ? "server-safe" : "client-only");
+      expect(RENDER_ENVIRONMENT[original]).toBe(["./tokens", "./catalog"].includes(original) ? "server-safe" : "client-only");
     }
   });
 });
@@ -411,7 +437,7 @@ describe("native compiled collection scale boundary", () => {
   }, 15_000);
 });
 
-it("keeps PageBar client-only, emits all seven types and requires authored labels (M10)", () => {
+it("keeps PageBar client-only, emits all nine current types and requires authored labels (M10)", () => {
   expect(importKeysNormally("blocks/index.js")).toContain("PageBar");
   expect(importKeysNormally("index.js")).toContain("PageBar");
   expect(importKeysNormally("blocks/server.js")).not.toContain("PageBar");
@@ -426,16 +452,40 @@ it("keeps PageBar client-only, emits all seven types and requires authored label
   for (const entry of ["blocks/index.js", "index.js"]) {
     const prelude = `import type * as B from ${JSON.stringify(join(distDir, entry))};`;
     const valid = `${prelude}
-      const width: B.PageBarWidth = "full";
       const destination: B.PageBarDestination = {id:"projects",label:"Projects",href:"/projects"};
       const crumb: B.PageBarCrumb = {...destination,siblings:[destination]};
       const action: B.PageBarAction = {id:"share",label:"Share",onAction:()=>{}};
-      const page: B.PageBarPage = {title:"Quarterly report",breadcrumb:[crumb],actions:[action],width};
-      const labels: B.PageBarLabels = {breadcrumb:"Trail",collapsedBreadcrumb:"Levels",pageInfo:"Details",fullWidth:"Expand",containedWidth:"Contain",pageActions:"Actions"};
-      const props: B.PageBarProps = {root:{label:"Workspace"},page,width,onWidthChange:()=>{},labels};`;
+      const page: B.PageBarPage = {title:"Quarterly report",breadcrumb:[crumb],actions:[action]};
+      const labels: B.PageBarLabels = {breadcrumb:"Trail",collapsedBreadcrumb:"Levels",pageInfo:"Details",pageActions:"Actions"};
+      const nav:B.PageBarHeaderNav={label:"Pages",items:[destination],activeId:"projects"};
+      const actions:B.PageBarHeaderActions={render:({compact})=>compact?"Compact":"Full"};
+      const header:B.PageBarHeader={title:"Quarterly report",nav,actions};
+      const props: B.PageBarProps = {root:{label:"Workspace"},page,header,labels};`;
     const diagnostics = diagnosticsFor(valid);
     expect(diagnostics.map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")), entry).toEqual([]);
-    const missing = diagnosticsFor(`${prelude} const props: B.PageBarProps = {root:{label:"Workspace"},width:"full",onWidthChange:()=>{}};`);
-    expect(missing.some(diagnostic => diagnostic.code === 2741 && /labels/.test(ts.flattenDiagnosticMessageText(diagnostic.messageText, " "))), entry).toBe(true);
+    const missing = diagnosticsFor(`${prelude} const props: B.PageBarProps = {root:{label:"Workspace"}};`);
+    expect(missing, entry).toHaveLength(1);
+    expect(missing[0]?.file?.fileName, entry).toBe(filename);
+    expect(missing[0]?.code, entry).toBe(2741);
+    expect(ts.flattenDiagnosticMessageText(missing[0]!.messageText, " "), entry).toContain("labels");
+    const removedAlias = diagnosticsFor(`${prelude}type Removed=B.PageBarWidth;`);
+    expect(removedAlias, entry).toHaveLength(1);
+    expect(removedAlias[0]?.file?.fileName, entry).toBe(filename);
+    expect(removedAlias[0]?.code, entry).toBe(2694);
+    expect(ts.flattenDiagnosticMessageText(removedAlias[0]!.messageText, " "), entry).toContain("PageBarWidth");
+    const labels = '{breadcrumb:"Trail",collapsedBreadcrumb:"Levels",pageInfo:"Details",pageActions:"Actions"}';
+    for (const [type, fields, retired] of [
+      ["PageBarPage", 'title:"Report",width:"full"', "width"],
+      ["PageBarProps", `root:{label:"Workspace"},labels:${labels},width:"full"`, "width"],
+      ["PageBarProps", `root:{label:"Workspace"},labels:${labels},onWidthChange:()=>{}`, "onWidthChange"],
+      ["PageBarLabels", 'breadcrumb:"Trail",collapsedBreadcrumb:"Levels",pageInfo:"Details",pageActions:"Actions",fullWidth:"Expand"', "fullWidth"],
+      ["PageBarLabels", 'breadcrumb:"Trail",collapsedBreadcrumb:"Levels",pageInfo:"Details",pageActions:"Actions",containedWidth:"Contain"', "containedWidth"],
+    ] as const) {
+      const diagnostics = diagnosticsFor(`${prelude}const retired:B.${type}={${fields}};`);
+      expect(diagnostics, `${entry} ${retired}`).toHaveLength(1);
+      expect(diagnostics[0]?.file?.fileName, entry).toBe(filename);
+      expect(diagnostics[0]?.code, entry).toBe(2353);
+      expect(ts.flattenDiagnosticMessageText(diagnostics[0]!.messageText, " "), entry).toContain(`'${retired}' does not exist`);
+    }
   }
 }, 30_000);

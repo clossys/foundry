@@ -168,6 +168,11 @@
       }
     },
     {
+      "name": "@clossys/producer",
+      "category": "executable-tooling",
+      "state": "implemented"
+    },
+    {
       "name": "@clossys/publisher",
       "state": "staged",
       "stagedBy": {

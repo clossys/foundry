@@ -646,6 +646,20 @@ record. It is evaluated on each call and not cached.
 - A narrow grant. A `delegatedCopyApproval` without `scopes` covers every
   entry; the grant is visible only as the missing member.
 
+### `writer-check admin-copy-draft` — create an English admin draft
+
+`writer-check admin-copy-draft <input.json> <new-envelope.json>` accepts an
+explicit `{ "locale": "en", "records": [...] }` input. Records must be distinct,
+unapproved draft Strings with registered leaves, `admin.writer.` contexts and
+valid declared ICU arguments. The command creates a new envelope and never
+overwrites an existing destination. It supplies no approval or activation.
+
+The shipped Writer page drafts join `getAdminCopy()` through the existing
+`@clossys/writer/admin-copy` export. `resolveAdminCopyRef(ref, copy)` formats
+English draft-review text from that supplied store and returns `undefined` for
+missing records, unsupported locales or invalid message arguments. It is separate
+from the approved production resolver.
+
 ### `writer-check approve` — write or revoke a record
 
 ```bash
@@ -1193,12 +1207,12 @@ package's own CLI sources.
 
 `@example/copy` (now `writer`) has terms (a glossary) and entries
 (single addressable strings) and nothing between them. `@clossys/designer`
-has tokens, atoms, **and blocks**. In practice nobody reuses one string —
+has tokens, components, **and blocks**. In practice nobody reuses one string —
 they reuse a whole empty-state (title + body + action), a whole FAQ item
 (question + answer), a whole error (message + recovery). `Passage`
 (`passage.ts`) is that missing middle: it composes entry/term REFERENCES
-the way a block composes atoms, never a raw sentence of its own. Terms ≈
-tokens, entries ≈ atoms, passages ≈ blocks; documents (a later,
+the way a block composes components, never a raw sentence of its own. Terms ≈
+tokens, entries ≈ components, passages ≈ blocks; documents (a later,
 composition-layer concern, mirroring how a view composes blocks) are out
 of scope here — see [issue #373](https://github.com/clossys/foundry/issues/373).
 
@@ -1262,6 +1276,37 @@ binding mechanism.
 same `writer-check` bin, dispatched on `argv[0] === "passages"`, the same
 fully-separate dispatch `addressability` already uses) exits `0` satisfied
 / `1` violated / `2` indeterminate.
+
+## Strategy cell claims
+
+Writer ships `strategy-brief.json` with the `writer.messaging` contract. Its
+required cells are narrative, voice, promise, proof, core segment and customer
+need; it has no optional cells. The Writer library manifest uses
+`strategy: { root, contract: "writer.messaging" }`. Claim records use
+`strategy: { cell, version }`, where version is a positive integer.
+`strategist.path` and claim `strategistClaimKey` are removed and produce
+migration guidance.
+
+Run `strategist-check handoff writer.messaging --root <strategy.root>` before
+writing. Missing briefs block work and require a missing request; stale briefs
+must be visibly flagged. Keep surface citations as `strategy:<cell>@N`.
+To check claim currency alongside native record readiness, supply a snapshot
+opened from the manifest's strategy root:
+
+```ts
+import { openStrategy } from "@clossys/strategist";
+import { checkWriterRecordDrift, type WriterManifest, type WriterRecordSource } from "@clossys/writer";
+
+declare const manifest: WriterManifest;
+declare const sources: WriterRecordSource[];
+const strategy = openStrategy(manifest.strategy.root);
+const report = checkWriterRecordDrift(sources, { strategy });
+```
+
+Reopen the snapshot after activation. Drift follows active pointers: a newer
+draft alone does not stale a current claim. Claims without a snapshot fail the
+currency check; sources without claims retain their native readiness checks.
+This checker does not grant copy approval.
 
 ## API
 
@@ -1344,6 +1389,8 @@ The root entry point exports the copy registry and traceability surface:
   that write and report on this state, `writer-check approve` and
   `writer-check approval-state`, are CLI-only and not exported from
   `index.ts`.
+- Native record readiness and strategy currency (see above): `checkWriterRecordDrift`,
+  `WriterRecordSource`, and `WriterRecordDriftFinding`.
 - Production authority from an approved plan (see above):
   `planDelegateCopyAuthority`, `PlanDelegateCopyAuthority`,
   `PlanDelegateCopyRefusal`, `CopyResolutionApproval`, and

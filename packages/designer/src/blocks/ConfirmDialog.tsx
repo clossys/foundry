@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Button } from "../atoms/Button.js";
-import { Dialog, type DialogProps } from "../atoms/Dialog.js";
+import { Button } from "../components/Button.js";
+import { Dialog, type DialogProps } from "../components/Dialog.js";
 
 export type ConfirmDialogTone = "neutral" | "destructive";
 
@@ -37,10 +37,10 @@ export interface ConfirmDialogProps extends Omit<DialogProps, "children" | "size
 }
 
 /**
- * A confirmation prompt built on the `Dialog` atom: a heading region, a
+ * A confirmation prompt built on the `Dialog` component: a heading region, a
  * message region, and an actions region (Cancel/Confirm) — three regions
  * that always render together and differ in kind, which is what makes this
- * a block rather than an atom (see the README's "Placement rules", test 2).
+ * a block rather than an component (see the README's "Placement rules", test 2).
  * `Dialog` itself deliberately stops short of this fixed shape — see its
  * own doc comment for exactly where its scope ends and this block's begins.
  *

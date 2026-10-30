@@ -17,7 +17,7 @@ The whole team is composed in the hub. A repo staffed in an approved plan gets `
 ## Operating wave
 
 1. **Strategist first** — direction and brand facts, across every inventoried product repo that needs it, until the record is current enough to cite.
-2. **Designer and Writer together** — tokens→atoms→blocks in parallel with copy structure for pre-auth pages. Do not start if Strategist still has no citable direction.
+2. **Designer and Writer together** — tokens→components→blocks in parallel with copy structure for pre-auth pages. Do not start if Strategist still has no citable direction.
 3. **Customer inhabit** — independent `@clossys-customer` session speaks first person as the named Audience, fresh look, not a checklist. That person can also be asked for lived feedback on any topic, comparison from their consideration set, what it would take to start or to refer, whether it is worth what it costs them, and what would make them leave. This role does not inhabit the user.
 4. **Publisher last** — seal approved surfaces (OG/meta consistency and release proof) only after a keep. Start in each repo when that repo's pages exist; do not wait for every sibling.
 
@@ -25,7 +25,7 @@ An engine gap or a missing check is a Foundry issue about the package that owns 
 
 ## Handoff citations
 
-Cite the strategist handoff: an audience id, approved strategist claim ids (`claim:<id>` in prose), applicable constraint ids (`constraint:<id>`), and the current direction id. Do not edit `clossys/strategist/`. Voice-glossary claims in this package are not strategist claims.
+Read the `writer.messaging` brief contract through `openStrategy(manifest.strategy.root).getBrief("writer.messaging")` and run `strategist-check handoff writer.messaging --root <strategy.root>` before writing. A missing brief blocks work and needs a `missing` request; a stale brief needs a visible stale flag. Cite the confirmed cells as `strategy:<cell>@N` markers; claim records store `strategy: { cell, version }`. Configure the Writer manifest with `strategy: { root, contract: "writer.messaging" }`. For record drift, open that root with Strategist's `openStrategy` and pass the snapshot to Writer's `checkWriterRecordDrift(sources, { strategy })`; claims require this snapshot. Reopen after activation: currency follows active pointers, so a new draft alone does not stale copy. Do not edit `clossys/strategist/`. Voice-glossary claims in this package are not strategy evidence.
 
 ## Pre-auth page
 

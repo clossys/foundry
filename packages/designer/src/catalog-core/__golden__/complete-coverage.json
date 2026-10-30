@@ -1,0 +1,1187 @@
+{
+  "assetLeaves": 49,
+  "boundProperties": 230,
+  "complete": true,
+  "consumer": "example-complete-catalog",
+  "kind": "materialized-consumer-coverage",
+  "leaves": [
+    {
+      "members": 2,
+      "originKinds": [
+        "derived"
+      ],
+      "rules": [
+        "identity-app-icon@1"
+      ],
+      "slot": "assets.app-icon",
+      "sources": [
+        "example-complete-catalog"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "derived"
+      ],
+      "rules": [
+        "identity-favicon@1"
+      ],
+      "slot": "assets.favicon",
+      "sources": [
+        "example-complete-catalog"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-arrow-right",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-business",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-check",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-chevron-down",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-chevron-left",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-chevron-right",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-chevron-up",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-close",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-danger",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-date",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-document",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-document-approved",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-external-link",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-folder",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-grid-view",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-guide",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-home",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-info",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-institution",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-integration",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-layers",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-legal",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-list-view",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-locked",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-organization",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-package",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-panel-left",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-payment",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-receipt",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-search",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-security",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-settings",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-success",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-team",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-theme-dark",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-theme-light",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-theme-system",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-time",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-user",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-warning",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-website",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "authored"
+      ],
+      "rules": [],
+      "slot": "assets.image",
+      "sources": [
+        "example-complete-catalog"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "authored"
+      ],
+      "rules": [],
+      "slot": "assets.image-ratio",
+      "sources": [
+        "example-complete-catalog"
+      ]
+    },
+    {
+      "members": 2,
+      "originKinds": [
+        "authored",
+        "derived"
+      ],
+      "rules": [
+        "identity-lockup@1"
+      ],
+      "slot": "assets.lockup",
+      "sources": [
+        "example-complete-catalog"
+      ]
+    },
+    {
+      "members": 3,
+      "originKinds": [
+        "authored",
+        "derived"
+      ],
+      "rules": [
+        "identity-mark@1"
+      ],
+      "slot": "assets.mark",
+      "sources": [
+        "example-complete-catalog"
+      ]
+    },
+    {
+      "members": 6,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.pattern",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "authored"
+      ],
+      "rules": [],
+      "slot": "assets.video",
+      "sources": [
+        "example-complete-catalog"
+      ]
+    },
+    {
+      "members": 5,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.accent-color",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 5,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.action-color",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 10,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.animation",
+      "sources": [
+        "foundry",
+        "tailwind-default"
+      ]
+    },
+    {
+      "members": 6,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.behavior-timing",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 10,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.blur",
+      "sources": [
+        "foundry",
+        "tailwind-default"
+      ]
+    },
+    {
+      "members": 4,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.body-size",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 6,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.border-color",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 3,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.border-width",
+      "sources": [
+        "foundry-baseline"
+      ]
+    },
+    {
+      "members": 6,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.brandmark-size",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 11,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.breakpoint",
+      "sources": [
+        "foundry",
+        "tailwind-default"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.caption-size",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 8,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.categorical-color",
+      "sources": [
+        "carbon-colors"
+      ]
+    },
+    {
+      "members": 4,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.chart-color",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.code-size",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 286,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.color-ramp",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "members": 13,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.container-width",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "members": 13,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.content-size",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 5,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.control-color",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.control-radius",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 8,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.control-size",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 5,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.density",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 5,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.display-face",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 4,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.display-size",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 3,
+      "originKinds": [
+        "adopted",
+        "derived"
+      ],
+      "rules": [
+        "token-diverging-neutral@1"
+      ],
+      "slot": "tokens.diverging-color",
+      "sources": [
+        "example-complete-catalog",
+        "tailwind-default"
+      ]
+    },
+    {
+      "members": 5,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.duration",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 7,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.easing",
+      "sources": [
+        "foundry",
+        "tailwind-default"
+      ]
+    },
+    {
+      "members": 4,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.elevation",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 2,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.focus-color",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 2,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.focus-outline",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 2,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.focus-shadow",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 13,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.font-size",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "members": 9,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.font-weight",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "members": 4,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.gradient",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.gutter",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 5,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.heading-size",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 3,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.icon-size",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.icon-stroke",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 9,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.letter-spacing",
+      "sources": [
+        "foundry",
+        "tailwind-default"
+      ]
+    },
+    {
+      "members": 20,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.line-height",
+      "sources": [
+        "foundry",
+        "tailwind-default"
+      ]
+    },
+    {
+      "members": 12,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.radius",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "members": 7,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.region-width",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.scrim-color",
+      "sources": [
+        "foundry-baseline"
+      ]
+    },
+    {
+      "members": 7,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.sequential-color",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "members": 9,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.shadow",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "members": 2,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.shift-distance",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 10,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.spacing",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "members": 4,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.state-opacity",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 12,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.status-color",
+      "sources": [
+        "radix-colors"
+      ]
+    },
+    {
+      "members": 11,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.surface-color",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 3,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.surface-radius",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 8,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.text-color",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.touch-target",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.transition-duration",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 2,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.transition-easing",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 3,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.typeface",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "members": 11,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.z-index",
+      "sources": [
+        "foundry-baseline"
+      ]
+    }
+  ],
+  "served": 105,
+  "slots": 105,
+  "tokenLeaves": 56
+}

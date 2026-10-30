@@ -36,13 +36,16 @@ describe("resolveCopyRef", () => {
     });
   });
 
-  it("fails closed for a missing entry, wrong locale, draft entry, and missing parameter", () => {
+  it("fails closed for a missing entry, draft entry, and missing parameter", () => {
     expect(resolveCopyRef(registry, { id: "dashboard.missing" }).issues[0]?.reason).toBe("unknown-copy-id");
-    expect(resolveCopyRef(registry, { id: "dashboard.welcome", locale: "fr" }).issues[0]?.reason).toBe(
-      "locale-mismatch",
-    );
     expect(resolveCopyRef(registry, { id: "dashboard.pending" }).issues[0]?.reason).toBe("copy-not-approved");
     expect(resolveCopyRef(registry, { id: "dashboard.welcome" }).issues[0]?.reason).toBe("missing-placeholder-value");
+  });
+
+  it("reports the served locale when a request falls back to the registry default", () => {
+    const result = resolveCopyRef(registry, { id: "dashboard.welcome", locale: "fr", values: { name: "Ada" } });
+    expect(result.complete).toBe(true);
+    expect(result.resolution).toMatchObject({ text: "Welcome, Ada.", locale: "en", servedLocale: "en", chain: ["en"] });
   });
 
   it("fails closed instead of throwing when JavaScript callers supply an invalid registry or ref shape", () => {

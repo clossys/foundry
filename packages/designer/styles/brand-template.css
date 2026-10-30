@@ -111,16 +111,23 @@
   --color-ink-on-inverse:          ;
   --color-ink-on-inverse-muted:    ;
 
-  /* ─── LINE (3 required) ──────────────────────────────────────────
+  /* ─── LINE (4 required) ──────────────────────────────────────────
    * --color-line-on-inverse is typically an rgba/oklch value with alpha,
    * since it sits on top of --color-surface-inverse rather than the page
-   * ground. */
+   * ground. --color-line-control is the resting edge of a form control and
+   * must clear 3:1 on every surface a control sits on (WCAG 1.4.11). */
   --color-line-base:               ;
   --color-line-strong:             ;
   --color-line-on-inverse:         ;
+  --color-line-control:            ;
 
   /* ─── ACCENT (5 required) ────────────────────────────────────────
    * --color-accent-tint is usually your accent color at ~10% alpha. */
+  --color-action: ;
+  --color-action-hover: ;
+  --color-action-pressed: ;
+  --color-action-on-inverse: ;
+  --color-action-on-inverse-hover: ;
   --color-accent:                  ;
   --color-accent-text:             ;
   --color-accent-hover:            ;
@@ -198,7 +205,7 @@
   /* ─── LAYOUT (1 optional) ────────────────────────────────────────── */
   /* --ui-layout-sidebar-w: 256px; */
 
-  /* ─── ICON (1 optional — the Icon atom's stroke weight; the three
+  /* ─── ICON (1 optional — the Icon component's stroke weight; the three
        icon SIZE steps alias the spacing scale and are not brand slots,
        the same call the density tokens above already make) ─────────── */
   /* --ui-icon-stroke: 2; */
@@ -236,13 +243,19 @@
     --color-ink-on-inverse:          ;
     --color-ink-on-inverse-muted:    ;
 
-    /* ─── LINE (3 required) ────────────────────────────────────── */
+    /* ─── LINE (4 required) ────────────────────────────────────── */
     --color-line-base:               ;
     --color-line-strong:             ;
     --color-line-on-inverse:         ;
+    --color-line-control:            ;
 
     /* ─── ACCENT (5 required) ──────────────────────────────────── */
-    --color-accent:                  ;
+    --color-action: ;
+    --color-action-hover: ;
+    --color-action-pressed: ;
+    --color-action-on-inverse: ;
+    --color-action-on-inverse-hover: ;
+  --color-accent:                  ;
     --color-accent-text:             ;
     --color-accent-hover:            ;
     --color-accent-tint:             ;
@@ -300,12 +313,18 @@
   --color-ink-on-inverse:          ;
   --color-ink-on-inverse-muted:    ;
 
-  /* ─── LINE (3 required) ──────────────────────────────────────── */
+  /* ─── LINE (4 required) ──────────────────────────────────────── */
   --color-line-base:               ;
   --color-line-strong:             ;
   --color-line-on-inverse:         ;
+  --color-line-control:            ;
 
   /* ─── ACCENT (5 required) ────────────────────────────────────── */
+  --color-action: ;
+  --color-action-hover: ;
+  --color-action-pressed: ;
+  --color-action-on-inverse: ;
+  --color-action-on-inverse-hover: ;
   --color-accent:                  ;
   --color-accent-text:             ;
   --color-accent-hover:            ;

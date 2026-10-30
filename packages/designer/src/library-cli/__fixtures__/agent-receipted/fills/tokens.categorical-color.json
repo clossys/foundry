@@ -1,0 +1,351 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias",
+        "wcag-2.2#1.4.3"
+      ],
+      "derivation": {
+        "from": "dtcg#alias",
+        "rule": "Carbon categorical14 paired light/dark indices 1,3,4,6,7,8,12,13; first eight pairs clearing 3:1 on all supplied grounds; unchanged upstream values, not the original first-eight sequence"
+      },
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        },
+        {
+          "check": "C9",
+          "clause": "wcag-2.2#1.4.3"
+        }
+      ],
+      "id": "example/tokens.categorical-color",
+      "license": "Apache-2.0",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "commit": "6568a3389c2a82348c693b167b511dea66b7b269",
+        "file": "packages/colors/src/colors.js",
+        "package": "@carbon/colors",
+        "sha256": "20b19b199cc0b77d6f49c626e2eb03fb48f02f2d2282a7291d93644242d644ef",
+        "url": "https://github.com/carbon-design-system/carbon/blob/6568a3389c2a82348c693b167b511dea66b7b269/packages/colors/src/colors.js",
+        "version": "11.37.0"
+      },
+      "relation": "derived",
+      "slot": "tokens.categorical-color",
+      "source": "example",
+      "sourceAddress": "https://github.com/carbon-design-system/carbon-charts/blob/d1b1061ab67b1b5c909f55afb3aabba7a0777391/packages/core/scss/_color-palette.scss",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "tokens": {
+    "categorical-color": {
+      "1": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#6929c4"
+          },
+          "com.clossys.modes": {
+            "dark": "#8a3ffc"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "carbon-colors/tokens.categorical-color",
+            "kind": "adopted",
+            "license": "Apache-2.0",
+            "member": "tokens.categorical-color.1",
+            "pin": {
+              "commit": "6568a3389c2a82348c693b167b511dea66b7b269",
+              "file": "packages/colors/src/colors.js",
+              "package": "@carbon/colors",
+              "sha256": "20b19b199cc0b77d6f49c626e2eb03fb48f02f2d2282a7291d93644242d644ef",
+              "url": "https://github.com/carbon-design-system/carbon/blob/6568a3389c2a82348c693b167b511dea66b7b269/packages/colors/src/colors.js",
+              "version": "11.37.0"
+            },
+            "sha256": "c3dfd1dbfb87ac3c1f41891328814f126dce19a7ad69ee076b9028c1940b77ca",
+            "source": "carbon-colors"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.411765,
+            0.160784,
+            0.768627
+          ],
+          "hex": "#6929c4"
+        }
+      },
+      "2": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#005d5d"
+          },
+          "com.clossys.modes": {
+            "dark": "#007d79"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "carbon-colors/tokens.categorical-color",
+            "kind": "adopted",
+            "license": "Apache-2.0",
+            "member": "tokens.categorical-color.2",
+            "pin": {
+              "commit": "6568a3389c2a82348c693b167b511dea66b7b269",
+              "file": "packages/colors/src/colors.js",
+              "package": "@carbon/colors",
+              "sha256": "20b19b199cc0b77d6f49c626e2eb03fb48f02f2d2282a7291d93644242d644ef",
+              "url": "https://github.com/carbon-design-system/carbon/blob/6568a3389c2a82348c693b167b511dea66b7b269/packages/colors/src/colors.js",
+              "version": "11.37.0"
+            },
+            "sha256": "b593140e443798d90c185c436e1770487ebb1ed6a28bf6cf33d47b8645d0bf2b",
+            "source": "carbon-colors"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0,
+            0.364706,
+            0.364706
+          ],
+          "hex": "#005d5d"
+        }
+      },
+      "3": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#9f1853"
+          },
+          "com.clossys.modes": {
+            "dark": "#ff7eb6"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "carbon-colors/tokens.categorical-color",
+            "kind": "adopted",
+            "license": "Apache-2.0",
+            "member": "tokens.categorical-color.3",
+            "pin": {
+              "commit": "6568a3389c2a82348c693b167b511dea66b7b269",
+              "file": "packages/colors/src/colors.js",
+              "package": "@carbon/colors",
+              "sha256": "20b19b199cc0b77d6f49c626e2eb03fb48f02f2d2282a7291d93644242d644ef",
+              "url": "https://github.com/carbon-design-system/carbon/blob/6568a3389c2a82348c693b167b511dea66b7b269/packages/colors/src/colors.js",
+              "version": "11.37.0"
+            },
+            "sha256": "ea248ac0672f6c4d58e171b3b9cf0478b1816f84a5ab015e1608826025f36c23",
+            "source": "carbon-colors"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.623529,
+            0.094118,
+            0.32549
+          ],
+          "hex": "#9f1853"
+        }
+      },
+      "4": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#520408"
+          },
+          "com.clossys.modes": {
+            "dark": "#fff1f1"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "carbon-colors/tokens.categorical-color",
+            "kind": "adopted",
+            "license": "Apache-2.0",
+            "member": "tokens.categorical-color.4",
+            "pin": {
+              "commit": "6568a3389c2a82348c693b167b511dea66b7b269",
+              "file": "packages/colors/src/colors.js",
+              "package": "@carbon/colors",
+              "sha256": "20b19b199cc0b77d6f49c626e2eb03fb48f02f2d2282a7291d93644242d644ef",
+              "url": "https://github.com/carbon-design-system/carbon/blob/6568a3389c2a82348c693b167b511dea66b7b269/packages/colors/src/colors.js",
+              "version": "11.37.0"
+            },
+            "sha256": "1e067082a1df26c29b28f8381d32d13d00f1b086a9bf82815e5dce4aa30f1d51",
+            "source": "carbon-colors"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.321569,
+            0.015686,
+            0.031373
+          ],
+          "hex": "#520408"
+        }
+      },
+      "5": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#198038"
+          },
+          "com.clossys.modes": {
+            "dark": "#6fdc8c"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "carbon-colors/tokens.categorical-color",
+            "kind": "adopted",
+            "license": "Apache-2.0",
+            "member": "tokens.categorical-color.5",
+            "pin": {
+              "commit": "6568a3389c2a82348c693b167b511dea66b7b269",
+              "file": "packages/colors/src/colors.js",
+              "package": "@carbon/colors",
+              "sha256": "20b19b199cc0b77d6f49c626e2eb03fb48f02f2d2282a7291d93644242d644ef",
+              "url": "https://github.com/carbon-design-system/carbon/blob/6568a3389c2a82348c693b167b511dea66b7b269/packages/colors/src/colors.js",
+              "version": "11.37.0"
+            },
+            "sha256": "90b055ca8d6e86cd048b99b0fb7cb8c0c6dfc820fc38de48ef225a248602b2cb",
+            "source": "carbon-colors"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.098039,
+            0.501961,
+            0.219608
+          ],
+          "hex": "#198038"
+        }
+      },
+      "6": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#002d9c"
+          },
+          "com.clossys.modes": {
+            "dark": "#4589ff"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "carbon-colors/tokens.categorical-color",
+            "kind": "adopted",
+            "license": "Apache-2.0",
+            "member": "tokens.categorical-color.6",
+            "pin": {
+              "commit": "6568a3389c2a82348c693b167b511dea66b7b269",
+              "file": "packages/colors/src/colors.js",
+              "package": "@carbon/colors",
+              "sha256": "20b19b199cc0b77d6f49c626e2eb03fb48f02f2d2282a7291d93644242d644ef",
+              "url": "https://github.com/carbon-design-system/carbon/blob/6568a3389c2a82348c693b167b511dea66b7b269/packages/colors/src/colors.js",
+              "version": "11.37.0"
+            },
+            "sha256": "9e18b952d24da1336de75a9a5f7e9aad9e545c41585bcbe2a0e42221a0b38fb5",
+            "source": "carbon-colors"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0,
+            0.176471,
+            0.611765
+          ],
+          "hex": "#002d9c"
+        }
+      },
+      "7": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#012749"
+          },
+          "com.clossys.modes": {
+            "dark": "#bae6ff"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "carbon-colors/tokens.categorical-color",
+            "kind": "adopted",
+            "license": "Apache-2.0",
+            "member": "tokens.categorical-color.7",
+            "pin": {
+              "commit": "6568a3389c2a82348c693b167b511dea66b7b269",
+              "file": "packages/colors/src/colors.js",
+              "package": "@carbon/colors",
+              "sha256": "20b19b199cc0b77d6f49c626e2eb03fb48f02f2d2282a7291d93644242d644ef",
+              "url": "https://github.com/carbon-design-system/carbon/blob/6568a3389c2a82348c693b167b511dea66b7b269/packages/colors/src/colors.js",
+              "version": "11.37.0"
+            },
+            "sha256": "10b5abd77d71bf16ad7b822c0dd71babb35c033994f6598bb28e93f4a675a992",
+            "source": "carbon-colors"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.003922,
+            0.152941,
+            0.286275
+          ],
+          "hex": "#012749"
+        }
+      },
+      "8": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#8a3800"
+          },
+          "com.clossys.modes": {
+            "dark": "#ba4e00"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "carbon-colors/tokens.categorical-color",
+            "kind": "adopted",
+            "license": "Apache-2.0",
+            "member": "tokens.categorical-color.8",
+            "pin": {
+              "commit": "6568a3389c2a82348c693b167b511dea66b7b269",
+              "file": "packages/colors/src/colors.js",
+              "package": "@carbon/colors",
+              "sha256": "20b19b199cc0b77d6f49c626e2eb03fb48f02f2d2282a7291d93644242d644ef",
+              "url": "https://github.com/carbon-design-system/carbon/blob/6568a3389c2a82348c693b167b511dea66b7b269/packages/colors/src/colors.js",
+              "version": "11.37.0"
+            },
+            "sha256": "0488f77fc539b62ea6dd964aea036d53a3cb5aa8ede9291c478ac7a489f514a6",
+            "source": "carbon-colors"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.541176,
+            0.219608,
+            0
+          ],
+          "hex": "#8a3800"
+        }
+      }
+    }
+  }
+}

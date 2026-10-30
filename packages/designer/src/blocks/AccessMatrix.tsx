@@ -1,12 +1,15 @@
 import { useId } from "react";
-import { Button } from "../atoms/Button.js";
-import { Checkbox } from "../atoms/Checkbox.js";
-import { Icon } from "../atoms/Icon.js";
-import { Tooltip } from "../atoms/Tooltip.js";
-import { cx } from "../atoms/internal/cx.js";
+import { Button } from "../components/Button.js";
+import { Checkbox } from "../components/Checkbox.js";
+import { Icon } from "../components/Icon.js";
+import { Tooltip } from "../components/Tooltip.js";
+import { cx } from "../components/internal/cx.js";
 import { Lock } from "../icons/Lock.js";
 import { accessCell, assertAccessMatrix } from "./access-matrix/validate.js";
 import { accessSummary, useDebouncedSummary } from "./access-matrix/summary.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.access-matrix", "foundry/sections.access-matrix");
 
 export type AccessCellValue = { readonly state: "granted" | "denied" } | { readonly state: "inherited"; readonly reason: string };
 export interface AccessRole { readonly id: string; readonly label: string; readonly isLocked?: boolean; readonly lockedReason?: string }
@@ -53,7 +56,7 @@ export function AccessMatrix(props: AccessMatrixProps) {
     }
     onChange({ ...value, [role.id]: cells }, { roleId: role.id, permissionIds, state });
   };
-  return <div className={cx("min-w-0 space-y-md text-body text-ink-primary", className)}>
+  return <div {...SECTION_STAMP} className={cx("min-w-0 space-y-md text-body text-ink-primary", className)}>
     <div className="max-w-full overflow-x-auto">
       <table aria-label={props["aria-label"]} role="table" className="block w-full border-separate border-spacing-0 tablet:table tablet:table-fixed">
         <thead className="sr-only focus-within:not-sr-only focus-within:block focus-within:w-full focus-within:overflow-x-auto tablet:not-sr-only tablet:table-header-group tablet:focus-within:table-header-group tablet:focus-within:w-auto tablet:focus-within:overflow-visible">

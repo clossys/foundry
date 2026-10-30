@@ -1,0 +1,252 @@
+{
+  "version": 1,
+  "revision": 1,
+  "state": "draft",
+  "locale": "en",
+  "activation": "none",
+  "records": [
+    {
+      "id": "st.e093300bfe",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.route.records",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Copy records"
+    },
+    {
+      "id": "st.8d4039cfd3",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.route.detail",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Selected copy"
+    },
+    {
+      "id": "st.7fa4df7552",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.route.notices",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Coverage and needs"
+    },
+    {
+      "id": "st.369fbc865a",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.route.id",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Record ID"
+    },
+    {
+      "id": "st.639e15d622",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.route.surface",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Surface"
+    },
+    {
+      "id": "st.40f20b782f",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.route.locale",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Language"
+    },
+    {
+      "id": "st.b24f21deba",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.route.bindings",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Bindings"
+    },
+    {
+      "id": "st.88038d1dfe",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.route.consumers",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Consumers"
+    },
+    {
+      "id": "st.1884409ce4",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.route.select",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Select record"
+    },
+    {
+      "id": "st.1f28d81f48",
+      "leaf": "strings.descriptions",
+      "context": "admin.writer.route.noSelection",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Select a record to review its copy."
+    },
+    {
+      "id": "st.5e1ae6cabe",
+      "leaf": "strings.counters",
+      "context": "admin.writer.route.coverageSummary",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{records, number, integer} records; {bindings, number, integer} proposed bindings.",
+      "args": [
+        {
+          "name": "records",
+          "type": "number"
+        },
+        {
+          "name": "bindings",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "id": "st.7cc4a2ef9f",
+      "leaf": "strings.counters",
+      "context": "admin.writer.route.needsSummary",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{needs, number, integer} open needs. Draft copy remains unapproved.",
+      "args": [
+        {
+          "name": "needs",
+          "type": "number"
+        }
+      ]
+    }
+  ],
+  "bindings": [
+    {
+      "cellId": "admin.writer.route.records",
+      "recordId": "st.e093300bfe",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.detail",
+      "recordId": "st.8d4039cfd3",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.notices",
+      "recordId": "st.7fa4df7552",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.id",
+      "recordId": "st.369fbc865a",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.surface",
+      "recordId": "st.639e15d622",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.status",
+      "recordId": "st.v6ra67gp67",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.locale",
+      "recordId": "st.40f20b782f",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.text",
+      "recordId": "st.fg1dznm6qa",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.bindings",
+      "recordId": "st.b24f21deba",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.consumers",
+      "recordId": "st.88038d1dfe",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.select",
+      "recordId": "st.1884409ce4",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.draft",
+      "recordId": "st.td8tdah4rw",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.approved",
+      "recordId": "st.1re7rsx0et",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.retired",
+      "recordId": "st.dvdvvejry8",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.noSelection",
+      "recordId": "st.1f28d81f48",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.coverageSummary",
+      "recordId": "st.5e1ae6cabe",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.needsSummary",
+      "recordId": "st.7cc4a2ef9f",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    }
+  ],
+  "externalRecords": [
+    {
+      "recordId": "st.1re7rsx0et",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.approved"
+    },
+    {
+      "recordId": "st.dvdvvejry8",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.retired"
+    },
+    {
+      "recordId": "st.fg1dznm6qa",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.components.inputs-text"
+    },
+    {
+      "recordId": "st.td8tdah4rw",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.draft"
+    },
+    {
+      "recordId": "st.v6ra67gp67",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.assets.icons-status"
+    }
+  ]
+}

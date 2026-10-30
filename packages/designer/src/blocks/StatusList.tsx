@@ -1,6 +1,11 @@
+import { SemanticContent } from "../components/SemanticContent.js";
+import { SectionHeader } from "./SectionHeader.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 import { SECTION_GROUND_CLASSES, type SectionGround, type SectionStatusTone } from "./section-ground.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.status-list", "foundry/sections.status-list");
 
 /** The closed readiness axis. A deliberate non-capability belongs in `StatusListDisposition`, not here. */
 export type StatusListState = "available" | "partial" | "planned";
@@ -146,19 +151,18 @@ export function StatusList({
   style,
   ...rest
 }: StatusListProps) {
-  const HeadingTag = `h${headingLevel}` as `h${StatusListHeadingLevel}`;
   const colors = SECTION_GROUND_CLASSES[ground];
   const GroupHeadingTag = `h${Math.min(headingLevel + 1, 6)}` as `h${StatusListHeadingLevel}`;
   const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
 
   const row = (item: StatusListItem, index: number) => (
-    <div
+    <SemanticContent as="div"
       key={item.id}
       className={cx("flex items-center justify-between gap-md py-sm", item.detail !== undefined ? "flex-wrap" : undefined, index > 0 ? cx("border-t", colors.border) : undefined)}
     >
-      <dt className={cx("text-body", colors.primary)}>{item.label}</dt>
-      <dd className={cx("flex shrink-0 items-center gap-xs text-body-s", colors.primary)}>
-        <span
+      <SemanticContent as="dt" className={cx("text-body", colors.primary)}>{item.label}</SemanticContent>
+      <SemanticContent as="dd" className={cx("flex shrink-0 items-center gap-xs text-body-s", colors.primary)}>
+        <SemanticContent as="span"
           aria-hidden="true"
           className={cx(
             "size-xs shrink-0 rounded-pill",
@@ -166,51 +170,47 @@ export function StatusList({
           )}
         />
         {labelFor(item, labels)}
-      </dd>
+      </SemanticContent>
       {item.detail !== undefined ? (
-        <dd className={cx("w-full text-body-s", colors.secondary)}>{item.detail}</dd>
+        <SemanticContent as="dd" className={cx("w-full text-body-s", colors.secondary)}>{item.detail}</SemanticContent>
       ) : null}
-    </div>
+    </SemanticContent>
   );
 
   return (
-    <section {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
+    <SemanticContent as="section" {...SECTION_STAMP} {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
-        <div className="flex flex-col gap-xs">
-          {eyebrow ? <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p> : null}
-          {heading ? <HeadingTag className={cx("text-h2 font-display", colors.primary)}>{heading}</HeadingTag> : null}
-          {description ? <p className={cx("text-body", colors.secondary)}>{description}</p> : null}
-        </div>
+        <SectionHeader density="standard" level={headingLevel} ground={ground} eyebrow={eyebrow} description={description} {...(heading ? { title: heading } : {})} />
       ) : null}
-      <div className="flex flex-col gap-xs">
-        <p className={cx("text-caption font-body font-medium", colors.primary)}>{legendLabel}</p>
-        <ul aria-label={legendLabel} className="flex flex-wrap gap-md">
+      <SemanticContent as="div" className="flex flex-col gap-xs">
+        <SemanticContent as="p" className={cx("text-caption font-body font-medium", colors.primary)}>{legendLabel}</SemanticContent>
+        <SemanticContent as="ul" aria-label={legendLabel} className="flex flex-wrap gap-md">
           {STATES.map((state) => (
-            <li key={state} className={cx("flex items-center gap-xs text-body-s", colors.primary)}>
-              <span aria-hidden="true" className={cx("size-xs shrink-0 rounded-pill", colors.status[STATE_TONES[state]])} />
+            <SemanticContent as="li" key={state} className={cx("flex items-center gap-xs text-body-s", colors.primary)}>
+              <SemanticContent as="span" aria-hidden="true" className={cx("size-xs shrink-0 rounded-pill", colors.status[STATE_TONES[state]])} />
               {labels[state]}
-            </li>
+            </SemanticContent>
           ))}
           {DISPOSITIONS.map((disposition) => (
-            <li key={disposition} className={cx("flex items-center gap-xs text-body-s", colors.primary)}>
-              <span aria-hidden="true" className={cx("size-xs shrink-0 rounded-pill", colors.offAxis)} />
+            <SemanticContent as="li" key={disposition} className={cx("flex items-center gap-xs text-body-s", colors.primary)}>
+              <SemanticContent as="span" aria-hidden="true" className={cx("size-xs shrink-0 rounded-pill", colors.offAxis)} />
               {labels.dispositions[disposition]}
-            </li>
+            </SemanticContent>
           ))}
-        </ul>
-      </div>
+        </SemanticContent>
+      </SemanticContent>
       {items ? (
-        <dl className="flex flex-col">{items.map((item, index) => row(item, index))}</dl>
+        <SemanticContent as="dl" className="flex flex-col">{items.map((item, index) => row(item, index))}</SemanticContent>
       ) : (
-        <div className="flex flex-col gap-lg">
+        <SemanticContent as="div" className="flex flex-col gap-lg">
           {(groups ?? []).map((group) => (
-            <section key={group.id} className="flex flex-col gap-sm">
-              <GroupHeadingTag className={cx("text-h3 font-display", colors.primary)}>{group.heading}</GroupHeadingTag>
-              <dl className="flex flex-col">{group.items.map((item, index) => row(item, index))}</dl>
-            </section>
+            <SemanticContent as="section" key={group.id} className="flex flex-col gap-sm">
+              <SemanticContent as={GroupHeadingTag} className={cx("text-h3 font-display", colors.primary)}>{group.heading}</SemanticContent>
+              <SemanticContent as="dl" className="flex flex-col">{group.items.map((item, index) => row(item, index))}</SemanticContent>
+            </SemanticContent>
           ))}
-        </div>
+        </SemanticContent>
       )}
-    </section>
+    </SemanticContent>
   );
 }

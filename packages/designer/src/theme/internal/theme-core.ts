@@ -74,6 +74,18 @@ export function stampAuthoredRegister(root: HTMLElement): void {
   root.style.colorScheme = "light";
 }
 
+/**
+ * Marks `root` with `data-theme-switching` until the frame after next, so the
+ * `theme.css` rule on that attribute drops every transition while the colours
+ * flip: a theme switch changes everything at once instead of animating each
+ * control's colour transition. A no-op without `requestAnimationFrame`.
+ */
+export function suppressThemeTransitions(root: HTMLElement): void {
+  if (typeof requestAnimationFrame !== "function") return;
+  root.setAttribute("data-theme-switching", "");
+  requestAnimationFrame(() => requestAnimationFrame(() => root.removeAttribute("data-theme-switching")));
+}
+
 export function applyThemeDom(root: HTMLElement, preference: ThemePreference): void {
   if (preference === "system") {
     root.removeAttribute("data-theme");

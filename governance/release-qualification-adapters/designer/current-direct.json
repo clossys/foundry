@@ -18,7 +18,8 @@
     "designer-rate-check": 0,
     "designer-hero-css-check": 0,
     "designer-fold-check": 0,
-    "designer-type-check": 0
+    "designer-type-check": 0,
+    "designer-library": 0
   },
   "fixtures": ["clean/View.tsx", "violated/View.ts", "indeterminate/View.tsx", "brand/satisfied.css", "brand/violated.css", "brand/indeterminate.css", "contrast/satisfied.css", "contrast/violated.css", "contrast/indeterminate.css", "type-record/satisfied.json", "type-record/violated.json", "type-record/indeterminate.json", "fold/satisfied-desktop.json", "fold/satisfied-narrow.json", "fold/violated.json", "fold/indeterminate.json", "hero-css/satisfied.css", "hero-css/violated.css", "surface/satisfied/app/page.tsx", "surface/satisfied/app/globals.css", "surface/violated/app/page.tsx", "surface/indeterminate/overview.md"],
   "cases": [

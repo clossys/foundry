@@ -1,6 +1,11 @@
+import { SectionHeader } from "./SectionHeader.js";
+import { SemanticContent } from "../components/SemanticContent.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.steps", "foundry/sections.steps");
 
 export type OrderedStepSequenceHeadingLevel = 2 | 3 | 4 | 5 | 6;
 export type OrderedStepSequenceGround = SectionGround;
@@ -51,35 +56,30 @@ const LAYOUT_CLASSES = {
 
 /** Authored editorial order with decorative connectors only between adjacent steps. */
 export function OrderedStepSequence({ eyebrow, heading, description, items, headingLevel = 2, ground = "base", className, style, ...rest }: OrderedStepSequenceProps) {
-  const HeadingTag = `h${headingLevel}` as `h${OrderedStepSequenceHeadingLevel}`;
   const ItemHeadingTag = `h${Math.min(headingLevel + 1, 6)}` as `h${OrderedStepSequenceHeadingLevel}`;
   const colors = SECTION_GROUND_CLASSES[ground];
   const lines = STEP_LINE_CLASSES[ground];
   const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
   return (
-    <section {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
+    <section {...SECTION_STAMP} {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
-        <div className="flex flex-col gap-xs">
-          {eyebrow ? <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p> : null}
-          {heading ? <HeadingTag className={cx("text-h2 font-display", colors.primary)}>{heading}</HeadingTag> : null}
-          {description ? <p className={cx("text-body", colors.secondary)}>{description}</p> : null}
-        </div>
+        <SectionHeader density="standard" level={headingLevel} ground={ground} eyebrow={eyebrow} description={description} {...(heading ? { title: heading } : {})} />
       ) : null}
       <ol data-step-layout="plain" className={LAYOUT_CLASSES.list}>
         {items.map((item, index) => {
           const last = index === items.length - 1;
           const text = (
             <div data-step-text="" className={cx("flex min-w-0 flex-col gap-sm", last ? undefined : LAYOUT_CLASSES.gap)}>
-              {item.label ? <p className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{item.label}</p> : null}
-              <ItemHeadingTag className={cx("text-body-l font-body font-medium", colors.primary)}>{item.heading}</ItemHeadingTag>
-              {item.description ? <p className={cx("text-body text-pretty", colors.secondary)}>{item.description}</p> : null}
+              {item.label ? <SemanticContent as="p" className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{item.label}</SemanticContent> : null}
+              <SemanticContent as={ItemHeadingTag} className={cx("text-body-l font-body font-medium", colors.primary)}>{item.heading}</SemanticContent>
+              {item.description ? <SemanticContent as="p" className={cx("text-body text-pretty", colors.secondary)}>{item.description}</SemanticContent> : null}
             </div>
           );
           return (
             <li key={item.id} className={LAYOUT_CLASSES.item}>
               <div className={LAYOUT_CLASSES.marker}>
-                <span className={cx("flex size-2xl shrink-0 items-center justify-center rounded-pill text-body font-body font-medium tabular-nums", lines.ordinal)}>{item.ordinal}</span>
-                {last ? null : <span aria-hidden="true" data-step-connector="" className={cx(LAYOUT_CLASSES.connector, lines.line)} />}
+                <SemanticContent as="span" className={cx("flex size-2xl shrink-0 items-center justify-center rounded-pill text-body font-body font-medium tabular-nums", lines.ordinal)}>{item.ordinal}</SemanticContent>
+                {last ? null : <SemanticContent as="span" aria-hidden="true" data-step-connector="" className={cx(LAYOUT_CLASSES.connector, lines.line)} />}
               </div>
               {text}
             </li>

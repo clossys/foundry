@@ -1,12 +1,11 @@
 import { defaultGroupByMessage, defaultGroupOrderMessage, defaultMoveGroupMessage, defaultSortDirectionMessage, defaultMoveSortMessage, defaultRemoveSortMessage, defaultAddSortMessage, defaultRemoveFilterMessage, defaultAddFilterMessage, defaultShowColumnMessage, defaultMoveColumnMessage, defaultPivotDimensionMessage, defaultPivotOrderMessage, defaultMovePivotMessage, defaultRemoveGroupMessage, defaultGroupChipMessage, defaultSortChipMessage, defaultFilterChipMessage, type DataTableMessages } from "./messages.js";
 import { useState, useSyncExternalStore, type ReactNode } from "react";
-import { Button } from "../../atoms/Button.js";
-import { Checkbox } from "../../atoms/Checkbox.js";
-import { Chip } from "../../atoms/Chip.js";
-import { Dialog } from "../../atoms/Dialog.js";
-import { Popover } from "../../atoms/Popover.js";
-import { Select } from "../../atoms/Select.js";
-import { Drawer } from "../Drawer.js";
+import { Button } from "../../components/Button.js";
+import { Checkbox } from "../../components/Checkbox.js";
+import { Chip } from "../../components/Chip.js";
+import { Dialog } from "../../components/Dialog.js";
+import { Popover } from "../../components/Popover.js";
+import { Select } from "../../components/Select.js";
 import type { TableColumn, TableDimension, TableFilter, TableFilterNode, TableFilterResult, TableModel } from "../table-model/index.js";
 import { FilterEditor } from "./FilterEditor.js";
 import { editView, type DataTableViewModel } from "./view-model.js";
@@ -179,7 +178,13 @@ export function ViewOptions({
     <div className="flex flex-wrap items-end gap-sm">
       <Select label={viewModeLabel} selectedKey={model.mode} options={[{ id: "flat", label: flatModeLabel }, { id: "grouped", label: groupedModeLabel }, { id: "pivot", label: pivotModeLabel, isDisabled: !hasDimensions || !model.table.measures?.length }]} onSelectionChange={key => { if (key === "flat" || key === "grouped" || key === "pivot") change(editView(model, { mode: key, ...(key === "pivot" && !model.table.pivot ? { table: { ...model.table, pivot } } : {}) })); }} />
       <Select label={densityLabel} selectedKey={model.density} options={[{ id: "comfortable", label: comfortableDensityLabel }, { id: "compact", label: compactDensityLabel }]} onSelectionChange={key => { if (key === "comfortable" || key === "compact") change(editView(model, { density: key })); }} />
-      {narrow ? <Drawer trigger={trigger} heading={viewOptionsLabel} closeLabel={closeViewOptionsLabel} placement="bottom" wide="sheet" isOpen={isOpen} onOpenChange={setIsOpen}>{controls}</Drawer>
+      {narrow ? <Dialog trigger={trigger} isOpen={isOpen} onOpenChange={setIsOpen} overlayClassName="items-end p-0" modalClassName="max-w-none">{({ close }) => <>
+        <div className="flex items-start justify-between gap-md">
+          <Dialog.Heading>{viewOptionsLabel}</Dialog.Heading>
+          <Button variant="ghost" aria-label={closeViewOptionsLabel} onPress={close}>{closeViewOptionsLabel}</Button>
+        </div>
+        {controls}
+      </>}</Dialog>
         : <Popover trigger={trigger} isOpen={isOpen} onOpenChange={setIsOpen} className="max-w-full max-h-[85vh] overflow-auto"><Dialog.Heading>{viewOptionsLabel}</Dialog.Heading>{controls}</Popover>}
     </div>
     {groups.length || model.sort.length || filters.length ? <div aria-label={activeRulesLabel} className="flex flex-wrap gap-xs">

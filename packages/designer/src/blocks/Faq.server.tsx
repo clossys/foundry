@@ -1,8 +1,13 @@
-import { cx } from "../atoms/internal/cx.js";
-import type { FaqHeadingLevel, FaqProps } from "./Faq.js";
+import { SectionHeader } from "./SectionHeader.js";
+import { cx } from "../components/internal/cx.js";
+import type { ReactNode } from "react";
+import type { FaqLayout, FaqProps } from "./Faq.js";
 import { SECTION_MEASURE_MAX } from "./internal/block-vars.js";
 import { nativeDisclosureRow } from "./internal/disclosure-row.server.js";
 import { SECTION_GROUND_CLASSES } from "./section-ground.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.faq", "foundry/sections.faq");
 
 /**
  * One row recipe for both FAQ implementations (this file and the React Aria
@@ -44,6 +49,35 @@ export const FAQ_ROW_CLASSES = {
 export const FAQ_ANSWER_STYLE = { maxWidth: SECTION_MEASURE_MAX.prose } as const;
 
 /**
+ * The `two-column` layout, shared by both implementations. `columns` stacks
+ * the two question lists below tablet and sets them side by side from it.
+ * The first list keeps `FAQ_ROW_CLASSES.list` (its hairline above the first
+ * question at every width); `followingColumn` draws that hairline only from
+ * tablet, so stacked lists never double the rule where they meet.
+ */
+export const FAQ_LAYOUT_CLASSES = {
+  columns: "grid grid-cols-1 gap-x-2xl tablet:grid-cols-2",
+  followingColumn: "flex flex-col tablet:border-t",
+} as const;
+
+/** The question lists a layout renders: one list, or the two halves (the first column takes the odd one) in reading order. */
+export function faqColumns<Item>(items: readonly Item[], layout: FaqLayout): readonly (readonly Item[])[] {
+  if (layout !== "two-column" || items.length < 2) return [items];
+  const split = Math.ceil(items.length / 2);
+  return [items.slice(0, split), items.slice(split)];
+}
+
+/** Lays out the rendered question lists: the single list as before, or the two-column grid. */
+export function faqLists(columns: readonly ReactNode[], layout: FaqLayout, border: string): ReactNode {
+  if (layout !== "two-column") return <div className={cx(FAQ_ROW_CLASSES.list, border)}>{columns[0]}</div>;
+  return (
+    <div data-faq-columns="" className={FAQ_LAYOUT_CLASSES.columns}>
+      {columns.map((rows, index) => <div key={index} className={cx(index === 0 ? FAQ_ROW_CLASSES.list : FAQ_LAYOUT_CLASSES.followingColumn, border)}>{rows}</div>)}
+    </div>
+  );
+}
+
+/**
  * The React-server-safe FAQ implementation. Native `details`/`summary`
  * preserves independent, keyboard-operable disclosure behavior without
  * reaching the client-only React Aria graph. The native marker is hidden and
@@ -59,28 +93,21 @@ export function Faq({
   items,
   headingLevel = 2,
   ground = "base",
+  layout = "list",
   className,
   style,
   ...rest
 }: FaqProps) {
-  const HeadingTag = `h${headingLevel}` as `h${FaqHeadingLevel}`;
   const colors = SECTION_GROUND_CLASSES[ground];
   const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
+  const columns = faqColumns(items, layout).map(column => column.map(item => nativeDisclosureRow({ id: item.id, question: item.question, answer: item.answer, recipe: FAQ_ROW_CLASSES, colors, answerStyle: FAQ_ANSWER_STYLE })));
 
   return (
-    <div {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
+    <div {...SECTION_STAMP} {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
-        <div className="flex flex-col gap-xs">
-          {eyebrow ? <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p> : null}
-          {heading ? (
-            <HeadingTag className={cx("text-h2 font-display leading-heading", colors.primary)}>{heading}</HeadingTag>
-          ) : null}
-          {description ? <p className={cx("text-body", colors.secondary)}>{description}</p> : null}
-        </div>
+        <SectionHeader density="standard" level={headingLevel} ground={ground} eyebrow={eyebrow} description={description} {...(heading ? { title: heading } : {})} titleClassName="leading-heading" />
       ) : null}
-      <div className={cx(FAQ_ROW_CLASSES.list, colors.border)}>
-        {items.map(item => nativeDisclosureRow({ id: item.id, question: item.question, answer: item.answer, recipe: FAQ_ROW_CLASSES, colors, answerStyle: FAQ_ANSWER_STYLE }))}
-      </div>
+      {faqLists(columns, layout, colors.border)}
     </div>
   );
 }

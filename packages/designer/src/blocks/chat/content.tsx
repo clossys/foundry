@@ -1,6 +1,6 @@
 import { Fragment, useState, type ReactNode } from "react";
-import { Button } from "../../atoms/Button.js";
-import { Link } from "../../atoms/Link.js";
+import { Button } from "../../components/Button.js";
+import { Link } from "../../components/Link.js";
 import type { ChatLabels } from "./types.js";
 
 interface InlinePart { text: string; isCode: boolean }

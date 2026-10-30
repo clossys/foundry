@@ -62,9 +62,7 @@ export function ConsumerArtSlot({ contract }: ConsumerArtSlotProps) {
           loading={contract.loading}
           decoding="async"
           draggable={false}
-          className={`${mediaClasses}${contract.fit === "cover" ? " object-cover" : ""}`}
-          // The shipped stylesheets contain object-cover; contain is still an inline fit.
-          style={contract.fit === "contain" ? { objectFit: "contain" } : undefined}
+          className={`${mediaClasses} ${contract.fit === "cover" ? "object-cover" : "object-contain"}`}
         />
       )}
     </div>

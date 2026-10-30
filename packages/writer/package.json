@@ -12,6 +12,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./locale": {
+      "types": "./dist/locale.d.ts",
+      "import": "./dist/locale.js"
+    },
     "./voice": {
       "types": "./dist/voice/index.d.ts",
       "import": "./dist/voice/index.js"
@@ -21,6 +25,25 @@
     "./front-door": {
       "types": "./dist/front-door-browser.d.ts",
       "import": "./dist/front-door-browser.js"
+    },
+    "./admin-studio.en.json": "./src/catalog/records/admin-studio.r1.en.json",
+    "./admin-studio": {
+      "types": "./dist/admin-studio.d.ts",
+      "import": "./dist/admin-studio.js"
+    },
+    "./admin-voice.en.json": "./src/catalog/records/admin-voice.r1.en.json",
+    "./admin-voice": {
+      "types": "./dist/admin-voice.d.ts",
+      "import": "./dist/admin-voice.js"
+    },
+    "./admin-meta.en.json": "./src/catalog/records/admin-meta.r1.en.json",
+    "./admin-meta": {
+      "types": "./dist/admin-meta.d.ts",
+      "import": "./dist/admin-meta.js"
+    },
+    "./admin-copy": {
+      "types": "./dist/admin-copy.d.ts",
+      "import": "./dist/admin-copy.js"
     }
   },
   "bin": {
@@ -35,7 +58,8 @@
     "fit-signals.json",
     "README.md",
     "LICENSE",
-    "skill"
+    "skill",
+    "strategy-brief.json"
   ],
   "sideEffects": false,
   "foundry": {
@@ -51,7 +75,7 @@
         "inputs": [
           {
             "producerRole": "@clossys/strategist",
-            "artifact": "brand-derivation"
+            "artifact": "strategy-brief"
           }
         ],
         "outputs": [
@@ -100,7 +124,7 @@
         "inputs": [
           {
             "producerRole": "@clossys/strategist",
-            "artifact": "claims"
+            "artifact": "strategy-brief"
           }
         ],
         "outputs": [
@@ -175,7 +199,7 @@
         "inputs": [
           {
             "producerRole": "@clossys/strategist",
-            "artifact": "positioning"
+            "artifact": "strategy-brief"
           }
         ],
         "outputs": [
@@ -213,11 +237,7 @@
     "needs": [
       {
         "producerRole": "@clossys/strategist",
-        "artifact": "brand-derivation"
-      },
-      {
-        "producerRole": "@clossys/strategist",
-        "artifact": "claims"
+        "artifact": "strategy-brief"
       }
     ],
     "solves": [
@@ -256,10 +276,12 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json",
+    "build": "node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json && node scripts/check-record-drift.mjs",
     "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
     "typecheck": "node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json --noEmit",
-    "test": "node scripts/pack-plan-contract.mjs && vitest run"
+    "test": "node scripts/pack-plan-contract.mjs && vitest run",
+    "check:records": "node scripts/check-record-drift.mjs",
+    "check:cells": "vitest run src/cells/cells.test.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
@@ -269,5 +291,12 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org",
     "access": "public"
+  },
+  "dependencies": {
+    "@clossys/strategist": "^0.6.0",
+    "@formatjs/icu-messageformat-parser": "3.5.22",
+    "intl-messageformat": "12.1.4",
+    "retext": "9.0.0",
+    "unified": "11.0.5"
   }
 }

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { BadgeVariant } from "../../atoms/Badge.js";
+import type { BadgeVariant } from "../../components/Badge.js";
 import type { CatalogWorkspaceSize } from "../catalog-workspace/types.js";
 
 /** Every entry carries one lifecycle. Parked entries are hidden from browse until shown. */

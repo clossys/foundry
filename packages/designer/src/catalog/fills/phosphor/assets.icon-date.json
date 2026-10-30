@@ -1,0 +1,86 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "phosphor/assets.icon-date",
+      "slot": "assets.icon-date",
+      "source": "phosphor",
+      "mode": "implementation",
+      "sourceAddress": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/calendar.svg",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "pin": {
+        "url": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/calendar.svg",
+        "commit": "fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f",
+        "sha256": "8429569ba11344ff12b1af62bd7d8d846b708b827fc71659918c1d5da991b943"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-date": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "rect",
+            {
+              "x": "3.75",
+              "y": "3.75",
+              "width": "16.5",
+              "height": "16.5",
+              "rx": "0.75"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "16.5",
+              "y1": "2.25",
+              "x2": "16.5",
+              "y2": "5.25"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "7.5",
+              "y1": "2.25",
+              "x2": "7.5",
+              "y2": "5.25"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "3.75",
+              "y1": "8.25",
+              "x2": "20.25",
+              "y2": "8.25"
+            }
+          ],
+          [
+            "polyline",
+            {
+              "points": "8.25 12 9.75 11.25 9.75 17.25"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M 12.950625 12 a 1.5 1.5 0 1 1 2.4975 1.6528125 L 12.75 17.25 h 3"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

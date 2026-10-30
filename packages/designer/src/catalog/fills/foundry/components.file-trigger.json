@@ -1,0 +1,87 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.file-trigger",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#FileTrigger",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.file-trigger",
+      "source": "foundry",
+      "sourceAddress": "./components#FileTrigger",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "file-trigger": {
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "FileTrigger",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "accept",
+        "directory",
+        "multiple"
+      ],
+      "pin": {
+        "export": "./components#FileTrigger",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "accept": "./components#FileTrigger",
+        "directory": "./components#FileTrigger",
+        "multiple": "./components#FileTrigger"
+      },
+      "props": [
+        "acceptDirectory",
+        "acceptedFileTypes",
+        "allowsMultiple",
+        "children",
+        "onSelect"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": []
+      },
+      "root": "rac:FileTrigger",
+      "slot": "components.file-trigger",
+      "source": "foundry"
+    }
+  }
+}

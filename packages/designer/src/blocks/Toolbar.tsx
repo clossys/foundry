@@ -1,14 +1,20 @@
-import type { CSSProperties, ReactNode } from "react";
-import { Toolbar as AriaToolbar, type ToolbarProps as AriaToolbarProps } from "react-aria-components";
-import { cx } from "../atoms/internal/cx.js";
+import { useId, type CSSProperties, type ReactNode } from "react";
+import { Toolbar as FoundryToolbar, type ToolbarProps as FoundryToolbarProps } from "../components/Toolbar.js";
 
 export interface ToolbarProps
-  extends Omit<AriaToolbarProps, "children" | "className" | "style"> {
-  /** Slot for the toolbar's leading actions — typically one or more `Button` atoms (bulk actions, view toggles). */
+  extends Omit<FoundryToolbarProps, "children" | "className" | "style" | "variant" | "title"> {
+  /**
+   * Header-row title at the start of the row — typically a heading. The actions in
+   * `trailing` stay pinned to the end, so a header row of toolbar controls needs no
+   * consumer flex row. Without an explicit `aria-label`/`aria-labelledby`, the
+   * toolbar is named by this title.
+   */
+  title?: ReactNode;
+  /** Slot for the toolbar's leading actions — typically one or more `Button` components (bulk actions, view toggles). */
   leading?: ReactNode;
-  /** Slot for a search/filter control — typically a `TextField` or `Select` atom. Grows to fill the space between `leading` and `trailing`. */
+  /** Slot for a search/filter control — typically a `TextField` or `Select` component. Grows to fill the space between `leading` and `trailing`. */
   search?: ReactNode;
-  /** Slot for the toolbar's trailing actions — typically one or more `Button`/`Menu` atoms. Pinned to the trailing edge when there's room. */
+  /** Slot for the toolbar's trailing actions — typically one or more `Button`/`Menu` components. Pinned to the trailing edge when there's room. */
   trailing?: ReactNode;
   /**
    * Accessible name for the toolbar landmark.
@@ -27,7 +33,8 @@ export interface ToolbarProps
  * toolbar, side by side), which is what makes this a block rather than a
  * view.
  *
- * **Built on react-aria-components' own `Toolbar` primitive**, which this
+ * **Rendered through this package's own `Toolbar` component** (`variant="bare"`),
+ * which is built on react-aria-components' own `Toolbar` primitive, which this
  * package's installed version (`react-aria-components@1.20.0`) ships —
  * so this uses it rather than hand-rolling `role="toolbar"` and arrow-key
  * handling from scratch. Its underlying `useToolbar` hook (from `react-aria`)
@@ -57,28 +64,34 @@ export interface ToolbarProps
  * overflowing once the three regions no longer fit on one line.
  */
 export function Toolbar({
+  title,
   leading,
   search,
   trailing,
   orientation = "horizontal",
-  "aria-label": ariaLabel = "Toolbar",
+  "aria-label": ariaLabel,
   className,
   style,
   ...rest
 }: ToolbarProps) {
+  const titleId = useId();
+  const namedByTitle = title != null && ariaLabel == null && rest["aria-labelledby"] == null;
   return (
-    <AriaToolbar
+    <FoundryToolbar
       {...rest}
+      variant="bare"
       orientation={orientation}
-      aria-label={ariaLabel}
-      className={cx("flex flex-wrap items-center gap-md", className)}
+      aria-label={namedByTitle ? undefined : (ariaLabel ?? "Toolbar")}
+      aria-labelledby={namedByTitle ? titleId : rest["aria-labelledby"]}
+      className={className}
       style={style}
     >
+      {title != null ? <div id={titleId} className="min-w-0">{title}</div> : null}
       {leading ? <div className="flex flex-wrap items-center gap-sm">{leading}</div> : null}
       {search ? <div className="min-w-[12rem] flex-1">{search}</div> : null}
       {trailing ? (
         <div className="ms-auto flex flex-wrap items-center gap-sm">{trailing}</div>
       ) : null}
-    </AriaToolbar>
+    </FoundryToolbar>
   );
 }

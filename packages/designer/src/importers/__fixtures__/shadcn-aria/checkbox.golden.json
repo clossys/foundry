@@ -1,0 +1,72 @@
+{
+  "transform": "shadcn-aria-rewrite@1",
+  "notes": [
+    {
+      "file": "apps/v4/registry/bases/aria/ui/checkbox.tsx",
+      "value": "group-has-[:focus-visible]/field-label:ring-0",
+      "message": "Removed suppression beside the same expanded literal's token-bound focus owner"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/checkbox.tsx",
+      "value": "outline-none",
+      "message": "Removed suppression beside the same expanded literal's token-bound focus owner"
+    }
+  ],
+  "files": [
+    {
+      "path": "components/_parts/utils/index.ts",
+      "content": "import { clsx, type ClassValue } from \"clsx\"\nimport { twMerge } from \"tailwind-merge\"\nexport function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }\n"
+    },
+    {
+      "path": "components/checkbox/checkbox.tsx",
+      "content": "\"use client\"\n\nimport { Icon as LibraryIcon } from \"../icon/index\"\nimport { cn } from \"../_parts/utils/index\"\nimport {\n  Checkbox as CheckboxPrimitive,\n  composeRenderProps,\n  type CheckboxProps,\n} from \"react-aria-components\"\n\nfunction Checkbox({ className, children, ...props }: CheckboxProps) {\n  return (\n    <CheckboxPrimitive\n      data-slot=\"checkbox\"\n      className={cn(\n        \"border-(--color-line-strong) dark:bg-(--color-line-strong)/30 data-checked:bg-(--color-action) data-checked:text-(--color-ink-on-action) dark:data-checked:bg-(--color-action) data-checked:border-(--color-action) aria-invalid:aria-checked:border-(--color-action) aria-invalid:border-(--color-status-danger) dark:aria-invalid:border-(--color-status-danger)/50 focus-visible:border-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus,3px) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger) dark:aria-invalid:ring-(--color-status-danger)/40 flex size-(--spacing-lg,calc(var(--spacing)*4)) items-center justify-center rounded-(--radius-default) border-(length:--ui-border-hairline,1px) transition-colors duration-(--ui-duration-default) ease-(--default-transition-timing-function) group-has-disabled/field:opacity-(--ui-alpha-disabled,50%) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus,3px) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger)  group-has-[:focus-visible]/field-label:not-data-checked:border-(--color-line-strong) group-has-[:focus-visible]/field-label:data-checked:border-(--color-action) data-selected:bg-(--color-action) data-selected:text-(--color-ink-on-action) dark:data-selected:bg-(--color-action) data-selected:border-(--color-action) data-focus-visible:border-(--color-focus-ring) data-focus-visible:outline-solid data-focus-visible:outline-(length:--ui-border-focus,3px) data-focus-visible:outline-offset-(--ui-focus-offset) data-focus-visible:outline-(--color-focus-ring) data-focus-visible:outline-solid data-focus-visible:outline-(length:--ui-border-focus,3px) data-focus-visible:outline-offset-(--ui-focus-offset) data-focus-visible:outline-(--color-focus-ring) data-invalid:data-selected:border-(--color-action) data-invalid:border-(--color-status-danger) dark:data-invalid:border-(--color-status-danger)/50 data-invalid:outline-solid data-invalid:outline-(length:--ui-border-focus,3px) data-invalid:outline-offset-(--ui-focus-offset) data-invalid:outline-(--color-status-danger) dark:data-invalid:ring-(--color-status-danger)/40 data-invalid:outline-solid data-invalid:outline-(length:--ui-border-focus,3px) data-invalid:outline-offset-(--ui-focus-offset) data-invalid:outline-(--color-status-danger) peer relative shrink-0 after:absolute after:-inset-x-3 after:-inset-y-2 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-(--ui-alpha-disabled,50%)\",\n        className\n      )}\n      {...props}\n    >\n      {composeRenderProps(\n        children,\n        (children, { isSelected, isIndeterminate }) => (\n          <>\n            <span\n              data-slot=\"checkbox-indicator\"\n              className=\"[&>svg]:size-(--ui-control-switch-thumb,calc(var(--spacing)*3.5)) grid place-content-center text-current transition-none\"\n            >\n              {isIndeterminate ? (<span aria-hidden=\"true\" data-slot=\"checkbox-indeterminate\" className=\"w-(--spacing-sm) border-t-(length:--ui-border-hairline)\" style={{ borderColor: \"currentColor\" }} />) : isSelected ? (<LibraryIcon asset=\"assets.icon-check\" decorative />) : null}\n            </span>\n            {children}\n          </>\n        )\n      )}\n    </CheckboxPrimitive>\n  )\n}\n\nexport { Checkbox }\n"
+    },
+    {
+      "path": "notices/THIRD-PARTY.md",
+      "content": "# Third-party notice\n\nSource: https://github.com/shadcn-ui/ui\nCommit: daaf156ee00ed91cc7e6bdd937c1b4973152d141\nTransform: shadcn-aria-rewrite@1\n\nMIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    }
+  ],
+  "outputSha256": [
+    {
+      "path": "components/_parts/utils/index.ts",
+      "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+    },
+    {
+      "path": "components/checkbox/checkbox.tsx",
+      "sha256": "e6364da57167d1409af8b9f0eea400aae484fbe0a0f7966810b95b17d799b6c2"
+    },
+    {
+      "path": "notices/THIRD-PARTY.md",
+      "sha256": "6148b3941d0eff3d024e4d3a0e630f009484163560272ae6ec79c649c67fc964"
+    }
+  ],
+  "reads": {
+    "tokens": [
+      "tokens.action-color.default",
+      "tokens.border-color.strong",
+      "tokens.border-width.hairline",
+      "tokens.control-size.switch-thumb",
+      "tokens.duration.default",
+      "tokens.easing.default",
+      "tokens.focus-color.default",
+      "tokens.focus-outline.offset",
+      "tokens.focus-outline.width",
+      "tokens.radius.default",
+      "tokens.spacing.lg",
+      "tokens.spacing.sm",
+      "tokens.state-opacity.disabled",
+      "tokens.status-color.danger",
+      "tokens.text-color.on-action"
+    ],
+    "assets": [
+      "assets.icon-check"
+    ],
+    "components": [
+      "components.icon"
+    ]
+  },
+  "parts": [
+    "utils"
+  ],
+  "issues": []
+}

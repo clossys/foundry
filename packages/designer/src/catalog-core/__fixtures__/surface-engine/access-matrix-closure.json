@@ -1,0 +1,35 @@
+{
+  "tree": "ac169a5d2d4333853d27a6148342b5be9a56d7a8",
+  "scope": "source-authentication-only",
+  "files": [
+    {
+      "path": "src/blocks/AccessMatrix.tsx",
+      "sha256": "5f45e6929d27bae4227b6270551e1eac2d4876d5767525571362c6dc7d4d0067"
+    },
+    {
+      "path": "src/blocks/access-matrix/validate.ts",
+      "sha256": "c8bb9454a3f19068cc4e27c7370cdacadb4431a3f731aa74af242d6d5dc68a32"
+    },
+    {
+      "path": "src/blocks/access-matrix/summary.ts",
+      "sha256": "fc91b0b809a347d177f03ff546bc6ff87d1ab784efb909408186937b056e5e94"
+    },
+    {
+      "path": "src/components/internal/cx.ts",
+      "sha256": "1e636e4a3131aba588a9db9ea855cdfade68668d2bb8496206c8d689b1d4daa7"
+    },
+    {
+      "path": "src/tokens/tokens.ts",
+      "sha256": "c79ca88a1667770be6da87d12496d1007a92dda76f7590fda67c6b28ec299f71"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "2fb06c60d79b0be483fd2dc0c907f58edb27afbc716e9d6c678384c38cf58544"
+    }
+  ],
+  "unresolved": [
+    "selected-component-apis",
+    "assets.icon-locked-permission",
+    "actual-compiled-runtime"
+  ]
+}

@@ -1,0 +1,122 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [
+        "components.button"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.number-field",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#NumberField",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.number-field",
+      "source": "foundry",
+      "sourceAddress": "./components#NumberField",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "number-field": {
+      "composes": [
+        "components.button"
+      ],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "NumberField",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "format",
+        "state.invalid",
+        "step"
+      ],
+      "pin": {
+        "export": "./components#NumberField",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "format": "./components#NumberField",
+        "state.invalid": "./components#NumberField.isInvalid",
+        "step": "./components#NumberField"
+      },
+      "props": [
+        "className",
+        "decrementLabel",
+        "defaultValue",
+        "description",
+        "errorMessage",
+        "formatOptions",
+        "incrementLabel",
+        "isDisabled",
+        "isInvalid",
+        "isReadOnly",
+        "label",
+        "maxValue",
+        "minValue",
+        "onChange",
+        "step",
+        "value"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [
+          "assets.icon-chevron-down",
+          "assets.icon-chevron-up"
+        ],
+        "components": [
+          "components.button"
+        ],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.control-radius",
+          "tokens.control-size",
+          "tokens.focus-shadow",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.touch-target",
+          "tokens.typeface"
+        ]
+      },
+      "root": "rac:NumberField",
+      "slot": "components.number-field",
+      "source": "foundry"
+    }
+  }
+}

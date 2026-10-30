@@ -1,0 +1,105 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.search-field",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#SearchField",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.search-field",
+      "source": "foundry",
+      "sourceAddress": "./components#SearchField",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "search-field": {
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "SearchField",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "part.clear",
+        "part.submit",
+        "state.empty",
+        "state.filled"
+      ],
+      "pin": {
+        "export": "./components#SearchField",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "part.clear": "./components#SearchField",
+        "part.submit": "./components#SearchField",
+        "state.empty": "./components#SearchField",
+        "state.filled": "./components#SearchField"
+      },
+      "props": [
+        "className",
+        "description",
+        "errorMessage",
+        "label",
+        "onChange",
+        "onSubmit",
+        "value"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.control-radius",
+          "tokens.control-size",
+          "tokens.focus-shadow",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
+      },
+      "root": "rac:SearchField",
+      "slot": "components.search-field",
+      "source": "foundry"
+    }
+  }
+}

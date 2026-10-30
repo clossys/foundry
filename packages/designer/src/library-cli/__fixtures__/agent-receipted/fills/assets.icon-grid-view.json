@@ -1,0 +1,97 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "example/assets.icon-grid-view",
+      "license": "ISC",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "file": "src/icons/Grid3x3.ts",
+        "package": "lucide-react",
+        "sha256": "0a77926c1da9c77b936a4ffb8a28d7b93733db4284de21f93f7aed1d4d56d332",
+        "version": "1.23.0"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": []
+      },
+      "relation": "same-contract",
+      "slot": "assets.icon-grid-view",
+      "source": "example",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/grid-3x3.js",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "assets": {
+    "icon-grid-view": {
+      "default": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "lucide/assets.icon-grid-view",
+            "kind": "adopted",
+            "license": "ISC",
+            "member": "assets.icon-grid-view.default",
+            "pin": {
+              "file": "src/icons/Grid3x3.ts",
+              "package": "lucide-react",
+              "sha256": "0a77926c1da9c77b936a4ffb8a28d7b93733db4284de21f93f7aed1d4d56d332",
+              "version": "1.23.0"
+            },
+            "sha256": "4c9923f17404d0c817a29c42a154f0428d820a767594c590d2a4046e8c6ea040",
+            "source": "lucide"
+          }
+        },
+        "$type": "glyph",
+        "$value": [
+          [
+            "rect",
+            {
+              "height": "18",
+              "key": "afitv7",
+              "rx": "2",
+              "width": "18",
+              "x": "3",
+              "y": "3"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 9h18",
+              "key": "1pudct"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 15h18",
+              "key": "5xshup"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M9 3v18",
+              "key": "fh3hqa"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M15 3v18",
+              "key": "14nvp0"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

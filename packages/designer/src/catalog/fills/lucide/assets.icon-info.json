@@ -1,0 +1,61 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-info",
+      "slot": "assets.icon-info",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/info.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/Info.ts",
+        "sha256": "ead0c9f1d9e45f0c181d93364f563f01876d03f27956565722b68dbc042388b5"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-info": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "circle",
+            {
+              "cx": "12",
+              "cy": "12",
+              "r": "10",
+              "key": "1mglay"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M12 16v-4",
+              "key": "1dtifu"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M12 8h.01",
+              "key": "e9boi3"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

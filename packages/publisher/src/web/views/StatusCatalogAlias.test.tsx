@@ -6,8 +6,6 @@ import { describe, expect, it, vi } from "vitest";
 import { resolveSectionedViewDocument, validateSectionedViewDocument, type SectionedViewDocument, type SectionedViewStatusItem, type SectionedViewStatusListSection } from "../../core/sectioned-view.js";
 import { SectionedView } from "./SectionedView.js";
 import { SectionedView as ServerSectionedView } from "./SectionedView.server.js";
-import { LandingView } from "./LandingView.js";
-import { LandingView as ServerLandingView } from "./LandingView.server.js";
 
 const words = { heading: "Capability reference", detail: "A bounded explanation", available: "Available", partial: "Partial", planned: "Planned", off: "Not offered", ...Object.fromEntries(Array.from({ length: 9 }, (_, i) => [`item${i}`, `Capability ${i}`])), group0: "First group", group1: "Second group", group2: "Third group" };
 const ref = (key: string) => ({ id: `status-catalog.${key}` });
@@ -47,21 +45,6 @@ describe("declared status catalog alias", () => {
       first.groups[0]!.heading += "G";
       for (const View of [SectionedView, ServerSectionedView]) expect(() => renderToStaticMarkup(<View document={resolved} />)).toThrow();
     }
-  });
-  it.each([false, true])("leaves status band padding to the canonical inner frame (server=%s)", server => {
-    const resolved = resolveSectionedViewDocument(documentOf(section(4)), resolver);
-    const input = { ...resolved, sections: [{ id: "hero", kind: "hero" as const, ground: "inverse" as const, heading: "Reference" }, ...resolved.sections] };
-    const View = server ? ServerLandingView : LandingView;
-    const dom = JSDOM.fragment(renderToStaticMarkup(<View document={input} peek={false} afterSection={{ capabilities: <aside data-status-appendix>Reference note</aside> }} />));
-    const inner = dom.querySelector<HTMLElement>("#capabilities")!;
-    expect(inner.querySelectorAll("[data-item]")).toHaveLength(4);
-    const outer = inner.closest<HTMLElement>("[data-landing-ground]")!;
-    expect(outer).not.toBe(inner);
-    expect(Number.parseFloat(outer.style.paddingBlock)).toBe(0);
-    expect(outer.dataset.landingGround).toBe("base");
-    const appendix = inner.querySelector("[data-status-appendix]")!;
-    expect(appendix.textContent).toBe("Reference note");
-    expect(inner.querySelector("[data-items]")!.compareDocumentPosition(appendix) & 4).toBe(4);
   });
   it.each([false, true])("renders readiness and off-axis disposition through canonical Items (server=%s)", server => {
     const input = section(4), before = JSON.stringify(input), dom = markup(input, server);

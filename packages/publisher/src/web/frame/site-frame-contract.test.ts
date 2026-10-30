@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import * as shell from "@clossys/designer/shell/server";
 import * as frame from "./index.js";
 import * as web from "../index.js";
-import { FOOTER_ICON_LIMIT, FOOTER_LINK_LIMIT, SITE_FRAME_CONTRACT, SITE_FRAME_CONFIG_SCHEMA, SiteFooterContractError, normalizeSiteFrameConfig, normalizeSiteFrameActions, SITE_FRAME_NAV_DEFAULTS } from "./site-frame-contract.js";
+import { FOOTER_ICON_LIMIT, FOOTER_LINK_LIMIT, SITE_FRAME_CONTRACT, SITE_FRAME_CONFIG_SCHEMA, SiteFooterContractError, normalizeSiteFrameConfig, normalizeSiteFrameActions, SITE_FRAME_NAV_DEFAULTS } from "../../../../designer/dist/frames/site-frame/site-frame-contract.js";
 
 describe("data-readable SiteFrame contract", () => {
   it("names real exported constituents without claiming measurement or qualification", () => {

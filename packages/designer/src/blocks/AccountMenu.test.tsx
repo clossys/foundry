@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import { I18nProvider } from "react-aria-components";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Menu } from "../atoms/Menu.js";
+import { Menu } from "../components/Menu.js";
 import { AccountMenu, type AccountMenuProps } from "./AccountMenu.js";
 
 const actor = { name: "Jordan Vale", secondaryText: "jordan@example.test" };
@@ -43,6 +43,13 @@ it("renders the expanded actor and context with one truthful menu trigger", () =
   expect(trigger()).toHaveTextContent("Workspace");
   expect(screen.queryByRole("img")).not.toBeInTheDocument();
   expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+});
+
+it("sizes the expanded trigger from the control-height set without inline sizing", () => {
+  render(<AccountMenu {...props()} />);
+  expect(trigger()).toHaveClass("control-h-lg");
+  expect(trigger().style.minBlockSize).toBe("");
+  expect(trigger().style.blockSize).toBe("");
 });
 
 it("keeps the collapsed avatar trigger named and described on keyboard focus", async () => {
@@ -201,7 +208,7 @@ it("omits empty sections alongside populated sections", async () => {
   render(<AccountMenu {...configured} sections={[{ id: "empty", label: "Empty", entries: [] }, ...configured.sections]} />);
   await open();
   expect(screen.queryByText("Empty")).not.toBeInTheDocument();
-  expect(screen.getAllByRole("menuitem")).toHaveLength(4);
+  expect(screen.getAllByRole("menuitem")).toHaveLength(3);
   expect(screen.getAllByRole("menuitemcheckbox")).toHaveLength(1);
 });
 
@@ -289,9 +296,14 @@ it("reports only changed preferences, including the peer select-all callback, wi
     { id: "other", kind: "preference", label: "Another", checked: false, onCheckedChange: all },
   ] }]} />);
   const user = await open();
-  expect(screen.getByRole("menuitemcheckbox", { name: "Already enabled" }).querySelector("svg path")).toHaveAttribute("d", "M20 6 9 17l-5-5");
+  const on = screen.getByRole("menuitemcheckbox", { name: "Already enabled" });
+  expect(on.querySelector("svg path")).toHaveAttribute("d", "M20 6 9 17l-5-5");
+  // Menu draws the one leading check slot for a selection-mode item since 8a9fd5344; it is hidden while unchecked.
+  expect(on.querySelectorAll("svg")).toHaveLength(1);
+  expect(on.querySelector("[data-menu-check]")).not.toHaveClass("invisible");
   const off = screen.getByRole("menuitemcheckbox", { name: "Enable this" });
-  expect(off.querySelector("svg")).toBeNull();
+  expect(off.querySelectorAll("svg")).toHaveLength(1);
+  expect(off.querySelector("[data-menu-check]")).toHaveClass("invisible");
   await user.click(off);
   expect(changed).toHaveBeenCalledExactlyOnceWith(true);
   expect(unchanged).not.toHaveBeenCalled(); expect(all).not.toHaveBeenCalled();
@@ -322,4 +334,15 @@ it.each([{ name: "", label: "Settings" }, { name: " ", label: "Settings" }, { na
 it.each(["", " "])("keeps an actor-derived collapsed name for blank triggerLabel %j", triggerLabel => {
   render(<AccountMenu {...props()} collapsed triggerLabel={triggerLabel} />);
   expect(trigger()).toHaveAccessibleName(actor.name);
+});
+
+it("keeps the full actor label and omits explicitly disabled menu items", async () => {
+  render(<AccountMenu {...props()} />);
+  const name = within(trigger()).getByText(actor.name);
+  expect(name).not.toHaveClass("truncate");
+  expect(name).toHaveClass("whitespace-normal", "break-words");
+  expect(trigger()).toHaveClass("w-full", "whitespace-normal");
+  await open();
+  expect(screen.queryByRole("menuitem", { name: "Unavailable" })).toBeNull();
+  expect(screen.getByRole("menuitem", { name: "Settings" })).toBeInTheDocument();
 });

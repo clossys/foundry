@@ -1,10 +1,10 @@
 import type { CSSProperties, ReactNode } from "react";
 import { assertNoNestedInteractive } from "../stretched-link.js";
-import { Meter } from "../../atoms/Meter.server.js";
-import type { MeterDirection } from "../../atoms/Meter.js";
-import { StatusMark, type StatusMarkTone } from "../../atoms/StatusMark.js";
-import { cx } from "../../atoms/internal/cx.js";
-import { UI_BORDER_HAIRLINE } from "../../atoms/internal/ui-vars.js";
+import { Meter } from "../../components/Meter.server.js";
+import type { MeterDirection } from "../../components/Meter.js";
+import { StatusMark, type StatusMarkTone } from "../../components/StatusMark.js";
+import { cx } from "../../components/internal/cx.js";
+import { UI_BORDER_HAIRLINE } from "../../components/internal/ui-vars.js";
 
 // Class records first: the compiled-CSS scan reads string literals in file
 // order, so every class lives here, above any code.
@@ -121,7 +121,7 @@ export interface SpecimenStatusRowsPart {
   items: readonly SpecimenStatusRow[];
 }
 
-/** One measured value against an optional limit, drawn with the `Meter` atom. */
+/** One measured value against an optional limit, drawn with the `Meter` component. */
 export interface SpecimenMeterPart {
   id: string;
   type: "meter";
@@ -258,7 +258,7 @@ function assertCount(what: string, count: number, max: number): void {
 export function assertSpecimenPart(part: SpecimenPart): void {
   const where = "the " + part.type + ' part "' + part.id + '"';
   if (part.type === "status-rows" && part.mobileRows !== undefined && part.mobileRows !== 3) throw new TypeError("Specimen: mobileRows must be 3 when supplied.");
-  if (part.type === "meter") return; // One value; the Meter atom validates its numbers.
+  if (part.type === "meter") return; // One value; the Meter component validates its numbers.
   if (part.type === "table") {
     assertCount(where + " columns", part.columns.length, SPECIMEN_TABLE_MAX_COLUMNS);
     assertCount(where + " rows", part.rows.length, SPECIMEN_TABLE_MAX_ROWS);

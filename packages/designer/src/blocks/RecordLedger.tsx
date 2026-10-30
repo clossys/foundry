@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
-import { UI_BORDER_HAIRLINE, UI_BORDER_RULE } from "../atoms/internal/ui-vars.js";
+import { cx } from "../components/internal/cx.js";
+import { UI_BORDER_HAIRLINE, UI_BORDER_RULE } from "../components/internal/ui-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { LedgerRows, LedgerStatus } from "./ledger-rows.js";
 import { ledgerDomIds } from "./internal/ledger-ids.js";

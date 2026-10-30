@@ -1,11 +1,11 @@
-import { Meter } from "../atoms/Meter.server.js";
-import { StatusMark } from "../atoms/StatusMark.js";
-import { cx } from "../atoms/internal/cx.js";
+import { Meter } from "../components/Meter.server.js";
+import { StatusMark } from "../components/StatusMark.js";
+import { cx } from "../components/internal/cx.js";
 import type { UsageMeterProps, UsageMeterThreshold } from "./UsageMeter.js";
 
 /**
  * Server-safe twin of the client `UsageMeter`: the same markup and classes,
- * built on the plain `Meter` atom instead of react-aria-components' Meter,
+ * built on the plain `Meter` component instead of react-aria-components' Meter,
  * which cannot load under React's `react-server` condition. The server meter
  * has no role or ARIA value attributes; the client one adds them. A parity
  * test pins the two to the same structure.

@@ -1,0 +1,17 @@
+{
+  "name": "tooltip",
+  "type": "registry:ui",
+  "repository": "https://github.com/shadcn-ui/ui",
+  "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+  "sourceFormat": "pinned repository source; not generated live registry JSON",
+  "license": "MIT",
+  "notice": "LICENSE.md",
+  "files": [
+    {
+      "path": "apps/v4/registry/bases/aria/ui/tooltip.tsx",
+      "type": "registry:ui",
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cn } from \"cn\"\nimport {\n  Focusable,\n  OverlayArrow,\n  Tooltip as TooltipPrimitive,\n  TooltipTrigger as TooltipTriggerPrimitive,\n} from \"react-aria-components\"\n\nfunction TooltipTrigger({\n  delay = 0,\n  children,\n  ...props\n}: React.ComponentProps<typeof TooltipTriggerPrimitive>) {\n  const [trigger, tooltip] = React.Children.toArray(children)\n\n  return (\n    <TooltipTriggerPrimitive\n      data-slot=\"tooltip-trigger\"\n      delay={delay}\n      {...props}\n    >\n      <Focusable>\n        {trigger as React.ComponentProps<typeof Focusable>[\"children\"]}\n      </Focusable>\n      {tooltip}\n    </TooltipTriggerPrimitive>\n  )\n}\n\nfunction Tooltip({\n  className,\n  placement = \"top\",\n  offset = 4,\n  crossOffset = 0,\n  children,\n  ...props\n}: Omit<\n  React.ComponentProps<typeof TooltipPrimitive>,\n  \"children\" | \"className\"\n> & {\n  className?: string\n  children?: React.ReactNode\n}) {\n  return (\n    <TooltipPrimitive\n      data-slot=\"tooltip-content\"\n      placement={placement}\n      offset={offset}\n      crossOffset={crossOffset}\n      className={cn(\n        \"cn-tooltip-content-aria z-50 w-fit max-w-xs origin-(--trigger-anchor-point) bg-foreground text-background\",\n        className\n      )}\n      {...props}\n    >\n      {children}\n      <OverlayArrow\n        className=\"cn-tooltip-arrow z-50 bg-foreground fill-foreground\"\n        style={({ placement, defaultStyle }) => ({\n          ...defaultStyle,\n          rotate: \"0deg\",\n          translate: \"0 0\",\n          transform:\n            placement === \"bottom\"\n              ? \"translate(-50%, calc(50% + 2px)) rotate(45deg)\"\n              : placement === \"top\"\n                ? \"translate(-50%, calc(-50% - 2px)) rotate(45deg)\"\n                : placement === \"left\"\n                  ? \"translate(calc(-50% - 2px), -50%) rotate(45deg)\"\n                  : \"translate(calc(50% + 2px), -50%) rotate(45deg)\",\n        })}\n      />\n    </TooltipPrimitive>\n  )\n}\n\nexport { Tooltip, TooltipTrigger }\n",
+      "sha256": "4cc80f882fec4abad1512f0d35d330603d653169ac210b27c12de10a09458d64"
+    }
+  ]
+}

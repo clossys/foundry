@@ -1,0 +1,113 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "rac-starter/components.toolbar",
+      "license": "Apache-2.0",
+      "mode": "implementation",
+      "pin": {
+        "commit": "4dd44e0f400636a87a9ad4390903e78c5ae6113c",
+        "sha256": "82e38d4f71deb9a81ac3522bc6209ce7c4856cdf801078b67f3f1348e86e0c56",
+        "url": "https://github.com/adobe/react-spectrum"
+      },
+      "relation": "same-contract",
+      "slot": "components.toolbar",
+      "source": "rac-starter",
+      "sourceAddress": "https://github.com/adobe/react-spectrum/blob/4dd44e0f400636a87a9ad4390903e78c5ae6113c/starters/tailwind/src/Toolbar.tsx",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "components": {
+    "toolbar": {
+      "blockers": [],
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": "19.3.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "1.21.1"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "class-variance-authority",
+          "version": "0.7.1"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "3.7.0"
+        }
+      ],
+      "impl": {
+        "entry": "components/toolbar/Toolbar.tsx",
+        "export": "Toolbar",
+        "kind": "source"
+      },
+      "license": "Apache-2.0",
+      "members": [
+        "orientation.horizontal",
+        "orientation.vertical"
+      ],
+      "notice": "notices/rac-starter-LICENSE.txt",
+      "outputSha256": [
+        {
+          "path": "components/_parts/rac-starter-variants/index.ts",
+          "sha256": "d92531e3b84d593698c351afb0532a9ed02faf8225417f34fdc780d8aa1ee1b3"
+        },
+        {
+          "path": "components/toolbar/Toolbar.tsx",
+          "sha256": "83eec1ebbfb18742fc6dc1c5e386ecf204e2f59c5d8ed3a159623f12a7a1ec46"
+        },
+        {
+          "path": "notices/rac-starter-LICENSE.txt",
+          "sha256": "7dfe6526888bac51759c99f9a51262ba2711a8c12a067f2181609dd9a4066b84"
+        }
+      ],
+      "pin": {
+        "commit": "4dd44e0f400636a87a9ad4390903e78c5ae6113c",
+        "files": [
+          {
+            "path": "starters/tailwind/package.json",
+            "sha256": "958aa1f722e1ccc670089376c82a8c730e0fbcc28ba7dc225c5fa4664d387923"
+          },
+          {
+            "path": "starters/tailwind/src/Toolbar.tsx",
+            "sha256": "82e38d4f71deb9a81ac3522bc6209ce7c4856cdf801078b67f3f1348e86e0c56"
+          }
+        ],
+        "url": "https://github.com/adobe/react-spectrum"
+      },
+      "propMap": {
+        "orientation.horizontal": "Toolbar.orientation=horizontal",
+        "orientation.vertical": "Toolbar.orientation=vertical"
+      },
+      "props": [],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": false,
+        "range": "^1.21.1"
+      },
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": [
+          "tokens.spacing.sm"
+        ]
+      },
+      "root": "rac:Toolbar",
+      "slot": "components.toolbar",
+      "source": "rac-starter",
+      "transform": "rac-starter-rewrite@1"
+    }
+  }
+}
+

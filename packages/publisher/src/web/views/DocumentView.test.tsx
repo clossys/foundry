@@ -46,6 +46,9 @@ describe("DocumentView", () => {
     expect(html).toContain('<article');
     expect(html).toContain('<section id="details"><h2');
     expect(html).toContain("Fixture body.");
+    const main = html.match(/<main[^>]*>/)?.[0];
+    expect(main).toContain("max-w-[var(--ui-width-prose-max,none)]");
+    expect(main).not.toContain("max-width:");
   });
 
   it("emphasis and mono column reach the page", () => {

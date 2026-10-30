@@ -1,0 +1,118 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.toggle-group",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#ToggleGroup",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.toggle-group",
+      "source": "foundry",
+      "sourceAddress": "./components#ToggleGroup",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "toggle-group": {
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "ToggleGroup",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "orientation.horizontal",
+        "orientation.vertical",
+        "selection.multiple",
+        "selection.single"
+      ],
+      "pin": {
+        "export": "./components#ToggleGroup",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "orientation.horizontal": "./components#ToggleGroup.orientation=horizontal",
+        "orientation.vertical": "./components#ToggleGroup.orientation=vertical",
+        "selection.multiple": "./components#ToggleGroup.selectionMode=multiple",
+        "selection.single": "./components#ToggleGroup.selectionMode=single"
+      },
+      "props": [
+        "aria-label",
+        "aria-labelledby",
+        "children",
+        "className",
+        "defaultSelectedKeys",
+        "disallowEmptySelection",
+        "isDisabled",
+        "onSelectionChange",
+        "orientation",
+        "selectedKeys",
+        "selectionMode",
+        "size",
+        "spacing",
+        "variant"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.control-size",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.focus-shadow",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface",
+          "tokens.z-index"
+        ]
+      },
+      "root": "rac:ToggleButtonGroup",
+      "slot": "components.toggle-group",
+      "source": "foundry"
+    }
+  }
+}

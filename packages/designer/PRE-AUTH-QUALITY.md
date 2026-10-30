@@ -80,7 +80,7 @@ grade specialists. The keep is the user.
 All of the following must hold, or the page is **below 3**:
 
 - **One display heading** through Designer `Hero` (`text-display-l` / `font-display`): not clipped, not stacked thesis lines masquerading as one H1.
-- **Exactly one primary CTA** in the fold. `Hero.actions` are `Button` atoms. No second pill competing for primary attention in the first viewport.
+- **Exactly one primary CTA** in the fold. `Hero.actions` are `Button` components. No second pill competing for primary attention in the first viewport.
 - **Chrome does not intersect the first viewport** — chat, consent, locale pickers, dev overlays, and similar chrome are findings when they steal the fold. Chat starts closed on `/`.
 - **Stylesheet the app loads** contains the Hero/Button utilities required by `designer-hero-css-check`, via the default path: `tokens.css` + `compiled.css` (one path; no mixed `compiled.css` and `theme.css` + `@source`).
 - **Fold copy is not wallpaper** — generic positioning phrases any competitor could reuse (including case variants of built-in examples such as “AI-native”, “AI intelligence”, and “for founders” as the headline thesis). `writer-check --live` reports `fold-wallpaper` on declared live trees.
@@ -185,7 +185,7 @@ green one, is not a keep.
 1. **Strategist** — direction and Audience records, until citable. Strategist
    supplies who the user is and does not inhabit them (they authored the
    positioning being expressed).
-2. **Designer and Writer together** — tokens→atoms→blocks in parallel with
+2. **Designer and Writer together** — tokens→components→blocks in parallel with
    copy. Prove 3 with the gates above. Do not start if Strategist still has
    no citable direction.
 3. **Synthetic user keep** — separate session, first person as the named

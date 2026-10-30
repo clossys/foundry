@@ -1,0 +1,65 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "example/assets.icon-chevron-down",
+      "license": "ISC",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "file": "src/icons/ChevronDown.ts",
+        "package": "lucide-react",
+        "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294",
+        "version": "1.23.0"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": []
+      },
+      "relation": "same-contract",
+      "slot": "assets.icon-chevron-down",
+      "source": "example",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/chevron-down.js",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "assets": {
+    "icon-chevron-down": {
+      "default": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "lucide/assets.icon-chevron-down",
+            "kind": "adopted",
+            "license": "ISC",
+            "member": "assets.icon-chevron-down.default",
+            "pin": {
+              "file": "src/icons/ChevronDown.ts",
+              "package": "lucide-react",
+              "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294",
+              "version": "1.23.0"
+            },
+            "sha256": "e9c2f81ea58066dc6e5a7bde3532f25bc525bf9166179bd7ccdad3740586c7ee",
+            "source": "lucide"
+          }
+        },
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "m6 9 6 6 6-6",
+              "key": "qrunsl"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

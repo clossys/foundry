@@ -77,3 +77,18 @@ describe("SectionFrame", () => {
     expect(screen.getByText("1,024")).toBeInTheDocument();
   });
 });
+
+it("S4-6 keeps band root attributes, events and content ownership", () => {
+  let clicks = 0;
+  const { container } = render(<SectionFrame id="band" dir="rtl" data-host="yes" className="gap-xl" style={{ marginTop: 7 }} onClick={() => clicks++}><ArticleBody><p>Body</p></ArticleBody></SectionFrame>);
+  const root = container.firstElementChild as HTMLElement;
+  expect(root.tagName).toBe("SECTION");
+  expect(root).toHaveAttribute("id", "band");
+  expect(root).toHaveAttribute("dir", "rtl");
+  expect(root).toHaveAttribute("data-host", "yes");
+  expect(root).toHaveClass("gap-xl");
+  expect(root.style.marginTop).toBe("7px");
+  expect(root.querySelectorAll("[data-designer-section-frame]")).toHaveLength(0);
+  expect(root.firstElementChild?.firstElementChild?.tagName).toBe("ARTICLE");
+  root.click(); expect(clicks).toBe(1);
+});

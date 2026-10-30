@@ -14,7 +14,7 @@ describe("StatusView routes through the server entry", () => {
     const routes: Routes = { label: "Next destinations", items: Object.freeze([{ id: "home", heading: "Home", href: "/" }, { id: "help", heading: "Help", href: "/help" }]) };
     const props = { status: "404", routes } as StatusViewProps & { routes: Routes };
     const html = renderToStaticMarkup(<webServer.StatusView {...props} />);
-    const region = /<section\b([^>]*)>([\s\S]*?)<\/section>/.exec(html)!;
+    const region = /<section\b(?![^>]*data-designer-section-frame)([^>]*)>([\s\S]*?)<\/section>/.exec(html)!;
     const labelId = /aria-labelledby="([^"]+)"/.exec(region[1]!)?.[1];
     expect(labelId).toBeTruthy();
     expect(region[2]).toContain(`id="${labelId}"`);
@@ -25,6 +25,9 @@ describe("StatusView routes through the server entry", () => {
     expect(html.match(/<a /g)).toHaveLength(2);
     expect(html.indexOf('href="/"')).toBeLessThan(html.indexOf('href="/help"'));
     expect(html).not.toMatch(/<main\b|<header\b|<footer\b| routes=/);
+    const rootTag = /^<section\b[^>]*>/.exec(html)?.[0] ?? "";
+    expect(rootTag).toContain('data-designer-section-frame=""');
+    expect(rootTag).toContain('data-ds-leaf="sections.band"');
     const fragment = JSDOM.fragment(html);
     const hiddenSpaces = fragment.querySelectorAll('span[aria-hidden="true"]');
     expect(Array.from(hiddenSpaces, span => span.textContent)).toEqual(["\u00a0", "\u00a0"]);

@@ -1,18 +1,24 @@
 import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactElement, type ReactNode, type Ref } from "react";
-import { Button } from "../atoms/Button.js";
-import { Icon } from "../atoms/Icon.js";
-import { Link } from "../atoms/Link.js";
-import { cx } from "../atoms/internal/cx.js";
+import { Button } from "../components/Button.js";
+import { Icon } from "../components/Icon.js";
+import { Link } from "../components/Link.js";
+import { cx } from "../components/internal/cx.js";
 import { ChevronRight } from "../icons/ChevronRight.js";
 import { FileText } from "../icons/FileText.js";
 import { Folder } from "../icons/Folder.js";
 import { TOKENS } from "../tokens/tokens.js";
 import { indexTree, type TreeNode } from "./tree-model.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.explorer", "foundry/sections.explorer");
 
 const ROW = "relative w-full min-w-0 justify-start gap-sm text-start";
 const GUIDE = "pointer-events-none absolute border-s border-line-base";
 const DETAILS = "flex min-w-0 items-center gap-xs text-caption text-ink-secondary";
 const TREE = "min-w-0 overflow-x-auto text-ink-primary";
+const PANES = "grid w-full min-w-0 grid-cols-1 gap-lg tablet-lg:grid-cols-12 tablet-lg:items-start";
+const TREE_PANE = "tablet-lg:col-span-4";
+const LIST_PANE = "min-w-0 tablet-lg:col-span-8";
 const LABEL = "min-w-0 truncate";
 const GUIDE_BRANCH = "border-b";
 const OPEN_ICON = "rotate-90";
@@ -29,6 +35,14 @@ export interface ExplorerProps<T extends TreeNode & { children?: readonly T[] } 
   defaultExpandedIds?: readonly string[];
   /** Optional descriptive metadata, separate from each node's accessible name. */
   renderDetails?: (node: T) => ReactNode;
+  /**
+   * Optional host-owned list pane (the sections.explorer `list` region): the
+   * contents of the selected folder. When supplied, the tree and the list sit
+   * side by side and `className` applies to the two-pane wrapper.
+   */
+  list?: ReactNode;
+  /** Accessible name of the list pane region. @default "Contents" */
+  listLabel?: string;
   className?: string;
 }
 
@@ -86,7 +100,7 @@ function Row<T extends TreeNode & { children?: readonly T[] }>(props: RowProps<T
 /** Single-select files and folders, with unrestricted semantic depth and independent disclosure. */
 export function Explorer<T extends TreeNode & { children?: readonly T[] }>(props: ExplorerProps<T>): ReactElement;
 export function Explorer(props: ExplorerProps): ReactElement;
-export function Explorer<T extends TreeNode & { children?: readonly T[] }>({ tree, label, selectedId, onSelect, defaultExpandedIds = [], renderDetails, className }: ExplorerProps<T>) {
+export function Explorer<T extends TreeNode & { children?: readonly T[] }>({ tree, label, selectedId, onSelect, defaultExpandedIds = [], renderDetails, list, listLabel = "Contents", className }: ExplorerProps<T>) {
   const index = indexTree(tree);
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set(defaultExpandedIds));
   const [focused, setFocused] = useState<string>();
@@ -124,9 +138,15 @@ export function Explorer<T extends TreeNode & { children?: readonly T[] }>({ tre
   };
   useLayoutEffect(() => { if (ownsFocus.current && active !== undefined) controls.current.get(active)?.focus(); }, [active]);
   const register = (id: string, element: HTMLElement | null) => { if (element) controls.current.set(id, element); else controls.current.delete(id); };
-  return <div role="tree" aria-label={label} aria-multiselectable={false} data-explorer="" className={cx(TREE, className)}
+  const panes = list !== undefined && list !== null && list !== false;
+  const treeElement = <div {...(panes ? {} : SECTION_STAMP)} role="tree" aria-label={label} aria-multiselectable={false} data-explorer="" className={cx(TREE, panes ? TREE_PANE : className)}
     onFocusCapture={() => { ownsFocus.current = true; }} onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) ownsFocus.current = false; }}>
     {tree.map((node, position) => <Row key={node.id} node={node} level={1} position={position + 1} count={tree.length}
       expanded={expanded} active={active} selectedId={selectedId} activate={activate} focus={setFocused} keyboard={keyboard} register={register} renderDetails={renderDetails} />)}
+  </div>;
+  if (!panes) return treeElement;
+  return <div {...SECTION_STAMP} data-explorer-layout="panes" className={cx(PANES, className)}>
+    {treeElement}
+    <section aria-label={listLabel} data-explorer-region="list" className={LIST_PANE}>{list}</section>
   </div>;
 }

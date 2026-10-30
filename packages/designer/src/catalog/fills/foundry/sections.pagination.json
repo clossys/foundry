@@ -1,0 +1,146 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.pagination",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#Pagination",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "sections.pagination",
+      "source": "foundry",
+      "sourceAddress": "./blocks#Pagination",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "mode.cursor",
+        "mode.load-more"
+      ]
+    }
+  },
+  "sections": {
+    "pagination": {
+      "composes": [
+        "components.button",
+        "components.icon",
+        "components.select",
+        "components.semantic-content"
+      ],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.button",
+          "components.icon",
+          "components.select",
+          "components.semantic-content"
+        ],
+        "scannedReads": {
+          "assets": [
+            "assets.icon-chevron-left",
+            "assets.icon-chevron-right"
+          ],
+          "components": [
+            "components.button",
+            "components.icon",
+            "components.select",
+            "components.semantic-content"
+          ],
+          "tokens": [
+            "tokens.body-size",
+            "tokens.spacing",
+            "tokens.text-color"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/Pagination.tsx",
+            "sha256": "1dc4425f71a5c15f0595ef4ec97d9590a7a07aec8f480eb98d53063f2b99dca7"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/Banner.copy-context.tsx",
+            "sha256": "fa058a7f7655c4968b4930010d57be56f1136b4c5eda4c6544dca26088edc55a"
+          },
+          {
+            "path": "packages/designer/src/components/Banner.copy.ts",
+            "sha256": "9a37518f0d4ab5d04c55cfd4706daaecaad2a490b9a36d83db9108215d48e658"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../components/glyph-context.js#useGlyph",
+            "file": "packages/designer/src/blocks/Pagination.tsx",
+            "line": 8
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
+      "impl": {
+        "export": "Pagination",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Host supplies pageCount and onPageChange. Only numbered pages exist; load-more and cursor modes are absent. Omitted labels and summary messages resolve the existing Writer pagination CopyRefs through the configured host resolver; no English fallback is shipped.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#Pagination",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "mode.pages": "./blocks#Pagination.page"
+      },
+      "reads": {
+        "assets": [
+          "assets.icon-chevron-left",
+          "assets.icon-chevron-right"
+        ],
+        "tokens": [
+          "tokens.body-size",
+          "tokens.spacing",
+          "tokens.text-color"
+        ]
+      },
+      "slot": "sections.pagination",
+      "slotMap": {
+        "page": "./blocks#Pagination.page",
+        "total": "./blocks#Pagination.totalItems"
+      },
+      "source": "foundry"
+    }
+  }
+}

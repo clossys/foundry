@@ -5,8 +5,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 import type { ItemData } from "@clossys/designer/blocks/server";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
-import type { SiteShellInput } from "../frame/types.js";
-import { SITE_MAIN_ID } from "../frame/types.js";
+import type { SiteShellInput } from "@clossys/designer/frames";
+import { SITE_MAIN_ID } from "@clossys/designer/frames";
 import { StatusView, type StatusViewProps } from "./StatusView.js";
 import { GlobalErrorDocument } from "./GlobalErrorDocument.js";
 import type { GlobalErrorDocumentFramedProps, GlobalErrorDocumentProps } from "./GlobalErrorDocument.js";
@@ -28,7 +28,8 @@ function statusMarkup(input: unknown): string {
 describe("StatusView next destinations", () => {
   it.each([undefined, { label: "No destinations", items: [] }, { items: [] }, { label: null, items: [] }, { label: "", items: [] }])("emits no route wrapper, label or DOM prop for omitted or empty destinations", input => {
     const { container } = draw(input);
-    expect(container.querySelector("section, [data-item], [data-items], [routes]")).toBeNull();
+    expect(container.querySelector("section:not([data-designer-section-frame]), [data-item], [data-items], [routes]")).toBeNull();
+    expect(container.querySelectorAll("[data-designer-section-frame]")).toHaveLength(1);
     expect(screen.queryByRole("heading", { level: 2 })).toBeNull();
     expect(container.textContent).not.toContain("No destinations");
     expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
@@ -148,7 +149,7 @@ const ref = (id: string): CopyRef => ({ id });
 const resolveCopy: CopyResolver = copyRef => COPY[copyRef.id] === undefined ? undefined : { ref: copyRef, text: COPY[copyRef.id]!, recordId: `record-${copyRef.id}`, revision: "1", locale: "en-US", source: { kind: "consumer", reference: "fixture" }, entryId: copyRef.id };
 const resolveAsset = (id: string): unknown => id === "mark" ? { type: "image", src: "/brand/mark.svg", width: 48, height: 48, alt: "Example mark" } : undefined;
 const shell: SiteShellInput = { brand: { assetId: "mark", label: ref("brand"), size: "md", variant: "mark" }, skipLink: ref("skip"), footer: { legal: { entity: ref("entity"), links: [{ href: "/privacy", label: ref("privacy") }] } } };
-const head = { lang: "en", documentTitle: { page: "Something went wrong", brand: "Example Studio" }, icon: { href: "/icon.svg" } };
+const head = { lang: "en", localeManifest: { locales: [{ tag: "en", dir: "ltr" as const, state: "active" as const }] }, documentTitle: { page: "Something went wrong", brand: "Example Studio" }, icon: { href: "/icon.svg" } };
 const framed: GlobalErrorDocumentFramedProps = { ...head, shell, resolveCopy, resolveAsset, status: "500", subtitle: "Something went wrong.", action: <button>Try again</button>, notes: <a href="/contact">Contact us</a> };
 function errorDocument(input: unknown): Document {
   const props = { ...framed, routes: input } as GlobalErrorDocumentFramedProps & { routes: Routes };
@@ -178,7 +179,7 @@ describe("GlobalErrorDocument framed routes", () => {
   });
   it("forwards empty routes as no additional status content", () => {
     const doc = errorDocument(routes(0));
-    expect(doc.querySelector("main section, [routes]")).toBeNull();
+    expect(doc.querySelector("main section:not([data-designer-section-frame]), [routes]")).toBeNull();
     expect(doc.querySelector("main h2")).toBeNull();
   });
   it("propagates a route refusal through the framed shape", () => {

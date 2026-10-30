@@ -5,7 +5,7 @@
  * one asserts nothing. Nothing imports this file at runtime.
  */
 import type { CopyResolver } from "@clossys/writer";
-import type { SiteShellInput } from "../frame/types.js";
+import type { SiteShellInput } from "@clossys/designer/frames";
 import type { AssetResolver } from "../types.js";
 import { NotFoundDocument } from "./NotFoundDocument.js";
 
@@ -15,11 +15,16 @@ declare const shell: SiteShellInput;
 
 const head = {
   lang: "en",
+  localeManifest: { locales: [{ tag: "en", dir: "ltr" as const, state: "active" as const }] },
   documentTitle: { page: "Page not found", brand: "Example Studio" },
   icon: { href: "/icon.svg" },
-} as const;
+};
 
 const frame = { shell, resolveCopy, resolveAsset };
+
+const { localeManifest: _localeManifest, ...headWithoutManifest } = head;
+// @ts-expect-error the document requires Writer's locale declarations
+export const withoutManifest = <NotFoundDocument {...headWithoutManifest} {...frame} status="404" />;
 
 // The whole shape: head, frame, StatusView props and linked stylesheets.
 export const complete = (

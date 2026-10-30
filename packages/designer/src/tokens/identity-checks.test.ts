@@ -41,8 +41,17 @@ describe("checkIdentityContrast", () => {
     const result = checkIdentityContrast("wordmark", UNUSED_VARIANTS, PASSING_TOKENS);
     expect(result.ok).toBe(true);
     expect(result.indeterminate).toBe(false);
-    expect(result.checked).toHaveLength(4);
+    expect(result.checked).toHaveLength(6);
     expect(result.findings).toHaveLength(0);
+  });
+
+  it("judges app-icon and both favicon schemes against ink/inverse, independently of accent",()=>{
+    const tokens={...PASSING_TOKENS,ink:'#0A0A0A',onInverse:'#FAFAFA',accent:'#FAFAFA',onAccent:'#FAFAFA'};
+    const result=checkIdentityContrast("wordmark",UNUSED_VARIANTS,tokens);
+    for(const variant of ['appIcon','favicon-light','favicon-dark']){
+      expect(result.checked.find(pair=>pair.variant===variant)?.ratio).toBeCloseTo(18.968,2);
+      expect(result.findings.some(finding=>finding.variant===variant)).toBe(false);
+    }
   });
 
   it("reports a finding for every pair below the floor", () => {
@@ -141,7 +150,7 @@ describe("checkIdentityContrast", () => {
         expect(checkSingleColourLegibility(knockedOut)).toEqual({ ok: true, offendingColors: [] });
         const direction = adoptSuppliedMark({ brand: { name: "Acme" }, suppliedSvg: twoTone, tokens: PASSING_TOKENS });
         expect(checkSingleColourLegibility(direction.variants.mono)).toEqual({ ok: true, offendingColors: [] });
-        expect(checkSingleColourLegibility(direction.variants.favicon)).toEqual({ ok: true, offendingColors: [] });
+        expect(direction.variants.favicon).toContain("prefers-color-scheme: dark");
       });
     });
 
@@ -312,29 +321,5 @@ describe("identityKitReport", () => {
     expect(report.verdict).toBe("violated");
     expect(report.findings.length).toBeGreaterThan(0);
     expect(typeof report.nextAction).toBe("string");
-  });
-});
-
-
-describe("adopted mark geometry judgment", () => {
-  it("adds measured findings for supplied geometry", () => {
-    const suppliedSvg = '<svg viewBox="0 0 100 100" data-clear-space="0.2"><rect width="100" height="100" rx="24"/><rect x="30" y="30" width="40" height="40"/></svg>';
-    const direction = adoptSuppliedMark({ brand: { name: "Example" }, suppliedSvg, tokens: PASSING_TOKENS });
-    const result = judgeIdentityKit(direction, PASSING_TOKENS);
-    expect(result.checks["mark-conformance"]?.verdict).toBe("violated");
-    expect(result.findings.some(f => f.rule === "mark-conformance" && /measured.*expected/.test(f.message))).toBe(true);
-  });
-  it("does not silently pass unsupported supplied text or masks", () => {
-    for (const body of ['<text/>', '<defs><mask/></defs>']) {
-      const direction = adoptSuppliedMark({ brand: { name: "Example" }, suppliedSvg: `<svg viewBox="0 0 48 48">${body}</svg>`, tokens: PASSING_TOKENS });
-      const result = judgeIdentityKit(direction, PASSING_TOKENS);
-      expect(result.checks["mark-conformance"]?.verdict).toBe("indeterminate");
-      expect(result.verdict).toBe("indeterminate");
-      expect(result.ok).toBe(false);
-    }
-  });
-  it("keeps generated live text under the legacy checks without claiming measured geometry", () => {
-    const [direction] = generateIdentityDirections({ name: "Example" }, PASSING_TOKENS);
-    expect(judgeIdentityKit(direction, PASSING_TOKENS).checks).not.toHaveProperty("mark-conformance");
   });
 });

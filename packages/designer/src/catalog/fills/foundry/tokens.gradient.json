@@ -1,0 +1,143 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "foundry/tokens.gradient",
+      "license": "MIT",
+      "mode": "implementation",
+      "relation": "same-contract",
+      "slot": "tokens.gradient",
+      "source": "foundry",
+      "sourceAddress": "src/catalog/fills/foundry/tokens.gradient.json",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "gradient": {
+      "border-shine": {
+        "$extensions": {
+          "com.clossys.modes": {
+            "dark": [
+              {
+                "color": "{tokens.border-color.strong}",
+                "position": 0
+              },
+              {
+                "color": "{tokens.border-color.base}",
+                "position": 1
+              }
+            ]
+          }
+        },
+        "$type": "gradient",
+        "$value": [
+          {
+            "color": "{tokens.border-color.base}",
+            "position": 0
+          },
+          {
+            "color": "{tokens.border-color.strong}",
+            "position": 1
+          }
+        ]
+      },
+      "glow": {
+        "$extensions": {
+          "com.clossys.modes": {
+            "dark": [
+              {
+                "color": "{tokens.accent-color.default}",
+                "position": 0
+              },
+              {
+                "color": "{tokens.accent-color.tint}",
+                "position": 1
+              }
+            ]
+          }
+        },
+        "$type": "gradient",
+        "$value": [
+          {
+            "color": "{tokens.accent-color.tint}",
+            "position": 0
+          },
+          {
+            "color": "{tokens.accent-color.default}",
+            "position": 1
+          }
+        ]
+      },
+      "media-scrim": {
+        "$extensions": {
+          "com.clossys.modes": {
+            "dark": [
+              {
+                "color": "{tokens.surface-color.glass-inverse}",
+                "position": 0
+              },
+              {
+                "color": "{tokens.surface-color.inverse}",
+                "position": 1
+              }
+            ]
+          }
+        },
+        "$type": "gradient",
+        "$value": [
+          {
+            "color": "{tokens.surface-color.glass}",
+            "position": 0
+          },
+          {
+            "color": "{tokens.surface-color.inverse}",
+            "position": 1
+          }
+        ]
+      },
+      "wash": {
+        "$extensions": {
+          "com.clossys.modes": {
+            "dark": [
+              {
+                "color": "{tokens.surface-color.sunken}",
+                "position": 0
+              },
+              {
+                "color": "{tokens.surface-color.base}",
+                "position": 1
+              }
+            ]
+          }
+        },
+        "$type": "gradient",
+        "$value": [
+          {
+            "color": "{tokens.surface-color.base}",
+            "position": 0
+          },
+          {
+            "color": "{tokens.surface-color.raised}",
+            "position": 1
+          }
+        ]
+      }
+    }
+  }
+}

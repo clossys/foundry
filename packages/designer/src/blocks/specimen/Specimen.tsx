@@ -1,6 +1,6 @@
 import { Fragment, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
-import { cx } from "../../atoms/internal/cx.js";
-import { UI_BORDER_PANEL } from "../../atoms/internal/ui-vars.js";
+import { cx } from "../../components/internal/cx.js";
+import { UI_BORDER_PANEL } from "../../components/internal/ui-vars.js";
 import { SpecimenPanel, type SpecimenPanelItem } from "./SpecimenPanel.js";
 
 /** How a specimen arranges its panels. `single` holds exactly one; the others hold two or three. */
@@ -74,7 +74,7 @@ function Connector({ caption }: { caption: ReactNode }) {
 
 /**
  * Native product-UI evidence for a marketing band: a labelled `<figure>`
- * of 1 to 3 `SpecimenPanel`s, built from atoms and tokens and rendered on
+ * of 1 to 3 `SpecimenPanel`s, built from components and tokens and rendered on
  * the server. It replaces screenshots and iframes: every word and number
  * arrives through props, so the specimen is real, translatable text, the
  * size of its content, and reflows at 390px.

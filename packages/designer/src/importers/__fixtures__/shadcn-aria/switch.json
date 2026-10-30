@@ -1,0 +1,17 @@
+{
+  "name": "switch",
+  "type": "registry:ui",
+  "repository": "https://github.com/shadcn-ui/ui",
+  "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+  "sourceFormat": "pinned repository source; not generated live registry JSON",
+  "license": "MIT",
+  "notice": "LICENSE.md",
+  "files": [
+    {
+      "path": "apps/v4/registry/bases/aria/ui/switch.tsx",
+      "type": "registry:ui",
+      "content": "\"use client\"\n\nimport { cn } from \"cn\"\nimport {\n  composeRenderProps,\n  Switch as SwitchPrimitive,\n  type SwitchProps as SwitchPrimitiveProps,\n} from \"react-aria-components\"\n\nfunction Switch({\n  className,\n  size = \"default\",\n  children,\n  ...props\n}: SwitchPrimitiveProps & {\n  size?: \"sm\" | \"default\"\n}) {\n  return (\n    <SwitchPrimitive\n      data-slot=\"switch\"\n      data-size={size}\n      className={cn(\n        \"cn-switch cn-switch-aria peer group/switch relative inline-flex items-center transition-all outline-none after:absolute after:-inset-x-3 after:-inset-y-2 data-disabled:cursor-not-allowed data-disabled:opacity-50\",\n        className\n      )}\n      {...props}\n    >\n      {composeRenderProps(children, (children, { isSelected }) => (\n        <>\n          <span\n            data-slot=\"switch-thumb\"\n            data-selected={isSelected || undefined}\n            className=\"cn-switch-thumb cn-switch-thumb-aria pointer-events-none block ring-0 transition-transform\"\n          />\n          {children}\n        </>\n      ))}\n    </SwitchPrimitive>\n  )\n}\n\nexport { Switch }\n",
+      "sha256": "b276029b57a613e457cdf3264c75cafe60bdf2c9093f564166ced3d66070e1b5"
+    }
+  ]
+}

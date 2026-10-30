@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "$comment": "The consumer layout contract (#1171): one visible clossys/ folder per repository, one subfolder per role, replacing strategy/ at the repository root and the hidden .clossys/. Launcher scaffolds clossys/README.md and clossys/.state/, migrating its own hub marker and inventory (and the packed skeleton template that seeds them) from the pre-#1171 .clossys/ path. Other roles adopt their own clossys/<role>/ folder on their own schedule; this contract is the shared shape they converge on.",
+  "$comment": "The consumer layout contract (#1171): one visible clossys/ folder per repository. The four agents keep cells under clossys/agents/<agent>/; other roles retain clossys/<role>/. Root clossys/ owns the package installation, configuration, generated README and machine state. Applications receive generated local source under apps/<app>/src/clossys/.",
   "root": "clossys",
   "readme": "clossys/README.md",
   "stateDir": "clossys/.state",
@@ -11,12 +11,36 @@
     "default": "."
   },
   "rules": [
-    "One owner per subfolder, named for the role the client talks to (@clossys-strategist -> clossys/strategist/). No two roles write the same folder.",
+    "One owner per folder: director, designer, writer and publisher own clossys/agents/<agent>/, containing tree.json and cells/<id>/v<N>.md. Other roles retain clossys/<role>/. No two roles write the same folder.",
     "Visible, not hidden: these are the business's own records. Only machine files go under clossys/.state/; there is no separate .clossys/.",
     "Removing a role removes its folder.",
-    "Monorepos: one configuration key (see monorepoRootKey) may place clossys/ inside a workspace package; the default is the repository root."
+    "Monorepos: one configuration key (see monorepoRootKey) may place clossys/ inside a workspace package; the default is the repository root.",
+    "clossys/package.json and clossys/clossys.config.ts are required. The package manifest is the only @clossys/* install site; applications consume generated local source at apps/<app>/src/clossys/."
   ],
   "folders": [
+    {
+      "path": "clossys/package.json",
+      "owner": "@clossys/producer",
+      "kind": "record",
+      "required": true,
+      "committed": true,
+      "description": "The sole install site for @clossys/* packages."
+    },
+    {
+      "path": "clossys/clossys.config.ts",
+      "owner": "@clossys/producer",
+      "kind": "record",
+      "required": true,
+      "committed": true,
+      "description": "Consumer configuration: identity, archetype, locales, targets, Studio and enabled agents."
+    },
+    {
+      "path": "clossys/agents/director",
+      "owner": "@clossys/director",
+      "kind": "record",
+      "committed": true,
+      "description": "Director tree.json and cells/<id>/v<N>.md; compiled strategy outputs stay in this agent folder."
+    },
     {
       "path": "clossys/README.md",
       "owner": "@clossys/launcher",
@@ -53,18 +77,18 @@
       "description": "Facts, audiences, positioning, claims, brand, direction. Replaces strategy/ at the repository root."
     },
     {
-      "path": "clossys/writer",
+      "path": "clossys/agents/writer",
       "owner": "@clossys/writer",
       "kind": "record",
       "committed": true,
-      "description": "Copy registry, voice record."
+      "description": "Copy registry, voice record. Authoring cells: tree.json and cells/<id>/v<N>.md."
     },
     {
-      "path": "clossys/designer",
+      "path": "clossys/agents/designer",
       "owner": "@clossys/designer",
       "kind": "record",
       "committed": true,
-      "description": "Brand bindings, type record."
+      "description": "Brand bindings, type record. Authoring cells: tree.json and cells/<id>/v<N>.md."
     },
     {
       "path": "clossys/customer",
@@ -74,18 +98,18 @@
       "description": "Keep verdicts."
     },
     {
-      "path": "clossys/publisher",
+      "path": "clossys/agents/publisher",
       "owner": "@clossys/publisher",
       "kind": "proof",
       "committed": true,
-      "description": "Route manifest, publication record. Append-only."
+      "description": "Route manifest, publication record. Append-only. Authoring cells: tree.json and cells/<id>/v<N>.md."
     },
     {
-      "path": "clossys/publisher/surfaces",
+      "path": "clossys/agents/publisher/surfaces",
       "owner": "@clossys/publisher",
       "kind": "record",
       "committed": true,
-      "description": "Surface documents: which template, which sections, which copy ids and asset ids, all by reference (#1205). Publisher is the only writer; Designer and Writer own everything a document references, propose changes in their own folders, and never edit a file here. Unlike the rest of clossys/publisher, a surface document is an approved record revised by reviewable diff, not append-only proof. Matches @clossys/publisher's PUBLISHER_SURFACES_DIR and the shipped site template, which reads clossys/publisher/surfaces/*.json at build time."
+      "description": "Surface documents owned by Publisher, referencing Designer and Writer records. Unlike append-only publication proof, these approved records are revised by reviewable diff."
     },
     {
       "path": "clossys/controller",
@@ -100,10 +124,24 @@
       "kind": "machine",
       "committed": true,
       "description": "Machine files: hub marker (workspace.json), inventory (inventory.json), skills manifest (skills.json, #1183). Not a place a person edits by hand."
+    },
+    {
+      "path": "apps/<app>/src/clossys",
+      "owner": "@clossys/publisher",
+      "kind": "generated",
+      "committed": true,
+      "description": "App-local theme, component source closure, locale copy, routes, navigation, dependencies.json and .manifest.json. Generated text carries a do-not-edit header and body digest; it imports no @clossys/* packages."
+    },
+    {
+      "path": "clossys/.state/studio",
+      "owner": "@clossys/producer",
+      "kind": "machine",
+      "committed": false,
+      "description": "Gitignored Studio run records, ports and writer lock."
     }
   ],
   "gitPolicy": {
-    "description": "What gets committed, by kind of output. Launcher's .gitignore entries cover only the last row -- generated run output -- never approved records, proof, or machine state.",
+    "description": "What gets committed, by kind of output. Approved records, proof, generated app-local source and persistent machine state are committed; generated run output and Studio runtime state are ignored.",
     "rows": [
       {
         "kind": "Approved records",
@@ -123,12 +161,23 @@
         "committed": true
       },
       {
+        "kind": "Generated app-local source",
+        "examples": "apps/<app>/src/clossys/",
+        "committed": true,
+        "note": "generated by Publisher; never hand-edited"
+      },
+      {
         "kind": "Generated run output",
         "examples": "check reports, preview galleries, caches",
         "committed": false,
-        "note": "launcher writes .gitignore entries; convention is clossys/<role>/.generated/"
+        "note": "launcher writes .gitignore entries; convention is the owning role or agent folder followed by .generated/; Studio runtime state lives in clossys/.state/studio/"
       }
     ]
   },
-  "approval": "Approval is a merged pull request, the same standing rule every skill already states -- a chat approved is not authorization. A consumer may route clossys/<role>/ through CODEOWNERS so the right person must approve each role's changes."
+  "approval": "Approval is a merged pull request, the same standing rule every skill already states -- a chat approved is not authorization. A consumer may route each role or agent folder through CODEOWNERS so the right person must approve its changes.",
+  "installPolicy": {
+    "packageFile": "clossys/package.json",
+    "onlyClossysInstallSite": true,
+    "description": "Install every @clossys/* package only through clossys/package.json. App package manifests and source must not depend on or import @clossys/*; generated app-local source declares its third-party dependencies separately."
+  }
 }

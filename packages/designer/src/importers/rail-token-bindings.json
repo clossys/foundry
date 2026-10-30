@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "utilities": [
+    {
+      "utility": "tracking-tight",
+      "member": "tokens.letter-spacing.meta",
+      "output": "tracking-(--tracking-meta)"
+    },
+    {
+      "utility": "tracking-widest",
+      "member": "tokens.letter-spacing.label",
+      "output": "tracking-(--tracking-label)"
+    },
+    {
+      "utility": "max-w-sm",
+      "member": "tokens.content-size.notice",
+      "output": "max-w-(--ui-width-notice-max)"
+    },
+    {
+      "utility": "max-w-xs",
+      "member": "tokens.content-size.notice",
+      "output": "max-w-(--ui-width-notice-max)"
+    },
+    {
+      "utility": "max-h-72",
+      "member": "tokens.content-size.notice",
+      "output": "max-h-(--ui-width-notice-max)"
+    },
+    {
+      "utility": "leading-normal",
+      "member": "tokens.line-height.heading",
+      "output": "leading-(--leading-heading)"
+    },
+    {
+      "utility": "leading-snug",
+      "member": "tokens.line-height.heading",
+      "output": "leading-(--leading-heading)"
+    },
+    {
+      "utility": "h-px",
+      "member": "tokens.border-width.hairline",
+      "output": "h-(--ui-border-hairline)"
+    },
+    {
+      "utility": "translate-x-px",
+      "member": "tokens.border-width.hairline",
+      "output": "translate-x-(--ui-border-hairline)"
+    },
+    {
+      "utility": "-translate-x-px",
+      "member": "tokens.border-width.hairline",
+      "output": "-translate-x-(--ui-border-hairline)"
+    },
+    {
+      "utility": "w-[2px]",
+      "member": "tokens.border-width.rule",
+      "output": "w-(--ui-border-rule)"
+    },
+    {
+      "utility": "ring-1",
+      "member": "tokens.border-width.hairline",
+      "output": "ring-(length:--ui-border-hairline)"
+    },
+    {
+      "utility": "ring-2",
+      "member": "tokens.border-width.rule",
+      "output": "ring-(length:--ui-border-rule)"
+    },
+    {
+      "utility": "duration-200",
+      "member": "tokens.duration.default",
+      "output": "duration-(--ui-duration-default)"
+    },
+    {
+      "utility": "duration-150",
+      "member": "tokens.duration.fast",
+      "output": "duration-(--ui-duration-fast)"
+    },
+    {
+      "utility": "ease-linear",
+      "member": "tokens.easing.default",
+      "output": "ease-(--ease-default)"
+    },
+    {
+      "utility": "ease-in-out",
+      "member": "tokens.easing.default",
+      "output": "ease-(--ease-default)"
+    },
+    {
+      "utility": "z-10",
+      "member": "tokens.z-index.sticky",
+      "output": "z-(--ui-z-sticky)"
+    },
+    {
+      "utility": "z-20",
+      "member": "tokens.z-index.aside",
+      "output": "z-(--ui-z-aside)"
+    },
+    {
+      "utility": "z-50",
+      "member": "tokens.z-index.modal",
+      "output": "z-(--ui-z-modal)"
+    },
+    {
+      "utility": "bg-black/10",
+      "member": "tokens.scrim-color.default",
+      "output": "bg-(--color-overlay-scrim)"
+    }
+  ],
+  "variables": [
+    {
+      "input": "--sidebar-width-icon",
+      "property": "--ui-layout-sidebar-rail-w",
+      "member": "tokens.region-width.sidebar-rail"
+    },
+    {
+      "input": "--sidebar-width",
+      "property": "--ui-layout-sidebar-w",
+      "member": "tokens.region-width.sidebar"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import { SectionFrame as S4Frame } from "./SectionFrame.js";
 import { render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -86,4 +87,22 @@ describe("TestimonialSet", () => {
       expect(host.querySelector("li")).toHaveClass("bg-surface-raised");
     }
   });
+});
+
+it("S4-6 retains the bare root, direct children and host identity under one external band", () => {
+  let clicks = 0;
+  const view = render(<TestimonialSet items={items(2)} id="bare" dir="rtl" data-host="bare" className="gap-xl" style={{ marginTop: 7 }} onClick={() => clicks++} />);
+  const root = view.container.firstElementChild as HTMLElement;
+  expect(root.tagName).toBe("UL");
+  expect(root).toHaveAttribute("id", "bare");
+  expect(root).toHaveAttribute("dir", "rtl");
+  expect(root).toHaveAttribute("data-host", "bare");
+  expect(root.style.marginTop).toBe("7px");
+  expect(root).toHaveClass("gap-xl");
+  expect(Array.from(root.children).every(child => child.tagName === "LI")).toBe(true);
+  expect(root.querySelector("section,header,h1,h2")).toBeNull();
+  root.click(); expect(clicks).toBe(1);
+  view.rerender(<S4Frame><TestimonialSet items={items(2)} id="bare" /></S4Frame>);
+  expect(view.container.querySelectorAll("[data-designer-section-frame]")).toHaveLength(1);
+  expect(view.container.querySelector("#bare")?.tagName).toBe("UL");
 });

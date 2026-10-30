@@ -4,7 +4,8 @@ import { renderToString } from "react-dom/server";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Button } from "../atoms/Button.js";
+import { Button } from "../components/Button.js";
+import { TOKENS } from "../tokens/index.js";
 import * as blocks from "./index.js";
 
 const Drawer = (blocks as any).Drawer ?? (() => null);
@@ -36,6 +37,21 @@ function heldHost() {
 }
 
 describe("Drawer", () => {
+  it.each([-1, 0, 1])("uses the tablet token to allow or refuse opening at breakpoint %+dpx", async offset => {
+    const breakpoint = Number.parseFloat(TOKENS["--breakpoint-tablet"]!.value);
+    const viewport = breakpoint + offset;
+    const query = `(min-width: ${TOKENS["--breakpoint-tablet"]!.value})`;
+    vi.stubGlobal("matchMedia", vi.fn((media: string) => ({
+      media, matches: media === query && viewport >= breakpoint,
+      addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {},
+    })));
+    render(<Drawer {...supplied}>Content</Drawer>);
+    await userEvent.click(screen.getByRole("button", { name: "Open tools" }));
+    expect(window.matchMedia).toHaveBeenCalledWith(query);
+    if (offset < 0) expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    else expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it.each(["ltr", "rtl"])("positions only the opted-in existing close at the measured %s corner", async direction => {
     const closeButtonStyle = { position: "fixed", insetBlockStart: 35, insetInlineStart: 117, insetInlineEnd: "auto", direction };
     render(<Drawer {...supplied} closeButtonStyle={closeButtonStyle}>Content</Drawer>);
@@ -75,7 +91,8 @@ describe("Drawer", () => {
     expect(close.textContent?.trim()).toBe("");
     await userEvent.tab();
     expect(close).toHaveFocus();
-    expect(close.style.boxShadow).toContain("--ui-ring-focus");
+    // The Foundry Button draws keyboard focus as the package outline, not a box-shadow ring, since 0d04b4c23 (bound in d14cc4b3b).
+    expect(close.style.outline).toContain("var(--color-focus-ring)");
     await userEvent.keyboard(key === "Enter" ? "{Enter}" : " ");
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     await waitFor(() => expect(trigger).toHaveFocus());

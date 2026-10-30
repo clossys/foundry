@@ -1,3 +1,4 @@
+import { renderToStaticMarkup as renderS4Server } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { DetailView, type DetailViewField } from "./DetailView.js";
@@ -97,4 +98,33 @@ describe("DetailView", () => {
     const section = container.querySelector("section") as HTMLElement;
     expect(section.style.marginTop).toBe("8px");
   });
+});
+
+it("S4-3 preserves title presence, titleless trailing actions and original section attributes", () => {
+  let clicks = 0;
+  const view = render(<DetailView id="record" dir="rtl" data-host="record" className="gap-lg" style={{ marginTop: 9 }} onClick={() => clicks++} fields={FIELDS} actions={<button>Edit</button>} />);
+  const root = view.container.firstElementChild as HTMLElement;
+  expect(root.tagName).toBe("SECTION");
+  expect(root).toHaveAttribute("id", "record");
+  expect(root).toHaveAttribute("dir", "rtl");
+  expect(root.style.marginTop).toBe("9px");
+  expect(root).toHaveClass("gap-lg");
+  expect(root.querySelector("h2")).toBeNull();
+  expect(view.getByRole("button").parentElement).toHaveClass("ms-auto");
+  root.click(); expect(clicks).toBe(1);
+  for (const title of [null, false, 0]) {
+    view.rerender(<DetailView fields={FIELDS} title={title} />);
+    expect(view.container.querySelectorAll("h2")).toHaveLength(1);
+    expect(view.container.querySelector("h2")?.textContent).toBe(title === 0 ? "0" : "");
+  }
+  for (const actions of [null, false, 0]) {
+    view.rerender(<DetailView fields={FIELDS} actions={actions} />);
+    expect(view.container.firstElementChild?.firstElementChild?.querySelector(".ms-auto")).not.toBeNull();
+  }
+});
+
+it("S4 server-renders the supplied title through the real shared Header", () => {
+  const markup = renderS4Server(<DetailView title="Title" fields={FIELDS} />);
+  expect(markup).toContain("<h2");
+  expect(markup).toContain("Title</h2>");
 });

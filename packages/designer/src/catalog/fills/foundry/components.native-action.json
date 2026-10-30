@@ -1,0 +1,110 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.native-action",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#NativeAction",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.native-action",
+      "source": "foundry",
+      "sourceAddress": "./components#NativeAction",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "native-action": {
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        }
+      ],
+      "impl": {
+        "export": "NativeAction",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "appearance.primary",
+        "ground.base",
+        "size.md",
+        "state.disabled",
+        "state.focus-visible",
+        "state.hover",
+        "state.pressed"
+      ],
+      "pin": {
+        "export": "./components#NativeAction",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "appearance.primary": "./components#NativeAction",
+        "ground.base": "./components#NativeAction",
+        "size.md": "./components#NativeAction",
+        "state.disabled": "./components#NativeAction.disabled",
+        "state.focus-visible": "./components#NativeAction:focus-visible",
+        "state.hover": "./components#NativeAction:hover",
+        "state.pressed": "./components#NativeAction:active"
+      },
+      "props": [
+        "aria-describedby",
+        "aria-label",
+        "aria-labelledby",
+        "children",
+        "className",
+        "disabled",
+        "form",
+        "name",
+        "onClick",
+        "ref",
+        "style",
+        "type",
+        "value"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": [
+          "tokens.action-color",
+          "tokens.body-size",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
+      },
+      "root": "engine:none",
+      "slot": "components.native-action",
+      "source": "foundry"
+    }
+  }
+}

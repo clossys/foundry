@@ -99,7 +99,8 @@ describe("CaptureView", () => {
     expect(hasRawLengthFallback(source)).toBe(false);
     const html = renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" />);
     const mainTag = html.slice(html.indexOf("<main"), html.indexOf(">", html.indexOf("<main")) + 1);
-    expect(mainTag).toContain("max-width:var(--ui-width-prose-max, none)");
+    expect(mainTag).toContain("max-w-[var(--ui-width-prose-max,none)]");
+    expect(mainTag).not.toContain("max-width:");
   });
 
   it("body structure: page header block, then the card holding the form and secondaryAction, then the notes below the card", () => {

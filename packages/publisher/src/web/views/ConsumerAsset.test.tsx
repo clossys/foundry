@@ -5,8 +5,6 @@ import { buildAssetElement } from "../buildAssetElement.js";
 
 import { createCopyResolver, type CopyRegistry } from "@clossys/writer";
 import { resolveSectionedViewDocument, validateSectionedViewDocument, type SectionedViewDocument } from "../../core/sectioned-view.js";
-import { LandingView } from "./LandingView.js";
-import { LandingView as ServerLandingView } from "./LandingView.server.js";
 import { SectionedView } from "./SectionedView.js";
 import { SectionedView as ServerSectionedView } from "./SectionedView.server.js";
 
@@ -80,7 +78,7 @@ function assetDocument(fill: unknown = media): SectionedViewDocument {
 const errors = (fill: unknown) => validateSectionedViewDocument(assetDocument(fill)).filter(finding => finding.severity === "error");
 
 describe("consumer asset fills the canonical content slot", () => {
-  const views = [["ordinary", SectionedView], ["server", ServerSectionedView], ["landing", LandingView], ["server landing", ServerLandingView]] as const;
+  const views = [["ordinary", SectionedView], ["server", ServerSectionedView]] as const;
   it.each(views)("renders meaningful CopyRef alt, intrinsic size and enforced lazy loading through %s", (_name, View) => {
     expect(errors(media)).toEqual([]);
     const resolved = resolveSectionedViewDocument(assetDocument(), resolver);

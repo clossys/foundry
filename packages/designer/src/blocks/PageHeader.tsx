@@ -1,5 +1,9 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
+import { SectionHeader } from "./SectionHeader.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.page-header", "foundry/sections.page-header");
 
 export interface PageHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "title"> {
   /** The page's own name. The only required prop. */
@@ -8,11 +12,11 @@ export interface PageHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "titl
   description?: ReactNode;
   /**
    * Slot for the page's primary actions — typically one or more `Button`
-   * atoms. Rendered at the trailing edge of the title row.
+   * components. Rendered at the trailing edge of the title row.
    */
   actions?: ReactNode;
   /**
-   * Slot for a `Breadcrumb` atom (or any `ReactNode`), rendered above the
+   * Slot for a `Breadcrumb` component (or any `ReactNode`), rendered above the
    * title. Not required — a top-level page has nowhere to link back to.
    */
   breadcrumb?: ReactNode;
@@ -41,19 +45,16 @@ export function PageHeader({
   ...rest
 }: PageHeaderProps) {
   return (
-    <header {...rest} className={cx("flex flex-col gap-md", className)}>
+    // The stamp follows the rest spread so source fixtures that anchor on the header's first spread still match.
+    <header {...rest} {...SECTION_STAMP} className={cx("flex flex-col gap-md", className)}>
       {breadcrumb}
-      <div className="flex flex-wrap items-start justify-between gap-lg">
-        <div className="flex flex-col gap-xs">
-          <h1 className="text-h1 font-display text-ink-primary">{title}</h1>
-          {description ? (
-            <p className="text-body text-ink-secondary">{description}</p>
-          ) : null}
-        </div>
-        {actions ? (
-          <div className="flex items-center gap-sm">{actions}</div>
-        ) : null}
-      </div>
+      <SectionHeader
+        level={1}
+        title={title}
+        titleClassName="text-h1"
+        description={description}
+        actions={actions}
+      />
     </header>
   );
 }

@@ -6,7 +6,7 @@ import ts from "typescript";
 import { createElement, type ComponentProps } from "react";
 import { render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Button } from "../atoms/Button.js";
+import { Button } from "../components/Button.js";
 import { describe, expect, it, vi } from "vitest";
 import * as blocks from "./index.js";
 
@@ -75,17 +75,17 @@ describe("AppFrame Material registration", () => {
     view.unmount();
   });
 
-  it("registers AccountMenu's rendered atoms, regions and complete public inputs", () => {
+  it("registers AccountMenu's rendered components, regions and complete public inputs", () => {
     const account = materials().find((entry: any) => entry.id === "account-menu");
     expect(account).toMatchObject({
       exportName: "AccountMenu", source: "src/blocks/AccountMenu.tsx",
       regions: ["identity", "trigger", "content", "preferences"],
       dependencies: [
-        { exportName: "Avatar", source: "src/atoms/Avatar.tsx" },
-        { exportName: "Button", source: "src/atoms/Button.tsx" },
-        { exportName: "Icon", source: "src/atoms/Icon.tsx" },
-        { exportName: "Menu", source: "src/atoms/Menu.tsx" },
-        { exportName: "Tooltip", source: "src/atoms/Tooltip.tsx" },
+        { exportName: "Avatar", source: "src/components/Avatar.tsx" },
+        { exportName: "Button", source: "src/components/Button.tsx" },
+        { exportName: "Icon", source: "src/components/Icon.tsx" },
+        { exportName: "Menu", source: "src/components/Menu.tsx" },
+        { exportName: "Tooltip", source: "src/components/Tooltip.tsx" },
       ],
       configs: [{ prop: "collapsed", values: [false, true], default: false, source: "src/blocks/AccountMenu.tsx" }],
       authoredInputs: ["actor", "sections", "contextLabel", "triggerLabel", "collapsed", "onClose", "onRoute"],
@@ -154,7 +154,7 @@ describe("AppFrame Material registration", () => {
       expect(entry.layer).toBe("blocks");
       expect(entry.component).toBe((blocks as any)[entry.exportName]);
       expect(entry.component).toBeTypeOf("function");
-      if (entry.id === "page-bar") expect(entry.regions).toEqual(["brand", "trail", "page-info", "actions", "width"]);
+      if (entry.id === "page-bar") expect(entry.regions).toEqual(["trail", "page-info", "actions"]);
       else expect(entry.regions).toContain("content");
       const source = readFileSync(join(root, entry.source), "utf8");
       const ast = ts.createSourceFile(entry.source, source, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TSX);
@@ -189,11 +189,11 @@ describe("AppFrame Material registration", () => {
   });
 
   it("keeps Dialog the single overlay owner and all additions outside server subsets", () => {
-    const dialog = readFileSync(join(root, "src/atoms/Dialog.tsx"), "utf8");
+    const dialog = readFileSync(join(root, "src/components/Dialog.tsx"), "utf8");
     const drawer = readFileSync(join(root, "src/blocks/Drawer.tsx"), "utf8");
     expect([...dialog.matchAll(/<ModalOverlay\b/g)]).toHaveLength(1);
     expect(drawer).not.toMatch(/ModalOverlay|DialogTrigger|usePreventScroll|document\.(?:body|documentElement)\.style/);
-    for (const layer of ["atoms", "blocks", "shell"]) {
+    for (const layer of ["components", "blocks", "shell"]) {
       const source = readFileSync(join(root, `src/${layer}/server.ts`), "utf8");
       expect(source).not.toMatch(/ResizeHandle|ResizablePane|\bDrawer\b|\bPanel\b|APP_FRAME_MATERIALS/);
     }
@@ -205,9 +205,9 @@ describe("AppFrame Material registration", () => {
     try {
       const packed = JSON.parse(execFileSync("npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", temporary], { cwd: root, encoding: "utf8" }));
       execFileSync("tar", ["-xzf", join(temporary, packed[0].filename), "-C", temporary]);
-      const atomEntry = pathToFileURL(join(temporary, "package/dist/atoms/index.js")).href;
+      const componentEntry = pathToFileURL(join(temporary, "package/dist/components/index.js")).href;
       const blockEntry = pathToFileURL(join(temporary, "package/dist/blocks/index.js")).href;
-      const script = `import * as atoms from ${JSON.stringify(atomEntry)}; import * as blocks from ${JSON.stringify(blockEntry)}; console.log(JSON.stringify({ handle: typeof atoms.ResizeHandle, materials: blocks.APP_FRAME_MATERIALS.map(entry => [entry.id, entry.component === blocks[entry.exportName]]) }));`;
+      const script = `import * as components from ${JSON.stringify(componentEntry)}; import * as blocks from ${JSON.stringify(blockEntry)}; console.log(JSON.stringify({ handle: typeof components.ResizeHandle, materials: blocks.APP_FRAME_MATERIALS.map(entry => [entry.id, entry.component === blocks[entry.exportName]]) }));`;
       const result = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: root }));
       expect(result).toEqual({ handle: "function", materials: [["panel", true], ["drawer", true], ["resizable-pane", true], ["command-menu", true], ["app-navigation", true], ["page-bar", true], ["account-menu", true], ["grouped-table", true], ["relation-graph", true], ["flow-canvas", true]] });
     } finally { rmSync(temporary, { recursive: true, force: true }); }
@@ -215,20 +215,20 @@ describe("AppFrame Material registration", () => {
 
   it("imports every real server subset under react-server without exporting interactive additions", () => {
     const additions = ["ResizeHandle", "Panel", "Drawer", "ResizablePane", "APP_FRAME_MATERIALS", "CommandMenu", "useCommandMenuShortcut", "AppNavigation", "AccountMenu", "PageBar", "GroupedTable", "RelationGraph", "FlowCanvas", "layoutFlowCanvas"];
-    const entries = ["atoms", "blocks", "shell"].map(layer => pathToFileURL(join(root, `dist/${layer}/server.js`)).href);
+    const entries = ["components", "blocks", "shell"].map(layer => pathToFileURL(join(root, `dist/${layer}/server.js`)).href);
     const script = `const modules = await Promise.all(${JSON.stringify(entries)}.map(entry => import(entry))); console.log(JSON.stringify(modules.map(module => ${JSON.stringify(additions)}.filter(name => name in module))));`;
     const result = JSON.parse(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", script], { encoding: "utf8", cwd: root }));
     expect(result).toEqual([[], [], []]);
   });
 });
 
-it("registers PageBar's complete authored contract and actual atom dependencies", () => {
+it("registers PageBar's complete authored contract and actual component dependencies", () => {
   const entry = materials().find((record: any) => record.id === "page-bar");
   expect(entry).toMatchObject({
     layer: "blocks", exportName: "PageBar", component: (blocks as any).PageBar, source: "src/blocks/PageBar.tsx",
-    regions: ["brand", "trail", "page-info", "actions", "width"],
-    dependencies: [{ exportName: "Link", source: "src/atoms/Link.tsx" }, { exportName: "Menu", source: "src/atoms/Menu.tsx" }, { exportName: "Popover", source: "src/atoms/Popover.tsx" }, { exportName: "Button", source: "src/atoms/Button.tsx" }, { exportName: "Icon", source: "src/atoms/Icon.tsx" }],
+    regions: ["trail", "page-info", "actions"],
+    dependencies: [{ exportName: "Link", source: "src/components/Link.tsx" }, { exportName: "Menu", source: "src/components/Menu.tsx" }, { exportName: "Popover", source: "src/components/Popover.tsx" }, { exportName: "Button", source: "src/components/Button.tsx" }, { exportName: "Icon", source: "src/components/Icon.tsx" }],
     configs: [{ prop: "narrow", values: [false, true], default: false, source: "src/blocks/PageBar.tsx" }],
-    authoredInputs: ["root", "page", "workspaces", "brand", "width", "onWidthChange", "labels", "reserveStart", "reserveEnd", "dir", "onHeightChange"],
+    authoredInputs: ["root", "page", "workspaces", "header", "onNavigate", "labels", "reserveStart", "reserveEnd", "dir", "onHeightChange"],
   });
 });

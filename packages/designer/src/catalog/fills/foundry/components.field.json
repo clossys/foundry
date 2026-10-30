@@ -1,0 +1,104 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.field",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#Field",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.field",
+      "source": "foundry",
+      "sourceAddress": "./components#Field",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "field": {
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "Field",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "part.description",
+        "part.error",
+        "part.label",
+        "state.disabled",
+        "state.invalid",
+        "state.required"
+      ],
+      "pin": {
+        "export": "./components#Field",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "part.description": "./components#Field.description",
+        "part.error": "./components#Field.errorMessage",
+        "part.label": "./components#Field.label",
+        "state.disabled": "./components#Field.isDisabled",
+        "state.invalid": "./components#Field.isInvalid",
+        "state.required": "./components#Field.isRequired"
+      },
+      "props": [
+        "children",
+        "className",
+        "description",
+        "errorMessage",
+        "isDisabled",
+        "isInvalid",
+        "isRequired",
+        "label"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": [
+          "tokens.body-size",
+          "tokens.caption-size",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
+      },
+      "root": "rac:Label+Text+FieldError",
+      "slot": "components.field",
+      "source": "foundry"
+    }
+  }
+}

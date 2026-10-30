@@ -1,0 +1,116 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "foundry/tokens.region-width",
+      "license": "MIT",
+      "mode": "implementation",
+      "relation": "same-contract",
+      "slot": "tokens.region-width",
+      "source": "foundry",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "region-width": {
+      "aside": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "320px"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 320
+        }
+      },
+      "drawer": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "min(20rem, 85vw)"
+          }
+        },
+        "$type": "dimension",
+        "$value": "min(20rem, 85vw)"
+      },
+      "inspector": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "280px"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 280
+        }
+      },
+      "inspector-max": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "420px"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 420
+        }
+      },
+      "inspector-min": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "220px"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 220
+        }
+      },
+      "sidebar": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "256px"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 256
+        }
+      },
+      "sidebar-rail": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "64px"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 64
+        }
+      }
+    }
+  }
+}

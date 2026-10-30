@@ -1,0 +1,179 @@
+{
+  "blockedCount": 0,
+  "descriptorCount": 34,
+  "leaves": [
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.avatar"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.badge"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.banner"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.breadcrumbs"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.button"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.calendar"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.card"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.checkbox"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.combo-box"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.command"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.dialog"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.disclosure"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.dropdown-menu"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.empty"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.file-trigger"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.item"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.keyboard"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.menu"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.popover"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.progress-bar"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.radio-group"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.scroll-area"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.select"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.separator"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.sheet"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.sidebar"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.skeleton"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.slider"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.switch"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.table"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.tabs"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.toggle-button"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.toggle-group"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.tooltip"
+    }
+  ],
+  "message": "Rewrite blockers are not runtime conformance evidence.",
+  "runtimeConformance": "unassessed",
+  "version": 1
+}

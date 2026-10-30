@@ -13,7 +13,7 @@
  * This exact gap — with this exact contract, `Shell.Main` rejecting `id` —
  * is what issue #24 was filed about; `../Shell.test.tsx` carried the inert
  * version of this assertion before it was moved here. See
- * `packages/ui/src/atoms/internal/icon-contract.check.tsx` for the
+ * `packages/designer/src/components/internal/icon-contract.check.tsx` for the
  * convention's original precedent, and `scripts/check-typechecked-
  * assertions.mjs` for the gate that now fails CI if a directive like this
  * one ever ends up back in a `*.test.ts(x)` file instead.

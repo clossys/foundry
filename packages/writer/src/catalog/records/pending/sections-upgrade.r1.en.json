@@ -1,0 +1,280 @@
+{
+  "version": 1,
+  "revision": 1,
+  "state": "draft",
+  "locale": "en",
+  "activation": "none",
+  "integration": "pending-designer-contracts",
+  "merges": [
+    {
+      "fromSection": "sections.logo-mark",
+      "toSection": "sections.logo-hero",
+      "fromPassage": "passages.logo-mark",
+      "toPassage": "passages.logo-hero",
+      "recordId": "ps.jrbpz6zcs1"
+    },
+    {
+      "fromSection": "sections.account-summary",
+      "toSection": "sections.record-detail",
+      "fromPassage": "passages.account-summary",
+      "toPassage": "passages.record-detail",
+      "recordId": "ps.avyhjvd2xr"
+    },
+    {
+      "fromSection": "sections.error-message",
+      "toSection": "sections.error-state",
+      "fromPassage": "passages.error-message",
+      "toPassage": "passages.error-state",
+      "recordId": "ps.gz9k8g8sw7"
+    }
+  ],
+  "additions": [
+    {
+      "sectionId": "sections.canvas-lane",
+      "passageId": "passages.canvas-lane",
+      "needs": [
+        "Designer copy contract",
+        "derive-passages regeneration",
+        "current schemaDigest"
+      ],
+      "passageIntent": {
+        "leaf": "passages.canvas-lane",
+        "context": "SU-9W pending canvas-lane",
+        "status": "draft",
+        "origin": "authored",
+        "schema": "passages.canvas-lane",
+        "fields": {
+          "header.heading": {
+            "ref": "string",
+            "id": "st.sfm0m2jd2q"
+          },
+          "header.description": {
+            "ref": "string",
+            "id": "st.dc395zvmxp"
+          }
+        },
+        "proposedRecordId": "ps.e1nk7p5fb9"
+      }
+    },
+    {
+      "sectionId": "sections.slot-board",
+      "passageId": "passages.slot-board",
+      "needs": [
+        "Designer copy contract",
+        "derive-passages regeneration",
+        "current schemaDigest"
+      ],
+      "passageIntent": {
+        "leaf": "passages.slot-board",
+        "context": "SU-9W pending slot-board",
+        "status": "draft",
+        "origin": "authored",
+        "schema": "passages.slot-board",
+        "fields": {
+          "header.heading": {
+            "ref": "string",
+            "id": "st.9crtvgwrk3"
+          },
+          "rows[].label": {
+            "ref": "string",
+            "id": "st.7xqzxry110"
+          },
+          "rows[].status": {
+            "ref": "string",
+            "id": "st.kmz1y1qvg0"
+          }
+        },
+        "proposedRecordId": "ps.vys01a10av"
+      }
+    },
+    {
+      "sectionId": "sections.canvas-controls",
+      "passageId": "passages.canvas-controls",
+      "needs": [
+        "Designer copy contract",
+        "derive-passages regeneration",
+        "current schemaDigest"
+      ],
+      "passageIntent": {
+        "leaf": "passages.canvas-controls",
+        "context": "SU-9W pending canvas-controls",
+        "status": "draft",
+        "origin": "authored",
+        "schema": "passages.canvas-controls",
+        "fields": {
+          "labels.zoom": {
+            "ref": "string",
+            "id": "st.37v9w4wyr8"
+          },
+          "labels.zoomIn": {
+            "ref": "string",
+            "id": "st.q2pdjh83tt"
+          },
+          "labels.zoomOut": {
+            "ref": "string",
+            "id": "st.frk6prh48a"
+          },
+          "labels.fit": {
+            "ref": "string",
+            "id": "st.ga01fexv2v"
+          },
+          "labels.reset": {
+            "ref": "string",
+            "id": "st.zxv0n7s7rc"
+          }
+        },
+        "proposedRecordId": "ps.f2x10y2mq4"
+      }
+    }
+  ],
+  "expectedLivePairs": 52,
+  "records": [
+    {
+      "id": "st.sfm0m2jd2q",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.new.canvas-lane.header.heading",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Canvas lane"
+    },
+    {
+      "id": "st.dc395zvmxp",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.new.canvas-lane.header.description",
+      "status": "draft",
+      "origin": "authored",
+      "text": "A group of related canvas items."
+    },
+    {
+      "id": "st.9crtvgwrk3",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.new.slot-board.header.heading",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Slot board"
+    },
+    {
+      "id": "st.7xqzxry110",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.new.slot-board.rows.label",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Slot"
+    },
+    {
+      "id": "st.37v9w4wyr8",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.new.canvas-controls.labels.zoom",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Canvas zoom"
+    },
+    {
+      "id": "st.ga01fexv2v",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.new.canvas-controls.labels.fit",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Fit to view"
+    },
+    {
+      "id": "st.zxv0n7s7rc",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.new.canvas-controls.labels.reset",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Reset view"
+    }
+  ],
+  "bindings": [
+    {
+      "cellId": "admin.writer.sections.new.canvas-lane.header.heading",
+      "recordId": "st.sfm0m2jd2q",
+      "target": "sections.canvas-lane",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.new.canvas-lane.header.description",
+      "recordId": "st.dc395zvmxp",
+      "target": "sections.canvas-lane",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.new.slot-board.header.heading",
+      "recordId": "st.9crtvgwrk3",
+      "target": "sections.slot-board",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.new.slot-board.rows.label",
+      "recordId": "st.7xqzxry110",
+      "target": "sections.slot-board",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.new.slot-board.rows.status",
+      "recordId": "st.kmz1y1qvg0",
+      "target": "sections.slot-board",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.new.canvas-controls.labels.zoom",
+      "recordId": "st.37v9w4wyr8",
+      "target": "sections.canvas-controls",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.new.canvas-controls.labels.zoomIn",
+      "recordId": "st.q2pdjh83tt",
+      "target": "sections.canvas-controls",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.new.canvas-controls.labels.zoomOut",
+      "recordId": "st.frk6prh48a",
+      "target": "sections.canvas-controls",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.new.canvas-controls.labels.fit",
+      "recordId": "st.ga01fexv2v",
+      "target": "sections.canvas-controls",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.new.canvas-controls.labels.reset",
+      "recordId": "st.zxv0n7s7rc",
+      "target": "sections.canvas-controls",
+      "kind": "CopyRef"
+    }
+  ],
+  "aliases": {
+    "new.canvas-lane.header.heading": "st.sfm0m2jd2q",
+    "new.canvas-lane.header.description": "st.dc395zvmxp",
+    "new.slot-board.header.heading": "st.9crtvgwrk3",
+    "new.slot-board.rows.label": "st.7xqzxry110",
+    "new.slot-board.rows.status": "st.kmz1y1qvg0",
+    "new.canvas-controls.labels.zoom": "st.37v9w4wyr8",
+    "new.canvas-controls.labels.zoomIn": "st.q2pdjh83tt",
+    "new.canvas-controls.labels.zoomOut": "st.frk6prh48a",
+    "new.canvas-controls.labels.fit": "st.ga01fexv2v",
+    "new.canvas-controls.labels.reset": "st.zxv0n7s7rc"
+  },
+  "externalRecords": [
+    {
+      "recordId": "st.frk6prh48a",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.kmz1y1qvg0",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.not-chosen"
+    },
+    {
+      "recordId": "st.q2pdjh83tt",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    }
+  ]
+}

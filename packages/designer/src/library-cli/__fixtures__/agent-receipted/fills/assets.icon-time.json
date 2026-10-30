@@ -1,0 +1,74 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "example/assets.icon-time",
+      "license": "ISC",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "file": "src/icons/Clock.ts",
+        "package": "lucide-react",
+        "sha256": "1c2f0abc0105b9902bfe89c3d79b7493f80b0d9aa2674a44b55909ae56306bfd",
+        "version": "1.23.0"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": []
+      },
+      "relation": "same-contract",
+      "slot": "assets.icon-time",
+      "source": "example",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/clock.js",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "assets": {
+    "icon-time": {
+      "default": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "lucide/assets.icon-time",
+            "kind": "adopted",
+            "license": "ISC",
+            "member": "assets.icon-time.default",
+            "pin": {
+              "file": "src/icons/Clock.ts",
+              "package": "lucide-react",
+              "sha256": "1c2f0abc0105b9902bfe89c3d79b7493f80b0d9aa2674a44b55909ae56306bfd",
+              "version": "1.23.0"
+            },
+            "sha256": "641813685105fe9a53e43630d4af9a7be5802d38c989463633969cfb8378dfbb",
+            "source": "lucide"
+          }
+        },
+        "$type": "glyph",
+        "$value": [
+          [
+            "circle",
+            {
+              "cx": "12",
+              "cy": "12",
+              "key": "1mglay",
+              "r": "10"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M12 6v6l4 2",
+              "key": "mmk7yg"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

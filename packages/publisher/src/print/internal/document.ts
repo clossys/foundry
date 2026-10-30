@@ -29,13 +29,15 @@
  */
 
 import type { ComposeDocument } from "../../core/index.js";
+import { resolveDocumentLocale } from "../../preview/render-document-locale.js";
+import type { DocumentLocaleOptions } from "../../preview/render-document-locale.js";
 import { escapeHtmlAttr, escapeHtmlText } from "./escape.js";
 import type { PageBox } from "./page.js";
 
 /** Fixed, deliberately minimal reset — nothing in this channel depends on any framework's own reset. */
 const RESET_CSS = "*{box-sizing:border-box;}html,body{margin:0;padding:0;}";
 
-export interface DocumentParts {
+export interface DocumentParts extends DocumentLocaleOptions {
   doc: ComposeDocument;
   pageBox: PageBox;
   pageAtRuleCss: string;
@@ -49,6 +51,7 @@ export interface DocumentParts {
 }
 
 export function buildHtmlDocument(parts: DocumentParts): string {
+  const { locale, dir } = resolveDocumentLocale(parts);
   const pageStyleParts = [
     "position:relative",
     `width:${parts.pageBox.width}`,
@@ -67,7 +70,7 @@ export function buildHtmlDocument(parts: DocumentParts): string {
 
   return (
     "<!doctype html>" +
-    '<html lang="en">' +
+    `<html lang="${escapeHtmlAttr(locale)}" dir="${escapeHtmlAttr(dir)}">` +
     "<head>" +
     '<meta charset="utf-8">' +
     `<title>${escapeHtmlText(parts.doc.id)}</title>` +

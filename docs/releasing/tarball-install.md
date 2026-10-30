@@ -103,7 +103,16 @@ node scripts/tarball-install-check.mjs                 # one minor past the curr
 node scripts/tarball-install-check.mjs --as-packed     # the same-version case
 ```
 
-It packs designer and publisher plus any first-party packages they depend on
+The default real Designer/Publisher closure currently declares third-party runtime
+dependencies and is unsupported by this offline checker: these commands exit `2`
+(`could not run`), never `OK`. The ordinary consumer recipe above can obtain
+third-party packages from the public registry normally. The regression suite uses
+an authored synthetic first-party workspace with real npm packing and offline
+installation; its success is not an install proof for the real default closure.
+Supporting mixed runtime dependencies in this checker requires a separate design.
+
+For a supported closure containing no third-party `dependencies` or
+`optionalDependencies`, the checker packs the requested packages and reachable first-party siblings
 into a temporary directory, installs them into an empty project with the
 overrides block above, and verifies that each first-party package resolves
 once, at the top level, from its tarball, with the tarball's integrity.
@@ -120,3 +129,14 @@ an `--omit-override` name must be one of the packed package names, or the
 check does not run. `--keep` leaves the temporary directory in place and
 prints its path. Exit codes follow the repository's gate convention: `0`
 clean, `1` findings, `2` could not run.
+
+The packed-consumer readiness check is separate from this offline override
+regression. Build the current package sources first (`npm run build`), then run
+`npm run check:packed-consumer -- --package designer` and
+`npm run check:packed-consumer -- --package publisher`. Those commands include
+`--skip-build`; they do not establish that the selected tarballs contain a fresh
+build. The readiness runner checks policy closure against packed manifests before
+installing, then physically removes each optional peer and measures every declared
+export condition. A declared browser refusal must throw its condition-specific
+marker both with all peers present and with each peer absent. Policy data must
+record those measured outcomes; a schema-valid row alone proves no import outcome.

@@ -1,0 +1,135 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "shadcn@aria/components.banner",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+        "sha256": "639c846b57885d8af4dbdf7ddab7b15fd4d392c051f7496c67e811154e7861d9",
+        "url": "https://github.com/shadcn-ui/ui"
+      },
+      "relation": "same-contract",
+      "slot": "components.banner",
+      "source": "shadcn@aria",
+      "sourceAddress": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/bases/aria/ui/alert.tsx",
+      "status": "draft",
+      "trust": "pinned-upstream",
+      "unmapped": []
+    }
+  },
+  "components": {
+    "banner": {
+      "blockers": [],
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": "19.2.3"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "class-variance-authority",
+          "version": "0.7.1"
+        },
+        {
+          "license": "MIT",
+          "name": "clsx",
+          "version": "2.1.1"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "3.3.1"
+        }
+      ],
+      "impl": {
+        "entry": "components/banner/alert.tsx",
+        "export": "Alert",
+        "kind": "source"
+      },
+      "item": "alert",
+      "license": "MIT",
+      "members": [
+        "tone.danger",
+        "tone.info"
+      ],
+      "notice": "notices/THIRD-PARTY.md",
+      "outputSha256": [
+        {
+          "path": "components/_parts/utils/index.ts",
+          "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+        },
+        {
+          "path": "components/banner/alert.tsx",
+          "sha256": "e188abddf9aff0e0619648739ec858cf5d896209705462caf07425099833272d"
+        },
+        {
+          "path": "notices/THIRD-PARTY.md",
+          "sha256": "6148b3941d0eff3d024e4d3a0e630f009484163560272ae6ec79c649c67fc964"
+        }
+      ],
+      "parts": [
+        {
+          "item": "utils"
+        }
+      ],
+      "pin": {
+        "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+        "files": [
+          {
+            "path": "apps/v4/registry/bases/aria/ui/alert.tsx",
+            "sha256": "639c846b57885d8af4dbdf7ddab7b15fd4d392c051f7496c67e811154e7861d9"
+          },
+          {
+            "path": "apps/v4/registry/styles/style-nova.css",
+            "sha256": "fd9803ec398290c306b377a46a769cad0c7ff024bf6a626993c113cacc20f16e"
+          },
+          {
+            "path": "LICENSE.md",
+            "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
+          }
+        ],
+        "url": "https://github.com/shadcn-ui/ui"
+      },
+      "propMap": {
+        "tone.danger": "Alert.variant=destructive",
+        "tone.info": "Alert.variant=default"
+      },
+      "props": [],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": false,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": [
+          "tokens.border-width.hairline",
+          "tokens.control-radius.default",
+          "tokens.font-size.sm",
+          "tokens.font-weight.medium",
+          "tokens.spacing.4xl",
+          "tokens.spacing.lg",
+          "tokens.spacing.md",
+          "tokens.spacing.sm",
+          "tokens.spacing.xs",
+          "tokens.status-color.danger",
+          "tokens.surface-color.raised",
+          "tokens.text-color.muted",
+          "tokens.text-color.primary"
+        ]
+      },
+      "root": "presentational",
+      "slot": "components.banner",
+      "source": "shadcn@aria",
+      "transform": "shadcn-aria-rewrite@1"
+    }
+  }
+}

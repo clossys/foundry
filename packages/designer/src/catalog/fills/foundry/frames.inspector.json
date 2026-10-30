@@ -1,0 +1,138 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.inspector",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./frames#InspectorFrame",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "frames.inspector",
+      "source": "foundry",
+      "sourceAddress": "./frames#InspectorFrame",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "frames": {
+    "inspector": {
+      "composes": [
+        "components.button",
+        "components.card",
+        "components.resize-handle",
+        "frames.sheet"
+      ],
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.button",
+          "components.card",
+          "components.resize-handle",
+          "frames.sheet"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.button",
+            "components.card",
+            "components.resize-handle"
+          ],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.border-color",
+            "tokens.breakpoint",
+            "tokens.spacing"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/Panel.tsx",
+            "sha256": "472398e3a3e376cf2f63dbdba831f18ffad241507f15900f1dd54f5e9f2b5340"
+          },
+          {
+            "path": "packages/designer/src/blocks/ResizablePane.tsx",
+            "sha256": "ab46f265b7911fe4355ac58c0199978723d08a2056c808ac03a71f58cfbc351e"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/frames/InspectorFrame.tsx",
+            "sha256": "4717570d2798d31d6bfb0460f006f76da6ed5ea68951eda91b3f970e17686c3e"
+          },
+          {
+            "path": "packages/designer/src/frames/right-panel-config.ts",
+            "sha256": "2ee8f0200da935f594212fc6cd4095c1f373dad8eabb3e28e46caa69fce4f160"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../tokens/index.js#TOKENS",
+            "file": "packages/designer/src/frames/right-panel-config.ts",
+            "line": 1
+          }
+        ]
+      },
+      "impl": {
+        "export": "InspectorFrame",
+        "kind": "package",
+        "module": "@clossys/designer/frames"
+      },
+      "members": [
+        "presentation.collapsed",
+        "presentation.docked",
+        "presentation.overlay"
+      ],
+      "propMap": {
+        "presentation.collapsed": "collapsed=true",
+        "presentation.docked": "presentation=docked",
+        "presentation.overlay": "presentation=overlay"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.border-color",
+          "tokens.breakpoint",
+          "tokens.spacing"
+        ]
+      },
+      "slot": "frames.inspector",
+      "slots": {
+        "content": "children"
+      },
+      "statePorts": {
+        "collapsed": "collapsed/onCollapsedChange",
+        "max": "max",
+        "min": "min",
+        "step": "step",
+        "width": "value/onChange"
+      }
+    }
+  }
+}

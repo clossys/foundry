@@ -1,0 +1,94 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.breadcrumbs",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#Breadcrumb",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "components.breadcrumbs",
+      "source": "foundry",
+      "sourceAddress": "./components#Breadcrumb",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "collapsed"
+      ]
+    }
+  },
+  "components": {
+    "breadcrumbs": {
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "Breadcrumb",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "current"
+      ],
+      "pin": {
+        "export": "./components#Breadcrumb",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "current": "./components#Breadcrumb"
+      },
+      "props": [
+        "aria-label",
+        "children",
+        "className"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": [
+          "tokens.body-size",
+          "tokens.control-size",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.spacing",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
+      },
+      "root": "rac:Breadcrumbs",
+      "slot": "components.breadcrumbs",
+      "source": "foundry"
+    }
+  }
+}

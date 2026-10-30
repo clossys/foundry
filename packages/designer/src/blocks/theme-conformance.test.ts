@@ -9,6 +9,7 @@ import { mergeDeclarations, registryFromDeclarations } from "../tokens/internal/
 import { resolveTokenValue } from "../tokens/internal/resolve-token-value.js";
 import { checkTokenContrast } from "../tokens/contrast-gate.js";
 import { CONTRAST_PAIRS, contrastPairsForTheme } from "../tokens/contrast-pairs.js";
+import { CANONICAL_SECTION_BLOCK_REGISTRATIONS } from "../catalog/blocks.js";
 import { BLOCK_THEME_CONFORMANCE, NON_BLOCK_THEME_EXPORTS, type BlockThemeRegistration } from "./theme-conformance.js";
 
 const packageRoot = resolve(import.meta.dirname, "../..");
@@ -161,9 +162,16 @@ interface ConformanceInputs {
   registrations: readonly BlockThemeRegistration[];
 }
 
+/*
+ * First authored class list in each exempt Block's own source. The Toolbar
+ * Block renders through the Foundry Toolbar (c866f93c5), so its first owned
+ * class list is a plain region string rather than a cx() call.
+ */
+const EXEMPT_CLASS_ANCHORS = [["Toolbar", 'className="'], ["Panel", 'className={cx("']] as const;
+
 function realInputs(): ConformanceInputs {
   return {
-    sources: new Map([...blockSources(), ...blockSources(resolve(packageRoot, "src/atoms"))]),
+    sources: new Map([...blockSources(), ...blockSources(resolve(packageRoot, "src/components"))]),
     css: readFileSync(resolve(packageRoot, "styles/tokens.css"), "utf8"),
     themeKeys: readFileSync(resolve(packageRoot, "styles/theme-keys.css"), "utf8"),
     registrations: BLOCK_THEME_CONFORMANCE,
@@ -205,7 +213,7 @@ function valueExports(file: string, source: string) {
 function ownedDependency(file: string, module: string, sources: ReadonlyMap<string, string>): string | undefined {
   if (!module.startsWith(".")) return;
   const path = posix.normalize(posix.join(posix.dirname(file), module)).replace(/\.js$/, "");
-  if (!/^src\/(?:blocks|atoms)\//.test(path)) return;
+  if (!/^src\/(?:blocks|components)\//.test(path)) return;
   for (const suffix of [".ts", ".tsx"]) if (sources.has(path + suffix)) return path + suffix;
   throw new Error(`${file}: missing owned dependency ${module}`);
 }
@@ -297,7 +305,7 @@ function conformanceFindings(input: ConformanceInputs): string[] {
     const foreground = new Set<string>();
     for (const file of graph) {
       const data = evidence(file);
-      // Atoms retain their existing source rules; their real token roles are
+      // Components retain their existing source rules; their real token roles are
       // included only to prove a Block's delegated contrast registration.
       if (file.startsWith("src/blocks/")) findings.push(...data.findings);
       for (const property of data.tokens) used.add(property);
@@ -348,13 +356,42 @@ describe("Block theme conformance", () => {
     expect(conformanceFindings(input)).toEqual([]);
   });
 
+  it("registers canonical LegalProse once with its owned and delegated reading pairs", () => {
+    const input = realInputs();
+    const entries = input.registrations.filter(entry => entry.exportName === "LegalProse");
+    expect(entries).toHaveLength(1);
+    const entry = entries[0]!;
+    expect(CANONICAL_SECTION_BLOCK_REGISTRATIONS.filter(item => item.export === entry.exportName)).toEqual([
+      { id: "sections.legal-prose", export: "LegalProse", source: entry.source },
+    ]);
+    expect(entry.source).toBe("src/blocks/LegalProse.tsx");
+    expect(entry).not.toHaveProperty("exemptionReason");
+    expect(NON_BLOCK_THEME_EXPORTS).not.toHaveProperty("LegalProse");
+    expect(entry.contrastPairs).toEqual([
+      "ink-primary/surface-base", "ink-secondary/surface-base",
+      "ink-primary/surface-sunken", "ink-link/surface-base",
+    ]);
+    const graph = sourceGraph(entry.source, input.sources);
+    expect(graph).toContain("src/components/SemanticContent.tsx");
+    expect(graph).toContain("src/blocks/SectionHeader.tsx");
+    expect(graph).toContain("src/blocks/ArticleBody.tsx");
+    const source = input.sources.get(entry.source)!;
+    expect(source).toContain('dsAttrs("sections", "sections.legal-prose", "foundry/sections.legal-prose")');
+    expect(source).toContain('className="text-body-s text-ink-secondary"');
+    expect(sourceEvidence(entry.source, source).paintTokens).toContain("--color-ink-secondary");
+    const baseline = conformanceFindings(input);
+    expect(baseline.filter(finding => finding.includes(entry.exportName) || finding.includes(entry.source))).toEqual([]);
+    input.registrations = input.registrations.filter(item => item.exportName !== entry.exportName);
+    expect(conformanceFindings(input).sort()).toEqual([...baseline, "unregistered barrel export LegalProse"].sort());
+  });
+
   it("follows real re-exports and nested runtime render helpers", () => {
     const input = realInputs();
     expect(exportedSource("Scene", "src/blocks/index.ts", input.sources)).toBe("src/blocks/scene/Scene.tsx");
     for (const [name, dependency] of [
       ["Items", "src/blocks/items/render.tsx"], ["Specimen", "src/blocks/specimen/parts.tsx"],
-      ["Tree", "src/blocks/tree/policies.ts"], ["ResizablePane", "src/atoms/ResizeHandle.tsx"],
-      ["Panel", "src/atoms/Card.tsx"],
+      ["Tree", "src/blocks/tree/policies.ts"], ["ResizablePane", "src/components/ResizeHandle.tsx"],
+      ["Panel", "src/components/Card.tsx"],
     ]) {
       const entry = input.registrations.find(item => item.exportName === name)!;
       expect(sourceGraph(entry.source, input.sources), name).toContain(dependency);
@@ -478,23 +515,24 @@ describe("Block theme conformance", () => {
     "text-line-base", "fill-line-base", "stroke-line-base",
     "hover:text-line-base", "[&_span]:text-line-base",
   ])("refuses a foreground-free exemption with authored foreground %s", utility => {
-    for (const name of ["Toolbar", "Panel"]) {
+    for (const [name, anchor] of EXEMPT_CLASS_ANCHORS) {
       const input = realInputs();
       const file = input.registrations.find(entry => entry.exportName === name)!.source;
       const source = input.sources.get(file)!;
-      expect(source).toContain('className={cx("');
-      input.sources.set(file, source.replace('className={cx("', `className={cx("${utility} `));
+      expect(source).toContain(anchor);
+      input.sources.set(file, source.replace(anchor, `${anchor}${utility} `));
       expect(conformanceFindings(input), `${name}: ${utility}`)
         .toContain(`${name}: stale exemption now owns or delegates a contrast foreground`);
     }
   });
 
   it("keeps structural text and surface or edge paint foreground-free", () => {
-    for (const name of ["Toolbar", "Panel"]) {
+    for (const [name, anchor] of EXEMPT_CLASS_ANCHORS) {
       const input = realInputs();
       const file = input.registrations.find(entry => entry.exportName === name)!.source;
       const source = input.sources.get(file)!;
-      input.sources.set(file, source.replace('className={cx("', 'className={cx("border-line-base bg-surface-base text-body-s stroke-2 '));
+      expect(source).toContain(anchor);
+      input.sources.set(file, source.replace(anchor, `${anchor}border-line-base bg-surface-base text-body-s stroke-2 `));
       expect(conformanceFindings(input), name).toEqual([]);
     }
   });

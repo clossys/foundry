@@ -1,0 +1,1150 @@
+[
+  {
+    "id": "frames.document",
+    "layer": "frames",
+    "contract": {
+      "kind": "frame",
+      "root": "html",
+      "landmarks": [],
+      "slots": [
+        {
+          "id": "head",
+          "required": true,
+          "accepts": "host-node"
+        },
+        {
+          "id": "critical-css",
+          "required": false,
+          "accepts": "host-node"
+        },
+        {
+          "id": "body",
+          "required": true,
+          "accepts": "host-node"
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "variant.page",
+          "variant.status"
+        ]
+      },
+      "statePorts": [],
+      "rendering": "server",
+      "breakpoints": [],
+      "layers": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color"
+        ],
+        "assets": []
+      },
+      "composes": [
+        "frames.site-shell",
+        "frames.app-shell",
+        "frames.auth-shell"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "frames.site-shell",
+    "layer": "frames",
+    "contract": {
+      "kind": "frame",
+      "root": "div",
+      "landmarks": [
+        {
+          "slot": "header",
+          "role": "banner",
+          "topLevel": true,
+          "nameRequired": false
+        },
+        {
+          "slot": "main",
+          "role": "main",
+          "topLevel": true,
+          "nameRequired": false,
+          "id": "main-content",
+          "tabIndex": -1
+        },
+        {
+          "slot": "footer",
+          "role": "contentinfo",
+          "topLevel": true,
+          "nameRequired": false
+        },
+        {
+          "slot": "toasts",
+          "role": "region",
+          "topLevel": true,
+          "nameRequired": true
+        }
+      ],
+      "slots": [
+        {
+          "id": "skip-link",
+          "required": true,
+          "accepts": "host-node"
+        },
+        {
+          "id": "progress",
+          "required": false,
+          "accepts": "components.progress-bar"
+        },
+        {
+          "id": "consent",
+          "required": false,
+          "accepts": "sections.*"
+        },
+        {
+          "id": "header",
+          "required": false,
+          "accepts": "host-node"
+        },
+        {
+          "id": "main",
+          "required": true,
+          "accepts": "view"
+        },
+        {
+          "id": "footer",
+          "required": false,
+          "accepts": "host-node"
+        },
+        {
+          "id": "toasts",
+          "required": false,
+          "accepts": "components.toast"
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "chrome.full",
+          "chrome.minimal",
+          "footer-placement.flow",
+          "footer-placement.overlay",
+          "header-placement.overlay"
+        ]
+      },
+      "statePorts": [],
+      "rendering": "server",
+      "breakpoints": [
+        "tokens.breakpoint.mobile",
+        "tokens.breakpoint.mobile-lg",
+        "tokens.breakpoint.tablet",
+        "tokens.breakpoint.tablet-lg",
+        "tokens.breakpoint.desktop",
+        "tokens.breakpoint.wide"
+      ],
+      "layers": [
+        "tokens.z-index.sticky",
+        "tokens.z-index.skip-link",
+        "tokens.z-index.progress",
+        "tokens.z-index.toast"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.breakpoint",
+          "tokens.gutter",
+          "tokens.z-index",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.caption-size",
+          "tokens.content-size",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.elevation",
+          "tokens.focus-color",
+          "tokens.heading-size",
+          "tokens.icon-size",
+          "tokens.letter-spacing",
+          "tokens.line-height",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.surface-radius",
+          "tokens.touch-target",
+          "tokens.typeface"
+        ],
+        "assets": [
+          "assets.image"
+        ],
+        "privateInternal": [
+          "packages/designer/src/frames/site-frame/landing/internal/assets.ts"
+        ]
+      },
+      "composes": [
+        "frames.site-header",
+        "frames.site-footer",
+        "components.progress-bar",
+        "components.toast",
+        "components.avatar",
+        "components.badge",
+        "components.card",
+        "components.disclosure",
+        "components.icon",
+        "components.logo",
+        "components.semantic-content",
+        "components.status-mark",
+        "sections.features",
+        "sections.hero",
+        "sections.media",
+        "sections.pricing",
+        "sections.section-header",
+        "sections.status-list",
+        "sections.steps"
+      ],
+      "skipTarget": "main-content"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "frames.app-shell",
+    "layer": "frames",
+    "contract": {
+      "kind": "frame",
+      "root": "div",
+      "landmarks": [
+        {
+          "slot": "header",
+          "role": "banner",
+          "topLevel": true,
+          "nameRequired": false
+        },
+        {
+          "slot": "sidebar",
+          "role": "navigation",
+          "topLevel": true,
+          "nameRequired": true
+        },
+        {
+          "slot": "main",
+          "role": "main",
+          "topLevel": true,
+          "nameRequired": false,
+          "id": "main-content",
+          "tabIndex": -1
+        },
+        {
+          "slot": "inspector",
+          "role": "complementary",
+          "topLevel": true,
+          "nameRequired": true
+        },
+        {
+          "slot": "toasts",
+          "role": "region",
+          "topLevel": true,
+          "nameRequired": true
+        }
+      ],
+      "slots": [
+        {
+          "id": "skip-link",
+          "required": true,
+          "accepts": "host-node"
+        },
+        {
+          "id": "progress",
+          "required": false,
+          "accepts": "components.progress-bar"
+        },
+        {
+          "id": "sidebar",
+          "required": false,
+          "accepts": "host-node"
+        },
+        {
+          "id": "header",
+          "required": false,
+          "accepts": "host-node"
+        },
+        {
+          "id": "main",
+          "required": true,
+          "accepts": "view"
+        },
+        {
+          "id": "inspector",
+          "required": false,
+          "accepts": "host-node"
+        },
+        {
+          "id": "command",
+          "required": false,
+          "accepts": "host-node"
+        },
+        {
+          "id": "page-module",
+          "required": false,
+          "accepts": "sections.*"
+        },
+        {
+          "id": "state",
+          "required": false,
+          "accepts": "host-node"
+        },
+        {
+          "id": "toasts",
+          "required": false,
+          "accepts": "components.toast"
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "layout.standard",
+          "layout.immersive",
+          "stage.contained",
+          "stage.full",
+          "theme.system",
+          "theme.light",
+          "theme.dark"
+        ]
+      },
+      "statePorts": [
+        {
+          "id": "sidebar-collapsed",
+          "type": "boolean"
+        },
+        {
+          "id": "inspector-collapsed",
+          "type": "boolean"
+        },
+        {
+          "id": "width",
+          "type": "number"
+        },
+        {
+          "id": "theme",
+          "type": "string",
+          "values": [
+            "system",
+            "light",
+            "dark"
+          ]
+        },
+        {
+          "id": "navigating",
+          "type": "boolean"
+        },
+        {
+          "id": "main-state",
+          "type": "string",
+          "values": [
+            "ready",
+            "loading",
+            "error",
+            "not-found",
+            "forbidden"
+          ]
+        }
+      ],
+      "rendering": "client",
+      "breakpoints": [
+        "tokens.breakpoint.mobile",
+        "tokens.breakpoint.mobile-lg",
+        "tokens.breakpoint.tablet",
+        "tokens.breakpoint.tablet-lg",
+        "tokens.breakpoint.desktop",
+        "tokens.breakpoint.wide"
+      ],
+      "layers": [
+        "tokens.z-index.sticky",
+        "tokens.z-index.shell",
+        "tokens.z-index.aside",
+        "tokens.z-index.modal",
+        "tokens.z-index.palette",
+        "tokens.z-index.toast",
+        "tokens.z-index.progress",
+        "tokens.z-index.skip-link"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.breakpoint",
+          "tokens.region-width",
+          "tokens.content-size",
+          "tokens.gutter",
+          "tokens.touch-target",
+          "tokens.z-index",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.accent-color",
+          "tokens.blur",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.caption-size",
+          "tokens.control-radius",
+          "tokens.spacing"
+        ],
+        "assets": [
+          "assets.icon-layers",
+          "assets.icon-list-view",
+          "assets.icon-search"
+        ]
+      },
+      "composes": [
+        "frames.app-header",
+        "frames.app-sidebar",
+        "frames.inspector",
+        "frames.sheet",
+        "frames.command",
+        "components.button",
+        "components.icon",
+        "components.menu",
+        "components.progress-bar",
+        "components.toast",
+        "components.skeleton",
+        "components.toggle-button",
+        "components.avatar",
+        "components.banner",
+        "components.card",
+        "components.logo",
+        "components.resize-handle",
+        "components.tabs",
+        "components.tooltip"
+      ],
+      "skipTarget": "main-content",
+      "stage": {
+        "accepts": [
+          "flow",
+          "canvas"
+        ],
+        "scroll": "region"
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "frames.auth-shell",
+    "layer": "frames",
+    "contract": {
+      "kind": "frame",
+      "stage": {
+        "accepts": [
+          "flow"
+        ],
+        "scroll": "document"
+      },
+      "root": "div",
+      "landmarks": [
+        {
+          "slot": "main",
+          "role": "main",
+          "topLevel": true,
+          "nameRequired": false,
+          "id": "main-content",
+          "tabIndex": -1
+        }
+      ],
+      "slots": [
+        {
+          "id": "skip-link",
+          "required": true,
+          "accepts": "host-node"
+        },
+        {
+          "id": "main",
+          "required": true,
+          "accepts": "view"
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "statePorts": [],
+      "rendering": "server",
+      "breakpoints": [],
+      "layers": [
+        "tokens.z-index.skip-link"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.container-width",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.z-index",
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.content-size",
+          "tokens.control-radius"
+        ],
+        "assets": []
+      },
+      "composes": [
+        "components.semantic-content"
+      ],
+      "skipTarget": "main-content"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "frames.site-header",
+    "layer": "frames",
+    "contract": {
+      "kind": "frame",
+      "root": "header",
+      "landmarks": [
+        {
+          "slot": "brand",
+          "role": "banner",
+          "topLevel": true,
+          "nameRequired": false
+        },
+        {
+          "slot": "nav",
+          "role": "navigation",
+          "topLevel": false,
+          "nameRequired": true
+        }
+      ],
+      "slots": [
+        {
+          "id": "brand",
+          "required": true,
+          "accepts": "components.logo"
+        },
+        {
+          "id": "nav",
+          "required": false,
+          "accepts": "components.link"
+        },
+        {
+          "id": "actions",
+          "required": false,
+          "accepts": "components.button"
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "surface.solid",
+          "surface.transparent",
+          "surface.glass",
+          "tone.base",
+          "tone.inverse",
+          "nav-placement.leading",
+          "nav-placement.centered",
+          "position.sticky",
+          "position.static"
+        ]
+      },
+      "statePorts": [],
+      "rendering": "server",
+      "breakpoints": [
+        "tokens.breakpoint.mobile",
+        "tokens.breakpoint.mobile-lg",
+        "tokens.breakpoint.tablet",
+        "tokens.breakpoint.tablet-lg",
+        "tokens.breakpoint.desktop",
+        "tokens.breakpoint.wide"
+      ],
+      "layers": [
+        "tokens.z-index.shell",
+        "tokens.z-index.sticky"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.surface-color",
+          "tokens.blur",
+          "tokens.border-color",
+          "tokens.text-color",
+          "tokens.z-index",
+          "tokens.touch-target",
+          "tokens.breakpoint",
+          "tokens.transition-duration",
+          "tokens.transition-easing",
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.body-size",
+          "tokens.border-width",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.typeface"
+        ],
+        "assets": [
+          "assets.lockup",
+          "assets.mark",
+          "assets.icon-close"
+        ]
+      },
+      "composes": [
+        "components.logo",
+        "components.link",
+        "components.button",
+        "components.icon",
+        "components.badge",
+        "components.disclosure",
+        "components.dialog"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "frames.app-header",
+    "layer": "frames",
+    "contract": {
+      "kind": "frame",
+      "root": "header",
+      "landmarks": [],
+      "slots": [
+        {
+          "id": "context",
+          "required": false,
+          "accepts": "sections.*"
+        },
+        {
+          "id": "trail",
+          "required": false,
+          "accepts": "components.breadcrumbs"
+        },
+        {
+          "id": "actions",
+          "required": false,
+          "accepts": "host-node"
+        },
+        {
+          "id": "info",
+          "required": false,
+          "accepts": "host-node"
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "surface.glass",
+          "fallback.opaque",
+          "position.sticky",
+          "position.static"
+        ]
+      },
+      "statePorts": [],
+      "rendering": "client",
+      "breakpoints": [],
+      "layers": [
+        "tokens.z-index.sticky"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.surface-color",
+          "tokens.blur",
+          "tokens.border-color",
+          "tokens.z-index",
+          "tokens.heading-size",
+          "tokens.spacing",
+          "tokens.text-color",
+          "tokens.touch-target",
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-width",
+          "tokens.control-radius"
+        ],
+        "assets": [
+          "assets.icon-chevron-down",
+          "assets.icon-external-link"
+        ]
+      },
+      "composes": [
+        "components.breadcrumbs",
+        "components.menu",
+        "components.popover",
+        "components.button",
+        "components.link",
+        "components.toggle-button",
+        "components.status-mark",
+        "components.icon",
+        "components.tooltip"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "frames.app-sidebar",
+    "layer": "frames",
+    "contract": {
+      "kind": "frame",
+      "root": "nav",
+      "landmarks": [
+        {
+          "slot": "tree",
+          "role": "navigation",
+          "topLevel": true,
+          "nameRequired": true
+        }
+      ],
+      "slots": [
+        {
+          "id": "header",
+          "required": false,
+          "accepts": "components.button"
+        },
+        {
+          "id": "tree",
+          "required": true,
+          "accepts": "components.navigation-tree"
+        },
+        {
+          "id": "account",
+          "required": false,
+          "accepts": "components.menu"
+        },
+        {
+          "id": "theme",
+          "required": false,
+          "accepts": "components.menu"
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "presentation.docked",
+          "presentation.collapsed",
+          "presentation.overlay"
+        ]
+      },
+      "statePorts": [
+        {
+          "id": "collapsed",
+          "type": "boolean"
+        }
+      ],
+      "rendering": "client",
+      "breakpoints": [
+        "tokens.breakpoint.mobile",
+        "tokens.breakpoint.mobile-lg",
+        "tokens.breakpoint.tablet",
+        "tokens.breakpoint.tablet-lg",
+        "tokens.breakpoint.desktop",
+        "tokens.breakpoint.wide"
+      ],
+      "layers": [
+        "tokens.z-index.shell",
+        "tokens.z-index.modal"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.breakpoint",
+          "tokens.region-width",
+          "tokens.surface-color",
+          "tokens.spacing",
+          "tokens.text-color",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.focus-shadow",
+          "tokens.touch-target",
+          "tokens.z-index",
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.icon-size"
+        ],
+        "assets": [
+          "assets.icon-chevron-down",
+          "assets.icon-chevron-left",
+          "assets.icon-check",
+          "assets.icon-chevron-up",
+          "assets.icon-theme-light",
+          "assets.icon-theme-dark",
+          "assets.icon-theme-system"
+        ]
+      },
+      "composes": [
+        "components.navigation-tree",
+        "components.link",
+        "components.button",
+        "components.tooltip",
+        "components.menu",
+        "components.avatar",
+        "frames.sheet",
+        "components.card",
+        "components.icon"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "frames.inspector",
+    "layer": "frames",
+    "contract": {
+      "kind": "frame",
+      "root": "aside",
+      "landmarks": [
+        {
+          "slot": "content",
+          "role": "complementary",
+          "topLevel": true,
+          "nameRequired": true
+        }
+      ],
+      "slots": [
+        {
+          "id": "content",
+          "required": true,
+          "accepts": "host-node"
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "presentation.docked",
+          "presentation.collapsed",
+          "presentation.overlay"
+        ]
+      },
+      "statePorts": [
+        {
+          "id": "collapsed",
+          "type": "boolean"
+        },
+        {
+          "id": "width",
+          "type": "number"
+        },
+        {
+          "id": "min",
+          "type": "number"
+        },
+        {
+          "id": "max",
+          "type": "number"
+        },
+        {
+          "id": "step",
+          "type": "number"
+        }
+      ],
+      "rendering": "client",
+      "breakpoints": [
+        "tokens.breakpoint.mobile",
+        "tokens.breakpoint.mobile-lg",
+        "tokens.breakpoint.tablet",
+        "tokens.breakpoint.tablet-lg",
+        "tokens.breakpoint.desktop",
+        "tokens.breakpoint.wide"
+      ],
+      "layers": [
+        "tokens.z-index.aside",
+        "tokens.z-index.modal"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.breakpoint",
+          "tokens.region-width",
+          "tokens.surface-color",
+          "tokens.border-color",
+          "tokens.z-index",
+          "tokens.accent-color",
+          "tokens.spacing"
+        ],
+        "assets": [
+          "assets.icon-layers"
+        ]
+      },
+      "composes": [
+        "components.resize-handle",
+        "components.button",
+        "frames.sheet",
+        "components.card"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "frames.site-footer",
+    "layer": "frames",
+    "contract": {
+      "kind": "frame",
+      "root": "footer",
+      "landmarks": [
+        {
+          "slot": "columns",
+          "role": "contentinfo",
+          "topLevel": true,
+          "nameRequired": false
+        }
+      ],
+      "slots": [
+        {
+          "id": "columns",
+          "required": false,
+          "accepts": "host-node"
+        },
+        {
+          "id": "links",
+          "required": false,
+          "accepts": "components.link"
+        },
+        {
+          "id": "legal",
+          "required": false,
+          "accepts": "host-node"
+        },
+        {
+          "id": "social",
+          "required": false,
+          "accepts": "components.icon"
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "ground.base",
+          "ground.inverse",
+          "rule.on",
+          "rule.off",
+          "overlay.on",
+          "overlay.off"
+        ]
+      },
+      "statePorts": [],
+      "rendering": "server",
+      "breakpoints": [
+        "tokens.breakpoint.mobile",
+        "tokens.breakpoint.mobile-lg",
+        "tokens.breakpoint.tablet",
+        "tokens.breakpoint.tablet-lg",
+        "tokens.breakpoint.desktop",
+        "tokens.breakpoint.wide"
+      ],
+      "layers": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.caption-size",
+          "tokens.typeface",
+          "tokens.breakpoint",
+          "tokens.body-size",
+          "tokens.brandmark-size",
+          "tokens.touch-target",
+          "tokens.z-index",
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.state-opacity",
+          "tokens.status-color"
+        ],
+        "assets": [
+          "assets.mark",
+          "assets.image"
+        ]
+      },
+      "composes": [
+        "components.link",
+        "components.icon",
+        "components.logo",
+        "components.separator",
+        "components.semantic-content"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "frames.sheet",
+    "layer": "frames",
+    "contract": {
+      "kind": "frame",
+      "root": "dialog",
+      "landmarks": [],
+      "slots": [
+        {
+          "id": "heading",
+          "required": true,
+          "accepts": "host-node"
+        },
+        {
+          "id": "body",
+          "required": true,
+          "accepts": "host-node"
+        },
+        {
+          "id": "footer",
+          "required": false,
+          "accepts": "host-node"
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "placement.start",
+          "placement.end",
+          "placement.bottom",
+          "wide.dismiss",
+          "wide.sheet"
+        ]
+      },
+      "statePorts": [
+        {
+          "id": "open",
+          "type": "boolean"
+        }
+      ],
+      "rendering": "client",
+      "breakpoints": [
+        "tokens.breakpoint.mobile",
+        "tokens.breakpoint.mobile-lg",
+        "tokens.breakpoint.tablet",
+        "tokens.breakpoint.tablet-lg",
+        "tokens.breakpoint.desktop",
+        "tokens.breakpoint.wide"
+      ],
+      "layers": [
+        "tokens.z-index.modal"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.breakpoint",
+          "tokens.scrim-color",
+          "tokens.surface-color",
+          "tokens.elevation",
+          "tokens.z-index",
+          "tokens.region-width",
+          "tokens.heading-size",
+          "tokens.spacing",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.shift-distance",
+          "tokens.accent-color"
+        ],
+        "assets": [
+          "assets.icon-close"
+        ]
+      },
+      "composes": [
+        "components.dialog",
+        "components.button",
+        "components.card",
+        "components.icon"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "frames.command",
+    "layer": "frames",
+    "contract": {
+      "kind": "frame",
+      "root": "dialog",
+      "landmarks": [],
+      "slots": [
+        {
+          "id": "search",
+          "required": true,
+          "accepts": "components.search-field"
+        },
+        {
+          "id": "groups",
+          "required": true,
+          "accepts": "host-node"
+        },
+        {
+          "id": "empty",
+          "required": false,
+          "accepts": "host-node"
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "shortcut.on",
+          "shortcut.off"
+        ]
+      },
+      "statePorts": [
+        {
+          "id": "open",
+          "type": "boolean"
+        },
+        {
+          "id": "query",
+          "type": "string"
+        }
+      ],
+      "rendering": "client",
+      "breakpoints": [],
+      "layers": [
+        "tokens.z-index.palette"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.scrim-color",
+          "tokens.surface-color",
+          "tokens.elevation",
+          "tokens.z-index",
+          "tokens.spacing",
+          "tokens.text-color",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.focus-shadow",
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.state-opacity"
+        ],
+        "assets": [
+          "assets.icon-search",
+          "assets.icon-close"
+        ]
+      },
+      "composes": [
+        "components.dialog",
+        "components.search-field",
+        "components.keyboard",
+        "components.tooltip",
+        "components.button",
+        "components.icon"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  }
+]

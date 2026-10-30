@@ -1,13 +1,21 @@
+import { MatrixChoices, type MatrixChoicesProps } from "./matrix/choices.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Card } from "../atoms/Card.js";
-import { Icon } from "../atoms/Icon.js";
-import type { StatusMarkTone } from "../atoms/StatusMark.js";
-import { cx } from "../atoms/internal/cx.js";
-import { UI_BORDER_HAIRLINE } from "../atoms/internal/ui-vars.js";
+import { Card } from "../components/Card.js";
+import { Icon } from "../components/Icon.js";
+import type { StatusMarkTone } from "../components/StatusMark.js";
+import { cx } from "../components/internal/cx.js";
+import { UI_BORDER_HAIRLINE } from "../components/internal/ui-vars.js";
 import { Check } from "../icons/Check.js";
 import { hasContent } from "./items/policies.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { MatrixGrid } from "./matrix/grid.js";
+import { LibraryBoardSection, type LibraryBoardSectionProps } from "./library-board/LibraryBoardSection.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.comparison", "foundry/sections.comparison");
+
+/** Explicit selected comparison configuration; the existing grid literal stays unchanged. */
+export const LIBRARY_BOARD_CONFIG = { id: "library-board", members: ["arrangement.library-board"], props: { arrangement: "library-board" } } as const;
 
 /** Heading element for each side's primary heading. */
 export type MatrixHeadingLevel = 2 | 3 | 4 | 5 | 6;
@@ -62,7 +70,7 @@ export interface MatrixGridProps extends Omit<HTMLAttributes<HTMLTableElement>, 
 }
 
 /** Two parallel sides, or a responsive comparison table with authored cells. */
-export type MatrixProps = MatrixQuadrantProps | MatrixGridProps;
+export type MatrixProps = MatrixQuadrantProps | MatrixGridProps | MatrixChoicesProps | ({ readonly arrangement: "library-board" } & LibraryBoardSectionProps);
 
 const HEADING_TAGS = { 2: "h2", 3: "h3", 4: "h4", 5: "h5", 6: "h6" } as const;
 const DASH_CLASSES: Record<SectionGround, string> = {
@@ -174,8 +182,10 @@ export function MatrixRenderer({ arrangement: _arrangement, sides, featured, hea
 
 /** Two equal plates or one responsive comparison table. Server-safe. */
 export function Matrix(props: MatrixProps) {
-  if (props.arrangement === "grid") return <MatrixGrid {...props} />;
+  if (props.arrangement === "library-board") return <LibraryBoardSection {...SECTION_STAMP} {...props} />;
+  if (props.arrangement === "choices") return <MatrixChoices {...SECTION_STAMP} {...props} />;
+  if (props.arrangement === "grid") return <MatrixGrid {...SECTION_STAMP} {...props} />;
   if (props.arrangement !== undefined && props.arrangement !== "sides") throw new TypeError("Matrix: unknown arrangement.");
   assertMatrix(props);
-  return <MatrixRenderer {...props} />;
+  return <MatrixRenderer {...SECTION_STAMP} {...props} />;
 }

@@ -1,0 +1,358 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.app-shell",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./frames#AppFrame",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "frames.app-shell",
+      "source": "foundry",
+      "sourceAddress": "./frames#AppFrame",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "frames": {
+    "app-shell": {
+      "composes": [
+        "components.avatar",
+        "components.banner",
+        "components.button",
+        "components.card",
+        "components.icon",
+        "components.logo",
+        "components.menu",
+        "components.resize-handle",
+        "components.tabs",
+        "components.toggle-button",
+        "components.tooltip",
+        "frames.app-header",
+        "frames.app-sidebar",
+        "frames.command",
+        "frames.sheet"
+      ],
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.avatar",
+          "components.banner",
+          "components.button",
+          "components.card",
+          "components.icon",
+          "components.logo",
+          "components.menu",
+          "components.resize-handle",
+          "components.tabs",
+          "components.toggle-button",
+          "components.tooltip",
+          "frames.app-header",
+          "frames.app-sidebar",
+          "frames.command",
+          "frames.sheet"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.avatar",
+            "components.banner",
+            "components.button",
+            "components.card",
+            "components.icon",
+            "components.logo",
+            "components.menu",
+            "components.resize-handle",
+            "components.tabs",
+            "components.toggle-button",
+            "components.tooltip"
+          ],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.blur",
+            "tokens.body-size",
+            "tokens.border-color",
+            "tokens.border-width",
+            "tokens.breakpoint",
+            "tokens.caption-size",
+            "tokens.content-size",
+            "tokens.control-radius",
+            "tokens.region-width",
+            "tokens.spacing",
+            "tokens.surface-color",
+            "tokens.text-color",
+            "tokens.touch-target",
+            "tokens.z-index"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/AccountMenu.tsx",
+            "sha256": "929f0396b0cb3433a4092ed6c55d70372866b3812ff79a9b5f2924805c203936"
+          },
+          {
+            "path": "packages/designer/src/blocks/canvas/models.ts",
+            "sha256": "dd0a29239e18010e12355d28c13b776be54ab19f1b9234468c627ff7b72d3e61"
+          },
+          {
+            "path": "packages/designer/src/blocks/CommandMenu.tsx",
+            "sha256": "a6aed4bf309c563a34e3548263253163e1e6454007dbdeb4a27887c5f8065274"
+          },
+          {
+            "path": "packages/designer/src/blocks/Panel.tsx",
+            "sha256": "472398e3a3e376cf2f63dbdba831f18ffad241507f15900f1dd54f5e9f2b5340"
+          },
+          {
+            "path": "packages/designer/src/blocks/ResizablePane.tsx",
+            "sha256": "ab46f265b7911fe4355ac58c0199978723d08a2056c808ac03a71f58cfbc351e"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/Banner.copy-context.tsx",
+            "sha256": "fa058a7f7655c4968b4930010d57be56f1136b4c5eda4c6544dca26088edc55a"
+          },
+          {
+            "path": "packages/designer/src/components/Banner.copy.ts",
+            "sha256": "9a37518f0d4ab5d04c55cfd4706daaecaad2a490b9a36d83db9108215d48e658"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/frames/app-frame-layout.ts",
+            "sha256": "fec6d45d03384483481d50b6eee8629da2799c66f5b70438f36eb7504f055a5e"
+          },
+          {
+            "path": "packages/designer/src/frames/app-frame-size-classes.ts",
+            "sha256": "bc6004ea5d97865ec6dea7b596e1f216c40bbdb7a1d1ff70954185af192e7d45"
+          },
+          {
+            "path": "packages/designer/src/frames/AppFrame.tsx",
+            "sha256": "b936356d4416d13e2a948ef0b6ac0c6091e0b7a4072c9dcda0b4f233c5712c27"
+          },
+          {
+            "path": "packages/designer/src/frames/AppFrameBrand.tsx",
+            "sha256": "aebc205da11a48ffce8f765e20bf62ae607d7df5f486a169c3b8d7f656f0c206"
+          },
+          {
+            "path": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
+            "sha256": "bd6a6a972c41308d44396a619ecd991c381defd6f7e55271b6c89e8e9264821a"
+          },
+          {
+            "path": "packages/designer/src/frames/frame-dock-layout.ts",
+            "sha256": "cca0c414d9ccdfd1302a092956cb6550cc9718c5d706c73426a21680f9a12fcf"
+          },
+          {
+            "path": "packages/designer/src/frames/frame-notices.tsx",
+            "sha256": "53e8f66790898a06ea518468e071bda360b5ac65ac60fa192f7d192ce2a3990b"
+          },
+          {
+            "path": "packages/designer/src/frames/frame-zoom-gestures.tsx",
+            "sha256": "9be4b7d8b3324e9014db063bafc4348d065039c6883e15dd1f553ea1694896cd"
+          },
+          {
+            "path": "packages/designer/src/frames/FrameDock.tsx",
+            "sha256": "9d1c352e83c87277f867cb8fb661be32dcfe5e8e6de918cd00877c8d4ac3c213"
+          },
+          {
+            "path": "packages/designer/src/icons/ChevronDown.ts",
+            "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
+          },
+          {
+            "path": "packages/designer/src/icons/ChevronUp.ts",
+            "sha256": "c36ddd23fcd3e3fa1a9d33723e69dafab41f96ed318c591daf1767534d973d55"
+          },
+          {
+            "path": "packages/designer/src/icons/List.ts",
+            "sha256": "41a9f16bbf2cea86eb4a8d2039efce4cf87fb58c6ef7a23d120dea45985bd4c2"
+          },
+          {
+            "path": "packages/designer/src/icons/Monitor.ts",
+            "sha256": "1018ced79e3d8f50a4a74607ffc22ad99c7744c29c248824b8437fba65185148"
+          },
+          {
+            "path": "packages/designer/src/icons/Moon.ts",
+            "sha256": "dc1db0aec557a9ca371734249fb9a84eedce7d41c0a5fdfd072979821039be9d"
+          },
+          {
+            "path": "packages/designer/src/icons/Search.ts",
+            "sha256": "85a680f4b9b2a41659159f5c3a825fec027443760fc8527ca570c3ec646fa6a3"
+          },
+          {
+            "path": "packages/designer/src/icons/Sun.ts",
+            "sha256": "8667df53d290ac14195b44a8a39a1b88e0bda24fb236637c1f30b6fea19a1a2f"
+          },
+          {
+            "path": "packages/designer/src/shell/FrameSlots.tsx",
+            "sha256": "516a1b13236d14591e8400d5fb17597f83b651c1b637909905ee7672bdf86300"
+          },
+          {
+            "path": "packages/designer/src/shell/SkipLink.tsx",
+            "sha256": "940d32dea44bdbde6f2ef1f5470f539425e34586f96f90750e34e17ffc82f20c"
+          },
+          {
+            "path": "packages/designer/src/shell/Toaster.tsx",
+            "sha256": "ec61ccf36fc75352f3668080b542344caf204a16bace2d49a2564949c0934f2d"
+          },
+          {
+            "path": "packages/designer/src/theme/internal/theme-core.ts",
+            "sha256": "7cae970cc903074715cd099a5b235d07fa71ce7873afb354b3926a17a4f1af33"
+          },
+          {
+            "path": "packages/designer/src/theme/ThemeProvider.tsx",
+            "sha256": "7cde01b104ce5bcc51b04053d361404bbfe79a2fc87f17493ac168f21efed753"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/ChevronUp.js#ChevronUp",
+            "file": "packages/designer/src/blocks/AccountMenu.tsx",
+            "line": 9
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../tokens/index.js#TOKENS",
+            "file": "packages/designer/src/frames/app-frame-layout.ts",
+            "line": 1
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/index.js#List",
+            "file": "packages/designer/src/frames/AppFrame.tsx",
+            "line": 7
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/index.js#Search",
+            "file": "packages/designer/src/frames/AppFrame.tsx",
+            "line": 7
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/Monitor.js#Monitor",
+            "file": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
+            "line": 8
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/Moon.js#Moon",
+            "file": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
+            "line": 9
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/Sun.js#Sun",
+            "file": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
+            "line": 10
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../tokens/index.js#TOKENS",
+            "file": "packages/designer/src/frames/frame-dock-layout.ts",
+            "line": 1
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/index.js#ChevronDown",
+            "file": "packages/designer/src/frames/FrameDock.tsx",
+            "line": 6
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ./internal/shell-vars.js#UI_Z_SKIP_LINK",
+            "file": "packages/designer/src/shell/SkipLink.tsx",
+            "line": 3
+          }
+        ]
+      },
+      "impl": {
+        "export": "AppFrame",
+        "kind": "package",
+        "module": "@clossys/designer/frames"
+      },
+      "members": [
+        "layout.immersive",
+        "layout.standard",
+        "stage.contained",
+        "stage.full",
+        "theme.dark",
+        "theme.light",
+        "theme.system"
+      ],
+      "propMap": {
+        "layout.immersive": "layout=immersive",
+        "layout.standard": "layout=standard",
+        "stage.contained": "stage=contained",
+        "stage.full": "stage=full",
+        "theme.dark": "theme.defaultPreference=dark",
+        "theme.light": "theme.defaultPreference=light",
+        "theme.system": "theme.defaultPreference=system"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.blur",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.breakpoint",
+          "tokens.caption-size",
+          "tokens.content-size",
+          "tokens.control-radius",
+          "tokens.region-width",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.touch-target",
+          "tokens.z-index"
+        ]
+      },
+      "slot": "frames.app-shell",
+      "slots": {
+        "command": "commands",
+        "header": "context",
+        "inspector": "rightPanel",
+        "main": "children",
+        "page-module": "pageModule",
+        "progress": "progress",
+        "sidebar": "navigation",
+        "skip-link": "skipLabel",
+        "state": "stateViews",
+        "toasts": "toasts"
+      },
+      "statePorts": {
+        "inspector-collapsed": "rightPanel.collapsed/rightPanel.onCollapsedChange",
+        "main-state": "state.main",
+        "navigating": "state.navigating",
+        "sidebar-collapsed": "navigation.collapsed/navigation.onCollapsedChange",
+        "theme": "theme.preference/theme.onPreferenceChange",
+        "width": "rightPanel.value/rightPanel.onChange"
+      }
+    }
+  }
+}

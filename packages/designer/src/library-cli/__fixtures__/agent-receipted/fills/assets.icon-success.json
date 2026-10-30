@@ -1,0 +1,72 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "example/assets.icon-success",
+      "license": "ISC",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "file": "src/icons/CheckCircle.ts",
+        "package": "lucide-react",
+        "sha256": "e42486366da8ecf567b7550bb88078661910f893c0237d96b5812fb9dbb6060a",
+        "version": "1.23.0"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": []
+      },
+      "relation": "same-contract",
+      "slot": "assets.icon-success",
+      "source": "example",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/circle-check-big.js",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "assets": {
+    "icon-success": {
+      "default": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "lucide/assets.icon-success",
+            "kind": "adopted",
+            "license": "ISC",
+            "member": "assets.icon-success.default",
+            "pin": {
+              "file": "src/icons/CheckCircle.ts",
+              "package": "lucide-react",
+              "sha256": "e42486366da8ecf567b7550bb88078661910f893c0237d96b5812fb9dbb6060a",
+              "version": "1.23.0"
+            },
+            "sha256": "3dba58aca378132ca2edf4f7ed7121ac3efd36d249e60fb5e14eb7e5e3c7c11b",
+            "source": "lucide"
+          }
+        },
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M21.801 10A10 10 0 1 1 17 3.335",
+              "key": "yps3ct"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m9 11 3 3L22 4",
+              "key": "1pflzl"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

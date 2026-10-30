@@ -1,0 +1,272 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.comparison",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#Matrix",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.comparison",
+      "source": "foundry",
+      "sourceAddress": "./blocks#Matrix",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "comparison": {
+      "composes": [
+        "components.badge",
+        "components.button",
+        "components.card",
+        "components.dialog",
+        "components.icon",
+        "components.menu",
+        "components.radio-group",
+        "components.status-mark",
+        "components.table",
+        "components.tooltip",
+        "sections.section-header"
+      ],
+      "configs": {
+        "arrangement": "grid"
+      },
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.badge",
+          "components.button",
+          "components.card",
+          "components.dialog",
+          "components.icon",
+          "components.menu",
+          "components.radio-group",
+          "components.status-mark",
+          "components.table",
+          "components.tooltip",
+          "sections.section-header"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.badge",
+            "components.button",
+            "components.card",
+            "components.dialog",
+            "components.icon",
+            "components.menu",
+            "components.radio-group",
+            "components.status-mark",
+            "components.table",
+            "components.tooltip"
+          ],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.body-size",
+            "tokens.border-color",
+            "tokens.border-width",
+            "tokens.caption-size",
+            "tokens.code-size",
+            "tokens.control-radius",
+            "tokens.heading-size",
+            "tokens.letter-spacing",
+            "tokens.line-height",
+            "tokens.radius",
+            "tokens.region-width",
+            "tokens.spacing",
+            "tokens.status-color",
+            "tokens.surface-color",
+            "tokens.surface-radius",
+            "tokens.text-color",
+            "tokens.typeface"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/canvas/CanvasLod.tsx",
+            "sha256": "ae7e31e40831a4bf14e51887ec7c47b861b8dea2370ddbeb1b6e594f860638e2"
+          },
+          {
+            "path": "packages/designer/src/blocks/internal/trend.ts",
+            "sha256": "4aa7cce812d8e68674aca3ccfe5580fa421661d7652e2c2d1eabfd69d1c1b466"
+          },
+          {
+            "path": "packages/designer/src/blocks/items/policies.ts",
+            "sha256": "64cb8c3d85df5e6d1cc846d6bdb36755dbb26b935be7e4964d8e636a3f78631a"
+          },
+          {
+            "path": "packages/designer/src/blocks/library-board/candidate-prompt.ts",
+            "sha256": "9ec62f8fc0e1120522cf1cf3224573deb791e0d6ab1152a024ef662399a273ed"
+          },
+          {
+            "path": "packages/designer/src/blocks/library-board/CandidatePromptDialog.tsx",
+            "sha256": "af2448b00e0dbb85f772e6818392711e21dd3b83c792fc4836ea621aed7def27"
+          },
+          {
+            "path": "packages/designer/src/blocks/library-board/LeafCell.tsx",
+            "sha256": "f03ad64139e9236f693d811022d6ca51edb6ff1cefdb23c510aa6e6219bbc9a0"
+          },
+          {
+            "path": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+            "sha256": "77b626f7d4f1cb7ca987fc57772cc391edcaee62d2beb4301200e89ebcdef9a2"
+          },
+          {
+            "path": "packages/designer/src/blocks/library-board/model.ts",
+            "sha256": "adedbad572ac67e5a7584027e74f0e3b7a9e0828fbf16fc88339d9819fff64a4"
+          },
+          {
+            "path": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+            "sha256": "6944de42b796e7391e7cd472dde2de47d45c6027e65e88f4281f9eeb54565bc9"
+          },
+          {
+            "path": "packages/designer/src/blocks/Matrix.tsx",
+            "sha256": "164374d9d37494fccf4f5aad699f5408ba568af094ef97cde1f484178fcc80ed"
+          },
+          {
+            "path": "packages/designer/src/blocks/matrix/choices.tsx",
+            "sha256": "e0326f70076fcb8c9b21cf88ff7eb840029dd6eada6eae5c5966d89ae2255774"
+          },
+          {
+            "path": "packages/designer/src/blocks/matrix/grid.tsx",
+            "sha256": "a7909a2486bdf24a4c9ff800d32e2a112080e95e8c45bbf342f3990b674ad3a3"
+          },
+          {
+            "path": "packages/designer/src/blocks/matrix/harvey-mark.tsx",
+            "sha256": "8e50bf8776d3ff31b3f5a4ad08c1b889cb7850b578363c45b20a7f8de70bf323"
+          },
+          {
+            "path": "packages/designer/src/blocks/section-ground.ts",
+            "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/runtime-ports.ts",
+            "sha256": "58f1483dafcefffde956d75d21acdd82e1a6101c36cf4d23b02de54d5bcad53f"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/runtime-snapshot-identity.ts",
+            "sha256": "1fa5e5d2cda0acb6f621209c6050b4c01bd694a0831b5ee18b49ca2e4db075af"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/components/internal/ui-vars.ts",
+            "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+          },
+          {
+            "path": "packages/designer/src/icons/Check.ts",
+            "sha256": "df7a0d203c39a358aba4b6cf7a9380e34352d38efe0947c0d30c0485ad509159"
+          },
+          {
+            "path": "packages/designer/src/icons/ChevronDown.ts",
+            "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
+          },
+          {
+            "path": "packages/designer/src/icons/ExternalLink.ts",
+            "sha256": "1803843525669af0f404ee8a5640a2c219753f1dbb9e8f5711cde00581b8c9f9"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../../icons/ChevronDown.js#ChevronDown",
+            "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+            "line": 7
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../../icons/ExternalLink.js#ExternalLink",
+            "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+            "line": 8
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/Check.js#Check",
+            "file": "packages/designer/src/blocks/Matrix.tsx",
+            "line": 8
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
+      "impl": {
+        "export": "Matrix",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "The exported Matrix preserves Matrix arrangement=grid for authored comparison cells and arrangement=choices for content-sized native RadioGroup rows. Choices accepts one or more library columns and unbounded leaf rows without an internal scroll region.",
+        "The explicit library-board configuration selects LibraryBoardSection typed columns, rows and controls records through LIBRARY_BOARD_CONFIG; its canonical member is arrangement.library-board. Grid remains the existing literal. Selected runtime qualification remains separate.",
+        "The choices assembly consumes SectionHeader, RadioGroup, Card, Badge, Tooltip and token-backed table layout; Studio supplies checked token, asset or component previews.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#Matrix",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "arrangement.library-board": "./blocks#Matrix.arrangement=library-board"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.caption-size",
+          "tokens.code-size",
+          "tokens.control-radius",
+          "tokens.heading-size",
+          "tokens.letter-spacing",
+          "tokens.line-height",
+          "tokens.radius",
+          "tokens.region-width",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.surface-radius",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
+      },
+      "slot": "sections.comparison",
+      "slotMap": {
+        "columns": "./blocks#Matrix.columns",
+        "controls": "./blocks#Matrix.records.controls",
+        "highlight": "./blocks#Matrix.featured",
+        "rows": "./blocks#Matrix.rows"
+      },
+      "source": "foundry"
+    }
+  }
+}

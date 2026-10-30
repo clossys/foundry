@@ -196,3 +196,25 @@ describe("Toaster", () => {
     });
   });
 });
+
+ it("SEL2 renders the authored action as the library Button and activates it by keyboard", async () => {
+  const user=userEvent.setup(); const onPress=vi.fn();
+  render(<Toaster aria-label="Updates" />);
+  act(() => {toast.success("Removed", {timeout:null, action:{label:"Undo", onPress}})});
+  const action=screen.getByRole("button", {name:"Undo"});
+  expect(action).toHaveAttribute("data-toast-part", "action");
+  expect(action).toHaveClass("rounded-control");
+  action.focus(); await user.keyboard("{Enter}"); expect(onPress).toHaveBeenCalledTimes(1);
+  expect(screen.queryByText("Removed")).not.toBeInTheDocument();
+ });
+
+it("invokes an authored toast action by pointer and retains a disabled action", async () => {
+ const user=userEvent.setup(); const onPress=vi.fn();
+ render(<Toaster aria-label="Updates" />);
+ act(() => { toast("Retry available", {timeout:null, action:{label:"Retry",onPress,isDisabled:true}}); });
+ await user.click(screen.getByRole("button",{name:"Retry"}));
+ expect(onPress).not.toHaveBeenCalled(); expect(screen.getByText("Retry available")).toBeInTheDocument();
+ act(() => { toast.dismissAll(); toast("Retry available", {timeout:null, action:{label:"Retry",onPress}}); });
+ await user.click(screen.getByRole("button",{name:"Retry"}));
+ expect(onPress).toHaveBeenCalledTimes(1); expect(screen.queryByText("Retry available")).not.toBeInTheDocument();
+});

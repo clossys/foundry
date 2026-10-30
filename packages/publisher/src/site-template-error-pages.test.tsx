@@ -14,9 +14,9 @@ import * as jsxRuntime from "react/jsx-runtime";
 import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
-import * as designerAtoms from "@clossys/designer/atoms";
+import * as designerComponents from "@clossys/designer/components";
 import { expectFrontDoorConformance } from "./testing/index.js";
-import { SITE_MAIN_ID } from "./web/frame/types.js";
+import { SITE_MAIN_ID } from "@clossys/designer/frames";
 import * as web from "../dist/web/index.js";
 import * as siteCopy from "../templates/site/app/site-copy.js";
 import { ERROR_COPY_IDS, SITE_FRAME_COPY_IDS, errorCopyIds, siteFrameCopyIds } from "../templates/site/app/site-copy.js";
@@ -38,7 +38,7 @@ const SiteErrorView: SiteErrorViewComponent = (() => {
   });
   const modules: Record<string, unknown> = {
     "react/jsx-runtime": jsxRuntime,
-    "@clossys/designer/atoms": designerAtoms,
+    "@clossys/designer/components": designerComponents,
     "@clossys/publisher/web": web,
     "./site-copy": siteCopy,
     "./site-frame": siteFrame,

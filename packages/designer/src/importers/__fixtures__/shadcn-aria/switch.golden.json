@@ -1,0 +1,112 @@
+{
+  "transform": "shadcn-aria-rewrite@1",
+  "notes": [
+    {
+      "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
+      "value": "border-transparent",
+      "message": "Removed suppression beside the same expanded literal's token-bound focus owner"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
+      "value": "data-[size=default]:h-[18.4px]",
+      "message": "Restyled source: Use actual existing switch-thumb role 14px instead of source 18.4px."
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
+      "value": "group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-2px)]",
+      "message": "Restyled source: Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read."
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
+      "value": "group-data-[size=default]/switch:data-selected:translate-x-[calc(100%-2px)]",
+      "message": "Restyled source: Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read."
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
+      "value": "group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-2px)]",
+      "message": "Restyled source: Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read."
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
+      "value": "group-data-[size=sm]/switch:data-selected:translate-x-[calc(100%-2px)]",
+      "message": "Restyled source: Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read."
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
+      "value": "group-has-[:focus-visible]/field-label:border-transparent",
+      "message": "Removed suppression beside the same expanded literal's token-bound focus owner"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
+      "value": "group-has-[:focus-visible]/field-label:ring-0",
+      "message": "Removed suppression beside the same expanded literal's token-bound focus owner"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
+      "value": "outline-none",
+      "message": "Removed suppression beside the same expanded literal's token-bound focus owner"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
+      "value": "ring-0",
+      "message": "Preserved authenticated decorative/control reset under its actual parent token-bound focus owner; not a focus conformance claim"
+    }
+  ],
+  "files": [
+    {
+      "path": "components/_parts/utils/index.ts",
+      "content": "import { clsx, type ClassValue } from \"clsx\"\nimport { twMerge } from \"tailwind-merge\"\nexport function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }\n"
+    },
+    {
+      "path": "components/switch/switch.tsx",
+      "content": "\"use client\"\n\nimport { cn } from \"../_parts/utils/index\"\nimport {\n  composeRenderProps,\n  Switch as SwitchPrimitive,\n  type SwitchProps as SwitchPrimitiveProps,\n} from \"react-aria-components\"\n\nfunction Switch({\n  className,\n  size = \"default\",\n  children,\n  ...props\n}: SwitchPrimitiveProps & {\n  size?: \"sm\" | \"default\"\n}) {\n  return (\n    <SwitchPrimitive\n      data-slot=\"switch\"\n      data-size={size}\n      className={cn(\n        \"data-checked:bg-(--color-action) data-unchecked:bg-(--color-line-strong) focus-visible:border-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus,3px) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger) dark:aria-invalid:ring-(--color-status-danger)/40 aria-invalid:border-(--color-status-danger) dark:aria-invalid:border-(--color-status-danger)/50 dark:data-unchecked:bg-(--color-line-strong)/80 shrink-0 rounded-full border-(length:--ui-border-hairline,1px)  focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus,3px) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger)   data-[size=default]:h-(--ui-control-switch-thumb) data-[size=default]:w-(--spacing-2xl) data-[size=sm]:h-(--ui-control-switch-thumb) data-[size=sm]:w-(--spacing-xl) data-selected:bg-(--color-action) not-data-selected:bg-(--color-line-strong) data-focus-visible:border-(--color-focus-ring) data-focus-visible:outline-solid data-focus-visible:outline-(length:--ui-border-focus,3px) data-focus-visible:outline-offset-(--ui-focus-offset) data-focus-visible:outline-(--color-focus-ring) dark:not-data-selected:bg-(--color-line-strong)/80 data-focus-visible:outline-solid data-focus-visible:outline-(length:--ui-border-focus,3px) data-focus-visible:outline-offset-(--ui-focus-offset) data-focus-visible:outline-(--color-focus-ring) data-invalid:outline-solid data-invalid:outline-(length:--ui-border-focus,3px) data-invalid:outline-offset-(--ui-focus-offset) data-invalid:outline-(--color-status-danger) dark:data-invalid:ring-(--color-status-danger)/40 data-invalid:border-(--color-status-danger) dark:data-invalid:border-(--color-status-danger)/50 data-invalid:outline-solid data-invalid:outline-(length:--ui-border-focus,3px) data-invalid:outline-offset-(--ui-focus-offset) data-invalid:outline-(--color-status-danger) peer group/switch relative inline-flex items-center transition-all duration-(--ui-duration-default) ease-(--default-transition-timing-function) after:absolute after:-inset-x-3 after:-inset-y-2 data-disabled:cursor-not-allowed data-disabled:opacity-(--ui-alpha-disabled,50%)\",\n        className\n      )}\n      {...props}\n    >\n      {composeRenderProps(children, (children, { isSelected }) => (\n        <>\n          <span\n            data-slot=\"switch-thumb\"\n            data-selected={isSelected || undefined}\n            className=\"bg-(--color-surface-base) dark:data-unchecked:bg-(--color-ink-primary) dark:data-checked:bg-(--color-ink-on-action) rounded-full group-data-[size=default]/switch:size-(--spacing-lg,calc(var(--spacing)*4)) group-data-[size=sm]/switch:size-(--spacing-md) group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-var(--ui-border-rule))] group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-var(--ui-border-rule))] group-data-[size=default]/switch:data-unchecked:translate-x-0 group-data-[size=sm]/switch:data-unchecked:translate-x-0 dark:not-data-selected:bg-(--color-ink-primary) dark:data-selected:bg-(--color-ink-on-action) group-data-[size=default]/switch:data-selected:translate-x-[calc(100%-var(--ui-border-rule))] group-data-[size=sm]/switch:data-selected:translate-x-[calc(100%-var(--ui-border-rule))] group-data-[size=default]/switch:not-data-selected:translate-x-0 group-data-[size=sm]/switch:not-data-selected:translate-x-0 pointer-events-none block ring-0 transition-transform duration-(--ui-duration-default) ease-(--default-transition-timing-function)\"\n          />\n          {children}\n        </>\n      ))}\n    </SwitchPrimitive>\n  )\n}\n\nexport { Switch }\n"
+    },
+    {
+      "path": "notices/THIRD-PARTY.md",
+      "content": "# Third-party notice\n\nSource: https://github.com/shadcn-ui/ui\nCommit: daaf156ee00ed91cc7e6bdd937c1b4973152d141\nTransform: shadcn-aria-rewrite@1\n\nMIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    }
+  ],
+  "outputSha256": [
+    {
+      "path": "components/_parts/utils/index.ts",
+      "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+    },
+    {
+      "path": "components/switch/switch.tsx",
+      "sha256": "3fd09f5b623aa1e03cb48f3e9d9dc0f0f024ff2cbb63e5f880182a449330dcb3"
+    },
+    {
+      "path": "notices/THIRD-PARTY.md",
+      "sha256": "6148b3941d0eff3d024e4d3a0e630f009484163560272ae6ec79c649c67fc964"
+    }
+  ],
+  "reads": {
+    "tokens": [
+      "tokens.action-color.default",
+      "tokens.border-color.strong",
+      "tokens.border-width.hairline",
+      "tokens.border-width.rule",
+      "tokens.control-size.switch-thumb",
+      "tokens.duration.default",
+      "tokens.easing.default",
+      "tokens.focus-color.default",
+      "tokens.focus-outline.offset",
+      "tokens.focus-outline.width",
+      "tokens.spacing.2xl",
+      "tokens.spacing.lg",
+      "tokens.spacing.md",
+      "tokens.spacing.xl",
+      "tokens.state-opacity.disabled",
+      "tokens.status-color.danger",
+      "tokens.surface-color.base",
+      "tokens.text-color.on-action",
+      "tokens.text-color.primary"
+    ],
+    "assets": [],
+    "components": []
+  },
+  "parts": [
+    "utils"
+  ],
+  "issues": []
+}

@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { cloneElement, createElement, isValidElement, type ReactElement, type ReactNode } from "react";
+import { Matrix as OrdinaryMatrix } from "./Matrix.js";
+import { Matrix as ServerMatrix } from "./Matrix.server.js";
 import { render, screen, within } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PricingTable, type PricingTableProps, type PricingTier } from "./PricingTable.js";
+import { withoutDsAttrs } from "../catalog-core/provenance-attrs.js";
 
 const TIERS: PricingTier[] = [
   {
@@ -336,12 +340,12 @@ const FIXED_BARE_MARKUP = "<div class=\"flex flex-col gap-lg\"><div class=\"grid
 describe("PricingTable fixed-price byte preservation", () => {
   it("preserves the captured heading, description and native-attribute render bytes", () => {
     const props = { heading: "Heading", description: "Description", tiers: TIERS, id: "tiers", dir: "rtl" };
-    expect(markup(props)).toBe(FIXED_HEADED_MARKUP);
-    expect(markup({ ...props, ground: "base" })).toBe(FIXED_HEADED_MARKUP);
+    expect(withoutDsAttrs(markup(props))).toBe(FIXED_HEADED_MARKUP);
+    expect(withoutDsAttrs(markup({ ...props, ground: "base" }))).toBe(FIXED_HEADED_MARKUP);
   });
 
   it("preserves the captured headingless render bytes without optional wrappers", () => {
-    expect(markup({ tiers: TIERS })).toBe(FIXED_BARE_MARKUP);
+    expect(withoutDsAttrs(markup({ tiers: TIERS }))).toBe(FIXED_BARE_MARKUP);
   });
 });
 
@@ -361,4 +365,60 @@ describe("PricingTable inherited price contracts", () => {
     );
     expect(() => markup({ tiers: [inherited], interval: "b" })).toThrow("PricingTable: each tier needs one price form.");
   });
+});
+
+// S4-2/S4-4: preserve the owner's presence predicate and ground on the shared region.
+it("S4 preserves absent, supporting-only and falsy title regions with original root attributes", () => {
+  const view = render(<PricingTable tiers={TIERS} id="host" dir="rtl" data-host="yes" style={{ marginTop: 7 }} />);
+  const root = view.container.firstElementChild as HTMLElement;
+  expect(root.tagName).toBe("DIV");
+  expect(root).toHaveAttribute("id", "host");
+  expect(root).toHaveAttribute("dir", "rtl");
+  expect(root).toHaveAttribute("data-host", "yes");
+  expect(root.style.marginTop).toBe("7px");
+  expect(root.children).toHaveLength(1);
+  expect(root.querySelectorAll("#host")).toHaveLength(0);
+  for (const heading of [0, "", null, false]) {
+    view.rerender(<PricingTable tiers={TIERS} heading={heading} />);
+    expect(view.container.firstElementChild?.firstElementChild).toHaveClass("gap-xs");
+    expect(view.container.firstElementChild?.firstElementChild?.querySelector("h2")).toBeNull();
+  }
+  view.rerender(<PricingTable tiers={TIERS} description="Support" ground="inverse" />);
+  expect(view.getByText("Support")).toHaveClass("text-ink-on-inverse-muted");
+  view.rerender(<PricingTable tiers={TIERS} heading="Title" headingLevel={5} ground="inverse"  />);
+  expect(view.getByRole("heading", { name: "Title", level: 5 })).toHaveClass("text-h2", "text-ink-on-inverse");
+});
+
+// Retain the original grid-composition output independently of the server bridge.
+function originalGrid(node: ReactNode): ReactNode {
+  if (Array.isArray(node)) return node.map(originalGrid);
+  if (!isValidElement(node)) return node;
+  const element = node as ReactElement<Record<string, unknown>>;
+  if (element.type === ServerMatrix) return createElement(OrdinaryMatrix, element.props as never);
+  return cloneElement(element, { children: originalGrid(element.props.children as ReactNode) });
+}
+
+it("source PricingTable server bridge preserves original grid composition for fixed/interval prices and one to four groups", () => {
+  for (const ground of ["base", "sunken", "inverse"] as const) {
+    for (const count of [1, 2, 3, 4]) {
+      for (const interval of [undefined, "b"]) {
+        const props: PricingTableProps = {
+          heading: "Compare plans", headingLevel: 3, description: "Plan details", ground,
+          tiers: interval === undefined ? TIERS : INTERVAL_TIERS, interval,
+          comparison: { ...MARK_COMPARISON, groups: [markGroup(), ...Array.from({ length: count - 1 }, (_, i) => textGroup(`text-${i}`))] },
+          controls: <button type="button">Choose interval</button>, dir: "rtl", id: "plans",
+          "aria-label": "Plan comparison", className: "authored", style: { maxWidth: 900 },
+        };
+        const tree = PricingTable(props);
+        const actual = renderToStaticMarkup(tree);
+        expect(actual).toBe(renderToStaticMarkup(originalGrid(tree)));
+        expect((actual.match(/<table/g) ?? []).length).toBe(count);
+        expect(actual).toContain('id="plans"');
+        expect(actual).toContain('dir="rtl"');
+        expect(actual).toContain("Featured tier");
+        expect(actual).toContain("Mark four");
+        expect(actual).toContain(interval === undefined ? "Price one" : "Spoken b 0");
+      }
+    }
+  }
 });

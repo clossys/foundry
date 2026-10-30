@@ -2,8 +2,8 @@
 
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { TOKENS } from "../tokens/tokens.js";
-import { buttonLinkClassName } from "../atoms/button-classes.js";
-import { cx } from "../atoms/internal/cx.js";
+import { buttonLinkClassName } from "../components/button-classes.js";
+import { cx } from "../components/internal/cx.js";
 import { UI_LAYOUT_TAP_TARGET } from "./internal/shell-vars.js";
 
 export interface NavDisclosureProps {

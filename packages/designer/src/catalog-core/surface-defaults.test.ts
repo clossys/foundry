@@ -1,0 +1,182 @@
+/** @vitest-environment node */
+import { describe, expect, it } from "vitest";
+import frameSlots from "../catalog/slots/frames.json" with { type: "json" };
+import sectionCoverage from "../catalog/fills/foundry/sections.coverage.json" with { type: "json" };
+import frameCoverage from "../catalog/fills/foundry/frames.coverage.json" with { type: "json" };
+import { importFoundrySections } from "../importers/foundry-sections.js";
+import { importFoundryFrames } from "../importers/foundry-frames.js";
+import { loadSectionRegistry } from "./sections-contract.js";
+import { loadCatalog } from "./index.js";
+import { loadComponentRegistry } from "./component-registry.js";
+import { applyLibraryChange, libraryHash } from "./api.js";
+import { planSurfaceDefaults, type SurfaceDefaultCandidateDocument, type SurfaceDefaultsInput } from "./surface-defaults.js";
+import type { CompositeCatalogData, CompositeLibraryData, FrameSlot } from "./types.js";
+import { syntheticSurface } from "./__fixtures__/surface-engine/synthetic.js";
+
+/** The real catalog: every Sections and Frames contract and every Foundry surface candidate. */
+function setup(overrides: Partial<SurfaceDefaultsInput> = {}) {
+  const slots = [...loadSectionRegistry().slots, ...structuredClone(frameSlots) as unknown as FrameSlot[]];
+  const fills: SurfaceDefaultCandidateDocument[] = [...importFoundrySections().fills, ...importFoundryFrames().fills];
+  const input: SurfaceDefaultsInput = { catalog: { slots, fills }, slots: slots.map(slot => slot.id), preference: ["foundry"], ...overrides };
+  return input;
+}
+const ledger = (plan: ReturnType<typeof planSurfaceDefaults>) => Object.fromEntries(plan.rows.map(row => [row.slot, row.status === "not-chosen" ? "-" : row.source!]));
+const reasons = (plan: ReturnType<typeof planSurfaceDefaults>, slot: string) => plan.rows.find(row => row.slot === slot)!.reasons.join(" || ");
+
+const SECTION_DEFAULTS = ["access-matrix", "activity-feed", "article", "audit-log", "band", "call-to-action", "cards", "chat", "column-mapper", "comparison",
+  "consent", "content", "data-grid", "data-table", "empty-state", "error-state", "explorer", "faq", "features", "filter-builder", "form", "gallery", "hero",
+  "link-index", "logo-cloud", "media", "newsletter", "notices", "page-header", "pagination", "people", "pricing", "record-detail", "resource-list",
+  "account-summary", "boundary-message", "legal-prose", "logo-hero", "logo-mark", "sign-in-form",
+  "section-header", "settings", "stats", "status-list", "steps", "table-of-contents", "task-list", "testimonials", "timeline", "usage", "wizard"].map(leaf => `sections.${leaf}`);
+/** Every Foundry candidate now maps its required content slots; none is ineligible. */
+const SECTION_INELIGIBLE: Readonly<Record<string, readonly string[]>> = {};
+const SECTION_NO_CANDIDATE: string[] = [];
+const FRAME_DEFAULTS = ["app-header", "app-shell", "app-sidebar", "auth-shell", "document", "command", "inspector", "sheet", "site-footer", "site-header", "site-shell"].map(leaf => `frames.${leaf}`);
+const FRAME_NOT_CHOSEN: string[] = [];
+
+/** Exact contract declarations for independently measured package dependencies. */
+const MEASURED_MARKETING_DECLARATIONS = [
+  {
+    slot: "sections.content",
+    composes: ["components.link", "components.semantic-content"],
+  },
+  {
+    slot: "sections.logo-cloud",
+    tokens: ["tokens.spacing", "tokens.gutter", "tokens.content-size", "tokens.region-width", "tokens.breakpoint", "tokens.surface-color", "tokens.animation", "tokens.shift-distance", "tokens.accent-color", "tokens.border-color", "tokens.control-radius", "tokens.status-color", "tokens.text-color", "tokens.touch-target", "tokens.action-color", "tokens.body-size", "tokens.control-color", "tokens.duration", "tokens.easing", "tokens.focus-color", "tokens.focus-outline", "tokens.state-opacity", "tokens.typeface"],
+  },
+  {
+    slot: "sections.logo-mark",
+    composes: ["components.logo", "components.semantic-content"],
+  },
+  {
+    slot: "frames.site-footer",
+    tokens: ["tokens.surface-color", "tokens.text-color", "tokens.border-color", "tokens.border-width", "tokens.spacing", "tokens.gutter", "tokens.content-size", "tokens.caption-size", "tokens.typeface", "tokens.breakpoint", "tokens.body-size", "tokens.brandmark-size", "tokens.touch-target", "tokens.z-index", "tokens.accent-color", "tokens.action-color", "tokens.control-color", "tokens.control-radius", "tokens.duration", "tokens.easing", "tokens.focus-color", "tokens.focus-outline", "tokens.state-opacity", "tokens.status-color"],
+    composes: ["components.link", "components.icon", "components.logo", "components.separator", "components.semantic-content"],
+  },
+] as const;
+
+describe("measured marketing surface declarations", () => {
+  it.each(MEASURED_MARKETING_DECLARATIONS)("plans $slot with its exact declared dependencies", expected => {
+    const input = setup();
+    const plan = planSurfaceDefaults(input);
+    expect(plan.rows.find(row => row.slot === expected.slot)).toMatchObject({ status: "default", source: "foundry", reasons: [] });
+    const contract = input.catalog.slots.find(row => row.id === expected.slot)!.contract;
+    if ("tokens" in expected) expect(contract.allowedReads.tokens).toEqual(expected.tokens);
+    if ("composes" in expected) expect(contract.kind === "section" ? contract.allowedComposes : contract.composes).toEqual(expected.composes);
+    expect(plan.decisions).toHaveLength(62);
+  });
+});
+
+describe("surface default fills", () => {
+  it("defaults every Section and Frame whose candidate passes the static contract rule, and only those", () => {
+    const input = setup();
+    const plan = planSurfaceDefaults(input);
+    expect(plan.rows.map(row => row.slot)).toEqual(input.slots);
+    expect(input.slots.filter(slot => slot.startsWith("sections.")).length).toBe(51);
+    expect(input.slots.filter(slot => slot.startsWith("frames.")).length).toBe(11);
+    const expected = Object.fromEntries(input.slots.map(slot => [slot, [...SECTION_DEFAULTS, ...FRAME_DEFAULTS].includes(slot) ? "foundry" : "-"]));
+    expect(ledger(plan)).toEqual(expected);
+    expect(Object.values(ledger(plan)).filter(value => value !== "-")).toHaveLength(62);
+    expect(plan.findings).toEqual([]);
+    expect(plan.rows.find(row => row.slot === "frames.site-header")).toEqual({ slot: "frames.site-header", status: "default", basis: "preference", source: "foundry", fill: "foundry/frames.site-header", reasons: [] });
+  });
+
+  it("keeps every unchosen leaf visible with its precise reason", () => {
+    const plan = planSurfaceDefaults(setup());
+    for (const slot of [...Object.keys(SECTION_INELIGIBLE), ...SECTION_NO_CANDIDATE, ...FRAME_NOT_CHOSEN]) {
+      const row = plan.rows.find(candidate => candidate.slot === slot)!;
+      expect(row.status, slot).toBe("not-chosen");
+      expect(row.source ?? row.fill, slot).toBeUndefined();
+      expect(row.reasons.length, slot).toBeGreaterThan(0);
+    }
+    expect(plan.rows.find(row => row.slot === "frames.inspector")).toEqual({ slot: "frames.inspector", status: "default", basis: "preference", source: "foundry", fill: "foundry/frames.inspector", reasons: [] });
+    for (const leaf of ["filter-builder", "settings", "wizard"]) expect(plan.rows.find(row => row.slot === `sections.${leaf}`), leaf).toMatchObject({ status: "default", source: "foundry", fill: `foundry/sections.${leaf}`, reasons: [] });
+    for (const slot of ["sections.chat", "sections.explorer", "sections.hero", "sections.newsletter", "frames.app-shell", "frames.app-sidebar", "frames.command"]) {
+      expect(plan.rows.find(row => row.slot === slot), slot).toMatchObject({ status: "default", source: "foundry", reasons: [] });
+    }
+  });
+
+  it("agrees with the importer's committed coverage for every leaf", () => {
+    const plan = planSurfaceDefaults(setup());
+    for (const row of [...sectionCoverage.coverage, ...frameCoverage.coverage]) {
+      const planned = plan.rows.find(candidate => candidate.slot === row.slot)!;
+      const ports = "missingStatePorts" in row ? row.missingStatePorts : [];
+      if (row.status === "unavailable") { expect(planned.reasons, row.slot).toEqual(["no implementation candidate"]); continue; }
+      expect(planned.status === "default", row.slot).toBe(!row.missingRequiredSlots.length && !ports.length);
+      for (const name of row.missingRequiredSlots) expect(reasons(plan, row.slot), row.slot).toContain(`required slot ${name} is not mapped`);
+      for (const port of ports) expect(reasons(plan, row.slot), row.slot).toContain(`state port ${port} is not owned`);
+    }
+    expect(Object.keys(SECTION_INELIGIBLE).map(slot => sectionCoverage.coverage.find(row => row.slot === slot)!.missingRequiredSlots)).toEqual(Object.values(SECTION_INELIGIBLE));
+  });
+
+  it("shows what a subset default leaves unmapped, and nothing for a same-contract default", () => {
+    const plan = planSurfaceDefaults(setup());
+    expect(plan.rows.find(row => row.slot === "sections.band")).toMatchObject({ status: "default", unmapped: ["axis.rhythm"] });
+    expect(plan.rows.find(row => row.slot === "frames.site-shell")).toMatchObject({ status: "default", unmapped: ["chrome.full", "chrome.minimal", "header-placement.overlay", "slot.consent", "slot.progress"] });
+    expect(plan.rows.find(row => row.slot === "sections.access-matrix")!.unmapped).toBeUndefined();
+  });
+
+  it("an owner pick or a choice is exclusive and never falls back", () => {
+    const picked = planSurfaceDefaults(setup({ picks: { "frames.app-sidebar": "other", "sections.faq": "other" } }));
+    expect(picked.rows.find(row => row.slot === "frames.app-sidebar")!.status).toBe("not-chosen");
+    expect(reasons(picked, "frames.app-sidebar")).toContain("owner pick other is not eligible; another source needs the owner's choice");
+    expect(reasons(picked, "sections.faq")).toBe("other: no implementation candidate || owner pick other is not eligible; another source needs the owner's choice");
+    const chosen = planSurfaceDefaults(setup({ choices: { "frames.sheet": "foundry", "frames.site-header": "other" }, picks: { "frames.sheet": "other" } }));
+    expect(chosen.rows.find(row => row.slot === "frames.sheet")).toMatchObject({ status: "chosen", basis: "choose", source: "foundry" });
+    expect(chosen.rows.find(row => row.slot === "frames.site-header")).toMatchObject({ status: "not-chosen", reasons: ["other: no implementation candidate"] });
+    expect(planSurfaceDefaults(setup({ picks: { "sections.faq": "foundry" } })).rows.find(row => row.slot === "sections.faq")).toMatchObject({ status: "default", basis: "owner-pick" });
+  });
+
+  it("never defaults a source the preference does not list", () => {
+    const plan = planSurfaceDefaults(setup({ preference: ["shadcn@aria"] }));
+    expect(plan.rows.every(row => row.status === "not-chosen")).toBe(true);
+    expect(plan.decisions).toEqual([]);
+    expect(reasons(plan, "sections.faq")).toBe("no eligible candidate");
+  });
+
+  it("refuses a candidate with a retained blocker, an unknown content slot or member, or a reference-mode document", () => {
+    const input = setup();
+    const edit = (slot: string, change: (doc: SurfaceDefaultCandidateDocument) => void) => {
+      const fills = input.catalog.fills.map(doc => {
+        if (doc.$extensions["com.clossys.fill"].slot !== slot) return doc;
+        const copy = structuredClone(doc); change(copy); return copy;
+      });
+      return planSurfaceDefaults({ ...input, catalog: { ...input.catalog, fills } });
+    };
+    const entry = (doc: SurfaceDefaultCandidateDocument) => Object.values(doc.sections ?? doc.frames ?? {})[0] as unknown as Record<string, unknown>;
+    expect(reasons(edit("sections.faq", doc => { entry(doc).blockers = [{ code: "S4", message: "dependency missing" }]; }), "sections.faq")).toBe("foundry: S5 S4: dependency missing");
+    expect(reasons(edit("sections.faq", doc => { (entry(doc).slotMap as Record<string, string>).invented = "./blocks#Faq.x"; }), "sections.faq")).toBe("foundry: S5 content/member mapping differs: slot invented is outside the contract");
+    expect(reasons(edit("frames.sheet", doc => { (entry(doc).propMap as Record<string, string>)["placement.invented"] = "placement=x"; }), "frames.sheet")).toBe("foundry: S5 content/member mapping differs: member placement.invented is outside the contract");
+    expect(reasons(edit("frames.sheet", doc => { (entry(doc).statePorts as Record<string, string>).invented = "x/y"; }), "frames.sheet")).toBe("foundry: S5 frame rendering/state ownership differs: state port invented is outside the contract");
+    expect(reasons(edit("frames.sheet", doc => { entry(doc).rendering = "server"; }), "frames.sheet")).toBe("foundry: S5 frame rendering/state ownership differs: rendering server differs from client");
+    expect(reasons(edit("sections.faq", doc => { doc.$extensions["com.clossys.fill"].mode = "reference"; }), "sections.faq")).toBe("no implementation candidate");
+  });
+
+  it("reports a cross-kind primary-name collision in the selected set", () => {
+    const input = setup();
+    // A real source-candidate shape exercises the primary collision without
+    // relabeling a package snapshot as an unauthenticated new package identity.
+    const fixture = syntheticSurface({ layer: "frames", leaf: "form" });
+    const form = fixture.input.catalog.surfaces!.slots[0]! as FrameSlot;
+    const doc = structuredClone(fixture.input.catalog.surfaces!.fills[0]!) as unknown as SurfaceDefaultCandidateDocument;
+    doc.$extensions["com.clossys.fill"].source = "foundry";
+    doc.$extensions["com.clossys.fill"].id = "foundry/frames.form";
+    (doc.frames!.form as unknown as { source: string }).source = "foundry";
+    const plan = planSurfaceDefaults({ ...input, catalog: { slots: [...input.catalog.slots, form], fills: [...input.catalog.fills, doc] }, slots: [...input.slots, "frames.form"] });
+    expect(plan.findings).toEqual([{ code: "S1", rule: "surfaces", severity: "error", subject: "frames.form", message: "cross-kind primary collision" }]);
+  });
+
+  it("emits one adopt decision per default, which the source apply path refuses without a verified surface source bundle", () => {
+    const input = setup();
+    const plan = planSurfaceDefaults(input);
+    expect(plan.decisions.map(row => row.slot)).toEqual(plan.rows.filter(row => row.status !== "not-chosen").map(row => row.slot));
+    expect(plan.decisions.find(row => row.slot === "sections.faq")).toEqual({ slot: "sections.faq", kind: "adopt", source: "foundry", fill: "foundry/sections.faq", note: "Default fill (preference)" });
+    const values = loadCatalog();
+    const registry = loadComponentRegistry();
+    const catalog: CompositeCatalogData = { values, components: { slots: registry.slots, fills: [] }, surfaces: { slots: input.catalog.slots, fills: [], transforms: [], rules: [], materializations: [] } };
+    const source = { kind: "consumer", author: "consumer", id: "defaults-consumer" } as CompositeLibraryData["source"];
+    const empty: CompositeLibraryData = { source, adoptedAt: "2026-10-26", values: { fills: [] }, components: { fills: [], files: [] } };
+    const decision = plan.decisions[0]!;
+    expect(() => applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes: [{ portion: "surfaces", change: { op: "adopt", slot: decision.slot, source: decision.source } }] }, { surfaceOptions: { packages: [], measurements: [] } })).toThrow(/S2 unique bundle required/);
+  });
+});

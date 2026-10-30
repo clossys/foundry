@@ -2,7 +2,7 @@ import type { RangeChartProps } from "../RangeChart.js";
 import type { RangeChartProps as ChartProps } from "../index.js";
 import type { RangeChartProps as ServerProps } from "../server.js";
 import type { RangeChartProps as RootProps } from "../../index.js";
-import type { StatusMarkTone } from "../../atoms/StatusMark.js";
+import type { StatusMarkTone } from "../../components/StatusMark.js";
 
 type Row = RangeChartProps["rows"][number];
 type Labels = RangeChartProps["labels"];
@@ -13,7 +13,7 @@ function checkRangeContract() {
   const statusLabels: Labels = { ...labels, status: "State" };
   const tones: readonly StatusMarkTone[] = ["success", "warning", "danger", "info", "neutral"];
   const rowTones: readonly RowTone[] = tones;
-  const atomTones: readonly StatusMarkTone[] = rowTones;
+  const componentTones: readonly StatusMarkTone[] = rowTones;
   const rows: readonly Row[] = tones.map((tone, index) => ({ id: String(index), label: `Activity ${index}`, from: 0, to: 4, status: { tone, label: "Authored state" } }));
   const plain: RangeChartProps = { title: "Schedule", ticks: ["First", "Next"], rows: [{ id: "a", label: "Activity", from: 0.5, to: 2 }], labels };
   const chart: ChartProps = plain;
@@ -48,6 +48,6 @@ function checkRangeContract() {
   // Blank copy, finite numeric bounds and labels.status iff any row has status
   // remain runtime validation. This fixture does not claim conditional-array
   // typing can enforce that dynamic status-header requirement.
-  void [plain, chart, server, root, source, withStatus, atomTones, missingRowLabel, missingStatusLabel, numericStatusLabel, unknownStatusTone, numericStatusTone, missingTable, missingCategory, missingFrom, missingTo, numericStatusHeader, missingLabels];
+  void [plain, chart, server, root, source, withStatus, componentTones, missingRowLabel, missingStatusLabel, numericStatusLabel, unknownStatusTone, numericStatusTone, missingTable, missingCategory, missingFrom, missingTo, numericStatusHeader, missingLabels];
 }
 void checkRangeContract;

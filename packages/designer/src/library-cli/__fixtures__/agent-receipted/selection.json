@@ -1,0 +1,1049 @@
+{
+  "consumer": "example",
+  "rubricVersion": "unscored",
+  "slots": [
+    {
+      "originKinds": [
+        "derived"
+      ],
+      "rationale": null,
+      "slot": "assets.app-icon",
+      "sources": [
+        "example"
+      ]
+    },
+    {
+      "originKinds": [
+        "derived"
+      ],
+      "rationale": null,
+      "slot": "assets.favicon",
+      "sources": [
+        "example"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-arrow-right",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-business",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-check",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-chevron-down",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-chevron-left",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-chevron-right",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-chevron-up",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-close",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-danger",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-date",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-document",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-document-approved",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-external-link",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-folder",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-grid-view",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-guide",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-home",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-info",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-institution",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-integration",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-layers",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-legal",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-list-view",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-locked",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-organization",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-package",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-payment",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-receipt",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-search",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-security",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-settings",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-success",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-team",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-theme-dark",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-theme-light",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-theme-system",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-time",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-user",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-warning",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.icon-website",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "authored"
+      ],
+      "rationale": null,
+      "slot": "assets.image",
+      "sources": [
+        "example"
+      ]
+    },
+    {
+      "originKinds": [
+        "authored"
+      ],
+      "rationale": null,
+      "slot": "assets.image-ratio",
+      "sources": [
+        "example"
+      ]
+    },
+    {
+      "originKinds": [
+        "authored",
+        "derived"
+      ],
+      "rationale": null,
+      "slot": "assets.lockup",
+      "sources": [
+        "example"
+      ]
+    },
+    {
+      "originKinds": [
+        "authored",
+        "derived"
+      ],
+      "rationale": null,
+      "slot": "assets.mark",
+      "sources": [
+        "example"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "assets.pattern",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "authored"
+      ],
+      "rationale": null,
+      "slot": "assets.video",
+      "sources": [
+        "example"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.accent-color",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.action-color",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.animation",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.behavior-timing",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted",
+        "authored"
+      ],
+      "rationale": null,
+      "slot": "tokens.blur",
+      "sources": [
+        "example",
+        "foundry",
+        "tailwind-default"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.body-size",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.border-color",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.border-width",
+      "sources": [
+        "foundry-baseline"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.brandmark-size",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.breakpoint",
+      "sources": [
+        "foundry",
+        "tailwind-default"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.caption-size",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.categorical-color",
+      "sources": [
+        "carbon-colors"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.chart-color",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.code-size",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.color-ramp",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.container-width",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.content-size",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.control-color",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.control-radius",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.control-size",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.density",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.display-face",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.display-size",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted",
+        "derived"
+      ],
+      "rationale": null,
+      "slot": "tokens.diverging-color",
+      "sources": [
+        "example",
+        "tailwind-default"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.duration",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.easing",
+      "sources": [
+        "foundry",
+        "tailwind-default"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.elevation",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.focus-color",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.focus-outline",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.focus-shadow",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.font-size",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.font-weight",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.gutter",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.heading-size",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.icon-size",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.icon-stroke",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.letter-spacing",
+      "sources": [
+        "foundry",
+        "tailwind-default"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.line-height",
+      "sources": [
+        "foundry",
+        "tailwind-default"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.radius",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.region-width",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.scrim-color",
+      "sources": [
+        "foundry-baseline"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.sequential-color",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.shadow",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.shift-distance",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.spacing",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.state-opacity",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.status-color",
+      "sources": [
+        "radix-colors"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.surface-color",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.surface-radius",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.text-color",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.touch-target",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.transition-duration",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.transition-easing",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.typeface",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "originKinds": [
+        "adopted"
+      ],
+      "rationale": null,
+      "slot": "tokens.z-index",
+      "sources": [
+        "foundry-baseline"
+      ]
+    }
+  ],
+  "strategy": null,
+  "version": 2
+}

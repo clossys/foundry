@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
-import { readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+import archivedSourceDigests from "./__fixtures__/web-role-pair-archived-sources.json" with { type: "json" };
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { checkImportPurity } from "../../../../scripts/lib/import-purity.mjs";
 import {
@@ -10,7 +12,8 @@ import { createHash } from "node:crypto";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactElement } from "react";
 import { describe, expect, it } from "vitest";
-import { SiteFrame, LandingView, LegalView, CaptureView, SITE_MAIN_ID } from "../web/index.js";
+import { SiteFrame, LegalView, CaptureView, SITE_MAIN_ID } from "../web/index.js";
+import { SectionedView } from "../web/index.js";
 import type { SiteShellInput } from "../web/index.js";
 import { LEGAL_SECTION_IDS } from "../document/legal.js";
 import type { LegalDocument } from "../document/legal.js";
@@ -38,7 +41,9 @@ const fixture = {
 const resolveCopy: CopyResolver = ref => ({ ref, text: fixture.copy + ref.id, recordId: "example", revision: "1", locale: fixture.locale,
   source: { kind: "consumer", reference: "fixture" }, entryId: ref.id });
 function view(name: string, mutant = ""): ReactElement {
-  if (name === "LandingView") return <LandingView document={fixture.landing} landmark={mutant === "landing" ? undefined : "none"} />;
+  // The archived Landing binding has no executable renderer. Observe the supported native body;
+  // its current source closure cannot re-admit the retired binding as measured evidence.
+  if (name === "LandingView") return <SectionedView document={{ ...fixture.landing, resolutions: fixture.landing.resolutions.map(entry => ({ ...entry, servedLocale: entry.locale, chain: [entry.locale] })) }} landmark={mutant === "landing" ? undefined : "none"} />;
   if (name === "LegalView") return <LegalView document={fixture.legal}
     {...(mutant === "legal" ? { brand: "Example" } : { framed: true as const })}
     labels={fixture.labels} locale={fixture.locale} resolveCopyId={resolveCopy} />;
@@ -78,22 +83,25 @@ function measure(name: string, mutant = "") {
   };
   return observations;
 }
+const PACKAGE_ROOT = resolve(import.meta.dirname, "../..");
+const sourcePath = (path: string) => resolve(PACKAGE_ROOT, path);
+const gitSourcePath = (path: string) => path.startsWith("../designer/") ? `packages/designer/${path.slice("../designer/".length)}` : `packages/publisher/${path}`;
 const SOURCE_FILES = [
   "src/web/index.ts",
   "src/web/frame/index.ts",
   "src/web/server.ts",
-  "src/web/frame/site-frame-contract.ts",
-  "src/web/frame/NavLinks.tsx",
-  "src/web/frame/NavDisclosure.client.tsx",
-  "src/web/frame/NavDisclosure.server.tsx",
-  "src/web/frame/NavDisclosure.boundary.client.tsx",
-  "src/web/frame/SiteFrame.tsx",
-  "src/web/frame/types.ts",
-  "src/web/frame/SkipLink.client.tsx",
-  "src/web/frame/internal/resolveShell.ts",
+  "../designer/src/frames/site-frame/site-frame-contract.ts",
+  "../designer/src/frames/site-frame/NavLinks.tsx",
+  "../designer/src/frames/site-frame/NavDisclosure.client.tsx",
+  "../designer/src/frames/site-frame/NavDisclosure.server.tsx",
+  "../designer/src/frames/site-frame/NavDisclosure.boundary.client.tsx",
+  "../designer/src/frames/site-frame/SiteFrame.tsx",
+  "../designer/src/frames/site-frame/types.ts",
+  "../designer/src/frames/site-frame/SkipLink.client.tsx",
+  "../designer/src/frames/site-frame/internal/resolveShell.ts",
   "src/web/views/index.ts",
-  "src/web/views/LandingView.tsx",
-  "src/web/views/LandingViewContent.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/LandingView.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/LandingViewContent.tsx",
   "src/web/views/SectionedViewContent.tsx",
   "src/web/views/SectionedViewBlocks.tsx",
   "src/web/views/LegalView.tsx",
@@ -101,8 +109,49 @@ const SOURCE_FILES = [
   "src/web/internal/viewContentRoot.ts",
   "src/web/internal/PageLayout.tsx",
   "src/document/legal.ts",
-  "src/document/render.ts"
+  "src/document/render.ts",
+  "../designer/src/frames/index.ts",
+  "../designer/src/frames/server.ts",
+  "../designer/src/frames/site-frame/copy-contract.ts",
+  "../designer/src/frames/site-frame/landing/core/content-asset.ts",
+  "../designer/src/frames/site-frame/landing/core/content-contract.ts",
+  "../designer/src/frames/site-frame/landing/core/content-ground.ts",
+  "../designer/src/frames/site-frame/landing/core/page-flow.ts",
+  "../designer/src/frames/site-frame/landing/core/sectioned-view.ts",
+  "../designer/src/frames/site-frame/landing/core/status-list-catalog.ts",
+  "../designer/src/frames/site-frame/landing/core/types.ts",
+  "../designer/src/frames/site-frame/landing/internal/assets.ts",
+  "../designer/src/frames/site-frame/landing/internal/errors.ts",
+  "../designer/src/frames/site-frame/landing/internal/href.ts",
+  "../designer/src/frames/site-frame/landing/internal/prose-text.ts",
+  "../designer/src/frames/site-frame/landing/web/buildAssetElement.tsx",
+  "../designer/src/frames/site-frame/landing/web/types.ts",
+  "../designer/src/frames/site-frame/landing/web/views/LandingView.server.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/SectionedViewActions.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/SectionedViewBlocks.server.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/SectionedViewBlocks.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/SectionedViewCanonical.ts",
+  "../designer/src/frames/site-frame/landing/web/views/SectionedViewContent.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/SectionedViewContentSection.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/landingViewGrounds.ts",
+  "../designer/src/frames/site-frame/viewChromeGround.ts",
 ];
+
+// Exact retired producer paths; other missing sources must still fail measurement.
+const RETIRED_SOURCE_FILES = [
+  "../designer/src/frames/site-frame/landing/web/views/LandingView.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/LandingViewContent.tsx",
+  "../designer/src/frames/site-frame/landing/web/buildAssetElement.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/LandingView.server.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/SectionedViewActions.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/SectionedViewBlocks.server.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/SectionedViewBlocks.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/SectionedViewCanonical.ts",
+  "../designer/src/frames/site-frame/landing/web/views/SectionedViewContent.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/SectionedViewContentSection.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/landingViewGrounds.ts"
+];
+const CURRENT_SOURCE_FILES = SOURCE_FILES.filter(path => !RETIRED_SOURCE_FILES.includes(path));
 
 const SELECTORS: Record<WebRolePairCheck, string> = {
   standaloneMain: "main, [role~='main']", standaloneChrome: "header, footer, [role~='banner'], [role~='contentinfo']",
@@ -120,7 +169,7 @@ function fresh(index: number, mutant = "", measuredAt = WEB_ROLE_PAIR_EVIDENCE[i
   const joined = validateBlockRoleBinding(WEB_ROLE_PAIR_BINDINGS[index], WEB_ROLE_PAIR_BINDINGS.flatMap(binding => [binding.frameBlockRef, binding.viewBlockRef]));
   if (!("identity" in joined) || !joined.identity) throw new Error("Missing fresh identity");
   return { ...JSON.parse(JSON.stringify(record)), identity: joined.identity, measuredAt, fixtureDigest: sha(JSON.stringify(fixture)),
-    sourceDigests: Object.fromEntries(SOURCE_FILES.map(path => [path, sha(readFileSync(path))])),
+    sourceDigests: Object.fromEntries(CURRENT_SOURCE_FILES.map(path => [path, sha(readFileSync(sourcePath(path)))])),
     checks: Object.fromEntries(Object.entries(observations).map(([key, count]) => [key, {
       count, selector: SELECTORS[key as WebRolePairCheck],
       status: count === expected[key as WebRolePairCheck] ? "measured" : "violated",
@@ -129,6 +178,23 @@ function fresh(index: number, mutant = "", measuredAt = WEB_ROLE_PAIR_EVIDENCE[i
 const validate = validateWebRolePairEvidence;
 const copy = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
 describe("web role-pair evidence", () => {
+  it("rejects missing current source closure while retaining the archived source pins", () => {
+    expect(Object.keys(archivedSourceDigests)).toEqual(SOURCE_FILES);
+    expect(CURRENT_SOURCE_FILES).toHaveLength(37);
+    expect(RETIRED_SOURCE_FILES).toHaveLength(11);
+    const current = fresh(0);
+    const archived = { ...copy(WEB_ROLE_PAIR_EVIDENCE[0]!), sourceDigests: archivedSourceDigests };
+    for (const path of RETIRED_SOURCE_FILES) {
+      expect(existsSync(sourcePath(path))).toBe(false);
+      expect(Object.hasOwn(archived.sourceDigests, path)).toBe(true);
+      expect(Object.hasOwn(current.sourceDigests, path)).toBe(false);
+    }
+    expect(validate(archived, WEB_ROLE_PAIR_BINDINGS[0], current).status).toBe("violated");
+    const missingCurrent = copy(current);
+    delete (missingCurrent.sourceDigests as Record<string, string>)[CURRENT_SOURCE_FILES[0]!];
+    expect(validate(WEB_ROLE_PAIR_EVIDENCE[0], WEB_ROLE_PAIR_BINDINGS[0], missingCurrent))
+      .toEqual({ status: "violated", reasons: ["fresh-measurement"] });
+  });
   it.each([0, 1, 2])("re-measures the independent real pair %i", index => {
     const record = WEB_ROLE_PAIR_EVIDENCE[index]!;
     const measurement = fresh(index);
@@ -143,10 +209,10 @@ describe("web role-pair evidence", () => {
     expect(record.identity.viewBlockRef.adapter.export).toBe(["LandingView", "LegalView", "CaptureView"][index]);
     expect(WEB_ROLE_PAIR_BINDINGS[index]!.viewBlockRef.adapter.config).toEqual([{ landmark: "none" }, { framed: true }, {}][index]);
     expect(WEB_ROLE_PAIR_BINDINGS[index]!.frameBlockRef.adapter.config).toEqual({});
-    expect(Object.keys(record.sourceDigests)).toEqual(SOURCE_FILES);
+    expect(Object.keys(record.sourceDigests)).toEqual(CURRENT_SOURCE_FILES);
     expect(Object.fromEntries(Object.entries(record.checks).map(([key, check]) => [key, check.selector]))).toEqual(SELECTORS);
     for (const [path, digest] of Object.entries(record.sourceDigests)) {
-      expect(sha(execFileSync("git", ["show", `${record.sourceRevision}:packages/publisher/${path}`]))).toBe(digest);
+      expect(sha(execFileSync("git", ["show", `${record.sourceRevision}:${gitSourcePath(path)}`]))).toBe(digest);
     }
   });
   it.each([
@@ -191,7 +257,7 @@ describe("web role-pair evidence", () => {
       { ...copy(record), sourceRevision: "0".repeat(40) },
       { ...copy(record), measuredAt: "2026-10-17" },
       { ...copy(record), fixtureDigest: sha("changed fixture") },
-      { ...copy(record), sourceDigests: { ...record.sourceDigests, "src/web/frame/SiteFrame.tsx": sha("changed source") } },
+      { ...copy(record), sourceDigests: { ...record.sourceDigests, "../designer/src/frames/site-frame/SiteFrame.tsx": sha("changed source") } },
       { ...copy(record), checks: { ...copy(record.checks), composedMain: { ...record.checks.composedMain, count: 2 } } },
       { ...copy(record), qualified: true }, { ...copy(record), status: "qualified" },
     ]) {
@@ -214,7 +280,7 @@ describe("web role-pair evidence", () => {
     expect(reads).toBe(0);
   });
   it("keeps core pure", () => {
-    expect(checkImportPurity({ root: process.cwd(), entries: ["src/core/web-role-pair-evidence.ts"], allowedBuiltins: [], allowedPackages: [] }).findings).toEqual([]);
+    expect(checkImportPurity({ root: PACKAGE_ROOT, entries: ["src/core/web-role-pair-evidence.ts"], allowedBuiltins: [], allowedPackages: [] }).findings).toEqual([]);
   });
 });
 
@@ -229,15 +295,15 @@ it("regenerates retained role-pair measurements on explicit request", () => {
     expect(measurement.measuredAt).toBe(measuredAt);
     expect(Object.fromEntries(Object.entries(measurement.checks).map(([key, value]) => [key, value.count]))).toEqual(expected);
     for (const [path, digest] of Object.entries(measurement.sourceDigests)) {
-      expect(sha(execFileSync("git", ["show", `${revision}:packages/publisher/${path}`]))).toBe(digest);
+      expect(sha(execFileSync("git", ["show", `${revision}:${gitSourcePath(path)}`]))).toBe(digest);
     }
   }
-  const path = "src/core/web-role-pair-evidence.ts";
+  const path = sourcePath("src/core/web-role-pair-evidence.ts");
   const source = readFileSync(path, "utf8")
     .replace(/const revision = "[a-f0-9]{40}";/, `const revision = "${revision}";`)
     .replace(/const measuredAt = "\d{4}-\d{2}-\d{2}";/, `const measuredAt = "${measuredAt}";`)
     .replace(/const sources = \{[\s\S]*?\n\} as const;/, `const sources = ${JSON.stringify(records[0]!.sourceDigests, null, 2)} as const;`)
     .replace(/fixtureDigest: "sha256:[a-f0-9]{64}"/, `fixtureDigest: "${records[0]!.fixtureDigest}"`);
   writeFileSync(path, source);
-  console.log(JSON.stringify({ sourceRevision: revision, measuredAt, pairs: records.length, sourceFiles: SOURCE_FILES.length, checks: records.map(record => record.checks) }));
+  console.log(JSON.stringify({ sourceRevision: revision, measuredAt, pairs: records.length, sourceFiles: CURRENT_SOURCE_FILES.length, checks: records.map(record => record.checks) }));
 });

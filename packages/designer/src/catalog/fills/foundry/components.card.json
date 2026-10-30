@@ -1,0 +1,90 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.card",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#Card",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.card",
+      "source": "foundry",
+      "sourceAddress": "./components#Card",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "card": {
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "Card",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [],
+      "pin": {
+        "export": "./components#Card",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "props": [
+        "children",
+        "className",
+        "ground",
+        "variant"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": [
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-radius",
+          "tokens.elevation",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.line-height",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.surface-radius",
+          "tokens.text-color"
+        ]
+      },
+      "root": "presentational",
+      "slot": "components.card",
+      "source": "foundry"
+    }
+  }
+}

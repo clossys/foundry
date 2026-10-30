@@ -7,6 +7,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { withoutDsAttrs } from "../catalog-core/provenance-attrs.js";
 import { scanStyleSources } from "../style-scan.js";
 import { checkTokenPurity } from "../token-gate.js";
 import { TOKENS } from "../tokens/tokens.js";
@@ -21,7 +22,7 @@ const packageRoot = join(here, "..", "..");
 const brandmarkSource = readFileSync(join(here, "Brandmark.tsx"), "utf8");
 const badgePlateSource = readFileSync(join(here, "badge-plate.ts"), "utf8");
 const shellVarsSource = readFileSync(join(here, "..", "internal", "brandmark.ts"), "utf8");
-const logomarkSource = readFileSync(join(here, "..", "atoms", "Logomark.tsx"), "utf8");
+const logomarkSource = readFileSync(join(here, "..", "components", "Logomark.tsx"), "utf8");
 const tokensCss = readFileSync(join(packageRoot, "styles", "tokens.css"), "utf8");
 
 const brandmarkConstantStatements = shellVarsSource.match(/export const (?:UI_)?BRANDMARK_\w+\s*=[^;]+;/g) ?? [];
@@ -690,7 +691,7 @@ describe("frozen legacy SSR without tailwind-merge", () => {
     vi.resetModules();
     vi.doMock("tailwind-merge", () => { throw Object.assign(new Error("absent optional peer"), { code: "ERR_MODULE_NOT_FOUND" }); });
     warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    const { cx } = await import("../atoms/internal/cx.js");
+    const { cx } = await import("../components/internal/cx.js");
     expect(cx("first", "second")).toBe("first second");
     expect(warning).toHaveBeenCalledTimes(1);
     absentBrandmark = (await import("./Brandmark.js")).Brandmark;
@@ -707,6 +708,7 @@ describe("frozen legacy SSR without tailwind-merge", () => {
   it.each(ABSENT_HEADER_GOLDENS)("preserves default/image/accent header $name", entry => {
     const Header = absentHeader;
     const Component = absentBrandmark;
-    expect(renderToStaticMarkup(<Header {...entry.header as Parameters<typeof Header>[0]} brand={<Component {...entry.props as BrandmarkProps} />} />)).toBe(entry.html);
+    // The frozen goldens predate the frame DOM provenance stamp (asserted in frames/frames-wiring.test.ts).
+    expect(withoutDsAttrs(renderToStaticMarkup(<Header {...entry.header as Parameters<typeof Header>[0]} brand={<Component {...entry.props as BrandmarkProps} />} />))).toBe(entry.html);
   });
 });

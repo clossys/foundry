@@ -5,7 +5,7 @@
 // in ci.yml's build job instead, after the build.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -15,12 +15,12 @@ import { strategistCli, strategistSubjectArgs } from "./check-strategist-subject
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CLAIM = "This is the only way to release a package.\n";
 
-// A fixture repository root with the real facts subject and a docs/ tree.
+// A fixture repository root with the real findings subject and a docs/ tree.
 function withFixture(docs, fn) {
   const root = mkdtempSync(join(tmpdir(), "strategist-subject-"));
   try {
-    mkdirSync(join(root, "clossys", "strategist"), { recursive: true });
-    writeFileSync(join(root, "clossys", "strategist", "facts.json"), readFileSync(join(repoRoot, "clossys", "strategist", "facts.json"), "utf8"));
+    mkdirSync(join(root, "clossys", "agents", "strategist"), { recursive: true });
+    cpSync(join(repoRoot, "clossys", "agents", "strategist", "findings"), join(root, "clossys", "agents", "strategist", "findings"), { recursive: true });
     for (const [path, text] of Object.entries(docs)) {
       mkdirSync(dirname(join(root, "docs", path)), { recursive: true });
       writeFileSync(join(root, "docs", path), text);

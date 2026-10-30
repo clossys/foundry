@@ -1,0 +1,645 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [
+        "components.dialog",
+        "components.popover"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "id": "rac-starter/components.color-picker",
+      "license": "Apache-2.0",
+      "mode": "implementation",
+      "pin": {
+        "commit": "4dd44e0f400636a87a9ad4390903e78c5ae6113c",
+        "sha256": "494f756579492e16c4580726de087c6e6a4826acc5f3ee453ee1fb5faeaec243",
+        "url": "https://github.com/adobe/react-spectrum"
+      },
+      "relation": "same-contract",
+      "slot": "components.color-picker",
+      "source": "rac-starter",
+      "sourceAddress": "https://github.com/adobe/react-spectrum/blob/4dd44e0f400636a87a9ad4390903e78c5ae6113c/starters/tailwind/src/ColorPicker.tsx",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "components": {
+    "color-picker": {
+      "blockers": [
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorArea.tsx: bg-neutral-300: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorArea.tsx: dark:bg-neutral-800: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorArea.tsx: forced-colors:bg-[GrayText]: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorArea.tsx: max-w-56: No spacing member has the exact source length"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorField.tsx: min-h-9: No spacing member has the exact source length"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorPicker.tsx: border-0: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorPicker.tsx: dark:text-neutral-200: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorPicker.tsx: text-neutral-800: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorSlider.tsx: bg-neutral-300: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorSlider.tsx: dark:bg-neutral-800: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorSlider.tsx: dark:text-neutral-400: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorSlider.tsx: forced-colors:bg-[GrayText]: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorSlider.tsx: h-50: No spacing member has the exact source length"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorSlider.tsx: orientation-horizontal:w-56: No spacing member has the exact source length"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorSlider.tsx: text-neutral-500: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorSwatch.tsx: border-black/10: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorSwatch.tsx: border-black/10: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorSwatchPicker.tsx: border-2: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorSwatchPicker.tsx: border-black: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorSwatchPicker.tsx: border-black: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorSwatchPicker.tsx: dark:border-white: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorSwatchPicker.tsx: dark:border-white: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorSwatchPicker.tsx: dark:outline-black: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorSwatchPicker.tsx: dark:outline-black: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorSwatchPicker.tsx: outline-2: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorSwatchPicker.tsx: outline-white: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorSwatchPicker.tsx: outline-white: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorThumb.tsx: bg-neutral-300: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorThumb.tsx: bg-neutral-700: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorThumb.tsx: border-2: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorThumb.tsx: border-neutral-300: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorThumb.tsx: border-neutral-300: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorThumb.tsx: border-white: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorThumb.tsx: border-white: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorThumb.tsx: dark:bg-neutral-300: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorThumb.tsx: dark:bg-neutral-800: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorThumb.tsx: dark:border-neutral-700: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorThumb.tsx: dark:border-neutral-700: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorThumb.tsx: forced-colors:bg-[ButtonBorder]: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorThumb.tsx: forced-colors:bg-[GrayText]: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorThumb.tsx: forced-colors:border-[GrayText]: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorThumb.tsx: forced-colors:border-[GrayText]: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorThumb.tsx: h-4.5: No spacing member has the exact source length"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorThumb.tsx: w-4.5: No spacing member has the exact source length"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorWheel.tsx: dark:disabled:bg-neutral-800: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorWheel.tsx: disabled:bg-neutral-300: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/ColorWheel.tsx: forced-colors:disabled:bg-[GrayText]: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: bg-white: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: border-0: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: border-neutral-200: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: border-neutral-200: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: border-neutral-300: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: border-neutral-300: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: border-neutral-600: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: border-neutral-600: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: border-red-600: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: border-red-600: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: dark:bg-neutral-900: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: dark:border-neutral-300: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: dark:border-neutral-300: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: dark:border-neutral-600: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: dark:border-neutral-600: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: dark:border-neutral-700: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: dark:border-neutral-700: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: dark:border-red-600: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: dark:border-red-600: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: dark:disabled:placeholder:text-neutral-600: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: dark:disabled:text-neutral-600: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: dark:group-disabled:text-neutral-700: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: dark:hover:border-neutral-500: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: dark:hover:border-neutral-500: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: dark:placeholder:text-neutral-400: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: dark:text-neutral-200: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: dark:text-neutral-300: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: dark:text-neutral-400: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: disabled:placeholder:text-neutral-200: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: disabled:text-neutral-200: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: forced-colors:bg-[Field]: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: forced-colors:border-[ButtonBorder]: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: forced-colors:border-[ButtonBorder]: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: forced-colors:border-[GrayText]: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: forced-colors:border-[GrayText]: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: forced-colors:border-[Highlight]: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: forced-colors:border-[Highlight]: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: forced-colors:border-[Mark]: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: forced-colors:border-[Mark]: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: forced-colors:text-[Mark]: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: group-disabled:text-neutral-200: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: h-9: No spacing member has the exact source length"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: hover:border-neutral-400: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: hover:border-neutral-400: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: min-h-9: No spacing member has the exact source length"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: outline-0: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: placeholder:text-neutral-600: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: text-neutral-600: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: text-neutral-800: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/Field.context.tsx: text-red-600: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/utils.ts: dark:outline-blue-500: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/utils.ts: dark:outline-blue-500: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/utils.ts: forced-colors:outline-[Highlight]: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/utils.ts: forced-colors:outline-[Highlight]: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/utils.ts: outline-0: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/utils.ts: outline-2: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/utils.ts: outline-blue-600: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/utils.ts: outline-blue-600: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/utils.ts: outline-offset-2: Design utility needs a consumer binding"
+        }
+      ],
+      "composes": [
+        "components.dialog",
+        "components.popover"
+      ],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": "19.3.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "1.21.1"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "class-variance-authority",
+          "version": "0.7.1"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "3.7.0"
+        }
+      ],
+      "impl": {
+        "entry": "components/color-picker/ColorPicker.tsx",
+        "export": "ColorPicker",
+        "kind": "source"
+      },
+      "license": "Apache-2.0",
+      "members": [
+        "part.area",
+        "part.field",
+        "part.slider",
+        "part.swatch-picker",
+        "part.wheel"
+      ],
+      "notice": "notices/rac-starter-LICENSE.txt",
+      "outputSha256": [
+        {
+          "path": "components/_parts/rac-starter-variants/index.ts",
+          "sha256": "d92531e3b84d593698c351afb0532a9ed02faf8225417f34fdc780d8aa1ee1b3"
+        },
+        {
+          "path": "components/color-picker/ColorArea.tsx",
+          "sha256": "6c68637bff2127434b4696ea9258609ba603a9605e0bd91724241aca4acdfde6"
+        },
+        {
+          "path": "components/color-picker/ColorField.tsx",
+          "sha256": "ebaa824f19b1de921da17c3a6c1628a5cec6bfe6ca26b06aeedf54ab0c1007df"
+        },
+        {
+          "path": "components/color-picker/ColorPicker.tsx",
+          "sha256": "fd04c4170e6c5842f1701cfff0762565b2f15437e26b7fad7d37ae6b52d2fdcf"
+        },
+        {
+          "path": "components/color-picker/ColorSlider.tsx",
+          "sha256": "ed3f30d703a5d5c744006f171ff18ddb47e274acbaf297fa575f37ee3342c8cc"
+        },
+        {
+          "path": "components/color-picker/ColorSwatch.tsx",
+          "sha256": "11ccc2025401360810c12984a42ec6296245fe52e0891a4422d57e71556778e1"
+        },
+        {
+          "path": "components/color-picker/ColorSwatchPicker.tsx",
+          "sha256": "a57a5c07095f83c191ed92b4ca208f0d5f5ec8130a397e8ee427f4a035280bd1"
+        },
+        {
+          "path": "components/color-picker/ColorThumb.tsx",
+          "sha256": "9ea7e81c7150012674f070609f805efd2cf013396cefe7426f1ad83ac4c30b65"
+        },
+        {
+          "path": "components/color-picker/ColorWheel.tsx",
+          "sha256": "38efd303787ec3c013e522896acd65ccc4ba638027537062802871bebb3342cc"
+        },
+        {
+          "path": "components/color-picker/Field.context.tsx",
+          "sha256": "d8dc97e10c12b76abbefa7fef43ad63116f1fefe3c8bc862e0bc0a95ed6222d2"
+        },
+        {
+          "path": "components/color-picker/utils.ts",
+          "sha256": "b619639c43b72ae48cd23036dfac785c7c29adaaf16e4116a650f845fce79d88"
+        },
+        {
+          "path": "notices/rac-starter-LICENSE.txt",
+          "sha256": "7dfe6526888bac51759c99f9a51262ba2711a8c12a067f2181609dd9a4066b84"
+        }
+      ],
+      "pin": {
+        "commit": "4dd44e0f400636a87a9ad4390903e78c5ae6113c",
+        "files": [
+          {
+            "path": "starters/tailwind/package.json",
+            "sha256": "958aa1f722e1ccc670089376c82a8c730e0fbcc28ba7dc225c5fa4664d387923"
+          },
+          {
+            "path": "starters/tailwind/src/ColorArea.tsx",
+            "sha256": "44a04c1e0ba61dce9d6c4ffd87768bfd06ae733277f7265a7d7b008c45b8ef60"
+          },
+          {
+            "path": "starters/tailwind/src/ColorField.tsx",
+            "sha256": "d76e4da662a1e087795928eb85775a8e52bb4bb009336b263f1f4a5f2c8c88c4"
+          },
+          {
+            "path": "starters/tailwind/src/ColorPicker.tsx",
+            "sha256": "494f756579492e16c4580726de087c6e6a4826acc5f3ee453ee1fb5faeaec243"
+          },
+          {
+            "path": "starters/tailwind/src/ColorSlider.tsx",
+            "sha256": "098ae73c7d3c60bdc7ace0648cc7d4dacc583cf5006c97d9357e5cfdbbebeb9e"
+          },
+          {
+            "path": "starters/tailwind/src/ColorSwatch.tsx",
+            "sha256": "ebef98ca4eb5cd28f1b4f8bbeca634f987fa4b1648146eabad6531ed4e7f8854"
+          },
+          {
+            "path": "starters/tailwind/src/ColorSwatchPicker.tsx",
+            "sha256": "4186ff2d2f27ce838a05c2304a19a4a9bbcb8754e5a943d18099efc6a70ed914"
+          },
+          {
+            "path": "starters/tailwind/src/ColorThumb.tsx",
+            "sha256": "2c8ed6f3193adf1a57560e088da4cad3b6372c578580951ffe904d7790b1e33a"
+          },
+          {
+            "path": "starters/tailwind/src/ColorWheel.tsx",
+            "sha256": "fca093a3a8173a4b8b4e0c65575d0dbcf26778c6a8a5dad5bde4b25be9692c15"
+          },
+          {
+            "path": "starters/tailwind/src/Dialog.tsx",
+            "sha256": "cae9cef47ed90be73b90093a0198b12bd127325ac1f45f3b0c7ceeaedd45d3e5"
+          },
+          {
+            "path": "starters/tailwind/src/Field.tsx",
+            "sha256": "c10b6a235cd27a7cbf9b9004e5f926797ea5005649662e66bf7c53009d3a43fd"
+          },
+          {
+            "path": "starters/tailwind/src/Popover.tsx",
+            "sha256": "a3cc4e1b7007d73ad98f75c2ece95cb985768c5d0f8c76307e72c64154f6bf6b"
+          },
+          {
+            "path": "starters/tailwind/src/utils.ts",
+            "sha256": "cc6475f2c16a751a2193adcf04e4943aa75fe4947eb2b3cb2c3a4846cea18e4b"
+          }
+        ],
+        "url": "https://github.com/adobe/react-spectrum"
+      },
+      "propMap": {
+        "part.area": "ColorArea",
+        "part.field": "ColorField",
+        "part.slider": "ColorSlider",
+        "part.swatch-picker": "ColorSwatchPicker",
+        "part.wheel": "ColorWheel"
+      },
+      "props": [],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": false,
+        "range": "^1.21.1"
+      },
+      "reads": {
+        "assets": [],
+        "components": [
+          "components.dialog",
+          "components.popover"
+        ],
+        "tokens": [
+          "tokens.border-width.hairline",
+          "tokens.control-radius.default",
+          "tokens.duration.default",
+          "tokens.easing.default",
+          "tokens.font-size.sm",
+          "tokens.font-size.xs",
+          "tokens.font-weight.medium",
+          "tokens.spacing.2xl",
+          "tokens.spacing.md",
+          "tokens.spacing.sm",
+          "tokens.spacing.xl",
+          "tokens.spacing.xs",
+          "tokens.typeface.body"
+        ]
+      },
+      "root": "rac:ColorPicker",
+      "slot": "components.color-picker",
+      "source": "rac-starter",
+      "transform": "rac-starter-rewrite@1"
+    }
+  }
+}
+

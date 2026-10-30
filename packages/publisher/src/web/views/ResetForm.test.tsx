@@ -111,6 +111,7 @@ describe("ResetForm :: steps", () => {
 
     expect(handlers.request).toHaveBeenCalledExactlyOnceWith(IDENTIFIER);
     expect(await screen.findByText(defaultText("code.description"))).toBeInTheDocument();
+    expect(screen.queryAllByRole("heading")).toHaveLength(0);
     expect(screen.getByRole("form", { name: defaultText("code.title") })).toBeInTheDocument();
     expect(codeField()).toHaveAttribute("autocomplete", "one-time-code");
     expect(passwordField()).toHaveAttribute("type", "password");
@@ -611,5 +612,19 @@ describe("ResetForm :: copy and source", () => {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("wrong-channel");
     }
+  });
+});
+
+describe("ResetForm :: Foundry step description", () => {
+  it("renders the code step's description as the lone copy of a Foundry SectionHeader block", async () => {
+    const { user } = setup();
+    await reachResetStep(user);
+    const line = screen.getByText(defaultText("code.description"));
+    expect(line.tagName).toBe("P");
+    expect(line).toHaveClass("text-body", "text-ink-secondary");
+    const block = line.parentElement as HTMLElement;
+    expect(block.tagName).toBe("DIV");
+    expect(block.children).toHaveLength(1);
+    expect(block).toHaveClass("flex", "flex-col", "gap-xs");
   });
 });

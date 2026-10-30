@@ -1,0 +1,49 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "lucide/tokens.icon-stroke",
+      "license": "ISC",
+      "mode": "implementation",
+      "pin": {
+        "file": "lucide-pin.json",
+        "package": "lucide-react",
+        "sha256": "f3231b3ab02590141fd04ccad77aeae9e5944449bf2c8e85762d03974534582e"
+      },
+      "relation": "subset",
+      "slot": "tokens.icon-stroke",
+      "source": "lucide",
+      "sourceAddress": "src/components/Icon.tsx: default strokeWidth=2; glyph nodes use the outline shell",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "tokens": {
+    "icon-stroke": {
+      "default": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "2"
+          }
+        },
+        "$type": "number",
+        "$value": 2
+      }
+    }
+  }
+}

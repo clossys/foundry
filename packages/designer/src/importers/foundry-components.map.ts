@@ -1,0 +1,95 @@
+import { craftBlockers, type CRAFT_COMPARED_LEAVES } from "./foundry-craft.js";
+/** Package pointers and supported public surfaces; these are claims, never runtime measurements (K5 craft blockers read a measured record). */
+export type FoundryComponentSubpath = "components" | "charts" | "shell";
+export interface FoundryComponentMapping {
+  subpath: FoundryComponentSubpath;
+  export: string;
+  propMap: Readonly<Record<string, string>>;
+  props: readonly string[];
+  composes?: readonly string[];
+  notes?: readonly string[];
+  /** Known offer deficits: inspectable candidates must not pass adoption. */
+  blockers?: readonly { code: string; message: string }[];
+  assets?: readonly string[];
+}
+/**
+ * Mapping syntax is the persist grammar (emit-components parseBinding): ./subpath#Export, an optional .Part
+ * (static compound sub-component), then .prop or .prop=value, or an intrinsic state ([data-*] or :pseudo-class).
+ * A capability or value shape the root export serves itself maps to the bare root (""): nothing to dispatch.
+ */
+const map = (subpath: FoundryComponentSubpath, name: string, entries: Readonly<Record<string, string>>): Record<string, string> => Object.fromEntries(Object.entries(entries).map(([member, target]) => [member, `./${subpath}#${target.startsWith("=") ? target.slice(1) : name + target}`]));
+const dimension = (dimension: string, prop: string, values: readonly string[]): Record<string, string> => Object.fromEntries(values.map(value => [`${dimension}.${value}`, `.${prop}=${value}`]));
+const sizes = dimension("size", "size", ["sm", "md", "lg"]);
+const tones = (prop: string) => dimension("tone", prop, ["neutral", "success", "warning", "danger", "info"]);
+const orientations = dimension("orientation", "orientation", ["horizontal", "vertical"]);
+const component = (name: string, entries: Readonly<Record<string, string>>, props: readonly string[], extra: Partial<FoundryComponentMapping> = {}): FoundryComponentMapping => ({ subpath: "components", export: name, propMap: map("components", name, entries), props, ...extra });
+/** K5: tag-group, toolbar and tree stay blocked exactly while their measured craft comparison (foundry-craft.json) has findings. */
+const craft = (leaf: (typeof CRAFT_COMPARED_LEAVES)[number]): Partial<FoundryComponentMapping> => { const blockers = craftBlockers(leaf); return blockers ? { blockers } : {}; };
+/**
+ * Every chart member (series, axes, legend, tooltip) is a capability the chart root renders itself from its
+ * own props, so each points at the bare root export: the persisted adapter is a transparent alias of it.
+ */
+const chart = (name: string, props: readonly string[]): FoundryComponentMapping => ({ subpath: "charts", export: name, propMap: map("charts", name, { series: "", axes: "", legend: "", tooltip: "" }), props });
+
+export const FOUNDRY_COMPONENT_MAP: Readonly<Record<string, FoundryComponentMapping>> = {
+  "native-action": component("NativeAction", { "appearance.primary": "", "size.md": "", "ground.base": "", "state.hover": ":hover", "state.pressed": ":active", "state.focus-visible": ":focus-visible", "state.disabled": ".disabled" }, ["type", "children", "disabled", "onClick", "className", "style", "ref", "aria-label", "aria-labelledby", "aria-describedby", "name", "value", "form"], { assets: [], notes: ["Fixed primary/md/base appearance is intrinsic, not a variant API. Native button activation and disabled state; no RAC root or press/pending abstraction. Source and runtime qualification remain unmeasured."] }),
+  "semantic-content": component("SemanticContent", dimension("as", "as", ["article", "aside", "code", "dd", "div", "dl", "dt", "figure", "figcaption", "picture", "source", "img", "h1", "h2", "h3", "h4", "h5", "h6", "li", "main", "p", "section", "small", "span", "strong", "time", "ul"]), ["as"], { notes: ["One explicit native content element with forwarded attributes and refs, no wrapper or internal paint. Caller presentation reads and actual runtime qualification remain separate."] }),
+  form: component("Form", { "validation.native": ".validationBehavior=native", "validation.aria": ".validationBehavior=aria" }, ["children", "validationBehavior", "validationErrors", "onSubmit", "onReset", "className", "aria-label", "aria-labelledby"]),
+  "navigation-tree": component("NavigationTree", { expand: "", current: "" }, ["children", "items", "selectedRoute", "expandedKeys", "defaultExpandedKeys", "onExpandedChange", "disabledKeys", "aria-label", "aria-labelledby", "className"]),
+  "color-picker": component("ColorPicker", { "part.area": ".Area", "part.wheel": ".Wheel", "part.slider": ".Slider", "part.field": ".Field", "part.swatch-picker": ".SwatchPicker" }, ["value", "defaultValue", "onChange", "onChangeEnd", "children"]),
+  "number-field": component("NumberField", { format: "", step: "", "state.invalid": ".isInvalid" }, ["label", "value", "defaultValue", "onChange", "formatOptions", "step", "minValue", "maxValue", "isInvalid", "isDisabled", "isReadOnly", "description", "errorMessage", "incrementLabel", "decrementLabel", "className"], { assets: ["assets.icon-chevron-up", "assets.icon-chevron-down"], composes: ["components.button"] }),
+  "tag-group": component("TagGroup", { removable: "", "selection.none": ".selectionMode=none", "selection.single": ".selectionMode=single", "selection.multiple": ".selectionMode=multiple" }, ["label", "description", "children", "onRemove", "selectionMode", "selectedKeys", "onSelectionChange", "disabledKeys", "className"], { assets: ["assets.icon-close"], ...craft("tag-group") }),
+  toolbar: component("Toolbar", orientations, ["orientation", "children", "aria-label", "aria-labelledby", "className"], craft("toolbar")),
+  tree: component("Tree", { selection: "", expand: "" }, ["children", "selectionMode", "selectedKeys", "onSelectionChange", "expandedKeys", "onExpandedChange", "disabledKeys", "aria-label", "aria-labelledby", "className"], { assets: ["assets.icon-chevron-right"], ...craft("tree") }),
+  avatar: component("Avatar", { ...sizes, "content.image": ".src", "content.initials": ".alt" }, ["alt", "src", "size", "className"]),
+  badge: component("Badge", dimension("tone", "variant", ["neutral", "danger"]), ["variant", "children", "className"]),
+  banner: component("Banner", dimension("tone", "variant", ["info", "danger"]), ["variant", "children", "onDismiss", "dismissLabel", "density", "className"]),
+  breadcrumbs: component("Breadcrumb", { current: "" }, ["children", "className", "aria-label"], { notes: ["No collapsed trail API is exported."] }),
+  button: component("Button", { ...dimension("variant", "variant", ["primary", "secondary", "ghost", "danger", "outline"]), ...sizes, ...dimension("ground", "ground", ["base"]), "shape.text": "", "shape.icon-only": "=IconButton", "state.hover": "[data-hovered]", "state.focus-visible": "[data-focus-visible]", "state.disabled": ".isDisabled" }, ["variant", "size", "ground", "children", "isDisabled", "isPending", "onPress", "className", "aria-label", "slot"], { composes: ["components.icon"] }),
+  card: component("Card", {}, ["variant", "ground", "children", "className"]),
+  checkbox: component("Checkbox", { "scope.single": "", "state.checked": ".isSelected", "state.indeterminate": ".isIndeterminate", "state.invalid": ".isInvalid" }, ["children", "isSelected", "isIndeterminate", "isInvalid", "isDisabled", "onChange", "slot", "aria-label", "value"], { notes: ["Group scope dispatches to Checkbox.Group (RAC CheckboxGroup); each member Checkbox takes a value."] }),
+  "combo-box": component("ComboBox", { "allows-custom": "", "state.invalid": ".isInvalid" }, ["label", "options", "allowsCustomValue", "isInvalid", "description", "errorMessage", "placeholder", "className"]),
+  "date-field": component("DateField", { "content.date": "", "content.time": "", granularity: "", "state.invalid": ".isInvalid" }, ["label", "value", "granularity", "isInvalid", "description", "errorMessage", "className"]),
+  dialog: component("Dialog", { "role.modal": "", dismissable: "" }, ["trigger", "children", "role", "isDismissable", "size", "isOpen", "onOpenChange", "className"], { notes: ["role=alertdialog keeps the modal surface and Escape, and ignores a scrim press unless isDismissable is set."] }),
+  disclosure: component("Disclosure", { "scope.group": ".Group" }, ["title", "children", "id", "isExpanded", "onExpandedChange", "className"], { notes: ["Group scope dispatches to Disclosure.Group (RAC DisclosureGroup); members are addressed by id."] }),
+  field: component("Field", { "part.label": ".label", "part.description": ".description", "part.error": ".errorMessage", "state.required": ".isRequired", "state.invalid": ".isInvalid", "state.disabled": ".isDisabled" }, ["label", "description", "errorMessage", "isRequired", "isInvalid", "isDisabled", "children", "className"], { notes: ["Client Field uses RAC Label/Text/FieldError; the server entry preserves its static arbitrary-control render bridge."] }),
+  "file-trigger": component("FileTrigger", { multiple: "", accept: "", directory: "" }, ["children", "allowsMultiple", "acceptedFileTypes", "acceptDirectory", "onSelect"]),
+  "grid-list": component("GridList", { "layout.list": ".layout=stack", "layout.grid": ".layout=grid", selection: "" }, ["children", "layout", "selectionMode", "selectedKeys", "onSelectionChange", "onAction", "aria-label", "className"], { composes: ["components.checkbox"] }),
+  icon: component("Icon", sizes, ["size", "glyph", "children", "decorative", "label", "className"]),
+  link: component("Link", { "appearance.inline": ".variant=default", "appearance.button": ".buttonVariant" }, ["href", "variant", "buttonVariant", "buttonSize", "children", "className"]),
+  logo: { ...component("Logomark", { "content.mark": "", ...sizes, "ground.base": ".tone=auto", "ground.inverse": ".tone=inverse" }, ["src", "size", "tone", "plate", "title", "presentation", "geometry"]), propMap: { ...map("components", "Logomark", { "content.mark": "", ...sizes, "ground.base": ".tone=auto", "ground.inverse": ".tone=inverse" }), "content.lockup": "./shell#Brandmark.variant=lockup" }, notes: ["Mark uses Logomark; lockup dispatches to the shell Brandmark export."] },
+  menu: component("Menu", { "presentation.popup": "", "presentation.inline": ".Inline", ...dimension("selection", "selectionMode", ["none", "single", "multiple"]) }, ["trigger", "children", "triggerAction", "selectionMode", "selectedKeys", "defaultSelectedKeys", "onSelectionChange", "onAction", "className", "popoverClassName"], { assets: ["assets.icon-check"], notes: ["Menu is the trigger-owned popup; Menu.Inline presents the same menu inline. Root selectionMode applies to both; selected items show the check glyph."] }),
+  meter: component("Meter", { tone: "", emphasis: "" }, ["value", "scaleMax", "tone", "valueText", "label", "emphasis", "className"]),
+  popover: component("Popover", { placement: "" }, ["trigger", "children", "placement", "offset", "anchorRef", "aria-label", "arrow", "className"], { notes: ["The arrow is opt-in (arrow=false by default) and decorative; it follows the resolved placement."] }),
+  "progress-bar": component("ProgressBar", { "progress.determinate": ".value", "progress.indeterminate": ".isIndeterminate" }, ["label", "value", "isIndeterminate", "className"]),
+  "radio-group": component("RadioGroup", { ...orientations, "state.invalid": ".isInvalid" }, ["label", "children", "orientation", "isInvalid", "description", "errorMessage", "className"]),
+  "resize-handle": component("ResizeHandle", orientations, ["orientation", "value", "min", "max", "resetValue", "label", "onChange", "className"]),
+  "search-field": component("SearchField", { "part.clear": "", "part.submit": "", "state.empty": "", "state.filled": "" }, ["label", "value", "onChange", "onSubmit", "description", "errorMessage", "className"]),
+  select: component("Select", { "selection.single": ".selectedKey", "state.invalid": ".isInvalid", ...sizes }, ["label", "options", "selectedKey", "onSelectionChange", "isInvalid", "size", "width", "description", "errorMessage", "className", "aria-label", "aria-labelledby"]),
+  separator: component("Separator", orientations, ["orientation", "decorative", "className"]),
+  slider: component("Slider", { ...orientations, "selection.single": "", "selection.range": "" }, ["label", "value", "defaultValue", "onChange", "onChangeEnd", "minValue", "maxValue", "step", "formatOptions", "orientation", "isDisabled", "thumbLabels", "showValue", "className"], { notes: ["A range is a value array with one thumbLabels name per thumb; the fill spans the selected range. Source and runtime qualification remain unmeasured."] }),
+  skeleton: component("Skeleton", dimension("shape", "shape", ["block"]), ["shape", "aria-label", "className"]),
+  spinner: component("Spinner", sizes, ["size", "label", "className"]),
+  "status-mark": component("StatusMark", tones("tone"), ["tone", "children", "className"]),
+  calendar: component("Calendar", { "selection.single": ".selection=single", "selection.range": ".selection=range" }, ["selection", "value", "defaultValue", "onChange", "minValue", "maxValue", "isDateUnavailable", "isDisabled", "isReadOnly", "isInvalid", "focusedValue", "defaultFocusedValue", "onFocusChange", "firstDayOfWeek", "visibleDuration", "pageBehavior", "autoFocus", "aria-label", "aria-labelledby", "className"], { assets: ["assets.icon-chevron-left", "assets.icon-chevron-right"], composes: ["components.button"] }),
+  "toggle-button": component("ToggleButton", { ...dimension("variant", "variant", ["ghost", "outline"]), ...sizes, "state.hover": "[data-hovered]", "state.focus-visible": "[data-focus-visible]", "state.disabled": ".isDisabled", "state.selected": ".isSelected" }, ["variant", "size", "ground", "shape", "children", "isSelected", "defaultSelected", "onChange", "isDisabled", "isPending", "className", "aria-label", "id"]),
+  "toggle-group": component("ToggleGroup", { "selection.single": ".selectionMode=single", "selection.multiple": ".selectionMode=multiple", ...orientations }, ["children", "selectionMode", "selectedKeys", "defaultSelectedKeys", "onSelectionChange", "disallowEmptySelection", "isDisabled", "orientation", "variant", "size", "spacing", "aria-label", "aria-labelledby", "className"], { notes: ["ToggleGroupItem renders its own RAC ToggleButton with the shared toggle variants; it does not dispatch to the toggle-button leaf, so no composition is claimed."] }),
+  switch: component("Switch",{ "state.on": ".isSelected=true", "state.off": ".isSelected=false", "state.disabled": ".isDisabled" }, ["children", "isSelected", "onChange", "isDisabled", "className"]),
+  table: component("Table", { selection: "", sort: "" }, ["children", "selectionMode", "selectedKeys", "onSelectionChange", "sortDescriptor", "onSortChange", "className"], { composes: ["components.checkbox"], notes: ["Column resizing: wrap in Table.ResizableContainer and set allowsResizing (with defaultWidth/minWidth/maxWidth) on Table.Column."] }),
+  tabs: component("Tabs", orientations, ["children", "orientation", "size", "selectedKey", "onSelectionChange", "className"]),
+  "text-field": component("TextField", { ...sizes, "line.single-line": "", "line.multiline": "=Textarea", "state.invalid": ".isInvalid", "state.disabled": ".isDisabled", "state.read-only": ".isReadOnly" }, ["label", "value", "size", "onChange", "isInvalid", "isDisabled", "isReadOnly", "description", "errorMessage", "className"], { notes: ["Size applies to the single-line TextField; multiline dispatches independently to Textarea."] }),
+  toast: { subpath: "shell", export: "Toaster", propMap: map("shell", "Toaster", { "tone.info": "", "tone.success": "", "tone.warning": "", "tone.danger": "", action: "", timeout: "" }), props: ["aria-label", "className"], composes: ["components.button"], notes: ["Toaster is the region; tone, timeout and authored action dispatch through shell toast."] },
+  "chart-bar": chart("BarChart", ["title", "categories", "series", "valueFormat", "className"]),
+  "chart-line": chart("LineChart", ["title", "series", "xFormat", "valueFormat", "className"]),
+  "chart-area": { ...chart("AreaChart", ["title", "series", "x", "className"]), notes: ["Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available."] },
+  "chart-scatter": { ...chart("ScatterChart", ["title", "points", "x", "y", "series", "labels", "className"]), notes: ["Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available."] },
+  "chart-sparkline": { ...chart("Sparkline", ["title", "values", "valueFormat", "axes", "legend", "tooltip", "className"]), notes: ["Axes, legend and tooltip are opt-in (off by default, so the bare inline trend is unchanged). The tooltip reuses the shared ChartFrame.Tooltip part; accessibility and browser behavior remain unmeasured, static CSS inspection has no Escape dismissal, and long labels may clip. The complete table remains available."] },
+  "chart-heatmap": { ...chart("Heatmap", ["title", "values", "rows", "columns", "className"]), notes: ["Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available."] },
+  "chart-range": { ...chart("RangeChart", ["title", "rows", "ticks", "labels", "className"]), notes: ["Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available."] },
+  "chart-waterfall": { ...chart("WaterfallChart", ["title", "start", "steps", "end", "labels", "className"]), notes: ["Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available."] },
+  "chart-status-strip": { ...chart("StatusStrip", ["title", "segments", "className"]), notes: ["Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available."] },
+  tooltip: component("Tooltip", { placement: "" }, ["trigger", "children", "placement", "triggerAction", "disabledTrigger", "disabledTriggerRole", "className"]),
+};
+
+export const FOUNDRY_COMPONENT_GAPS: Readonly<Record<string, string>> = {
+};

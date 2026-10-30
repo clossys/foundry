@@ -1,13 +1,18 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { Button } from "../atoms/Button.js";
-import { Dialog, type DialogProps } from "../atoms/Dialog.js";
-import { Icon } from "../atoms/Icon.js";
-import { cx } from "../atoms/internal/cx.js";
+import { Button } from "../components/Button.js";
+import { Dialog, type DialogProps } from "../components/Dialog.js";
+import { Icon } from "../components/Icon.js";
+import { cx } from "../components/internal/cx.js";
 import { X } from "../icons/X.js";
+import { TOKENS } from "../tokens/tokens.js";
 import { Panel } from "./Panel.js";
+
+const TABLET_QUERY = `(min-width: ${TOKENS["--breakpoint-tablet"]!.value})`;
 
 export interface DrawerProps extends Omit<DialogProps, "children" | "size" | "isDismissable" | "overlayClassName" | "modalClassName" | "modalStyle"> {
   heading: ReactNode;
+  /** Frame navigation uses the entire viewport width. */
+  fullViewport?: boolean;
   closeLabel: string;
   children: ReactNode;
   footer?: ReactNode;
@@ -17,7 +22,7 @@ export interface DrawerProps extends Omit<DialogProps, "children" | "size" | "is
   placement?: "start" | "end" | "bottom";
   /** Route identity supplied by the host; any change dismisses an open drawer. */
   navigationKey?: string;
-  /** Close on entering this wide-layout query; the default matches the structural tablet breakpoint. Ignored when `wide="sheet"`. @default "(min-width: 768px)" */
+  /** Close on entering this wide-layout query; the default derives from the structural tablet token. Ignored when `wide="sheet"`. */
   dismissAt?: string;
   /** Wide-layout behavior: `"dismiss"` closes and refuses opening while `dismissAt` matches; `"sheet"` opens as a modal side sheet at every viewport width. @default "dismiss" */
   wide?: "dismiss" | "sheet";
@@ -25,8 +30,8 @@ export interface DrawerProps extends Omit<DialogProps, "children" | "size" | "is
 
 /** Material composing the existing Dialog lifecycle and Panel regions, never a second overlay owner. */
 export function Drawer({
-  trigger, heading, closeLabel, children, footer, placement = "start",
-  navigationKey, dismissAt = "(min-width: 768px)", wide = "dismiss", isOpen, defaultOpen = false,
+  trigger, heading, closeLabel, children, footer, fullViewport = false, placement = "start",
+  navigationKey, dismissAt = TABLET_QUERY, wide = "dismiss", isOpen, defaultOpen = false,
   onOpenChange, className, style, closeButtonStyle, ...rest
 }: DrawerProps) {
   const [internal, setInternal] = useState(defaultOpen);
@@ -68,7 +73,7 @@ export function Drawer({
       overlayClassName={bottom ? "items-end p-0" : placement === "start" ? "items-stretch justify-start p-0" : "items-stretch justify-end p-0"}
       modalClassName="h-full max-w-none"
       modalStyle={{
-        width: bottom ? "100%" : "var(--ui-layout-drawer-w, min(20rem, 85vw))",
+        width: bottom || fullViewport ? "100%" : "var(--ui-layout-drawer-w, min(20rem, 85vw))",
         maxWidth: "100%", height: bottom ? "85vh" : "100%",
         maxHeight: bottom ? "85vh" : "100%",
       }}

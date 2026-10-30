@@ -26,7 +26,7 @@ describe("Item", () => {
   it.each([
     ["neutral", "bg-surface-sunken"], ["success", "bg-status-success-tint"], ["warning", "bg-status-warning-tint"],
     ["danger", "bg-status-danger-tint"], ["info", "bg-status-info-tint"],
-  ] as const)("maps badge tone %s to the existing atom", (tone, cls) => {
+  ] as const)("maps badge tone %s to the existing component", (tone, cls) => {
     render(<Item {...base} badge={{ label: "State", tone }} />);
     expect(screen.getByText("State")).toHaveClass(cls);
   });

@@ -1,0 +1,111 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.slider",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#Slider",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.slider",
+      "source": "foundry",
+      "sourceAddress": "./components#Slider",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "slider": {
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "Slider",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "orientation.horizontal",
+        "orientation.vertical",
+        "selection.range",
+        "selection.single"
+      ],
+      "pin": {
+        "export": "./components#Slider",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "orientation.horizontal": "./components#Slider.orientation=horizontal",
+        "orientation.vertical": "./components#Slider.orientation=vertical",
+        "selection.range": "./components#Slider",
+        "selection.single": "./components#Slider"
+      },
+      "props": [
+        "className",
+        "defaultValue",
+        "formatOptions",
+        "isDisabled",
+        "label",
+        "maxValue",
+        "minValue",
+        "onChange",
+        "onChangeEnd",
+        "orientation",
+        "showValue",
+        "step",
+        "thumbLabels",
+        "value"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.border-width",
+          "tokens.control-size",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.focus-shadow",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.surface-color"
+        ]
+      },
+      "root": "rac:Slider",
+      "slot": "components.slider",
+      "source": "foundry"
+    }
+  }
+}

@@ -1,0 +1,186 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.site-shell",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./frames#SiteFrame",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "frames.site-shell",
+      "source": "foundry",
+      "sourceAddress": "./frames#SiteFrame",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "chrome.full",
+        "chrome.minimal",
+        "header-placement.overlay",
+        "slot.consent",
+        "slot.progress"
+      ]
+    }
+  },
+  "frames": {
+    "site-shell": {
+      "composes": [
+        "components.icon",
+        "components.logo",
+        "components.semantic-content",
+        "frames.site-footer",
+        "frames.site-header"
+      ],
+      "consumption": {
+        "privateInternalReads": [
+          {
+            "file": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",
+            "line": 4,
+            "rawAssets": [
+              "assets.js"
+            ],
+            "sourceSha256": "3ede6936935916b747b8cf8e1271e11a1f36caa94360a57f98064c924bdcdd29",
+            "specifier": "../landing/internal/assets.js",
+            "target": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
+            "targetSha256": "54cc0184672dfc74981225929705b024611926fd305a88374c1040605cffa3f8"
+          }
+        ],
+        "rawScannedReads": {
+          "assets": [
+            "assets.js"
+          ],
+          "components": [
+            "components.icon",
+            "components.logo",
+            "components.semantic-content"
+          ],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.control-color",
+            "tokens.spacing",
+            "tokens.text-color",
+            "tokens.touch-target",
+            "tokens.z-index"
+          ]
+        },
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.icon",
+          "components.logo",
+          "components.semantic-content",
+          "frames.site-footer",
+          "frames.site-header"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.icon",
+            "components.logo",
+            "components.semantic-content"
+          ],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.control-color",
+            "tokens.spacing",
+            "tokens.text-color",
+            "tokens.touch-target",
+            "tokens.z-index"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/catalog-assets/media.ts",
+            "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
+          },
+          {
+            "path": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",
+            "sha256": "3ede6936935916b747b8cf8e1271e11a1f36caa94360a57f98064c924bdcdd29"
+          },
+          {
+            "path": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
+            "sha256": "54cc0184672dfc74981225929705b024611926fd305a88374c1040605cffa3f8"
+          },
+          {
+            "path": "packages/designer/src/frames/site-frame/landing/internal/errors.ts",
+            "sha256": "19a0d6e258427849321149d4fb3cefe1d4122f8cbb82c224ba3349859783eaa4"
+          },
+          {
+            "path": "packages/designer/src/frames/site-frame/site-frame-contract.ts",
+            "sha256": "44f7a4f9b6ea8ba04abd355313921a16d2d0c285c0bafc91a10473cec6134416"
+          },
+          {
+            "path": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
+            "sha256": "3d67ddfa17aa29c1fcdf01d11b4289448fe3483ba276235a9e9542ce62ff413a"
+          },
+          {
+            "path": "packages/designer/src/frames/site-frame/types.ts",
+            "sha256": "5082a75480ef118eda6c17d091d966bceb23e0b42555fe20930cd5c24437359b"
+          },
+          {
+            "path": "packages/designer/src/frames/site-frame/viewChromeGround.ts",
+            "sha256": "d5c430d26e272474f954f3fd42ed0f7175e0e483afaeb8352c131d46e6f50aa2"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved source export ../../components/Link.js#Link",
+            "file": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
+            "line": 3
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved source export ./NavDisclosure.boundary.client.js#SiteNavDisclosure",
+            "file": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
+            "line": 8
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved source export ./SkipLink.boundary.client.js#SiteSkipLink",
+            "file": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
+            "line": 9
+          }
+        ]
+      },
+      "impl": {
+        "export": "SiteFrame",
+        "kind": "package",
+        "module": "@clossys/designer/frames"
+      },
+      "members": [
+        "footer-placement.flow",
+        "footer-placement.overlay"
+      ],
+      "propMap": {
+        "footer-placement.flow": "presentation.footerPlacement=flow",
+        "footer-placement.overlay": "presentation.footerPlacement=overlay"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.control-color",
+          "tokens.spacing",
+          "tokens.text-color",
+          "tokens.touch-target",
+          "tokens.z-index"
+        ]
+      },
+      "slot": "frames.site-shell",
+      "slots": {
+        "footer": "shell.footer",
+        "header": "shell",
+        "main": "children",
+        "skip-link": "shell.skipLink",
+        "toasts": "toasts"
+      },
+      "statePorts": {}
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "token-diverging-neutral@1",
+  "slot": "tokens.diverging-color",
+  "values": {
+    "neutral": {
+      "$extensions": {
+        "com.clossys.css": {
+          "raw": "{{tokens.border-color.base}}"
+        },
+        "com.clossys.modes": {
+          "dark": "{tokens.border-color.base}"
+        }
+      },
+      "$type": "color",
+      "$value": "{tokens.border-color.base}"
+    }
+  }
+}

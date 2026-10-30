@@ -1,0 +1,251 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.data-table",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#DataTable",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.data-table",
+      "source": "foundry",
+      "sourceAddress": "./blocks#DataTable",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "data-table": {
+      "composes": [
+        "components.button",
+        "components.checkbox",
+        "components.dialog",
+        "components.icon",
+        "components.popover",
+        "components.select",
+        "components.table",
+        "components.text-field",
+        "sections.section-header"
+      ],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.button",
+          "components.checkbox",
+          "components.dialog",
+          "components.icon",
+          "components.popover",
+          "components.select",
+          "components.table",
+          "components.text-field",
+          "sections.section-header"
+        ],
+        "scannedReads": {
+          "assets": [
+            "assets.icon-chevron-down",
+            "assets.icon-chevron-right",
+            "assets.icon-close"
+          ],
+          "components": [
+            "components.button",
+            "components.checkbox",
+            "components.dialog",
+            "components.icon",
+            "components.popover",
+            "components.select",
+            "components.table",
+            "components.text-field"
+          ],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.body-size",
+            "tokens.border-color",
+            "tokens.breakpoint",
+            "tokens.caption-size",
+            "tokens.control-radius",
+            "tokens.control-size",
+            "tokens.focus-shadow",
+            "tokens.letter-spacing",
+            "tokens.radius",
+            "tokens.spacing",
+            "tokens.state-opacity",
+            "tokens.surface-color",
+            "tokens.text-color",
+            "tokens.typeface"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/data-table/empty-columns.ts",
+            "sha256": "d6d0e7a54139024b417415e72035e31a126e182fdc220aba6de2f97b60b8bed4"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/FilterEditor.tsx",
+            "sha256": "93c57ef44c802178834251b2e99cfd514b63b97c8526ba2b302c36da4ca70b57"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/FlatGrid.tsx",
+            "sha256": "defca6b60a72096a42ca48915af28836c64a2108046f679a3472fac0d61f0f9d"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/messages.ts",
+            "sha256": "8a94ebfc6e63c1f43782a2afb158a79ab77ebed517606b3051cd32b3351e94b0"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/ModelTable.tsx",
+            "sha256": "9f752383f5047113f1e83bdeeddf2ba05502b3d8428f00f3f3d2f761b3a00a76"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/PivotGrid.tsx",
+            "sha256": "ba0ac41b063acc765e614c22c63e5502aad1445b994335d0eee1ee65b877b761"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/presentation.ts",
+            "sha256": "9e9a798d5186645619f200ea0ca029418ccd67c5d3a90c0bd1df3fbf63bfa125"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/TableSurface.tsx",
+            "sha256": "26ff35fde373eb71c293af32071ade5974dbe5a8a8d336633f982c67c6561734"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/view-model.ts",
+            "sha256": "49bb10250b1a5874c2251896f1503dc337e5ec5b7f8cd5599c23c533b3cdeb9f"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/ViewOptions.tsx",
+            "sha256": "25fc7536f83d781693465f3f7cbeb10559ee02d2f3a3e1e81a69977cdcf76ada"
+          },
+          {
+            "path": "packages/designer/src/blocks/DataTable.tsx",
+            "sha256": "0c426159b76924e7cce49cdda833353f60932d94798805cc351d54610be88cc1"
+          },
+          {
+            "path": "packages/designer/src/blocks/table-model/index.ts",
+            "sha256": "3afd372dce33c7a5b58c8265eb9f46ce3b50b7da0ecf2613cb9961bc0f5eb1ed"
+          },
+          {
+            "path": "packages/designer/src/blocks/table-model/model.ts",
+            "sha256": "e8f0636f9ef841c4b1bcb9b8d0fcbec41c495bdbca991a2688e117e45c6af260"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/Chip.tsx",
+            "sha256": "1818b30d8256686d9dd6df16dcd6f8b78c78a024f3808d918b9481563ce1da2f"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/components/internal/ui-vars.ts",
+            "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/blocks/data-table/ModelTable.tsx",
+            "line": 3
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../components/glyph-context.js#useGlyph",
+            "file": "packages/designer/src/blocks/data-table/ModelTable.tsx",
+            "line": 6
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/blocks/data-table/TableSurface.tsx",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ./glyph-context.js#useGlyph",
+            "file": "packages/designer/src/components/Chip.tsx",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
+      "impl": {
+        "export": "DataTable",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Host supplies rowKey. Grouping uses the typed model API; footer is an arbitrary region, not a pagination controller. FlatGrid and ModelTable own implementation dependencies, including direct RAC imports.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#DataTable",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "reads": {
+        "assets": [
+          "assets.icon-chevron-down",
+          "assets.icon-chevron-right",
+          "assets.icon-close"
+        ],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.breakpoint",
+          "tokens.caption-size",
+          "tokens.control-radius",
+          "tokens.control-size",
+          "tokens.focus-shadow",
+          "tokens.letter-spacing",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
+      },
+      "slot": "sections.data-table",
+      "slotMap": {
+        "columns": "./blocks#DataTable.columns",
+        "grouping": "./blocks#DataTable.model",
+        "pagination": "./blocks#DataTable.footer",
+        "rows": "./blocks#DataTable.rows",
+        "selection": "./blocks#DataTable.selectionMode",
+        "sort": "./blocks#DataTable.sortDescriptor",
+        "toolbar": "./blocks#DataTable.toolbar"
+      },
+      "source": "foundry"
+    }
+  }
+}

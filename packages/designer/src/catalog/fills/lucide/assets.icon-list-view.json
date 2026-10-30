@@ -1,0 +1,80 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-list-view",
+      "slot": "assets.icon-list-view",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/list.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/List.ts",
+        "sha256": "41a9f16bbf2cea86eb4a8d2039efce4cf87fb58c6ef7a23d120dea45985bd4c2"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-list-view": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M3 5h.01",
+              "key": "18ugdj"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 12h.01",
+              "key": "nlz23k"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 19h.01",
+              "key": "noohij"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M8 5h13",
+              "key": "1pao27"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M8 12h13",
+              "key": "1za7za"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M8 19h13",
+              "key": "m83p4d"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

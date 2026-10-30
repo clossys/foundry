@@ -1,0 +1,77 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-grid-view",
+      "slot": "assets.icon-grid-view",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/grid-3x3.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/Grid3x3.ts",
+        "sha256": "0a77926c1da9c77b936a4ffb8a28d7b93733db4284de21f93f7aed1d4d56d332"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-grid-view": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "rect",
+            {
+              "width": "18",
+              "height": "18",
+              "x": "3",
+              "y": "3",
+              "rx": "2",
+              "key": "afitv7"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 9h18",
+              "key": "1pudct"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 15h18",
+              "key": "5xshup"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M9 3v18",
+              "key": "fh3hqa"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M15 3v18",
+              "key": "14nvp0"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

@@ -128,6 +128,30 @@ describe("consent-copy/resolve (P-20)", () => {
     expectRefusal(() => resolveConsentCopy({ resolveCopy: resolverFor(reg, "preview"), target: "preview", refs: REFS, locale: "en" }), "noticeLead");
   });
 
+  it.each(["title", "status.memoryOnly", "trailingText"] as const)("refuses preview draft lifecycle at %s", (field) => {
+    const reg = registry();
+    const { approval: _approval, ...entry } = reg.entries[0]!;
+    reg.entries.push({ ...entry, id: "consent.draft", status: "draft" });
+    const resolveCopy = resolverFor(reg, "preview");
+    expect(resolveCopy({ id: "consent.draft" })).toMatchObject({ status: "draft", text: entry.text });
+    const refs = structuredClone(REFS);
+    if (field === "status.memoryOnly") refs.status.memoryOnly = { id: "consent.draft" };
+    else refs[field] = { id: "consent.draft" };
+    expectRefusal(() => resolveConsentCopy({ resolveCopy, target: "preview", refs, locale: "en" }), field);
+  });
+
+  it("keeps approved delegate preview usable with or without explicit lifecycle metadata", () => {
+    const inner = resolverFor(registry(allDelegate()), "preview");
+    expect(inner(REFS.title)).toMatchObject({ approval: { approvedBy: "delegate" } });
+    expect(inner(REFS.title)).not.toHaveProperty("status");
+    expect(resolveConsentCopy({ resolveCopy: inner, target: "preview", refs: REFS, locale: "en" }).title.text).toBe(textFor("consent.title"));
+    const withStatus: CopyResolver = ref => {
+      const resolution = inner(ref);
+      return resolution && { ...resolution, status: "approved" };
+    };
+    expect(resolveConsentCopy({ resolveCopy: withStatus, target: "preview", refs: REFS, locale: "en" }).title.text).toBe(textFor("consent.title"));
+  });
+
   it("refuses out-of-scope delegate copy the resolver returns nothing for", () => {
     const inner = resolverFor(registry(allDelegate()), "preview");
     const scoped: CopyResolver = (ref) => (ref.id === "consent.status.evidence-conflict" ? undefined : inner(ref));

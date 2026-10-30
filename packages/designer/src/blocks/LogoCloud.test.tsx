@@ -1,3 +1,4 @@
+import { SectionFrame as S4Frame } from "./SectionFrame.js";
 import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -7,6 +8,7 @@ import { render, screen, within } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeAll, describe, expect, it } from "vitest";
 import { LogoCloud, type LogoCloudItem } from "./LogoCloud.js";
+import { selectChromium } from "../__fixtures__/chromium-discovery.js";
 
 type BrowserStep =
   | { viewport: number }
@@ -103,8 +105,7 @@ async function driveChromium() {
 const INPUT_CAPABILITIES = "primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4";
 
 function runInChromium(html: string, steps: readonly BrowserStep[]): Record<string, any> {
-  const browser = ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"]
-    .find(name => spawnSync(name, ["--version"], { stdio: "ignore" }).status === 0);
+  const browser = selectChromium(process.env.FOUNDRY_TEST_CHROME, (executable, args) => spawnSync(executable, args, { stdio: "ignore" }));
   if (!browser) throw new Error("Measured block tests require Chromium or Google Chrome on PATH.");
   const directory = mkdtempSync(join(tmpdir(), "block-measure-"));
   try {
@@ -306,4 +307,22 @@ describe("LogoCloud measured in Chromium", () => {
     expect(second.mono.map(mark => mark.gray)).toEqual([1, 0, 1, 1]);
     expect(second.outline).not.toMatch(/^none/);
   });
+});
+
+it("S4-6 retains the bare root, direct children and host identity under one external band", () => {
+  let clicks = 0;
+  const view = render(<LogoCloud items={items(3)} id="bare" dir="rtl" data-host="bare" className="gap-xl" style={{ marginTop: 7 }} onClick={() => clicks++} />);
+  const root = view.container.firstElementChild as HTMLElement;
+  expect(root.tagName).toBe("UL");
+  expect(root).toHaveAttribute("id", "bare");
+  expect(root).toHaveAttribute("dir", "rtl");
+  expect(root).toHaveAttribute("data-host", "bare");
+  expect(root.style.marginTop).toBe("7px");
+  expect(root).toHaveClass("gap-xl");
+  expect(Array.from(root.children).every(child => child.tagName === "LI")).toBe(true);
+  expect(root.querySelector("section,header,h1,h2")).toBeNull();
+  root.click(); expect(clicks).toBe(1);
+  view.rerender(<S4Frame><LogoCloud items={items(3)} id="bare" /></S4Frame>);
+  expect(view.container.querySelectorAll("[data-designer-section-frame]")).toHaveLength(1);
+  expect(view.container.querySelector("#bare")?.tagName).toBe("UL");
 });

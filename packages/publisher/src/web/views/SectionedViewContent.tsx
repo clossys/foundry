@@ -1,3 +1,4 @@
+import { copyLocaleProvenance } from "../../content/copy-provenance.js";
 import { applyContentGrounds, planContentGrounds } from "../../core/content-ground.js";
 import { projectStatusListItems } from "../../core/status-list-catalog.js";
 import { assertClosedData, assertCanonicalContentSection } from "./SectionedViewCanonical.js";
@@ -5,7 +6,8 @@ import { resolveActionEmphasis } from "../../core/page-flow.js";
 import { desugarRecipe, SECTIONED_VIEW_CONTENT_CONTRACT } from "../../core/content-contract.js";
 import { resolveRoleActionEmphasis } from "../../core/sectioned-view.js";
 import { renderAction, renderRoleActions } from "./SectionedViewActions.js";
-import { SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
+import { SectionHeader, SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
+import type { CopyEntryStatus } from "@clossys/writer";
 import type { ReactNode } from "react";
 import type { ResolvedSectionedViewAction, ResolvedSectionedViewContentAction, ResolvedSectionedViewContentSection, ResolvedSectionedViewDocument, ResolvedSectionedViewHeroMedia, ResolvedSectionedViewSection, SectionedViewGround, SectionedViewStatTrend, SectionedViewStatus, SectionedViewStatusDisposition } from "../../core/sectioned-view.js";
 import { isRenderAsset } from "../../internal/assets.js";
@@ -243,6 +245,9 @@ function assertContentSection(record: Record<string, unknown>, path: string): vo
   assertCanonicalContentSection(record, path);
 }
 
+// Lifecycle is recorded Writer provenance, not approval authority for this view.
+const COPY_RESOLUTION_STATUSES = { draft: true, approved: true, retired: true } satisfies Record<CopyEntryStatus, true>;
+
 /** Validates the direct resolved-model boundary before any Designer block receives props. */
 export function assertRenderableSectionedViewDocument(document: unknown): asserts document is ResolvedSectionedViewDocument {
   assertClosedData(document, "document");
@@ -253,9 +258,10 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
   for (let index = 0; index < candidate.resolutions.length; index += 1) {
     if (!Object.hasOwn(candidate.resolutions, index)) throw new Error(`resolutions.${index} is a sparse provenance hole.`);
     const resolution = candidate.resolutions[index];
-    if (!plain(resolution) || !closed(resolution, ["ref", "text", "recordId", "revision", "locale", "source", "entryId", "approval"]) || !nonBlank(resolution.text) || !nonBlank(resolution.recordId) || !nonBlank(resolution.revision) || !nonBlank(resolution.locale) || !nonBlank(resolution.entryId) || !validCopyRef(resolution.ref) || !validResolutionApproval(resolution.approval) || !plain(resolution.source) || !closed(resolution.source, ["kind", "reference"]) || !["consumer", "generated", "imported"].includes(resolution.source.kind as string) || !nonBlank(resolution.source.reference)) {
+    if (!plain(resolution) || !closed(resolution, ["ref", "text", "recordId", "revision", "locale", "servedLocale", "chain", "source", "entryId", "approval", "status"]) || (resolution.status !== undefined && (typeof resolution.status !== "string" || !Object.hasOwn(COPY_RESOLUTION_STATUSES, resolution.status))) || !nonBlank(resolution.text) || !nonBlank(resolution.recordId) || !nonBlank(resolution.revision) || !nonBlank(resolution.locale) || !nonBlank(resolution.entryId) || !validCopyRef(resolution.ref) || !validResolutionApproval(resolution.approval) || !plain(resolution.source) || !closed(resolution.source, ["kind", "reference"]) || !["consumer", "generated", "imported"].includes(resolution.source.kind as string) || !nonBlank(resolution.source.reference)) {
       throw new Error(`resolutions.${index} must be complete CopyResolution provenance.`);
     }
+    copyLocaleProvenance(resolution, `resolutions.${index}`);
   }
   const sectionIds = new Set<string>();
   let heroCount = 0;
@@ -494,11 +500,8 @@ function renderStatGrid(section: Extract<ResolvedSectionedViewSection, { kind: "
   return (
     <div key={section.id} id={section.id} className={`flex flex-col gap-lg ${colors.surface}`}>
       {hasHeadingRegion ? (
-        <div className="flex flex-col gap-xs">
-          {section.eyebrow ? <p className={`text-caption uppercase tracking-label ${colors.muted}`}>{section.eyebrow}</p> : null}
-          <h2 className={`text-h2 font-display ${colors.primary}`}>{section.heading}</h2>
-          {section.description ? <p className={`text-body ${colors.secondary}`}>{section.description}</p> : null}
-        </div>
+        <SectionHeader density="standard" level={2} ground={section.ground}
+          eyebrow={section.eyebrow} title={section.heading} description={section.description} />
       ) : null}
       <div className="grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-4">
         {section.items.map((item) => (

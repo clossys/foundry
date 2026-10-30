@@ -1,11 +1,19 @@
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { I18nProvider } from "react-aria-components";
 import { act } from "react";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AppNavigation } from "./AppNavigation.js";
+import { AppNavigation as ShellFixtureAppNavigation } from "./AppNavigation.js";
+import { Icon } from "../components/Icon.js";
+import { ChevronDown } from "../icons/ChevronDown.js";
 import { getAppNavigationCloseStyle } from "./app-navigation-layout.js";
 import type { AppNavigationNode } from "./app-navigation-tree.js";
+import { withShellCopy } from "../frames/__fixtures__/shell-copy.js";
+const AppNavigation = withShellCopy(ShellFixtureAppNavigation);
+
+
 
 const action = vi.fn();
 const tree: readonly AppNavigationNode[] = [
@@ -31,6 +39,21 @@ beforeEach(() => {
 afterEach(() => { document.documentElement.dir = ""; vi.unstubAllGlobals(); });
 
 describe("AppNavigation", () => {
+  it("routes real parent and nested links through the host once while preserving native destinations and active state", async () => {
+    const navigate = vi.fn().mockResolvedValue(undefined);
+    render(<AppNavigation tree={tree} activeId="blocks" onNavigate={navigate} />);
+    const nested = screen.getByRole("link", { name: "Blocks" });
+    expect(nested).toHaveAttribute("href", "#blocks");
+    expect(nested).toHaveAttribute("aria-current", "page");
+    await userEvent.click(nested);
+    await waitFor(() => expect(navigate).toHaveBeenCalledExactlyOnceWith("#blocks"));
+    navigate.mockClear();
+    const parent = screen.getByRole("link", { name: "Catalogs" });
+    expect(parent).toHaveAttribute("href", "#catalogs");
+    await userEvent.click(parent);
+    await waitFor(() => expect(navigate).toHaveBeenCalledExactlyOnceWith("#catalogs"));
+  });
+
   it.each([
     [{}, "Open navigation", "Close navigation"],
     [{ openLabel: "Show destinations", closeLabel: "Hide destinations" }, "Show destinations", "Hide destinations"],
@@ -62,11 +85,11 @@ describe("AppNavigation", () => {
       return this.getAttribute("aria-label") === "Host corner" ? new DOMRect(left, 27, 44, 44) : original.call(this);
     });
     try {
-      const view = render(<div dir="ltr"><AppNavigation tree={tree} drawerOpen trigger={<button aria-label="Host corner" style={{ direction: "ltr" }} />} /></div>);
+      const view = render(<I18nProvider locale="en"><div dir="rtl"><AppNavigation tree={tree} drawerOpen trigger={<button aria-label="Host corner" style={{ direction: "rtl" }} />} /></div></I18nProvider>);
       const close = await screen.findByRole("button", { name: "Close navigation", expanded: true });
       await waitFor(() => expect(close).toHaveStyle({ insetBlockStart: "27px", insetInlineStart: "35px", direction: "ltr" }));
       left = 621;
-      view.rerender(<div dir="rtl"><AppNavigation tree={tree} drawerOpen trigger={<button aria-label="Host corner" style={{ direction: "rtl" }} />} /></div>);
+      view.rerender(<I18nProvider locale="ar"><div dir="ltr"><AppNavigation tree={tree} drawerOpen trigger={<button aria-label="Host corner" style={{ direction: "ltr" }} />} /></div></I18nProvider>);
       await waitFor(() => expect(close).toHaveStyle({ insetBlockStart: "27px", insetInlineStart: "calc(100% - 665px)", direction: "rtl" }));
     } finally { measured.mockRestore(); }
   });
@@ -124,12 +147,57 @@ describe("AppNavigation", () => {
     expect(link).toHaveAttribute("href", "#catalogs");
     expect(link).not.toHaveAttribute("aria-expanded");
     expect(link).not.toHaveAttribute("aria-current");
-    expect(link.closest("li")).toHaveAttribute("data-active-ancestor", "true");
+    expect(link.closest("[role=row]")).toHaveAttribute("data-active-ancestor", "true");
+    expect(link.closest("[role=row]")).toHaveAttribute("data-current-ancestor");
+    expect(screen.getByRole("treegrid", { name: "Navigation" })).toContainElement(link);
     expect(disclosure).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("link", { name: "Blocks" })).toHaveAttribute("aria-current", "page");
     await userEvent.click(disclosure);
     expect(screen.queryByRole("link", { name: "Blocks" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Catalogs" })).toHaveAttribute("href", "#catalogs");
+  });
+
+  it("turns the disclosure chevron on the motion tokens and snaps under reduced motion", async () => {
+    render(<AppNavigation tree={tree} activeId="home" />);
+    const glyph = (name: string) => screen.getByRole("button", { name }).querySelector("svg")!;
+    const MOTION = ["transition-transform", "motion-reduce:transition-none"];
+    const closed = glyph("Expand Catalogs");
+    expect(closed).toHaveClass(...MOTION);
+    // Named classes only: arbitrary-value classes ship no compiled CSS.
+    expect([...closed.classList].filter(name => name.includes("("))).toEqual([]);
+    expect(closed).not.toHaveClass("rotate-180");
+    await userEvent.click(screen.getByRole("button", { name: "Expand Catalogs" }));
+    const open = glyph("Collapse Catalogs");
+    expect(open).toHaveClass(...MOTION, "rotate-180");
+  });
+
+  it("leaves the current destination's group header row without a fill", () => {
+    render(<AppNavigation tree={tree} activeId="blocks" />);
+    const row = screen.getByRole("button", { name: "Collapse Catalogs" }).parentElement!;
+    expect([...row.classList].filter(name => name.startsWith("bg-"))).toEqual([]);
+    expect(screen.getByRole("link", { name: "Blocks" })).toHaveClass("bg-surface-selected");
+  });
+
+  it("uses the existing named 44px target contracts without caller inline sizing", () => {
+    render(<AppNavigation tree={tree} activeId="blocks" />);
+    for (const name of ["Home", "Catalogs", "Blocks"]) {
+      const control = screen.getByRole("link", { name });
+      expect(control).toHaveClass("control-h-md");
+      expect(control.style.blockSize).toBe("");
+      expect(control.style.minBlockSize).toBe("");
+      expect(control.style.borderInlineStartWidth).toBe("var(--ui-border-rule)");
+    }
+    const actionControl = screen.getByRole("button", { name: "Actions" });
+    expect(actionControl).toHaveClass("control-h-md");
+    expect(actionControl.style.blockSize).toBe("");
+    expect(actionControl.style.minBlockSize).toBe("");
+    expect(actionControl.style.borderInlineStartWidth).toBe("var(--ui-border-rule)");
+    const chevron = screen.getByRole("button", { name: "Collapse Catalogs" });
+    expect(chevron).toHaveClass("icon-control-md");
+    expect(chevron).not.toHaveAttribute("style");
+    const css = readFileSync(resolve(import.meta.dirname, "../../styles/compiled.css"), "utf8");
+    expect(css).toMatch(/\.control-h-md \{[\s\S]*?min-block-size: var\(--ui-control-h-md, 32px\)/);
+    expect(css).toMatch(/\.icon-control-md \{\s*inline-size: var\(--ui-layout-tap-target, 44px\);\s*block-size: var\(--ui-layout-tap-target, 44px\)/);
   });
 
   it("expands a new active ancestor and rejects third-level unsafe trees", () => {
@@ -143,35 +211,121 @@ describe("AppNavigation", () => {
     expect(screen.queryByRole("link", { name: "C" })).not.toBeInTheDocument();
   });
 
-  it("supports arrows, Home, End, Enter and Space on visible controls", async () => {
+  it("programmatic parent restoration requirement probe: native parent key follows the focused anchor", async () => {
     render(<AppNavigation tree={tree} activeId="blocks" />);
     const home = screen.getByRole("link", { name: "Home" });
-    const activate = vi.spyOn(home, "click");
-    home.focus();
-    await userEvent.keyboard(" ");
+    const catalogs = screen.getByRole("link", { name: "Catalogs" });
+    const blocks = screen.getByRole("link", { name: "Blocks" });
+    const actionButton = screen.getByRole("button", { name: "Actions" });
+    const activate = vi.fn((event: Event) => event.preventDefault());
+    home.addEventListener("click", activate);
+    act(() => home.focus());
+    await userEvent.keyboard("{Enter}");
     expect(activate).toHaveBeenCalledOnce();
-    await userEvent.keyboard("{End}");
-    expect(screen.getByRole("button", { name: "Actions" })).toHaveFocus();
+    expect(home).toHaveAttribute("href", "#home");
+    await userEvent.keyboard("{ArrowDown}");
+    expect(catalogs).toHaveFocus();
+    await userEvent.keyboard("{ArrowDown}");
+    expect(blocks).toHaveFocus();
+    await userEvent.keyboard("{ArrowDown}");
+    expect(actionButton.closest("[role=row]")).toHaveFocus();
+    await userEvent.tab();
+    expect(actionButton).toHaveFocus();
     await userEvent.keyboard("{Enter} ");
     expect(action).toHaveBeenCalledTimes(2);
-    await userEvent.keyboard("{Home}{ArrowDown}");
-    expect(screen.getByRole("link", { name: "Catalogs" })).toHaveFocus();
-    await userEvent.keyboard("{ArrowDown}");
-    expect(screen.getByRole("button", { name: "Collapse Catalogs" })).toHaveFocus();
+    act(() => blocks.focus());
+    expect(blocks).toHaveFocus();
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(catalogs).toHaveFocus();
+    screen.getByRole("button", { name: "Collapse Catalogs" }).focus();
     await userEvent.keyboard(" ");
     expect(screen.getByRole("button", { name: "Expand Catalogs" })).toHaveFocus();
     await userEvent.keyboard("{ArrowUp}");
-    expect(screen.getByRole("link", { name: "Catalogs" })).toHaveFocus();
+    expect(home).toHaveFocus();
   });
 
-  it.each(["ltr", "rtl"])("uses logical expansion keys in %s", async dir => {
+  it("follows the native Actions to Blocks to parent keyboard path with exact anchor focus", async () => {
+    render(<AppNavigation tree={tree} activeId="blocks" />);
+    const catalogs = screen.getByRole("link", { name: "Catalogs" });
+    const blocks = screen.getByRole("link", { name: "Blocks" });
+    const actionButton = screen.getByRole("button", { name: "Actions" });
+    const activate = vi.fn((event: Event) => event.preventDefault());
+    blocks.addEventListener("click", activate);
+    await userEvent.tab();
+    expect(screen.getByRole("button", { name: "Close navigation" })).toHaveFocus();
+    await userEvent.tab();
+    expect(blocks).toHaveFocus();
+    expect(blocks).toHaveAttribute("href", "#blocks");
+    await userEvent.keyboard("{Enter}");
+    expect(activate).toHaveBeenCalledOnce();
+    await userEvent.keyboard("{ArrowDown}");
+    expect(actionButton.closest("[role=row]")).toHaveFocus();
+    await userEvent.tab();
+    expect(actionButton).toHaveFocus();
+    await userEvent.keyboard("{Enter} ");
+    expect(action).toHaveBeenCalledTimes(2);
+    await userEvent.keyboard("{ArrowUp}");
+    expect(blocks).toHaveFocus();
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(catalogs).toHaveFocus();
+    expect(catalogs).toHaveAttribute("href", "#catalogs");
+  });
+
+  it.each(["ltr", "rtl"])("expands and collapses from actual keyboard entry in %s", async dir => {
     document.documentElement.dir = dir;
-    render(<AppNavigation tree={tree} activeId="home" />);
-    screen.getByRole("button", { name: "Expand Catalogs" }).focus();
+    render(<I18nProvider locale={dir === "rtl" ? "ar" : "en-US"}><AppNavigation tree={tree} activeId="home" /></I18nProvider>);
+    const home = screen.getByRole("link", { name: "Home" });
+    const catalogs = screen.getByRole("link", { name: "Catalogs" });
+    const activate = vi.fn((event: Event) => event.preventDefault());
+    catalogs.addEventListener("click", activate);
+    await userEvent.tab();
+    expect(screen.getByRole("button", { name: "Close navigation" })).toHaveFocus();
+    await userEvent.tab();
+    expect(home).toHaveFocus();
+    await userEvent.keyboard("{ArrowDown}");
+    expect(catalogs).toHaveFocus();
     await userEvent.keyboard(dir === "rtl" ? "{ArrowLeft}" : "{ArrowRight}");
-    expect(screen.getByRole("link", { name: "Blocks" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Blocks" })).toHaveAttribute("href", "#blocks");
+    expect(catalogs).toHaveFocus();
     await userEvent.keyboard(dir === "rtl" ? "{ArrowRight}" : "{ArrowLeft}");
     expect(screen.queryByRole("link", { name: "Blocks" })).not.toBeInTheDocument();
+    expect(catalogs).toHaveFocus();
+    expect(catalogs).toHaveAttribute("href", "#catalogs");
+    await userEvent.keyboard("{Enter}");
+    expect(activate).toHaveBeenCalledOnce();
+  });
+
+  it("Home and End requirement probe: real destination anchor focus reaches the first and last row", async () => {
+    render(<AppNavigation tree={tree} activeId="blocks" />);
+    const home = screen.getByRole("link", { name: "Home" });
+    const blocks = screen.getByRole("link", { name: "Blocks" });
+    act(() => blocks.focus());
+    expect(blocks).toHaveFocus();
+    await userEvent.keyboard("{Home}");
+    expect.soft(home).toHaveFocus();
+    act(() => home.focus());
+    expect(home).toHaveFocus();
+    await userEvent.keyboard("{End}");
+    expect.soft(screen.getByRole("button", { name: "Actions" }).closest("[role=row]")).toHaveFocus();
+  });
+
+  it.each(["ltr", "rtl"])("programmatic expansion requirement probe in %s", async dir => {
+    document.documentElement.dir = dir;
+    render(<I18nProvider locale={dir === "rtl" ? "ar" : "en-US"}><AppNavigation tree={tree} activeId="home" /></I18nProvider>);
+    const catalogs = screen.getByRole("link", { name: "Catalogs" });
+    const activate = vi.fn((event: Event) => event.preventDefault());
+    catalogs.addEventListener("click", activate);
+    act(() => catalogs.focus());
+    expect(catalogs).toHaveFocus();
+    await userEvent.keyboard(dir === "rtl" ? "{ArrowLeft}" : "{ArrowRight}");
+    expect(screen.getByRole("link", { name: "Blocks" })).toHaveAttribute("href", "#blocks");
+    expect(catalogs).toHaveFocus();
+    await userEvent.keyboard(dir === "rtl" ? "{ArrowRight}" : "{ArrowLeft}");
+    expect(screen.queryByRole("link", { name: "Blocks" })).not.toBeInTheDocument();
+    expect(catalogs).toHaveAttribute("href", "#catalogs");
+    expect(catalogs).toHaveFocus();
+    await userEvent.keyboard("{Enter}");
+    expect(activate).toHaveBeenCalledOnce();
   });
 
   it("keeps destinations named on reopening and hands collapsed focus to the corner control", async () => {
@@ -282,7 +436,7 @@ describe("AppNavigation", () => {
       expect(source).not.toMatch(/(?:from|import\s*)\s*["'][^"']*(?:router|storage|theme|shell|AccountMenu|publisher)/i);
       expect(source).not.toMatch(/\b(?:localStorage|sessionStorage|fetch|XMLHttpRequest)\b/);
       expect(source).not.toMatch(/#[\da-f]{3,8}\b|\b(?:rgb|oklch)\(/i);
-      expect(source).not.toMatch(/forced-color-adjust-none|animate-|transition-(?!none)/);
+      expect(source).not.toMatch(/forced-color-adjust-none|animate-|transition-(?!none|transform\b)/);
     }
   });
 });
@@ -305,4 +459,35 @@ describe("AppNavigation frame slots", () => {
     await user.click(screen.getByRole("button", { name: "Open navigation" }));
     expect(screen.getByRole("navigation", { name: "Workspace destinations" })).toBeInTheDocument();
   });
+});
+
+describe("AppNavigation visual pass (VF-1 shell-01/02, cross-05)", () => {
+  it("marks the current destination with the selected surface and an accent edge, never an outline", () => {
+    render(<AppNavigation tree={tree} activeId="blocks" />);
+    const current = screen.getByRole("link", { name: "Blocks" });
+    expect(current).toHaveClass("bg-surface-selected", "border-s-accent", "font-medium");
+    expect(current.style.borderInlineStartWidth).toBe("var(--ui-border-rule)");
+    expect(current).not.toHaveClass("outline-solid", "outline-line-strong", "font-semibold");
+    const rest = screen.getByRole("link", { name: "Home" });
+    expect(rest).toHaveClass("border-s-transparent", "hover:bg-control-tonal-hover");
+    expect(rest).not.toHaveClass("hover:bg-surface-sunken");
+  });
+
+  it("binds destination icons to the small icon step", () => {
+    const withIcon: readonly AppNavigationNode[] = [{ id: "home", label: "Home", href: "#home", icon: <Icon glyph={ChevronDown} decorative size="lg" /> }];
+    const { container } = render(<AppNavigation tree={withIcon} activeId="home" />);
+    const svg = container.querySelector("[data-navigation-node-id=home] svg") as SVGElement;
+    expect(svg.style.width).toContain("--ui-icon-sm");
+    expect((svg.parentElement as HTMLElement).style.inlineSize).toContain("--ui-icon-sm");
+  });
+});
+
+it("renders SVG destination glyphs instead of single-letter placeholders", () => {
+  render(<AppNavigation tree={[...tree, { id: "legacy", label: "Legacy destination", href: "#legacy", icon: "L" }]} activeId="blocks" />);
+  for (const name of ["Home", "Catalogs", "Blocks", "Actions", "Legacy destination"]) {
+    const control = screen.getByRole(name === "Actions" ? "button" : "link", { name });
+    const slot = control.querySelector('[aria-hidden="true"]')!;
+    expect(slot.textContent).toBe("");
+    expect(slot.querySelector("svg")).not.toBeNull();
+  }
 });

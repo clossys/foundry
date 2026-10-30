@@ -1,0 +1,2623 @@
+[
+  {
+    "id": "components.avatar",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "size.sm",
+          "size.md",
+          "size.lg",
+          "content.image",
+          "content.initials"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.body-size",
+          "tokens.caption-size",
+          "tokens.radius",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface",
+          "tokens.action-color",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.font-size",
+          "tokens.spacing",
+          "tokens.z-index"
+        ],
+        "assets": [
+          "assets.icon-user"
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.badge",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "tone.neutral",
+          "tone.danger"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.caption-size",
+          "tokens.letter-spacing",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface",
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-color",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.banner",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "tone.info",
+          "tone.danger"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.control-radius",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.typeface",
+          "tokens.border-width",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.text-color"
+        ],
+        "assets": [
+          "assets.icon-success",
+          "assets.icon-warning",
+          "assets.icon-danger",
+          "assets.icon-info",
+          "assets.icon-close"
+        ]
+      },
+      "composes": [
+        "components.button"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.breadcrumbs",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Breadcrumbs",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "current",
+          "collapsed"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.body-size",
+          "tokens.spacing",
+          "tokens.text-color",
+          "tokens.typeface",
+          "tokens.control-size",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.font-size",
+          "tokens.font-weight"
+        ],
+        "assets": [
+          "assets.icon-chevron-right",
+          "assets.icon-chevron-down"
+        ]
+      },
+      "composes": [
+        "components.link"
+      ],
+      "apg": "breadcrumb"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.button",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Button",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "variant.primary",
+          "variant.secondary",
+          "variant.ghost",
+          "variant.danger",
+          "variant.outline",
+          "state.hover",
+          "state.focus-visible",
+          "state.disabled",
+          "size.sm",
+          "size.md",
+          "size.lg",
+          "shape.text",
+          "shape.icon-only",
+          "ground.base"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.focus-shadow",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface",
+          "tokens.border-width",
+          "tokens.caption-size",
+          "tokens.control-size",
+          "tokens.duration",
+          "tokens.font-size",
+          "tokens.font-weight"
+        ],
+        "assets": [
+          "assets.icon-chevron-right"
+        ]
+      },
+      "composes": [
+        "components.icon"
+      ],
+      "apg": "button"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.calendar",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Calendar",
+      "memberRoots": {
+        "selection.single": "rac:Calendar",
+        "selection.range": "rac:RangeCalendar"
+      },
+      "members": {
+        "mode": "closed",
+        "names": [
+          "selection.single",
+          "selection.range"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.focus-shadow",
+          "tokens.action-color",
+          "tokens.control-radius",
+          "tokens.focus-color",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.z-index",
+          "tokens.line-height",
+          "tokens.caption-size",
+          "tokens.control-size",
+          "tokens.focus-outline"
+        ],
+        "assets": [
+          "assets.icon-chevron-left",
+          "assets.icon-chevron-right"
+        ]
+      },
+      "composes": [
+        "components.button",
+        "components.select"
+      ],
+      "apg": "grid"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.card",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.border-color",
+          "tokens.control-radius",
+          "tokens.elevation",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.surface-radius",
+          "tokens.border-width",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.text-color",
+          "tokens.line-height"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.chart-area",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "engine:none",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "series",
+          "axes",
+          "legend",
+          "tooltip"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.categorical-color",
+          "tokens.chart-color",
+          "tokens.diverging-color",
+          "tokens.radius",
+          "tokens.sequential-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.chart-bar",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "engine:none",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "series",
+          "axes",
+          "legend",
+          "tooltip"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.categorical-color",
+          "tokens.chart-color",
+          "tokens.diverging-color",
+          "tokens.radius",
+          "tokens.sequential-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.chart-heatmap",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "engine:none",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "series",
+          "axes",
+          "legend",
+          "tooltip"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.categorical-color",
+          "tokens.chart-color",
+          "tokens.diverging-color",
+          "tokens.radius",
+          "tokens.sequential-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.chart-line",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "engine:none",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "series",
+          "axes",
+          "legend",
+          "tooltip"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.categorical-color",
+          "tokens.chart-color",
+          "tokens.diverging-color",
+          "tokens.radius",
+          "tokens.sequential-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.chart-range",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "engine:none",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "series",
+          "axes",
+          "legend",
+          "tooltip"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.categorical-color",
+          "tokens.chart-color",
+          "tokens.diverging-color",
+          "tokens.radius",
+          "tokens.sequential-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.chart-scatter",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "engine:none",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "series",
+          "axes",
+          "legend",
+          "tooltip"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.categorical-color",
+          "tokens.chart-color",
+          "tokens.diverging-color",
+          "tokens.radius",
+          "tokens.sequential-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.chart-sparkline",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "engine:none",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "series",
+          "axes",
+          "legend",
+          "tooltip"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.categorical-color",
+          "tokens.chart-color",
+          "tokens.diverging-color",
+          "tokens.radius",
+          "tokens.sequential-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.chart-status-strip",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "engine:none",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "series",
+          "axes",
+          "legend",
+          "tooltip"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.categorical-color",
+          "tokens.chart-color",
+          "tokens.diverging-color",
+          "tokens.radius",
+          "tokens.sequential-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.chart-waterfall",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "engine:none",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "series",
+          "axes",
+          "legend",
+          "tooltip"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.categorical-color",
+          "tokens.chart-color",
+          "tokens.diverging-color",
+          "tokens.radius",
+          "tokens.sequential-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.checkbox",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Checkbox",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "scope.single",
+          "state.checked",
+          "state.indeterminate",
+          "state.invalid"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.focus-shadow",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.action-color",
+          "tokens.border-width",
+          "tokens.control-size",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline"
+        ],
+        "assets": [
+          "assets.icon-check"
+        ]
+      },
+      "apg": "checkbox"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.color-picker",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:ColorPicker",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "part.area",
+          "part.wheel",
+          "part.slider",
+          "part.field",
+          "part.swatch-picker"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.control-radius",
+          "tokens.control-size",
+          "tokens.focus-shadow",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.touch-target",
+          "tokens.typeface"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.combo-box",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:ComboBox",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "allows-custom",
+          "state.invalid"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.control-radius",
+          "tokens.elevation",
+          "tokens.focus-shadow",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface",
+          "tokens.z-index",
+          "tokens.border-width",
+          "tokens.control-size",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-weight",
+          "tokens.shift-distance",
+          "tokens.transition-easing"
+        ],
+        "assets": [
+          "assets.icon-chevron-down",
+          "assets.icon-check",
+          "assets.icon-close"
+        ]
+      },
+      "composes": [
+        "components.button",
+        "components.popover"
+      ],
+      "apg": "combobox"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.date-field",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:DateField",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "content.date",
+          "content.time",
+          "granularity",
+          "state.invalid"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.control-radius",
+          "tokens.focus-shadow",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface",
+          "tokens.control-size"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.date-picker",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:DatePicker",
+      "memberRoots": {
+        "selection.single": "rac:DatePicker",
+        "selection.range": "rac:DateRangePicker"
+      },
+      "members": {
+        "mode": "closed",
+        "names": [
+          "selection.single",
+          "selection.range"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [],
+        "assets": [
+          "assets.icon-date"
+        ]
+      },
+      "composes": [
+        "components.date-field",
+        "components.popover",
+        "components.calendar"
+      ],
+      "apg": "dialog-modal"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.dialog",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Dialog",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "role.modal",
+          "dismissable"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.control-radius",
+          "tokens.elevation",
+          "tokens.heading-size",
+          "tokens.scrim-color",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface",
+          "tokens.z-index",
+          "tokens.border-width",
+          "tokens.duration",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.transition-easing",
+          "tokens.line-height",
+          "tokens.focus-outline",
+          "tokens.focus-color"
+        ],
+        "assets": [
+          "assets.icon-close"
+        ]
+      },
+      "apg": "dialog-modal"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.disclosure",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Disclosure",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "scope.group"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.body-size",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.text-color",
+          "tokens.border-width",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.state-opacity",
+          "tokens.transition-easing"
+        ],
+        "assets": [
+          "assets.icon-chevron-down",
+          "assets.icon-chevron-up"
+        ]
+      },
+      "apg": "disclosure"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.field",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Label+Text+FieldError",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "part.label",
+          "part.description",
+          "part.error",
+          "state.required",
+          "state.invalid",
+          "state.disabled"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.body-size",
+          "tokens.caption-size",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.file-trigger",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:FileTrigger",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "multiple",
+          "accept",
+          "directory"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.form",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Form",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "validation.native",
+          "validation.aria"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.grid-list",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:GridList",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "layout.list",
+          "layout.grid",
+          "selection"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.focus-shadow",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.touch-target"
+        ],
+        "assets": []
+      },
+      "composes": [
+        "components.checkbox"
+      ],
+      "apg": "grid"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.icon",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "size.sm",
+          "size.md",
+          "size.lg"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.icon-size",
+          "tokens.icon-stroke",
+          "tokens.spacing"
+        ],
+        "assets": [
+          "assets.icon-chevron-down",
+          "assets.icon-chevron-up",
+          "assets.icon-chevron-left",
+          "assets.icon-chevron-right",
+          "assets.icon-arrow-right",
+          "assets.icon-external-link",
+          "assets.icon-home",
+          "assets.icon-search",
+          "assets.icon-close",
+          "assets.icon-check",
+          "assets.icon-settings",
+          "assets.icon-list-view",
+          "assets.icon-grid-view",
+          "assets.icon-theme-light",
+          "assets.icon-theme-dark",
+          "assets.icon-theme-system",
+          "assets.icon-success",
+          "assets.icon-warning",
+          "assets.icon-danger",
+          "assets.icon-info",
+          "assets.icon-user",
+          "assets.icon-team",
+          "assets.icon-organization",
+          "assets.icon-website",
+          "assets.icon-institution",
+          "assets.icon-guide",
+          "assets.icon-document",
+          "assets.icon-document-approved",
+          "assets.icon-folder",
+          "assets.icon-date",
+          "assets.icon-time",
+          "assets.icon-payment",
+          "assets.icon-receipt",
+          "assets.icon-business",
+          "assets.icon-security",
+          "assets.icon-locked",
+          "assets.icon-legal",
+          "assets.icon-package",
+          "assets.icon-layers",
+          "assets.icon-integration"
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.keyboard",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Keyboard",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "scope.single",
+          "scope.chord"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.code-size",
+          "tokens.typeface",
+          "tokens.border-color",
+          "tokens.control-radius",
+          "tokens.font-weight",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.link",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Link",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "appearance.inline",
+          "appearance.button"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.focus-shadow",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ],
+        "assets": []
+      },
+      "apg": "link"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.logo",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "content.mark",
+          "content.lockup",
+          "size.sm",
+          "size.md",
+          "size.lg",
+          "ground.base",
+          "ground.inverse"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.text-color",
+          "tokens.touch-target",
+          "tokens.brandmark-size"
+        ],
+        "assets": [
+          "assets.mark",
+          "assets.lockup"
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.menu",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Menu",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "presentation.popup",
+          "presentation.inline",
+          "selection.none",
+          "selection.single",
+          "selection.multiple"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.control-radius",
+          "tokens.elevation",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface",
+          "tokens.z-index",
+          "tokens.duration",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.shift-distance",
+          "tokens.state-opacity",
+          "tokens.transition-easing",
+          "tokens.border-width",
+          "tokens.letter-spacing",
+          "tokens.focus-outline",
+          "tokens.focus-color"
+        ],
+        "assets": [
+          "assets.icon-check",
+          "assets.icon-chevron-right"
+        ]
+      },
+      "composes": [
+        "components.button",
+        "components.popover"
+      ],
+      "apg": "menu",
+      "memberRoots": {
+        "presentation.popup": "rac:Menu",
+        "presentation.inline": "rac:Menu"
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.meter",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Meter",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "tone",
+          "emphasis"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.heading-size",
+          "tokens.line-height",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ],
+        "assets": []
+      },
+      "apg": "meter"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.native-action",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "engine:none",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "appearance.primary",
+          "size.md",
+          "ground.base",
+          "state.hover",
+          "state.pressed",
+          "state.focus-visible",
+          "state.disabled"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.action-color",
+          "tokens.body-size",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.text-color",
+          "tokens.typeface"
+        ],
+        "assets": []
+      },
+      "apg": "button"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.navigation-tree",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:NavigationTree",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "expand",
+          "current"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.focus-shadow",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.touch-target"
+        ],
+        "assets": [
+          "assets.icon-chevron-right"
+        ]
+      },
+      "apg": "treeview"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.number-field",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:NumberField",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "format",
+          "step",
+          "state.invalid"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.control-radius",
+          "tokens.control-size",
+          "tokens.focus-shadow",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.touch-target",
+          "tokens.typeface"
+        ],
+        "assets": [
+          "assets.icon-chevron-up",
+          "assets.icon-chevron-down"
+        ]
+      },
+      "composes": [
+        "components.button"
+      ],
+      "apg": "spinbutton"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.popover",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Popover",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "placement"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.border-color",
+          "tokens.control-radius",
+          "tokens.elevation",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.z-index",
+          "tokens.duration",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.shift-distance",
+          "tokens.text-color",
+          "tokens.transition-easing",
+          "tokens.border-width",
+          "tokens.focus-outline",
+          "tokens.focus-color"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.progress-bar",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:ProgressBar",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "progress.determinate",
+          "progress.indeterminate"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface",
+          "tokens.action-color",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.font-size",
+          "tokens.font-weight"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.radio-group",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:RadioGroup",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "orientation.horizontal",
+          "orientation.vertical",
+          "state.invalid"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.focus-shadow",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface",
+          "tokens.action-color",
+          "tokens.border-width",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.control-size"
+        ],
+        "assets": []
+      },
+      "apg": "radio"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.resize-handle",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "engine:none",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "orientation.horizontal",
+          "orientation.vertical"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.touch-target"
+        ],
+        "assets": []
+      },
+      "apg": "windowsplitter"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.search-field",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:SearchField",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "part.clear",
+          "part.submit",
+          "state.empty",
+          "state.filled"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.control-radius",
+          "tokens.focus-shadow",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface",
+          "tokens.control-size"
+        ],
+        "assets": [
+          "assets.icon-search",
+          "assets.icon-close"
+        ]
+      },
+      "composes": [
+        "components.button"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.select",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Select",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "selection.single",
+          "state.invalid",
+          "size.sm",
+          "size.md",
+          "size.lg"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.control-radius",
+          "tokens.elevation",
+          "tokens.focus-shadow",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface",
+          "tokens.z-index",
+          "tokens.border-width",
+          "tokens.control-size",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-weight",
+          "tokens.shift-distance",
+          "tokens.transition-easing"
+        ],
+        "assets": [
+          "assets.icon-chevron-down",
+          "assets.icon-check",
+          "assets.icon-search"
+        ]
+      },
+      "composes": [
+        "components.button",
+        "components.popover"
+      ],
+      "apg": "listbox"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.semantic-content",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "as.article",
+          "as.aside",
+          "as.code",
+          "as.dd",
+          "as.div",
+          "as.dl",
+          "as.dt",
+          "as.figcaption",
+          "as.figure",
+          "as.h1",
+          "as.h2",
+          "as.h3",
+          "as.h4",
+          "as.h5",
+          "as.h6",
+          "as.img",
+          "as.li",
+          "as.main",
+          "as.p",
+          "as.picture",
+          "as.section",
+          "as.small",
+          "as.source",
+          "as.span",
+          "as.strong",
+          "as.time",
+          "as.ul"
+        ]
+      },
+      "props": [
+        "as"
+      ],
+      "allowedReads": {
+        "tokens": [],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.separator",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Separator",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "orientation.horizontal",
+          "orientation.vertical"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.border-color",
+          "tokens.border-width"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.skeleton",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "shape.block"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.control-radius",
+          "tokens.radius",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.slider",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Slider",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "selection.single",
+          "selection.range",
+          "orientation.horizontal",
+          "orientation.vertical"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.surface-color",
+          "tokens.focus-shadow",
+          "tokens.action-color",
+          "tokens.border-width",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.control-size"
+        ],
+        "assets": []
+      },
+      "apg": "slider"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.spinner",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:ProgressBar",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "size.sm",
+          "size.md",
+          "size.lg"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.text-color"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.status-mark",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "tone.neutral",
+          "tone.success",
+          "tone.warning",
+          "tone.danger",
+          "tone.info"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.body-size",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ],
+        "assets": [
+          "assets.icon-success",
+          "assets.icon-warning",
+          "assets.icon-danger",
+          "assets.icon-info"
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.switch",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Switch",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "state.on",
+          "state.off",
+          "state.disabled"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.focus-shadow",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.action-color",
+          "tokens.border-width",
+          "tokens.control-size",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.status-color"
+        ],
+        "assets": []
+      },
+      "apg": "switch"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.table",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Table",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "selection",
+          "sort"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.focus-shadow",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface",
+          "tokens.border-width",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.font-size",
+          "tokens.font-weight"
+        ],
+        "assets": []
+      },
+      "composes": [
+        "components.checkbox"
+      ],
+      "apg": "table"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.tabs",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Tabs",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "orientation.horizontal",
+          "orientation.vertical"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.focus-shadow",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.text-color",
+          "tokens.typeface",
+          "tokens.border-width",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.elevation",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "apg": "tabs"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.tag-group",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:TagGroup",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "removable",
+          "selection.none",
+          "selection.single",
+          "selection.multiple"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.caption-size",
+          "tokens.control-size",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.focus-shadow",
+          "tokens.letter-spacing",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ],
+        "assets": [
+          "assets.icon-close"
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.text-field",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:TextField",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "line.single-line",
+          "line.multiline",
+          "state.invalid",
+          "state.disabled",
+          "state.read-only",
+          "size.sm",
+          "size.md",
+          "size.lg"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.control-radius",
+          "tokens.control-size",
+          "tokens.focus-shadow",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ],
+        "assets": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.toast",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:UNSTABLE_Toast",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "tone.info",
+          "tone.success",
+          "tone.warning",
+          "tone.danger",
+          "action",
+          "timeout"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [],
+        "assets": [
+          "assets.icon-success",
+          "assets.icon-warning",
+          "assets.icon-danger",
+          "assets.icon-info"
+        ]
+      },
+      "composes": [
+        "components.button"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.toggle-button",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:ToggleButton",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "variant.ghost",
+          "variant.outline",
+          "state.hover",
+          "state.focus-visible",
+          "state.disabled",
+          "size.sm",
+          "size.md",
+          "size.lg",
+          "state.selected"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.easing",
+          "tokens.focus-shadow",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface",
+          "tokens.action-color",
+          "tokens.border-width",
+          "tokens.control-size",
+          "tokens.duration",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.caption-size"
+        ],
+        "assets": []
+      },
+      "apg": "button"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.toggle-group",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:ToggleButtonGroup",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "selection.single",
+          "selection.multiple",
+          "orientation.horizontal",
+          "orientation.vertical"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.easing",
+          "tokens.focus-shadow",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface",
+          "tokens.border-width",
+          "tokens.z-index",
+          "tokens.control-size",
+          "tokens.focus-color",
+          "tokens.focus-outline"
+        ],
+        "assets": []
+      },
+      "composes": [
+        "components.toggle-button"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.toolbar",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Toolbar",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "orientation.horizontal",
+          "orientation.vertical"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.border-color"
+        ],
+        "assets": []
+      },
+      "apg": "toolbar"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.tooltip",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Tooltip",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "placement"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.control-radius",
+          "tokens.elevation",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.z-index",
+          "tokens.duration",
+          "tokens.font-size",
+          "tokens.shift-distance",
+          "tokens.transition-easing",
+          "tokens.behavior-timing",
+          "tokens.radius",
+          "tokens.border-width"
+        ],
+        "assets": []
+      },
+      "apg": "tooltip"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.tree",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Tree",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "selection",
+          "expand"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.focus-shadow",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.touch-target"
+        ],
+        "assets": [
+          "assets.icon-chevron-right"
+        ]
+      },
+      "apg": "treeview"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.sidebar",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.breakpoint",
+          "tokens.caption-size",
+          "tokens.content-size",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.control-size",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.elevation",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.radius",
+          "tokens.region-width",
+          "tokens.shift-distance",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.transition-easing",
+          "tokens.z-index"
+        ],
+        "assets": [
+          "assets.icon-panel-left"
+        ],
+        "components": [
+          "components.icon",
+          "components.sheet"
+        ]
+      },
+      "composes": [
+        "components.icon",
+        "components.sheet"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.command",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Autocomplete",
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.caption-size",
+          "tokens.content-size",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.control-size",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.elevation",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.letter-spacing",
+          "tokens.line-height",
+          "tokens.radius",
+          "tokens.scrim-color",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.transition-easing",
+          "tokens.z-index"
+        ],
+        "assets": [
+          "assets.icon-check",
+          "assets.icon-close",
+          "assets.icon-search"
+        ],
+        "components": [
+          "components.icon"
+        ]
+      },
+      "composes": [
+        "components.icon"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.sheet",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Dialog+Modal+ModalOverlay",
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.caption-size",
+          "tokens.content-size",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.control-size",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.elevation",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.scrim-color",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.z-index"
+        ],
+        "assets": [
+          "assets.icon-close"
+        ],
+        "components": [
+          "components.icon"
+        ]
+      },
+      "composes": [
+        "components.icon"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.empty",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.action-color",
+          "tokens.content-size",
+          "tokens.control-radius",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.letter-spacing",
+          "tokens.line-height",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color"
+        ],
+        "assets": [],
+        "components": []
+      },
+      "composes": []
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.item",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.action-color",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.line-height",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color"
+        ],
+        "assets": [],
+        "components": []
+      },
+      "composes": []
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.scroll-area",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.border-color",
+          "tokens.focus-color",
+          "tokens.focus-outline"
+        ],
+        "assets": [],
+        "components": []
+      },
+      "composes": []
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.dropdown-menu",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Menu",
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.elevation",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.letter-spacing",
+          "tokens.shift-distance",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.transition-easing",
+          "tokens.z-index"
+        ],
+        "assets": [
+          "assets.icon-check",
+          "assets.icon-chevron-right"
+        ],
+        "components": [
+          "components.icon"
+        ]
+      },
+      "composes": [
+        "components.icon"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  }
+]

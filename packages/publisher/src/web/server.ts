@@ -127,8 +127,8 @@ export type {
   StubContactDelivery,
 } from "./contact/index.js";
 
-export { HeroView, LandingView } from "#publisher-web-views";
-export type { HeroViewFooter, HeroViewGround, HeroViewProps, LandingViewAction, LandingViewCallToAction, LandingViewHeader, LandingViewProps } from "#publisher-web-views";
+export { HeroView } from "#publisher-web-views";
+export type { HeroViewFooter, HeroViewGround, HeroViewProps, LandingViewAction } from "#publisher-web-views";
 export { LANDING_VIEW_CALL_TO_ACTION_GROUND, LANDING_VIEW_CLOSING_GROUND, planLandingViewGrounds } from "#publisher-web-views";
 export type { LandingViewBandGround, LandingViewBandRole, LandingViewGroundPlan, LandingViewGroundRepeat } from "#publisher-web-views";
 export { ContactView } from "#publisher-web-views";
@@ -143,21 +143,8 @@ export { ActivateForm, ResetForm } from "#publisher-web-views";
 export type { ActivateDetails, ActivateFailure, ActivateFormProps, ActivateResult, ResetDetails, ResetFailure, ResetFormProps, ResetResult } from "#publisher-web-views";
 
 // The page frame: owns the skip link, banner, the page's one <main> and contentinfo; views render chrome-free inside it.
-export { SITE_MAIN_ID, SITE_PAGE_LAYERS, SITE_SURFACE_KINDS, SiteFrame, siteShellFor } from "./frame/index.js";
-export type {
-  SiteBrandInput,
-  SiteChromeGround,
-  SiteEnvironmentLinkInput,
-  SiteFooterInput,
-  SiteFrameConfig,
-  SiteFrameInput,
-  SiteFrameProps,
-  SiteIconLinkInput,
-  SiteLinkInput,
-  SitePageLayer,
-  SiteShellInput,
-  SiteSurfaceKind,
-} from "./frame/index.js";
+// The frames.site-shell surface runtime renderer: Publisher's registry beside Designer's (@clossys/designer/frames).
+export { SITE_SHELL_RUNTIME_POINTER, siteShellRuntimeCallbacks, siteShellRuntimePointers, siteShellRuntimeRenderers } from "./site-shell-runtime.js";
 
 // Kept after the views: the share card reads Designer names newer than the views do, and a Designer that lacks the views' names must fail on those first.
 export {
@@ -192,8 +179,14 @@ export type { ContactFormCopy, ContactFormDevPreview, ContactFormProps, ContactF
 
 export type { SectionedViewHeroSection } from "../core/sectioned-view.js";
 
-export { SITE_FRAME_CONTRACT, SITE_FRAME_CONFIG_SCHEMA, normalizeSiteFrameConfig, normalizeSiteFrameActions } from "./frame/site-frame-contract.js";
-export type { SiteFramePresentationConfig } from "./frame/site-frame-contract.js";
 
 export { IndexView, DetailsView } from "#publisher-web-views";
 export type { IndexViewCollection, IndexViewProps, IndexViewRowRoute, IndexViewTable, DetailsViewBlock, DetailsViewLayout, DetailsViewProps, DetailsViewRegion, DetailsViewSection, DetailsViewSectionState, DetailsViewTab } from "#publisher-web-views";
+
+// Pure inventory projection is also available to React Server Component callers.
+export { projectAppInventory } from "./publisher/app/inventory.js";
+export type { AppInventory, AppRoute, AppLane, AppMissingDecision, AppInventoryProjection, AppPageProjection, AppSubrowProjection, AppScopedStateDeclaration } from "./publisher/app/inventory.js";
+
+export { SiteFrame, siteShellFor, SITE_SURFACE_KINDS, SITE_PAGE_LAYERS, SITE_MAIN_ID, SITE_FRAME_CONTRACT, SITE_FRAME_CONFIG_SCHEMA, normalizeSiteFrameConfig, normalizeSiteFrameActions, type SiteBrandInput, type SiteChromeGround, type SiteEnvironmentLinkInput, type SiteFooterInput, type SiteFrameConfig, type SiteFrameInput, type SiteFrameProps, type SiteIconLinkInput, type SiteLinkInput, type SitePageLayer, type SiteShellInput, type SiteSurfaceKind, type SiteFramePresentationConfig } from "@clossys/designer/frames"; // removed by CX-2
+
+export { projectSiteShellNavigation, type SiteShellNavigationOptions, type SiteShellNavigationProjection } from "./frame/registered-navigation.js";

@@ -1,0 +1,230 @@
+{
+  "layer": "sections",
+  "nodes": [
+    {
+      "id": "parts",
+      "label": "Parts",
+      "children": [
+        {
+          "id": "parts-structure",
+          "label": "Structure",
+          "leaves": [
+            "sections.band",
+            "sections.section-header"
+          ]
+        },
+        {
+          "id": "parts-navigation",
+          "label": "Navigation",
+          "leaves": [
+            "sections.pagination"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "explain",
+      "label": "Explain",
+      "children": [
+        {
+          "id": "explain-introductions",
+          "label": "Introductions",
+          "leaves": [
+            "sections.hero",
+            "sections.logo-hero",
+            "sections.page-header",
+            "sections.logo-mark"
+          ]
+        },
+        {
+          "id": "explain-reading",
+          "label": "Reading",
+          "leaves": [
+            "sections.content",
+            "sections.article",
+            "sections.legal-prose"
+          ]
+        },
+        {
+          "id": "explain-promotion",
+          "label": "Promotion",
+          "leaves": [
+            "sections.features",
+            "sections.call-to-action"
+          ]
+        },
+        {
+          "id": "explain-social-proof",
+          "label": "Social proof",
+          "leaves": [
+            "sections.testimonials",
+            "sections.logo-cloud",
+            "sections.people"
+          ]
+        },
+        {
+          "id": "explain-media",
+          "label": "Media",
+          "leaves": [
+            "sections.media",
+            "sections.gallery"
+          ]
+        },
+        {
+          "id": "explain-guidance",
+          "label": "Guidance",
+          "leaves": [
+            "sections.faq",
+            "sections.steps",
+            "sections.timeline"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "organize",
+      "label": "Organize",
+      "children": [
+        {
+          "id": "organize-collections",
+          "label": "Collections",
+          "leaves": [
+            "sections.cards",
+            "sections.resource-list",
+            "sections.task-list"
+          ]
+        },
+        {
+          "id": "organize-comparison",
+          "label": "Comparison",
+          "leaves": [
+            "sections.comparison",
+            "sections.pricing"
+          ]
+        },
+        {
+          "id": "organize-summaries",
+          "label": "Summaries",
+          "leaves": [
+            "sections.stats",
+            "sections.status-list",
+            "sections.usage",
+            "sections.account-summary"
+          ]
+        },
+        {
+          "id": "organize-records",
+          "label": "Records",
+          "leaves": [
+            "sections.data-table",
+            "sections.data-grid",
+            "sections.record-detail"
+          ]
+        },
+        {
+          "id": "organize-history",
+          "label": "History",
+          "leaves": [
+            "sections.activity-feed",
+            "sections.audit-log"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "collect",
+      "label": "Collect",
+      "children": [
+        {
+          "id": "collect-forms",
+          "label": "Forms",
+          "leaves": [
+            "sections.form",
+            "sections.newsletter"
+          ]
+        },
+        {
+          "id": "collect-workflows",
+          "label": "Workflows",
+          "leaves": [
+            "sections.wizard"
+          ]
+        },
+        {
+          "id": "collect-preferences",
+          "label": "Preferences",
+          "leaves": [
+            "sections.settings"
+          ]
+        },
+        {
+          "id": "collect-configuration",
+          "label": "Configuration",
+          "leaves": [
+            "sections.column-mapper",
+            "sections.access-matrix"
+          ]
+        },
+        {
+          "id": "collect-conversation",
+          "label": "Conversation",
+          "leaves": [
+            "sections.chat"
+          ]
+        },
+        {
+          "id": "collect-inputs",
+          "label": "Inputs",
+          "leaves": [
+            "sections.sign-in-form"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "navigate",
+      "label": "Navigate",
+      "children": [
+        {
+          "id": "navigate-indexes",
+          "label": "Indexes",
+          "leaves": [
+            "sections.link-index",
+            "sections.table-of-contents"
+          ]
+        },
+        {
+          "id": "navigate-discovery",
+          "label": "Discovery",
+          "leaves": [
+            "sections.explorer",
+            "sections.filter-builder"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "respond",
+      "label": "Respond",
+      "children": [
+        {
+          "id": "respond-states",
+          "label": "States",
+          "leaves": [
+            "sections.empty-state",
+            "sections.error-state",
+            "sections.boundary-message"
+          ]
+        },
+        {
+          "id": "respond-messages",
+          "label": "Messages",
+          "leaves": [
+            "sections.notices",
+            "sections.consent"
+          ]
+        }
+      ]
+    }
+  ]
+}

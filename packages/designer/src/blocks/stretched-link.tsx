@@ -1,6 +1,6 @@
 import { Children, isValidElement, type ReactNode } from "react";
-import { Icon, type IconSize } from "../atoms/Icon.js";
-import { cx } from "../atoms/internal/cx.js";
+import { Icon, type IconSize } from "../components/Icon.js";
+import { cx } from "../components/internal/cx.js";
 import { ChevronRight } from "../icons/ChevronRight.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
@@ -15,7 +15,7 @@ import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js"
  * item (the stretched-link pattern): the item's container is `relative
  * isolate`, so a click anywhere on it follows the link and Tab stops once.
  * The keyboard ring is drawn on that `::after`, so it surrounds the whole
- * item. The chevron is the T4 quiet action's: the same `ChevronRight` atom,
+ * item. The chevron is the T4 quiet action's: the same `ChevronRight` component,
  * the same `quiet-action` utility (its RTL mirror and its hover nudge, which
  * never runs under reduced motion), visible at rest. A no-break space in an
  * `aria-hidden` span joins it to the title's last word, so it never wraps

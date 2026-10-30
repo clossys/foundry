@@ -1,0 +1,57 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-locked",
+      "slot": "assets.icon-locked",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/lock.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/Lock.ts",
+        "sha256": "baaf147a4a1580802e2cecd2598df14c060fc829191a64af549a42ae175b15c2"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-locked": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "rect",
+            {
+              "width": "18",
+              "height": "11",
+              "x": "3",
+              "y": "11",
+              "rx": "2",
+              "ry": "2",
+              "key": "1w4ew1"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M7 11V7a5 5 0 0 1 10 0v4",
+              "key": "fwvmzm"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

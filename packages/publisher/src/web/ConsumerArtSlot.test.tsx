@@ -22,6 +22,8 @@ describe("Publisher checked consumer art slot", () => {
     expect(image.getAttribute("height")).toBe("900");
     expect(image.getAttribute("loading")).toBe("lazy");
     expect(image.getAttribute("decoding")).toBe("async");
+    expect(image.classList.contains("object-contain")).toBe(true);
+    expect(image.hasAttribute("style")).toBe(false);
     expect((el as HTMLElement).style.aspectRatio).toBe("1600 / 900");
   });
   it("keeps the Clossys hero backdrop decorative, covered and noninteractive", () => {
@@ -51,7 +53,8 @@ describe("Publisher checked consumer art slot", () => {
     expect(image.style.display).toBe("");
     expect(image.style.width).toBe("");
     expect(image.style.height).toBe("");
-    expect(image.style.objectFit).toBe("contain");
+    expect(image.style.objectFit).toBe("");
+    expect(image.classList.contains("object-contain")).toBe(true);
   });
   it("uses the shipped square utility for square media", () => {
     const el = root({ ...art, width: 900, height: 900, aspect: "1:1" });

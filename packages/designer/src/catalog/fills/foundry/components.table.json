@@ -1,0 +1,107 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [
+        "components.checkbox"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.table",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#Table",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.table",
+      "source": "foundry",
+      "sourceAddress": "./components#Table",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "table": {
+      "composes": [
+        "components.checkbox"
+      ],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "Table",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "selection",
+        "sort"
+      ],
+      "pin": {
+        "export": "./components#Table",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "selection": "./components#Table",
+        "sort": "./components#Table"
+      },
+      "props": [
+        "children",
+        "className",
+        "onSelectionChange",
+        "onSortChange",
+        "selectedKeys",
+        "selectionMode",
+        "sortDescriptor"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [],
+        "components": [
+          "components.checkbox"
+        ],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-shadow",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
+      },
+      "root": "rac:Table",
+      "slot": "components.table",
+      "source": "foundry"
+    }
+  }
+}

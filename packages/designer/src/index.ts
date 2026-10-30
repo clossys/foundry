@@ -1,13 +1,13 @@
 /**
  * This file is NOT a public entry point — `package.json` deliberately
- * declares no `"."` export. Import from `@clossys/designer/atoms` or
+ * declares no `"."` export. Import from `@clossys/designer/components` or
  * `@clossys/designer/blocks` instead; see the README for why the ladder
- * (atoms → blocks, with shell, charts, and theme as sibling layers) is kept explicit at the import site rather than
+ * (components → blocks, with shell, charts, and theme as sibling layers) is kept explicit at the import site rather than
  * flattened through a root barrel. This barrel exists only so the same
  * names are reachable from one place for internal tooling (see
  * `scripts/check-readme-parity.mjs` in the repository root, which reads
  * `src/index.ts` as every package's canonical export list); it re-exports
- * exactly what `./atoms/index.js`, `./icons/index.js`, `./blocks/index.js`,
+ * exactly what `./components/index.js`, `./icons/index.js`, `./blocks/index.js`,
  * `./shell/index.js`, `./charts/index.js`, and `./theme/index.js` each
  * export, nothing more.
  */
@@ -54,7 +54,7 @@ export {
   iconButtonClassName,
   iconButtonLinkClassName,
   IconButton,
-} from "./atoms/index.js";
+} from "./components/index.js";
 export type {
   ControlGround,
   IconButtonClassOptions,
@@ -134,7 +134,7 @@ export type {
   MeterTone,
   MeterDirection,
   MeterEmphasis,
-} from "./atoms/index.js";
+} from "./components/index.js";
 
 export {
   PageHeader,
@@ -172,6 +172,10 @@ export {
   OrderedStepSequence,
   StatusList,
   EventItem,
+  ActivityFeed,
+  AuditLog,
+  Timeline,
+  UsageSummary,
   TaskList,
   Faq,
   PricingTable,
@@ -184,6 +188,12 @@ export {
   SectionFrame,
   ConsentBanner,
   NewsletterBand,
+  ErrorState,
+  StatGroup,
+  RecordCards,
+  CallToAction,
+  NoticeList,
+  Gallery,
   SECTION_GROUND_CLASSES,
 } from "./blocks/index.js";
 export type {
@@ -307,6 +317,16 @@ export type {
   EventRecord,
   EventLabels,
   EventItemProps,
+  ActivityFeedProps,
+  ActivityFeedGroup,
+  AuditLogProps,
+  AuditLogEntry,
+  AuditLogLabels,
+  TimelineProps,
+  TimelineEvent,
+  TimelineHeadingLevel,
+  UsageSummaryProps,
+  UsageSummaryMeter,
   TaskStatus,
   TaskListItem,
   TaskListProps,
@@ -341,6 +361,19 @@ export type {
   ArticleBodyProps,
   SectionFrameProps,
   ConsentBannerProps,
+  ErrorStateProps,
+  ErrorStateKind,
+  StatGroupProps,
+  StatGroupItem,
+  StatGroupLayout,
+  RecordCardsProps,
+  RecordCardsRecord,
+  RecordCardsLayout,
+  CallToActionProps,
+  NoticeListProps,
+  NoticeListItem,
+  GalleryProps,
+  GalleryImage,
   NewsletterBandProps,
   NewsletterStatus,
   SectionMeasure,
@@ -459,7 +492,7 @@ export { Item } from "./blocks/items/Item.js";
 export { AppNavigation } from "./blocks/AppNavigation.js";
 export type { AppNavigationProps } from "./blocks/AppNavigation.js";
 export { PageBar } from "./blocks/PageBar.js";
-export type { PageBarProps, PageBarPage, PageBarCrumb, PageBarAction, PageBarDestination, PageBarLabels, PageBarWidth } from "./blocks/PageBar.js";
+export type { PageBarProps, PageBarPage, PageBarCrumb, PageBarAction, PageBarDestination, PageBarLabels, PageBarHeader, PageBarHeaderNav, PageBarHeaderActions } from "./blocks/PageBar.js";
 export { validateAppNavigationTree, getAppNavigationAncestry, getAppNavigationBreadcrumbs } from "./blocks/app-navigation-tree.js";
 export type { AppNavigationNode, AppNavigationLeaf, AppNavigationDestination, AppNavigationTarget, AppNavigationBreadcrumb } from "./blocks/app-navigation-tree.js";
 export { FlowCanvas } from "./blocks/FlowCanvas.js";
@@ -471,8 +504,8 @@ export { RelationGraph } from "./blocks/RelationGraph.js";
 export type { RelationGraphProps, RelationGraphNode, RelationGraphEdge } from "./blocks/relation-graph-types.js";
 export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./blocks/items/types.js";
 
-export { Logomark } from "./atoms/index.js";
-export type { LogomarkProps, LogomarkSize, LogomarkTone, LogomarkPlate } from "./atoms/index.js";
+export { Logomark } from "./components/index.js";
+export type { LogomarkProps, LogomarkSize, LogomarkTone, LogomarkPlate } from "./components/index.js";
 export { Lockup } from "./blocks/index.js";
 export type { LockupProps } from "./blocks/index.js";
 export { GroupedTable } from "./blocks/GroupedTable.js";
@@ -500,3 +533,20 @@ export { AccessMatrix } from "./blocks/AccessMatrix.js";
 export type { AccessCellValue, AccessRole, AccessPermission, AccessGroup, AccessMatrixValue, AccessMatrixChange, AccessMatrixLabels, AccessMatrixProps } from "./blocks/AccessMatrix.js";
 export { ColumnMapper } from "./blocks/ColumnMapper.js";
 export type { ColumnMapperTarget, ColumnMapperSource, ColumnMapping, ColumnMapperIssue, ColumnMapperLabels, ColumnMapperProps } from "./blocks/ColumnMapper.js";
+export { FilterBuilder } from "./blocks/FilterBuilder.js";
+export type { FilterBuilderField, FilterBuilderOperator, FilterBuilderCondition, FilterBuilderMatch, FilterBuilderGroup, FilterBuilderLabels, FilterBuilderProps } from "./blocks/FilterBuilder.js";
+export { SettingsSection } from "./blocks/SettingsSection.js";
+export type { SettingsSectionGroup, SettingsSectionLabels, SettingsSectionProps } from "./blocks/SettingsSection.js";
+export { FormWizard } from "./blocks/FormWizard.js";
+export type { FormWizardStep, FormWizardLabels, FormWizardProps } from "./blocks/FormWizard.js";
+
+export { AppFrame, AppFrameSpecimen, APP_FRAME_CONTRACT, APP_FRAME_CONFIG_SCHEMA } from "./frames/index.js";
+export { InspectorFrame } from "./frames/index.js";
+export type { InspectorFrameProps, InspectorFramePresentation } from "./frames/index.js";
+export type { AppFrameProps, AppFrameBrand, AppFrameAccount, AppFrameRightPanel, AppFrameLayout, AppFrameStage, AppFrameNotice, AppFrameDock, AppFrameSpecimenProps } from "./frames/index.js";
+
+export { SemanticContent } from "./components/SemanticContent.js";
+export type { SemanticContentTag, SemanticContentProps } from "./components/SemanticContent.js";
+
+export { NativeAction } from "./components/NativeAction.js";
+export type { NativeActionProps } from "./components/NativeAction.js";

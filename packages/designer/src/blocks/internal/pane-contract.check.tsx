@@ -1,7 +1,7 @@
 import { Drawer } from "../Drawer.js";
 import { Panel } from "../Panel.js";
 import { ResizablePane } from "../ResizablePane.js";
-import { Button } from "../../atoms/Button.js";
+import { Button } from "../../components/Button.js";
 
 export const panel = <Panel header="Tools" footer="Supporting content">Content</Panel>;
 export const drawer = <Drawer heading="Tools" closeLabel="Close tools" placement="end" trigger={<Button>Tools</Button>}>Content</Drawer>;

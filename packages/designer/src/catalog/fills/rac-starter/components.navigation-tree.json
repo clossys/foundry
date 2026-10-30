@@ -1,0 +1,294 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [
+        "components.icon"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "id": "rac-starter/components.navigation-tree",
+      "license": "Apache-2.0",
+      "mode": "implementation",
+      "pin": {
+        "commit": "4dd44e0f400636a87a9ad4390903e78c5ae6113c",
+        "sha256": "d5e05dc5571b0671c27772d73db04dc883e03356c5a000dd1709d7eb1ef59e89",
+        "url": "https://github.com/adobe/react-spectrum"
+      },
+      "relation": "same-contract",
+      "slot": "components.navigation-tree",
+      "source": "rac-starter",
+      "sourceAddress": "https://github.com/adobe/react-spectrum/blob/4dd44e0f400636a87a9ad4390903e78c5ae6113c/starters/tailwind/src/NavigationTree.tsx",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "components": {
+    "navigation-tree": {
+      "blockers": [
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: bg-white: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: border-0: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: border-neutral-200: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: border-neutral-200: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: dark:bg-neutral-900: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: dark:border-neutral-700: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: dark:border-neutral-700: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: dark:data-[indicator=ancestor]:bg-neutral-500: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: dark:data-[indicator=current]:bg-blue-400: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: dark:group-[[data-href]]:data-[indicator=hover]:bg-neutral-500: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: dark:text-neutral-200: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: dark:text-neutral-300: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: dark:text-neutral-400: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: dark:text-neutral-600: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: data-[indicator=ancestor]:bg-neutral-400: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: data-[indicator=current]:bg-blue-600: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: duration-200: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: ease-in-out: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: forced-colors:data-[indicator]:bg-[Highlight]: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: forced-colors:text-[GrayText]: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: gap-0.5: No spacing member has the exact source length"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: group-[[data-href]]:data-[indicator=hover]:bg-neutral-400: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: max-h-72: No spacing member has the exact source length"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: outline-none: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: text-neutral-300: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: text-neutral-500: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: text-neutral-700: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: text-neutral-800: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: w-0.5: No spacing member has the exact source length"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/NavigationTree.tsx: w-56: No spacing member has the exact source length"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/utils.ts: dark:outline-blue-500: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/utils.ts: dark:outline-blue-500: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/utils.ts: forced-colors:outline-[Highlight]: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/utils.ts: forced-colors:outline-[Highlight]: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/utils.ts: outline-0: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/utils.ts: outline-2: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/utils.ts: outline-blue-600: Design utility needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/utils.ts: outline-blue-600: Raw paint or arbitrary design value needs a consumer binding"
+        },
+        {
+          "code": "K4",
+          "message": "starters/tailwind/src/utils.ts: outline-offset-2: Design utility needs a consumer binding"
+        }
+      ],
+      "composes": [
+        "components.icon"
+      ],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": "19.3.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "1.21.1"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "class-variance-authority",
+          "version": "0.7.1"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "3.7.0"
+        }
+      ],
+      "impl": {
+        "entry": "components/navigation-tree/NavigationTree.tsx",
+        "export": "NavigationTree",
+        "kind": "source"
+      },
+      "license": "Apache-2.0",
+      "members": [
+        "current",
+        "expand"
+      ],
+      "notice": "notices/rac-starter-LICENSE.txt",
+      "outputSha256": [
+        {
+          "path": "components/_parts/rac-starter-variants/index.ts",
+          "sha256": "d92531e3b84d593698c351afb0532a9ed02faf8225417f34fdc780d8aa1ee1b3"
+        },
+        {
+          "path": "components/navigation-tree/NavigationTree.tsx",
+          "sha256": "a7e08e3a75d8739484c19e7ec594a77e4718260ffb4bbf26d3c89735c6c7a8f6"
+        },
+        {
+          "path": "components/navigation-tree/utils.ts",
+          "sha256": "b619639c43b72ae48cd23036dfac785c7c29adaaf16e4116a650f845fce79d88"
+        },
+        {
+          "path": "notices/rac-starter-LICENSE.txt",
+          "sha256": "7dfe6526888bac51759c99f9a51262ba2711a8c12a067f2181609dd9a4066b84"
+        }
+      ],
+      "pin": {
+        "commit": "4dd44e0f400636a87a9ad4390903e78c5ae6113c",
+        "files": [
+          {
+            "path": "starters/tailwind/package.json",
+            "sha256": "958aa1f722e1ccc670089376c82a8c730e0fbcc28ba7dc225c5fa4664d387923"
+          },
+          {
+            "path": "starters/tailwind/src/NavigationTree.tsx",
+            "sha256": "d5e05dc5571b0671c27772d73db04dc883e03356c5a000dd1709d7eb1ef59e89"
+          },
+          {
+            "path": "starters/tailwind/src/utils.ts",
+            "sha256": "cc6475f2c16a751a2193adcf04e4943aa75fe4947eb2b3cb2c3a4846cea18e4b"
+          }
+        ],
+        "url": "https://github.com/adobe/react-spectrum"
+      },
+      "propMap": {
+        "current": "NavigationTree",
+        "expand": "NavigationTree"
+      },
+      "props": [],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": false,
+        "range": "^1.21.1"
+      },
+      "reads": {
+        "assets": [
+          "assets.icon-chevron-right"
+        ],
+        "components": [
+          "components.icon"
+        ],
+        "tokens": [
+          "tokens.border-width.hairline",
+          "tokens.control-radius.default",
+          "tokens.font-size.sm",
+          "tokens.font-weight.semibold",
+          "tokens.spacing.lg",
+          "tokens.spacing.sm",
+          "tokens.spacing.xl",
+          "tokens.spacing.xs",
+          "tokens.typeface.body"
+        ]
+      },
+      "root": "rac:NavigationTree",
+      "slot": "components.navigation-tree",
+      "source": "rac-starter",
+      "transform": "rac-starter-rewrite@1"
+    }
+  }
+}
+

@@ -27,7 +27,7 @@ describe("generateUtilitiesCss", () => {
     const listed = new Set(onDisk.match(/[^\s"()]+/g));
     const narrow = new Set(scanCompiledCssSources(packageRoot).candidates);
     const only = scanClassCandidates(resolve(packageRoot, "src", "charts")).candidates.filter((c) => !narrow.has(c) && /^[a-z]+-\d/.test(c));
-    expect(only.length, "charts render a utility no atom, block or shell renders").toBeGreaterThan(0);
+    expect(only.length, "charts render a utility no component, block or shell renders").toBeGreaterThan(0);
     for (const c of only) expect(listed.has(c), `${c} (from src/charts)`).toBe(true);
     expect(listed.has("h-3")).toBe(true);
   });
@@ -43,6 +43,10 @@ describe("generateUtilitiesCss", () => {
     const covered = (file: string) => UTILITIES_SOURCE_DIRS.some(root => file.startsWith(`${root}/`));
     expect(implementations.length).toBeGreaterThan(0);
     for (const file of implementations) expect(covered(file), file).toBe(true);
+    expect(covered("frames/AppFrame.tsx")).toBe(true);
+    expect(covered("studio/AssetExemptions.tsx")).toBe(true);
+    expect(covered("studio-other/AssetExemptions.tsx")).toBe(false);
+    expect(covered("frames-other/AppFrame.tsx")).toBe(false);
     expect(covered("tokens/preview/index.tsx")).toBe(true);
     expect(covered("tokens/preview-other/index.tsx")).toBe(false);
     expect(covered("tokens/other.tsx")).toBe(false);

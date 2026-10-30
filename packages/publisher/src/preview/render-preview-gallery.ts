@@ -1,3 +1,4 @@
+import { resolveDocumentLocale, type DocumentLocaleOptions } from "./render-document-locale.js";
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
@@ -13,7 +14,6 @@ import { CollectionView } from "../web/views/CollectionView.js";
 import { IndexView } from "../web/views/IndexView.js";
 import { DetailsView } from "../web/views/DetailsView.js";
 import { DocumentView } from "../web/views/DocumentView.js";
-import { LandingView } from "../web/views/LandingView.server.js";
 import { heroCompactCatalogDocument, contentCatalogCopyResolver } from "./fixture-content-catalog.js";
 import { SectionedView } from "../web/views/SectionedView.server.js";
 import { BrandGuideView } from "../web/views/BrandGuideView.js";
@@ -126,7 +126,7 @@ export function renderPreviewGalleryEntries(): PreviewGalleryEntry[] {
   return [
     { view: "MarketingView", markup: marketing },
     { view: "SectionedView", markup: sectioned },
-    { view: "LandingView (hero-compact)", markup: renderToStaticMarkup(createElement(LandingView, { document: resolveSectionedViewDocument(heroCompactCatalogDocument, contentCatalogCopyResolver), header: "reserved", peek: false })) },
+    { view: "SectionedView (hero-compact)", markup: renderToStaticMarkup(createElement(SectionedView, { document: resolveSectionedViewDocument(heroCompactCatalogDocument, contentCatalogCopyResolver) })) },
     { view: "AuthView", markup: auth },
     { view: "ErrorView", markup: error },
     { view: "CaptureView", markup: capture },
@@ -145,7 +145,8 @@ function escapeHtml(text: string): string {
     .replaceAll('"', "&quot;");
 }
 
-export function buildPreviewGalleryHtml(entries: PreviewGalleryEntry[]): string {
+export function buildPreviewGalleryHtml(entries: PreviewGalleryEntry[], options: DocumentLocaleOptions = {}): string {
+  const { locale, dir } = resolveDocumentLocale(options);
   const sections = entries
     .map(
       (entry) =>
@@ -157,7 +158,7 @@ export function buildPreviewGalleryHtml(entries: PreviewGalleryEntry[]): string 
     .join("\n");
 
   return `<!DOCTYPE html>
-<html lang="en" data-brand-bound>
+<html lang="${locale}" dir="${dir}" data-brand-bound>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -259,7 +260,7 @@ export function renderCertificationPages(declarations: Record<string, string>, r
   return { guideHtml, auditHtml };
 }
 
-export interface WritePreviewGalleryOptions {
+export interface WritePreviewGalleryOptions extends DocumentLocaleOptions {
   brandCssPath: string;
   outputDir: string;
   /**
@@ -293,10 +294,10 @@ export interface WritePreviewGalleryResult {
  * covers and what deliberately isn't rendered (the two Next.js metadata
  * route handlers).
  */
-function buildLaunchPackFiles(declarations: Record<string, string>): { files: LaunchPackFile[]; sections: LaunchPackSection[] } {
-  const sitePages = renderSitePages();
-  const materials = renderMaterialsSection(declarations);
-  const email = renderEmailSection(declarations);
+function buildLaunchPackFiles(declarations: Record<string, string>, options: DocumentLocaleOptions = {}): { files: LaunchPackFile[]; sections: LaunchPackSection[] } {
+  const sitePages = renderSitePages(options);
+  const materials = renderMaterialsSection(declarations, options);
+  const email = renderEmailSection(declarations, options);
   const cards = renderCardsSection(declarations);
 
   const files: LaunchPackFile[] = [...sitePages, ...materials, ...email, ...cards];
@@ -342,11 +343,11 @@ export function writePreviewGallery(options: WritePreviewGalleryOptions): WriteP
 
   const entries = renderPreviewGalleryEntries();
   const galleryPath = join(outputDir, PREVIEW_GALLERY_FILENAME);
-  writeFileSync(galleryPath, buildPreviewGalleryHtml(entries), "utf8");
+  writeFileSync(galleryPath, buildPreviewGalleryHtml(entries, options), "utf8");
   const contentCatalogPath = join(outputDir, CONTENT_CATALOG_FILENAME);
-  writeFileSync(contentCatalogPath, buildContentCatalogHtml(), "utf8");
+  writeFileSync(contentCatalogPath, buildContentCatalogHtml(undefined, options), "utf8");
   const writtenFiles: string[] = [PREVIEW_GALLERY_FILENAME, CONTENT_CATALOG_FILENAME];
-  const catalogPages = buildCatalogFunctionPages({ designerTokens: DESIGNER_TOKENS_BASENAME, utilities: PREVIEW_UTILITIES_BASENAME, brand: BRAND_COPY_BASENAME });
+  const catalogPages = buildCatalogFunctionPages({ designerTokens: DESIGNER_TOKENS_BASENAME, utilities: PREVIEW_UTILITIES_BASENAME, brand: BRAND_COPY_BASENAME }, options);
   mkdirSync(join(outputDir, "catalog"), { recursive: true });
   for (const entry of catalogPages) {
     writeFileSync(join(outputDir, entry.file), entry.content, "utf8");
@@ -398,14 +399,14 @@ export function writePreviewGallery(options: WritePreviewGalleryOptions): WriteP
     });
   }
 
-  const { files: launchPackFiles, sections: launchPackSections } = buildLaunchPackFiles(validation.declarations);
+  const { files: launchPackFiles, sections: launchPackSections } = buildLaunchPackFiles(validation.declarations, options);
   for (const entry of launchPackFiles) {
     writeFileSync(join(outputDir, entry.file), entry.content, "utf8");
     writtenFiles.push(entry.file);
   }
   indexSections.push(...launchPackSections);
 
-  writeFileSync(result.indexPath, buildLaunchPackIndexHtml(indexSections), "utf8");
+  writeFileSync(result.indexPath, buildLaunchPackIndexHtml(indexSections, options), "utf8");
   writtenFiles.push(LAUNCH_PACK_INDEX_FILENAME);
 
   return result;

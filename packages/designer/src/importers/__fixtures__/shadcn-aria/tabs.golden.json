@@ -1,0 +1,144 @@
+{
+  "transform": "shadcn-aria-rewrite@1",
+  "notes": [
+    {
+      "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+      "value": "after:opacity-0",
+      "message": "Preserved paired state visibility; no intermediate alpha or paint is introduced"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+      "value": "border-transparent",
+      "message": "Removed suppression beside the same expanded literal's token-bound focus owner"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+      "value": "cn-tabs-list-variant-default",
+      "message": "Removed marker-only class absent from the pinned stylesheet"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+      "value": "cn-tabs-list-variant-line",
+      "message": "Removed marker-only class absent from the pinned stylesheet"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+      "value": "dark:group-data-[variant=line]/tabs-list:data-selected:border-transparent",
+      "message": "Preserved authenticated selected line-tab border transparency beside its same-element independent token focus outline and selected indicator"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+      "value": "focus-visible:outline-1",
+      "message": "Removed competing literal focus width beside the same element token-bound focus outline"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+      "value": "gap-1.5",
+      "message": "Restyled source: 6px to spacing.sm 8px"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+      "value": "group-data-[variant=line]/tabs-list:data-selected:after:opacity-100",
+      "message": "Preserved paired state visibility; no intermediate alpha or paint is introduced"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+      "value": "group-data-horizontal/tabs:after:bottom-[-5px]",
+      "message": "Restyled source: Restyle selected indicator offset -5 to -4px existing spacing."
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+      "value": "group-data-horizontal/tabs:after:h-0.5",
+      "message": "Restyled source: Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact."
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+      "value": "group-data-vertical/tabs:after:w-0.5",
+      "message": "Restyled source: Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact."
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+      "value": "h-[calc(100%-1px)]",
+      "message": "Restyled source: Preserve relative height minus exact hairline."
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+      "value": "outline-none",
+      "message": "Restyled selected focusable surface: replace outline suppression with its own existing token-bound keyboard outline"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+      "value": "p-[3px]",
+      "message": "Restyled source: Restyle3px tabs padding to existing4px xs spacing."
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+      "value": "px-1.5",
+      "message": "Restyled source: 6px to spacing.sm 8px"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+      "value": "py-0.5",
+      "message": "Restyled source: Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact."
+    }
+  ],
+  "files": [
+    {
+      "path": "components/_parts/utils/index.ts",
+      "content": "import { clsx, type ClassValue } from \"clsx\"\nimport { twMerge } from \"tailwind-merge\"\nexport function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }\n"
+    },
+    {
+      "path": "components/tabs/tabs.tsx",
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cva, type VariantProps } from \"class-variance-authority\"\nimport { cn } from \"../_parts/utils/index\"\nimport {\n  TabList as TabListPrimitive,\n  TabPanel as TabPanelPrimitive,\n  Tab as TabPrimitive,\n  Tabs as TabsPrimitive,\n} from \"react-aria-components\"\n\nfunction Tabs({\n  className,\n  ...props\n}: React.ComponentProps<typeof TabsPrimitive>) {\n  return (\n    <TabsPrimitive\n      data-slot=\"tabs\"\n      className={cn(\n        \"gap-(--spacing-sm) group/tabs flex data-horizontal:flex-col\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nconst tabsListVariants = cva(\n  \"rounded-(--radius-control) p-(--spacing-xs) group-data-horizontal/tabs:h-(--spacing-2xl,calc(var(--spacing)*8)) data-[variant=line]:rounded-none group/tabs-list inline-flex w-fit items-center justify-center text-(--color-ink-muted) group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col\",\n  {\n    variants: {\n      variant: {\n        default: \"bg-(--color-surface-sunken)\",\n        line: \"gap-(--spacing-xs) bg-transparent\",\n      },\n    },\n    defaultVariants: {\n      variant: \"default\",\n    },\n  }\n)\n\nfunction TabsList({\n  className,\n  variant = \"default\",\n  ...props\n}: React.ComponentProps<typeof TabListPrimitive> &\n  VariantProps<typeof tabsListVariants>) {\n  return (\n    <TabListPrimitive\n      data-slot=\"tabs-list\"\n      data-variant={variant}\n      className={cn(tabsListVariants({ variant }), className)}\n      {...props}\n    />\n  )\n}\n\nfunction TabsTrigger({\n  className,\n  ...props\n}: React.ComponentProps<typeof TabPrimitive>) {\n  return (\n    <TabPrimitive\n      data-slot=\"tabs-trigger\"\n      className={cn(\n        \"gap-(--spacing-sm) rounded-(--radius-control) border-(length:--ui-border-hairline,1px)  px-(--spacing-sm) py-[var(--spacing-xs)] text-(length:--text-sm) font-(weight:--font-weight-medium) group-data-[variant=default]/tabs-list:data-active:shadow-(--ui-elevation-raised) group-data-[variant=line]/tabs-list:data-active:shadow-(--ui-elevation-none) [&_svg:not([class*='size-'])]:size-(--spacing-lg,calc(var(--spacing)*4)) has-data-[icon=inline-end]:pr-(--spacing-xs) has-data-[icon=inline-start]:pl-(--spacing-xs) group-data-[variant=default]/tabs-list:data-selected:shadow-(--ui-elevation-raised) group-data-[variant=line]/tabs-list:data-selected:shadow-(--ui-elevation-none) relative inline-flex h-[calc(100%-var(--ui-border-hairline))] flex-1 cursor-default items-center justify-center whitespace-nowrap text-(--color-ink-primary)/60 transition-all duration-(--ui-duration-default) ease-(--default-transition-timing-function) group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start hover:text-(--color-ink-primary) focus-visible:border-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) focus-visible:outline-(--color-focus-ring) disabled:pointer-events-none disabled:opacity-(--ui-alpha-disabled,50%) data-[disabled]:pointer-events-none data-[disabled]:opacity-(--ui-alpha-disabled,50%) dark:text-(--color-ink-muted) dark:hover:text-(--color-ink-primary) [&_svg]:pointer-events-none [&_svg]:shrink-0\",\n        \"group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:data-selected:bg-transparent dark:group-data-[variant=line]/tabs-list:data-selected:border-transparent dark:group-data-[variant=line]/tabs-list:data-selected:bg-transparent\",\n        \"data-selected:bg-(--color-surface-base) data-selected:text-(--color-ink-primary) dark:data-selected:border-(--color-line-strong) dark:data-selected:bg-(--color-line-strong)/30 dark:data-selected:text-(--color-ink-primary)\",\n        \"after:absolute after:bg-(--color-ink-primary) after:opacity-0 after:transition-opacity after:duration-(--ui-duration-default) after:ease-(--default-transition-timing-function) group-data-horizontal/tabs:after:inset-x-0 group-data-horizontal/tabs:after:bottom-[calc(var(--spacing-xs)*-1)] group-data-horizontal/tabs:after:h-[var(--spacing-xs)] group-data-vertical/tabs:after:inset-y-0 group-data-vertical/tabs:after:-right-(--spacing-xs) group-data-vertical/tabs:after:w-[var(--spacing-xs)] group-data-[variant=line]/tabs-list:data-selected:after:opacity-100\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction TabsContent({\n  className,\n  ...props\n}: React.ComponentProps<typeof TabPanelPrimitive>) {\n  return (\n    <TabPanelPrimitive\n      data-slot=\"tabs-content\"\n      className={cn(\"text-(length:--text-sm) flex-1 focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring)\", className)}\n      {...props}\n    />\n  )\n}\n\nexport { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants }\n"
+    },
+    {
+      "path": "notices/THIRD-PARTY.md",
+      "content": "# Third-party notice\n\nSource: https://github.com/shadcn-ui/ui\nCommit: daaf156ee00ed91cc7e6bdd937c1b4973152d141\nTransform: shadcn-aria-rewrite@1\n\nMIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    }
+  ],
+  "outputSha256": [
+    {
+      "path": "components/_parts/utils/index.ts",
+      "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+    },
+    {
+      "path": "components/tabs/tabs.tsx",
+      "sha256": "463fa0a0dfed07c77607a747e163fe4cdf7eccf1d7abf4d1fe34bb992717e5c2"
+    },
+    {
+      "path": "notices/THIRD-PARTY.md",
+      "sha256": "6148b3941d0eff3d024e4d3a0e630f009484163560272ae6ec79c649c67fc964"
+    }
+  ],
+  "reads": {
+    "tokens": [
+      "tokens.border-color.strong",
+      "tokens.border-width.hairline",
+      "tokens.control-radius.default",
+      "tokens.duration.default",
+      "tokens.easing.default",
+      "tokens.elevation.none",
+      "tokens.elevation.raised",
+      "tokens.focus-color.default",
+      "tokens.focus-outline.offset",
+      "tokens.focus-outline.width",
+      "tokens.font-size.sm",
+      "tokens.font-weight.medium",
+      "tokens.spacing.2xl",
+      "tokens.spacing.lg",
+      "tokens.spacing.sm",
+      "tokens.spacing.xs",
+      "tokens.state-opacity.disabled",
+      "tokens.surface-color.base",
+      "tokens.surface-color.sunken",
+      "tokens.text-color.muted",
+      "tokens.text-color.primary"
+    ],
+    "assets": [],
+    "components": []
+  },
+  "parts": [
+    "utils"
+  ],
+  "issues": []
+}

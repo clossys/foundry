@@ -99,7 +99,7 @@ export type { CanvasInches } from "./frame.js";
 
 export { getSlotSpec, listSlotKeys, requiredSlotKeys } from "./slots.js";
 
-export { collectCopyProvenance, createOutputManifest, createResolvedOutputManifest } from "./output-manifest.js";
+export { collectCopyProvenance, validateStrategyProvenance, createOutputManifest, createResolvedOutputManifest } from "./output-manifest.js";
 
 export { resolveSurfaceDocument, SurfaceResolutionError } from "./resolve-surface.js";
 export { checkSectionVariety, CONTENT_ICON_NAMES, CONTENT_ITEM_EYEBROW_MAX_CHARACTERS, resolveSectionedViewDocument, SectionedViewResolutionError, validateSectionedViewDocument } from "./sectioned-view.js";
@@ -214,3 +214,29 @@ export type {
   InstanceRecord, PackRecord, InstanceRecordOptions, InstanceRecordReason, InstanceRecordValidationResult,
 } from "./instance-record.js";
 export { STANDARD_WEBSITE_INSTANCES, STANDARD_WEBSITE_PACK } from "./standard-website-pack.js";
+
+export { PUBLISHER_MENU_VERSION, PUBLISHER_MENU, PUBLISHER_MILESTONES, PUBLISHER_PACKS, PUBLISHER_LANES } from "../planning/menu.js";
+export type { MilestoneId, PublisherMenuItem, PublisherPlanLane, PublisherPlanPackId, MenuNeeds } from "../planning/menu.js";
+export { createPublisherPlanDraft, validatePublisherPlan } from "../planning/plan.js";
+export type { PublisherPlanDraft, PublisherPlanMilestone, PublisherPlanPack, PublisherPlanItem, PublisherPlanNeed, PublisherPlanFinding } from "../planning/plan.js";
+export { PublisherPlanStore, alignedPlanItems, projectPlanInstances } from "../planning/change-set.js";
+export type { PublisherPlanVersion, PublisherPlanChangeSet, PublisherPlanApply, AlignedPlanItem } from "../planning/change-set.js";
+
+export { menuConfiguration, recommendPlanItem, withPublisherConfiguration, validatePublisherConfiguration, checkPublisherMenu, configurationInputNeeds, derivePublisherDeliveryState } from "../planning/configuration.js";
+export type { PublisherConfiguration, PublisherMediaSettings, PublisherLaneRecommendation, PublisherRecommendation, PublisherConfigurationOverride, PublisherRequirements, PublisherRequirementMessages, PublisherDeliveryState } from "../planning/configuration.js";
+
+export { PUBLISHER_CHANNELS } from "../planning/channel-ids.js";
+export type { PublisherChannelId } from "../planning/channel-ids.js";
+export { isLegacyRouteRegistration, projectRouteRegistry, routeServerLoader, registeredRoutesForChannel, registeredRouteBrandLink, routeRegistryDigest, routeCompositionDigest, registeredRouteFrameFinding } from "./route-registry.js";
+export type { LegacyRouteRegistration, LegacyRouteRegistry, RegionPageRouteRegistration, RegionPageRouteRegistry, AnyRouteRegistration, RouteSourceExport, RouteRegistration, RouteRegistry, RouteRegistryFinding, RegisteredRouteRow, RouteRegistryProjection } from "./route-registry.js";
+export type { InstanceBinding, FlowInstanceBinding, CanvasInstanceBinding, InstanceBindingBase, InstanceSectionRef, SectionPlacement, SectionFill, ContentRef, PublicationBinding, RegionPageBinding, InstanceRegistries, ConsumerInstanceLibrary, ConsumerInstanceFill, LayoutRendererSource } from "./instance-binding.js";
+export { instanceBodyFill, instanceBodyFindings } from "./instance-body.js";
+
+export { deriveRouteRuntimeBinding } from "./route-runtime.js";
+export type { RouteRuntimeBindingResult } from "./route-runtime.js";
+
+export { deriveRegisteredRouteLifecycle } from "./route-lifecycle.js";
+export type { RegisteredRouteLifecycleEvidence, RegisteredRouteLifecycleResult, RegisteredRouteNodeCurrentContext } from "./route-lifecycle.js";
+export type { RegisteredRouteSourceEvidence } from "./route-source-evidence.js";
+export { registeredRouteServerData } from "./route-server-data.js";
+export type { RegisteredRouteSerializable, RegisteredRouteServerData } from "./route-server-data.js";

@@ -1,0 +1,52 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "consumer",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "example/assets.video",
+      "license": "UNLICENSED",
+      "mode": "implementation",
+      "originKinds": [
+        "authored"
+      ],
+      "reads": {
+        "assets": [],
+        "tokens": []
+      },
+      "relation": "same-contract",
+      "slot": "assets.video",
+      "source": "example",
+      "sourceAddress": "fills/assets.video.json",
+      "status": "draft",
+      "trust": "consumer"
+    }
+  },
+  "assets": {
+    "video": {
+      "tour": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "kind": "authored",
+            "license": "UNLICENSED",
+            "note": "Consumer media brief: Product tour"
+          }
+        },
+        "$type": "rules",
+        "$value": {
+          "captions": {
+            "label": "English",
+            "src": "https://media.example.invalid/tour.en.vtt",
+            "srclang": "en"
+          },
+          "height": 720,
+          "mediaType": "video/mp4",
+          "reducedMotion": "poster",
+          "src": "https://media.example.invalid/tour.mp4",
+          "width": 1280
+        }
+      }
+    }
+  }
+}

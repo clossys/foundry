@@ -1,0 +1,90 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/assets.pattern",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "PATTERN_RECIPES",
+        "file": "src/tokens/pattern.ts",
+        "sha256": "5cde189c7941f787042b61fe3ac9575b9d34918fa0d20d3f7740548d10aa5852"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.border-color.strong",
+          "tokens.border-width.hairline",
+          "tokens.spacing.xl"
+        ]
+      },
+      "relation": "same-contract",
+      "slot": "assets.pattern",
+      "source": "foundry",
+      "sourceAddress": "importers/pattern.ts",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "assets": {
+    "pattern": {
+      "dots": {
+        "$type": "rules",
+        "$value": {
+          "ink": "--color-line-strong",
+          "shape": "dots",
+          "tile": "--spacing-xl",
+          "weight": "--ui-border-hairline"
+        }
+      },
+      "grain": {
+        "$type": "rules",
+        "$value": {
+          "ink": "--color-line-strong",
+          "shape": "grain",
+          "tile": "--spacing-xl",
+          "weight": "--ui-border-hairline"
+        }
+      },
+      "grid": {
+        "$type": "rules",
+        "$value": {
+          "ink": "--color-line-strong",
+          "shape": "grid",
+          "tile": "--spacing-xl",
+          "weight": "--ui-border-hairline"
+        }
+      },
+      "lines": {
+        "$type": "rules",
+        "$value": {
+          "ink": "--color-line-strong",
+          "shape": "lines",
+          "tile": "--spacing-xl",
+          "weight": "--ui-border-hairline"
+        }
+      },
+      "noise": {
+        "$type": "rules",
+        "$value": {
+          "ink": "--color-line-strong",
+          "shape": "noise",
+          "tile": "--spacing-xl",
+          "weight": "--ui-border-hairline"
+        }
+      },
+      "topo": {
+        "$type": "rules",
+        "$value": {
+          "ink": "--color-line-strong",
+          "shape": "topo",
+          "tile": "--spacing-xl",
+          "weight": "--ui-border-hairline"
+        }
+      }
+    }
+  }
+}

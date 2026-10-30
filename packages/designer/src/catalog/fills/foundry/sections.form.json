@@ -1,0 +1,143 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.form",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#Form",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.form",
+      "source": "foundry",
+      "sourceAddress": "./blocks#Form",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "form": {
+      "composes": [],
+      "configs": {
+        "form.contact": "composition=contact"
+      },
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.body-size",
+            "tokens.control-radius",
+            "tokens.focus-shadow",
+            "tokens.heading-size",
+            "tokens.spacing",
+            "tokens.status-color",
+            "tokens.text-color",
+            "tokens.typeface"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/Form.tsx",
+            "sha256": "1a1017d0bed99a6d22dce148602985fb57923c008937d622cac697451f79b87e"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/action-row.ts",
+            "sha256": "a6a5d775bce9eabccdae57892d623363f081b31aa44bb64855b6f1844f4b3ea3"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/components/internal/ui-vars.ts",
+            "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved source export ../components/Link.js#Link",
+            "file": "packages/designer/src/blocks/Form.tsx",
+            "line": 11
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
+      "impl": {
+        "export": "Form",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "The form.contact configuration opts into the public Form composition=contact API. Its consumer-owned onSubmit promise controls the send; the package implements no endpoint, transport or persistence.",
+        "Fields compose the native Field, TextField, Textarea and Select components; submit binds to a native Button in the actions region. The error-summary uses errors and errorSummaryMessage, while host-authored success and error regions render through Banner after the submit promise resolves or rejects. Rejected submits retain the field values.",
+        "Honeypot and Turnstile regions pass through consumer-owned host nodes. They do not create anti-abuse services, tokens or verification behavior. The runtime adapter resolves live nodes and the submit callback through sectionHosts[\"sections.form\"].",
+        "Form is the public block anchor, not a claim that the components.form leaf is adopted. Source declarations do not qualify a consumer handler or consent host.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#Form",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "form.contact": "./blocks#Form.composition=contact"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.control-radius",
+          "tokens.focus-shadow",
+          "tokens.heading-size",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
+      },
+      "slot": "sections.form",
+      "slotMap": {
+        "error": "./blocks#Form.submitError",
+        "error-summary": "./blocks#Form.errorSummaryMessage",
+        "fields": "./blocks#Form.children",
+        "honeypot": "./blocks#Form.honeypot",
+        "submit": "./blocks#Form.actions",
+        "success": "./blocks#Form.submitSuccess",
+        "turnstile": "./blocks#Form.turnstile"
+      },
+      "source": "foundry"
+    }
+  }
+}

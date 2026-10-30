@@ -5,8 +5,8 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 /**
- * Stack boundary. Blocks compose atoms, tokens and local block files; atoms
- * build on react-aria-components, tokens, utilities and other atoms; no other
+ * Stack boundary. Blocks compose components, tokens and local block files; components
+ * build on react-aria-components, tokens, utilities and other components; no other
  * UI library appears anywhere in this package's shipped source. ladder.test.ts
  * checks layer direction; this file checks every bare and relative specifier
  * against a per-directory allow-list, parsed with the TypeScript AST so
@@ -15,8 +15,9 @@ import { describe, expect, it } from "vitest";
 const srcDir = dirname(fileURLToPath(import.meta.url));
 const SHARED = ["icons/", "tokens/", "internal/peer-version.js", "internal/declared-peer-ranges.js", "internal/brandmark.js"];
 const RULES = {
-  atoms: { bare: /^(?:react|react-aria-components(?:\/package\.json)?|tailwind-merge)$/, local: ["atoms/", ...SHARED] },
-  blocks: { bare: /^react$/, typeOnlyBare: /^react-aria-components$/, local: ["blocks/", "atoms/", ...SHARED] },
+  catalog: { bare: /^$/, local: ["catalog-core/", "catalog-assets/", "catalog/", "tokens/", "importers/", "icons/"] },
+  components: { bare: /^(?:react|react-aria-components(?:\/package\.json)?|tailwind-merge)$/, local: ["components/", ...SHARED] },
+  blocks: { bare: /^react$/, typeOnlyBare: /^react-aria-components$/, local: ["blocks/", "components/", "catalog-core/provenance-attrs.js", ...SHARED] },
   /**
    * tokens, icons, internal: bare specifiers follow the blocks rule plus Node built-ins (existing
    * CLIs and the peer probe); relative imports stay inside src (tokens/index.ts re-exports backdrop/, type-record/).
@@ -31,11 +32,13 @@ const OTHER_BARE = /^(?:react|react-aria-components(?:\/package\.json)?|node:[a-
 const TAILWIND_DIRS = ["compiled-css", "hero-css"];
 /** The one computed `import()`: the conformance CLI loads a consumer's declaration file by path. */
 const COMPUTED_IMPORT_FILES = ["environment-conformance-worker.ts"];
+/** The admitted browser-compatible CSS AST parser has exactly two source owners. */
+const CSS_AST_IMPORT_FILES = ["catalog-core/dogfood-css.ts", "catalog-core/token-css-syntax.ts"];
 /** The exception list as introduced. Frozen: never add a name here. */
 const ORIGINAL_EXCEPTIONS: readonly string[] = ["blocks/CommandMenu.tsx", "blocks/Toolbar.tsx", "blocks/internal/disclosure-row.tsx"];
 /**
  * Blocks that still import react-aria-components at runtime. Expiry: remove an
- * entry when its block moves the usage behind an atom. It must stay a subset of
+ * entry when its block moves the usage behind an component. It must stay a subset of
  * ORIGINAL_EXCEPTIONS, so this list may only shrink.
  */
 const RUNTIME_RAC_EXCEPTIONS: readonly string[] = ["blocks/CommandMenu.tsx", "blocks/Toolbar.tsx", "blocks/internal/disclosure-row.tsx"];
@@ -87,7 +90,7 @@ function rawViolations(): string[] {
   for (const file of collect(srcDir)) {
     const rel = relative(srcDir, file).split(sep).join("/");
     const top = rel.split("/")[0]!;
-    const rule = top === "atoms" || top === "blocks" ? RULES[top] : SHARED_DIRS.includes(top) ? RULES.shared : undefined;
+    const rule = top === "catalog-core" || top === "catalog-assets" ? RULES.catalog : top === "components" || top === "blocks" ? RULES[top] : SHARED_DIRS.includes(top) ? RULES.shared : undefined;
     for (const { spec, typeOnly } of importsOf(file)) {
       let ok: boolean;
       if (spec.startsWith(".")) {
@@ -95,7 +98,7 @@ function rawViolations(): string[] {
         const insideSrc = !target.startsWith("..") && !isAbsolute(target);
         ok = insideSrc && (!rule || rule.local.some(prefix => target.startsWith(prefix)) || (rel.includes(".check.") && target === "index.js"));
       } else if (rule) {
-        ok = rule.bare.test(spec) || (typeOnly && "typeOnlyBare" in rule && rule.typeOnlyBare.test(spec)) || !!BARREL_EXTRA[rel]?.test(spec);
+        ok = rule.bare.test(spec) || (spec === "css-tree" && CSS_AST_IMPORT_FILES.includes(rel)) || (typeOnly && "typeOnlyBare" in rule && rule.typeOnlyBare.test(spec)) || !!BARREL_EXTRA[rel]?.test(spec);
       } else {
         ok = OTHER_BARE.test(spec) || (spec === "tailwindcss" && TAILWIND_DIRS.includes(top)) || (spec === COMPUTED && COMPUTED_IMPORT_FILES.includes(rel));
       }
@@ -109,7 +112,7 @@ describe("stack import boundary", () => {
   const raw = rawViolations();
   const isException = (v: string) => RUNTIME_RAC_EXCEPTIONS.some(file => v === `${file}: react-aria-components`);
 
-  it("allows only the per-directory specifiers in atoms, blocks, shared folders and every other source file", () => {
+  it("allows only the per-directory specifiers in components, blocks, shared folders and every other source file", () => {
     expect(raw.filter(v => !isException(v))).toEqual([]);
   });
 
@@ -118,9 +121,10 @@ describe("stack import boundary", () => {
     expect([...new Set(raw.filter(isException).map(v => v.split(":")[0]))].sort()).toEqual([...RUNTIME_RAC_EXCEPTIONS].sort());
   });
 
-  it("declares no installed dependencies, a fixed optional peer set and no UI library in package.json", () => {
+  it("declares the exact runtime dependencies, a fixed optional peer set and no UI library in package.json", () => {
     const pkg = JSON.parse(readFileSync(join(srcDir, "..", "package.json"), "utf8"));
-    expect(Object.keys(pkg).filter(key => /^(?:d|optionalD|bundleD|bundledD)ependencies$/.test(key))).toEqual([]);
+    expect(Object.keys(pkg).filter(key => /^(?:d|optionalD|bundleD|bundledD)ependencies$/.test(key))).toEqual(["dependencies"]);
+    expect(pkg.dependencies).toEqual({ "class-variance-authority": "0.7.1", "css-tree": "3.2.1" });
     expect(Object.keys(pkg.peerDependencies).sort()).toEqual(KNOWN_PEERS);
     for (const name of KNOWN_PEERS) expect(pkg.peerDependenciesMeta[name], name).toEqual({ optional: true });
     const names = [...Object.keys(pkg.peerDependencies), ...Object.keys(pkg.devDependencies ?? {})];

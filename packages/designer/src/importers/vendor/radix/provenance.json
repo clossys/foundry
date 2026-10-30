@@ -1,0 +1,21 @@
+{
+  "files": {
+    "LICENSE": "d981bc30e0d78b9ffc8f279fcaa274ea0444ff51d983548a609397d5c8a42dc2",
+    "dark.txt": "d8599fe69a4454340b2bc82e003a210caa6b79082be9a1b7f13429ff03826c68",
+    "light.txt": "1a9725486609d36b469caa3b84b8de4348b7f2f05d45905127637b988329acbd"
+  },
+  "hashFormat": "sha256(light.ts UTF-8 bytes + NUL + dark.ts UTF-8 bytes); distinct from per-token adoption hashes",
+  "mapping": {
+    "accent": "indigo light default9 hover10 text11 tint3 on-inverse8; dark default11 hover12 text11 tint3 on-inverse9",
+    "status": "green/amber/red/blue: marker step11, text step12, tint step3 (light and real dark scales); WCAG tested on consumer grounds, not inferred from APCA"
+  },
+  "source": {
+    "commit": "dbdb85470547c7d34b9001f48fddb08ded335979",
+    "file": "src/light.ts + src/dark.ts",
+    "package": "@radix-ui/colors",
+    "sha256": "49f27121f8bd6bcba4b9ea9da2378950ac3096029bc9bb4cf402974a314654fa",
+    "url": "https://github.com/radix-ui/colors/tree/dbdb85470547c7d34b9001f48fddb08ded335979",
+    "version": "3.0.0"
+  },
+  "upstreamPackageVerifiedVersion": "3.0.0"
+}

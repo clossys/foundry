@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Button } from "../atoms/Button.js";
-import { TextField } from "../atoms/TextField.js";
+import { Button } from "../components/Button.js";
+import { TextField } from "../components/TextField.js";
 import { Form, type FormError } from "./Form.js";
 import { useFormValidation, type FormValidation } from "./useFormValidation.js";
 
@@ -28,7 +28,7 @@ import { useFormValidation, type FormValidation } from "./useFormValidation.js";
  *   6. Every string a user can see comes from the consumer; the error
  *      summary renders only when the consumer supplies its heading.
  *
- * Every field here is a real designer atom (`TextField`, `Button`) or a
+ * Every field here is a real designer component (`TextField`, `Button`) or a
  * plain native `<input>`, so the ARIA wiring asserted is the wiring a
  * consumer actually gets, not a mock's.
  */

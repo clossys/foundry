@@ -1,6 +1,6 @@
 /**
  * Page-level web surfaces owned by `@clossys/publisher/web` and built
- * from reusable `@clossys/designer` atoms and blocks. Most product pages
+ * from reusable `@clossys/designer` components and blocks. Most product pages
  * remain consumer-owned compositions, so this catalog is deliberately short.
  */
 
@@ -48,8 +48,6 @@ export { LegalView } from "./LegalView.js";
 export type { LegalViewFramedLabels, LegalViewLabels, LegalViewProps } from "./LegalView.js";
 export { HeroView } from "./HeroView.js";
 export type { HeroViewFooter, HeroViewGround, HeroViewProps } from "./HeroView.js";
-export { LandingView } from "./LandingView.js";
-export type { LandingViewCallToAction, LandingViewHeader, LandingViewProps } from "./LandingView.js";
 export { LANDING_VIEW_CALL_TO_ACTION_GROUND, LANDING_VIEW_CLOSING_GROUND, planLandingViewGrounds } from "./landingViewGrounds.js";
 export type { LandingViewBandGround, LandingViewBandRole, LandingViewGroundPlan, LandingViewGroundRepeat } from "./landingViewGrounds.js";
 export { ContactView } from "./ContactView.js";

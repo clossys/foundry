@@ -1,0 +1,58 @@
+"use client"
+
+import type { ComponentPropsWithRef } from "react"
+import { cva, type VariantProps } from "class-variance-authority"
+import { controlSizeStyle, controlStateStyle } from "../button-classes.js"
+import { cn } from "../_parts/utils/index.js"
+import {
+  composeRenderProps,
+  ToggleButton as TogglePrimitive,
+} from "react-aria-components"
+
+const toggleVariants = cva(
+  "hover:text-(--color-ink-primary) aria-pressed:bg-(--color-action) aria-pressed:text-(--color-ink-on-action) focus-visible:border-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:ring-(--color-status-danger)/20 dark:aria-invalid:ring-(--color-status-danger)/40 aria-invalid:border-(--color-status-danger) data-[state=on]:bg-(--color-action) data-[state=on]:text-(--color-ink-on-action) gap-(--spacing-xs) rounded-(--radius-control) text-(length:--text-sm) font-(weight:--font-weight-medium) transition-colors motion-reduce:transition-none [&_svg:not([class*='size-'])]:size-(--spacing-lg) data-selected:bg-(--color-action) data-selected:text-(--color-ink-on-action) group/toggle inline-flex items-center justify-center whitespace-nowrap hover:bg-(--color-surface-sunken) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) disabled:pointer-events-none disabled:opacity-(--ui-alpha-disabled) [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  {
+    variants: {
+      variant: {
+        default: "bg-transparent",
+        outline: "border-(--color-line-strong) hover:bg-(--color-surface-sunken) border-(length:--ui-border-hairline) bg-transparent",
+      },
+      size: {
+        default: "h-(--ui-control-h-md) min-w-(--spacing-2xl) px-(--spacing-md) has-data-[icon=inline-end]:pe-(--spacing-sm) has-data-[icon=inline-start]:ps-(--spacing-sm)",
+        sm: "h-(--ui-control-h-sm) min-w-[var(--spacing-2xl)] rounded-(--radius-control) px-(--spacing-md) text-(length:--text-caption) has-data-[icon=inline-end]:pe-(--spacing-sm) has-data-[icon=inline-start]:ps-(--spacing-sm) [&_svg:not([class*='size-'])]:size-(--ui-control-switch-thumb)",
+        lg: "h-(--ui-control-h-lg) min-w-[var(--spacing-2xl)] px-(--spacing-md) has-data-[icon=inline-end]:pe-(--spacing-sm) has-data-[icon=inline-start]:ps-(--spacing-sm)",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
+
+function Toggle({
+  className,
+  variant = "default",
+  size = "default",
+  ...props
+}: ComponentPropsWithRef<typeof TogglePrimitive> & VariantProps<typeof toggleVariants>) {
+  return (
+    <TogglePrimitive
+      data-slot="toggle"
+      className={composeRenderProps(className, (className) => cn(toggleVariants({ variant, size, className })))}
+      {...props}
+    />
+  )
+}
+
+/** Local token styling; the adopted peer above owns all interaction. */
+function ControlToggle({ style, size, ...props }: ComponentPropsWithRef<typeof Toggle>) {
+  return <Toggle {...props} size={size}
+    style={composeRenderProps(style, (style, state) => ({
+      ...controlSizeStyle(size === "sm" || size === "lg" ? size : "md"),
+      ...controlStateStyle(state),
+      ...style,
+    }))} />
+}
+
+export { ControlToggle as Toggle, toggleVariants }

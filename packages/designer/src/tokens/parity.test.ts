@@ -12,7 +12,7 @@ const declarations = parseRootDeclarations(tokensCss);
 /**
  * The important test in this package (see the README's Tests section): two
  * independently hand-authored artifacts, `styles/tokens.css` and
- * `src/tokens.ts`, both claim to describe the same 217 tokens. Nothing
+ * `src/tokens.ts`, both claim to describe the same 230 tokens. Nothing
  * generates one from the other, so nothing but a test keeps them in sync —
  * this is that test, checked in both directions and by value, not just by
  * name.
@@ -48,9 +48,9 @@ describe("tokens.css <-> src/tokens.ts parity", () => {
     expect(mismatched).toEqual([]);
   });
 
-  it("retains exactly 31 families and a structural Scene card-width token", () => {
-    expect(TOKEN_FAMILIES).toHaveLength(31);
-    expect(new Set(TOKEN_FAMILIES).size).toBe(31);
+  it("retains exactly 32 families and a structural Scene card-width token", () => {
+    expect(TOKEN_FAMILIES).toHaveLength(32);
+    expect(new Set(TOKEN_FAMILIES).size).toBe(32);
     expect([...new Set(Object.values(TOKENS).map(token => token.family))].sort()).toEqual([...TOKEN_FAMILIES].sort());
     expect(TOKENS["--ui-scene-card-w"]).toMatchObject({ value: "30rem", family: "scene", brandable: false, themeDependent: false });
     expect(declarations.get("--ui-scene-card-w")).toBe("30rem");
@@ -58,8 +58,16 @@ describe("tokens.css <-> src/tokens.ts parity", () => {
     expect(declarations.has("--ui-scene-tilt")).toBe(false);
   });
 
-  it("declares exactly 217 tokens (the curated set this package promises)", () => {
-    expect(declarations.size).toBe(217);
-    expect(Object.keys(TOKENS).length).toBe(217);
+  it("declares exactly 230 tokens (the curated set this package promises)", () => {
+    expect(declarations.size).toBe(230);
+    expect(Object.keys(TOKENS).length).toBe(230);
   });
+});
+
+it("ships the three semantic dock heights as exact, non-brandable layout tokens", () => {
+  for (const [member, value] of [["min", "160px"], ["default", "240px"], ["max", "480px"]] as const) {
+    const property = `--ui-layout-dock-${member}-block` as const;
+    expect(TOKENS[property]).toEqual({ property, family: "layout", value, brandable: false, themeDependent: false });
+    expect(declarations.get(property)).toBe(value);
+  }
 });

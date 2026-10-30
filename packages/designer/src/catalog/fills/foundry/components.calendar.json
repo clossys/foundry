@@ -1,0 +1,126 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [
+        "components.button"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.calendar",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#Calendar",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.calendar",
+      "source": "foundry",
+      "sourceAddress": "./components#Calendar",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "calendar": {
+      "composes": [
+        "components.button"
+      ],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "Calendar",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "selection.range",
+        "selection.single"
+      ],
+      "pin": {
+        "export": "./components#Calendar",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "selection.range": "./components#Calendar.selection=range",
+        "selection.single": "./components#Calendar.selection=single"
+      },
+      "props": [
+        "aria-label",
+        "aria-labelledby",
+        "autoFocus",
+        "className",
+        "defaultFocusedValue",
+        "defaultValue",
+        "firstDayOfWeek",
+        "focusedValue",
+        "isDateUnavailable",
+        "isDisabled",
+        "isInvalid",
+        "isReadOnly",
+        "maxValue",
+        "minValue",
+        "onChange",
+        "onFocusChange",
+        "pageBehavior",
+        "selection",
+        "value",
+        "visibleDuration"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [
+          "assets.icon-chevron-left",
+          "assets.icon-chevron-right"
+        ],
+        "components": [
+          "components.button"
+        ],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.caption-size",
+          "tokens.control-radius",
+          "tokens.control-size",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.focus-shadow",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.line-height",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.z-index"
+        ]
+      },
+      "root": "rac:Calendar",
+      "slot": "components.calendar",
+      "source": "foundry"
+    }
+  }
+}

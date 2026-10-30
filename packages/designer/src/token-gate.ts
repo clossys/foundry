@@ -25,7 +25,7 @@
  * value"` if some token in the registry happened to share the literal's
  * value. That collapsed two genuinely different situations into one
  * message, and the message was actively WRONG for the fallback case: for
- * `atoms/Icon.tsx`'s `"var(--ui-icon-sm, var(--spacing-lg, 16px))"`, the
+ * `components/Icon.tsx`'s `"var(--ui-icon-sm, var(--spacing-lg, 16px))"`, the
  * old finding read "read it via var(--spacing-lg) ... instead of the
  * literal" — but the code ALREADY reads it via `var(--spacing-lg)`. The
  * `16px` is that var's own documented fallback, and
@@ -94,7 +94,7 @@
  * namespace, raw `var()` only" escape hatch this package's token layer
  * README describes for values that have no Tailwind `@theme` namespace at
  * all (z-index, elevation, layout widths, ...) — see
- * `packages/ui/src/atoms/internal/ui-vars.ts`'s own header comment for the
+ * `packages/designer/src/components/internal/ui-vars.ts`'s own header comment for the
  * real precedent.
  *
  * WHAT THIS DELIBERATELY DOES NOT DO, mirroring `copy-gate.ts`'s own list:
@@ -125,7 +125,7 @@
  * PR description for why)
  * ============================================================================
  *
- * `atoms/internal/ui-vars.ts`, `charts/internal/chart-vars.ts`,
+ * `components/internal/ui-vars.ts`, `charts/internal/chart-vars.ts`,
  * `shell/internal/shell-vars.ts` and surface-level web views each
  * carry a real, deliberate, and DOCUMENTED pattern: `"var(--token-name,
  * <literal fallback>)"`, where the literal fallback is hand-copied from

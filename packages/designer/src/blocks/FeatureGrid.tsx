@@ -1,8 +1,13 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { CompatFeatureGrid } from "./items/compat-features.js";
 import type { SectionGround } from "./section-ground.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.features", "foundry/sections.features");
 
 export type FeatureGridHeadingLevel = 2 | 3 | 4 | 5 | 6;
+/** How the features are laid out: the responsive grid, one feature per row, or the heading region beside the grid. */
+export type FeatureGridLayout = "grid" | "list" | "split";
 
 export interface FeatureGridItem {
   /** Stable identifier — the React key. */
@@ -35,9 +40,17 @@ export interface FeatureGridProps extends Omit<HTMLAttributes<HTMLDivElement>, "
   headingLevel?: FeatureGridHeadingLevel;
   /** Semantic section ground; selects the complete matching surface and foreground policy. @default "base" */
   ground?: SectionGround;
+  /**
+   * `grid` is the published responsive grid (one, two, then three columns).
+   * `list` puts one feature per row, its icon beside the heading and copy.
+   * `split` sets the heading region beside a two-column feature grid from
+   * desktop; with no heading region the grid keeps the full width.
+   * @default "grid"
+   */
+  layout?: FeatureGridLayout;
   className?: string;
   style?: CSSProperties;
 }
 
 /** Published feature copy keeps its original count, heading and presence policy. */
-export function FeatureGrid({ ground = "base", ...props }: FeatureGridProps) { return <CompatFeatureGrid {...props} ground={ground} />; }
+export function FeatureGrid({ ground = "base", ...props }: FeatureGridProps) { return <CompatFeatureGrid {...SECTION_STAMP} {...props} ground={ground} />; }

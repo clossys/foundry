@@ -8,7 +8,8 @@
  * those inputs so `@example/surface` can place them in its output
  * manifest without knowing how a consumer stores copy.
  *
- * Target policy: an owner-approved entry resolves on both `"preview"` and
+ * Target policy: a draft entry resolves only on explicit `"preview"`.
+ * An owner-approved entry resolves on both `"preview"` and
  * `"production"` (the default target). A delegate-approved entry resolves
  * freely on `"preview"`, but on `"production"` is refused
  * (`delegate-approval-refused`) unless the caller opts in with
@@ -21,13 +22,19 @@
 import type {
   CopyRef,
   CopyRegistry,
+  CopyRegistryEntry,
   CopyResolution,
   CopyResolutionApproval,
   CopyResolver,
   CopyValue,
 } from "./types.js";
 import { validateCopyRegistryShape } from "./schema.js";
-import { isApprovalExpired, isApprovalStale, isEntryInDelegateScope } from "./approval.js";
+import { IntlMessageFormat } from "intl-messageformat";
+import { canonicalLocale, fallbackChain } from "./locale.js";
+import { parseIcuMessage } from "./icu/parse.js";
+import type { IcuParseResult } from "./icu/parse.js";
+import type { WriterManifest } from "./model/types.js";
+import { isApprovalExpired, isApprovalStale, isEntryInDelegateScope } from "./approval-policy.js";
 import { isPlanBytes, planDelegateCopyAuthority } from "./plan-authority.js";
 import type { PlanDelegateCopyRefusal } from "./plan-authority.js";
 
@@ -40,6 +47,8 @@ export type CopyResolveIssueReason =
   | "missing-placeholder-value"
   | "unexpected-placeholder-value"
   | "invalid-options"
+  | "invalid-message"
+  | "formatting-error"
   | "approval-stale"
   | "approval-expired"
   | "delegate-approval-refused";
@@ -49,6 +58,12 @@ export type CopyResolveTarget = "preview" | "production";
 
 /** Options controlling how strictly `resolveCopyRef`/`createCopyResolver` treat an entry's approval record. */
 export interface CopyResolveOptions {
+  /** Locale declarations and fallback policy. Omitted: available registries, with the first as default. */
+  manifest?: Pick<WriterManifest, "defaultLocale" | "locales" | "fallback">;
+  /** Additional locale registries; each available locale must be unique, including the first registry. */
+  registries?: readonly CopyRegistry[];
+  /** Explicit zone for every date/time argument. Defaults to `"UTC"`. */
+  timeZone?: string;
   /** Defaults to `"production"`. */
   target?: CopyResolveTarget;
   /** Defaults to `false`. Only meaningful when `target` is `"production"`. */
@@ -78,7 +93,7 @@ export interface CopyResolveIssue {
 }
 
 export interface CopyResolveResult {
-  resolution?: CopyResolution;
+  resolution?: CopyResolution & { servedLocale: string; chain: string[] };
   issues: CopyResolveIssue[];
   complete: boolean;
 }
@@ -92,11 +107,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 function isCopyValue(value: unknown): value is CopyValue {
-  return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
-}
-
-function interpolate(text: string, values: Readonly<Record<string, CopyValue>>): string {
-  return text.replace(/\{([^{}]+)\}/g, (_match, name: string) => String(values[name]!));
+  return typeof value === "string" || (typeof value === "number" && Number.isFinite(value)) || typeof value === "boolean";
 }
 
 /** The options a call runs with, each read from the caller's object exactly once. */
@@ -105,6 +116,9 @@ interface ResolveSettings {
   acceptDelegateInProduction: boolean;
   now: Date;
   approvalPlan: Uint8Array | undefined;
+  manifest: CopyResolveOptions["manifest"];
+  registries: readonly CopyRegistry[];
+  timeZone: string;
 }
 
 /**
@@ -115,9 +129,17 @@ interface ResolveSettings {
  * cannot answer differently at validation and at use.
  */
 function readResolveOptions(value: unknown): ResolveSettings | null {
-  if (value === undefined) return { target: "production", acceptDelegateInProduction: false, now: new Date(), approvalPlan: undefined };
+  if (value === undefined) return {
+    target: "production", acceptDelegateInProduction: false, now: new Date(), approvalPlan: undefined,
+    manifest: undefined, registries: [], timeZone: "UTC",
+  };
   if (!isPlainObject(value)) return null;
-  const { target, acceptDelegateInProduction, now, approvalPlan } = value;
+  const { target, acceptDelegateInProduction, now, approvalPlan, manifest, registries, timeZone } = value;
+  if (manifest !== undefined && !isPlainObject(manifest)) return null;
+  if (registries !== undefined && !Array.isArray(registries)) return null;
+  if (timeZone !== undefined && !isNonEmptyString(timeZone)) return null;
+  try { new Intl.DateTimeFormat("en", { timeZone: timeZone ?? "UTC" }); }
+  catch { return null; }
   if (target !== undefined && target !== "preview" && target !== "production") return null;
   if (acceptDelegateInProduction !== undefined && typeof acceptDelegateInProduction !== "boolean") return null;
   if (now !== undefined && !(now instanceof Date && Number.isFinite(now.getTime()))) return null;
@@ -129,74 +151,112 @@ function readResolveOptions(value: unknown): ResolveSettings | null {
     acceptDelegateInProduction: acceptDelegateInProduction ?? false,
     now: now ?? new Date(),
     approvalPlan,
+    manifest: manifest as CopyResolveOptions["manifest"],
+    registries: (registries ?? []) as readonly CopyRegistry[],
+    timeZone: (timeZone ?? "UTC") as string,
   };
 }
 
+function failure(reason: CopyResolveIssueReason, message: string, id?: string): CopyResolveResult {
+  return { issues: [{ reason, message, ...(id === undefined ? {} : { id }) }], complete: false };
+}
+
 /**
- * Resolves a `CopyRef` against one locale-specific registry. Any absence,
- * lifecycle failure, locale mismatch, staleness/expiry, delegate-in-production
- * refusal, or placeholder mismatch produces no text and a non-complete
- * result. Consumers may log `issues`; renderers must treat a missing
- * `resolution` as an unresolved required input.
+ * Resolves an approved entry along the shared locale fallback chain. Only an
+ * absent registry or entry advances the chain; an existing entry's lifecycle,
+ * approval, argument, or formatting failure always stops resolution.
  */
 export function resolveCopyRef(
   registry: CopyRegistry | unknown,
   ref: CopyRef | unknown,
   options?: CopyResolveOptions | unknown,
 ): CopyResolveResult {
-  const settings = readResolveOptions(options);
-  if (settings === null) {
-    return {
-      issues: [{ reason: "invalid-options", message: "CopyResolveOptions is malformed." }],
-      complete: false,
-    };
-  }
-  const { target, acceptDelegateInProduction, now, approvalPlan } = settings;
+  let settings: ResolveSettings | null;
+  try { settings = readResolveOptions(options); }
+  catch { settings = null; }
+  if (settings === null) return failure("invalid-options", "CopyResolveOptions is malformed.");
+  const { target, acceptDelegateInProduction, now, approvalPlan, timeZone } = settings;
 
-  const registryFindings = validateCopyRegistryShape(registry);
-  if (registryFindings.length > 0) {
-    return {
-      issues: [{ reason: "invalid-registry", message: "CopyRegistry must pass validateCopyRegistryShape before it can resolve CopyRefs." }],
-      complete: false,
-    };
-  }
-  // Safe after the validator's complete structural check. The public
-  // signature still accepts unknown because JavaScript callers can bypass
-  // TypeScript and resolution must fail closed rather than throw.
-  const validRegistry = registry as CopyRegistry;
+  // Cache the shared parser result for schema compatibility and the eventual
+  // formatter. No message is parsed a second time in a resolution call.
+  const parsed = new Map<CopyRegistryEntry, IcuParseResult>();
+  const parseEntry = (entry: CopyRegistryEntry): IcuParseResult => {
+    let result = parsed.get(entry);
+    if (result === undefined) { result = parseIcuMessage(entry.text); parsed.set(entry, result); }
+    return result;
+  };
+  const available = new Map<string, CopyRegistry>();
+  let firstLocale: string;
+  try {
+    const registries = [registry, ...settings.registries];
+    for (const candidate of registries) {
+      const findings = validateCopyRegistryShape(candidate);
+      // The legacy shape validator recognizes only literal {name}. Suppress
+      // only that finding at its exact declared index when valid ICU confirms
+      // the same argument; every other shape/approval finding still refuses.
+      const bridged = new Set<string>();
+      if (isPlainObject(candidate) && Array.isArray(candidate.entries)) {
+        candidate.entries.forEach((entry: unknown, index: number) => {
+          if (!isPlainObject(entry) || typeof entry.text !== "string" || !Array.isArray(entry.placeholders)) return;
+          const result = parseEntry(entry as unknown as CopyRegistryEntry);
+          if (result.issues.length !== 0 || result.formatjsAst === undefined) return;
+          const names = new Set(result.arguments.map((argument) => argument.name));
+          entry.placeholders.forEach((name: unknown, placeholderIndex: number) => {
+            if (typeof name === "string" && names.has(name)) bridged.add(`entries.${index}.placeholders.${placeholderIndex}`);
+          });
+        });
+      }
+      if (findings.some((finding) => finding.rule !== "placeholder-missing-from-text" || finding.path === undefined || !bridged.has(finding.path))) {
+        return failure("invalid-registry", "CopyRegistry must pass validateCopyRegistryShape before it can resolve CopyRefs.");
+      }
+      const valid = candidate as CopyRegistry;
+      const locale = canonicalLocale(valid.locale);
+      if (locale !== valid.locale) return failure("invalid-registry", "Stored registry locales must be canonical.");
+      if (available.has(locale)) return failure("invalid-registry", "Available registry locales must be unique.");
+      available.set(locale, valid);
+    }
+    firstLocale = available.keys().next().value!;
+  } catch { return failure("invalid-registry", "CopyRegistry is malformed or has an invalid locale."); }
 
-  if (!isPlainObject(ref) || !isNonEmptyString(ref.id) || (ref.locale !== undefined && !isNonEmptyString(ref.locale)) || (ref.values !== undefined && !isPlainObject(ref.values))) {
-    return {
-      issues: [{ reason: "invalid-ref", message: "CopyRef.id must be a non-empty string." }],
-      complete: false,
-    };
-  }
-  const validRef = ref as { id: string; locale?: string; values?: Readonly<Record<string, unknown>> };
+  let defaultLocale: string;
+  try { defaultLocale = canonicalLocale(settings.manifest?.defaultLocale ?? firstLocale); }
+  catch { return failure("invalid-options", "The locale manifest has an invalid default locale."); }
+  let validRef: { id: string; locale?: string; values?: Readonly<Record<string, unknown>> };
+  let requested: string;
+  try {
+    if (!isPlainObject(ref)) return failure("invalid-ref", "CopyRef must be an object.");
+    const { id, locale, values } = ref;
+    if (!isNonEmptyString(id) || (locale !== undefined && !isNonEmptyString(locale)) || (values !== undefined && !isPlainObject(values))) {
+      return failure("invalid-ref", "CopyRef must have a non-empty id and valid locale and values.");
+    }
+    const valueSnapshot = values === undefined ? undefined : Object.fromEntries(Object.entries(values));
+    validRef = { id, ...(locale === undefined ? {} : { locale }), ...(valueSnapshot === undefined ? {} : { values: valueSnapshot }) } as typeof validRef;
+    requested = canonicalLocale(locale ?? defaultLocale);
+  } catch { return failure("invalid-ref", "CopyRef has an invalid locale or values."); }
 
-  if (validRef.locale !== undefined && validRef.locale !== validRegistry.locale) {
-    return {
-      issues: [
-        {
-          reason: "locale-mismatch",
-          id: validRef.id,
-          message: `CopyRef "${validRef.id}" requests locale "${validRef.locale}", but this registry provides "${validRegistry.locale}".`,
-        },
-      ],
-      complete: false,
+  let chain: string[];
+  try {
+    const manifest = settings.manifest ?? {
+      defaultLocale: firstLocale,
+      locales: [...available.keys()].map((tag) => ({ tag, dir: "ltr" as const, state: "active" as const })),
+      fallback: {},
     };
+    chain = fallbackChain(requested, manifest);
+  } catch { return failure("invalid-options", "The locale manifest or fallback policy is malformed."); }
+
+  let validRegistry: CopyRegistry | undefined;
+  let entry: CopyRegistryEntry | undefined;
+  let servedLocale: string | undefined;
+  for (const locale of chain) {
+    const candidate = available.get(locale);
+    const candidateEntry = candidate?.entries.find((item) => item.id === validRef.id);
+    if (candidateEntry !== undefined) { validRegistry = candidate; entry = candidateEntry; servedLocale = locale; break; }
+  }
+  if (entry === undefined || validRegistry === undefined || servedLocale === undefined) {
+    return failure("unknown-copy-id", `CopyRef "${validRef.id}" is absent from the available fallback chain.`, validRef.id);
   }
 
-  const entry = validRegistry.entries.find((candidate) => candidate.id === validRef.id);
-  if (!entry) {
-    return {
-      issues: [
-        { reason: "unknown-copy-id", id: validRef.id, message: `CopyRef "${validRef.id}" is not present in registry "${validRegistry.id}".` },
-      ],
-      complete: false,
-    };
-  }
-
-  if (entry.status !== "approved") {
+  if (entry.status !== "approved" && !(target === "preview" && entry.status === "draft")) {
     return {
       issues: [
         {
@@ -272,47 +332,64 @@ export function resolveCopyRef(
     }
   }
 
+  const message = parseEntry(entry);
+  if (message.issues.length > 0 || message.formatjsAst === undefined) {
+    return failure("invalid-message", `CopyRef "${validRef.id}" has invalid or unsupported ICU syntax.`, validRef.id);
+  }
   const values = validRef.values ?? {};
   const issues: CopyResolveIssue[] = [];
-  const declared = new Set(entry.placeholders ?? []);
-  for (const placeholder of declared) {
-    if (!Object.hasOwn(values, placeholder)) {
+  const required = new Set(message.arguments.map((argument) => argument.name));
+  const declared = entry.placeholders === undefined ? required : new Set(entry.placeholders);
+  if ([...required].some((name) => !declared.has(name)) || [...declared].some((name) => !required.has(name))) {
+    return failure("invalid-registry", `CopyRef "${validRef.id}" has placeholder declarations inconsistent with its ICU arguments.`, validRef.id);
+  }
+  const formatValues: Record<string, string | number> = Object.create(null);
+  for (const placeholder of required) {
+    const value = Object.hasOwn(values, placeholder) ? values[placeholder] : undefined;
+    const argumentsForName = message.arguments.filter((argument) => argument.name === placeholder);
+    const needsNumber = argumentsForName.some((argument) => argument.type === "number" || argument.type === "plural" || argument.type === "date");
+    if (!isCopyValue(value) || (needsNumber && typeof value !== "number")) {
       issues.push({
-        reason: "missing-placeholder-value",
-        id: validRef.id,
-        placeholder,
-        message: `CopyRef "${validRef.id}" is missing a value for required placeholder "${placeholder}".`,
+        reason: "missing-placeholder-value", id: validRef.id, placeholder,
+        message: `CopyRef "${validRef.id}" is missing a valid value for required placeholder "${placeholder}".`,
       });
-    } else if (!isCopyValue(values[placeholder])) {
-      issues.push({
-        reason: "missing-placeholder-value",
-        id: validRef.id,
-        placeholder,
-        message: `CopyRef "${validRef.id}" has an invalid value for placeholder "${placeholder}".`,
-      });
-    }
+    } else { formatValues[placeholder] = typeof value === "boolean" ? String(value) : value; }
   }
   for (const name of Object.keys(values)) {
-    if (!declared.has(name)) {
-      issues.push({
-        reason: "unexpected-placeholder-value",
-        id: validRef.id,
-        placeholder: name,
-        message: `CopyRef "${validRef.id}" supplies "${name}", which is not declared by that copy entry.`,
-      });
-    }
+    if (!required.has(name)) issues.push({
+      reason: "unexpected-placeholder-value", id: validRef.id, placeholder: name,
+      message: `CopyRef "${validRef.id}" supplies "${name}", which is not an argument of that copy entry.`,
+    });
   }
   if (issues.length > 0) return { issues, complete: false };
 
-  const resolution: CopyResolution = {
+  let text: string;
+  try {
+    const formatter = new IntlMessageFormat(message.formatjsAst, servedLocale, undefined, {
+      ignoreTag: true,
+      formatters: {
+        getNumberFormat: (locales, options) => new Intl.NumberFormat(locales, options as Intl.NumberFormatOptions),
+        getDateTimeFormat: (locales, options) => new Intl.DateTimeFormat(locales, { ...options, timeZone }),
+        getPluralRules: (locales, options) => new Intl.PluralRules(locales, options),
+      },
+    });
+    const formatted = formatter.format(formatValues);
+    if (typeof formatted !== "string") return failure("formatting-error", `CopyRef "${validRef.id}" did not format as text.`, validRef.id);
+    text = formatted;
+  } catch { return failure("formatting-error", `CopyRef "${validRef.id}" could not be formatted.`, validRef.id); }
+
+  const resolution: NonNullable<CopyResolveResult["resolution"]> = {
     ref: validRef as unknown as CopyRef,
-    text: interpolate(entry.text, values as Readonly<Record<string, CopyValue>>),
+    text,
     recordId: validRegistry.id,
     revision: validRegistry.revision,
-    locale: validRegistry.locale,
+    locale: servedLocale,
+    servedLocale,
+    chain,
     source: validRegistry.source,
     entryId: entry.id,
   };
+  if (entry.status === "draft") resolution.status = "draft";
   // Only set when the entry actually carries a record — an approved entry
   // with no record resolves exactly as it did before this field existed,
   // with no `approval` key on the resolution at all.

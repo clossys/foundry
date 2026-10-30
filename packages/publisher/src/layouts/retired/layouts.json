@@ -1,0 +1,69 @@
+{
+  "LandingView": {
+    "replacedBy": "layouts.stack",
+    "config": "stack.landing"
+  },
+  "LandingViewContent": {
+    "replacedBy": "layouts.stack",
+    "config": "stack.landing"
+  },
+  "landingViewGrounds": {
+    "replacedBy": "layouts.stack",
+    "config": "stack.landing"
+  },
+  "planLandingViewGrounds": {
+    "replacedBy": "layouts.stack",
+    "config": "stack.landing"
+  },
+  "PageView.content": {
+    "replacedBy": "layouts.stack",
+    "config": "stack.document"
+  },
+  "LegalView": {
+    "replacedBy": "layouts.stack",
+    "config": "stack.document"
+  },
+  "PageView.form": {
+    "replacedBy": "layouts.stack",
+    "config": "stack.focus"
+  },
+  "StatusView": {
+    "replacedBy": "layouts.stack",
+    "config": "stack.focus"
+  },
+  "GlobalErrorDocument": {
+    "replacedBy": "layouts.stack",
+    "config": "stack.focus"
+  },
+  "NotFoundDocument": {
+    "replacedBy": "layouts.stack",
+    "config": "stack.focus"
+  },
+  "AuthView": {
+    "replacedBy": "layouts.stack",
+    "config": "stack.focus"
+  },
+  "IndexView": {
+    "replacedBy": "layouts.stack",
+    "config": "stack.index"
+  },
+  "DetailsView.main-aside": {
+    "replacedBy": "layouts.sidebar-content",
+    "config": "sidebar-content.record"
+  },
+  "DetailsView.single": {
+    "replacedBy": "layouts.stack"
+  },
+  "PageView": {
+    "replacedBy": "layouts.stack"
+  },
+  "DetailsView": {
+    "replacedBy": "layouts.stack"
+  },
+  "MarketingView": {
+    "replacedBy": "layouts.stack"
+  },
+  "ContactView": {
+    "replacedBy": "layouts.split"
+  }
+}

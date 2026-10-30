@@ -1,0 +1,117 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "phosphor/assets.icon-theme-light",
+      "slot": "assets.icon-theme-light",
+      "source": "phosphor",
+      "mode": "implementation",
+      "sourceAddress": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/sun.svg",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "pin": {
+        "url": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/sun.svg",
+        "commit": "fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f",
+        "sha256": "9e7e4d1e5e87c0036ef7bcb3ed52f4d61997ac566d1c6b7f4601e503bd3094fc"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-theme-light": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "line",
+            {
+              "x1": "12",
+              "y1": "3.75",
+              "x2": "12",
+              "y2": "1.5"
+            }
+          ],
+          [
+            "circle",
+            {
+              "cx": "12",
+              "cy": "12",
+              "r": "5.25"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "6",
+              "y1": "6",
+              "x2": "4.5",
+              "y2": "4.5"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "6",
+              "y1": "18",
+              "x2": "4.5",
+              "y2": "19.5"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "18",
+              "y1": "6",
+              "x2": "19.5",
+              "y2": "4.5"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "18",
+              "y1": "18",
+              "x2": "19.5",
+              "y2": "19.5"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "3.75",
+              "y1": "12",
+              "x2": "1.5",
+              "y2": "12"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "12",
+              "y1": "20.25",
+              "x2": "12",
+              "y2": "22.5"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "20.25",
+              "y1": "12",
+              "x2": "22.5",
+              "y2": "12"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

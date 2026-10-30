@@ -1,12 +1,57 @@
 "use client";
 
 import { useEffect, useRef, useState, version, type CSSProperties, type ReactNode } from "react";
+import { NativeAction } from "../../components/NativeAction.js";
+import { SemanticContent } from "../../components/SemanticContent.js";
 import { TOKENS } from "../tokens.js";
 import { TOKEN_GUIDANCE } from "../guidance.js";
 import { assertPeerVersion } from "../../internal/peer-version.js";
 import { REACT_DECLARED_RANGE } from "../../internal/declared-peer-ranges.js";
+import tokenSlots from "../../catalog/slots/tokens.json" with { type: "json" };
+import { malformed, unsafeText } from "../../catalog-core/model.js";
+import type { ResolvedMember, TokenContract } from "../../catalog-core/types.js";
+import { checkedPreviewCss } from "./checked-css.js";
 
 assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: version });
+
+export interface TokenValuePreviewProps {
+  id: string;
+  member: ResolvedMember;
+  sampleText: string;
+  lightLabel: string;
+  darkLabel: string;
+  compact?: boolean;
+}
+/** Selected consumer values use the registered member/type/property binding.
+ * This mechanism paints data; callers cannot supply CSS property names or styles.
+ */
+export function TokenValuePreview({ id, member, sampleText, lightLabel, darkLabel, compact = false }: TokenValuePreviewProps) {
+  const slot = tokenSlots.find(slot => slot.id === member.slot);
+  const contract = slot?.contract as TokenContract | undefined;
+  const name = id.slice(member.slot.length + 1);
+  const declared = contract?.members.mode === "closed" ? contract.members.names.includes(name) : contract?.members.mode === "open" && new RegExp(contract.members.pattern).test(name);
+  const expectedType = contract?.memberTypes?.[name] ?? contract?.$type;
+  if (!id.startsWith(member.slot + ".") || !declared || member.$type !== expectedType) throw new TypeError("TokenValuePreview requires a registered member/type binding");
+  const property = contract?.emit?.[name];
+  if (member.emit !== property || property !== undefined && !/^--[a-z][a-z0-9-]*$/.test(property)) throw new TypeError("TokenValuePreview property binding differs");
+  for (const mode of ["light", "dark"] as const) {
+    const css = member.css[mode], value = member.value[mode];
+    if (mode === "dark" && css === undefined && value === undefined) continue;
+    if (typeof css !== "string" || !css.trim() || value === undefined || unsafeText(css) || malformed(member.$type, value, member.$type === "gradient" ? undefined : css) || !checkedPreviewCss(member.$type, css)) throw new TypeError("TokenValuePreview requires safe checked light/dark values");
+  }
+  const light = member.css.light, dark = member.css.dark ?? light;
+  const swatch = member.$type === "color" || member.$type === "gradient";
+  if (swatch && !compact) return <span data-token-value-preview={id} className="inline-flex items-center gap-sm"><span data-preview-kind="swatch" aria-hidden="true" className="inline-block shrink-0 border border-line-strong" style={{ inlineSize: "calc(var(--spacing-xl) + var(--spacing-lg))", blockSize: "calc(var(--spacing-xl) + var(--spacing-lg))", background: light }} /><code>{light}</code></span>;
+  if (swatch) return <span data-token-value-preview={id} data-studio-color-swatch={compact ? "" : undefined} className="inline-flex size-xl shrink-0 overflow-hidden border border-line-base">
+    <span role="img" aria-label={`${lightLabel} ${light}`} className="h-full w-1/2" style={{ background: light }} />
+    <span role="img" aria-label={`${darkLabel} ${dark}`} className="h-full w-1/2" style={{ background: dark }} />
+  </span>;
+  if (member.$type === "fontFamily") return <span data-token-value-preview={id} data-preview-kind="font" style={{ fontFamily: light }}>{sampleText}</span>;
+  if (member.slot === "tokens.display-face" && name === "optical-size") return <SemanticContent as="span" data-token-value-preview={id} data-preview-kind="font" data-specimen-target="" className="text-body-l"
+    style={{ "--studio-specimen-value": light, fontVariationSettings: '"opsz" var(--studio-specimen-value)' } as CSSProperties}>{sampleText}</SemanticContent>;
+  if (member.$type === "dimension") return <span data-token-value-preview={id} className="grid gap-xs"><span aria-hidden="true" data-preview-kind="ruler" className="block max-w-full bg-accent" style={{ blockSize: "var(--spacing-sm)", inlineSize: light }} /><code>{light}</code></span>;
+  return <code data-token-value-preview={id} data-preview-kind="text">{light}</code>;
+}
 
 // Keep the live cascade first; use only this exact property's authored CSS as fallback.
 function tokenReference(property: string): string {
@@ -81,7 +126,7 @@ function MotionPreview({ property, cssProperty, authoredValueLabel, replayLabel,
     node.style.transitionProperty = "";
     node.style.transform = "translateX(64px)";
   }
-  return <div>{information}<button type="button" onClick={replay}>{replayLabel}</button>
+  return <div>{information}<NativeAction type="button" onClick={replay}>{replayLabel}</NativeAction>
     <div ref={moving} data-token-preview-motion="" aria-hidden="true" className="transition-transform motion-reduce:transition-none" style={style} />
   </div>;
 }
@@ -214,7 +259,7 @@ export function TokenPreview({
       : <>{sampleText}</>}</div>,
     text: <p style={style}>{sampleText}</p>,
     border: <div style={{ ...plate, border: `2px solid ${tokenReference("--color-line-strong")}`, ...style }}>{sampleText}</div>,
-    control: <button type="button" style={{ ...plate, ...style }}>{sampleText}</button>,
+    control: <NativeAction type="button" style={{ ...plate, ...style }}>{sampleText}</NativeAction>,
     status: <span style={{ ...plate, ...style }}>{sampleText}</span>,
     chart: <svg viewBox="0 0 120 60" style={{ inlineSize: 160, blockSize: 80 }}>
       {property === "--color-chart-axis-label" ? <text x="8" y="36" style={style}>{sampleText}</text> :
@@ -251,8 +296,8 @@ export function TokenPreview({
     opacity: <div style={{ ...plate, ...style }}>{sampleText}</div>,
   };
   return (
-    <figure aria-label={property} data-kind={kind} style={{
-      margin: 0, padding: 16, overflow: "auto", background: backing,
+    <figure aria-label={property} data-kind={kind} className="token-specimen-contain" style={{
+      margin: 0, padding: 16, background: backing,
       backgroundImage: translucent.has(property) ? checker : undefined, backgroundSize: 16,
     }}>
       {specimens[kind]}

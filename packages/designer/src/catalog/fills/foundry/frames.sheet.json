@@ -1,0 +1,139 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.sheet",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./blocks#Drawer",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "frames.sheet",
+      "source": "foundry",
+      "sourceAddress": "./blocks#Drawer",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "frames": {
+    "sheet": {
+      "composes": [
+        "components.button",
+        "components.card",
+        "components.dialog",
+        "components.icon"
+      ],
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.button",
+          "components.card",
+          "components.dialog",
+          "components.icon"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.button",
+            "components.card",
+            "components.dialog",
+            "components.icon"
+          ],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.breakpoint",
+            "tokens.region-width",
+            "tokens.spacing"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/Drawer.tsx",
+            "sha256": "295e9bb1783d23687972f32f6cd551304bbf043f127bd18bf126bf86e591faec"
+          },
+          {
+            "path": "packages/designer/src/blocks/Panel.tsx",
+            "sha256": "472398e3a3e376cf2f63dbdba831f18ffad241507f15900f1dd54f5e9f2b5340"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/icons/X.ts",
+            "sha256": "8f72143caaadd154476c699ee02546dd60ca49217afc4215220b8fbe9867f29e"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/X.js#X",
+            "file": "packages/designer/src/blocks/Drawer.tsx",
+            "line": 6
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/blocks/Drawer.tsx",
+            "line": 7
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
+      "impl": {
+        "export": "Drawer",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "members": [
+        "placement.bottom",
+        "placement.end",
+        "placement.start",
+        "wide.dismiss",
+        "wide.sheet"
+      ],
+      "propMap": {
+        "placement.bottom": "placement=bottom",
+        "placement.end": "placement=end",
+        "placement.start": "placement=start",
+        "wide.dismiss": "wide=dismiss",
+        "wide.sheet": "wide=sheet"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.breakpoint",
+          "tokens.region-width",
+          "tokens.spacing"
+        ]
+      },
+      "slot": "frames.sheet",
+      "slots": {
+        "body": "children",
+        "footer": "footer",
+        "heading": "heading"
+      },
+      "statePorts": {
+        "open": "isOpen/onOpenChange"
+      }
+    }
+  }
+}

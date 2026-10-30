@@ -1,41 +1,80 @@
-import { describe, expect, it } from "vitest";
-import { resolveDefaultStrategyDirectory } from "./strategy-dir-default.js";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { resolveStrategyRoot } from "./strategy-dir-default.js";
 
-// Hermetic and fully synchronous: `resolveDefaultStrategyDirectory` is
-// pure — it takes booleans for whether each candidate directory exists, so
-// every test here passes a literal and never touches a filesystem. The
-// CLI-side tests that DO use real `mkdtemp` directories live in
-// `cli.test.ts`.
+let sandbox: string;
 
-const currentDir = "/repo/clossys/strategist";
-const legacyDir = "/repo/strategy";
+beforeEach(() => {
+  sandbox = mkdtempSync(join(tmpdir(), "strategy-root-default-"));
+});
 
-describe("resolveDefaultStrategyDirectory", () => {
-  it("resolves to the current convention when only it exists", () => {
-    const result = resolveDefaultStrategyDirectory(currentDir, legacyDir, true, false);
-    expect(result).toEqual({ reason: "current", dir: currentDir });
+afterEach(() => {
+  rmSync(sandbox, { recursive: true, force: true });
+});
+
+describe("resolveStrategyRoot", () => {
+  it.each(["directory", "worktree-file"])("finds the repository from nested cwd with a .git %s", marker => {
+    const repo = join(sandbox, "repo");
+    const cwd = join(repo, "packages", "app", "src");
+    mkdirSync(cwd, { recursive: true });
+    if (marker === "directory") mkdirSync(join(repo, ".git"));
+    else writeFileSync(join(repo, ".git"), "gitdir: ../metadata/worktrees/app\n");
+
+    expect(resolveStrategyRoot(undefined, cwd)).toBe(join(repo, "clossys", "agents", "strategist"));
   });
 
-  it("resolves to the current convention when neither directory exists (caller reports the missing-directory error one step later)", () => {
-    const result = resolveDefaultStrategyDirectory(currentDir, legacyDir, false, false);
-    expect(result).toEqual({ reason: "current", dir: currentDir });
+  it("uses the repository root when invoked at that root", () => {
+    mkdirSync(join(sandbox, ".git"));
+    expect(resolveStrategyRoot(undefined, sandbox)).toBe(join(sandbox, "clossys", "agents", "strategist"));
   });
 
-  it("falls back to the retired directory, with a notice, when only it exists", () => {
-    const result = resolveDefaultStrategyDirectory(currentDir, legacyDir, false, true);
-    expect(result.reason).toBe("legacy");
-    if (result.reason !== "legacy") throw new Error("unreachable");
-    expect(result.dir).toBe(legacyDir);
-    expect(result.notice).toContain(legacyDir);
-    expect(result.notice).toContain(currentDir);
+  it("selects the nearest repository boundary", () => {
+    mkdirSync(join(sandbox, ".git"));
+    const nestedRepo = join(sandbox, "nested");
+    const cwd = join(nestedRepo, "src");
+    mkdirSync(cwd, { recursive: true });
+    writeFileSync(join(nestedRepo, ".git"), "gitdir: ../metadata/worktrees/nested\n");
+    expect(resolveStrategyRoot(undefined, cwd)).toBe(join(nestedRepo, "clossys", "agents", "strategist"));
   });
 
-  it("is indeterminate, never a silent pick, when both directories exist", () => {
-    const result = resolveDefaultStrategyDirectory(currentDir, legacyDir, true, true);
-    expect(result.reason).toBe("indeterminate");
-    if (result.reason !== "indeterminate") throw new Error("unreachable");
-    expect(result.notice).toContain(legacyDir);
-    expect(result.notice).toContain(currentDir);
-    expect("dir" in result).toBe(false);
+  it("falls back to cwd outside a repository", () => {
+    const cwd = join(sandbox, "plain", "nested");
+    mkdirSync(cwd, { recursive: true });
+    expect(resolveStrategyRoot(undefined, cwd)).toBe(join(cwd, "clossys", "agents", "strategist"));
+  });
+
+  it("uses process cwd when no cwd is supplied", () => {
+    const original = process.cwd();
+    process.chdir(sandbox);
+    try {
+      expect(resolveStrategyRoot()).toBe(join(sandbox, "clossys", "agents", "strategist"));
+    } finally {
+      process.chdir(original);
+    }
+  });
+
+  it("resolves explicit relative roots from cwd without repository rebasing", () => {
+    mkdirSync(join(sandbox, ".git"));
+    const cwd = join(sandbox, "packages", "app");
+    mkdirSync(cwd, { recursive: true });
+    expect(resolveStrategyRoot("../custom-root", cwd)).toBe(resolve(cwd, "../custom-root"));
+    expect(resolveStrategyRoot("clossys/strategist", cwd)).toBe(join(cwd, "clossys", "strategist"));
+    expect(resolveStrategyRoot("", cwd)).toBe(cwd);
+  });
+
+  it("preserves explicit absolute root resolution", () => {
+    const explicit = join(sandbox, "custom-root");
+    expect(resolveStrategyRoot(explicit, join(sandbox, "other"))).toBe(explicit);
+  });
+
+  it("does not create a missing default or fall back to old roots", () => {
+    mkdirSync(join(sandbox, ".git"));
+    mkdirSync(join(sandbox, "strategy"));
+    mkdirSync(join(sandbox, "clossys", "strategist"), { recursive: true });
+    const expected = join(sandbox, "clossys", "agents", "strategist");
+    expect(resolveStrategyRoot(undefined, sandbox)).toBe(expected);
+    expect(existsSync(expected)).toBe(false);
   });
 });

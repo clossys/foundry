@@ -27,7 +27,7 @@ describe("Explorer", () => {
     const view = render(<Explorer tree={tree} label="Files" selectedId="folder" onSelect={onSelect} />);
     const folder = screen.getByRole("treeitem", { name: "Folder" });
     expect(folder).toHaveAttribute("aria-selected", "true");
-    expect(folder).toHaveClass("bg-surface-raised", "border-line-base");
+    expect(folder).toHaveClass("bg-surface-raised", "border-line-control");
     await userEvent.click(folder); expect(folder).toHaveAttribute("aria-expanded", "true");
     expect(action).toHaveBeenCalledTimes(1); expect(onSelect).toHaveBeenCalledExactlyOnceWith("folder");
     await userEvent.keyboard("{ArrowLeft}{ArrowRight}"); expect(folder).toHaveAttribute("aria-expanded", "true");
@@ -39,7 +39,7 @@ describe("Explorer", () => {
     expect(folder).toHaveAttribute("aria-selected", "false"); expect(action).toHaveBeenCalledTimes(3);
     expect(folder).not.toHaveClass("bg-surface-raised");
   });
-  it("renders twelve levels, token branch guides, distinct Icon atoms and capped indentation", () => {
+  it("renders twelve levels, token branch guides, distinct Icon components and capped indentation", () => {
     const { container } = render(<Explorer tree={chain(12)} label="Files" defaultExpandedIds={Array.from({ length: 11 }, (_, i) => String(i + 1))} />);
     const rows = screen.getAllByRole("treeitem"); expect(rows).toHaveLength(12);
     rows.forEach((row, i) => {
@@ -138,5 +138,22 @@ describe("Explorer", () => {
       return ![`${selector} {`, `${selector}:`, `${selector},`].some(form => css.includes(form));
     });
     expect(missing).toEqual([]);
+  });
+
+  it("lays out a host list region beside the tree and keeps the tree semantics unchanged", () => {
+    const view = render(<Explorer tree={chain(2)} label="Files" list={<ul aria-label="Folder contents"><li>Report.pdf</li></ul>} listLabel="Contents" />);
+    const tree = screen.getByRole("tree", { name: "Files" });
+    const list = screen.getByRole("region", { name: "Contents" });
+    expect(within(list).getByRole("list", { name: "Folder contents" })).toBeInTheDocument();
+    expect(tree.contains(list)).toBe(false);
+    const root = view.container.firstElementChild!;
+    expect(root).toHaveAttribute("data-explorer-layout", "panes");
+    expect(root.contains(tree) && root.contains(list)).toBe(true);
+    for (const name of (root.getAttribute("class") ?? "").split(/\s+/).filter(Boolean)) expect(name, name).not.toMatch(/^\[|\[.*\]./);
+  });
+  it("renders the bare tree when no list region is supplied", () => {
+    const view = render(<Explorer tree={chain(2)} label="Files" />);
+    expect(view.container.firstElementChild).toHaveAttribute("role", "tree");
+    expect(screen.queryByRole("region")).toBeNull();
   });
 });

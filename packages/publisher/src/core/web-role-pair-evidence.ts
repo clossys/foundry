@@ -26,11 +26,11 @@ function freeze<T>(value: T): T {
   }
   return value;
 }
-const revision = "91f2160d6420f2e5255e122c53e4977042d96471";
-const measuredAt = "2026-10-21";
+const revision = "8bd1db89f8f2d0a195e0e87412dec4bb2d7f9075";
+const measuredAt = "2026-10-29";
 const frame: InstanceBlockBinding["frameBlockRef"] = {
   blockId: "site-frame", role: "frame", medium: "web",
-  adapter: { owner: "@clossys/publisher", subpath: "web", export: "SiteFrame", config: {} },
+  adapter: { owner: "@clossys/designer", subpath: "frames", export: "SiteFrame", config: {} },
   regions: [{ key: "main", required: true, childRoles: ["view"], content: ["document"] }],
   content: ["document"], runtime: ["server"], lifecycle: { requires: [], provides: ["skip-focus"] },
   layout: "flow", web: { main: "sole", skipTarget: "main" }, evidence: { sourceRevision: revision, measuredAt },
@@ -42,35 +42,49 @@ const candidates = [
 ] as const;
 export const WEB_ROLE_PAIR_BINDINGS: readonly InstanceBlockBinding[] = freeze(candidates.map(({ name, config }) => ({
   context: { consumer: "example", brand: "standard", medium: "web" }, frameBlockRef: frame,
-  viewBlockRef: { ...frame, blockId: name, role: "view", adapter: { ...frame.adapter, export: name, config },
+  viewBlockRef: { ...frame, blockId: name, role: "view", adapter: { owner: name === "LandingView" ? "@clossys/designer" : "@clossys/publisher", subpath: name === "LandingView" ? "frames" : "web", export: name, config },
     regions: [{ key: "body", required: true, childRoles: [], content: ["document"] }],
     lifecycle: { requires: [], provides: [] }, web: { main: "none" } },
 })));
 const known = WEB_ROLE_PAIR_BINDINGS.flatMap(binding => [binding.frameBlockRef, binding.viewBlockRef]);
 const sources = {
-  "src/web/index.ts": "sha256:eb7ff1d5b71fcbeb86d3c1f9bcced0325ee56704802fd416d81d9482a69424a8",
-  "src/web/frame/index.ts": "sha256:51c265d1680485b457299374b1df944c60f45f19d9c8be6eb0abb0e6c91ed6ef",
-  "src/web/server.ts": "sha256:ee9549cb58cd5bb7e2fd01f22dda18d265ad0b953a10e0ff6bbc270a95d53570",
-  "src/web/frame/site-frame-contract.ts": "sha256:678940dd5021909c68b638c6a8c15dab2f7d5273efc4dfe6f156e62edc28196d",
-  "src/web/frame/NavLinks.tsx": "sha256:01288ed59dfcd0f0d8abda463dbc6df9c5a60359d3b0fe8f60ba631d70024ca7",
-  "src/web/frame/NavDisclosure.client.tsx": "sha256:d08037c12988a01a10faff0e81e6120aa6c6b61a911705fe5017642e117770f2",
-  "src/web/frame/NavDisclosure.server.tsx": "sha256:ded40ebac8e5d0bc633672fb1214376c5e529c17663cb23631184098683bbed1",
-  "src/web/frame/NavDisclosure.boundary.client.tsx": "sha256:7534aa2ae3394632a66ad871b4c298cd4467420b55d74af54ccf23422540655f",
-  "src/web/frame/SiteFrame.tsx": "sha256:56f89776295138a921fb42ce955032d89dda9fcac08973ce1467f6e698668093",
-  "src/web/frame/types.ts": "sha256:f6a27f2c396e80a2dbfa96b2c665f73f8dfc3b2e2e97dab4051a392a124b61f5",
-  "src/web/frame/SkipLink.client.tsx": "sha256:4cd4ff41cd290b09f10d6c1079f7fe3ad788c25722c9d023bb740b659148aa01",
-  "src/web/frame/internal/resolveShell.ts": "sha256:be6e184ba938aa57cc4f30c729cb46ff8b693e8a40f7ef4cbdfefc3fa336cf32",
-  "src/web/views/index.ts": "sha256:9d63c36e4cc6220fc6997ddfceaeb92d244378f1cfebc0eb04259ea9fe8b43c9",
-  "src/web/views/LandingView.tsx": "sha256:ad06fd2fd0e76e087c104a67c45630bcd6c02fa310222fae2c4e6d85c3526de7",
-  "src/web/views/LandingViewContent.tsx": "sha256:510a846a5e470efaec2415219afa0b5820f79642c5e7bac08a648971e4100324",
-  "src/web/views/SectionedViewContent.tsx": "sha256:81dc4a515f3d60db852799aef67208da4c607ac6b98e11bbeb38737ba4dd5a94",
-  "src/web/views/SectionedViewBlocks.tsx": "sha256:deffac32eea7e4af4cada6b39a92504ddc511859aa82f508ea40630f662d1f1a",
-  "src/web/views/LegalView.tsx": "sha256:bd8fadd0ddf3d0ea9ab7fc01f9697d8c74fb5f60a9c76b7ff74a513406fa8f68",
-  "src/web/views/CaptureView.tsx": "sha256:9a8c2eb3fc260d121c24f62c025d5caf2017b84669ad0718ac131fb8b0d2724c",
-  "src/web/internal/viewContentRoot.ts": "sha256:30d3259d5514a5b7dda0f51c4fb7735ecaee4eda7242174df4e996a7e5c4059e",
-  "src/web/internal/PageLayout.tsx": "sha256:45bf980356da1711fa57ccd7f41fa06fb34759df6fe7d3084bc67d96c5d4c94e",
+  "src/web/index.ts": "sha256:29f32f3eb6414c9477e543600d42d458a26c4af274e287655b00e2bb601f6efc",
+  "src/web/frame/index.ts": "sha256:433ec11ad4135d0c9a827921d751e5fdde03fcf75b248a86e5e92d1207e9b9d8",
+  "src/web/server.ts": "sha256:a6b51fbc58205b8dca29235f81806c58866f4588a40fdb679caf4cbe34cbfabb",
+  "../designer/src/frames/site-frame/site-frame-contract.ts": "sha256:44f7a4f9b6ea8ba04abd355313921a16d2d0c285c0bafc91a10473cec6134416",
+  "../designer/src/frames/site-frame/NavLinks.tsx": "sha256:f08cb4cfe847ee67cfb7031422df5e9aa8f963b514de8180a44f935013bd00ae",
+  "../designer/src/frames/site-frame/NavDisclosure.client.tsx": "sha256:e62dd1650d0b9a4964bc72f6ce48ee7c1a41b07c6b1656c4c43ab57d7241e311",
+  "../designer/src/frames/site-frame/NavDisclosure.server.tsx": "sha256:a67e16466fdd82b7ddd154e743b7a4af0614a21991d39d206e2a4a74462ba4cc",
+  "../designer/src/frames/site-frame/NavDisclosure.boundary.client.tsx": "sha256:32e1550ce3d62a04d33874e677b5b32e32684d1561ceb994c6020cc57930c05a",
+  "../designer/src/frames/site-frame/SiteFrame.tsx": "sha256:3d67ddfa17aa29c1fcdf01d11b4289448fe3483ba276235a9e9542ce62ff413a",
+  "../designer/src/frames/site-frame/types.ts": "sha256:5082a75480ef118eda6c17d091d966bceb23e0b42555fe20930cd5c24437359b",
+  "../designer/src/frames/site-frame/SkipLink.client.tsx": "sha256:4cd4ff41cd290b09f10d6c1079f7fe3ad788c25722c9d023bb740b659148aa01",
+  "../designer/src/frames/site-frame/internal/resolveShell.ts": "sha256:3ede6936935916b747b8cf8e1271e11a1f36caa94360a57f98064c924bdcdd29",
+  "src/web/views/index.ts": "sha256:48aaf88a5efc78ea7274fe4f309c8cf4f3a6d53a7e68ae9255fe381c96e24aab",
+  "src/web/views/SectionedViewContent.tsx": "sha256:fc040d165b0b5fc6f00d850e554c736152434b94cbfd04649b21b30b615a7dab",
+  "src/web/views/SectionedViewBlocks.tsx": "sha256:29e9280b60b2bb082f3a9a0321557ba69b6771da5c4b9be2d4d93edfc1af1282",
+  "src/web/views/LegalView.tsx": "sha256:8c1d7ae576511f93a73390bbd3efd2e56bcd3944854d06637e6d299e84bb50ac",
+  "src/web/views/CaptureView.tsx": "sha256:c74d71e24f6f7aa985d281524101004f759271a81bb3f123c4667e8cb78ac949",
+  "src/web/internal/viewContentRoot.ts": "sha256:b8f15f55bd4a34991f83f1e060f1d33791c300a02112ac58202690448750833e",
+  "src/web/internal/PageLayout.tsx": "sha256:a9969b13774fb0227f08c1554c5df86fd15db5e3657a4c52d030075a180784e6",
   "src/document/legal.ts": "sha256:3b9b19cb843964875b1f5fd89be78ea9b851a059d2f8a9d904ca84adf9a74ee3",
-  "src/document/render.ts": "sha256:2564a403881a2c43f70e9aaffb679878d2351413a556af4c57e0f433016737e0"
+  "src/document/render.ts": "sha256:2564a403881a2c43f70e9aaffb679878d2351413a556af4c57e0f433016737e0",
+  "../designer/src/frames/index.ts": "sha256:9b64226701237b59c28bc01165bd233b68923d7f7ebdf3fdf1845e6b468c1f0f",
+  "../designer/src/frames/server.ts": "sha256:07c7b46ee590a56b8087b8515d9cedec1e5ebca57b45bf7025be59a95cb56883",
+  "../designer/src/frames/site-frame/copy-contract.ts": "sha256:d25eeb44e89f6cd94cca46cf1b5fcaa03ffeee31389b2190f1e44a5099256f75",
+  "../designer/src/frames/site-frame/landing/core/content-asset.ts": "sha256:3cac86a74516e1427500dc9bccb85b80b56d213cb6dedd44072e31ef38acb4f3",
+  "../designer/src/frames/site-frame/landing/core/content-contract.ts": "sha256:d6c0eb90d4734fcd961fe6438b1114d0686bc42fb7cf4cdbfe87ac625db7b44c",
+  "../designer/src/frames/site-frame/landing/core/content-ground.ts": "sha256:188f61cf5c113d5e10131e36d674127ff0890a1a3c5a2240a5b8c294c371b48b",
+  "../designer/src/frames/site-frame/landing/core/page-flow.ts": "sha256:62296b40af038bf92c4712903c38ce3132b8dd8bdafbce24fb63718b4ca952d8",
+  "../designer/src/frames/site-frame/landing/core/sectioned-view.ts": "sha256:d13d399b8cc4ac171a16bea82ee0a66d7de9f45fd04673ec409914bc1f5c7755",
+  "../designer/src/frames/site-frame/landing/core/status-list-catalog.ts": "sha256:4ccbf551c74b16104476d703aa0e94060699ebf77dc836622df388cd04177896",
+  "../designer/src/frames/site-frame/landing/core/types.ts": "sha256:9308206e5a674e77619c194036879591aaa784403feb12923cdb4bf7616cd38a",
+  "../designer/src/frames/site-frame/landing/internal/assets.ts": "sha256:54cc0184672dfc74981225929705b024611926fd305a88374c1040605cffa3f8",
+  "../designer/src/frames/site-frame/landing/internal/errors.ts": "sha256:19a0d6e258427849321149d4fb3cefe1d4122f8cbb82c224ba3349859783eaa4",
+  "../designer/src/frames/site-frame/landing/internal/href.ts": "sha256:36c0690b4f606166f36ae1dd7a042674977126be921223e058d3df7346c096cc",
+  "../designer/src/frames/site-frame/landing/internal/prose-text.ts": "sha256:2b608bac5f11fdfdf991ca27f89dc96a57a917066a81248c46d4ae0c98c71d85",
+  "../designer/src/frames/site-frame/landing/web/types.ts": "sha256:bac4afa406c522c5ea14f663a90471130601006e625cd3479634c459d5f7aa47",
+  "../designer/src/frames/site-frame/viewChromeGround.ts": "sha256:d5c430d26e272474f954f3fd42ed0f7175e0e483afaeb8352c131d46e6f50aa2"
 } as const;
 const selectors: Record<WebRolePairCheck, string> = {
   standaloneMain: "main, [role~='main']", standaloneChrome: "header, footer, [role~='banner'], [role~='contentinfo']",

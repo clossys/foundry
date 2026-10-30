@@ -65,14 +65,32 @@ describe("BoundaryView", () => {
     const [headerBlock, card, notes] = blocks as [HTMLElement, HTMLElement, HTMLElement];
     expect(headerBlock.children[0]?.tagName).toBe("H1");
     expect(headerBlock.children[0]).toHaveTextContent("500");
-    expect(headerBlock.children[1]?.tagName).toBe("H2");
-    expect(headerBlock.children[1]).toHaveTextContent("Something went wrong");
-    expect(headerBlock.children[2]).toHaveTextContent("Please try again.");
+    const title = within(headerBlock).getByRole("heading", { level: 2, name: "Something went wrong" });
+    expect(title).toHaveClass("text-h2", "font-display", "text-ink-primary");
+    expect(title.nextElementSibling).toHaveTextContent("Please try again.");
+    expect(headerBlock.querySelectorAll("h1, h2")).toHaveLength(2);
     expect(card).toHaveClass("rounded-control");
     expect(card).toContainElement(screen.getByRole("button", { name: "Try again" }));
     expect(card.children).toHaveLength(1);
     expect(notes).toContainElement(screen.getByRole("link", { name: "Contact support" }));
     expect(notes.className).toContain("flex flex-col gap-xs text-body-s text-ink-secondary");
+  });
+
+  it("renders the title and description through one Foundry SectionHeader block beside the status heading", () => {
+    const { container } = renderBoundary();
+    const headerBlock = (container.querySelector("main") as HTMLElement).children[0] as HTMLElement;
+    const status = within(headerBlock).getByRole("heading", { level: 1, name: "500" });
+    const title = within(headerBlock).getByRole("heading", { level: 2, name: "Something went wrong" });
+    const description = within(headerBlock).getByText("Please try again.");
+    expect(headerBlock.children).toHaveLength(2);
+    expect(status.parentElement).toBe(headerBlock);
+    const sectionHeader = title.parentElement as HTMLElement;
+    expect(sectionHeader).not.toBe(headerBlock);
+    expect(sectionHeader.parentElement).toBe(headerBlock);
+    expect(sectionHeader).toHaveClass("flex", "flex-col", "gap-xs");
+    expect([...sectionHeader.children]).toEqual([title, description]);
+    expect(description.tagName).toBe("P");
+    expect(description).toHaveClass("text-body", "text-ink-secondary");
   });
 
   it("omits the card when there is no action and the notes block when there are no notes", () => {
@@ -94,8 +112,8 @@ describe("BoundaryView", () => {
   it("shares AuthView's form-measure column with no raw-length fallback", () => {
     const { container } = renderBoundary();
     const main = container.querySelector("main") as HTMLElement;
-    expect(main.style.maxWidth).toBe("var(--ui-width-form-max, none)");
-    expect(main.style.maxWidth).not.toMatch(/rem|px/);
+    expect(main).toHaveClass("max-w-[var(--ui-width-form-max,none)]");
+    expect(main.style.maxWidth).toBe("");
   });
 
   it("the outer element owns min-h-dvh and takes a caller className, style and the rest props (break: they no longer reach an ErrorView root)", () => {

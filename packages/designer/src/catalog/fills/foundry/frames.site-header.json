@@ -1,0 +1,162 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.site-header",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./shell/server#SiteHeader",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "frames.site-header",
+      "source": "foundry",
+      "sourceAddress": "./shell/server#SiteHeader",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "frames": {
+    "site-header": {
+      "composes": [
+        "components.icon"
+      ],
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.icon"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.icon"
+          ],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.action-color",
+            "tokens.body-size",
+            "tokens.border-color",
+            "tokens.border-width",
+            "tokens.control-color",
+            "tokens.control-radius",
+            "tokens.duration",
+            "tokens.easing",
+            "tokens.focus-color",
+            "tokens.spacing",
+            "tokens.status-color",
+            "tokens.surface-color",
+            "tokens.text-color",
+            "tokens.touch-target",
+            "tokens.typeface",
+            "tokens.z-index"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/catalog-core/frame-header-options.ts",
+            "sha256": "22434fadf5f294cc28bba10e8d92891d5d43a20b8ec323b039aa21adaa96d474"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/button-classes.ts",
+            "sha256": "b8ebd6d815a52769cd0e02ca091f4c81d81e31f9558e1df767bfcf07dcc5f2a6"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/shell/internal/shell-ground.ts",
+            "sha256": "e04a3d0244d866b417cf3feebe8cc8a7d2815f54652f0feeacab07b9b4762be2"
+          },
+          {
+            "path": "packages/designer/src/shell/internal/shell-vars.ts",
+            "sha256": "662ffc7e288f722504186d2fcb01fc4c20f3a4e4186971c29f3901be84b4513b"
+          },
+          {
+            "path": "packages/designer/src/shell/SiteHeader.tsx",
+            "sha256": "008e593324d160e9a41abd6623a3aa8104ca3fe219a1a3eae129dae3a8843c55"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
+      "impl": {
+        "export": "SiteHeader",
+        "kind": "package",
+        "module": "@clossys/designer/shell/server"
+      },
+      "members": [
+        "nav-placement.centered",
+        "nav-placement.leading",
+        "position.static",
+        "position.sticky",
+        "surface.glass",
+        "surface.solid",
+        "surface.transparent",
+        "tone.base",
+        "tone.inverse"
+      ],
+      "propMap": {
+        "nav-placement.centered": "navPlacement=centered",
+        "nav-placement.leading": "navPlacement=leading",
+        "position.static": "position=static",
+        "position.sticky": "position=sticky",
+        "surface.glass": "surface=glass",
+        "surface.solid": "surface=solid",
+        "surface.transparent": "surface=transparent",
+        "tone.base": "tone=base",
+        "tone.inverse": "tone=inverse"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.touch-target",
+          "tokens.typeface",
+          "tokens.z-index"
+        ]
+      },
+      "slot": "frames.site-header",
+      "slots": {
+        "actions": "actions",
+        "brand": "brand",
+        "nav": "nav"
+      },
+      "statePorts": {}
+    }
+  }
+}

@@ -12,7 +12,7 @@ import {
   loadBrandFacts,
   loadEngagementBrief,
   loadPackManifest,
-  loadStrategyContract,
+  loadStrategyBrief,
   loadVoiceRecord,
   siteCopyIds,
 } from "../site-records";
@@ -65,7 +65,7 @@ export default function PackReviewPage() {
 
   const sections = resolvePackReviewSections({
     env: process.env,
-    loadStrategyContract,
+    loadStrategyBrief,
     loadEngagementBrief,
     loadVoiceRecord,
     loadBrandDeclarations,
@@ -75,6 +75,18 @@ export default function PackReviewPage() {
     exports: model.exports,
     text,
   });
+
+  if (sections.strategyState === "missing") {
+    return (
+      <BoundaryView
+        brand={brand}
+        status={503}
+        title={text.unavailable.title}
+        description={text.labels.strategy.empty}
+        action={<a href="/">{text.unavailable.action}</a>}
+      />
+    );
+  }
 
   return (
     <PackReviewView

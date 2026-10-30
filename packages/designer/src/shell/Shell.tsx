@@ -1,5 +1,5 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 import { MAIN_CONTENT_ID } from "./internal/main-content-id.js";
 import { SkipLink } from "./SkipLink.js";
 import { SHELL_GROUND_CLASSES, type ShellGround } from "./internal/shell-ground.js";
@@ -29,7 +29,7 @@ export interface ShellProps extends HTMLAttributes<HTMLDivElement> {
  * The persistent application frame: a fixed set of named slots (`Header`,
  * `SideNav`, `Main`, `Rail`, `Footer`) that content fills, rather than the
  * other way around. See this package's README for the full rationale; in
- * short — content (`views`, and the blocks/atoms inside them) remounts per
+ * short — content (`views`, and the blocks/components inside them) remounts per
  * route and is many-per-app; `Shell` persists across navigation and is
  * exactly one-per-app. In a Next.js App Router application that maps
  * directly onto `layout.tsx` (this) vs. `page.tsx` (a view) — mounting
@@ -83,7 +83,7 @@ export interface ShellHeaderProps extends HTMLAttributes<HTMLElement> {
 /**
  * The top chrome bar — a `<header>` landmark. Renders none of its own
  * content: a consumer composes their own brand mark, top-level nav, and
- * account menu from atoms and passes them in as children. Shipping a
+ * account menu from components and passes them in as children. Shipping a
  * pre-built `SiteHeader`/`AppHeader` here would recreate the `mode`-prop
  * problem this package's README warns against, one layer up — see
  * "Placement rules" there.

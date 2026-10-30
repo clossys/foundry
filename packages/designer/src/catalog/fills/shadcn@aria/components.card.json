@@ -1,0 +1,124 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "shadcn@aria/components.card",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+        "sha256": "0d525c03e086b0047f7c0700850281023359cfc020eb233fdb0d74ec870ebea0",
+        "url": "https://github.com/shadcn-ui/ui"
+      },
+      "relation": "same-contract",
+      "slot": "components.card",
+      "source": "shadcn@aria",
+      "sourceAddress": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/bases/aria/ui/card.tsx",
+      "status": "draft",
+      "trust": "pinned-upstream",
+      "unmapped": []
+    }
+  },
+  "components": {
+    "card": {
+      "blockers": [],
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": "19.2.3"
+        },
+        {
+          "license": "MIT",
+          "name": "clsx",
+          "version": "2.1.1"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "3.3.1"
+        }
+      ],
+      "impl": {
+        "entry": "components/card/card.tsx",
+        "export": "Card",
+        "kind": "source"
+      },
+      "item": "card",
+      "license": "MIT",
+      "members": [],
+      "notice": "notices/THIRD-PARTY.md",
+      "outputSha256": [
+        {
+          "path": "components/_parts/utils/index.ts",
+          "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+        },
+        {
+          "path": "components/card/card.tsx",
+          "sha256": "94146186de743faaf7e17ecbccd4909d3a3ed6ca36111951a69e052634937c04"
+        },
+        {
+          "path": "notices/THIRD-PARTY.md",
+          "sha256": "6148b3941d0eff3d024e4d3a0e630f009484163560272ae6ec79c649c67fc964"
+        }
+      ],
+      "parts": [
+        {
+          "item": "utils"
+        }
+      ],
+      "pin": {
+        "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+        "files": [
+          {
+            "path": "apps/v4/registry/bases/aria/ui/card.tsx",
+            "sha256": "0d525c03e086b0047f7c0700850281023359cfc020eb233fdb0d74ec870ebea0"
+          },
+          {
+            "path": "apps/v4/registry/styles/style-nova.css",
+            "sha256": "fd9803ec398290c306b377a46a769cad0c7ff024bf6a626993c113cacc20f16e"
+          },
+          {
+            "path": "LICENSE.md",
+            "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
+          }
+        ],
+        "url": "https://github.com/shadcn-ui/ui"
+      },
+      "propMap": {},
+      "props": [],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": false,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": [
+          "tokens.border-width.hairline",
+          "tokens.control-radius.default",
+          "tokens.font-size.base",
+          "tokens.font-size.sm",
+          "tokens.font-weight.medium",
+          "tokens.line-height.heading",
+          "tokens.spacing.lg",
+          "tokens.spacing.md",
+          "tokens.spacing.xs",
+          "tokens.surface-color.raised",
+          "tokens.surface-color.sunken",
+          "tokens.text-color.muted",
+          "tokens.text-color.primary"
+        ]
+      },
+      "root": "presentational",
+      "slot": "components.card",
+      "source": "shadcn@aria",
+      "transform": "shadcn-aria-rewrite@1"
+    }
+  }
+}

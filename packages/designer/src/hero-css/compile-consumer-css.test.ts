@@ -283,7 +283,7 @@ describe("compileConsumerCss — pnpm symlinked node_modules layout (issue #1032
       // symlink, exactly as issue #1032 describes — not the dereferenced
       // `.pnpm` store path.
       const symlinkedDist = join(symlinkPackageRoot, "dist");
-      expect(existsSync(join(symlinkedDist, "atoms"))).toBe(true);
+      expect(existsSync(join(symlinkedDist, "components"))).toBe(true);
 
       const candidates = await scanRealSourceCandidates(symlinkedDist);
       expect(candidates.length).toBeGreaterThan(0);
@@ -302,7 +302,7 @@ describe("compileConsumerCss — pnpm symlinked node_modules layout (issue #1032
       const { hoistedPackageRoot } = buildHoistedFixture(fixtureWorkDir);
 
       const hoistedDist = join(hoistedPackageRoot, "dist");
-      expect(existsSync(join(hoistedDist, "atoms"))).toBe(true);
+      expect(existsSync(join(hoistedDist, "components"))).toBe(true);
 
       const candidates = await scanRealSourceCandidates(hoistedDist);
       expect(candidates.length).toBeGreaterThan(0);

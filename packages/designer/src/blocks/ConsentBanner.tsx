@@ -1,8 +1,12 @@
 import { useId, type CSSProperties, type ReactNode } from "react";
-import { Icon } from "../atoms/Icon.js";
+import { Icon } from "../components/Icon.js";
 import { Check } from "../icons/Check.js";
-import { Button } from "../atoms/Button.js";
-import { cx } from "../atoms/internal/cx.js";
+import { Button } from "../components/Button.js";
+import { SemanticContent } from "../components/SemanticContent.js";
+import { cx } from "../components/internal/cx.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.consent", "foundry/sections.consent");
 
 /** Card choices: full-width cells of a two-column grid, current-colour edge, no fill; labels may wrap. */
 const CARD_CHOICE_CLASS = "w-full min-w-0 border border-current bg-transparent font-medium text-center whitespace-normal";
@@ -12,7 +16,7 @@ export interface ConsentBannerProps {
   presentation?: "banner" | "card";
   /** Presentational feedback from the host's current choice; it changes no state. Card only. */
   selectedChoice?: "granted" | "denied";
-  /** Heading that names the region. Rendered as an `<h2>`; the region takes its accessible name from it. */
+  /** Heading that names the region. Rendered as an h2; the region takes its accessible name from it. */
   title: ReactNode;
   /** Supporting copy under the title. */
   body: ReactNode;
@@ -69,7 +73,8 @@ export function ConsentBanner({
   const titleId = useId();
   const card = presentation === "card";
   return (
-    <section
+    <SemanticContent as="section"
+      {...SECTION_STAMP}
       data-consent-banner=""
       data-consent-presentation={card ? "card" : undefined}
       aria-labelledby={titleId}
@@ -81,21 +86,21 @@ export function ConsentBanner({
         className,
       )}
     >
-      <div className={card ? "flex min-w-0 flex-col gap-xs" : "flex min-w-0 flex-col gap-xs tablet-lg:max-w-display wide:max-w-display"}>
-        <h2 id={titleId} className={card ? "sr-only" : "text-h3 font-display text-ink-primary"}>
+      <SemanticContent as="div" className={card ? "flex min-w-0 flex-col gap-xs" : "flex min-w-0 flex-col gap-xs tablet-lg:max-w-display wide:max-w-display"}>
+        <SemanticContent as="h2" id={titleId} className={card ? "sr-only" : "text-h3 font-display text-ink-primary"}>
           {title}
-        </h2>
-        <div className="text-body-s text-ink-secondary">
+        </SemanticContent>
+        <SemanticContent as="div" className="text-body-s text-ink-secondary">
           {body}{card && privacyLink != null && privacyLink !== false ? <> {privacyLink}</> : null}
-        </div>
-        {!card && privacyLink != null && privacyLink !== false ? <div className="text-body-s">{privacyLink}</div> : null}
-        <div role="status" aria-live="polite">
+        </SemanticContent>
+        {!card && privacyLink != null && privacyLink !== false ? <SemanticContent as="div" className="text-body-s">{privacyLink}</SemanticContent> : null}
+        <SemanticContent as="div" role="status" aria-live="polite">
           {status != null && status !== false && status !== true ? (
-            <div className="text-body-s text-ink-secondary">{status}</div>
+            <SemanticContent as="div" className="text-body-s text-ink-secondary">{status}</SemanticContent>
           ) : null}
-        </div>
-      </div>
-      <div className={card ? "grid grid-cols-2 gap-sm" : "flex flex-col gap-sm tablet:shrink-0 tablet:flex-row"}>
+        </SemanticContent>
+      </SemanticContent>
+      <SemanticContent as="div" className={card ? "grid grid-cols-2 gap-sm" : "flex flex-col gap-sm tablet:shrink-0 tablet:flex-row"}>
         <Button
           variant="secondary"
           size="md"
@@ -104,7 +109,7 @@ export function ConsentBanner({
           onPress={() => onAccept()}
         >
           {card && selectedChoice === "granted" ? (
-            <span data-consent-selected="" aria-hidden="true"><Icon glyph={Check} decorative size="sm" /></span>
+            <SemanticContent as="span" data-consent-selected="" aria-hidden="true"><Icon glyph={Check} decorative size="sm" /></SemanticContent>
           ) : null}
           {acceptLabel}
         </Button>
@@ -116,11 +121,11 @@ export function ConsentBanner({
           onPress={() => onReject()}
         >
           {card && selectedChoice === "denied" ? (
-            <span data-consent-selected="" aria-hidden="true"><Icon glyph={Check} decorative size="sm" /></span>
+            <SemanticContent as="span" data-consent-selected="" aria-hidden="true"><Icon glyph={Check} decorative size="sm" /></SemanticContent>
           ) : null}
           {rejectLabel}
         </Button>
-      </div>
-    </section>
+      </SemanticContent>
+    </SemanticContent>
   );
 }

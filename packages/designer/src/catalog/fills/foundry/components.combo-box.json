@@ -1,0 +1,113 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.combo-box",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#ComboBox",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.combo-box",
+      "source": "foundry",
+      "sourceAddress": "./components#ComboBox",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "combo-box": {
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "ComboBox",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "allows-custom",
+        "state.invalid"
+      ],
+      "pin": {
+        "export": "./components#ComboBox",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "allows-custom": "./components#ComboBox",
+        "state.invalid": "./components#ComboBox.isInvalid"
+      },
+      "props": [
+        "allowsCustomValue",
+        "className",
+        "description",
+        "errorMessage",
+        "isInvalid",
+        "label",
+        "options",
+        "placeholder"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.caption-size",
+          "tokens.control-radius",
+          "tokens.control-size",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.elevation",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.focus-shadow",
+          "tokens.font-weight",
+          "tokens.radius",
+          "tokens.shift-distance",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.transition-easing",
+          "tokens.typeface",
+          "tokens.z-index"
+        ]
+      },
+      "root": "rac:ComboBox",
+      "slot": "components.combo-box",
+      "source": "foundry"
+    }
+  }
+}

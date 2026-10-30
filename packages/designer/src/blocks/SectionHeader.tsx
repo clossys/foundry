@@ -1,27 +1,35 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { SemanticContent } from "../components/SemanticContent.js";
+import { cx } from "../components/internal/cx.js";
+import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.section-header", "foundry/sections.section-header");
 
-export type SectionHeaderLevel = 2 | 3 | 4 | 5 | 6;
+export type SectionHeaderLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
 type HeadingTag = `h${SectionHeaderLevel}`;
 
 export interface SectionHeaderProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   /** Small label above the title ("BETA", "Step 2 of 4", a category name). */
   eyebrow?: ReactNode;
-  /** The section's own name. The only required prop. */
-  title: ReactNode;
+  /** The section's own name. Explicit empty values keep a heading. */
+  title?: ReactNode;
   /** A line of supporting copy under the title. */
   description?: ReactNode;
   /**
    * Slot for the section's own actions — typically one or more `Button`
-   * atoms. Rendered at the trailing edge of the title row.
+   * components. Rendered at the trailing edge of the title row.
    */
   actions?: ReactNode;
+  /** Host-resolved stat badges and status summary. */
+  stats?: ReactNode;
   /**
-   * Which heading element `title` renders as (`<h2>` through `<h6>`) — a
+   * Which heading element `title` renders as (`<h1>` through `<h6>`) — a
    * real, settable prop rather than a component always fixed to one level.
-   * A page's document outline has to stay unbroken (no skipped levels) no
-   * matter how deep a `SectionHeader` sits: one directly under a
+   * Use `level={1}` for the page's own title. A page's document outline
+   * has to stay unbroken (no skipped levels), no matter how deep a
+   * `SectionHeader` sits: one directly under a
    * `PageHeader`'s own `<h1>` needs `level={2}` (the default), but a
    * `SectionHeader` for a subsection of THAT section needs `level={3}`, and
    * so on. Getting this wrong — hardcoding one level, or styling a `<div>`
@@ -31,71 +39,63 @@ export interface SectionHeaderProps extends Omit<HTMLAttributes<HTMLDivElement>,
    * @default 2
    */
   level?: SectionHeaderLevel;
+  /** Visual scale, independent of heading rank. @default "compact" */
+  density?: "compact" | "standard" | "display";
+  align?: "start" | "center";
+  /** Foreground inks only; paints no surface. */
+  ground?: SectionGround;
+  /** Additional classes on the real heading, merged last. */
+  titleClassName?: string;
   className?: string;
   style?: CSSProperties;
 }
 
-/**
- * A heading for a section WITHIN a page — as opposed to `PageHeader`,
- * which announces the page itself. Up to four regions that differ in kind
- * (an optional eyebrow, the title, an optional description, an optional
- * actions slot), and — unlike `PageHeader`, which appears once per page —
- * a single page routinely holds several `SectionHeader`s (one per section
- * of a long settings page, one per card in a dashboard). That "can one
- * page hold two of them?" difference (this package's README, "Placement
- * rules", test 3) is what makes `SectionHeader` its own block rather than
- * a `variant`/`mode` on `PageHeader`: the two are never interchangeable —
- * a page has exactly one `PageHeader` and any number of `SectionHeader`s —
- * so collapsing them into one component with a prop for "which kind" would
- * be exactly the structural-difference-through-a-mode-prop failure the
- * README's variant rule warns against. This file shares no code with
- * `PageHeader.tsx` — the visual rhyme between the two (a title/description
- * column beside an actions slot) is coincidental resemblance, not a
- * factored-out implementation either would break if the other changed.
- *
- * Renders a plain `<div>`, not a `<header>` the way `PageHeader` does:
- * `PageHeader` is a page-level singleton, where `<header>` correctly
- * registers as the page's one `banner` landmark (or a scoped header, if
- * nested inside `<main>`/`<article>`/`<section>`). `SectionHeader` is
- * neither — it's repeatable, and rendering it as a bare top-level
- * `<header>` (i.e., one NOT already nested inside its own `<section>`)
- * would register a SECOND `banner` landmark on the page, which isn't valid
- * document structure. The real navigational structure a `SectionHeader`
- * needs to provide comes from its heading element (`level`, above) and
- * screen readers' own heading-by-heading navigation, not from a landmark
- * role — so a plain `<div>` carries no risk and no missing capability.
- *
- * Deliberately has no other `variant`/`mode` prop, the same as
- * `PageHeader`: a consuming page that needs a structurally different
- * section header composes that directly with slots (`eyebrow`, `actions`)
- * rather than asking this component to grow a new mode for it.
- */
-export function SectionHeader({
-  eyebrow,
-  title,
-  description,
-  actions,
-  level = 2,
-  className,
-  style,
-  ...rest
-}: SectionHeaderProps) {
-  const HeadingTag = `h${level}` as HeadingTag;
-
+/** A repeatable section title region; the div introduces no banner landmark. */
+export function SectionHeader(props: SectionHeaderProps) {
+  const {
+    eyebrow, title, description, actions, stats, level = 2, density = "compact",
+    align = "start", ground = "base", titleClassName, className, style, ...rest
+  } = props;
+  const headingTag: HeadingTag = `h${level}`;
+  const hasTitle = Object.hasOwn(props, "title");
+  const colors = SECTION_GROUND_CLASSES[ground];
+  const centered = align === "center";
+  const display = density === "display";
+  const hasCopy = Boolean(eyebrow) || hasTitle || Boolean(description);
+  const titleNode = hasTitle ? (
+    <SemanticContent as={headingTag} className={cx(
+      display ? "text-display-m tablet:text-display-l font-display leading-display text-balance"
+        : density === "standard" ? "text-h2 font-display" : "text-h3 font-display",
+      colors.primary, display && eyebrow ? "mt-sm" : undefined, titleClassName,
+    )}>{title}</SemanticContent>
+  ) : null;
+  const eyebrowNode = eyebrow ? (
+    <SemanticContent as="p" className={cx(
+      display ? "text-body-s font-medium uppercase tracking-label" : "text-caption uppercase tracking-label",
+      display ? ground === "inverse" ? "text-accent-on-inverse" : "text-accent-text" : colors.muted,
+    )}>{eyebrow}</SemanticContent>
+  ) : null;
+  const descriptionNode = description ? (
+    <SemanticContent as="p" className={cx(display ? "text-body-l text-pretty" : "text-body", colors.secondary,
+      display && (eyebrow || hasTitle) ? "mt-2xl" : undefined)}>{description}</SemanticContent>
+  ) : null;
+  const actionsNode = actions ? (
+    <SemanticContent as="div" className={cx("flex items-center gap-sm", centered ? "justify-center" : undefined,
+      display && hasCopy ? "mt-3xl" : undefined,
+      !display && !centered && !hasTitle && !description ? "ms-auto" : undefined)}>{actions}</SemanticContent>
+  ) : null;
   return (
-    <div {...rest} className={cx("flex flex-col gap-xs", className)} style={style}>
-      {eyebrow ? (
-        <p className="text-caption uppercase tracking-label text-ink-muted">{eyebrow}</p>
-      ) : null}
-      <div className="flex flex-wrap items-start justify-between gap-md">
-        <div className="flex flex-col gap-xs">
-          <HeadingTag className="text-h3 font-display text-ink-primary">{title}</HeadingTag>
-          {description ? (
-            <p className="text-body text-ink-secondary">{description}</p>
-          ) : null}
-        </div>
-        {actions ? <div className="flex items-center gap-sm">{actions}</div> : null}
-      </div>
-    </div>
+    <SemanticContent as="div" {...SECTION_STAMP} {...rest} className={cx(display ? "flex flex-col" : "flex flex-col gap-xs", centered ? "items-center text-center" : undefined, className)} style={style}>
+      {eyebrowNode}
+      {stats ? <SemanticContent as="div" className="flex flex-wrap items-center gap-sm">{stats}</SemanticContent> : null}
+      {display || (density === "standard" && (!actions || centered)) ? (
+        <>{titleNode}{descriptionNode}{actionsNode}</>
+      ) : (
+        <SemanticContent as="div" className={cx("flex flex-wrap items-start justify-between gap-md", centered ? "flex-col items-center" : undefined)}>
+          {hasTitle || description ? <SemanticContent as="div" className="flex flex-col gap-xs">{titleNode}{descriptionNode}</SemanticContent> : null}
+          {actionsNode}
+        </SemanticContent>
+      )}
+    </SemanticContent>
   );
 }

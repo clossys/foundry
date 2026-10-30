@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "layer": "assets",
+  "baseSignedHead": "581e4fd70589fe072d9ce38fa159306d473c1754",
+  "status": "owner-signed",
+  "ownerSignoffComment": "6408363557",
+  "receiptComment": "6404876885",
+  "addedLeafIds": [
+    "assets.image",
+    "assets.pattern",
+    "assets.video"
+  ],
+  "pending": {
+    "status": "pending-owner-ratification",
+    "source": "workspace#45 A131/A132 AUTO-DECIDED 2026-10-28",
+    "memberChanges": [
+      {
+        "id": "assets.pattern",
+        "addedMembers": [
+          "grain",
+          "noise",
+          "topo"
+        ]
+      }
+    ]
+  }
+}
