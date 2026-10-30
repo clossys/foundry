@@ -569,3 +569,15 @@ it("uses the supplied reversed mark in dark mode and the positive mark in light 
   await userEvent.click(screen.getByRole("menuitemradio", { name: "Dark" }));
   expect(brand).toHaveAttribute("src", "/reversed.svg");
 });
+
+it('omits the account surface while keeping navigation available for account-free hosts', () => {
+  const props = fixture();
+  const { container, rerender } = render(<AppFrame {...props} showAccount={false} rightPanel={undefined} />);
+  expect(screen.getByRole('navigation', { name: 'Workspace navigation' })).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Home' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Sam River/ })).toBeNull();
+  expect(container.querySelector('[data-application-frame-footer]')).toBeNull();
+  expect(container.querySelector('[data-application-frame-panel]')).toBeNull();
+  rerender(<AppFrame {...props} rightPanel={undefined} />);
+  expect(container.querySelector('[data-application-frame-slot="account"]')).not.toBeNull();
+});

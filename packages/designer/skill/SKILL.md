@@ -49,6 +49,7 @@ repository or the operator's skill tree.
 - [Check the library](library-check.md): checks and plain-language findings.
 - [Emit library files](library-emit.md): regeneration, drift and notices.
 - [Review in Studio](library-studio.md): availability and owner review boundary.
+- [Derive native Designer drafts](director-brief.md): read the active Director brief, make design decisions as the agent, and declare versioned trait coverage in cell rationale.
 
 The consumer library is the only input to resolve and emit. Never resolve
 straight from a catalog fill or invent a value to make an emission pass. The
