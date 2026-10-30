@@ -48,13 +48,13 @@ export const GROUP_A_CONTENT: Readonly<Record<GroupALeaf, Readonly<Record<string
   },
   faq: { items: plainJson(S.faq.items) },
   features: { items: plainJson(S.featureGrid.items) },
-  gallery: { images: { label: S.gallery.label, items: S.gallery.images.map(image => ({ id: image.id, label: image.label, media: markMedia(image.label), caption: image.caption })) } },
+  gallery: { images: { label: S.gallery.label, items: S.gallery.images.map(image => ({ id: image.id, label: image.label, media: markMedia(image.label), caption: image.caption })) }, controls: S.gallery.labels },
   hero: {
     header: { eyebrow: S.hero.eyebrow, heading: S.hero.heading, description: S.hero.description },
     media: barMedia,
     actions: { primary: { label: S.hero.primary, href: S.callToAction.primary.href }, secondary: { label: S.hero.secondary, href: S.callToAction.secondary.href } },
   },
-  "logo-cloud": { logos: S.logoCloud.names.map(name => ({ id: name, name, src: data.assets.mark.src })) },
+  "logo-cloud": { logos: S.logoCloud.names.map(name => ({ id: name, name, src: data.assets.mark.src })), controls: { pause: "Pause motion", resume: "Resume motion" } },
   media: { figure: { media: barMedia, caption: S.mediaFigure.caption } },
   newsletter: {
     email: { label: S.newsletter.emailLabel },
@@ -66,7 +66,7 @@ export const GROUP_A_CONTENT: Readonly<Record<GroupALeaf, Readonly<Record<string
     plans: S.pricing.tiers.map(tier => plainJson({ id: tier.id, name: tier.name, price: tier.price, features: tier.features, cta: { label: tier.cta, href: `#${tier.id}` }, badge: tier.badge })),
     highlight: S.pricing.tiers.filter(tier => tier.featured).map(tier => tier.id),
   },
-  testimonials: { quotes: plainJson(S.testimonials.items) },
+  testimonials: { quotes: plainJson(S.testimonials.items), controls: { previous: "Previous quote", next: "Next quote" } },
 };
 
 /** Members the preview selects per leaf; every one is in the leaf's fill propMap. */

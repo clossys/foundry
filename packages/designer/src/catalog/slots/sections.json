@@ -659,7 +659,9 @@
       ],
       "members": {
         "mode": "closed",
-        "names": []
+        "names": [
+          "typography.drop-cap"
+        ]
       },
       "allowedComposes": [
         "components.link",
@@ -687,7 +689,9 @@
           "tokens.heading-size",
           "tokens.radius",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.caption-size",
+          "tokens.display-size"
         ],
         "assets": []
       },
@@ -1043,6 +1047,12 @@
           "ground.sunken",
           "ground.inverse",
           "ground.transparent",
+          "ground.wash",
+          "texture.grain",
+          "texture.noise",
+          "texture.topo",
+          "reveal.true",
+          "reveal.false",
           "measure.prose",
           "measure.content",
           "measure.wide"
@@ -1054,19 +1064,25 @@
       "parts": [],
       "allowedReads": {
         "tokens": [
+          "tokens.display-size",
+          "tokens.heading-size",
+          "tokens.border-width",
           "tokens.spacing",
           "tokens.gutter",
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
           "tokens.surface-color",
+          "tokens.gradient",
           "tokens.animation",
           "tokens.shift-distance",
           "tokens.border-color",
           "tokens.status-color",
           "tokens.text-color"
         ],
-        "assets": []
+        "assets": [
+          "assets.pattern"
+        ]
       },
       "data": "host-injected",
       "surface": "both",
@@ -1235,7 +1251,15 @@
       ],
       "members": {
         "mode": "closed",
-        "names": []
+        "names": [
+          "ground.base",
+          "ground.sunken",
+          "ground.inverse",
+          "ground.wash",
+          "texture.grain",
+          "texture.noise",
+          "texture.topo"
+        ]
       },
       "allowedComposes": [
         "components.button",
@@ -1248,12 +1272,16 @@
       ],
       "allowedReads": {
         "tokens": [
+          "tokens.display-size",
+          "tokens.heading-size",
+          "tokens.border-width",
           "tokens.spacing",
           "tokens.gutter",
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
           "tokens.surface-color",
+          "tokens.gradient",
           "tokens.animation",
           "tokens.shift-distance",
           "tokens.border-color",
@@ -1262,7 +1290,9 @@
           "tokens.surface-radius",
           "tokens.text-color"
         ],
-        "assets": []
+        "assets": [
+          "assets.pattern"
+        ]
       },
       "data": "host-injected",
       "surface": "site",
@@ -1348,7 +1378,9 @@
       "allowedComposes": [
         "components.card",
         "components.link",
-        "components.badge"
+        "components.badge",
+        "components.semantic-content",
+        "sections.media"
       ],
       "parts": [
         "sections.band",
@@ -1368,9 +1400,13 @@
           "tokens.shift-distance",
           "tokens.body-size",
           "tokens.caption-size",
-          "tokens.text-color"
+          "tokens.text-color",
+          "tokens.heading-size"
         ],
-        "assets": []
+        "assets": [
+          "assets.image",
+          "assets.icon-set"
+        ]
       },
       "data": "host-injected",
       "surface": "both",
@@ -1493,6 +1529,96 @@
           },
           {
             "key": "records[].badge.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].image.alt",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.author.name",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.author.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.date.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.readingTime.value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.readingTime.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.tags[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.summary",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.outcomeStats[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.outcomeStats[].value",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -2213,6 +2339,11 @@
           "name": "footnote",
           "type": "copy",
           "required": false
+        },
+        {
+          "name": "aside",
+          "type": "records",
+          "required": false
         }
       ],
       "members": {
@@ -2340,6 +2471,24 @@
             "required": false,
             "maxLength": {
               "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "aside[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 1000
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "aside[].value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 1000
             },
             "dir": "auto"
           }
@@ -3411,6 +3560,11 @@
           "name": "items",
           "type": "records",
           "required": true
+        },
+        {
+          "name": "header",
+          "type": "records",
+          "required": false
         }
       ],
       "members": {
@@ -3419,6 +3573,10 @@
           "layout.grid",
           "layout.list",
           "layout.split",
+          "layout.bento",
+          "layout.tabs",
+          "layout.alternating",
+          "layout.scroll",
           "about.features"
         ]
       },
@@ -3426,7 +3584,10 @@
         "components.card",
         "components.icon",
         "components.link",
-        "components.semantic-content"
+        "components.item",
+        "components.tabs",
+        "components.semantic-content",
+        "sections.media"
       ],
       "parts": [
         "sections.band",
@@ -3454,6 +3615,7 @@
         ],
         "assets": [
           "assets.icon-*",
+          "assets.icon-set",
           "assets.image"
         ]
       },
@@ -3946,6 +4108,11 @@
           "name": "images",
           "type": "media",
           "required": true
+        },
+        {
+          "name": "controls",
+          "type": "copy",
+          "required": false
         }
       ],
       "members": {
@@ -3958,7 +4125,8 @@
       "allowedComposes": [
         "components.dialog",
         "components.grid-list",
-        "components.button"
+        "components.button",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -4052,6 +4220,24 @@
               "en": 160
             },
             "dir": "auto"
+          },
+          {
+            "key": "controls.close",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.enlarge",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
           }
         ]
       }
@@ -4118,6 +4304,7 @@
       ],
       "allowedReads": {
         "tokens": [
+          "tokens.border-width",
           "tokens.spacing",
           "tokens.gutter",
           "tokens.content-size",
@@ -4142,7 +4329,9 @@
         ],
         "assets": [
           "assets.image-ratio",
-          "assets.image"
+          "assets.image",
+          "assets.video",
+          "assets.backdrop"
         ]
       },
       "data": "host-injected",
@@ -4207,6 +4396,24 @@
           },
           {
             "key": "media.series[].name",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "backdrop.labels.pause",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "backdrop.labels.resume",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -4473,6 +4680,24 @@
               "en": 120
             },
             "dir": "auto"
+          },
+          {
+            "key": "links[].details[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "links[].details[].value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
           }
         ]
       }
@@ -4495,6 +4720,11 @@
           "name": "logos",
           "type": "media",
           "required": true
+        },
+        {
+          "name": "controls",
+          "type": "copy",
+          "required": false
         }
       ],
       "members": {
@@ -4506,12 +4736,15 @@
           "count.8",
           "count.12",
           "monochrome.true",
-          "monochrome.false"
+          "monochrome.false",
+          "motion.static",
+          "motion.marquee"
         ]
       },
       "allowedComposes": [
         "components.link",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.native-action"
       ],
       "parts": [
         "sections.band",
@@ -4589,6 +4822,24 @@
               "en": 160
             },
             "dir": "auto"
+          },
+          {
+            "key": "controls.pause",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.resume",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
           }
         ]
       }
@@ -4621,7 +4872,8 @@
       "members": {
         "mode": "closed",
         "names": [
-          "brand.named"
+          "brand.named",
+          "brand.mark-only"
         ]
       },
       "allowedComposes": [
@@ -4752,11 +5004,13 @@
         "names": [
           "chrome.browser",
           "chrome.device",
-          "chrome.bare"
+          "chrome.bare",
+          "kind.video"
         ]
       },
       "allowedComposes": [
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.media-player"
       ],
       "parts": [
         "sections.band",
@@ -4781,7 +5035,8 @@
         ],
         "assets": [
           "assets.image-ratio",
-          "assets.image"
+          "assets.image",
+          "assets.video"
         ]
       },
       "data": "host-injected",
@@ -4870,6 +5125,69 @@
               "en": 480
             },
             "dir": "auto"
+          },
+          {
+            "key": "figure.media.passage.play",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.passage.pause",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.passage.mute",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.passage.seek",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.passage.captions",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.passage.error.title",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.passage.error.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
           }
         ]
       }
@@ -4911,7 +5229,9 @@
       "allowedComposes": [
         "components.text-field",
         "components.button",
-        "components.icon"
+        "components.icon",
+        "components.form",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -5220,7 +5540,9 @@
         "components.breadcrumbs",
         "components.button",
         "components.badge",
-        "components.tabs"
+        "components.tabs",
+        "components.semantic-content",
+        "components.link"
       ],
       "parts": [
         "sections.band",
@@ -5239,7 +5561,8 @@
           "tokens.shift-distance",
           "tokens.body-size",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.caption-size"
         ],
         "assets": []
       },
@@ -5336,6 +5659,87 @@
             "required": false,
             "maxLength": {
               "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.author.name",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.author.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.date.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.readingTime.value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.readingTime.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.tags[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.summary",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.outcomeStats[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.outcomeStats[].value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
             },
             "dir": "auto"
           }
@@ -6887,12 +7291,15 @@
         "mode": "closed",
         "names": [
           "layout.grid",
-          "layout.row"
+          "layout.row",
+          "motion.static",
+          "motion.count"
         ]
       },
       "allowedComposes": [
         "components.chart-sparkline",
-        "components.meter"
+        "components.meter",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -6916,7 +7323,9 @@
           "tokens.text-color",
           "tokens.typeface"
         ],
-        "assets": []
+        "assets": [
+          "assets.icon-set"
+        ]
       },
       "data": "host-injected",
       "surface": "both",
@@ -7447,11 +7856,14 @@
       ],
       "members": {
         "mode": "closed",
-        "names": []
+        "names": [
+          "tracking.css"
+        ]
       },
       "allowedComposes": [
         "components.link",
-        "components.disclosure"
+        "components.disclosure",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band"
@@ -7772,19 +8184,28 @@
           "name": "quotes",
           "type": "records",
           "required": true
+        },
+        {
+          "name": "controls",
+          "type": "copy",
+          "required": false
         }
       ],
       "members": {
         "mode": "closed",
         "names": [
           "layout.single",
-          "layout.grid"
+          "layout.grid",
+          "layout.wall",
+          "layout.carousel"
         ]
       },
       "allowedComposes": [
         "components.avatar",
         "components.card",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.scroll-area",
+        "components.native-action"
       ],
       "parts": [
         "sections.band",
@@ -7806,7 +8227,10 @@
           "tokens.status-color",
           "tokens.surface-radius",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.accent-color",
+          "tokens.focus-color",
+          "tokens.focus-outline"
         ],
         "assets": [
           "assets.image"
@@ -7871,6 +8295,24 @@
               "en": 120
             },
             "dir": "auto"
+          },
+          {
+            "key": "controls.previous",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.next",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
           }
         ]
       }
@@ -7900,7 +8342,8 @@
         "names": []
       },
       "allowedComposes": [
-        "components.separator"
+        "components.separator",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",

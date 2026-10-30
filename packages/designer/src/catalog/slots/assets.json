@@ -980,5 +980,40 @@
     },
     "requires": [],
     "status": "draft"
+  },
+  {
+    "id": "assets.icon-set",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "open",
+        "pattern": "^glyph\\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.backdrop",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "rules",
+      "members": {
+        "mode": "open",
+        "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+      },
+      "modes": [
+        "light"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
   }
 ]

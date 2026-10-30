@@ -61,7 +61,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/ContentSection.tsx",
-            "sha256": "1a8d3f0cd0835a9842eef51f303bff1a3adfbea4ee9de6297f2de0ae5532006b"
+            "sha256": "0bc53396320e0d118f33a7b49699f1d91741f12f7e3cc31833ee6966699535ff"
           },
           {
             "path": "packages/designer/src/blocks/internal/block-vars.ts",
@@ -146,6 +146,7 @@
       },
       "slot": "sections.content",
       "slotMap": {
+        "aside": "./blocks#ContentSection.aside",
         "body": "./blocks#ContentSection.children",
         "footnote": "./blocks#ContentSection.footnote",
         "header": "./blocks#ContentSection.heading,eyebrow,description,actions",

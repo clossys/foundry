@@ -1,0 +1,323 @@
+{
+  "packet": "A231 MR-T2 / 14",
+  "status": "runnable draft; owner review and production qualification unclaimed",
+  "initialStart": "2026-10-29T23:15:00Z",
+  "recordedAt": "2026-10-30T00:22:51.537330+00:00",
+  "repository": "clossys/foundry",
+  "pullRequest": 2473,
+  "baseline": {
+    "commit": "643791d7c8c8d1ef639692d94371c47da0b358d7",
+    "tree": "f9595acce7c95c0b12e2561fddf71f97a35e2d4a",
+    "originalBase": "e4bb199f08ad4dda478ae92541b55c0adde89728",
+    "originalPrerequisites": [
+      "5f5cb670d7f47f1e858236a2dacf001b9fc96f12",
+      "7bd4ed7dd42892c4c7948747062cb67bde680a26"
+    ],
+    "method": "Rebuild own fixture delta on the new integration; prerequisites already inherited, not replayed."
+  },
+  "mergedPacketHeads": {
+    "04": "c1e68f32ce05572000c31e4b028a2714d3540df4",
+    "05": "d2b1adaf67f6b06dba95f9dfc5a799484137aba1",
+    "06": "3e9713d95214d60a47bfc4f25e858f49e6ee1348",
+    "07": "de4ec5a65b40c54d8aeef36fc9cead5492611ace",
+    "08": "4a1d0e00a3897aef54294b5b14da75db63d7d36a",
+    "09": "2ef4c44a435d1c004d7106507b5a3f19b3257f37",
+    "10": "cc1741f9d9982bdc360c7d7465bca98e3c46dcf1",
+    "11": "f3819eccb6b16e77d7e0719f2d99f1d998b40166",
+    "12": "08294c5ecd2e1a13b037549d9a21df4c116fd35c"
+  },
+  "fixtureSourceCommit": "7090109797d623547c6b6015c3c4dbc6300f5eea",
+  "fixtureSourceTree": "97f1b15581c466f194e8f98842f1745298111e9b",
+  "executor": {
+    "kind": "subagent",
+    "actualModel": "unknown",
+    "actualEffort": "unknown",
+    "selectedModel": "gpt-6.1-sol",
+    "selectedTier": "high",
+    "session": "01a185de-cd76-7508-8eff-1114343c3013"
+  },
+  "selfAmendments": [
+    "Keep the real packed-tarball HTTP foundation and add capture rehearsal options.",
+    "Use native draft Writer records and supported public Designer block inputs; no new production copy or approval records.",
+    "Add an optional dependency-free local Chromium CDP driver and full-page capture.",
+    "Use the actual one-row public Faq block; keep its stricter runtime-adapter policy as a gap.",
+    "Use fixture-owned geometric logo and decorative token-SVG artwork.",
+    "Set the fixture body to native base surface/primary ink utilities and matching color-scheme; no brand binding.",
+    "Resolve source merge overlaps by preserving integration composition and sibling-owned member changes; regenerate all shared descriptors/CSS canonically.",
+    "Keep generated Writer drift report outside committed history."
+  ],
+  "inputs": {
+    "fixtureSha256": "acf111c861fc7c52b1b7848fb31196cbe8a3661758d888718612f3e25ab4017b",
+    "driverSha256": "eb4328b2a2bf7635469cd58fab01520fff7341e306fa96cd5168e9a0dc832c80",
+    "manifestSha256": "3060efc87c590f2571e93a275de689845312b3eedebd66a4aa6c8338b3283769",
+    "designerTokensSha256": "4d1afeb383d409596a0f8dc6194712efaf05c09555278cc2859327f848d5b62a",
+    "designerCompiledCssSha256": "ed214bbb4add330fd1342662a88e1ccbc4563cc75f821dd254950d02c5eca4bc",
+    "publisherPreviewCssSha256": "8c1ec6cc7047ce1cf5ab1bea12347794abc696cdbe5b6eacba55a092401a195b"
+  },
+  "browser": {
+    "browser": "Chrome/151.0.7922.173",
+    "protocol": "1.3"
+  },
+  "captureEvidence": {
+    "report": "capture-report.json",
+    "reportSha256": "b7968870a018ca7073faf37b1440b6e64b82d00daac19b0e005392af385cb5d7",
+    "routes": 21,
+    "cases": 504,
+    "captured": 504,
+    "verifiedImageHashes": 504,
+    "findings": 0,
+    "coverage": "DOM text and accessible attributes; CSS-generated text is not covered",
+    "visualSpotChecks": [
+      "Mobile feature tabs",
+      "Dark FAQ native canvas",
+      "Unbound-brand debug badge remains visible"
+    ]
+  },
+  "commands": [
+    {
+      "command": "node packages/designer/scripts/generate-surface-consumption.mjs --write",
+      "exitCode": 0,
+      "output": "62 descriptors measured; source-only lower-bound; runtime unmeasured"
+    },
+    {
+      "command": "npm run generate:compiled-css --workspace=packages/designer",
+      "exitCode": 0,
+      "output": "Designer TypeScript build passed; scanned 562 source files; 935 compiled class rules"
+    },
+    {
+      "command": "npm run generate:preview-css --workspace=packages/publisher",
+      "exitCode": 0,
+      "output": "275171 bytes written canonically"
+    },
+    {
+      "command": "npm run build --workspace=packages/writer",
+      "exitCode": 0,
+      "output": "1502 records, 12 sources, 0 record-drift findings; approval not evaluated"
+    },
+    {
+      "command": "npm run build --workspace=packages/publisher",
+      "exitCode": 0,
+      "output": "TypeScript build passed"
+    },
+    {
+      "command": "node --test scripts/marketing-reference-rehearsal.test.mjs",
+      "exitCode": 0,
+      "output": "8 tests passed; 0 failed"
+    },
+    {
+      "command": "node scripts/marketing-reference-rehearsal.mjs",
+      "exitCode": 0,
+      "output": {
+        "installedTarballs": [
+          "designer",
+          "writer",
+          "publisher"
+        ],
+        "runtimeTarballs": [
+          "strategist",
+          "controller"
+        ],
+        "fixtureExcluded": true,
+        "routes": [
+          {
+            "path": "/",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/about",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/contact",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/privacy",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/terms",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/features",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/features-tabs",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/features-alternating",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/features-scroll",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/faq",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/summary",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/roles",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/article",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/backdrop",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/gallery",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/logos",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/testimonials",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/stats",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/band",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/editorial",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/case-study",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/mark",
+            "status": 200,
+            "h1": 1
+          },
+          {
+            "path": "/missing-reference-page",
+            "status": 404,
+            "h1": 1
+          },
+          {
+            "path": "/welcome",
+            "status": 308
+          },
+          {
+            "path": "/robots.txt",
+            "status": 200
+          },
+          {
+            "path": "/sitemap.xml",
+            "status": 200
+          },
+          {
+            "path": "/.well-known/security.txt",
+            "status": 200
+          },
+          {
+            "path": "/site.css",
+            "status": 200
+          }
+        ]
+      }
+    },
+    {
+      "command": "node scripts/marketing-reference-rehearsal.mjs --fixture packages/publisher/test-fixtures/marketing-reference/admitted-fixture.mjs --out $EVIDENCE/browser-final --driver packages/publisher/test-fixtures/marketing-reference/chromium-driver.mjs",
+      "exitCode": 0,
+      "output": {
+        "ok": true,
+        "routes": 21,
+        "cases": 504,
+        "captureStatus": "executed",
+        "captured": 504,
+        "findings": 0
+      },
+      "note": "EVIDENCE is the session-local output directory; images and HTML are not committed."
+    },
+    {
+      "command": "node scripts/check-public-safety.mjs . --allow-changelogs --json",
+      "exitCode": 0,
+      "output": {
+        "mode": "PARTIAL",
+        "failures": []
+      }
+    },
+    {
+      "command": "node scripts/check-neutrality.mjs --json",
+      "exitCode": 0,
+      "output": {
+        "baselineFindings": 0,
+        "candidateFindings": 0
+      }
+    },
+    {
+      "command": "node scripts/check-foreign-references.mjs . --json",
+      "exitCode": 1,
+      "output": {
+        "baseline": "643791d7c8c8d1ef639692d94371c47da0b358d7",
+        "identityFields": [
+          "file",
+          "kind",
+          "reference",
+          "text"
+        ],
+        "baselineOccurrences": 912,
+        "candidateOccurrences": 912,
+        "newOccurrences": 0,
+        "removedOccurrences": 0
+      },
+      "note": "Existing occurrences remain; exact occurrence identity comparison has no new or removed findings."
+    }
+  ],
+  "safetyAuthorization": "A228 PARTIAL scoped execution; no FULL clearance or publication authorization asserted.",
+  "limitations": [
+    "Native tokens.css shows a CSS-generated unbound-brand debug badge; outside DOM Writer probe coverage",
+    "FAQ uses the public block's real one-row support; the registered runtime adapter still requires four to six rows and is not qualified here",
+    "04 timeline-specific dated passages unavailable; mark artwork is a fictional fixture-owned geometric SVG, not a brand binding; contact form is a disabled static preview",
+    "05 newsletter/announcement/locale-specific Writer passages unavailable; no submission service or translated copy is claimed",
+    "06 bento requires at least two items; the actual feature passage supplies one and is not duplicated",
+    "09 author/date/outcome-specific copy is absent; editorial fixtures reuse existing generic Writer title/description/draft-status fields",
+    "11 video and runtime-module assets unavailable; the checked static token-painted SVG backdrop is exercised",
+    "12 footnote-specific Writer passages unavailable; article and TOC reuse actual generic title and legal-body passages",
+    "Static server HTML does not qualify hydration, keyboard behavior, carousel navigation, scroll animation or runtime-module lifecycle.",
+    "No package version, dependency, scanner, governance, approval record or production brand was added.",
+    "No owner review, full gate clearance, main-branch merge, deployment or package publication was performed.",
+    "Navigation extensions are merged but are not selected in these captured routes; newsletter, announcement and locale-specific passages are absent."
+  ]
+}

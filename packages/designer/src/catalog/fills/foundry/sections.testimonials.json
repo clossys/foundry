@@ -27,22 +27,28 @@
   "sections": {
     "testimonials": {
       "composes": [
+        "components.native-action",
         "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.native-action",
           "components.semantic-content"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
+            "components.native-action",
             "components.semantic-content"
           ],
           "tokens": [
+            "tokens.accent-color",
             "tokens.body-size",
             "tokens.border-color",
+            "tokens.focus-color",
+            "tokens.focus-outline",
             "tokens.radius",
             "tokens.spacing",
             "tokens.status-color",
@@ -54,6 +60,10 @@
         },
         "sourceFiles": [
           {
+            "path": "packages/designer/src/blocks/LogoCloud/motion.ts",
+            "sha256": "3461f076aeba952439b5531550d4beb305aba9b575da23d71a2998e0ebd12334"
+          },
+          {
             "path": "packages/designer/src/blocks/section-ground.ts",
             "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
           },
@@ -62,16 +72,28 @@
             "sha256": "b781ec297f690e3d0cfc482d0815bdd6bd248800ce3bfc740669cbaf619e0d07"
           },
           {
+            "path": "packages/designer/src/blocks/Testimonial/Carousel.tsx",
+            "sha256": "b864073bd118dc818f3b9184d93c393173d02b0562162ac2d512eca6e926d776"
+          },
+          {
             "path": "packages/designer/src/blocks/TestimonialSet.tsx",
-            "sha256": "949fd4c6e6eda5a1e8210148c998be83254ff59a56292b1b3ad398d0adfcc5f9"
+            "sha256": "dde5a0d3b48a2991fa070d3b0d990c3fc813913c47f83bfb9e04ec41cc8ff3d7"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
           },
           {
+            "path": "packages/designer/src/components/_parts/rail-utils/index.ts",
+            "sha256": "311725349da92f9f32b134e451c3acc0b5fb2426a4485468760df6c528b2335e"
+          },
+          {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/components/scroll-area/scroll-area.tsx",
+            "sha256": "08d2ec6d8dd6edae70c787a21df891d09c89c441b4ef2326ffd8fa45bb2808be"
           }
         ],
         "unresolved": [
@@ -96,7 +118,7 @@
       },
       "license": "MIT",
       "notes": [
-        "Source selects single or grid geometry from enforced item counts; quote attribution uses attributorName/attributorRole/portrait. Root is ul with external anatomy.",
+        "Wall uses staggered quote columns. Carousel uses components.scroll-area scroll snap and authored previous/next buttons without autoplay; reduced motion scrolls instantly. Attribution reuses the shared Testimonial figure. The native Section adapter maps both new layouts and authored controls, with section provenance on the outer root.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -106,14 +128,19 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "layout.grid": "./blocks#TestimonialSet.items.length[2,3,4,6]",
-        "layout.single": "./blocks#TestimonialSet.items.length=1"
+        "layout.carousel": "./blocks#TestimonialSet.layout=carousel",
+        "layout.grid": "./blocks#TestimonialSet.layout=grid,items.length[2,3,4,6]",
+        "layout.single": "./blocks#TestimonialSet.layout=single,items.length=1",
+        "layout.wall": "./blocks#TestimonialSet.layout=wall"
       },
       "reads": {
         "assets": [],
         "tokens": [
+          "tokens.accent-color",
           "tokens.body-size",
           "tokens.border-color",
+          "tokens.focus-color",
+          "tokens.focus-outline",
           "tokens.radius",
           "tokens.spacing",
           "tokens.status-color",
@@ -125,6 +152,7 @@
       },
       "slot": "sections.testimonials",
       "slotMap": {
+        "controls": "./blocks#TestimonialSet.carouselLabels",
         "quotes": "./blocks#TestimonialSet.items"
       },
       "source": "foundry"

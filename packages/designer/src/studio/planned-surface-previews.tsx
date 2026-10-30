@@ -111,7 +111,7 @@ const BLOCK_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
     privacyLink={<Link href={S.consentBanner.privacy.href}>{S.consentBanner.privacy.label}</Link>} />,
   ErrorState: () => <ErrorState kind="failure" code={S.errorState.code} title={S.errorState.title} description={S.errorState.description}
     retry={<Button variant="primary" size="md" onPress={noop}>{S.errorState.retryLabel}</Button>} report={<Link href={S.errorState.report.href}>{S.errorState.report.label}</Link>} />,
-  Gallery: () => <Gallery label={S.gallery.label} images={S.gallery.images.map(image => ({ ...image, media: media(image.label) }))} />,
+  Gallery: () => <Gallery label={S.gallery.label} labels={S.gallery.labels} images={S.gallery.images.map(image => ({ ...image, media: media(image.label) }))} />,
   NoticeList: () => <NoticeList label={S.noticeList.label} onDismiss={noop}
     notices={S.noticeList.notices.map(({ action, ...notice }) => ({ ...notice, action: action ? <Link href={action.href}>{action.label}</Link> : undefined }))} />,
   StatGroup: () => <StatGroup {...S.statGroup} />,

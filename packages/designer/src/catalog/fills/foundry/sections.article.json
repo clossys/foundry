@@ -37,6 +37,7 @@
           "tokens": [
             "tokens.body-size",
             "tokens.border-color",
+            "tokens.caption-size",
             "tokens.code-size",
             "tokens.control-radius",
             "tokens.heading-size",
@@ -50,7 +51,11 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/ArticleBody.tsx",
-            "sha256": "f530b071afec662a54c08723d2253902d75582e06d987e56c7024897f125e81a"
+            "sha256": "01cda52f6c4af8a5907a14c7d5aef694d5a56980f3797c18afc9273977e035b8"
+          },
+          {
+            "path": "packages/designer/src/blocks/ArticleReading.tsx",
+            "sha256": "c952d3ba3e5e53d394a70e07c802032fc1fb4e6093324efd2b5110935db2d11f"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -62,6 +67,12 @@
           }
         ],
         "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved source export ../components/Link.js#Link",
+            "file": "packages/designer/src/blocks/ArticleBody.tsx",
+            "line": 3
+          },
           {
             "code": "DF2",
             "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
@@ -92,12 +103,15 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "propMap": {},
+      "propMap": {
+        "typography.drop-cap": "./blocks#ArticleBody.dropCap=true"
+      },
       "reads": {
         "assets": [],
         "tokens": [
           "tokens.body-size",
           "tokens.border-color",
+          "tokens.caption-size",
           "tokens.code-size",
           "tokens.control-radius",
           "tokens.heading-size",

@@ -110,6 +110,9 @@ export type { SectionHeaderProps, SectionHeaderLevel } from "./SectionHeader.js"
 
 export { Hero } from "./Hero.js";
 export type { HeroProps, HeroHeadingLevel, HeroComposition, HeroAlign } from "./Hero.js";
+export { BackdropHost, type BackdropHostProps } from "../backdrop/BackdropHost.js";
+export { VideoBackdrop, type VideoBackdropResource } from "../backdrop/VideoBackdrop.js";
+export type { RuntimeBackdropResource, BackdropModuleLoaders, BackdropRuntimeModule, BackdropModuleInstance } from "../backdrop/runtime-module.js";
 
 export { ContentSection } from "./ContentSection.js";
 export type {

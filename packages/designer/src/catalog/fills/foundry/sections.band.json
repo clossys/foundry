@@ -39,14 +39,19 @@
           "components.semantic-content"
         ],
         "scannedReads": {
-          "assets": [],
+          "assets": [
+            "assets.pattern"
+          ],
           "components": [
             "components.semantic-content"
           ],
           "tokens": [
             "tokens.border-color",
+            "tokens.border-width",
             "tokens.content-size",
+            "tokens.display-size",
             "tokens.gutter",
+            "tokens.heading-size",
             "tokens.spacing",
             "tokens.status-color",
             "tokens.surface-color",
@@ -64,7 +69,7 @@
           },
           {
             "path": "packages/designer/src/blocks/SectionFrame.tsx",
-            "sha256": "a6d8d6398d38d5e4df2b81cccd01f4236d04dd24c8dd76c59921a631c427d25b"
+            "sha256": "0b0b8477099f0ee05bc8655fc92ca86d9ff448d4e480a06e48181a96cdfddc57"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -73,9 +78,23 @@
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/styles/section-reveal.tsx",
+            "sha256": "4a6f7b05d5a83e6e8a369fecc3378e7bb563446c24860bbfe049a1fc6c41401b"
+          },
+          {
+            "path": "packages/designer/src/tokens/pattern.ts",
+            "sha256": "086eedb4d51373c9f84ba1e0b5310e0041792aebf14c964300fc669a7b028a38"
           }
         ],
         "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/blocks/SectionFrame.tsx",
+            "line": 3
+          },
           {
             "code": "DF2",
             "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
@@ -97,7 +116,7 @@
       },
       "license": "MIT",
       "notes": [
-        "SectionFrame alone widens its ground with transparent (no surface, inherited ink); block grounds stay the closed SectionGround. Rhythm is fixed in source, with no specified contract member values.",
+        "SectionFrame alone widens its ground with transparent (no surface, inherited ink); block grounds stay the closed SectionGround. Wash reads tokens.gradient.wash; texture reads assets.pattern. Fluid heading properties are scoped to the section; global token defaults remain fixed. Reveal is opt-in and uses the shared reduced-motion policy. Rhythm is fixed in source, with no specified contract member values.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -111,16 +130,30 @@
         "ground.inverse": "./blocks#SectionFrame.ground=inverse",
         "ground.sunken": "./blocks#SectionFrame.ground=sunken",
         "ground.transparent": "./blocks#SectionFrame.ground=transparent",
+        "ground.wash": "./blocks#SectionFrame.ground=wash",
         "measure.content": "./blocks#SectionFrame.measure=content",
         "measure.prose": "./blocks#SectionFrame.measure=prose",
-        "measure.wide": "./blocks#SectionFrame.measure=wide"
+        "measure.wide": "./blocks#SectionFrame.measure=wide",
+        "reveal.false": "./blocks#SectionFrame.reveal=false",
+        "reveal.true": "./blocks#SectionFrame.reveal=true",
+        "texture.grain": "./blocks#SectionFrame.texture=grain",
+        "texture.noise": "./blocks#SectionFrame.texture=noise",
+        "texture.topo": "./blocks#SectionFrame.texture=topo"
       },
       "reads": {
-        "assets": [],
+        "assets": [
+          "assets.pattern"
+        ],
         "tokens": [
+          "tokens.animation",
           "tokens.border-color",
+          "tokens.border-width",
           "tokens.content-size",
+          "tokens.display-size",
+          "tokens.gradient",
           "tokens.gutter",
+          "tokens.heading-size",
+          "tokens.shift-distance",
           "tokens.spacing",
           "tokens.status-color",
           "tokens.surface-color",

@@ -7,9 +7,9 @@ import { OrderedStepSequence, type OrderedStepSequenceItem, type OrderedStepSequ
 
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type Expect<T extends true> = T;
-export type PublishedFeatureItemKeys = Expect<Equal<keyof FeatureGridItem, "id" | "icon" | "heading" | "description">>;
+export type PublishedFeatureItemKeys = Expect<Equal<keyof FeatureGridItem, "id" | "icon" | "heading" | "description" | "visual" | "span">>;
 export type PublishedFeatureProps = Expect<Equal<Exclude<keyof FeatureGridProps, keyof HTMLAttributes<HTMLDivElement>>, "eyebrow" | "heading" | "description" | "items" | "headingLevel" | "ground" | "layout">>;
-export type PublishedFeatureLayout = Expect<Equal<NonNullable<FeatureGridProps["layout"]>, "grid" | "list" | "split">>;
+export type PublishedFeatureLayout = Expect<Equal<NonNullable<FeatureGridProps["layout"]>, "grid" | "list" | "split" | "bento" | "tabs" | "alternating" | "scroll">>;
 export type PublishedStepItemKeys = Expect<Equal<keyof OrderedStepSequenceItem, "id" | "ordinal" | "label" | "heading" | "description">>;
 export type PublishedStepProps = Expect<Equal<Exclude<keyof OrderedStepSequenceProps, keyof HTMLAttributes<HTMLElement>>, "eyebrow" | "heading" | "description" | "items" | "headingLevel" | "ground">>;
 export type PublishedOrdinal = Expect<Equal<OrderedStepSequenceItem["ordinal"], string | number>>;
@@ -226,8 +226,8 @@ export type MatrixQuadrantAliasParity = Expect<Equal<Blocks.MatrixQuadrantProps,
 export type MatrixQuadrantInventoryAliasParity = Expect<Equal<Blocks.MatrixQuadrantProps, PackageInventory.MatrixQuadrantProps>>;
 export type MatrixQuadrantMemberIdentity = Expect<Equal<Extract<Blocks.MatrixProps, { arrangement?: "sides" }>, Blocks.MatrixQuadrantProps>>;
 export type MatrixMembersIdentity = Expect<Equal<Blocks.MatrixProps, Blocks.MatrixQuadrantProps | Blocks.MatrixGridProps | import("../matrix/choices.js").MatrixChoicesProps | ({ readonly arrangement: "library-board" } & Blocks.LibraryBoardSectionProps)>>;
-export type PublishedNavKeys = Expect<Equal<keyof Blocks.NavGridProps, "heading" | "items" | "className" | "style">>;
-export type PublishedNavItemKeys = Expect<Equal<keyof Blocks.NavGridItem, "id" | "title" | "description" | "icon" | "href" | "onSelect">>;
+export type PublishedNavKeys = Expect<Equal<keyof Blocks.NavGridProps, "heading" | "items" | "className" | "style" | "config">>;
+export type PublishedNavItemKeys = Expect<Equal<keyof Blocks.NavGridItem, "id" | "title" | "description" | "icon" | "href" | "onSelect" | "details">>;
 void <Blocks.NavGrid items={Object.freeze([{ id: "one", title: 0, href: "relative-path" }, { id: "two", title: null, onSelect: () => {} }])} />;
 // @ts-expect-error A navigation entry has exactly one activation mechanism.
 void <Blocks.NavGrid items={[{ id: "one", title: "One", href: "/one", onSelect: () => {} }]} />;

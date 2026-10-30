@@ -34,6 +34,12 @@ export type ContentMapEntry = {
   readonly indexing?: ContentMapIndexing;
   /** Consumer-supplied ISO date or timestamp; no implicit build-time clock. */
   readonly lastModified?: string;
+  /** Existing group identity used for a navigation column; no extra IA layer. */
+  readonly group?: string;
+  /** Marks a mapped destination as its navigation group's featured card. */
+  readonly featured?: boolean;
+  /** Actual translated routes for this page, including its current locale. */
+  readonly alternates?: readonly { readonly locale: string; readonly entryId: string; readonly label: string }[];
 } & ({ readonly path: string; readonly slug?: never } | { readonly slug: string; readonly path?: never })
   /** A present config narrows sourced entries without admitting external nodes. */
   & ({ readonly pageConfig: string } | { readonly pageConfig?: never });
@@ -85,10 +91,14 @@ export interface ContentMapNavigationNode {
   readonly external?: true;
   readonly icon?: string;
   readonly children?: readonly ContentMapNavigationNode[];
+  readonly group?: string;
+  readonly featured?: boolean;
+  readonly description?: string;
 }
 export interface ContentMapNavigation {
   readonly tree: readonly ContentMapNavigationNode[];
   readonly activeId: string;
+  readonly alternates?: readonly { readonly locale: string; readonly href: string; readonly label: string; readonly isCurrent: boolean }[];
 }
 export type ContentMapCommand = {
   readonly id: string;

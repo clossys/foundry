@@ -1,9 +1,13 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
+import { sectionTreatment } from "./SectionFrame.js";
 import { cx } from "../components/internal/cx.js";
 import type { SectionIntroProps } from "./SectionIntro.js";
 import { HeroIntro } from "./hero/HeroIntro.js";
 import { StillBackdrop, type HeroBackdropScrim } from "./hero/StillBackdrop.js";
 import type { StillBackdropArt } from "../backdrop/consumer-art.js";
+import { BackdropHost } from "../backdrop/BackdropHost.js";
+import type { BackdropModuleLoaders, RuntimeBackdropResource } from "../backdrop/runtime-module.js";
+import { VideoBackdrop, type VideoBackdropResource } from "../backdrop/VideoBackdrop.js";
 export type { HeroBackdropScrim } from "./hero/StillBackdrop.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
@@ -42,8 +46,10 @@ export interface HeroProps extends HTMLAttributes<HTMLElement> {
    * Passing `media` does not choose a layout — set `composition` explicitly.
    */
   media?: ReactNode;
-  /** Checked decorative still art behind the message. The same static source serves reduced motion. */
-  backdrop?: StillBackdropArt;
+  /** Checked decorative art behind the message. Moving kinds declare a poster, still and bounded transfer budget. */
+  backdrop?: StillBackdropArt | RuntimeBackdropResource | VideoBackdropResource;
+  /** Consumer static import registry for runtime artwork. Missing keys keep the poster. */
+  backdropModules?: BackdropModuleLoaders;
   /** Scalar protection over the media-scrim gradient. @default "light" */
   backdropScrim?: HeroBackdropScrim;
   /**
@@ -102,6 +108,7 @@ export function Hero({
   actions,
   media,
   backdrop,
+  backdropModules,
   backdropScrim = "light",
   composition = "editorial",
   headingLevel = 1,
@@ -145,11 +152,16 @@ export function Hero({
           : "flex flex-col gap-xl",
         className,
       )}
-      style={style}
+      style={{ ...sectionTreatment(ground), ...style }}
     >
-      {backdrop ? <StillBackdrop art={backdrop} scrim={backdropScrim} /> : null}
+      {backdrop ? ("kind" in backdrop && backdrop.kind === "module"
+        ? <BackdropHost resource={backdrop} modules={backdropModules ?? EMPTY_BACKDROP_MODULES} scrim={backdropScrim} />
+        : "kind" in backdrop && backdrop.kind === "video" ? <VideoBackdrop resource={backdrop} scrim={backdropScrim} />
+        : <StillBackdrop art={backdrop as StillBackdropArt} scrim={backdropScrim} />) : null}
       {backdrop ? <div className="relative">{content}</div> : content}
       {media ? <div className={cx("w-full", backdrop ? "relative" : "", splitLayout ? "" : "max-w-display", centred && !splitLayout ? "mx-auto" : "")}>{media}</div> : null}
     </section>
   );
 }
+
+const EMPTY_BACKDROP_MODULES: BackdropModuleLoaders = Object.freeze({});

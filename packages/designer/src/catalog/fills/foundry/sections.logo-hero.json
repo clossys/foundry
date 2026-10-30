@@ -16,27 +16,26 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "sections.logo-hero",
       "source": "foundry",
       "sourceAddress": "./blocks#LogoHero",
       "status": "draft",
-      "trust": "foundry",
-      "unmapped": [
-        "brand.named"
-      ]
+      "trust": "foundry"
     }
   },
   "sections": {
     "logo-hero": {
       "composes": [
-        "components.logo"
+        "components.logo",
+        "sections.band"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
-          "components.logo"
+          "components.logo",
+          "sections.band"
         ],
         "scannedReads": {
           "assets": [],
@@ -48,21 +47,14 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/LogoHero.tsx",
-            "sha256": "c4d81259bccc7648c61e9846b2c5a25f9b03c23d9fd23c7ce5bd5dc07b2f4d4c"
+            "sha256": "977b90f1d141472c59ea280049c9b2b25961cbe13019bd29e14a79c6a74b19ee"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
           }
         ],
-        "unresolved": [
-          {
-            "code": "DF5",
-            "evidence": "ambiguous slot ownership ./SectionFrame.js#SectionFrame: sections.band, sections.logo-mark",
-            "file": "packages/designer/src/blocks/LogoHero.tsx",
-            "line": 3
-          }
-        ]
+        "unresolved": []
       },
       "impl": {
         "export": "LogoHero",
@@ -80,7 +72,10 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "propMap": {},
+      "propMap": {
+        "brand.mark-only": "./blocks#LogoHero.member=brand.mark-only",
+        "brand.named": "./blocks#LogoHero.member=brand.named"
+      },
       "reads": {
         "assets": [],
         "tokens": []

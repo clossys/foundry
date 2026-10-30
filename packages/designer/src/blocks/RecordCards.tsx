@@ -4,6 +4,10 @@ import { Card } from "../components/Card.js";
 import { Link } from "../components/Link.js";
 import { cx } from "../components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { SemanticContent } from "../components/SemanticContent.js";
+import type { ImageResource } from "../catalog-assets/media.js";
+import { MediaFigure } from "./MediaFigure.js";
+import { PageHeaderMetadata, type EditorialMetadata } from "./PageHeaderMetadata.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.cards", "foundry/sections.cards");
 
@@ -22,10 +26,15 @@ export interface RecordCardsRecord {
   badge?: { label: ReactNode; variant?: BadgeVariant };
   /** Secondary detail at the foot of the card ("Updated 2 days ago"). */
   meta?: ReactNode;
+  /** Resolved assets.image resource; the image retains its alternative text. */
+  image?: ImageResource;
+  editorial?: EditorialMetadata;
 }
 export interface RecordCardsProps extends Omit<HTMLAttributes<HTMLUListElement>, "children"> {
   /** The records, in reading order. Each renders one `Card`. */
   records: readonly RecordCardsRecord[];
+  config?: "post" | "post-featured" | "case-study";
+  locale?: string;
   /** `grid` lays cards in columns (one, two, then three); `list` stacks them full width. @default "grid" */
   layout?: RecordCardsLayout;
   /** Heading level of each card title. @default 3 */
@@ -43,21 +52,23 @@ const LAYOUT_CLASSES: Record<RecordCardsLayout, string> = {
  * Renders a list; the host injects the records and owns sorting, paging and
  * empty, loading and error states around it.
  */
-export function RecordCards({ records, layout = "grid", headingLevel = 3, className, ...rest }: RecordCardsProps) {
+export function RecordCards({ records, config, locale, layout = "grid", headingLevel = 3, className, ...rest }: RecordCardsProps) {
   const Heading = `h${headingLevel}` as "h2" | "h3" | "h4";
   return (
-    <ul {...SECTION_STAMP} {...rest} role="list" data-layout={layout} className={cx(LAYOUT_CLASSES[layout], className)}>
+    <ul {...SECTION_STAMP} {...rest} role="list" data-card-config={config} data-layout={layout} className={cx(config === "post-featured" ? LAYOUT_CLASSES.list : LAYOUT_CLASSES[layout], className)}>
       {records.map(record => (
         <li key={record.id} className="flex min-w-0">
           <Card variant="outline" className="flex w-full flex-col gap-xs p-lg">
+            {record.image ? <MediaFigure image={record.image} data-asset-slot="assets.image" /> : null}
             <div className="flex flex-wrap items-start justify-between gap-sm">
               <Heading className="m-0 text-body-l font-medium text-ink-primary">
                 {record.href ? <Link href={record.href} variant="standalone">{record.title}</Link> : record.title}
               </Heading>
               {record.badge ? <Badge variant={record.badge.variant}>{record.badge.label}</Badge> : null}
             </div>
-            {record.description ? <p className="text-body-s text-ink-secondary">{record.description}</p> : null}
-            {record.meta ? <p className="mt-auto text-caption text-ink-muted">{record.meta}</p> : null}
+            {record.description ? <SemanticContent as="p" dir="auto" className="text-body-s text-ink-secondary">{record.description}</SemanticContent> : null}
+            {record.editorial ? <PageHeaderMetadata metadata={record.editorial} locale={locale} /> : null}
+            {record.meta ? <SemanticContent as="p" dir="auto" className="mt-auto text-caption text-ink-muted">{record.meta}</SemanticContent> : null}
           </Card>
         </li>
       ))}

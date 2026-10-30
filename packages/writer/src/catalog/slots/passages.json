@@ -1017,6 +1017,96 @@
               "en": 160
             },
             "dir": "auto"
+          },
+          {
+            "key": "records[].image.alt",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.author.name",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.author.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.date.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.readingTime.value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.readingTime.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.tags[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.summary",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.outcomeStats[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.outcomeStats[].value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
           }
         ]
       }
@@ -1523,6 +1613,24 @@
             "required": false,
             "maxLength": {
               "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "aside[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 1000
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "aside[].value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 1000
             },
             "dir": "auto"
           }
@@ -2568,6 +2676,24 @@
               "en": 160
             },
             "dir": "auto"
+          },
+          {
+            "key": "controls.close",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.enlarge",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
           }
         ]
       }
@@ -2642,6 +2768,24 @@
           },
           {
             "key": "media.series[].name",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "backdrop.labels.pause",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "backdrop.labels.resume",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -2781,6 +2925,24 @@
               "en": 120
             },
             "dir": "auto"
+          },
+          {
+            "key": "links[].details[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "links[].details[].value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
           }
         ]
       }
@@ -2832,6 +2994,24 @@
             "required": true,
             "maxLength": {
               "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.pause",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.resume",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
             },
             "dir": "auto"
           }
@@ -2972,6 +3152,69 @@
             "required": false,
             "maxLength": {
               "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.passage.play",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.passage.pause",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.passage.mute",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.passage.seek",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.passage.captions",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.passage.error.title",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.passage.error.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
             },
             "dir": "auto"
           }
@@ -3266,6 +3509,87 @@
             "required": false,
             "maxLength": {
               "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.author.name",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.author.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.date.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.readingTime.value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.readingTime.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.tags[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.summary",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.outcomeStats[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta.outcomeStats[].value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
             },
             "dir": "auto"
           }
@@ -4953,6 +5277,24 @@
             "required": false,
             "maxLength": {
               "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.previous",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.next",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
             },
             "dir": "auto"
           }

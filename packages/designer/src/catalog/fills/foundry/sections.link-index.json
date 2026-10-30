@@ -37,9 +37,12 @@
         "components.icon",
         "components.link",
         "components.semantic-content",
-        "components.status-mark"
+        "components.status-mark",
+        "sections.section-header"
       ],
-      "configs": {},
+      "configs": {
+        "roles": "config=roles"
+      },
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
@@ -49,7 +52,8 @@
           "components.icon",
           "components.link",
           "components.semantic-content",
-          "components.status-mark"
+          "components.status-mark",
+          "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
@@ -107,7 +111,7 @@
           },
           {
             "path": "packages/designer/src/blocks/NavGrid.tsx",
-            "sha256": "5f5f826e5a87ac928605bae0a3f04b4ae91a1063478dc742c632332939afdeef"
+            "sha256": "e41a44b73bcb676a90852a00d3b4d0ccf30dd45a861c6b24c827b6d45c75ecbc"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -162,7 +166,7 @@
       },
       "license": "MIT",
       "notes": [
-        "NavGrid composes SemanticContent and shared item anatomy for linked/action cards, preserving its published heading markup. Eligible linked collections use the existing linked-item treatment; list and plain-grid configuration modes are absent.",
+        "Roles renders a list of destination links with Writer-owned titles, descriptions and labelled details. The default remains linked/action cards; generic list and grid members remain unmapped.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],

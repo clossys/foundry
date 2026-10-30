@@ -2,12 +2,13 @@
 import type { ReactNode } from "react";
 import { MediaFigure } from "../../blocks/MediaFigure.js";
 import type { ChromeCalloutsProps } from "../../blocks/media/ChromeCallouts.js";
-import { isImageResource } from "../../catalog-assets/media.js";
+import { isImageResource, isVideoResource } from "../../catalog-assets/media.js";
+import type { MediaPlayerPassage } from "../../components/media-player/index.js";
 import { IMAGE_RATIOS } from "../../importers/image-ratio.js";
 import { list, mediaNode, memberValue, object, optionalText, readSectionContent, required, SectionContentError, text,
   type JsonObject, type SectionContent, type SectionRenderInput, type SectionRendererInputs } from "./group-a-content.js";
 
-export const mediaInputs: SectionRendererInputs = { slots: ["figure", "callouts"], members: ["chrome.browser", "chrome.device", "chrome.bare"] };
+export const mediaInputs: SectionRendererInputs = { slots: ["figure", "callouts"], members: ["chrome.browser", "chrome.device", "chrome.bare", "kind.video"] };
 
 function keys(content: SectionContent, value: JsonObject, allowed: readonly string[], path: string) {
   for (const key of Object.keys(value)) if (!allowed.includes(key)) throw new SectionContentError(content.leaf, `${path}.${key} is not supported`);
@@ -41,6 +42,27 @@ export function renderMediaSection(input: SectionRenderInput): ReactNode {
   if (chromeLabel !== undefined && chrome !== "browser") throw new SectionContentError(content.leaf, "figure.chromeLabel requires chrome.browser");
   const props = { chrome, chromeLabel, caption: optionalText(content, figure.caption, "figure.caption"), callouts: annotations(content) };
   const media = object(content, figure.media, "figure.media");
+  const selectedKind = memberValue(content, "kind", ["video"] as const);
+  if (selectedKind !== undefined && media.kind !== selectedKind) throw new SectionContentError(content.leaf, "kind.video requires a video resource");
+  if (media.kind === "video") {
+    keys(content, media, ["kind", "resource", "poster", "title", "passage"], "figure.media");
+    if (!isVideoResource(media.resource) || !isImageResource(media.poster)) throw new SectionContentError(content.leaf, "figure.media needs a valid video resource and poster");
+    if (figure.ratio !== undefined) throw new SectionContentError(content.leaf, "figure.ratio requires an image resource");
+    const labels = object(content, media.passage, "figure.media.passage");
+    keys(content, labels, ["play", "pause", "mute", "seek", "captions", "error"], "figure.media.passage");
+    const error = object(content, labels.error, "figure.media.passage.error");
+    keys(content, error, ["title", "description"], "figure.media.passage.error");
+    const passage: MediaPlayerPassage = {
+      title: text(content, media.title, "figure.media.title"),
+      play: text(content, labels.play, "figure.media.passage.play"),
+      pause: text(content, labels.pause, "figure.media.passage.pause"),
+      mute: text(content, labels.mute, "figure.media.passage.mute"),
+      seek: text(content, labels.seek, "figure.media.passage.seek"),
+      captions: text(content, labels.captions, "figure.media.passage.captions"),
+      error: { title: text(content, error.title, "figure.media.passage.error.title"), description: text(content, error.description, "figure.media.passage.error.description") },
+    };
+    return <MediaFigure {...props} kind="video" video={{ video: media.resource, poster: media.poster, passage }} />;
+  }
   if (media.kind === "image") {
     keys(content, media, ["kind", "resource"], "figure.media");
     if (!isImageResource(media.resource)) throw new SectionContentError(content.leaf, "figure.media.resource must be a valid image resource");

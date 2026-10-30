@@ -1,3 +1,4 @@
+import { sectionTreatment, type SectionTexture } from "./SectionFrame.js";
 import { SemanticContent } from "../components/SemanticContent.js";
 import { useId, type HTMLAttributes, type ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
@@ -19,7 +20,8 @@ export interface CallToActionProps extends Omit<HTMLAttributes<HTMLElement>, "ti
   /** At most one secondary action. Two actions is the contract ceiling; there is no third slot. */
   secondaryAction?: ReactNode;
   /** The ground the band sits on. @default "sunken" */
-  ground?: SectionGround;
+  ground?: SectionGround | "wash";
+  texture?: SectionTexture;
   /** @default 2 */
   headingLevel?: SectionHeaderLevel;
 }
@@ -31,25 +33,30 @@ export interface CallToActionProps extends Omit<HTMLAttributes<HTMLElement>, "ti
  * section ground; the host supplies the actions, so no destination or
  * analytics is assumed.
  */
-export function CallToAction({ title, eyebrow, description, primaryAction, secondaryAction, ground = "sunken", headingLevel = 2, className, ...rest }: CallToActionProps) {
+export function CallToAction({ title, eyebrow, description, primaryAction, secondaryAction, ground = "sunken", headingLevel = 2, texture, className, style, ...rest }: CallToActionProps) {
   const titleId = useId();
+  const inkGround = ground === "wash" ? "base" : ground;
   return (
     <SemanticContent as="section"
       {...SECTION_STAMP} {...rest}
       aria-labelledby={titleId}
       data-ground={ground}
-      className={cx("flex flex-col items-center gap-lg rounded-panel px-lg py-3xl text-center", SECTION_GROUND_CLASSES[ground].surface, className)}
+      data-texture={texture}
+      data-designer-texture={texture ? "assets.pattern" : undefined}
+      style={{ ...sectionTreatment(ground, texture), ...style }}
+      className={cx("flex flex-col items-center gap-lg rounded-panel px-lg py-3xl text-center", SECTION_GROUND_CLASSES[inkGround].surface, className)}
     >
       <SectionHeader
         density="standard"
         align="center"
-        ground={ground}
+        ground={inkGround}
+        style={texture ? { backgroundColor: `var(--color-surface-${inkGround})` } : undefined}
         level={headingLevel}
         eyebrow={eyebrow}
         title={<SemanticContent as="span" id={titleId}>{title}</SemanticContent>}
         description={description}
       />
-      <SemanticContent as="div" className="flex flex-wrap items-center justify-center gap-sm">
+      <SemanticContent as="div" className="flex flex-wrap items-center justify-center gap-sm" style={texture ? { backgroundColor: `var(--color-surface-${inkGround})` } : undefined}>
         {primaryAction}
         {secondaryAction}
       </SemanticContent>
