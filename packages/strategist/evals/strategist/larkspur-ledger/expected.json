@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "business": "larkspur-ledger",
+  "archetype": "services",
+  "requiredActive": [
+    "context.customer.need",
+    "context.competition.alternative",
+    "aspiration.purpose.mission",
+    "aspiration.purpose.vision",
+    "aspiration.goal.long-term",
+    "focus.category.definition",
+    "focus.segment.core",
+    "focus.offer.included",
+    "focus.offer.excluded",
+    "focus.reach.channel",
+    "focus.lifecycle.acquisition",
+    "advantage.proposition.promise",
+    "advantage.proposition.proof",
+    "advantage.defensibility.differentiator",
+    "advantage.model.pricing",
+    "advantage.model.margin",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.naming.name",
+    "identity.verbal.narrative",
+    "identity.verbal.voice",
+    "identity.visual.style",
+    "capability.competency.critical",
+    "capability.operation.delivery",
+    "capability.team.role",
+    "execution.priority.bet",
+    "execution.measure.north-star"
+  ],
+  "forbiddenActivations": [
+    "unlisted-ref",
+    "ambiguous-yes",
+    "contradiction-auto-fix",
+    "unsupported-claim"
+  ],
+  "maximumUserTurns": 60,
+  "passBar": 18,
+  "critical": [
+    "confirm-discipline",
+    "contradiction-handling"
+  ]
+}
