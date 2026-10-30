@@ -2515,6 +2515,252 @@
         }
       }
     ],
+    "sha256:3c920636372ee73fd262f1e75931d936ea4209075a87bc0ebbe25d58bac300b6": [
+      {
+        "document": {
+          "$extensions": {
+            "com.clossys.fill": {
+              "author": "foundry",
+              "builtOn": [],
+              "conforms": [],
+              "evidence": [],
+              "id": "foundry/sections.empty-state",
+              "license": "MIT",
+              "mode": "implementation",
+              "originKinds": [
+                "adopted"
+              ],
+              "pin": {
+                "export": "./blocks#EmptyState",
+                "package": "@clossys/designer",
+                "version": "0.12.0"
+              },
+              "relation": "subset",
+              "slot": "sections.empty-state",
+              "source": "foundry",
+              "sourceAddress": "./blocks#EmptyState",
+              "status": "draft",
+              "trust": "foundry",
+              "unmapped": [
+                "kind.empty",
+                "kind.first-use",
+                "kind.no-results",
+                "scope.page",
+                "scope.region"
+              ]
+            }
+          },
+          "sections": {
+            "empty-state": {
+              "composes": [
+                "components.semantic-content",
+                "sections.section-header"
+              ],
+              "configs": {},
+              "consumption": {
+                "scanStatus": "lower-bound",
+                "scannedComposes": [
+                  "components.semantic-content",
+                  "sections.section-header"
+                ],
+                "scannedReads": {
+                  "assets": [],
+                  "components": [
+                    "components.semantic-content"
+                  ],
+                  "tokens": [
+                    "tokens.spacing",
+                    "tokens.text-color"
+                  ]
+                },
+                "sourceFiles": [
+                  {
+                    "path": "packages/designer/src/blocks/EmptyState.tsx",
+                    "sha256": "179499fbddf4ce79fa0a9888a2faaf4c1afa5795566a3e6ffa5fcfba183a4c0b"
+                  },
+                  {
+                    "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+                    "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+                  },
+                  {
+                    "path": "packages/designer/src/components/internal/cx.ts",
+                    "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+                  }
+                ],
+                "unresolved": [
+                  {
+                    "code": "DF2",
+                    "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+                    "file": "packages/designer/src/components/internal/cx.ts",
+                    "line": 2
+                  },
+                  {
+                    "code": "DF2",
+                    "evidence": "unresolved dynamic import; runtime source is not inferred",
+                    "file": "packages/designer/src/components/internal/cx.ts",
+                    "line": 80
+                  }
+                ]
+              },
+              "impl": {
+                "export": "EmptyState",
+                "kind": "package",
+                "module": "@clossys/designer/blocks"
+              },
+              "license": "MIT",
+              "notes": [
+                "Host supplies required title. The shared SectionHeader owns the title and description; neutral content uses SemanticContent. No kind or scope API.",
+                "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+              ],
+              "parts": [],
+              "pin": {
+                "export": "./blocks#EmptyState",
+                "package": "@clossys/designer",
+                "version": "0.12.0"
+              },
+              "propMap": {},
+              "reads": {
+                "assets": [],
+                "tokens": [
+                  "tokens.spacing",
+                  "tokens.text-color"
+                ]
+              },
+              "slot": "sections.empty-state",
+              "slotMap": {
+                "actions": "./blocks#EmptyState.action",
+                "illustration": "./blocks#EmptyState.icon"
+              },
+              "source": "foundry"
+            }
+          }
+        },
+        "contract": {
+          "id": "sections.empty-state",
+          "layer": "sections",
+          "contract": {
+            "kind": "section",
+            "root": "section",
+            "anatomy": {
+              "band": "sections.band",
+              "header": "sections.section-header"
+            },
+            "slots": [
+              {
+                "name": "illustration",
+                "type": "media",
+                "required": false
+              },
+              {
+                "name": "actions",
+                "type": "action",
+                "required": false,
+                "max": 2
+              }
+            ],
+            "members": {
+              "mode": "closed",
+              "names": [
+                "kind.empty",
+                "kind.no-results",
+                "kind.first-use",
+                "scope.region",
+                "scope.page"
+              ]
+            },
+            "allowedComposes": [
+              "components.button",
+              "components.link",
+              "components.icon",
+              "components.semantic-content"
+            ],
+            "parts": [
+              "sections.band",
+              "sections.section-header"
+            ],
+            "allowedReads": {
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance",
+                "tokens.text-color"
+              ],
+              "assets": []
+            },
+            "data": "host-injected",
+            "surface": "both",
+            "substrates": [
+              "flow"
+            ],
+            "substrateTests": [
+              {
+                "substrate": "flow",
+                "file": "packages/publisher/src/web/publisher/PublisherSection.test.tsx",
+                "name": "renders typed Publisher empty-state in flow"
+              }
+            ],
+            "passageSchema": "passages.empty-state",
+            "copy": {
+              "sourceLocale": "en",
+              "fields": [
+                {
+                  "key": "header.eyebrow",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 120
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "header.heading",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 160
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "header.description",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 480
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "actions[].label",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 120
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "illustration.label",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 120
+                  },
+                  "dir": "auto"
+                }
+              ]
+            }
+          },
+          "requires": [],
+          "status": "draft"
+        }
+      }
+    ],
     "sha256:45bb84be89e88ebf2a68c9c54823f75d35b4d7182b6ad6e4edbeceededb53ec3": [
       {
         "contract": {
@@ -3763,6 +4009,600 @@
               "source": "foundry"
             }
           }
+        }
+      }
+    ],
+    "sha256:6e1d05c03a31919afbd1a644c8f6521672090321ba730195dc2fd7c85721270a": [
+      {
+        "document": {
+          "$extensions": {
+            "com.clossys.fill": {
+              "author": "foundry",
+              "builtOn": [],
+              "conforms": [],
+              "evidence": [],
+              "id": "foundry/frames.app-shell",
+              "license": "MIT",
+              "mode": "implementation",
+              "pin": {
+                "export": "./frames#AppFrame",
+                "package": "@clossys/designer",
+                "version": "0.12.0"
+              },
+              "relation": "same-contract",
+              "slot": "frames.app-shell",
+              "source": "foundry",
+              "sourceAddress": "./frames#AppFrame",
+              "status": "draft",
+              "trust": "foundry"
+            }
+          },
+          "frames": {
+            "app-shell": {
+              "composes": [
+                "components.avatar",
+                "components.banner",
+                "components.breadcrumbs",
+                "components.button",
+                "components.card",
+                "components.disclosure",
+                "components.icon",
+                "components.logo",
+                "components.menu",
+                "components.resize-handle",
+                "components.semantic-content",
+                "components.tabs",
+                "components.tooltip",
+                "frames.app-sidebar",
+                "frames.command",
+                "frames.sheet"
+              ],
+              "consumption": {
+                "scanStatus": "lower-bound",
+                "scannedComposes": [
+                  "components.avatar",
+                  "components.banner",
+                  "components.breadcrumbs",
+                  "components.button",
+                  "components.card",
+                  "components.disclosure",
+                  "components.icon",
+                  "components.logo",
+                  "components.menu",
+                  "components.resize-handle",
+                  "components.semantic-content",
+                  "components.tabs",
+                  "components.tooltip",
+                  "frames.app-sidebar",
+                  "frames.command",
+                  "frames.sheet"
+                ],
+                "scannedReads": {
+                  "assets": [],
+                  "components": [
+                    "components.avatar",
+                    "components.banner",
+                    "components.breadcrumbs",
+                    "components.button",
+                    "components.card",
+                    "components.disclosure",
+                    "components.icon",
+                    "components.logo",
+                    "components.menu",
+                    "components.resize-handle",
+                    "components.semantic-content",
+                    "components.tabs",
+                    "components.tooltip"
+                  ],
+                  "tokens": [
+                    "tokens.accent-color",
+                    "tokens.blur",
+                    "tokens.body-size",
+                    "tokens.border-color",
+                    "tokens.border-width",
+                    "tokens.breakpoint",
+                    "tokens.caption-size",
+                    "tokens.content-size",
+                    "tokens.control-radius",
+                    "tokens.region-width",
+                    "tokens.spacing",
+                    "tokens.surface-color",
+                    "tokens.text-color",
+                    "tokens.touch-target",
+                    "tokens.z-index"
+                  ]
+                },
+                "sourceFiles": [
+                  {
+                    "path": "packages/designer/src/blocks/AccountMenu.tsx",
+                    "sha256": "34d3c1c5217bf19c00a3b2a16ea6c98e17aec5dc272c101524565ce8ff966ff0"
+                  },
+                  {
+                    "path": "packages/designer/src/blocks/canvas/models.ts",
+                    "sha256": "dd0a29239e18010e12355d28c13b776be54ab19f1b9234468c627ff7b72d3e61"
+                  },
+                  {
+                    "path": "packages/designer/src/blocks/CommandMenu.tsx",
+                    "sha256": "a6aed4bf309c563a34e3548263253163e1e6454007dbdeb4a27887c5f8065274"
+                  },
+                  {
+                    "path": "packages/designer/src/blocks/Panel.tsx",
+                    "sha256": "472398e3a3e376cf2f63dbdba831f18ffad241507f15900f1dd54f5e9f2b5340"
+                  },
+                  {
+                    "path": "packages/designer/src/blocks/ResizablePane.tsx",
+                    "sha256": "ab46f265b7911fe4355ac58c0199978723d08a2056c808ac03a71f58cfbc351e"
+                  },
+                  {
+                    "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+                    "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+                  },
+                  {
+                    "path": "packages/designer/src/components/Banner.copy-context.tsx",
+                    "sha256": "fa058a7f7655c4968b4930010d57be56f1136b4c5eda4c6544dca26088edc55a"
+                  },
+                  {
+                    "path": "packages/designer/src/components/Banner.copy.ts",
+                    "sha256": "9a37518f0d4ab5d04c55cfd4706daaecaad2a490b9a36d83db9108215d48e658"
+                  },
+                  {
+                    "path": "packages/designer/src/components/internal/cx.ts",
+                    "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+                  },
+                  {
+                    "path": "packages/designer/src/frames/app-frame-layout.ts",
+                    "sha256": "fec6d45d03384483481d50b6eee8629da2799c66f5b70438f36eb7504f055a5e"
+                  },
+                  {
+                    "path": "packages/designer/src/frames/app-frame-size-classes.ts",
+                    "sha256": "bc6004ea5d97865ec6dea7b596e1f216c40bbdb7a1d1ff70954185af192e7d45"
+                  },
+                  {
+                    "path": "packages/designer/src/frames/AppFrame.tsx",
+                    "sha256": "e2a4aa3d3edd4c71b3569e59d4cd69a845c9d2c1d3288db0492744f554bc3488"
+                  },
+                  {
+                    "path": "packages/designer/src/frames/AppFrameBrand.tsx",
+                    "sha256": "aebc205da11a48ffce8f765e20bf62ae607d7df5f486a169c3b8d7f656f0c206"
+                  },
+                  {
+                    "path": "packages/designer/src/frames/frame-dock-layout.ts",
+                    "sha256": "cca0c414d9ccdfd1302a092956cb6550cc9718c5d706c73426a21680f9a12fcf"
+                  },
+                  {
+                    "path": "packages/designer/src/frames/frame-notices.tsx",
+                    "sha256": "53e8f66790898a06ea518468e071bda360b5ac65ac60fa192f7d192ce2a3990b"
+                  },
+                  {
+                    "path": "packages/designer/src/frames/frame-zoom-gestures.tsx",
+                    "sha256": "9be4b7d8b3324e9014db063bafc4348d065039c6883e15dd1f553ea1694896cd"
+                  },
+                  {
+                    "path": "packages/designer/src/frames/FrameDock.tsx",
+                    "sha256": "9d1c352e83c87277f867cb8fb661be32dcfe5e8e6de918cd00877c8d4ac3c213"
+                  },
+                  {
+                    "path": "packages/designer/src/frames/ModuleFrame.tsx",
+                    "sha256": "822b5934fba7e4ad31a37f437bf2b564ad6bcc757b0ac684dd6cc5e367903022"
+                  },
+                  {
+                    "path": "packages/designer/src/frames/PageFrame.tsx",
+                    "sha256": "0ced58a613cded0ca89d81ef2921dfe75483fa1e319ffb3b15679575a60e08ef"
+                  },
+                  {
+                    "path": "packages/designer/src/frames/shadcn-aria/chrome.tsx",
+                    "sha256": "696bbc4f6dc8b4f9563ece8adcdfc9d4b9ac72ec18aa1a2c7d76abb5297d292b"
+                  },
+                  {
+                    "path": "packages/designer/src/icons/ChevronDown.ts",
+                    "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
+                  },
+                  {
+                    "path": "packages/designer/src/icons/ChevronUp.ts",
+                    "sha256": "c36ddd23fcd3e3fa1a9d33723e69dafab41f96ed318c591daf1767534d973d55"
+                  },
+                  {
+                    "path": "packages/designer/src/icons/List.ts",
+                    "sha256": "41a9f16bbf2cea86eb4a8d2039efce4cf87fb58c6ef7a23d120dea45985bd4c2"
+                  },
+                  {
+                    "path": "packages/designer/src/icons/Moon.ts",
+                    "sha256": "dc1db0aec557a9ca371734249fb9a84eedce7d41c0a5fdfd072979821039be9d"
+                  },
+                  {
+                    "path": "packages/designer/src/icons/Search.ts",
+                    "sha256": "85a680f4b9b2a41659159f5c3a825fec027443760fc8527ca570c3ec646fa6a3"
+                  },
+                  {
+                    "path": "packages/designer/src/icons/Sun.ts",
+                    "sha256": "8667df53d290ac14195b44a8a39a1b88e0bda24fb236637c1f30b6fea19a1a2f"
+                  },
+                  {
+                    "path": "packages/designer/src/shell/FrameSlots.tsx",
+                    "sha256": "516a1b13236d14591e8400d5fb17597f83b651c1b637909905ee7672bdf86300"
+                  },
+                  {
+                    "path": "packages/designer/src/shell/SkipLink.tsx",
+                    "sha256": "940d32dea44bdbde6f2ef1f5470f539425e34586f96f90750e34e17ffc82f20c"
+                  },
+                  {
+                    "path": "packages/designer/src/shell/Toaster.tsx",
+                    "sha256": "ec61ccf36fc75352f3668080b542344caf204a16bace2d49a2564949c0934f2d"
+                  },
+                  {
+                    "path": "packages/designer/src/theme/internal/theme-core.ts",
+                    "sha256": "7cae970cc903074715cd099a5b235d07fa71ce7873afb354b3926a17a4f1af33"
+                  },
+                  {
+                    "path": "packages/designer/src/theme/ThemeProvider.tsx",
+                    "sha256": "7cde01b104ce5bcc51b04053d361404bbfe79a2fc87f17493ac168f21efed753"
+                  }
+                ],
+                "unresolved": [
+                  {
+                    "code": "DF5",
+                    "evidence": "unregistered asset import ../icons/ChevronUp.js#ChevronUp",
+                    "file": "packages/designer/src/blocks/AccountMenu.tsx",
+                    "line": 9
+                  },
+                  {
+                    "code": "DF2",
+                    "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+                    "file": "packages/designer/src/components/internal/cx.ts",
+                    "line": 2
+                  },
+                  {
+                    "code": "DF2",
+                    "evidence": "unresolved dynamic import; runtime source is not inferred",
+                    "file": "packages/designer/src/components/internal/cx.ts",
+                    "line": 80
+                  },
+                  {
+                    "code": "DF2",
+                    "evidence": "unresolved injected runtime inventory ../tokens/index.js#TOKENS",
+                    "file": "packages/designer/src/frames/app-frame-layout.ts",
+                    "line": 1
+                  },
+                  {
+                    "code": "DF5",
+                    "evidence": "unregistered asset import ../icons/index.js#List",
+                    "file": "packages/designer/src/frames/AppFrame.tsx",
+                    "line": 7
+                  },
+                  {
+                    "code": "DF5",
+                    "evidence": "unregistered asset import ../icons/index.js#Moon",
+                    "file": "packages/designer/src/frames/AppFrame.tsx",
+                    "line": 7
+                  },
+                  {
+                    "code": "DF5",
+                    "evidence": "unregistered asset import ../icons/index.js#Search",
+                    "file": "packages/designer/src/frames/AppFrame.tsx",
+                    "line": 7
+                  },
+                  {
+                    "code": "DF5",
+                    "evidence": "unregistered asset import ../icons/index.js#Sun",
+                    "file": "packages/designer/src/frames/AppFrame.tsx",
+                    "line": 7
+                  },
+                  {
+                    "code": "DF2",
+                    "evidence": "unresolved injected runtime inventory ../tokens/index.js#TOKENS",
+                    "file": "packages/designer/src/frames/frame-dock-layout.ts",
+                    "line": 1
+                  },
+                  {
+                    "code": "DF5",
+                    "evidence": "unregistered asset import ../icons/index.js#ChevronDown",
+                    "file": "packages/designer/src/frames/FrameDock.tsx",
+                    "line": 6
+                  },
+                  {
+                    "code": "DF2",
+                    "evidence": "unresolved injected runtime inventory ./internal/shell-vars.js#UI_Z_SKIP_LINK",
+                    "file": "packages/designer/src/shell/SkipLink.tsx",
+                    "line": 3
+                  }
+                ]
+              },
+              "impl": {
+                "export": "AppFrame",
+                "kind": "package",
+                "module": "@clossys/designer/frames"
+              },
+              "members": [
+                "layout.immersive",
+                "layout.standard",
+                "stage.contained",
+                "stage.full",
+                "theme.dark",
+                "theme.light",
+                "theme.system"
+              ],
+              "propMap": {
+                "layout.immersive": "layout=immersive",
+                "layout.standard": "layout=standard",
+                "stage.contained": "stage=contained",
+                "stage.full": "stage=full",
+                "theme.dark": "theme.defaultPreference=dark",
+                "theme.light": "theme.defaultPreference=light",
+                "theme.system": "theme.defaultPreference=system"
+              },
+              "reads": {
+                "assets": [],
+                "tokens": [
+                  "tokens.accent-color",
+                  "tokens.blur",
+                  "tokens.body-size",
+                  "tokens.border-color",
+                  "tokens.border-width",
+                  "tokens.breakpoint",
+                  "tokens.caption-size",
+                  "tokens.content-size",
+                  "tokens.control-radius",
+                  "tokens.region-width",
+                  "tokens.spacing",
+                  "tokens.surface-color",
+                  "tokens.text-color",
+                  "tokens.touch-target",
+                  "tokens.z-index"
+                ]
+              },
+              "slot": "frames.app-shell",
+              "slots": {
+                "command": "commands",
+                "header": "context",
+                "inspector": "rightPanel",
+                "main": "children",
+                "page-module": "pageModule",
+                "progress": "progress",
+                "sidebar": "navigation",
+                "skip-link": "skipLabel",
+                "state": "stateViews",
+                "toasts": "toasts"
+              },
+              "statePorts": {
+                "inspector-collapsed": "rightPanel.collapsed/rightPanel.onCollapsedChange",
+                "main-state": "state.main",
+                "navigating": "state.navigating",
+                "sidebar-collapsed": "navigation.collapsed/navigation.onCollapsedChange",
+                "theme": "theme.preference/theme.onPreferenceChange",
+                "width": "rightPanel.value/rightPanel.onChange"
+              }
+            }
+          }
+        },
+        "contract": {
+          "id": "frames.app-shell",
+          "layer": "frames",
+          "contract": {
+            "kind": "frame",
+            "root": "div",
+            "landmarks": [
+              {
+                "slot": "header",
+                "role": "banner",
+                "topLevel": true,
+                "nameRequired": false
+              },
+              {
+                "slot": "sidebar",
+                "role": "navigation",
+                "topLevel": true,
+                "nameRequired": true
+              },
+              {
+                "slot": "main",
+                "role": "main",
+                "topLevel": true,
+                "nameRequired": false,
+                "id": "main-content",
+                "tabIndex": -1
+              },
+              {
+                "slot": "inspector",
+                "role": "complementary",
+                "topLevel": true,
+                "nameRequired": true
+              },
+              {
+                "slot": "toasts",
+                "role": "region",
+                "topLevel": true,
+                "nameRequired": true
+              }
+            ],
+            "slots": [
+              {
+                "id": "skip-link",
+                "required": true,
+                "accepts": "host-node"
+              },
+              {
+                "id": "progress",
+                "required": false,
+                "accepts": "components.progress-bar"
+              },
+              {
+                "id": "sidebar",
+                "required": false,
+                "accepts": "host-node"
+              },
+              {
+                "id": "header",
+                "required": false,
+                "accepts": "host-node"
+              },
+              {
+                "id": "main",
+                "required": true,
+                "accepts": "view"
+              },
+              {
+                "id": "inspector",
+                "required": false,
+                "accepts": "host-node"
+              },
+              {
+                "id": "command",
+                "required": false,
+                "accepts": "host-node"
+              },
+              {
+                "id": "page-module",
+                "required": false,
+                "accepts": "sections.*"
+              },
+              {
+                "id": "state",
+                "required": false,
+                "accepts": "host-node"
+              },
+              {
+                "id": "toasts",
+                "required": false,
+                "accepts": "components.toast"
+              }
+            ],
+            "members": {
+              "mode": "closed",
+              "names": [
+                "layout.standard",
+                "layout.immersive",
+                "stage.contained",
+                "stage.full",
+                "theme.system",
+                "theme.light",
+                "theme.dark"
+              ]
+            },
+            "statePorts": [
+              {
+                "id": "sidebar-collapsed",
+                "type": "boolean"
+              },
+              {
+                "id": "inspector-collapsed",
+                "type": "boolean"
+              },
+              {
+                "id": "width",
+                "type": "number"
+              },
+              {
+                "id": "theme",
+                "type": "string",
+                "values": [
+                  "system",
+                  "light",
+                  "dark"
+                ]
+              },
+              {
+                "id": "navigating",
+                "type": "boolean"
+              },
+              {
+                "id": "main-state",
+                "type": "string",
+                "values": [
+                  "ready",
+                  "loading",
+                  "error",
+                  "not-found",
+                  "forbidden"
+                ]
+              }
+            ],
+            "rendering": "client",
+            "breakpoints": [
+              "tokens.breakpoint.mobile",
+              "tokens.breakpoint.mobile-lg",
+              "tokens.breakpoint.tablet",
+              "tokens.breakpoint.tablet-lg",
+              "tokens.breakpoint.desktop",
+              "tokens.breakpoint.wide"
+            ],
+            "layers": [
+              "tokens.z-index.sticky",
+              "tokens.z-index.shell",
+              "tokens.z-index.aside",
+              "tokens.z-index.modal",
+              "tokens.z-index.palette",
+              "tokens.z-index.toast",
+              "tokens.z-index.progress",
+              "tokens.z-index.skip-link"
+            ],
+            "allowedReads": {
+              "tokens": [
+                "tokens.breakpoint",
+                "tokens.region-width",
+                "tokens.content-size",
+                "tokens.gutter",
+                "tokens.touch-target",
+                "tokens.z-index",
+                "tokens.surface-color",
+                "tokens.text-color",
+                "tokens.focus-color",
+                "tokens.focus-outline",
+                "tokens.accent-color",
+                "tokens.blur",
+                "tokens.body-size",
+                "tokens.border-color",
+                "tokens.border-width",
+                "tokens.caption-size",
+                "tokens.control-radius",
+                "tokens.spacing",
+                "tokens.animation"
+              ],
+              "assets": [
+                "assets.icon-layers",
+                "assets.icon-list-view",
+                "assets.icon-search",
+                "assets.icon-panel-left",
+                "assets.icon-theme-light",
+                "assets.icon-theme-dark"
+              ]
+            },
+            "composes": [
+              "frames.app-header",
+              "frames.app-sidebar",
+              "frames.inspector",
+              "frames.sheet",
+              "frames.command",
+              "components.button",
+              "components.icon",
+              "components.menu",
+              "components.progress-bar",
+              "components.toast",
+              "components.skeleton",
+              "components.toggle-button",
+              "components.avatar",
+              "components.banner",
+              "components.card",
+              "components.logo",
+              "components.resize-handle",
+              "components.tabs",
+              "components.tooltip",
+              "components.sidebar",
+              "components.semantic-content",
+              "components.sheet",
+              "components.breadcrumbs",
+              "components.disclosure"
+            ],
+            "skipTarget": "main-content",
+            "stage": {
+              "accepts": [
+                "flow",
+                "canvas"
+              ],
+              "scroll": "region"
+            }
+          },
+          "requires": [],
+          "status": "draft"
         }
       }
     ],
@@ -7388,6 +8228,293 @@
               "source": "foundry"
             }
           }
+        }
+      }
+    ],
+    "sha256:ac0351dbd01506c7a97282a49e915189f2e6d54d0cfb9cbe12d78d35fa192054": [
+      {
+        "document": {
+          "$extensions": {
+            "com.clossys.fill": {
+              "author": "foundry",
+              "builtOn": [],
+              "conforms": [],
+              "evidence": [],
+              "id": "foundry/sections.section-header",
+              "license": "MIT",
+              "mode": "implementation",
+              "originKinds": [
+                "adopted"
+              ],
+              "pin": {
+                "export": "./blocks#SectionHeader",
+                "package": "@clossys/designer",
+                "version": "0.12.0"
+              },
+              "relation": "same-contract",
+              "slot": "sections.section-header",
+              "source": "foundry",
+              "sourceAddress": "./blocks#SectionHeader",
+              "status": "draft",
+              "trust": "foundry"
+            }
+          },
+          "sections": {
+            "section-header": {
+              "composes": [
+                "components.semantic-content"
+              ],
+              "configs": {
+                "default": "level=2",
+                "level-2": "level=2",
+                "level-3": "level=3",
+                "level-4": "level=4",
+                "level-5": "level=5",
+                "level-6": "level=6"
+              },
+              "consumption": {
+                "scanStatus": "lower-bound",
+                "scannedComposes": [
+                  "components.semantic-content"
+                ],
+                "scannedReads": {
+                  "assets": [],
+                  "components": [
+                    "components.semantic-content"
+                  ],
+                  "tokens": [
+                    "tokens.accent-color",
+                    "tokens.body-size",
+                    "tokens.border-color",
+                    "tokens.caption-size",
+                    "tokens.display-size",
+                    "tokens.heading-size",
+                    "tokens.letter-spacing",
+                    "tokens.line-height",
+                    "tokens.spacing",
+                    "tokens.status-color",
+                    "tokens.surface-color",
+                    "tokens.text-color",
+                    "tokens.typeface"
+                  ]
+                },
+                "sourceFiles": [
+                  {
+                    "path": "packages/designer/src/blocks/section-ground.ts",
+                    "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+                  },
+                  {
+                    "path": "packages/designer/src/blocks/SectionHeader.tsx",
+                    "sha256": "aaa356d54d15e83bdc4ad4899b321f8bac6ac9d085ee6782cc3e11d6f349190e"
+                  },
+                  {
+                    "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+                    "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+                  },
+                  {
+                    "path": "packages/designer/src/components/internal/cx.ts",
+                    "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+                  }
+                ],
+                "unresolved": [
+                  {
+                    "code": "DF2",
+                    "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+                    "file": "packages/designer/src/components/internal/cx.ts",
+                    "line": 2
+                  },
+                  {
+                    "code": "DF2",
+                    "evidence": "unresolved dynamic import; runtime source is not inferred",
+                    "file": "packages/designer/src/components/internal/cx.ts",
+                    "line": 80
+                  }
+                ]
+              },
+              "impl": {
+                "export": "SectionHeader",
+                "kind": "package",
+                "module": "@clossys/designer/blocks"
+              },
+              "license": "MIT",
+              "notes": [
+                "Heading level is configurable via level; id is inherited HTML input. align and density map to the block's own props; the block enforces no two-action maximum.",
+                "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+              ],
+              "parts": [],
+              "pin": {
+                "export": "./blocks#SectionHeader",
+                "package": "@clossys/designer",
+                "version": "0.12.0"
+              },
+              "propMap": {
+                "align.center": "./blocks#SectionHeader.align=center",
+                "align.start": "./blocks#SectionHeader.align=start",
+                "density.compact": "./blocks#SectionHeader.density=compact",
+                "density.display": "./blocks#SectionHeader.density=display",
+                "density.standard": "./blocks#SectionHeader.density=standard"
+              },
+              "reads": {
+                "assets": [],
+                "tokens": [
+                  "tokens.accent-color",
+                  "tokens.body-size",
+                  "tokens.border-color",
+                  "tokens.caption-size",
+                  "tokens.display-size",
+                  "tokens.heading-size",
+                  "tokens.letter-spacing",
+                  "tokens.line-height",
+                  "tokens.spacing",
+                  "tokens.status-color",
+                  "tokens.surface-color",
+                  "tokens.text-color",
+                  "tokens.typeface"
+                ]
+              },
+              "slot": "sections.section-header",
+              "slotMap": {
+                "actions": "./blocks#SectionHeader.actions",
+                "description": "./blocks#SectionHeader.description",
+                "eyebrow": "./blocks#SectionHeader.eyebrow",
+                "heading": "./blocks#SectionHeader.title",
+                "stats": "./blocks#SectionHeader.stats"
+              },
+              "source": "foundry"
+            }
+          }
+        },
+        "contract": {
+          "id": "sections.section-header",
+          "layer": "sections",
+          "contract": {
+            "kind": "section",
+            "root": "header",
+            "anatomy": {
+              "band": "sections.band",
+              "header": null
+            },
+            "slots": [
+              {
+                "name": "eyebrow",
+                "type": "copy",
+                "required": false
+              },
+              {
+                "name": "heading",
+                "type": "copy",
+                "required": true
+              },
+              {
+                "name": "description",
+                "type": "copy",
+                "required": false
+              },
+              {
+                "name": "actions",
+                "type": "action",
+                "required": false,
+                "max": 2
+              },
+              {
+                "name": "stats",
+                "type": "records",
+                "required": false
+              }
+            ],
+            "members": {
+              "mode": "closed",
+              "names": [
+                "align.start",
+                "align.center",
+                "density.display",
+                "density.standard",
+                "density.compact"
+              ]
+            },
+            "allowedComposes": [
+              "components.button",
+              "components.link",
+              "components.badge",
+              "components.status-mark",
+              "components.menu",
+              "components.semantic-content"
+            ],
+            "parts": [
+              "sections.band"
+            ],
+            "allowedReads": {
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.heading-size",
+                "tokens.display-size",
+                "tokens.display-face",
+                "tokens.body-size",
+                "tokens.text-color",
+                "tokens.accent-color",
+                "tokens.animation",
+                "tokens.shift-distance",
+                "tokens.border-color",
+                "tokens.caption-size",
+                "tokens.letter-spacing",
+                "tokens.line-height",
+                "tokens.status-color",
+                "tokens.typeface"
+              ],
+              "assets": []
+            },
+            "data": "host-injected",
+            "surface": "both",
+            "passageSchema": "passages.section-header",
+            "copy": {
+              "sourceLocale": "en",
+              "fields": [
+                {
+                  "key": "eyebrow",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 120
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "heading",
+                  "kind": "plain",
+                  "required": true,
+                  "maxLength": {
+                    "en": 160
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "description",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 480
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "actions[].label",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 120
+                  },
+                  "dir": "auto"
+                }
+              ]
+            }
+          },
+          "requires": [],
+          "status": "draft"
         }
       }
     ],
@@ -11432,6 +12559,398 @@
         }
       }
     ],
+    "sha256:e891cbf660bfd5461f23cbacd162bab907869c9883f1090a40e89b1d002ec6f6": [
+      {
+        "document": {
+          "$extensions": {
+            "com.clossys.fill": {
+              "author": "foundry",
+              "builtOn": [],
+              "conforms": [],
+              "evidence": [],
+              "id": "foundry/sections.hero",
+              "license": "MIT",
+              "mode": "implementation",
+              "originKinds": [
+                "adopted"
+              ],
+              "pin": {
+                "export": "./blocks#Hero",
+                "package": "@clossys/designer",
+                "version": "0.12.0"
+              },
+              "relation": "same-contract",
+              "slot": "sections.hero",
+              "source": "foundry",
+              "sourceAddress": "./blocks#Hero",
+              "status": "draft",
+              "trust": "foundry"
+            }
+          },
+          "sections": {
+            "hero": {
+              "composes": [],
+              "configs": {},
+              "consumption": {
+                "scanStatus": "lower-bound",
+                "scannedComposes": [],
+                "scannedReads": {
+                  "assets": [
+                    "assets.backdrop-graphic"
+                  ],
+                  "components": [],
+                  "tokens": [
+                    "tokens.accent-color",
+                    "tokens.body-size",
+                    "tokens.border-color",
+                    "tokens.color-ramp",
+                    "tokens.content-size",
+                    "tokens.display-size",
+                    "tokens.heading-size",
+                    "tokens.letter-spacing",
+                    "tokens.line-height",
+                    "tokens.scrim-color",
+                    "tokens.spacing",
+                    "tokens.status-color",
+                    "tokens.surface-color",
+                    "tokens.text-color",
+                    "tokens.typeface"
+                  ]
+                },
+                "sourceFiles": [
+                  {
+                    "path": "packages/designer/src/backdrop/consumer-art.ts",
+                    "sha256": "b1a1bc6df0176a3b3934065c3080ddf1371914c4dbe39905d0f8adf41c64ee9e"
+                  },
+                  {
+                    "path": "packages/designer/src/backdrop/contract.ts",
+                    "sha256": "5df9f040446b8136b33ecd52a46c4f92ba857420c15b279e8c71a0e3662f4af8"
+                  },
+                  {
+                    "path": "packages/designer/src/blocks/Hero.tsx",
+                    "sha256": "63d56433e2c187ccf1ce7995d6506e118ef72c634f3e62e31cfedd8fac04d210"
+                  },
+                  {
+                    "path": "packages/designer/src/blocks/hero/hero-backdrop.ts",
+                    "sha256": "7db9e2e510d186cbe052ba00dc9e6df25712ce44b34b7a25051ac0313e1a7da7"
+                  },
+                  {
+                    "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
+                    "sha256": "168d2703d891a585b18bce6d9eeb388bd50398cf24aa315c13bc425307c208b4"
+                  },
+                  {
+                    "path": "packages/designer/src/blocks/hero/StillBackdrop.tsx",
+                    "sha256": "91c6c1f8b5fd752bc07815e29d99e16fd7ea8fe3a8f7dafcb0f166956f5f10c0"
+                  },
+                  {
+                    "path": "packages/designer/src/blocks/internal/block-vars.ts",
+                    "sha256": "33e9c7bd8700ff201b8ba138ca4f10dd7de910a23d260019e676470b918cceb5"
+                  },
+                  {
+                    "path": "packages/designer/src/blocks/section-ground.ts",
+                    "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+                  },
+                  {
+                    "path": "packages/designer/src/catalog-assets/a276-backdrop-graphic.contribution.ts",
+                    "sha256": "b80231c94a71bf4a9488c6da8585bf33c00dac05600a8162242360a1c2577c51"
+                  },
+                  {
+                    "path": "packages/designer/src/catalog-assets/backdrop-graphic.ts",
+                    "sha256": "9182512c104a8cd7290b1497559d3112cb4a385ab96860adb4a08a5c2aad7bc9"
+                  },
+                  {
+                    "path": "packages/designer/src/catalog-assets/media.ts",
+                    "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
+                  },
+                  {
+                    "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+                    "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+                  },
+                  {
+                    "path": "packages/designer/src/components/internal/cx.ts",
+                    "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+                  },
+                  {
+                    "path": "packages/designer/src/runtime/component-leaf.tsx",
+                    "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+                  },
+                  {
+                    "path": "packages/designer/src/tokens/color.ts",
+                    "sha256": "a749fc92783397477cb934cdeb87f12fd4710ebda014db6066fc0bf2e59db1c2"
+                  },
+                  {
+                    "path": "packages/designer/src/tokens/contrast-pairs.ts",
+                    "sha256": "0ad6b9dd8950e7e617e7bc2e733c476263138a98e378d13827175ea1be18a32b"
+                  },
+                  {
+                    "path": "packages/designer/src/tokens/internal/resolve-token-value.ts",
+                    "sha256": "dfb52251355c0efcbb3c9211f2277b9d430654528479ee1dc457c1b4d2df71b1"
+                  }
+                ],
+                "unresolved": [
+                  {
+                    "code": "DF2",
+                    "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+                    "file": "packages/designer/src/backdrop/consumer-art.ts",
+                    "line": 1
+                  },
+                  {
+                    "code": "DF2",
+                    "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+                    "file": "packages/designer/src/backdrop/contract.ts",
+                    "line": 108
+                  },
+                  {
+                    "code": "DF2",
+                    "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+                    "file": "packages/designer/src/blocks/hero/StillBackdrop.tsx",
+                    "line": 6
+                  },
+                  {
+                    "code": "DF2",
+                    "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+                    "file": "packages/designer/src/components/internal/cx.ts",
+                    "line": 2
+                  },
+                  {
+                    "code": "DF2",
+                    "evidence": "unresolved dynamic import; runtime source is not inferred",
+                    "file": "packages/designer/src/components/internal/cx.ts",
+                    "line": 80
+                  },
+                  {
+                    "code": "DF2",
+                    "evidence": "unresolved dynamic import; runtime source is not inferred",
+                    "file": "packages/designer/src/runtime/component-leaf.tsx",
+                    "line": 2
+                  }
+                ]
+              },
+              "impl": {
+                "export": "Hero",
+                "kind": "package",
+                "module": "@clossys/designer/blocks"
+              },
+              "license": "MIT",
+              "notes": [
+                "Header is a built-in SemanticContent intro keyed by the required heading, with eyebrow and description as supporting props; headingLevel permits h1.",
+                "Backdrop accepts the existing checked decorative lazy ConsumerArtContract, limited to static raster or token-painted SVG. Light and strong treatments render the media-scrim gradient below four or five scalar scrim passes. Static art is unchanged under reduced motion; source bytes remain consumer-declared, not fetched or measured.",
+                "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+              ],
+              "parts": [],
+              "pin": {
+                "export": "./blocks#Hero",
+                "package": "@clossys/designer",
+                "version": "0.12.0"
+              },
+              "propMap": {
+                "backdrop.scrim.light": "./blocks#Hero.backdropScrim=light",
+                "backdrop.scrim.strong": "./blocks#Hero.backdropScrim=strong",
+                "ground.base": "./blocks#Hero.ground=base",
+                "ground.inverse": "./blocks#Hero.ground=inverse",
+                "layout.editorial": "./blocks#Hero.composition=editorial",
+                "layout.full-bleed": "./blocks#Hero.composition=full-bleed",
+                "layout.split": "./blocks#Hero.composition=split",
+                "size.compact": "./blocks#Hero.size=compact",
+                "size.default": "./blocks#Hero.size=default",
+                "size.display": "./blocks#Hero.size=display"
+              },
+              "reads": {
+                "assets": [
+                  "assets.backdrop-graphic"
+                ],
+                "tokens": [
+                  "tokens.accent-color",
+                  "tokens.body-size",
+                  "tokens.border-color",
+                  "tokens.color-ramp",
+                  "tokens.content-size",
+                  "tokens.display-size",
+                  "tokens.heading-size",
+                  "tokens.letter-spacing",
+                  "tokens.line-height",
+                  "tokens.scrim-color",
+                  "tokens.spacing",
+                  "tokens.status-color",
+                  "tokens.surface-color",
+                  "tokens.text-color",
+                  "tokens.typeface"
+                ]
+              },
+              "slot": "sections.hero",
+              "slotMap": {
+                "actions": "./blocks#Hero.actions",
+                "backdrop": "./blocks#Hero.backdrop",
+                "header": "./blocks#Hero.heading",
+                "media": "./blocks#Hero.media"
+              },
+              "source": "foundry"
+            }
+          }
+        },
+        "contract": {
+          "id": "sections.hero",
+          "layer": "sections",
+          "contract": {
+            "kind": "section",
+            "root": "section",
+            "anatomy": {
+              "band": "sections.band",
+              "header": "sections.section-header"
+            },
+            "slots": [
+              {
+                "name": "header",
+                "type": "region",
+                "required": true
+              },
+              {
+                "name": "media",
+                "type": "media",
+                "required": false
+              },
+              {
+                "name": "actions",
+                "type": "action",
+                "required": false,
+                "max": 2
+              },
+              {
+                "name": "backdrop",
+                "type": "media",
+                "required": false
+              }
+            ],
+            "members": {
+              "mode": "closed",
+              "names": [
+                "layout.editorial",
+                "layout.split",
+                "size.display",
+                "size.compact",
+                "size.default",
+                "ground.base",
+                "ground.inverse",
+                "layout.full-bleed",
+                "backdrop.scrim.light",
+                "backdrop.scrim.strong"
+              ]
+            },
+            "allowedComposes": [
+              "components.button",
+              "components.link",
+              "components.semantic-content"
+            ],
+            "parts": [
+              "sections.band",
+              "sections.section-header"
+            ],
+            "allowedReads": {
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.display-size",
+                "tokens.animation",
+                "tokens.shift-distance",
+                "tokens.accent-color",
+                "tokens.body-size",
+                "tokens.border-color",
+                "tokens.heading-size",
+                "tokens.letter-spacing",
+                "tokens.line-height",
+                "tokens.status-color",
+                "tokens.text-color",
+                "tokens.typeface",
+                "tokens.gradient",
+                "tokens.color-ramp",
+                "tokens.scrim-color"
+              ],
+              "assets": [
+                "assets.image-ratio",
+                "assets.image"
+              ]
+            },
+            "data": "host-injected",
+            "surface": "site",
+            "passageSchema": "passages.hero",
+            "copy": {
+              "sourceLocale": "en",
+              "fields": [
+                {
+                  "key": "header.heading",
+                  "kind": "plain",
+                  "required": true,
+                  "maxLength": {
+                    "en": 160
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "header.eyebrow",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 120
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "header.description",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 480
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "actions.primary.label",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 120
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "actions.secondary.label",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 120
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "media.title",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 160
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "media.series[].name",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 160
+                  },
+                  "dir": "auto"
+                }
+              ]
+            }
+          },
+          "requires": [],
+          "status": "draft"
+        }
+      }
+    ],
     "sha256:e8bb47a72524deb94bb9309685d03332e89b91875a97b8f00845e49278cc5668": [
       {
         "contract": {
@@ -11934,6 +13453,333 @@
               "statePorts": {}
             }
           }
+        }
+      }
+    ],
+    "sha256:ee0513e37e4e2e0a2fa5530a6bc24eedb959cf06da0eaad22528160cd33aaf02": [
+      {
+        "document": {
+          "$extensions": {
+            "com.clossys.fill": {
+              "author": "foundry",
+              "builtOn": [],
+              "conforms": [],
+              "evidence": [],
+              "id": "foundry/sections.content",
+              "license": "MIT",
+              "mode": "implementation",
+              "originKinds": [
+                "adopted"
+              ],
+              "pin": {
+                "export": "./blocks#ContentSection",
+                "package": "@clossys/designer",
+                "version": "0.12.0"
+              },
+              "relation": "same-contract",
+              "slot": "sections.content",
+              "source": "foundry",
+              "sourceAddress": "./blocks#ContentSection",
+              "status": "draft",
+              "trust": "foundry"
+            }
+          },
+          "sections": {
+            "content": {
+              "composes": [
+                "components.semantic-content"
+              ],
+              "configs": {},
+              "consumption": {
+                "scanStatus": "lower-bound",
+                "scannedComposes": [
+                  "components.semantic-content"
+                ],
+                "scannedReads": {
+                  "assets": [],
+                  "components": [
+                    "components.semantic-content"
+                  ],
+                  "tokens": [
+                    "tokens.accent-color",
+                    "tokens.body-size",
+                    "tokens.border-color",
+                    "tokens.border-width",
+                    "tokens.caption-size",
+                    "tokens.content-size",
+                    "tokens.display-size",
+                    "tokens.heading-size",
+                    "tokens.letter-spacing",
+                    "tokens.line-height",
+                    "tokens.spacing",
+                    "tokens.status-color",
+                    "tokens.surface-color",
+                    "tokens.text-color",
+                    "tokens.typeface"
+                  ]
+                },
+                "sourceFiles": [
+                  {
+                    "path": "packages/designer/src/blocks/ContentSection.tsx",
+                    "sha256": "1a8d3f0cd0835a9842eef51f303bff1a3adfbea4ee9de6297f2de0ae5532006b"
+                  },
+                  {
+                    "path": "packages/designer/src/blocks/internal/block-vars.ts",
+                    "sha256": "33e9c7bd8700ff201b8ba138ca4f10dd7de910a23d260019e676470b918cceb5"
+                  },
+                  {
+                    "path": "packages/designer/src/blocks/section-ground.ts",
+                    "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+                  },
+                  {
+                    "path": "packages/designer/src/blocks/SectionIntro.tsx",
+                    "sha256": "68bddd1ff6ac3183d13a397915e5b21e19567110d0c1d014c953dfb138f423dd"
+                  },
+                  {
+                    "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+                    "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+                  },
+                  {
+                    "path": "packages/designer/src/components/internal/cx.ts",
+                    "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+                  },
+                  {
+                    "path": "packages/designer/src/components/internal/ui-vars.ts",
+                    "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+                  }
+                ],
+                "unresolved": [
+                  {
+                    "code": "DF2",
+                    "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+                    "file": "packages/designer/src/components/internal/cx.ts",
+                    "line": 2
+                  },
+                  {
+                    "code": "DF2",
+                    "evidence": "unresolved dynamic import; runtime source is not inferred",
+                    "file": "packages/designer/src/components/internal/cx.ts",
+                    "line": 80
+                  }
+                ]
+              },
+              "impl": {
+                "export": "ContentSection",
+                "kind": "package",
+                "module": "@clossys/designer/blocks"
+              },
+              "license": "MIT",
+              "notes": [
+                "Header is spread across heading, eyebrow, description and actions; there is no single section-header region prop. Source uses SectionIntro rather than the frozen section-header fill.",
+                "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+              ],
+              "parts": [],
+              "pin": {
+                "export": "./blocks#ContentSection",
+                "package": "@clossys/designer",
+                "version": "0.12.0"
+              },
+              "propMap": {
+                "layout.split-end": "./blocks#ContentSection.layout=split-end",
+                "layout.split-start": "./blocks#ContentSection.layout=split-start",
+                "layout.stacked": "./blocks#ContentSection.layout=stacked"
+              },
+              "reads": {
+                "assets": [],
+                "tokens": [
+                  "tokens.accent-color",
+                  "tokens.body-size",
+                  "tokens.border-color",
+                  "tokens.border-width",
+                  "tokens.caption-size",
+                  "tokens.content-size",
+                  "tokens.display-size",
+                  "tokens.heading-size",
+                  "tokens.letter-spacing",
+                  "tokens.line-height",
+                  "tokens.spacing",
+                  "tokens.status-color",
+                  "tokens.surface-color",
+                  "tokens.text-color",
+                  "tokens.typeface"
+                ]
+              },
+              "slot": "sections.content",
+              "slotMap": {
+                "body": "./blocks#ContentSection.children",
+                "footnote": "./blocks#ContentSection.footnote",
+                "header": "./blocks#ContentSection.heading,eyebrow,description,actions",
+                "media": "./blocks#ContentSection.media"
+              },
+              "source": "foundry"
+            }
+          }
+        },
+        "contract": {
+          "id": "sections.content",
+          "layer": "sections",
+          "contract": {
+            "kind": "section",
+            "root": "section",
+            "anatomy": {
+              "band": "sections.band",
+              "header": "sections.section-header"
+            },
+            "slots": [
+              {
+                "name": "header",
+                "type": "region",
+                "required": false
+              },
+              {
+                "name": "body",
+                "type": "region",
+                "required": true
+              },
+              {
+                "name": "media",
+                "type": "media",
+                "required": false
+              },
+              {
+                "name": "footnote",
+                "type": "copy",
+                "required": false
+              }
+            ],
+            "members": {
+              "mode": "closed",
+              "names": [
+                "layout.stacked",
+                "layout.split-start",
+                "layout.split-end"
+              ]
+            },
+            "allowedComposes": [
+              "components.link",
+              "components.semantic-content"
+            ],
+            "parts": [
+              "sections.band",
+              "sections.section-header"
+            ],
+            "allowedReads": {
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance",
+                "tokens.accent-color",
+                "tokens.body-size",
+                "tokens.border-color",
+                "tokens.border-width",
+                "tokens.caption-size",
+                "tokens.display-size",
+                "tokens.heading-size",
+                "tokens.letter-spacing",
+                "tokens.line-height",
+                "tokens.status-color",
+                "tokens.text-color",
+                "tokens.typeface"
+              ],
+              "assets": []
+            },
+            "data": "host-injected",
+            "surface": "both",
+            "passageSchema": "passages.content",
+            "copy": {
+              "sourceLocale": "en",
+              "fields": [
+                {
+                  "key": "header.eyebrow",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 120
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "header.heading",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 160
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "header.description",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 480
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "header.actions[].label",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 120
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "body[].text",
+                  "kind": "plain",
+                  "required": true,
+                  "maxLength": {
+                    "en": 8000
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "body[].items[]",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 8000
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "media.title",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 160
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "media.series[].name",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 160
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "footnote",
+                  "kind": "plain",
+                  "required": false,
+                  "maxLength": {
+                    "en": 480
+                  },
+                  "dir": "auto"
+                }
+              ]
+            }
+          },
+          "requires": [],
+          "status": "draft"
         }
       }
     ],

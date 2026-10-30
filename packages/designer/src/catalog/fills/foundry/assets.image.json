@@ -17,6 +17,10 @@
       "reads": {
         "tokens": [],
         "assets": []
+      },
+      "pin": {
+        "file": "src/catalog-assets/image-default.svg",
+        "sha256": "aa230bccd0af384371603a0ed1fb3fc0cf19ea3172e6793440fa21bb345151fd"
       }
     },
     "com.clossys.default": {
