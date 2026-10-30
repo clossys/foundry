@@ -31,7 +31,7 @@ test('all products come from the same ordinary Publisher map and route-pack', as
   assert.deepEqual(projection.breadcrumbs.designer, projectBreadcrumbs(map, 'designer'));
   const pack = JSON.parse(await readFile(join(options.cellRoot, 'route-pack/studio.json'), 'utf8'));
   assert.deepEqual(projection.routes, pack.routes);
-  assert.deepEqual(projection.navigation.home.tree.map(row => row.id), ['home', 'agents', 'apps']);
+  assert.deepEqual(projection.navigation.home.tree.map(row => row.id), ['home', 'agents']);
   assert.deepEqual(projection.navigation.home.tree[1].children.map(row => row.id), ['director', 'designer', 'writer', 'publisher']);
   const imports = await readFile(join(options.outputDir, 'view-bindings.ts'), 'utf8');
   for (const route of pack.routes) {
@@ -92,33 +92,59 @@ test('ordinary CELL-P output drift is checked before accepting the tarball proje
   await generateStudioMap({ ...options, check: true });
 });
 
-test('Foundry Publisher inventory exposes the Studio publication and six authored page cells', async () => {
+test('Foundry Publisher inventory exposes the Studio publication and five authored page cells', async () => {
   const { inventory } = await import('../dist/server/cells.js');
   const foundryRoot = fileURLToPath(new URL('../../../', import.meta.url));
   const result = await inventory(foundryRoot, 'publisher');
   assert.equal(result.state, 'ready');
-  assert.deepEqual(result.cells.map(cell => cell.id).sort(), ['page.apps', 'page.designer', 'page.director', 'page.home', 'page.publisher', 'page.writer']);
+  assert.deepEqual(result.cells.map(cell => cell.id).sort(), ['page.designer', 'page.director', 'page.home', 'page.publisher', 'page.writer']);
   assert.equal(result.tree.tree[0].id, 'studio');
   assert.equal(result.tree.meta.publications[0].id, 'studio');
 });
 
-test('page actions project the ordinary map in source order, including module defaults and one Apps intent', async t => {
+test('Studio pages project the universal action modules and semantic icons in source order', async t => {
   const options = await fixture(t), projection = await generateStudioMap(options);
-  for (const page of projection.map.entries.filter(row => row.kind === 'page')) {
+  const pages = projection.map.entries.filter(row => row.kind === 'page');
+  assert.equal(pages.length, 5);
+  assert.equal(pages.reduce((count, page) => count + page.actions.length, 0), 21);
+  for (const page of pages) {
     assert.deepEqual(projection.pageActions[page.id], page.actions ?? []);
+    const actions = projection.pageActions[page.id];
+    assert.deepEqual(actions.map(action => action.id), page.id === 'home'
+      ? ['needs'] : ['explorer', 'inspector', 'source', 'checks', 'needs']);
+    const sectionIds = { explorer: 'sections.explorer', inspector: 'sections.record-detail', source: 'sections.content', checks: 'sections.status-list', needs: 'sections.task-list' };
+    for (const action of actions) {
+      assert.equal(action.label, action.id[0].toUpperCase() + action.id.slice(1));
+      assert.equal(action.icon, `assets.icon-${action.id}`);
+      assert.equal(action.defaultOpen, action.id === 'explorer');
+      assert.equal(action.module.section, sectionIds[action.id]);
+      assert.equal(action.intent, undefined);
+    }
+    assert.deepEqual(actions.find(action => action.id === 'needs').module, { section: 'sections.task-list', source: `${page.id}.open-requests` });
+    if (page.id !== 'home') {
+      assert.deepEqual(actions.find(action => action.id === 'inspector').module, { section: 'sections.record-detail', source: `${page.id}.inspector` });
+    }
   }
-  assert.deepEqual(projection.pageActions.designer.map(action => action.id), ['explorer', 'details', 'source', 'checks', 'preview', 'needs']);
-  assert.equal(projection.pageActions.designer[0].defaultOpen, true);
-  assert.deepEqual(projection.pageActions.designer.find(action => action.id === 'needs').module, { section: 'sections.check-findings', source: 'designer.selection-needs' });
-  assert.ok(projection.pageActions.designer.slice(1).every(action => action.defaultOpen === false));
-  assert.ok(projection.pageActions.home.every(action => action.defaultOpen === false));
-  assert.deepEqual(projection.pageActions.apps, [{ id: 'open-selected-app-dev-server', label: 'Open app', icon: 'assets.icon-external-link', defaultOpen: false, intent: 'open-app-dev-server' }]);
   const generated = await readFile(join(options.outputDir, 'studio-map.ts'), 'utf8');
   assert.match(generated, /export const studioPageActions = projection\.pageActions/);
+  assert.doesNotMatch(generated, /studioPublicationHref/);
   const cell = join(options.cellRoot, 'cells/page.designer/v1.md');
-  await replace(cell, '"label": "Preview"', '"label": "Inspect preview"');
+  await replace(cell, '"label": "Inspector"', '"label": "Record inspector"');
   await assert.rejects(generateStudioMap({ ...options, check: true }), /drift/i);
   const changed = await generateStudioMap(options);
-  assert.equal(changed.pageActions.designer.find(action => action.id === 'preview').label, 'Inspect preview');
-  assert.equal(changed.map.entries.find(entry => entry.id === 'designer').actions.find(action => action.id === 'preview').label, 'Inspect preview');
+  assert.equal(changed.pageActions.designer.find(action => action.id === 'inspector').label, 'Record inspector');
+  assert.equal(changed.map.entries.find(entry => entry.id === 'designer').actions.find(action => action.id === 'inspector').label, 'Record inspector');
+});
+
+test('removed Apps page stays absent from every generated discovery surface', async t => {
+  const options = await fixture(t), projection = await generateStudioMap(options);
+  assert.ok(!projection.map.entries.some(entry => entry.id === 'apps'));
+  assert.ok(!projection.routes.some(route => route.instanceId === 'apps'));
+  assert.equal(projection.pageActions.apps, undefined);
+  for (const navigation of Object.values(projection.navigation)) {
+    assert.ok(!navigation.tree.some(entry => entry.id === 'apps'));
+  }
+  assert.ok(!projection.commands.flatMap(group => group.items).some(entry => entry.id === 'apps'));
+  const bindings = await readFile(join(options.outputDir, 'view-bindings.ts'), 'utf8');
+  assert.doesNotMatch(bindings, /AppsView/);
 });

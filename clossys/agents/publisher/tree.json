@@ -9,8 +9,7 @@
           "id": "studio.pages",
           "name": "Pages",
           "cells": [
-            "page.home",
-            "page.apps"
+            "page.home"
           ]
         },
         {
@@ -42,7 +41,6 @@
     "page.home": 1,
     "page.director": 1,
     "page.designer": 1,
-    "page.apps": 1,
     "page.writer": 1,
     "page.publisher": 1
   },
@@ -56,7 +54,6 @@
           "page.home": "home",
           "page.director": "director",
           "page.designer": "designer",
-          "page.apps": "apps",
           "page.writer": "writer",
           "page.publisher": "publisher"
         },
@@ -66,8 +63,7 @@
           "director",
           "designer",
           "writer",
-          "publisher",
-          "apps"
+          "publisher"
         ],
         "entryMeta": {
           "page.home": {
@@ -85,11 +81,6 @@
             "pin": {
               "nav": true,
               "group": "agents"
-            }
-          },
-          "page.apps": {
-            "pin": {
-              "nav": true
             }
           },
           "page.writer": {

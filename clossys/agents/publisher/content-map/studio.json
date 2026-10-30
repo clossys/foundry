@@ -18,21 +18,13 @@
       "icon": "assets.icon-home",
       "actions": [
         {
-          "id": "activity",
-          "label": "Activity",
-          "icon": "assets.icon-time",
+          "id": "needs",
+          "label": "Needs",
+          "icon": "assets.icon-needs",
           "defaultOpen": false,
           "module": {
-            "section": "sections.activity-feed"
-          }
-        },
-        {
-          "id": "checks",
-          "label": "Checks",
-          "icon": "assets.icon-check",
-          "defaultOpen": false,
-          "module": {
-            "section": "sections.check-findings"
+            "section": "sections.task-list",
+            "source": "home.open-requests"
           }
         }
       ]
@@ -69,37 +61,48 @@
         {
           "id": "explorer",
           "label": "Explorer",
-          "icon": "assets.icon-folder",
+          "icon": "assets.icon-explorer",
           "defaultOpen": true,
           "module": {
-            "section": "sections.cell-explorer"
+            "section": "sections.explorer"
           }
         },
         {
-          "id": "details",
-          "label": "Details",
-          "icon": "assets.icon-info",
+          "id": "inspector",
+          "label": "Inspector",
+          "icon": "assets.icon-inspector",
           "defaultOpen": false,
           "module": {
-            "section": "sections.cell-details"
+            "section": "sections.record-detail",
+            "source": "director.inspector"
           }
         },
         {
           "id": "source",
           "label": "Source",
-          "icon": "assets.icon-document",
+          "icon": "assets.icon-source",
           "defaultOpen": false,
           "module": {
-            "section": "sections.source-view"
+            "section": "sections.content"
           }
         },
         {
           "id": "checks",
           "label": "Checks",
-          "icon": "assets.icon-check",
+          "icon": "assets.icon-checks",
           "defaultOpen": false,
           "module": {
-            "section": "sections.check-findings"
+            "section": "sections.status-list"
+          }
+        },
+        {
+          "id": "needs",
+          "label": "Needs",
+          "icon": "assets.icon-needs",
+          "defaultOpen": false,
+          "module": {
+            "section": "sections.task-list",
+            "source": "director.open-requests"
           }
         }
       ]
@@ -122,56 +125,48 @@
         {
           "id": "explorer",
           "label": "Explorer",
-          "icon": "assets.icon-folder",
+          "icon": "assets.icon-explorer",
           "defaultOpen": true,
           "module": {
-            "section": "sections.cell-explorer"
+            "section": "sections.explorer"
           }
         },
         {
-          "id": "details",
-          "label": "Details",
-          "icon": "assets.icon-info",
+          "id": "inspector",
+          "label": "Inspector",
+          "icon": "assets.icon-inspector",
           "defaultOpen": false,
           "module": {
-            "section": "sections.cell-details"
+            "section": "sections.record-detail",
+            "source": "designer.inspector"
           }
         },
         {
           "id": "source",
           "label": "Source",
-          "icon": "assets.icon-document",
+          "icon": "assets.icon-source",
           "defaultOpen": false,
           "module": {
-            "section": "sections.source-view"
+            "section": "sections.content"
           }
         },
         {
           "id": "checks",
           "label": "Checks",
-          "icon": "assets.icon-check",
+          "icon": "assets.icon-checks",
           "defaultOpen": false,
           "module": {
-            "section": "sections.check-findings"
-          }
-        },
-        {
-          "id": "preview",
-          "label": "Preview",
-          "icon": "assets.icon-website",
-          "defaultOpen": false,
-          "module": {
-            "section": "sections.preview-controls"
+            "section": "sections.status-list"
           }
         },
         {
           "id": "needs",
           "label": "Needs",
-          "icon": "assets.icon-warning",
+          "icon": "assets.icon-needs",
           "defaultOpen": false,
           "module": {
-            "section": "sections.check-findings",
-            "source": "designer.selection-needs"
+            "section": "sections.task-list",
+            "source": "designer.open-requests"
           }
         }
       ]
@@ -194,55 +189,48 @@
         {
           "id": "explorer",
           "label": "Explorer",
-          "icon": "assets.icon-folder",
+          "icon": "assets.icon-explorer",
           "defaultOpen": true,
           "module": {
-            "section": "sections.cell-explorer"
+            "section": "sections.explorer"
           }
         },
         {
-          "id": "details",
-          "label": "Details",
-          "icon": "assets.icon-info",
+          "id": "inspector",
+          "label": "Inspector",
+          "icon": "assets.icon-inspector",
           "defaultOpen": false,
           "module": {
-            "section": "sections.cell-details"
+            "section": "sections.record-detail",
+            "source": "writer.inspector"
           }
         },
         {
           "id": "source",
           "label": "Source",
-          "icon": "assets.icon-document",
+          "icon": "assets.icon-source",
           "defaultOpen": false,
           "module": {
-            "section": "sections.source-view"
+            "section": "sections.content"
           }
         },
         {
           "id": "checks",
           "label": "Checks",
-          "icon": "assets.icon-check",
+          "icon": "assets.icon-checks",
           "defaultOpen": false,
           "module": {
-            "section": "sections.check-findings"
+            "section": "sections.status-list"
           }
         },
         {
-          "id": "locales",
-          "label": "Locales",
-          "icon": "assets.icon-website",
+          "id": "needs",
+          "label": "Needs",
+          "icon": "assets.icon-needs",
           "defaultOpen": false,
           "module": {
-            "section": "sections.locale-switcher"
-          }
-        },
-        {
-          "id": "voice",
-          "label": "Voice",
-          "icon": "assets.icon-guide",
-          "defaultOpen": false,
-          "module": {
-            "section": "sections.voice-rules"
+            "section": "sections.task-list",
+            "source": "writer.open-requests"
           }
         }
       ]
@@ -265,88 +253,49 @@
         {
           "id": "explorer",
           "label": "Explorer",
-          "icon": "assets.icon-folder",
+          "icon": "assets.icon-explorer",
           "defaultOpen": true,
           "module": {
-            "section": "sections.cell-explorer"
+            "section": "sections.explorer"
           }
         },
         {
-          "id": "details",
-          "label": "Details",
-          "icon": "assets.icon-info",
+          "id": "inspector",
+          "label": "Inspector",
+          "icon": "assets.icon-inspector",
           "defaultOpen": false,
           "module": {
-            "section": "sections.cell-details"
+            "section": "sections.record-detail",
+            "source": "publisher.inspector"
           }
         },
         {
           "id": "source",
           "label": "Source",
-          "icon": "assets.icon-document",
+          "icon": "assets.icon-source",
           "defaultOpen": false,
           "module": {
-            "section": "sections.source-view"
+            "section": "sections.content"
           }
         },
         {
           "id": "checks",
           "label": "Checks",
-          "icon": "assets.icon-check",
+          "icon": "assets.icon-checks",
           "defaultOpen": false,
           "module": {
-            "section": "sections.check-findings"
+            "section": "sections.status-list"
           }
         },
         {
-          "id": "preview",
-          "label": "Preview",
-          "icon": "assets.icon-website",
+          "id": "needs",
+          "label": "Needs",
+          "icon": "assets.icon-needs",
           "defaultOpen": false,
           "module": {
-            "section": "sections.preview-controls"
+            "section": "sections.task-list",
+            "source": "publisher.open-requests"
           }
-        },
-        {
-          "id": "site-map",
-          "label": "Site map",
-          "icon": "assets.icon-layers",
-          "defaultOpen": false,
-          "module": {
-            "section": "sections.site-map"
-          }
-        },
-        {
-          "id": "search-social",
-          "label": "Search & social",
-          "icon": "assets.icon-search",
-          "defaultOpen": false,
-          "module": {
-            "section": "sections.search-social-preview"
-          }
-        }
-      ]
-    },
-    {
-      "id": "apps",
-      "order": 1,
-      "title": "Apps",
-      "kind": "page",
-      "path": "/apps",
-      "source": {
-        "planItemId": "studio.apps"
-      },
-      "pin": {
-        "nav": true
-      },
-      "icon": "assets.icon-grid-view",
-      "actions": [
-        {
-          "id": "open-selected-app-dev-server",
-          "label": "Open app",
-          "icon": "assets.icon-external-link",
-          "defaultOpen": false,
-          "intent": "open-app-dev-server"
         }
       ]
     }
