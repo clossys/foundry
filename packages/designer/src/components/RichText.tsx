@@ -4,7 +4,8 @@ import { useEffect, type HTMLAttributes } from "react";
 import { EditorContent, useEditor, type JSONContent } from "@tiptap/react";
 import { cx } from "./internal/cx.js";
 import { richTextDocument, richTextExtensions, type RichTextValue } from "./rich-text/schema.js";
-import { renderRichTextNode, RICH_TEXT_CLASSES } from "./rich-text/document.js";
+import { renderRichTextNode } from "./rich-text/document.js";
+import { RICH_TEXT_CLASSES } from "./rich-text/styles.js";
 
 export type { RichTextValue } from "./rich-text/schema.js";
 export interface RichTextProps extends Omit<HTMLAttributes<HTMLDivElement>, "children" | "onChange"> {
@@ -35,7 +36,7 @@ function EditableRichText({ value, onChange, "aria-label": label, "aria-labelled
  * editor; only MIT Tiptap/ProseMirror packages supply its document engine.
  */
 export function RichText({ value, readOnly = true, onChange, className, ...rest }: RichTextProps) {
-  return <div {...rest} data-ds-layer="components" data-ds-leaf="components.rich-text" data-ds-fill="shadcn@aria/components.rich-text" data-slot="rich-text" data-readonly={readOnly ? "true" : "false"} className={cx(RICH_TEXT_CLASSES, className)}>
+  return <div {...rest} style={{ overflowWrap: "anywhere", ...rest.style }} data-ds-layer="components" data-ds-leaf="components.rich-text" data-ds-fill="shadcn@aria/components.rich-text" data-slot="rich-text" data-readonly={readOnly ? "true" : "false"} className={cx(RICH_TEXT_CLASSES, className)}>
     {readOnly ? renderRichTextNode(richTextDocument(value)) : <EditableRichText value={value} onChange={onChange} aria-label={rest["aria-label"]} aria-labelledby={rest["aria-labelledby"]} />}
   </div>;
 }
