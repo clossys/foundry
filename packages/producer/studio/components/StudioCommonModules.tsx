@@ -4,14 +4,15 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useStudioSelection } from './StudioSelection';
 import { useRoleToolPayloads } from './AgentSpecimenProvider';
 import { StudioModulesProvider } from './StudioModuleHost';
-import { studioModulePayloads, type StudioChecks, type StudioModulePayloads } from '../lib/studio-module-data';
+import { studioModulePayloads, type StudioChecks, type StudioModulePayload, type StudioModulePayloads } from '../lib/studio-module-data';
 import { loadStudioChecks } from '../lib/studio-module-client';
 import type { Agent } from '../lib/agents';
+import type { StudioCoverageResult } from '../lib/studio-specimen-coverage';
 import type { AgentCells, CellDetail } from '../lib/cells-client';
 
 /** Shared semantic data. Section components and the selected frame own all module UI. */
-export function StudioCommonModules({ pageId, indexes, agent, selectedId, detail, revision, rolePayloads = {}, children }: {
-  pageId: string; indexes: readonly AgentCells[]; agent?: Agent; selectedId?: string; detail?: CellDetail; revision: number; rolePayloads?: StudioModulePayloads; children: ReactNode;
+export function StudioCommonModules({ pageId, indexes, agent, selectedId, detail, revision, rolePayloads = {}, activeNodeId, onSelectNode, coverage, children }: {
+  pageId: string; indexes: readonly AgentCells[]; agent?: Agent; selectedId?: string; detail?: CellDetail; revision: number; rolePayloads?: StudioModulePayloads; activeNodeId?: string; onSelectNode?: (id: string) => void; coverage?: StudioCoverageResult; children: ReactNode;
 }) {
   const providedRoles = useRoleToolPayloads();
   const { selection } = useStudioSelection();
@@ -26,7 +27,11 @@ export function StudioCommonModules({ pageId, indexes, agent, selectedId, detail
     return () => controller.abort();
   }, [agent, revision]);
   const common = studioModulePayloads({ indexes, agent, selectedId, detail, selection, checks });
-  const payloads = { ...common };
+  const payloads: Record<string, StudioModulePayload> = { ...common, 'sections.explorer': { ...common['sections.explorer'], selectedId: activeNodeId ?? selectedId, onSelect: onSelectNode }, 'sections.status-list': { ...common['sections.status-list'], ...(coverage ? { specimenCoverage: coverage } : {}) } };
+  if (coverage?.state === 'fail') {
+    const key = `${agent ?? 'home'}.open-requests`;
+    payloads[key] = { ...common[key], coverageIssues: coverage.issues };
+  }
   for (const [key, role] of Object.entries({ ...providedRoles, ...rolePayloads })) {
     const target = key === 'sections.record-detail' && agent ? `${agent}.inspector` : key;
     payloads[target] = { ...common[target], ...role };

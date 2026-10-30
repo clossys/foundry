@@ -1,3 +1,4 @@
+import type { StudioCoverageResult } from '../lib/studio-specimen-coverage';
 import { cellContentTarget } from '../lib/cell-content';
 import { createElement, type ComponentType } from 'react';
 import type { StudioModuleAction } from '../lib/studio-module-host';
@@ -37,11 +38,12 @@ export function studioModuleProps(action: StudioModuleAction, payload: StudioMod
     heading: action.label,
     labels: { available: 'Available', partial: 'Partial', planned: 'Planned', dispositions: { 'not-offered': 'Unavailable' } },
     legendLabel: action.label,
-    items: records(payload.results).map(result => ({ id: `${result.agent}:${result.verb}`, label: `${result.agent}: ${result.verb}`, detail: `${result.message} (exit ${result.exitCode})`, disposition: 'not-offered' })),
+    items: [...records(payload.results).map(result => ({ id: `${result.agent}:${result.verb}`, label: `${result.agent}: ${result.verb}`, detail: `${result.message} (exit ${result.exitCode})`, disposition: 'not-offered' })), ...(payload.specimenCoverage ? [{ id: 'specimen-coverage', label: `Specimen coverage: ${(payload.specimenCoverage as StudioCoverageResult).state.toUpperCase()}`, detail: `cells ${(payload.specimenCoverage as StudioCoverageResult).cells.covered}/${(payload.specimenCoverage as StudioCoverageResult).cells.total}; variants ${(payload.specimenCoverage as StudioCoverageResult).variants.covered}/${(payload.specimenCoverage as StudioCoverageResult).variants.total}; ${(payload.specimenCoverage as StudioCoverageResult).variants.completeScope ? 'declared inventory' : 'inventory incomplete'}`, state: (payload.specimenCoverage as StudioCoverageResult).state === 'pass' ? 'available' : 'partial' }] : [])],
     ...(payload.state !== 'ready' ? { description: valueText(payload.error) || valueText(payload.state) } : {}),
   };
   if (action.module.section === 'sections.task-list') {
-    const items = records(payload.gaps).map(gap => ({ id: valueText(gap.leaf), title: valueText(gap.leaf), description: valueText(gap.message), status: 'blocked' }));
+    const coverageNeeds = [...new Map(records(payload.coverageIssues).map(issue => [`${valueText(issue.cellId)}:${valueText(issue.code)}`, issue])).entries()].map(([key, issue]) => ({ id: `specimen:${key}`, title: valueText(issue.cellId) || 'Authored IA', description: valueText(issue.code), status: 'blocked' }));
+    const items = [...records(payload.gaps).map(gap => ({ id: valueText(gap.leaf), title: valueText(gap.leaf), description: valueText(gap.message), status: 'blocked' })), ...coverageNeeds];
     return { 'aria-label': action.label, items, statusLabels: { todo: 'Open', 'in-progress': 'In progress', blocked: 'Blocked', done: 'Done' }, progressText: `0 of ${items.length} resolved`, emptyState: { title: action.label, description: 'No unresolved selection needs were reported.' } };
   }
   return undefined;

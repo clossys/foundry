@@ -1,11 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useStudioUI } from './StudioSelection';
 import { AGENT_LABELS, type Agent } from '../lib/agents';
 import { loadCell, loadCells, type AgentCells, type CellDetail } from '../lib/cells-client';
 import { studioCellChange } from '../lib/studio-module-data';
+import { StudioAgentIA } from './StudioAgentIA';
+import { useStudioIASelection } from './useStudioIASelection';
+import type { StudioCoverageResult } from '../lib/studio-specimen-coverage';
 import { StudioFrame } from './StudioFrame';
 import { RoleToolsProvider } from './AgentSpecimenProvider';
 import { StudioCommonModules } from './StudioCommonModules';
@@ -16,9 +19,13 @@ type Resource<T> = { state: 'loading' } | { state: 'error'; message: string } | 
 export function CellsWorkspace({ agent }: { agent?: Agent }) {
   const { EmptyState } = useStudioUI();
   const params = useSearchParams();
-  const selectedId = params.get('cell') ?? undefined;
   const [revision, setRevision] = useState(0);
   const [index, setIndex] = useState<Resource<AgentCells[]>>({ state: 'loading' });
+  const indexes = index.state === 'ready' ? index.value : [];
+  const selectedIndex = indexes.find(item => item.agent === agent);
+  const { selectedId, activeNodeId, selectNode, breadcrumb } = useStudioIASelection(selectedIndex, params.get('cell') ?? undefined);
+  const [coverage, setCoverage] = useState<{ index: AgentCells; value: StudioCoverageResult }>();
+  const onCoverage = useCallback((value: StudioCoverageResult) => { if (selectedIndex) setCoverage({ index: selectedIndex, value }); }, [selectedIndex]);
   const [detail, setDetail] = useState<Resource<CellDetail>>({ state: 'loading' });
   useEffect(() => {
     const events = new EventSource('/api/events');
@@ -40,8 +47,6 @@ export function CellsWorkspace({ agent }: { agent?: Agent }) {
     if (agent && selectedId) loadCell(agent, selectedId, controller.signal).then(value => setDetail({ state: 'ready', value }), error => { if (!controller.signal.aborted) setDetail({ state: 'error', message: error instanceof Error ? error.message : 'The cell could not be loaded.' }); });
     return () => controller.abort();
   }, [agent, selectedId, revision]);
-  const indexes = index.state === 'ready' ? index.value : [];
-  const selectedIndex = indexes.find(item => item.agent === agent);
   const selectedDetail = detail.state === 'ready' && detail.value.agent === agent && detail.value.id === selectedId ? detail.value : undefined;
   const title = agent ? AGENT_LABELS[agent] : studioHome.label;
   let stage = <EmptyState title={studioHome.label} />;
@@ -49,9 +54,9 @@ export function CellsWorkspace({ agent }: { agent?: Agent }) {
     if (index.state === 'loading') stage = <EmptyState role="status" title="Loading cells…" />;
     else if (index.state === 'error') stage = <EmptyState role="alert" title="Cells could not be loaded" description={index.message} />;
     else if (!selectedIndex || selectedIndex.state !== 'ready') stage = <EmptyState title="Cells are unavailable" description={selectedIndex?.error} />;
-    else stage = <EmptyState title="NEED: manifest-bound IA body" description="The native IA body projection, declared specimen spans, card-grid bodies and module-frame APIs require the integration composition." />;
+    else stage = <StudioAgentIA index={selectedIndex} indexes={indexes} selectedId={selectedId} onSelect={selectNode} onCoverage={onCoverage} />;
   }
-  return <RoleToolsProvider index={selectedIndex} selectedId={selectedId}><StudioCommonModules pageId={agent ?? studioHome.id} indexes={indexes} agent={agent} selectedId={selectedId} detail={selectedDetail} revision={revision}>
-    <StudioFrame page={{ title }}>{stage}</StudioFrame>
+  return <RoleToolsProvider index={selectedIndex} selectedId={selectedId}><StudioCommonModules pageId={agent ?? studioHome.id} indexes={indexes} agent={agent} selectedId={selectedId} detail={selectedDetail} revision={revision} activeNodeId={activeNodeId} onSelectNode={selectNode} coverage={coverage?.index === selectedIndex ? coverage?.value : undefined}>
+    <StudioFrame page={{ title, ...(breadcrumb ? { breadcrumb } : {}) }}>{stage}</StudioFrame>
   </StudioCommonModules></RoleToolsProvider>;
 }

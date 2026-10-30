@@ -29,6 +29,13 @@ describe('existing closed module section APIs', () => {
     const invalid = studioModuleProps(action('sections.record-detail'), { cell: { agent: 'director', id: '../../outside', title: 'Invalid' } }, { Link, Icon });
     expect(invalid?.actions).toBeUndefined();
   });
+  it('keeps measured specimen failures visible in Checks and Needs without passing findings', () => {
+    const specimenCoverage = { state: 'fail', cells: { covered: 0, total: 5 }, variants: { covered: 0, total: 10, completeScope: true }, issues: [{ cellId: 'page.home', code: 'missing-specimen-body' }] };
+    const checks = studioModuleProps(action('sections.status-list'), { state: 'ready', results: [], specimenCoverage }, {});
+    expect(checks?.items).toEqual([{ id: 'specimen-coverage', label: 'Specimen coverage: FAIL', detail: 'cells 0/5; variants 0/10; declared inventory', state: 'partial' }]);
+    const needs = studioModuleProps(action('sections.task-list'), { gaps: [], coverageIssues: [...specimenCoverage.issues, ...specimenCoverage.issues] }, {});
+    expect(needs?.items).toEqual([{ id: 'specimen:page.home:missing-specimen-body', title: 'page.home', description: 'missing-specimen-body', status: 'blocked' }]);
+  });
   it('uses the actual five module entries and Home only Needs, initially closed', () => {
     for (const page of ['director', 'designer', 'writer', 'publisher']) {
       expect(studioPageActions[page]?.map(entry => entry.module?.section)).toEqual(['sections.explorer', 'sections.record-detail', 'sections.content', 'sections.status-list', 'sections.task-list']);
