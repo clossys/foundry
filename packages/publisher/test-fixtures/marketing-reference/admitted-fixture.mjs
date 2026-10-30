@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { createCopyResolver, validateWriterRecord } from "@clossys/writer";
 import { resolveSectionedViewDocument } from "@clossys/publisher/core";
 import { SectionedView } from "@clossys/publisher/web";
-import { Hero, LogoCloud, TestimonialSet, StatGroup, SectionFrame, Form, ContentSection, ArticleBody, PageHeader, RecordCards, FeatureGrid, Faq, NavGrid, TableOfContents, Gallery } from "@clossys/designer/blocks";
+import { Hero, LogoCloud, TestimonialSet, StatGroup, SectionFrame, Form, ContentSection, ArticleBody, PageHeader, RecordCards, FeatureGrid, Faq, NavGrid, TableOfContents, Gallery, LogoHero } from "@clossys/designer/blocks";
 import { SemanticContent, Button, Textarea } from "@clossys/designer/components";
 
 const writerRoot = new URL("../", import.meta.resolve("@clossys/writer"));
@@ -47,7 +47,8 @@ const documents = {
   "/features": () => [hero(), { id: "features", kind: "feature-grid", heading: field("ps.features.about", "header.heading"), description: field("ps.features.about", "header.description"), items: [{ id: "detail", heading: field("ps.features.about", "items[].heading"), description: field("ps.features.about", "items[].description") }] }],
 };
 export const routes = [{ path: "/", family: "hero" }, { path: "/features", family: "features" }, ...["tabs", "alternating", "scroll"].map(layout => ({ path: `/features-${layout}`, family: `features.${layout}` })), { path: "/faq", family: "faq.public-block" }, { path: "/summary", family: "content.summary" }, { path: "/roles", family: "link-index.roles" }, { path: "/article", family: "article.reading" }, { path: "/backdrop", family: "hero.backdrop" }, { path: "/gallery", family: "gallery" }, { path: "/logos", family: "logo-cloud" }, { path: "/testimonials", family: "testimonials" }, { path: "/stats", family: "stats" }, { path: "/band", family: "band" }, { path: "/contact", family: "form" }, { path: "/privacy", family: "legal-prose" }, { path: "/terms", family: "legal-prose" }, { path: "/editorial", family: "editorial" }, { path: "/case-study", family: "case-study" }];
-export const gaps = ["Native tokens.css shows a CSS-generated unbound-brand debug badge; outside DOM Writer probe coverage", "FAQ uses the public block's real one-row support; the registered runtime adapter still requires four to six rows and is not qualified here", "04 mark artwork and timeline-specific dated passages unavailable; contact form is a disabled static preview", "05 newsletter/announcement/locale-specific Writer passages unavailable; no submission service or translated copy is claimed", "06 bento requires at least two items; the actual feature passage supplies one and is not duplicated", "09 author/date/outcome-specific copy is absent; editorial fixtures reuse existing generic Writer title/description/draft-status fields", "11 video and runtime-module assets unavailable; the checked static token-painted SVG backdrop is exercised", "12 footnote-specific Writer passages unavailable; article and TOC reuse actual generic title and legal-body passages"];
+routes.push({ path: "/mark", family: "logo-hero.logo-mark" });
+export const gaps = ["Native tokens.css shows a CSS-generated unbound-brand debug badge; outside DOM Writer probe coverage", "FAQ uses the public block's real one-row support; the registered runtime adapter still requires four to six rows and is not qualified here", "04 timeline-specific dated passages unavailable; mark artwork is a fictional fixture-owned geometric SVG, not a brand binding; contact form is a disabled static preview", "05 newsletter/announcement/locale-specific Writer passages unavailable; no submission service or translated copy is claimed", "06 bento requires at least two items; the actual feature passage supplies one and is not duplicated", "09 author/date/outcome-specific copy is absent; editorial fixtures reuse existing generic Writer title/description/draft-status fields", "11 video and runtime-module assets unavailable; the checked static token-painted SVG backdrop is exercised", "12 footnote-specific Writer passages unavailable; article and TOC reuse actual generic title and legal-body passages"];
 const styles = (await Promise.all(["tokens.css", "compiled.css"].map(name => readFile(new URL(import.meta.resolve("@clossys/designer/" + name)), "utf8")))).join("\n").replace(/<\/style/gi, "<\\/style");
 export async function render(item) {
   const writerValues = [];
@@ -60,7 +61,10 @@ export async function render(item) {
   let element;
   const proofAlias = { "/logos": "ps.proof.logo-cloud", "/testimonials": "ps.proof.testimonials", "/stats": "ps.proof.stats" }[item.route];
   const intro = () => createElement(Hero, { heading: text("ps.hero.home", "header.heading"), ground, size: "compact" });
-  if (item.route.startsWith("/features-")) {
+  if (item.route === "/mark") {
+    const mark = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M8 8H56V56H8Z" fill="currentColor"/><path d="M20 20H44V44H20Z" fill="white"/></svg>');
+    element = createElement("main", null, intro(), createElement(LogoHero, { mark, name: text("ps.hero.logo", "name") }), createElement(LogoHero, { mark, member: "brand.mark-only" }));
+  } else if (item.route.startsWith("/features-")) {
     const layout = item.route.slice("/features-".length);
     element = createElement("main", null, intro(), createElement(SectionFrame, { ground }, createElement(FeatureGrid, { layout, ground, heading: text("ps.features.about", "header.heading"), description: text("ps.features.about", "header.description"), items: [{ id: "actual-writer-item", heading: text("ps.features.about", "items[].heading"), description: text("ps.features.about", "items[].description") }] })));
   } else if (item.route === "/faq") {
@@ -128,7 +132,7 @@ export async function render(item) {
   }
   const markup = renderToStaticMarkup(element);
   return {
-    html: `<!doctype html><html lang="en" dir="${item.dir}" data-theme="${item.theme === "dark" ? "dark" : "light"}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${styles}</style></head><body>${markup}</body></html>`,
+    html: `<!doctype html><html lang="en" dir="${item.dir}" data-theme="${item.theme === "dark" ? "dark" : "light"}" style="color-scheme:${item.theme === "dark" ? "dark" : "light"}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${styles}</style></head><body class="m-0 bg-surface-base text-ink-primary">${markup}</body></html>`,
     writerValues,
   };
 }

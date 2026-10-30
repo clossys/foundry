@@ -27,7 +27,7 @@ The direct server and probe failure cases run with
 
 This fictional Example Co. consumer renders native Publisher SectionedView pages
 and public Designer blocks using actual, unapproved native Writer passages. The
-20 routes and their selected families are listed in `capture-manifest.json`.
+21 routes and their selected families are listed in `capture-manifest.json`.
 Unavailable passage, asset and record-count inputs are listed as gaps rather
 than placeholder pages. Generic proof quotes are draft examples, not customer
 evidence. Contact is a disabled static preview without a submission service.
@@ -41,7 +41,8 @@ node scripts/marketing-reference-rehearsal.mjs --fixture packages/publisher/test
 Every route has 24 explicit cases: light, dark and inverse; 1440 and 390 pixels;
 LTR and RTL; motion allowed and reduced. RTL uses the existing English draft
 records and does not claim translation. Inverse selects actual section ground;
-dark selects the authored token theme. The DOM probe checks exactly one h1,
+dark selects the authored token theme. The body consumes native base-surface and
+primary-ink utilities; the root also sets the matching native color scheme. The DOM probe checks exactly one h1,
 decorative backdrop attributes, visible text and accessible names against real
 Writer resolutions. FAQ uses the public block's supported one-row input; it
 does not qualify the separate runtime adapter's four-to-six-row policy.
