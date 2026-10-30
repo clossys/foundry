@@ -17,7 +17,27 @@
         "pin": {
           "nav": true
         },
-        "icon": "assets.icon-home"
+        "icon": "assets.icon-home",
+        "actions": [
+          {
+            "id": "activity",
+            "label": "Activity",
+            "icon": "assets.icon-time",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.activity-feed"
+            }
+          },
+          {
+            "id": "checks",
+            "label": "Checks",
+            "icon": "assets.icon-check",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.check-findings"
+            }
+          }
+        ]
       },
       {
         "path": "/agents",
@@ -46,7 +66,45 @@
         "pin": {
           "nav": true,
           "group": "agents"
-        }
+        },
+        "actions": [
+          {
+            "id": "explorer",
+            "label": "Explorer",
+            "icon": "assets.icon-folder",
+            "defaultOpen": true,
+            "module": {
+              "section": "sections.cell-explorer"
+            }
+          },
+          {
+            "id": "details",
+            "label": "Details",
+            "icon": "assets.icon-info",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.cell-details"
+            }
+          },
+          {
+            "id": "source",
+            "label": "Source",
+            "icon": "assets.icon-document",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.source-view"
+            }
+          },
+          {
+            "id": "checks",
+            "label": "Checks",
+            "icon": "assets.icon-check",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.check-findings"
+            }
+          }
+        ]
       },
       {
         "id": "designer",
@@ -61,7 +119,64 @@
         "pin": {
           "nav": true,
           "group": "agents"
-        }
+        },
+        "actions": [
+          {
+            "id": "explorer",
+            "label": "Explorer",
+            "icon": "assets.icon-folder",
+            "defaultOpen": true,
+            "module": {
+              "section": "sections.cell-explorer"
+            }
+          },
+          {
+            "id": "details",
+            "label": "Details",
+            "icon": "assets.icon-info",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.cell-details"
+            }
+          },
+          {
+            "id": "source",
+            "label": "Source",
+            "icon": "assets.icon-document",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.source-view"
+            }
+          },
+          {
+            "id": "checks",
+            "label": "Checks",
+            "icon": "assets.icon-check",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.check-findings"
+            }
+          },
+          {
+            "id": "preview",
+            "label": "Preview",
+            "icon": "assets.icon-website",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.preview-controls"
+            }
+          },
+          {
+            "id": "needs",
+            "label": "Needs",
+            "icon": "assets.icon-warning",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.check-findings",
+              "source": "designer.selection-needs"
+            }
+          }
+        ]
       },
       {
         "id": "writer",
@@ -76,7 +191,63 @@
         "pin": {
           "nav": true,
           "group": "agents"
-        }
+        },
+        "actions": [
+          {
+            "id": "explorer",
+            "label": "Explorer",
+            "icon": "assets.icon-folder",
+            "defaultOpen": true,
+            "module": {
+              "section": "sections.cell-explorer"
+            }
+          },
+          {
+            "id": "details",
+            "label": "Details",
+            "icon": "assets.icon-info",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.cell-details"
+            }
+          },
+          {
+            "id": "source",
+            "label": "Source",
+            "icon": "assets.icon-document",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.source-view"
+            }
+          },
+          {
+            "id": "checks",
+            "label": "Checks",
+            "icon": "assets.icon-check",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.check-findings"
+            }
+          },
+          {
+            "id": "locales",
+            "label": "Locales",
+            "icon": "assets.icon-website",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.locale-switcher"
+            }
+          },
+          {
+            "id": "voice",
+            "label": "Voice",
+            "icon": "assets.icon-guide",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.voice-rules"
+            }
+          }
+        ]
       },
       {
         "id": "publisher",
@@ -91,7 +262,72 @@
         "pin": {
           "nav": true,
           "group": "agents"
-        }
+        },
+        "actions": [
+          {
+            "id": "explorer",
+            "label": "Explorer",
+            "icon": "assets.icon-folder",
+            "defaultOpen": true,
+            "module": {
+              "section": "sections.cell-explorer"
+            }
+          },
+          {
+            "id": "details",
+            "label": "Details",
+            "icon": "assets.icon-info",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.cell-details"
+            }
+          },
+          {
+            "id": "source",
+            "label": "Source",
+            "icon": "assets.icon-document",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.source-view"
+            }
+          },
+          {
+            "id": "checks",
+            "label": "Checks",
+            "icon": "assets.icon-check",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.check-findings"
+            }
+          },
+          {
+            "id": "preview",
+            "label": "Preview",
+            "icon": "assets.icon-website",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.preview-controls"
+            }
+          },
+          {
+            "id": "site-map",
+            "label": "Site map",
+            "icon": "assets.icon-layers",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.site-map"
+            }
+          },
+          {
+            "id": "search-social",
+            "label": "Search & social",
+            "icon": "assets.icon-search",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.search-social-preview"
+            }
+          }
+        ]
       },
       {
         "id": "apps",
@@ -105,7 +341,16 @@
         "pin": {
           "nav": true
         },
-        "icon": "assets.icon-grid-view"
+        "icon": "assets.icon-grid-view",
+        "actions": [
+          {
+            "id": "open-selected-app-dev-server",
+            "label": "Open app",
+            "icon": "assets.icon-external-link",
+            "defaultOpen": false,
+            "intent": "open-app-dev-server"
+          }
+        ]
       }
     ]
   },
@@ -477,6 +722,253 @@
       ]
     }
   ],
+  "pageActions": {
+    "home": [
+      {
+        "id": "activity",
+        "label": "Activity",
+        "icon": "assets.icon-time",
+        "defaultOpen": false,
+        "module": {
+          "section": "sections.activity-feed"
+        }
+      },
+      {
+        "id": "checks",
+        "label": "Checks",
+        "icon": "assets.icon-check",
+        "defaultOpen": false,
+        "module": {
+          "section": "sections.check-findings"
+        }
+      }
+    ],
+    "director": [
+      {
+        "id": "explorer",
+        "label": "Explorer",
+        "icon": "assets.icon-folder",
+        "defaultOpen": true,
+        "module": {
+          "section": "sections.cell-explorer"
+        }
+      },
+      {
+        "id": "details",
+        "label": "Details",
+        "icon": "assets.icon-info",
+        "defaultOpen": false,
+        "module": {
+          "section": "sections.cell-details"
+        }
+      },
+      {
+        "id": "source",
+        "label": "Source",
+        "icon": "assets.icon-document",
+        "defaultOpen": false,
+        "module": {
+          "section": "sections.source-view"
+        }
+      },
+      {
+        "id": "checks",
+        "label": "Checks",
+        "icon": "assets.icon-check",
+        "defaultOpen": false,
+        "module": {
+          "section": "sections.check-findings"
+        }
+      }
+    ],
+    "designer": [
+      {
+        "id": "explorer",
+        "label": "Explorer",
+        "icon": "assets.icon-folder",
+        "defaultOpen": true,
+        "module": {
+          "section": "sections.cell-explorer"
+        }
+      },
+      {
+        "id": "details",
+        "label": "Details",
+        "icon": "assets.icon-info",
+        "defaultOpen": false,
+        "module": {
+          "section": "sections.cell-details"
+        }
+      },
+      {
+        "id": "source",
+        "label": "Source",
+        "icon": "assets.icon-document",
+        "defaultOpen": false,
+        "module": {
+          "section": "sections.source-view"
+        }
+      },
+      {
+        "id": "checks",
+        "label": "Checks",
+        "icon": "assets.icon-check",
+        "defaultOpen": false,
+        "module": {
+          "section": "sections.check-findings"
+        }
+      },
+      {
+        "id": "preview",
+        "label": "Preview",
+        "icon": "assets.icon-website",
+        "defaultOpen": false,
+        "module": {
+          "section": "sections.preview-controls"
+        }
+      },
+      {
+        "id": "needs",
+        "label": "Needs",
+        "icon": "assets.icon-warning",
+        "defaultOpen": false,
+        "module": {
+          "section": "sections.check-findings",
+          "source": "designer.selection-needs"
+        }
+      }
+    ],
+    "writer": [
+      {
+        "id": "explorer",
+        "label": "Explorer",
+        "icon": "assets.icon-folder",
+        "defaultOpen": true,
+        "module": {
+          "section": "sections.cell-explorer"
+        }
+      },
+      {
+        "id": "details",
+        "label": "Details",
+        "icon": "assets.icon-info",
+        "defaultOpen": false,
+        "module": {
+          "section": "sections.cell-details"
+        }
+      },
+      {
+        "id": "source",
+        "label": "Source",
+        "icon": "assets.icon-document",
+        "defaultOpen": false,
+        "module": {
+          "section": "sections.source-view"
+        }
+      },
+      {
+        "id": "checks",
+        "label": "Checks",
+        "icon": "assets.icon-check",
+        "defaultOpen": false,
+        "module": {
+          "section": "sections.check-findings"
+        }
+      },
+      {
+        "id": "locales",
+        "label": "Locales",
+        "icon": "assets.icon-website",
+        "defaultOpen": false,
+        "module": {
+          "section": "sections.locale-switcher"
+        }
+      },
+      {
+        "id": "voice",
+        "label": "Voice",
+        "icon": "assets.icon-guide",
+        "defaultOpen": false,
+        "module": {
+          "section": "sections.voice-rules"
+        }
+      }
+    ],
+    "publisher": [
+      {
+        "id": "explorer",
+        "label": "Explorer",
+        "icon": "assets.icon-folder",
+        "defaultOpen": true,
+        "module": {
+          "section": "sections.cell-explorer"
+        }
+      },
+      {
+        "id": "details",
+        "label": "Details",
+        "icon": "assets.icon-info",
+        "defaultOpen": false,
+        "module": {
+          "section": "sections.cell-details"
+        }
+      },
+      {
+        "id": "source",
+        "label": "Source",
+        "icon": "assets.icon-document",
+        "defaultOpen": false,
+        "module": {
+          "section": "sections.source-view"
+        }
+      },
+      {
+        "id": "checks",
+        "label": "Checks",
+        "icon": "assets.icon-check",
+        "defaultOpen": false,
+        "module": {
+          "section": "sections.check-findings"
+        }
+      },
+      {
+        "id": "preview",
+        "label": "Preview",
+        "icon": "assets.icon-website",
+        "defaultOpen": false,
+        "module": {
+          "section": "sections.preview-controls"
+        }
+      },
+      {
+        "id": "site-map",
+        "label": "Site map",
+        "icon": "assets.icon-layers",
+        "defaultOpen": false,
+        "module": {
+          "section": "sections.site-map"
+        }
+      },
+      {
+        "id": "search-social",
+        "label": "Search & social",
+        "icon": "assets.icon-search",
+        "defaultOpen": false,
+        "module": {
+          "section": "sections.search-social-preview"
+        }
+      }
+    ],
+    "apps": [
+      {
+        "id": "open-selected-app-dev-server",
+        "label": "Open app",
+        "icon": "assets.icon-external-link",
+        "defaultOpen": false,
+        "intent": "open-app-dev-server"
+      }
+    ]
+  },
   "breadcrumbs": {
     "home": [
       {

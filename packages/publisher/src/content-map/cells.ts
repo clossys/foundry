@@ -40,16 +40,16 @@ function cellSource(entry: ContentMapNode, id: string, date: string, route?: Jso
   for (const key of ["pageConfig", "icon", "description", "keywords", "lastModified"] as const) if (entry[key] !== undefined) front[key] = entry[key];
   if (entry.indexing !== undefined) { front.indexing = entry.indexing.mode; if (entry.indexing.reason !== undefined) front.indexingReason = entry.indexing.reason; }
   let body = "## Copy\n";
-  for (const [title, data] of [["Constructs", entry.constructs], ["Manifest", entry.manifest], ["Route", route]] as const) if (data !== undefined) body += `\n## ${title}\n\`\`\`json\n${json(data)}\`\`\`\n`;
+  for (const [title, data] of [["Constructs", entry.constructs], ["Manifest", entry.manifest], ["Actions", entry.actions], ["Route", route]] as const) if (data !== undefined) body += `\n## ${title}\n\`\`\`json\n${json(data)}\`\`\`\n`;
   return `---\n${fields(front)}\n---\n\n${body}`;
 }
 function blocks(cell: StoredCell): Record<string, unknown> {
   const lines = cell.document.body; const result: Record<string, unknown> = {}; let previous = -1;
-  const headings = ["Copy", "Constructs", "Manifest", "Route"];
+  const headings = ["Copy", "Constructs", "Manifest", "Actions", "Route"];
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!; if (!line.text.trim()) continue;
     const heading = /^## (.+)$/.exec(line.text)?.[1]; const position = headings.indexOf(heading ?? "");
-    if (position < 0 || position <= previous) error(cell.path, `line ${line.line}: Expected ordered Copy, Constructs, Manifest or Route sections`);
+    if (position < 0 || position <= previous) error(cell.path, `line ${line.line}: Expected ordered Copy, Constructs, Manifest, Actions or Route sections`);
     previous = position;
     if (heading === "Copy") {
       const copy: string[] = [];
@@ -93,6 +93,7 @@ function parsePage(cell: StoredCell, entryId: string, parentId: string | undefin
   if (f.indexing !== undefined) entry.indexing = { mode: f.indexing, ...(f.indexingReason === undefined ? {} : { reason: f.indexingReason }) };
   if (body.Constructs !== undefined) entry.constructs = body.Constructs;
   if (body.Manifest !== undefined) entry.manifest = body.Manifest;
+  if (Object.hasOwn(body, "Actions")) entry.actions = body.Actions;
   if (body.Route !== undefined && !object(body.Route)) error(cell.path, "Route metadata must be an object");
   return { entry, ...(body.Route === undefined ? {} : { route: body.Route as JsonObject }) };
 }

@@ -101,3 +101,24 @@ test('Foundry Publisher inventory exposes the Studio publication and six authore
   assert.equal(result.tree.tree[0].id, 'studio');
   assert.equal(result.tree.meta.publications[0].id, 'studio');
 });
+
+test('page actions project the ordinary map in source order, including module defaults and one Apps intent', async t => {
+  const options = await fixture(t), projection = await generateStudioMap(options);
+  for (const page of projection.map.entries.filter(row => row.kind === 'page')) {
+    assert.deepEqual(projection.pageActions[page.id], page.actions ?? []);
+  }
+  assert.deepEqual(projection.pageActions.designer.map(action => action.id), ['explorer', 'details', 'source', 'checks', 'preview', 'needs']);
+  assert.equal(projection.pageActions.designer[0].defaultOpen, true);
+  assert.deepEqual(projection.pageActions.designer.find(action => action.id === 'needs').module, { section: 'sections.check-findings', source: 'designer.selection-needs' });
+  assert.ok(projection.pageActions.designer.slice(1).every(action => action.defaultOpen === false));
+  assert.ok(projection.pageActions.home.every(action => action.defaultOpen === false));
+  assert.deepEqual(projection.pageActions.apps, [{ id: 'open-selected-app-dev-server', label: 'Open app', icon: 'assets.icon-external-link', defaultOpen: false, intent: 'open-app-dev-server' }]);
+  const generated = await readFile(join(options.outputDir, 'studio-map.ts'), 'utf8');
+  assert.match(generated, /export const studioPageActions = projection\.pageActions/);
+  const cell = join(options.cellRoot, 'cells/page.designer/v1.md');
+  await replace(cell, '"label": "Preview"', '"label": "Inspect preview"');
+  await assert.rejects(generateStudioMap({ ...options, check: true }), /drift/i);
+  const changed = await generateStudioMap(options);
+  assert.equal(changed.pageActions.designer.find(action => action.id === 'preview').label, 'Inspect preview');
+  assert.equal(changed.map.entries.find(entry => entry.id === 'designer').actions.find(action => action.id === 'preview').label, 'Inspect preview');
+});

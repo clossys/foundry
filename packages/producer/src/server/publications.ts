@@ -16,7 +16,7 @@ export interface ConsumerPublication {
   breadcrumbs: Record<string, readonly ContentMapBreadcrumb[]>;
   outline: readonly ContentMapOutlineNode[];
   /** Only explicitly declared, existing app directories enter this mapping. */
-  target?: { appDirectory?: string; entryId?: string; path?: string };
+  target?: { appDirectory?: string; entryId?: string; path?: string; devServerUrl?: string };
 }
 export interface ConsumerAppsResponse {
   state: "ready" | "missing" | "error";
@@ -52,6 +52,12 @@ async function appTarget(root: string, map: ContentMap, metadata: unknown): Prom
   if (metadata === undefined) return undefined;
   if (!object(metadata)) throw new TypeError("Invalid publication route metadata");
   const target: NonNullable<ConsumerPublication["target"]> = {};
+  if (metadata.devServerUrl !== undefined) {
+    if (typeof metadata.devServerUrl !== "string" || metadata.devServerUrl.trim() !== metadata.devServerUrl) throw new TypeError("Invalid declared app server URL");
+    const url = new URL(metadata.devServerUrl);
+    if (!["http:", "https:"].includes(url.protocol) || !["127.0.0.1", "localhost"].includes(url.hostname) || url.username || url.password) throw new TypeError("App server must use a declared local HTTP URL");
+    target.devServerUrl = url.href;
+  }
   const directories = [metadata.appDir, metadata.appRoot, metadata.siteDir].filter(value => value !== undefined);
   if (directories.length) {
     if (directories.some(value => typeof value !== "string" || !value || /[\\\x00-\x1f\x7f]/.test(value) || /^[a-z]:/i.test(value) || isAbsolute(value) || value.split("/").some(part => !part || part === "." || part === "..")) || new Set(directories).size !== 1) throw new TypeError("Invalid declared app directory");
