@@ -5,6 +5,7 @@ export interface CliArgs {
   verb?: Verb;
   help: boolean;
   check: boolean;
+  brief?: boolean;
   root?: string;
   json: boolean;
   once: boolean;
@@ -18,7 +19,7 @@ export class CliUsageError extends Error {
 }
 
 export const USAGE = "Usage: clossys <direct|design|write|publish|produce> [--check] [--root <dir>] [--json]\n"
-  + "Options: --help; produce --once --port <0-65535> --no-open; publish --target <id>";
+  + "Options: --help; design|write --brief; produce --once --port <0-65535> --no-open; publish --target <id>";
 
 export function parseArgs(argv: readonly string[]): CliArgs {
   const args: CliArgs = { help: false, check: false, json: false, once: false, noOpen: false };
@@ -32,6 +33,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
     switch (arg) {
       case "--help": args.help = true; break;
       case "--check": args.check = true; break;
+      case "--brief": args.brief = true; break;
       case "--json": args.json = true; break;
       case "--root": args.root = value(); break;
       case "--once": args.once = true; break;
@@ -52,6 +54,8 @@ export function parseArgs(argv: readonly string[]): CliArgs {
     throw new CliUsageError("--once, --port and --no-open require produce");
   }
   if (args.target !== undefined && args.verb !== "publish") throw new CliUsageError("--target requires publish");
+  if (args.brief && !["design", "write"].includes(args.verb ?? "")) throw new CliUsageError("--brief requires design or write");
+  if (args.brief && args.check) throw new CliUsageError("Use either --brief or --check");
   if (!args.verb && !args.help) throw new CliUsageError("A verb is required");
   return args;
 }

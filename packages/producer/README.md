@@ -18,8 +18,21 @@ clossys <verb> [--check] [--root <dir>] [--json]
 | `publish` | Publisher |
 | `produce` | The four agents in sequence |
 
-`direct`, `design`, `write`, and `publish` are dispatch stubs in this build.
+`direct`, `write`, and `publish` are dispatch stubs in this build.
 They exit `2` with `not implemented in this build`. Help exits `0`.
+
+`clossys design --brief` returns the exact active Director inputs, versioned refs,
+unresolved owner facts, prohibition bullets and existing Designer leaves. The
+Designer agent uses the installed `skill/director-brief.md` procedure to author
+creative draft proposals; this CLI makes no creative choices or model calls.
+`design --check` reads active cells, checks Director links and declared per-bullet
+rationale coverage, and runs native value and token-contrast checks. Missing
+contrast bindings are findings; runtime WCAG and visual review remain named limits.
+It exits `0` for no findings, `1` for findings, and `2` when it cannot run.
+`design` without either flag compiles active Designer cells into
+`clossys/agents/designer/compiled`; it creates no drafts or activations.
+`--brief` and `--check` are read-only and mutually exclusive. All three forms
+honour `--root` and `--json`. Writer owns prohibited-copy and locale checks.
 
 `clossys produce [--port 4300] [--no-open]` compiles Designer and Writer cells,
 then serves the read-only Studio on `127.0.0.1`. The browser opens by default.
