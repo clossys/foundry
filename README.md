@@ -89,6 +89,10 @@ package READMEs and their lifecycle records.
 
 ## Installing
 
+For existing Designer, Publisher and Producer consumers, see the
+[consumer migration guide](docs/CONSUMER-MIGRATION.md) for current import,
+frame-data and local rehearsal changes.
+
 Current `@clossys` packages install from the public npm registry,
 `https://registry.npmjs.org`, with no authentication. Do not add a token or a
 private registry mapping for `@clossys`. Pin exact versions; do not treat
