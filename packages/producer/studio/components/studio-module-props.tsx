@@ -18,13 +18,13 @@ export function studioModuleProps(action: StudioModuleAction, payload: StudioMod
     collect(tree);
     const Icon = components.Icon;
     // Exact public Explorer externalAction handoff. No renderDetails or nested controls.
-    // The old selected fill does not implement this port; its owner update remains required.
+    // The selected section owns sibling placement, new-tab safety and keyboard behavior.
     const externalAction = (node: StudioIAOutline) => {
       if (!node || typeof node !== 'object' || typeof node.id !== 'string' || node.children !== undefined || !Icon || !['function', 'object'].includes(typeof Icon)) return undefined;
       const stored = actualLeaves.get(node.id);
       if (!stored?.externalAction || !stored.contentTarget || stored.children !== undefined) return undefined;
       try {
-        const target = cellContentTarget(valueText(payload.agent), stored.id, { version: stored.version });
+        const target = cellContentTarget(valueText(payload.agent), stored.id);
         if (stored.externalAction.href !== target.href || stored.contentTarget.href !== target.href || node.externalAction?.href !== target.href || node.externalAction.label !== stored.externalAction.label) return undefined;
         return { href: target.href, label: stored.externalAction.label, icon: createElement(Icon as ComponentType<Record<string, unknown>>, { asset: 'assets.icon-external-link', decorative: true }) };
       } catch { return undefined; }
@@ -39,7 +39,7 @@ export function studioModuleProps(action: StudioModuleAction, payload: StudioMod
     let actions;
     if (cell && Link && Icon) {
       try {
-        const target = cellContentTarget(valueText(cell.agent), valueText(cell.id), typeof cell.version === 'number' ? { version: cell.version } : undefined);
+        const target = cellContentTarget(valueText(cell.agent), valueText(cell.id));
         actions = createElement(Link as ComponentType<Record<string, unknown>>, { ...target, buttonVariant: 'ghost', 'aria-label': `Open ${valueText(cell.title) || valueText(cell.id)} content` }, createElement(Icon as ComponentType<Record<string, unknown>>, { asset: 'assets.icon-external-link', decorative: true }));
       } catch { /* An unresolved identity cannot become a navigation target. */ }
     }

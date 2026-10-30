@@ -18,7 +18,7 @@ function cellRef(reference: string, agent: Agent) {
   return { agent: owner, id: match[2]!, version: Number(match[3]), reference };
 }
 function linkedCell(cell: CellSummary, agent: Agent) {
-  return { agent, id: cell.id, version: cell.version, status: cell.status, title: typeof cell.fields?.title === 'string' ? cell.fields.title : cell.id.split('.').at(-1), href: `${studioAgentHref(agent)}${studioIAHref(cell.id)}`, contentHref: cellContentHref(agent, cell.id, { version: cell.version }), contentTarget: '_blank', contentRel: 'noopener noreferrer' };
+  return { agent, id: cell.id, version: cell.version, status: cell.status, title: typeof cell.fields?.title === 'string' ? cell.fields.title : cell.id.split('.').at(-1), href: `${studioAgentHref(agent)}${studioIAHref(cell.id)}`, contentHref: cellContentHref(agent, cell.id), contentTarget: '_blank', contentRel: 'noopener noreferrer' };
 }
 
 /** Only stored facts and resolvable cell references become module data. */

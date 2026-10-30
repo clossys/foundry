@@ -22,7 +22,7 @@ export function projectStudioAgentIA(index: AgentCells): StudioAgentIA {
         return { id: section.id, label: section.title, cells: section.children };
       }) };
     });
-    const outline = (nodes: CellNode[]): StudioIAOutline[] => nodes.map(node => ({ id: node.id, label: node.title, href: studioIAHref(node.id), ...(node.group ? { children: outline(node.children) } : { version: node.version, contentTarget: cellContentTarget(index.agent, node.id, { version: node.version }), externalAction: { href: cellContentTarget(index.agent, node.id, { version: node.version }).href, label: `Open ${node.title} content` } }) }));
+    const outline = (nodes: CellNode[]): StudioIAOutline[] => nodes.map(node => ({ id: node.id, label: node.title, href: studioIAHref(node.id), ...(node.group ? { children: outline(node.children) } : { version: node.version, contentTarget: cellContentTarget(index.agent, node.id), externalAction: { href: cellContentTarget(index.agent, node.id).href, label: `Open ${node.title} content` } }) }));
     return { ...root, state: 'ready', groups, tree: [{ ...root, href: studioIAHref(root.id), children: outline(nodes) }] };
   } catch (error) { return { ...root, state: 'error', groups: [], tree: [], error: error instanceof Error ? error.message : String(error) }; }
 }

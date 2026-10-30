@@ -21,7 +21,7 @@ describe('selected native IA partial render', () => {
     expect(html).toContain('data-ds-leaf="sections.cards"');
     expect(html).toContain('data-layout="grid"');
     expect(html.indexOf('studio-ia-sample.two')).toBeLessThan(html.indexOf('studio-ia-sample.one'));
-    expect(html.match(/href="\/content\/publisher\/sample\.(?:one|two)\?version=1"/g)).toHaveLength(2);
+    expect(html.match(/href="\/content\/publisher\/sample\.(?:one|two)"/g)).toHaveLength(2);
     expect(html.match(/rel="noopener noreferrer"/g)).toHaveLength(2);
     expect(html).toContain('inventory incomplete');
     expect(html).toContain('NEED: sections.cards full specimen-body');

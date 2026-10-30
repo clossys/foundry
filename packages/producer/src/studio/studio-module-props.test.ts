@@ -10,7 +10,7 @@ describe('existing closed module section APIs', () => {
   });
   it('offers the exact public Explorer sibling action only for guarded actual L3 targets', () => {
     const Icon = () => null;
-    const leaf = { id: 'focus.segment.core', label: 'Core', version: 2, contentTarget: { href: '/content/director/focus.segment.core?version=2', target: '_blank', rel: 'noopener noreferrer' }, externalAction: { href: '/content/director/focus.segment.core?version=2', label: 'Open Core content' } };
+    const leaf = { id: 'focus.segment.core', label: 'Core', version: 2, contentTarget: { href: '/content/director/focus.segment.core', target: '_blank', rel: 'noopener noreferrer' }, externalAction: { href: '/content/director/focus.segment.core', label: 'Open Core content' } };
     const group = { id: 'focus', label: 'Focus', children: [leaf] };
     const props = studioModuleProps(action('sections.explorer'), { agent: 'director', tree: [group] }, { Icon });
     const callback = props?.externalAction as (node: unknown) => unknown;
@@ -39,7 +39,7 @@ describe('existing closed module section APIs', () => {
   it('uses the real Inspector action slot for guarded selected icon linkouts', () => {
     const Link = () => null, Icon = () => null;
     const props = studioModuleProps(action('sections.record-detail'), { cell: { agent: 'director', id: 'focus.segment.core', version: 2, title: 'Core' } }, { Link, Icon });
-    expect(props?.actions).toMatchObject({ type: Link, props: { href: '/content/director/focus.segment.core?version=2', target: '_blank', rel: 'noopener noreferrer', buttonVariant: 'ghost', children: { type: Icon, props: { asset: 'assets.icon-external-link', decorative: true } } } });
+    expect(props?.actions).toMatchObject({ type: Link, props: { href: '/content/director/focus.segment.core', target: '_blank', rel: 'noopener noreferrer', buttonVariant: 'ghost', children: { type: Icon, props: { asset: 'assets.icon-external-link', decorative: true } } } });
     const invalid = studioModuleProps(action('sections.record-detail'), { cell: { agent: 'director', id: '../../outside', title: 'Invalid' } }, { Link, Icon });
     expect(invalid?.actions).toBeUndefined();
   });

@@ -18,5 +18,5 @@ export async function studioModuleRequirements(): Promise<string[]> {
       sections.add(action.module.section);
     }
   }
-  return sections.size ? ['frames.page-module', ...[...sections].sort()] : [];
+  return [...sections].sort();
 }

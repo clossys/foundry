@@ -1,13 +1,14 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import type { ReactNode } from 'react';
+import type { ComponentType, ComponentProps, ReactNode } from 'react';
 import type { AppNavigationNode, CommandMenuGroup, PageBarPage } from '@clossys/designer/blocks';
 import type { ContentMapNavigationNode } from '@clossys/publisher/content-map';
-import { useStudioSelection, useStudioUI } from './StudioSelection';
+import { useStudioUI } from './StudioSelection';
 import { studioNavigation, studioCommands, studioBreadcrumbs, studioHome, studioPageActions, studioRouteForPath } from '../generated/studio-map';
 import { useStudioBrand } from './StudioBrand';
 import { useStudioModules } from './StudioModuleHost';
+import { studioPageManifest, type StudioPageFrameManifest } from '../lib/studio-page-manifest';
 import { studioPageActionItems } from '../lib/page-actions';
 
 /** Bind projected identities to the selected Designer icon renderer. */
@@ -33,19 +34,20 @@ export function StudioFrame({ children, page }: { children: ReactNode; page: Pag
   const theme = useStudioBrand();
   const route = studioRouteForPath(pathname);
   const activeId = route?.instanceId ?? studioHome.id;
-  const { AppFrame, Icon } = useStudioUI();
-  const { runtime } = useStudioSelection();
+  const { AppFrame: SelectedAppFrame, Icon, EmptyState } = useStudioUI();
+  const AppFrame = SelectedAppFrame as ComponentType<ComponentProps<typeof SelectedAppFrame> & { pageManifest?: StudioPageFrameManifest }>;
   const modules = useStudioModules();
   const projected = studioNavigation[activeId] ?? studioNavigation[studioHome.id];
   const destinations = useDestinations(projected.tree);
   const commands: CommandMenuGroup[] = studioCommands.map(group => ({ ...group, items: group.items.flatMap(item => item.href ? [{ id: item.id, label: item.label, description: item.description, href: item.href }] : []) }));
   const activeHref = pathname;
   const breadcrumb = studioBreadcrumbs[activeId];
+  const pageManifest = studioPageManifest({ pageId: activeId, breadcrumbs: page.breadcrumb ?? breadcrumb, modules, icon: asset => <Icon asset={asset} decorative />, need: (sectionId, reason) => <EmptyState title={`NEED: ${sectionId}`} description={reason} /> });
   const moduleNeeds = modules.filter(module => module.open && module.need).map(module => ({ id: `module-need:${module.action.id}`, severity: 'warning' as const, text: `NEED: ${module.need!.sectionId}`, dismissible: false }));
-  const hostNeeds = modules.some(module => module.open) && !runtime.surfaces.PageModule ? [{ id: 'module-host-need', severity: 'warning' as const, text: 'NEED: frames.page-module', dismissible: false }] : [];
   return <AppFrame
+    pageManifest={pageManifest}
     brand={{ markSrc: '/studio-mark.svg', navigationMark: { label: 'Studio' } }}
-    notices={[...hostNeeds, ...moduleNeeds, ...(theme.source === 'foundry' ? [{ id: 'studio-unbranded', severity: 'warning' as const, text: `Unbranded: ${theme.message ?? 'No active consumer brand cells. Using the Foundry default theme.'}`, dismissible: false }] : theme.message ? [{ id: 'studio-theme-error', severity: 'warning' as const, text: theme.message, dismissible: false }] : [])]}
+    notices={[...moduleNeeds, ...(theme.source === 'foundry' ? [{ id: 'studio-unbranded', severity: 'warning' as const, text: `Unbranded: ${theme.message ?? 'No active consumer brand cells. Using the Foundry default theme.'}`, dismissible: false }] : theme.message ? [{ id: 'studio-theme-error', severity: 'warning' as const, text: theme.message, dismissible: false }] : [])]}
     navigation={{ tree: destinations, activeHref, navigationKey: activeHref, defaultCollapsed: false, label: 'Studio navigation', emptyMessage: 'No pages available', openLabel: 'Open navigation', closeLabel: 'Close navigation', formatDisclosureLabel: (name, expanded) => `${expanded ? 'Collapse' : 'Expand'} ${name}` }}
     account={{ signedOutLabel: 'Local Studio', sections: [] }} showAccount={false} themeControl={null}
     commands={{ heading: 'Navigate Studio', triggerLabel: 'Find a page', searchLabel: 'Search pages', closeLabel: 'Close search', emptyMessage: 'No matching pages', resultCountMessage: count => `${count} pages`, groups: commands }}

@@ -34,7 +34,7 @@ export function useStudioModuleHost(pageId: string, payloads: StudioModulePayloa
     const props = payload ? studioModuleProps(action, payload, runtime.components) : undefined;
     const resolved = selectedModuleSection(action, selection.leaves, runtime.surfaces, props);
     return { action, ...current, ...(resolved.need ? { need: resolved.need } : {}),
-      ...(resolved.component && current.open && !current.collapsed ? { content: createElement(resolved.component as ComponentType<Record<string, unknown>>, props) } : {}),
+      ...(resolved.component ? { content: createElement(resolved.component as ComponentType<Record<string, unknown>>, props) } : {}),
       onToggle: () => setState(current => changeModuleState(current, action.id, 'toggle')),
       onCollapsedChange: collapsed => setState(current => changeModuleState(current, action.id, collapsed ? 'collapse' : 'expand')),
     };

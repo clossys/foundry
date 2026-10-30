@@ -53,7 +53,7 @@ export function StudioAgentIA({ index, indexes, selectedId, onSelect, onCoverage
           id={studioIAAnchor(collection.id)} data-studio-ia-node={collection.id} aria-label={collection.label} layout="grid"
           records={collection.cells.map(cell => ({
             id: cell.id,
-            title: <><Link id={studioIAAnchor(cell.id)} data-studio-ia-node={cell.id} href={studioIAHref(cell.id)} buttonVariant={selectedId === cell.id ? 'secondary' : 'ghost'} onPress={() => onSelect(cell.id)} aria-current={selectedId === cell.id ? 'true' : undefined}>{cell.title}</Link><Link {...cellContentTarget(index.agent, cell.id, { version: cell.version })} buttonVariant="ghost" aria-label={`Open ${cell.title} content`}><Icon asset="assets.icon-external-link" decorative /></Link></>,
+            title: <><Link id={studioIAAnchor(cell.id)} data-studio-ia-node={cell.id} href={studioIAHref(cell.id)} buttonVariant={selectedId === cell.id ? 'secondary' : 'ghost'} onPress={() => onSelect(cell.id)} aria-current={selectedId === cell.id ? 'true' : undefined}>{cell.title}</Link><Link {...cellContentTarget(index.agent, cell.id)} buttonVariant="ghost" aria-label={`Open ${cell.title} content`}><Icon asset="assets.icon-external-link" decorative /></Link></>,
             ...(cell.status ? { badge: { label: cell.status, variant: cell.status === 'draft' ? 'warning' : cell.status === 'active' ? 'success' : 'neutral' } } : {}),
             meta: `${cell.version === undefined ? 'Version unavailable' : `v${cell.version}`} · ${usedByLabel(indexes, index.agent, cell)}`,
             description: BODY_NEED,
