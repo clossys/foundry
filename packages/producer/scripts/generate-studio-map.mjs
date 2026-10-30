@@ -44,13 +44,13 @@ export async function generateStudioMap({ cellRoot = defaultCellRoot, outputDir 
   };
   const module = `${banner}import type { ContentMap, ContentMapNavigation, ContentMapCommandGroup, ContentMapBreadcrumb, ContentMapPageAction, ContentMapPageBody, ContentMapProjectedBody } from '@clossys/publisher/content-map';
 import { projectPageBody } from '@clossys/publisher/content-map';
-export type { ContentMapPageBody, ContentMapProjectedBody, ContentMapBodyContainer, ContentMapBodyContainerBinding } from '@clossys/publisher/content-map';
+export type { ContentMapPageBody, ContentMapProjectedBody } from '@clossys/publisher/content-map';
 import projection from './studio-map.json';
 export type StudioPageAction = ContentMapPageAction;
 export const studioMap = projection.map as ContentMap;
 export const studioPageActions = projection.pageActions as Record<string, readonly StudioPageAction[]>;
 export const studioPageBodies = projection.pageBodies as unknown as Record<string, ContentMapPageBody>;
-export function studioPageBody(pageId: string, boundSpecimenId: string, layer?: string): ContentMapProjectedBody { return projectPageBody(studioMap, pageId, boundSpecimenId, layer); }
+export function studioPageBody(pageId: string, boundSpecimenId: string): ContentMapProjectedBody { return projectPageBody(studioMap, pageId, boundSpecimenId); }
 export const studioRoutes = projection.routes;
 export const studioNavigation = projection.navigation as Record<string, ContentMapNavigation>;
 export const studioCommands = projection.commands as readonly ContentMapCommandGroup[];

@@ -3,15 +3,14 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { checkContentMap, projectPageBody } from "./index.js";
-import type { ContentMap, ContentMapBodyContainer, ContentMapBodyContainerBinding, ContentMapPageBody, ContentMapProjectedBody } from "./index.js";
+import type { ContentMap, ContentMapPageBody, ContentMapProjectedBody } from "./index.js";
 import { compileContentMaps, contentMapFromCells, contentMapToCells } from "./cells.js";
 
 const roots: string[] = [];
 afterEach(async () => { await Promise.all(roots.splice(0).map(root => rm(root, { recursive: true, force: true }))); });
 const body = (): ContentMapPageBody => ({
   template: "ia-scroll",
-  bands: { L0: "sections.section-header", L1: "sections.section-header" },
-  container: { section: "sections.data-table" },
+  bands: { L0: "sections.section-header", L1: "sections.section-header", L2: "sections.cards" },
   row: { columns: ["title", "specimen", "status", "version", "usedBy", "linkOut"] },
 });
 const map = (declaration: ContentMapPageBody = body()): ContentMap => ({
@@ -25,43 +24,20 @@ it("projects distinct per-cell specimen bindings from one unresolved page body",
   const token: ContentMapProjectedBody = projectPageBody(source, "designer", "sections.specimen-token");
   expect(token).toEqual({ ...body(), row: { specimen: "sections.specimen-token", columns: body().row.columns } });
   expect(projectPageBody(source, "designer", "sections.specimen-component").row.specimen).toBe("sections.specimen-component");
-  expect(Object.keys(token)).toEqual(["template", "bands", "container", "row"]);
+  expect(Object.keys(token)).toEqual(["template", "bands", "row"]);
   expect(source).toEqual(before);
   expect(token.bands).not.toBe(source.entries[0]!.body!.bands);
-  expect(token.container).not.toBe(source.entries[0]!.body!.container);
   expect(token.row.columns).not.toBe(source.entries[0]!.body!.row.columns);
 });
 
-it.each<ContentMapBodyContainerBinding>([
-  { section: "sections.data-table" },
-  { section: "sections.cards", mode: "stack" },
-  { section: "sections.cards", mode: "grid" },
-])("projects a direct authored container without requiring a layer: %j", container => {
-  const source = map({ ...body(), container }), before = structuredClone(source);
-  const projected = projectPageBody(source, "designer", "sections.specimen-token");
-  expect(projected.container).toEqual(container);
-  expect(projectPageBody(source, "designer", "sections.specimen-token", "unlisted").container).toEqual(container);
-  expect(projected.container).not.toBe(container);
-  expect(source).toEqual(before);
-});
-
-it("resolves only the exact authored layer and clones its container", () => {
-  const container: ContentMapBodyContainer = { byLayer: {
-    atoms: { section: "sections.data-table" },
-    components: { section: "sections.cards", mode: "stack" },
-    "page-sections": { section: "sections.cards", mode: "grid" },
-  } };
-  const source = map({ ...body(), container }), before = structuredClone(source);
-  for (const [layer, binding] of Object.entries(container.byLayer)) {
-    const projected = projectPageBody(source, "designer", "sections.specimen-token", layer);
-    expect(projected.container).toEqual(binding);
-    expect(projected.container).not.toBe(binding);
-    expect(projected.row.specimen).toBe("sections.specimen-token");
-  }
-  for (const layer of [undefined, "", "component", "Components", "toString", "constructor", "__proto__"]) {
-    expect(() => projectPageBody(source, "designer", "sections.specimen-token", layer)).toThrow(/exact layer/);
-  }
-  expect(source).toEqual(before);
+it("preserves the exact bound identity without resolving Designer registration or layout", () => {
+  const projected = projectPageBody(map(), "designer", "sections.specimen-unregistered-example");
+  expect(projected).toEqual({
+    template: "ia-scroll",
+    bands: { L0: "sections.section-header", L1: "sections.section-header", L2: "sections.cards" },
+    row: { specimen: "sections.specimen-unregistered-example", columns: body().row.columns },
+  });
+  expect(Object.keys(projected.row)).toEqual(["specimen", "columns"]);
 });
 
 it("accepts an explicit authored binding and requires agreement with a supplied binding", () => {
@@ -92,20 +68,10 @@ it.each([
   { ...body(), bands: { ...body().bands, L3: "sections.specimen-token" } },
   { ...body(), bands: { L0: "sections.section-header" } },
   { ...body(), bands: { ...body().bands, L1: "sections.data-table" } },
-  { template: body().template, bands: body().bands, row: body().row },
-  { ...body(), container: null },
-  { ...body(), container: {} },
-  { ...body(), container: { section: "sections.section-header" } },
-  { ...body(), container: { section: "sections.data-table", mode: "stack" } },
-  { ...body(), container: { section: "sections.cards" } },
-  { ...body(), container: { section: "sections.cards", mode: "table" } },
-  { ...body(), container: { section: "sections.cards", mode: "grid", extra: true } },
-  { ...body(), container: { byLayer: {} } },
-  { ...body(), container: { byLayer: [] } },
-  { ...body(), container: { byLayer: { atoms: { section: "sections.data-table" } }, extra: true } },
-  { ...body(), container: { byLayer: { atoms: { section: "sections.cards" } } } },
-  { ...body(), container: { byLayer: { atoms: { section: "sections.data-table", mode: "stack" } } } },
-  ...["", "Atoms", "page_sections", "page--sections", "page-", "-page", "1page", "page.sections", "page/sections"].map(layer => ({ ...body(), container: { byLayer: { [layer]: { section: "sections.data-table" } } } })),
+  { ...body(), bands: { L0: "sections.section-header", L1: "sections.section-header" } },
+  { ...body(), bands: { ...body().bands, L2: { section: "sections.cards", mode: "grid" } } },
+  { ...body(), span: "full" },
+  ...["full", "half", "third", null].map(span => ({ ...body(), row: { ...body().row, span } })),
   { ...body(), row: { ...body().row, specimen: null } },
   { ...body(), row: { ...body().row, specimen: "sections.data-table" } },
   { ...body(), row: { ...body().row, extra: true } },
@@ -118,10 +84,17 @@ it.each([
   expect(() => projectPageBody(source, "designer", "sections.specimen-token")).toThrow(/refused/);
 });
 
-it("requires the authored container field rather than accepting the superseded fixed L2 band", () => {
-  const { container: _container, ...declaration } = body();
-  const source = map({ ...declaration, bands: { ...declaration.bands, L2: "sections.data-table" } } as unknown as ContentMapPageBody);
+it.each([
+  null,
+  {},
+  { section: "sections.data-table" },
+  { section: "sections.cards", mode: "stack" },
+  { section: "sections.cards", mode: "grid" },
+  { byLayer: { atoms: { section: "sections.data-table" }, components: { section: "sections.cards", mode: "stack" }, "page-sections": { section: "sections.cards", mode: "grid" } } },
+])("refuses every superseded container declaration: %j", container => {
+  const source = map({ ...body(), container } as ContentMapPageBody);
   expect(checkContentMap(source)).toContainEqual(expect.objectContaining({ code: "contract", path: "entries.0.body" }));
+  expect(() => projectPageBody(source, "designer", "sections.specimen-token")).toThrow(/refused/);
 });
 
 it.each(["group", "section", "slide", "external"])("refuses body on non-page kind %s", kind => {
@@ -129,14 +102,9 @@ it.each(["group", "section", "slide", "external"])("refuses body on non-page kin
   expect(checkContentMap(source)).toContainEqual(expect.objectContaining({ code: "contract", path: "entries.0.body" }));
 });
 
-it.each<ContentMapBodyContainer>([
-  { section: "sections.data-table" },
-  { section: "sections.cards", mode: "stack" },
-  { section: "sections.cards", mode: "grid" },
-  { byLayer: { atoms: { section: "sections.data-table" }, components: { section: "sections.cards", mode: "stack" }, "page-sections": { section: "sections.cards", mode: "grid" } } },
-])("round-trips the authoritative Body block between Actions and Route and preserves authored containers: %j", async container => {
+it("round-trips the authoritative cards Body block between Actions and Route with the exact specimen binding", async () => {
   const root = await mkdtemp(join(tmpdir(), "publisher-body-")); roots.push(root);
-  const declaration = { ...body(), container };
+  const declaration = body();
   const source: ContentMap = { ...map(declaration), entries: map(declaration).entries.map(entry => ({ ...entry, actions: [{ id: "open", label: "Open", icon: "assets.icon-open", intent: "open", defaultOpen: false }] })) };
   await contentMapToCells(source, root, { date: "2026-10-30", routePack: { packId: source.publicationId, routes: [{ instanceId: "designer", path: "/designer", label: "Designer", channel: "app" }] } });
   const file = join(root, "cells/page.designer/v1.md"), authored = await readFile(file, "utf8");
@@ -146,12 +114,7 @@ it.each<ContentMapBodyContainer>([
   const resolved = { ...declaration, row: { ...declaration.row, specimen: "sections.specimen-token" } };
   await writeFile(file, authored.replace(JSON.stringify(declaration, null, 2), JSON.stringify(resolved, null, 2)));
   const recompiled = await contentMapFromCells(root, source.publicationId);
-  expect(projectPageBody(recompiled, "designer", undefined, "components").row.specimen).toBe("sections.specimen-token");
-  expect(projectPageBody(recompiled, "designer", undefined, "components").container).toEqual("byLayer" in container ? container.byLayer.components : container);
-  if ("byLayer" in container) {
-    expect(() => projectPageBody(recompiled, "designer")).toThrow(/exact layer/);
-    expect(() => projectPageBody(recompiled, "designer", undefined, "unknown")).toThrow(/exact layer/);
-  }
+  expect(projectPageBody(recompiled, "designer")).toEqual(resolved);
   const output = join(root, "content-map", `${source.publicationId}.json`), before = await readFile(output, "utf8");
   await writeFile(file, authored.replace('"ia-scroll"', '"invalid"'));
   await expect(compileContentMaps(root)).rejects.toThrow(/body/);

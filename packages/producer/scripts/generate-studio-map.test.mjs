@@ -163,93 +163,103 @@ async function loadGenerated(outputDir, projection) {
 
 const commonBody = {
   template: 'ia-scroll',
-  bands: { L0: 'sections.section-header', L1: 'sections.section-header' },
+  bands: { L0: 'sections.section-header', L1: 'sections.section-header', L2: 'sections.cards' },
   row: { columns: ['title', 'specimen', 'status', 'version', 'usedBy', 'linkOut'] },
 };
-const designerContainers = {
-  tokens: { section: 'sections.data-table' },
-  assets: { section: 'sections.cards', mode: 'grid' },
-  components: { section: 'sections.cards', mode: 'grid' },
-  sections: { section: 'sections.cards', mode: 'grid' },
-  frames: { section: 'sections.cards', mode: 'grid' },
-};
-const pageContainers = {
-  director: { section: 'sections.cards', mode: 'stack' },
-  designer: { byLayer: designerContainers },
-  writer: { section: 'sections.cards', mode: 'stack' },
-  publisher: { section: 'sections.data-table' },
-};
+const agentPages = ['director', 'designer', 'writer', 'publisher'];
 
-test('agent bodies retain authored containers and the wrapper resolves every agent and Designer layer', async t => {
+// Fixture specimen IDs exercise Publisher's binding syntax, not Designer registration.
+test('identical agent bodies project cards at L2 through the actual generated wrapper', async t => {
   const options = await fixture(t), projection = await generateStudioMap(options);
   const map = await contentMapFromCells(options.cellRoot, 'studio');
   const runtime = await loadGenerated(options.outputDir, projection);
   assert.deepEqual(runtime.studioPageBodies, projection.pageBodies);
-  assert.deepEqual(Object.keys(projection.pageBodies), ['director', 'designer', 'writer', 'publisher']);
+  assert.deepEqual(Object.keys(projection.pageBodies), agentPages);
   assert.equal(projection.pageBodies.home, undefined);
   assert.equal(map.entries.find(page => page.id === 'home').body, undefined);
-  for (const [pageId, container] of Object.entries(pageContainers)) {
-    const body = { ...commonBody, container };
-    assert.deepEqual(projection.pageBodies[pageId], body);
+  for (const pageId of agentPages) {
+    assert.deepEqual(projection.pageBodies[pageId], commonBody);
     assert.deepEqual(projection.pageBodies[pageId], map.entries.find(page => page.id === pageId).body);
+    assert.equal(Object.hasOwn(projection.pageBodies[pageId], 'container'), false);
     assert.equal(Object.hasOwn(projection.pageBodies[pageId].row, 'specimen'), false);
     assert.throws(() => runtime.studioPageBody(pageId));
-    const bindings = pageId === 'designer' ? Object.entries(designerContainers) : [[undefined, container]];
-    for (const [layer, resolvedContainer] of bindings) {
-      for (const specimen of ['sections.specimen-fixture-first', 'sections.specimen-fixture-second']) {
-        assert.deepEqual(runtime.studioPageBody(pageId, specimen, layer), {
-          ...commonBody, container: resolvedContainer,
-          row: { specimen, columns: commonBody.row.columns },
-        });
-      }
-      for (const specimen of [undefined, 'sections.data-table', 'sections.specimen-', 'sections.specimen-fixture extra']) {
-        assert.throws(() => runtime.studioPageBody(pageId, specimen, layer));
-      }
+    for (const specimen of ['sections.specimen-fixture-first', 'sections.specimen-fixture-second']) {
+      assert.deepEqual(runtime.studioPageBody(pageId, specimen), {
+        ...commonBody,
+        row: { specimen, columns: commonBody.row.columns },
+      });
     }
-  }
-  for (const layer of [undefined, '', 'unknown', 'Tokens', 'tokens ']) {
-    assert.throws(() => runtime.studioPageBody('designer', 'sections.specimen-fixture-first', layer));
+    for (const specimen of [undefined, 'sections.data-table', 'sections.specimen-', 'sections.specimen-fixture extra']) {
+      assert.throws(() => runtime.studioPageBody(pageId, specimen));
+    }
   }
   assert.throws(() => runtime.studioPageBody('home', 'sections.specimen-fixture-first'));
   const generated = await readFile(join(options.outputDir, 'studio-map.ts'), 'utf8');
-  assert.match(generated, /export type \{ ContentMapPageBody, ContentMapProjectedBody, ContentMapBodyContainer, ContentMapBodyContainerBinding \} from '@clossys\/publisher\/content-map'/);
+  assert.match(generated, /export type \{ ContentMapPageBody, ContentMapProjectedBody \} from '@clossys\/publisher\/content-map'/);
+  assert.doesNotMatch(generated, /ContentMapBodyContainer|\blayer\b/);
   assert.match(generated, /import \{ projectPageBody \} from '@clossys\/publisher\/content-map'/);
-  assert.match(generated, /studioPageBody\(pageId: string, boundSpecimenId: string, layer\?: string\): ContentMapProjectedBody \{ return projectPageBody\(studioMap, pageId, boundSpecimenId, layer\); \}/);
+  assert.match(generated, /studioPageBody\(pageId: string, boundSpecimenId: string\): ContentMapProjectedBody \{ return projectPageBody\(studioMap, pageId, boundSpecimenId\); \}/);
   await generateStudioMap({ ...options, check: true });
 });
 
-test('authored specimen and container edits fail drift and retain native binding conflicts', async t => {
+test('authored specimen edits fail drift and retain native binding conflicts', async t => {
   const options = await fixture(t);
   await generateStudioMap(options);
   const cell = join(options.cellRoot, 'cells/page.designer/v1.md');
   await replace(cell, '"columns": [', '"specimen": "sections.specimen-fixture-bound",\n    "columns": [');
   await assert.rejects(generateStudioMap({ ...options, check: true }), /drift/i);
   const changed = await generateStudioMap(options);
-  assert.equal(changed.pageBodies.designer.row.specimen, 'sections.specimen-fixture-bound');
+  const body = { ...commonBody, row: { specimen: 'sections.specimen-fixture-bound', columns: commonBody.row.columns } };
+  assert.deepEqual(changed.pageBodies.designer, body);
   assert.deepEqual(changed.pageBodies.designer, changed.map.entries.find(page => page.id === 'designer').body);
-  const projected = { ...changed.pageBodies.designer, container: designerContainers.assets };
-  assert.deepEqual(projectPageBody(changed.map, 'designer', undefined, 'assets'), projected);
-  assert.deepEqual(projectPageBody(changed.map, 'designer', 'sections.specimen-fixture-bound', 'assets'), projected);
-  assert.throws(() => projectPageBody(changed.map, 'designer', 'sections.specimen-fixture-conflict', 'assets'));
+  assert.deepEqual(projectPageBody(changed.map, 'designer'), body);
+  const runtime = await loadGenerated(options.outputDir, changed);
+  assert.deepEqual(runtime.studioPageBody('designer', 'sections.specimen-fixture-bound'), body);
+  assert.throws(() => runtime.studioPageBody('designer', 'sections.specimen-fixture-conflict'));
   await generateStudioMap({ ...options, check: true });
   await replace(join(options.outputDir, 'studio-map.json'), '"specimen": "sections.specimen-fixture-bound"', '"specimen": "sections.specimen-fixture-stale"');
   await assert.rejects(generateStudioMap({ ...options, check: true }), /drift/i);
-  await generateStudioMap(options);
-  await replace(cell, '"mode": "grid"', '"mode": "stack"');
-  await assert.rejects(generateStudioMap({ ...options, check: true }), /drift/i);
-  const changedContainer = await generateStudioMap(options);
-  const runtime = await loadGenerated(options.outputDir, changedContainer);
-  assert.deepEqual(runtime.studioPageBody('designer', 'sections.specimen-fixture-bound', 'assets').container, { section: 'sections.cards', mode: 'stack' });
 });
 
-test('legacy fixed L2 bodies and stale generated container output fail closed', async t => {
+test('old container bindings and L2 tables fail for every agent body', async t => {
+  const options = await fixture(t);
+  const containers = [
+    { section: 'sections.data-table' },
+    { section: 'sections.cards', mode: 'grid' },
+    { section: 'sections.cards', mode: 'stack' },
+    { byLayer: {
+      tokens: { section: 'sections.data-table' },
+      assets: { section: 'sections.cards', mode: 'grid' },
+      components: { section: 'sections.cards', mode: 'grid' },
+      sections: { section: 'sections.cards', mode: 'grid' },
+      frames: { section: 'sections.cards', mode: 'grid' },
+    } },
+  ];
+  for (const pageId of agentPages) {
+    const cell = join(options.cellRoot, `cells/page.${pageId}/v1.md`);
+    const source = await readFile(cell, 'utf8');
+    for (const container of containers) {
+      await writeFile(cell, source.replace('"row": {', `"container": ${JSON.stringify(container)},\n  "row": {`));
+      await assert.rejects(generateStudioMap(options), undefined, `${pageId} rejects ${JSON.stringify(container)}`);
+    }
+    await writeFile(cell, source.replace('"L2": "sections.cards"', '"L2": "sections.data-table"'));
+    await assert.rejects(generateStudioMap(options), undefined, `${pageId} rejects L2 table`);
+    await writeFile(cell, source);
+  }
+  await generateStudioMap(options);
+  await generateStudioMap({ ...options, check: true });
+});
+
+test('stale generated containers, L2 tables and wrapper arguments fail projection drift', async t => {
   const options = await fixture(t);
   await generateStudioMap(options);
-  const cell = join(options.cellRoot, 'cells/page.publisher/v1.md');
-  await replace(cell, '"L1": "sections.section-header"', '"L1": "sections.section-header", "L2": "sections.data-table"');
-  await assert.rejects(generateStudioMap(options));
-  await replace(cell, ', "L2": "sections.data-table"', '');
+  const data = join(options.outputDir, 'studio-map.json');
+  await replace(data, '"row": {', '"container": { "section": "sections.cards", "mode": "stack" },\n          "row": {');
+  await assert.rejects(generateStudioMap({ ...options, check: true }), /drift/i);
   await generateStudioMap(options);
-  await replace(join(options.outputDir, 'studio-map.json'), '"mode": "stack"', '"mode": "grid"');
+  await replace(data, '"L2": "sections.cards"', '"L2": "sections.data-table"');
+  await assert.rejects(generateStudioMap({ ...options, check: true }), /drift/i);
+  await generateStudioMap(options);
+  await replace(join(options.outputDir, 'studio-map.ts'), 'boundSpecimenId: string)', 'boundSpecimenId: string, layer?: string)');
   await assert.rejects(generateStudioMap({ ...options, check: true }), /drift/i);
 });

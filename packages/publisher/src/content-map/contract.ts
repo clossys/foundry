@@ -13,26 +13,18 @@ export type ContentMapConstructs = Readonly<Record<string, readonly SectionFill[
 export type ContentMapSource = { readonly planItemId: string; readonly frameId?: never; readonly sectionIds?: never }
   | { readonly planItemId?: never; readonly frameId: string; readonly sectionIds: readonly string[] };
 export interface ContentMapIndexing { readonly mode: "index" | "noindex"; readonly reason?: string }
-/** Authored L2 container choice. The host renderer owns the Section anatomy. */
-export type ContentMapBodyContainerBinding = { readonly section: "sections.data-table" }
-  | { readonly section: "sections.cards"; readonly mode: "stack" | "grid" };
-/** Layer choices are authored explicitly; projection supplies no default. */
-export type ContentMapBodyContainer = ContentMapBodyContainerBinding
-  | { readonly byLayer: Readonly<Record<string, ContentMapBodyContainerBinding>> };
 /** IA body declaration. An omitted specimen is an unresolved Designer-owned
  * binding port; projection requires a concrete specimen for each cell. */
 export interface ContentMapPageBody {
   readonly template: "ia-scroll";
-  readonly bands: { readonly L0: "sections.section-header"; readonly L1: "sections.section-header" };
-  readonly container: ContentMapBodyContainer;
+  readonly bands: { readonly L0: "sections.section-header"; readonly L1: "sections.section-header"; readonly L2: "sections.cards" };
   readonly row: {
     readonly specimen?: `sections.specimen-${string}`;
     readonly columns: readonly ["title", "specimen", "status", "version", "usedBy", "linkOut"];
   };
 }
 /** A body for one cell after its Designer-owned specimen binding resolves. */
-export interface ContentMapProjectedBody extends Omit<ContentMapPageBody, "row" | "container"> {
-  readonly container: ContentMapBodyContainerBinding;
+export interface ContentMapProjectedBody extends Omit<ContentMapPageBody, "row"> {
   readonly row: Omit<ContentMapPageBody["row"], "specimen"> & { readonly specimen: `sections.specimen-${string}` };
 }
 /** Ordered, serializable page-local controls. Section references may describe a

@@ -12,7 +12,7 @@ export { checkContentMap } from "./check.js";
 export { projectRoutes, projectNavigation, projectCommands, projectBreadcrumbs, projectSitemap, projectOutline, projectToc, projectRedirects, projectStaticParams } from "./projections.js";
 export { projectRobots } from "./robots.js";
 export { projectPageBody } from "./page-body.js";
-export type { ContentMapBodyContainerBinding, ContentMapBodyContainer, ContentMapPageBody, ContentMapProjectedBody } from "./contract.js";
+export type { ContentMapPageBody, ContentMapProjectedBody } from "./contract.js";
 export type { ContentMapRobotsOptions, ContentMapRobots } from "./robots.js";
 export { buildSecurityTxt } from "./security.js";
 export type { SecurityTxtOptions } from "./security.js";

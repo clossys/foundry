@@ -24,34 +24,31 @@ are separate from publication-wide command actions. CELL-P stores them in one
 `## Actions` fenced JSON block, after `Manifest` and before `Body` or `Route` when present.
 
 Pages may declare an `ia-scroll` `body` with exact bands
-`{ L0: "sections.section-header", L1: "sections.section-header" }`, an authored
-L2 `container`, and row columns
+`{ L0: "sections.section-header", L1: "sections.section-header", L2: "sections.cards" }`
+and row columns
 `["title", "specimen", "status", "version", "usedBy", "linkOut"]`.
-The container is either `{ section: "sections.data-table" }`,
-`{ section: "sections.cards", mode: "stack" | "grid" }`, or
-`{ byLayer: { [layer]: binding } }` with one or more explicit bindings. Layer
-keys use lowercase kebab case. A table has no mode; cards require a mode. The
-superseded fixed `bands.L2` field is refused.
+Every L2 section uses a cards grid. The superseded `container` field, table
+bands, missing L2 bands, and authored row spans are refused.
 
 `row.specimen` may be omitted as an unresolved port or authored as a
-`sections.specimen-*` identity. `projectPageBody(map, pageId, specimenId?, layer?)`
-returns a body for one cell with a required specimen and a resolved container
-beside `row`. A direct container needs no layer. A `byLayer` container requires
-the exact declared layer; an absent or unknown layer is refused. Every choice
-comes from the authored declaration, with no default or code-kind mapping.
-The projection accepts an already bound Designer identity. An authored
-identity must agree with a supplied identity. Missing bindings, missing page
-bodies and invalid identity syntax are refused. Designer's consuming checker
-still owns specimen registration. CELL-P stores the declaration in one
-`## Body` fenced JSON block after `Actions` and before `Route` when present.
-For cards, the binding means a header metadata row and the entire bound specimen
-body. The H2 renderer owns that anatomy; this schema adds no card payload shape
-and does not truncate specimen content.
+`sections.specimen-*` identity. `projectPageBody(map, pageId, specimenId?)`
+returns a body for one cell with the exact bound specimen identity and the
+same bands and columns. An authored identity must agree with a supplied
+identity. Missing bindings, missing page bodies and invalid identity syntax
+are refused. The projection resolves only the identity; Designer's consuming
+checker still owns specimen registration. CELL-P stores the declaration in
+one `## Body` fenced JSON block after `Actions` and before `Route` when present.
+
+Each L3 card contains a header metadata row and the entire bound specimen
+body. The H2 renderer owns that anatomy and looks up the specimen leaf by
+`row.specimen`. The leaf owns its `full`, `half`, or `third` span; Publisher
+does not author, infer, duplicate, or project span metadata. This schema adds
+no card payload shape and does not truncate specimen content.
 
 | Function | Output |
 | --- | --- |
 | `projectRoutes(map, options)` | Registered local page metadata; external entries are excluded. |
-| `projectPageBody(map, pageId, specimenId?, layer?)` | One page body with resolved authored container and per-cell specimen identity. |
+| `projectPageBody(map, pageId, specimenId?)` | One cards page body with the exact per-cell specimen identity. |
 | `projectSitemap(map, { channel: "site", origin })` | Local indexable page URLs, with optional normalized ISO `lastModified`. |
 | `projectStaticParams(map)` | Catch-all `{ slug: string[] }` rows for local pages; the root uses `[]`. |
 | `projectRedirects(map)` | Next-compatible `{ source, destination, permanent }` rows. |
