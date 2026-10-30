@@ -1,10 +1,11 @@
+import { studioModuleRequirements } from './studio-module-manifest.js';
 import { applyLibraryChange, emittedTokenProperties, libraryHash, loadCatalog, loadComponentCompositionRules, loadComponentRegistry, planComponentDefaults, planSurfaceDefaults, resolve, DEFAULT_COMPONENT_PREFERENCE, DEFAULT_COMPONENT_PICKS, DEFAULT_COMPONENT_FALLBACK, type CompositeCatalogData, type CompositeEngineInput, type CompositeLibraryData, type LibraryData } from "@clossys/designer/catalog";
 import { installedHeadlessLibrary, loadCatalogBundles } from "@clossys/designer/catalog-bundles";
 import { agentModule } from "./cells.js";
 import type { StudioDesignerLibrary } from "./theme.js";
 import type { StudioSelectionLeaf } from "./selection.js";
 
-const REQUIRED = ["frames.app-shell", "sections.band", "sections.section-header", "sections.content", "sections.article", "sections.empty-state", "components.badge", "components.disclosure", "components.icon", "components.link", "components.navigation-tree", "components.button", "components.rich-text", "sections.record-detail", "components.card", "components.table"];
+const REQUIRED = ["frames.app-shell", "sections.band", "sections.section-header", "sections.content", "sections.article", "sections.empty-state", "components.badge", "components.disclosure", "components.icon", "components.link", "components.navigation-tree", "components.button", "components.rich-text", "components.semantic-content", "sections.record-detail", "components.card", "components.table"];
 const meta = (fill: any) => fill.$extensions["com.clossys.fill"];
 
 /** Preserve authored selections; fill missing seats through Designer's default planners. */
@@ -43,7 +44,7 @@ export async function prepareStudioSelection(stored?: StudioDesignerLibrary): Pr
   const surfacePlan = planSurfaceDefaults({ catalog: surfaceCatalog as any, slots: surfaceCatalog.slots.map(slot => slot.id), preference: DEFAULT_COMPONENT_PREFERENCE });
   const candidates = new Map<string, any>([...catalog.components.fills, ...surfaceCatalog.fills].map(fill => [meta(fill).id, fill]));
   const defaults = new Map<string, any>([...componentPlan.rows, ...surfacePlan.rows].flatMap(row => row.fill && candidates.has(row.fill) ? [[row.slot, candidates.get(row.fill)] as const] : []));
-  const needed = new Set(REQUIRED);
+  const needed = new Set([...REQUIRED, ...await studioModuleRequirements()]);
   const visit = (leaf: string) => {
     const fill = own.get(leaf) ?? defaults.get(leaf); if (!fill) return;
     const descriptor: any = Object.values(fill.components ?? fill.sections ?? fill.frames ?? {})[0];

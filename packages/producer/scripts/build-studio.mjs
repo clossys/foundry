@@ -86,6 +86,10 @@ export async function packageStandalone(appDir, destination) {
   if (hasPublic) {
     await cp(publicSource, join(targetApp, "public"), { recursive: true, verbatimSymlinks: true });
   }
+  // The server planner consumes the same Publisher projection as the client manifest.
+  const studioMap = join(appDir, 'generated', 'studio-map.json');
+  try { await cp(studioMap, join(destination, 'studio-map.json')); }
+  catch (error) { if (error.code !== 'ENOENT') throw error; }
   // All paths are relative to dist/studio; no build-machine paths or timestamps.
   const manifest = {
     schemaVersion: 1,

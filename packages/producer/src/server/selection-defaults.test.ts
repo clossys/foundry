@@ -9,7 +9,7 @@ describe("Studio missing selection defaults", () => {
     const badge = Object.values(input.library.components.fills.find(fill => fill.$extensions["com.clossys.fill"].slot === "components.badge")!.components)[0]!;
     expect(badge.origin).toMatchObject({ kind: "adopted", source: "shadcn@aria" });
     expect(leaves.find(leaf => leaf.leaf === "components.badge")).toMatchObject({ source: "fallback", fill: "shadcn@aria/components.badge" });
-    expect(leaves.every(leaf => leaf.source === "fallback" && leaf.message?.startsWith("NEED:"))).toBe(true);
+    expect(leaves.every(leaf => (leaf.source === "fallback" || leaf.source === "unavailable") && leaf.message?.startsWith("NEED:"))).toBe(true);
     expect(Object.keys(profile.components.components).length).toBeLessThan(input.catalog.components.slots.length);
     expect(profile.components.components["components.tooltip"]).toBeDefined();
     expect(profile.components.check.findings.filter(finding => finding.severity === "error")).toEqual([]);
@@ -25,6 +25,6 @@ describe("Studio missing selection defaults", () => {
     expect(badge.origin).toMatchObject({ kind: "adopted", source: "foundry" });
     expect(prepared.leaves.find(leaf => leaf.leaf === "components.badge")).toMatchObject({ source: "consumer", fill: "foundry/components.badge" });
     expect(libraryHash(library)).toBe(before);
-    expect(prepared.leaves.every(leaf => leaf.source === "consumer")).toBe(true);
+    expect(prepared.leaves.every(leaf => leaf.source === "consumer" || leaf.source === "unavailable")).toBe(true);
   });
 });

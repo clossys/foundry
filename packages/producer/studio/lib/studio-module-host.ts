@@ -1,6 +1,7 @@
 import type { StudioSelectionLeaf } from './selection-client';
+import type { StudioPageAction } from '../generated/studio-map';
 
-export interface StudioModuleAction { id: string; module: string; icon: string; label: string; defaultOpen: boolean }
+export type StudioModuleAction = Extract<StudioPageAction, { module: unknown }>;
 export interface StudioModuleState { open: boolean; collapsed: boolean }
 export interface StudioModuleNeed { code: 'missing-section' | 'missing-selected-export' | 'missing-payload'; sectionId: string; actionId: string }
 
@@ -17,11 +18,11 @@ export function changeModuleState(state: Readonly<Record<string, StudioModuleSta
 
 /** Surface compiler canonical export spelling; no leaf aliases or default kit imports. */
 export function selectedModuleSection(action: StudioModuleAction, leaves: readonly StudioSelectionLeaf[], surfaces: Readonly<Record<string, unknown>>, payload: unknown): { component?: unknown; need?: StudioModuleNeed } {
-  const selected = leaves.find(leaf => leaf.leaf === action.module);
-  if (!/^sections\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(action.module) || !selected?.fill || selected.source === 'unavailable') return { need: { code: 'missing-section', sectionId: action.module, actionId: action.id } };
-  const name = action.module.slice('sections.'.length).split('-').map(word => word[0]!.toUpperCase() + word.slice(1)).join('');
+  const selected = leaves.find(leaf => leaf.leaf === action.module.section);
+  if (!/^sections\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(action.module.section) || !selected?.fill || selected.source === 'unavailable') return { need: { code: 'missing-section', sectionId: action.module.section, actionId: action.id } };
+  const name = action.module.section.slice('sections.'.length).split('-').map(word => word[0]!.toUpperCase() + word.slice(1)).join('');
   const component = surfaces[name];
-  if (!component || !['function', 'object'].includes(typeof component)) return { need: { code: 'missing-selected-export', sectionId: action.module, actionId: action.id } };
-  if (!payload || typeof payload !== 'object') return { need: { code: 'missing-payload', sectionId: action.module, actionId: action.id } };
+  if (!component || !['function', 'object'].includes(typeof component)) return { need: { code: 'missing-selected-export', sectionId: action.module.section, actionId: action.id } };
+  if (!payload || typeof payload !== 'object') return { need: { code: 'missing-payload', sectionId: action.module.section, actionId: action.id } };
   return { component };
 }

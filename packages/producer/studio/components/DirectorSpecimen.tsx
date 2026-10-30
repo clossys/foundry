@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import type { AgentCells, CellDetail } from '../lib/cells-client';
 import { directorDocument, directorSections, directorVersions, evidenceHref, evidenceReferences, type DirectorChapter } from '../lib/director-specimen';
 import { useSpecimenCells } from '../lib/director-specimen-resource';
-import { Badge, ContentSection, DetailView, EmptyState, Link, SectionHeader, SpecimenSelectionNeeds } from './director-specimen-ds';
+import { Badge, ContentSection, DetailView, EmptyState, Link, SectionHeader } from './director-specimen-ds';
 import { RichTextSpecimen } from './RichTextSpecimen';
 
 export const directorPassageId = (id: string, version?: number) => `director-passage-${id}-v${version ?? 'latest'}`;
@@ -57,5 +57,5 @@ export function DirectorSpecimen({ index, selectedId }: { index: AgentCells; sel
   if (resource.state === 'loading') return <EmptyState role="status" title="Loading strategy document…" />;
   if (resource.state === 'error') return <EmptyState role="alert" title="Strategy unavailable" description={resource.message} />;
   const cells = resource.cells;
-  return <ContentSection aria-label="Director strategy specimen"><SpecimenSelectionNeeds />{chapters.map(chapter => <Chapter key={chapter.id} chapter={chapter} cells={cells} selectedId={selectedId} />)}</ContentSection>;
+  return <ContentSection aria-label="Director strategy specimen">{chapters.map(chapter => <Chapter key={chapter.id} chapter={chapter} cells={cells} selectedId={selectedId} />)}</ContentSection>;
 }
