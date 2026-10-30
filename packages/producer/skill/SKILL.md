@@ -5,8 +5,9 @@ description: Inspect the private clossys CLI scaffold and its agent resolution c
 ---
 
 Use `clossys --help` to inspect supported verbs and flags. This private build
-recognizes `direct`, `design`, `write`, `publish`, and `produce` as dispatch stubs.
-Each verb exits `2` with `not implemented in this build`.
+recognizes `direct`, `design`, `write`, `publish`, and `produce`. `direct`, `design`,
+`write` and `publish` without `--target` exit `2` with `not implemented in this build`.
+`publish --target preview` renders and serves the active pages and writes a build report.
 
 Use `--root <dir>` to select the starting directory for discovery of an ancestor
 containing `clossys/clossys.config.ts`. The scaffold does not evaluate the config.

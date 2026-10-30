@@ -13,6 +13,7 @@ export interface CliArgs {
   target?: string;
   pages?: string;
   report?: string;
+  out?: string;
 }
 
 export class CliUsageError extends Error {
@@ -20,7 +21,7 @@ export class CliUsageError extends Error {
 }
 
 export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check> [--check] [--root <dir>] [--json]\n"
-  + "Options: --help; produce --once --port <0-65535> --no-open; publish --target <id>\n"
+  + "Options: --help; produce --once --port <0-65535> --no-open; publish --target preview [--port <0-65535>] [--out <dir>]\n"
   + "Page check: clossys check --pages <generated-manifest.json> --report <report.json> [--json]";
 
 export function parseArgs(argv: readonly string[]): CliArgs {
@@ -42,6 +43,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       case "--target": args.target = value(); break;
       case "--pages": args.pages = value(); break;
       case "--report": args.report = value(); break;
+      case "--out": args.out = value(); break;
       case "--port": {
         const port = value();
         if (!/^\d+$/.test(port) || Number(port) > 65535) throw new CliUsageError("--port must be an integer from 0 to 65535");
@@ -53,10 +55,10 @@ export function parseArgs(argv: readonly string[]): CliArgs {
         args.verb = arg as Verb;
     }
   }
-  if ((args.once || args.port !== undefined || args.noOpen) && args.verb !== "produce") {
-    throw new CliUsageError("--once, --port and --no-open require produce");
-  }
+  if ((args.once || args.noOpen) && args.verb !== "produce") throw new CliUsageError("--once and --no-open require produce");
+  if (args.port !== undefined && args.verb !== "produce" && args.verb !== "publish") throw new CliUsageError("--port requires produce or publish");
   if (args.target !== undefined && args.verb !== "publish") throw new CliUsageError("--target requires publish");
+  if (args.out !== undefined && args.verb !== "publish") throw new CliUsageError("--out requires publish");
   if ((args.pages !== undefined || args.report !== undefined) && args.verb !== "check") {
     throw new CliUsageError("--pages and --report require check");
   }

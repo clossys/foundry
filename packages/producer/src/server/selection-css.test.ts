@@ -189,6 +189,18 @@ describe("selected runtime CSS closure", () => {
     } finally { await browser.close(); }
   });
 
+  it("keeps Designer's responsive variants winning over base utilities the selected layer re-emits", async () => {
+    // A selected component uses `flex-col`; a Designer package section ships `flex-col tablet:flex-row`.
+    const css = await selectionCss(new Map([["components/selected/Card.tsx", 'export const Card = () => <div className="flex flex-col" />;']]));
+    // The selected layer is the last utility layer: when it re-emits `flex-col`, the variant must follow it there.
+    const selected = css.slice(css.indexOf("@layer foundry-ui-selected {"));
+    const base = selected.indexOf(".flex-col {");
+    const variant = selected.indexOf(".tablet\\:flex-row {");
+    expect(base).toBeGreaterThan(0);
+    expect(variant).toBeGreaterThan(base);
+    expect(selected.slice(0, variant)).toContain("@media (width >= 768px)");
+  });
+
   it("does not invent a selected utility rule without its candidate and preserves emitted CSS", async () => {
     const css = await selectionCss(new Map([["selected.ts", "export const label = 'Selected';"], ["selected.css", ".selected-proof { isolation: isolate; }"]]));
     expect(css.includes("width: 137px")).toBe(false);

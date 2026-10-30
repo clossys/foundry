@@ -96,7 +96,7 @@ function projectionPlugin(files: ReadonlyMap<string, string>, root: string, comp
           const name = posix.normalize(args.kind === "entry-point" ? args.path : posix.join(posix.dirname(args.importer), args.path));
           const candidates = [name, name.replace(/\.js$/, ".ts"), name.replace(/\.js$/, ".tsx"), ...[".ts", ".tsx", ".js", "/index.ts", "/index.tsx", "/index.js"].map(suffix => name + suffix)];
           const path = candidates.find(candidate => files.has(candidate));
-          if (!path) throw new Error("Selected library import does not resolve");
+          if (!path) throw new Error(`Selected library import does not resolve: ${name}`);
           return { path, namespace: "studio-projection" };
         }
         if (args.namespace !== "studio-projection") return undefined;

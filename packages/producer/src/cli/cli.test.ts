@@ -79,7 +79,7 @@ describe("clossys bin", () => {
   });
 
   it.each([
-    ["publish", "--target", "example"],
+    ["publish", "--port", "4330"],
     ["write", "--check", "--root", "."],
   ])("parses supported flags without implementing behavior: %j", (...args) => {
     const result = run(args);
@@ -91,6 +91,8 @@ describe("clossys bin", () => {
     ["direct", "--root"], ["direct", "--bogus"], ["design", "--once"],
     ["produce", "--port", "bad"], ["produce", "--port", "65536"],
     ["publish", "--target"], ["write", "--target", "example"],
+    ["publish", "--target", "example"], ["publish", "--target", "preview", "--port", "80"],
+    ["write", "--out", "site"], ["write", "--port", "4330"],
   ])("rejects invalid arguments: %j", (...args) => {
     const result = run(args);
     expect(result.status).toBe(2);

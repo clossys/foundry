@@ -18,8 +18,15 @@ clossys <verb> [--check] [--root <dir>] [--json]
 | `publish` | Publisher |
 | `produce` | The four agents in sequence |
 
-`direct`, `design`, `write`, and `publish` are dispatch stubs in this build.
-They exit `2` with `not implemented in this build`. Help exits `0`.
+`direct`, `design` and `write` are dispatch stubs in this build, as is `publish`
+without `--target`. They exit `2` with `not implemented in this build`. Help exits `0`.
+
+`clossys publish --target preview [--port 4330] [--out <dir>]` renders every
+active Publisher page as one Designer frame plus its ordered sections, filled
+with bound Writer records, inside the consumer's Designer stylesheet. It writes
+the static site and `report.json` (empty slots, unbound keys, agent requests)
+outside the consumer root and serves the site on `127.0.0.1`, leaving the
+server running. `--check` renders and reports without serving.
 
 `clossys produce [--port 4300] [--no-open]` compiles Designer and Writer cells,
 then serves the read-only Studio on `127.0.0.1`. The browser opens by default.

@@ -7,6 +7,7 @@ import type { Verb } from "./args.js";
 import { discoverRoot } from "./root.js";
 import { runProduce } from "./produce.js";
 import { runPageCheck } from "./check.js";
+import { runPublish } from "./publish.js";
 
 const VERB_AGENTS: Record<Exclude<Verb, "check">, readonly AgentKind[]> = {
   direct: ["director"],
@@ -34,6 +35,7 @@ export async function runCli(argv: readonly string[], cwd = process.cwd()): Prom
     if (verb === "check") return await runPageCheck(args, cwd);
     const root = discoverRoot(resolve(cwd, args.root ?? "."));
     if (verb === "produce") return await runProduce(args, root);
+    if (verb === "publish" && args.target !== undefined) return await runPublish(args, root);
     for (const kind of VERB_AGENTS[verb]) resolveAgent(kind);
     return { exitCode: 2, message: `${verb}: not implemented in this build`, verb, root, check: args.check };
   } catch (error) {
