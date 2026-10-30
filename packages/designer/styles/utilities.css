@@ -244,8 +244,8 @@
 @source inline("followed follows font-body font-display font-medium font-mono font-normal font-semibold font-size");
 @source inline("font: fontSize: footer footer-duplicate-link footer-icon-limit footer-link-limit footnote for force");
 @source inline("forced forced-colors:-outline-offset-2 forced-colors:[forced-color-adjust:preserve-parent-color]");
-@source inline("forced-colors:bg-current forced-colors:border-current forced-colors:border-solid");
-@source inline("forced-colors:fill-current forced-colors:focus-visible:outline");
+@source inline("forced-colors:bg-current forced-colors:border-current forced-colors:border-dashed");
+@source inline("forced-colors:border-solid forced-colors:fill-current forced-colors:focus-visible:outline");
 @source inline("forced-colors:focus-visible:outline-solid forced-colors:outline forced-colors:outline-2");
 @source inline("forced-colors:outline-current forced-colors:outline-offset-2 forced-colors:outline-solid");
 @source inline("forced-colors:stroke-current foreground foreignobject form form. form: formRef formatDisclosureLabel");

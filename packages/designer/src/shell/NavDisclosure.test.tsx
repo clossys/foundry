@@ -62,7 +62,7 @@ describe("NavDisclosure", () => {
     expect(toggle).toHaveFocus();
   });
 
-  it("activating a link in the panel collapses it, including a nested click target, without refocusing the toggle", () => {
+  it("activating a link in the panel collapses it, including a nested click target, and refocuses the toggle", () => {
     renderNav();
     const toggle = screen.getByRole("button", { name: "Menu" });
     fireEvent.click(toggle);
@@ -72,7 +72,7 @@ describe("NavDisclosure", () => {
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(link.parentElement).not.toHaveAttribute("data-expanded");
     expect(link.parentElement).toHaveAttribute("inert");
-    expect(toggle).not.toHaveFocus();
+    expect(toggle).toHaveFocus();
   });
 
   it("accepts landmark and trigger names and className, with instance-local controls", () => {

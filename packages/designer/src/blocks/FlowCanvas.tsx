@@ -32,8 +32,8 @@ export interface FlowCanvasProps {
 const UNIT = "var(--spacing-xs, 4px)";
 const units = (value: number) => "calc(" + value + " * " + UNIT + ")";
 
-/** In forced colors the border colours collapse to one system colour, so the selected node also gets an outline in the button's system text colour. */
-const SELECTED_FORCED = "forced-colors:outline-solid forced-colors:outline-2 forced-colors:outline-offset-2 forced-colors:outline-current";
+/** Forced colors flatten border colours; a dashed selected perimeter distinguishes selection from the solid keyboard-focus outline. */
+const SELECTED_FORCED = "forced-colors:border-dashed forced-colors:outline-solid forced-colors:outline-2 forced-colors:outline-offset-2 forced-colors:outline-current";
 
 /**
  * The canvas's own direction: the closest `dir`, as `:dir()` reads it, so a

@@ -278,9 +278,8 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
         className="nav-disclosure-panel"
         data-expanded={expanded ? "" : undefined}
         onClick={event => {
-          // Following a link moves on from the menu; focus stays with the
-          // destination rather than returning to the toggle.
-          if (event.target instanceof Element && event.target.closest("a[href]")) close(false);
+          // Restore focus before the closing panel becomes inert.
+          if (event.target instanceof Element && event.target.closest("a[href]")) close();
         }}
       >
         {children}
