@@ -13,7 +13,23 @@ export function studioModuleProps(action: StudioModuleAction, payload: StudioMod
   if (action.module.section === 'sections.explorer') {
     const tree = (payload.tree ?? []) as StudioIAOutline[];
     const expanded = (nodes: StudioIAOutline[]): string[] => nodes.flatMap(node => node.children ? [node.id, ...expanded(node.children)] : []);
-    return { label: action.label, tree, selectedId: payload.selectedId, defaultExpandedIds: expanded(tree), ...(typeof payload.onSelect === 'function' ? { onSelect: payload.onSelect } : {}) };
+    const actualLeaves = new Map<string, StudioIAOutline>();
+    const collect = (nodes: StudioIAOutline[]) => { for (const node of nodes) { if (node.children !== undefined) collect(node.children); else actualLeaves.set(node.id, node); } };
+    collect(tree);
+    const Icon = components.Icon;
+    // Exact public Explorer externalAction handoff. No renderDetails or nested controls.
+    // The old selected fill does not implement this port; its owner update remains required.
+    const externalAction = (node: StudioIAOutline) => {
+      if (!node || typeof node !== 'object' || typeof node.id !== 'string' || node.children !== undefined || !Icon || !['function', 'object'].includes(typeof Icon)) return undefined;
+      const stored = actualLeaves.get(node.id);
+      if (!stored?.externalAction || !stored.contentTarget || stored.children !== undefined) return undefined;
+      try {
+        const target = cellContentTarget(valueText(payload.agent), stored.id, { version: stored.version });
+        if (stored.externalAction.href !== target.href || stored.contentTarget.href !== target.href || node.externalAction?.href !== target.href || node.externalAction.label !== stored.externalAction.label) return undefined;
+        return { href: target.href, label: stored.externalAction.label, icon: createElement(Icon as ComponentType<Record<string, unknown>>, { asset: 'assets.icon-external-link', decorative: true }) };
+      } catch { return undefined; }
+    };
+    return { label: action.label, tree, selectedId: payload.selectedId, defaultExpandedIds: expanded(tree), externalAction, ...(typeof payload.onSelect === 'function' ? { onSelect: payload.onSelect } : {}) };
   }
   if (action.module.section === 'sections.record-detail') {
     const cell = payload.cell && typeof payload.cell === 'object' ? payload.cell as Record<string, unknown> : undefined;

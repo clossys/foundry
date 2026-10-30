@@ -8,6 +8,20 @@ describe('existing closed module section APIs', () => {
     const onSelect = () => undefined;
     expect(studioModuleProps(action('sections.explorer'), { tree: [{ id: 'group', label: 'Group', children: [{ id: 'leaf', label: 'Leaf' }] }], selectedId: 'leaf', onSelect }, {})).toMatchObject({ label: 'Authored module label', selectedId: 'leaf', defaultExpandedIds: ['group'], onSelect });
   });
+  it('offers the exact public Explorer sibling action only for guarded actual L3 targets', () => {
+    const Icon = () => null;
+    const leaf = { id: 'focus.segment.core', label: 'Core', version: 2, contentTarget: { href: '/content/director/focus.segment.core?version=2', target: '_blank', rel: 'noopener noreferrer' }, externalAction: { href: '/content/director/focus.segment.core?version=2', label: 'Open Core content' } };
+    const group = { id: 'focus', label: 'Focus', children: [leaf] };
+    const props = studioModuleProps(action('sections.explorer'), { agent: 'director', tree: [group] }, { Icon });
+    const callback = props?.externalAction as (node: unknown) => unknown;
+    expect(callback(leaf)).toMatchObject({ href: leaf.externalAction.href, label: 'Open Core content', icon: { type: Icon, props: { asset: 'assets.icon-external-link', decorative: true } } });
+    expect(callback(group)).toBeUndefined();
+    expect(callback(null)).toBeUndefined();
+    expect(callback({ ...leaf, externalAction: { ...leaf.externalAction, href: 'https://outside.invalid' } })).toBeUndefined();
+    expect(callback({ ...leaf, id: '../../outside' })).toBeUndefined();
+    const noIcon = studioModuleProps(action('sections.explorer'), { agent: 'director', tree: [group] }, {});
+    expect((noIcon?.externalAction as typeof callback)(leaf)).toBeUndefined();
+  });
   it('puts source only in a selected read-only code leaf and refuses an absent export', () => {
     const SemanticContent = () => null;
     const props = studioModuleProps(action('sections.content'), { source: '---\ntitle: fixture\n---\nbody', readOnly: true }, { SemanticContent });
