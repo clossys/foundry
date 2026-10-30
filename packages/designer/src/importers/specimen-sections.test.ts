@@ -2,7 +2,7 @@ import { expect, it } from "vitest";
 import ts from "typescript";
 import { loadCatalog, loadComponentRegistry, loadSectionRegistry, planSurfaceDefaults, applyLibraryChange, libraryHash, resolve, emit } from "../catalog-core/index.js";
 import type { CompositeEngineInput } from "../catalog-core/types.js";
-import { surfaceOf, verifySurfaceProvenance, verifySurfaceFiles } from "../catalog-core/surface-library.js";
+import { surfaceOf, surfaceEntryOf, isSurfacePackageEntry, verifySurfaceProvenance, verifySurfaceFiles } from "../catalog-core/surface-library.js";
 import { parseSurfaceModule } from "../catalog-core/surface-source-analysis.js";
 import { emitSurfaces } from "../catalog-core/surface-emit.js";
 import { specimenSectionSourceCatalog, SPECIMEN_SECTION_EXPORTS } from "./specimen-sections.js";
@@ -13,7 +13,7 @@ import { studioSpecimenLeaves } from "../studio/specimen-registry.js";
 function input(): CompositeEngineInput {
   return { catalog: { values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: [] }, surfaces: foundrySurfaceCatalog() }, library: { source: { id: "specimen-native-consumer", kind: "consumer", author: "consumer", license: "MIT" }, adoptedAt: "2026-10-30", values: { fills: [] }, components: { fills: [], files: [] }, surfaces: { version: 1, fills: [], files: [] } }, surfaceOptions: { packages: [], measurements: [] } };
 }
-it("registers all14 real section contracts, IA placements, native source candidates and eligible bindings", () => {
+it("registers all14 real section contracts with the Writer package implementation and13 native source candidates", () => {
   const registry = loadSectionRegistry(), source = specimenSectionSourceCatalog();
   expect(SPECIMEN_SECTION_EXPORTS).toHaveLength(14);
   expect(source.fills).toHaveLength(14);
@@ -23,6 +23,13 @@ it("registers all14 real section contracts, IA placements, native source candida
   const plan = planSurfaceDefaults({ catalog: { slots: registry.slots, fills: source.fills }, slots, preference: ["foundry"] });
   expect(plan.rows.every(row => row.status === "default")).toBe(true);
   for (const document of source.fills) {
+    const entry = surfaceEntryOf(document);
+    if (isSurfacePackageEntry(entry)) {
+      expect(entry.slot).toBe("sections.specimen-copy-in-context");
+      expect(entry.impl).toEqual({ kind: "package", module: "@clossys/designer/studio", export: "SpecimenCopyInContext" });
+      expect(source.transforms.some(row => row.identity.id === "specimen-copy-in-context")).toBe(false);
+      continue;
+    }
     const candidate = surfaceOf(document);
     const file = source.upstream.find(file => file.path === candidate.impl.entry)!;
     const parsed = parseSurfaceModule(file.content);
@@ -45,10 +52,10 @@ it("registers all14 real section contracts, IA placements, native source candida
     expect(native.render.name).toBe(candidate.impl.export);
   }
 });
-it("materializes and replays all14 retained native sources with immutable receipts; missing runtime evidence remains FAIL", async () => {
+it("materializes and replays13 retained native sources with immutable receipts; missing runtime evidence remains FAIL", async () => {
   const prepared = await prepareSpecimenSurfaceSources(input());
-  expect(prepared.bundles).toHaveLength(14);
-  expect(prepared.input.catalog.surfaces!.materializations).toHaveLength(14);
+  expect(prepared.bundles).toHaveLength(13);
+  expect(prepared.input.catalog.surfaces!.materializations).toHaveLength(13);
   let library = prepared.input.library;
   for (const bundle of prepared.bundles) {
     const fill = surfaceOf(bundle.document);
@@ -57,7 +64,7 @@ it("materializes and replays all14 retained native sources with immutable receip
     library = applyLibraryChange(prepared.input.catalog, library, { baseHash: libraryHash(library), changes: [{ portion: "surfaces", change: { op: "adopt", slot: bundle.slot, source: "foundry" } }], surfaceBundles: [bundle] }, { surfaceOptions: prepared.input.surfaceOptions! });
   }
   const resolved = resolve({ ...prepared.input, library });
-  expect(Object.keys(resolved.surfaces!.fills)).toHaveLength(14);
+  expect(Object.keys(resolved.surfaces!.fills)).toHaveLength(13);
   expect(resolved.surfaces!.check.findings).toContainEqual(expect.objectContaining({ code: "S8", message: "independent current type/closure measurement missing" }));
   expect(() => emitSurfaces(resolved.surfaces!, ["surface-index"])).toThrow("S8 source emission requires current complete evidence");
   const bundle = prepared.bundles[0]!, fill = surfaceOf(bundle.document);

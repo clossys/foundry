@@ -74,6 +74,18 @@ describe('full semantic agent specimen source plans', () => {
     expect(plan.expectedVariantIds).toHaveLength(1);
     expect(plan.issues).toEqual([]);
   });
+  it('keeps native lexicon voice, rule and glossary metadata in Inspector', () => {
+    const detail = writer([
+      { locale: 'en', record: { id: 'lx.0000000001', leaf: 'lexicon.warmth', context: 'page.body.voice', kind: 'voice-rule', rule: 'warmth', value: 'warm', forbidden: ['effortless'] } },
+      { locale: 'en', record: { id: 'lx.0000000002', leaf: 'lexicon.avoid-terms', context: 'page.terms', kind: 'term', term: 'seamless', forms: [], termStatus: 'avoid', reason: 'Avoid unsupported wording' } },
+      { locale: 'en', record: { id: 'lx.0000000003', leaf: 'lexicon.avoid-patterns', context: 'page.rules', kind: 'pattern-rule', pattern: { source: 'always' }, severity: 'warning', reason: 'Use precise language' } },
+      { locale: 'en', record: { id: 'copy.1', context: 'page.hero.cta', text: 'Continue' } },
+    ]);
+    const plan = agentSpecimenPlan(index(detail), detail);
+    expect(plan.items.map(item => item.value)).toEqual(['Continue']);
+    expect(plan.expectedVariantIds).toHaveLength(1);
+    expect(plan.issues).toEqual([]);
+  });
   it('does not report an empty English scope as a successful specimen', () => {
     const detail = writer([{ locale: 'ar', record: { id: 'copy.1', context: 'page.hero.cta', text: 'متابعة' } }]);
     expect(agentSpecimenPlan(index(detail), detail)).toMatchObject({ items: [], expectedVariantIds: [], issues: ['No English Writer records are available.'] });

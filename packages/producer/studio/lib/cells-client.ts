@@ -3,7 +3,12 @@ import { isAgent, type Agent } from './agents';
 export interface CellSummary { id: string; title: string; parent?: string; version?: number; status?: 'draft' | 'active' | 'retired'; path?: string; fields?: Record<string, unknown> }
 export type CellContentScope = { kind: 'cell'; cellId: string } | { kind: 'version'; cellId: string; version: number };
 export interface AgentCells { contentScope?: CellContentScope; agent: Agent; cells: CellSummary[]; tree?: Record<string, unknown>; state: 'ready' | 'missing' | 'error'; error?: string }
-export interface CellDetail extends CellSummary { agent: Agent; content: string }
+export interface WriterInventory {
+  cellId: string; version: number; status: 'draft' | 'active' | 'retired';
+  records: { cellId: string; version: number; status: 'draft' | 'active' | 'retired'; locale: string; record: Record<string, unknown> }[];
+  issues: string[];
+}
+export interface CellDetail extends CellSummary { agent: Agent; content: string; writerInventory?: WriterInventory }
 
 function object(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
 
@@ -29,7 +34,20 @@ export function parseCellResponse(value: unknown, agent: Agent, id: string): Cel
   if (!object(value) || value.agent !== agent || value.state !== 'ready' || !object(value.cell)) throw new Error('The selected cell response is invalid.');
   const cell = value.cell;
   if (cell.id !== id || typeof cell.source !== 'string') throw new Error('The selected cell response is invalid.');
-  return { ...summary(cell), agent, content: cell.source };
+  const parsed = summary(cell);
+  let writerInventory: WriterInventory | undefined;
+  if (agent === 'writer' && cell.writerInventory !== undefined) {
+    const inventory = cell.writerInventory;
+    if (!object(inventory) || inventory.cellId !== id || inventory.version !== parsed.version || inventory.status !== parsed.status || !Array.isArray(inventory.records) || !Array.isArray(inventory.issues) || inventory.issues.some(issue => typeof issue !== 'string') || inventory.records.some(entry => !object(entry) || typeof entry.cellId !== 'string' || !entry.cellId || !Number.isSafeInteger(entry.version) || Number(entry.version) < 1 || !['draft', 'active', 'retired'].includes(String(entry.status)) || typeof entry.locale !== 'string' || !entry.locale || !object(entry.record) || typeof entry.record.id !== 'string' || typeof entry.record.context !== 'string')) throw new Error('The Writer reference inventory is invalid.');
+    const snapshots = new Map<string, string>();
+    for (const value of inventory.records as WriterInventory['records']) {
+      const snapshot = `${value.version}:${value.status}`;
+      if (value.cellId === id && (value.version !== parsed.version || value.status !== parsed.status) || snapshots.has(value.cellId) && snapshots.get(value.cellId) !== snapshot) throw new Error('The Writer reference inventory mixes cell snapshots.');
+      snapshots.set(value.cellId, snapshot);
+    }
+    writerInventory = inventory as unknown as WriterInventory;
+  }
+  return { ...parsed, agent, content: cell.source, ...(writerInventory ? { writerInventory } : {}) };
 }
 
 async function request(path: string, signal: AbortSignal): Promise<unknown> {

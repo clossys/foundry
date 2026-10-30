@@ -23,6 +23,8 @@ export async function prepareStudioSelection(stored?: StudioDesignerLibrary): Pr
   const authored: CompositeLibraryData = composite ? structuredClone(original as CompositeLibraryData) : { source, adoptedAt: original?.adoptedAt ?? "2026-10-29", values: { fills: (original as LibraryData | undefined)?.fills ?? [] }, components: { fills: [], files: [] }, surfaces: { version: 1, fills: [], files: [] } };
   authored.surfaces ??= { version: 1, fills: [], files: [] };
   const own = new Map<string, any>([...authored.values.fills, ...authored.components.fills, ...authored.surfaces.fills].map(fill => [meta(fill).slot, fill]));
+  const surfaceCatalog = catalog.surfaces!;
+  const surfacePlan = planSurfaceDefaults({ catalog: surfaceCatalog as any, slots: surfaceCatalog.slots.map(slot => slot.id), preference: DEFAULT_COMPONENT_PREFERENCE });
   let values: LibraryData = { ...authored.values, source: authored.source, adoptedAt: authored.adoptedAt };
   const absentValues = catalog.values.slots.filter(slot => slot.layer === "tokens" || slot.id.startsWith("assets.icon-")).filter(slot => !values.fills.some(fill => meta(fill).slot === slot.id));
   const changes = absentValues.flatMap(slot => {
@@ -31,6 +33,32 @@ export async function prepareStudioSelection(stored?: StudioDesignerLibrary): Pr
     return fill ? [{ op: "adopt" as const, slot: slot.id, source: meta(fill).source }] : [];
   });
   if (changes.length) values = applyLibraryChange(catalog.values, values, { baseHash: libraryHash(values), changes });
+  // A selected Frame may require members absent from a whole-leaf subset fill.
+  // Adopt only the missing native members, preserving every authored value.
+  const model = await agentModule('designer', 'catalog-core/model.js');
+  const frames = new Set([...REQUIRED.filter(id => id.startsWith('frames.')), ...[...own.keys()].filter(id => id.startsWith('frames.'))]);
+  const visitFrame = (id: string) => {
+    const selected = own.get(id) ?? surfaceCatalog.fills.find(fill => meta(fill).id === surfacePlan.rows.find(row => row.slot === id)?.fill);
+    const descriptor = selected && Object.values(selected.frames ?? {})[0] as { composes?: string[] } | undefined;
+    for (const dependency of descriptor?.composes ?? []) if (dependency.startsWith('frames.') && !frames.has(dependency)) { frames.add(dependency); visitFrame(dependency); }
+  };
+  for (const frame of [...frames]) visitFrame(frame);
+  const present = new Set<string>(values.fills.flatMap(fill => Object.keys(model.flatten(fill))));
+  const members = new Map<string, { slot: string; source: string; members: string[] }>();
+  for (const frame of surfaceCatalog.slots) {
+    if (!frames.has(frame.id) || frame.contract.kind !== 'frame') continue;
+    for (const member of [...frame.contract.breakpoints, ...frame.contract.layers]) {
+      if (present.has(member)) continue;
+      const slot = member.split('.').slice(0, 2).join('.');
+      const offers = catalog.values.fills.filter(fill => meta(fill).slot === slot && Object.hasOwn(model.flatten(fill), member));
+      const fill = ['foundry', 'tailwind-default'].map(source => offers.find(fill => meta(fill).source === source)).find(Boolean) ?? offers[0];
+      if (!fill) continue;
+      const source = meta(fill).source, key = `${slot}:${source}`;
+      const choice = members.get(key) ?? { slot, source, members: [] as string[] };
+      choice.members.push(member); members.set(key, choice); present.add(member);
+    }
+  }
+  if (members.size) values = applyLibraryChange(catalog.values, values, { baseHash: libraryHash(values), changes: [...members.values()].map(choice => ({ op: 'adopt' as const, ...choice })) });
   const profile = resolve({ catalog: catalog.values, library: values });
   const literal = (id: string, mode: "light" | "dark", seen = new Set<string>()): string => {
     if (seen.has(id) || !profile.members[id]) throw new Error("Unresolved selected token");
@@ -41,12 +69,12 @@ export async function prepareStudioSelection(stored?: StudioDesignerLibrary): Pr
   const tokens = Object.fromEntries([...emittedTokenProperties(profile)].map(([id, property]) => [id, { property: property.property, light: literal(id, "light"), ...(profile.members[id]!.value.dark === undefined ? {} : { dark: literal(id, "dark") }) }]));
   const assets = [...new Set(Object.values(profile.members).filter(member => member.slot.startsWith("assets.")).map(member => member.slot))];
   const componentPlan = planComponentDefaults({ catalog: catalog.components, slots: catalog.components.slots.map(slot => slot.id), tokens, assets, installedRac: installedHeadlessLibrary(), bundles: bundles.sourceBundles, preference: DEFAULT_COMPONENT_PREFERENCE, picks: DEFAULT_COMPONENT_PICKS, fallback: DEFAULT_COMPONENT_FALLBACK });
-  const surfaceCatalog = catalog.surfaces!;
-  const surfacePlan = planSurfaceDefaults({ catalog: surfaceCatalog as any, slots: surfaceCatalog.slots.map(slot => slot.id), preference: DEFAULT_COMPONENT_PREFERENCE });
   const candidates = new Map<string, any>([...catalog.components.fills, ...surfaceCatalog.fills].map(fill => [meta(fill).id, fill]));
   const defaults = new Map<string, any>([...componentPlan.rows, ...surfacePlan.rows].flatMap(row => row.fill && candidates.has(row.fill) ? [[row.slot, candidates.get(row.fill)] as const] : []));
   // Native surface slots are the source of eligible specimen seats, not a second leaf list.
-  const specimenIds = surfaceCatalog.slots.flatMap(slot => /^sections\.specimen-[a-z][a-z0-9-]*$/.test(slot.id) ? [slot.id] : []);
+  const registeredSpecimenIds = surfaceCatalog.slots.flatMap(slot => /^sections\.specimen-[a-z][a-z0-9-]*$/.test(slot.id) ? [slot.id] : []);
+  const authoredSpecimenIds = registeredSpecimenIds.filter(id => own.has(id));
+  const specimenIds = authoredSpecimenIds.length ? authoredSpecimenIds : registeredSpecimenIds;
   const needed = new Set([...REQUIRED, ...await studioModuleRequirements(), ...specimenIds]);
   const visit = (leaf: string) => {
     const fill = own.get(leaf) ?? defaults.get(leaf); if (!fill) return;

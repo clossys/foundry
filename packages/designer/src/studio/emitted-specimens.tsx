@@ -1,6 +1,6 @@
 "use client";
 
-import { createElement, forwardRef, isValidElement, type ReactNode } from "react";
+import { Children, createElement, forwardRef, isValidElement, type ReactNode } from "react";
 import type { CompositeResolved } from "../catalog-core/types.js";
 import type { ResolvedComponent } from "../catalog-core/resolve-components.js";
 import { componentMemberBinding } from "../catalog-core/emit-components.js";
@@ -20,6 +20,7 @@ export interface EmittedDesignerSpecimenRuntime {
   readonly surfaces: ComponentSpecimenModule;
   readonly tree?: ComponentSpecimenModule;
   readonly disclosure?: ComponentSpecimenModule;
+  readonly table?: ComponentSpecimenModule;
 }
 
 const renderable = (value: unknown): value is ComponentSpecimenComponent => typeof value === "function" || typeof value === "object" && value !== null && "$$typeof" in value;
@@ -38,7 +39,7 @@ export function emittedDesignerSpecimenContext(profile: CompositeResolved, runti
   const canonical = new Map(importFoundryComponents().fills.map(doc => [doc.$extensions["com.clossys.fill"].slot, componentOf(doc)]));
   const packageElements = new Set(originalNamespaces.flatMap(namespace => Object.values(namespace).filter(renderable)));
   const remap = (node: ReactNode): ReactNode => {
-    if (Array.isArray(node)) return node.map(remap);
+    if (Array.isArray(node)) return Children.map(node, remap);
     if (!isValidElement<Record<string, unknown>>(node)) return node;
     const props = Object.fromEntries(Object.entries(node.props).map(([key, value]) => [key, isValidElement(value) || Array.isArray(value) ? remap(value as ReactNode) : key === "children" && typeof value === "function" ? (...args: unknown[]) => remap(value(...args)) : value]));
     const selected = replacements.get(node.type);
@@ -50,7 +51,7 @@ export function emittedDesignerSpecimenContext(profile: CompositeResolved, runti
       if (renderable(EmptyState)) return createElement(EmptyState, { role: "status", title: `NEED: ${name}`, description: "This fixture component is absent from the emitted consumer selection." });
       throw new Error(`NEED: fixture component ${name} is absent from the emitted consumer selection`);
     }
-    return createElement(selected ?? node.type, { ...props, key: node.key });
+    return createElement(selected ?? node.type, { ...props, ...(node.key === null ? {} : { key: node.key }) });
   };
   const bridge = (component: ResolvedComponent, forcedMember?: string): ComponentSpecimenComponent | undefined => {
     const Selected = runtime.components[primary(component.slot)];
@@ -97,7 +98,12 @@ export function emittedDesignerSpecimenContext(profile: CompositeResolved, runti
       if (memberAdapter) (modules[mapped.module] ??= {})[mapped.name] = memberAdapter;
     }
     if (component.slot === "components.navigation-tree") Object.assign(namespace, runtime.tree);
-    if (component.slot === "components.disclosure") Object.assign(namespace, runtime.disclosure);
+    if (component.slot === "components.disclosure") for (const [name, Part] of Object.entries(runtime.disclosure ?? {})) {
+      if (name !== component.impl.export) namespace[name] = Part;
+    }
+    if (component.slot === "components.table") for (const [name, Part] of Object.entries(runtime.table ?? {})) {
+      if (name !== component.impl.export) namespace[name] = Part;
+    }
     for (const original of originalNamespaces) {
       // A selected source may use a different export name from the package fixture's implementation.
       const reference = canonical.get(component.slot);

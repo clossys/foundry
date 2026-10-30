@@ -29,7 +29,8 @@ describe("packageBarrelExports", () => {
 describe("readSurfacePackageEvidence", () => {
   it("reads every package the Foundry Section/Frame candidates point at from the installed barrels", async () => {
     const evidence = await readSurfacePackageEvidence(fills);
-    expect(evidence.map(row => `${row.module}@${row.version}`)).toEqual(["@clossys/designer/blocks@0.12.0", "@clossys/designer/frames@0.12.0", "@clossys/designer/shell/server@0.12.0", "@clossys/publisher/web@0.13.0"]);
+    const modules = [...new Set(fills.map(doc => Object.values(doc.sections ?? doc.frames!)[0]!.impl.module))].sort();
+    expect(evidence.map(row => row.module)).toEqual(modules);
     // Every pointed-at export is present in the inventory read from its own barrel.
     for (const doc of fills) {
       const entry = Object.values((doc as unknown as { sections?: Record<string, { impl: { module: string; export: string } }> }).sections ?? (doc as unknown as { frames: Record<string, { impl: { module: string; export: string } }> }).frames)[0]!;

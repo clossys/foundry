@@ -1,0 +1,105 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.specimen-copy-in-context",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./studio#SpecimenCopyInContext",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.specimen-copy-in-context",
+      "source": "foundry",
+      "sourceAddress": "./studio#SpecimenCopyInContext",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "specimen-copy-in-context": {
+      "composes": [],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "tokens": [
+            "tokens.spacing"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/catalog-core/api.ts",
+            "sha256": "091d83f11c2bb533dbf9cc7e153fd3b4b6d4cee32911bfb7f7360158cb3f574d"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/emit-components.ts",
+            "sha256": "60516d678d79333c1094280145ef5d4f424b8175cb1113b0db439c28452f38f2"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/resolve-components.ts",
+            "sha256": "5ff7084fdd23b7f1b0504a09b1ca460f938d0f7a3ffcbf815162a2fe513d8348"
+          },
+          {
+            "path": "packages/designer/src/components/rich-text/schema.ts",
+            "sha256": "d1a1f7c6ae9d7b2845038e2dab73c4a89a5fa3f56a14416f78103a7aef24ef2f"
+          },
+          {
+            "path": "packages/designer/src/studio/component-specimens.tsx",
+            "sha256": "60c1604bc4efaa778513ffd950af9e44439d3de21a6eaeaf50e03f5117022635"
+          },
+          {
+            "path": "packages/designer/src/studio/specimen-content.tsx",
+            "sha256": "c50e94044f722dc4629d125f76cc4b9a04dec2797e011378ed22e09ab6fb29e7"
+          },
+          {
+            "path": "packages/designer/src/studio/specimen-layouts.tsx",
+            "sha256": "05615ab55b50b27aa9f935fa82ecdb16cc0c4068f66b74a45d89b0ee9359bb25"
+          }
+        ],
+        "unresolved": []
+      },
+      "impl": {
+        "export": "SpecimenCopyInContext",
+        "kind": "package",
+        "module": "@clossys/designer/studio"
+      },
+      "license": "MIT",
+      "notes": [
+        "The existing public specimen binds every component and content surface through its supplied DesignerSpecimenContext. Items and caller labels remain data; no source wrapper or fallback renderer is materialized."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./studio#SpecimenCopyInContext",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.spacing"
+        ]
+      },
+      "slot": "sections.specimen-copy-in-context",
+      "slotMap": {
+        "axes": "./studio#SpecimenCopyInContext.axes",
+        "context": "./studio#SpecimenCopyInContext.context",
+        "items": "./studio#SpecimenCopyInContext.items",
+        "labels": "./studio#SpecimenCopyInContext.labels"
+      },
+      "source": "foundry"
+    }
+  }
+}

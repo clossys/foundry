@@ -27,6 +27,19 @@ it("converts actual native Writer roles without changing produced copy", () => {
     expect(result.cell.items[0]?.value).toEqual({ role, context: "source context", locale: "ar", dir: "rtl", ...(role === "body" ? { passage: "Produced copy" } : { text: "Produced copy" }) });
   }
 });
+it("preserves structured native Writer body documents and rejects malformed or non-body documents", () => {
+  const passage = { type: "doc", content: [{ type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "Produced heading" }] }, { type: "paragraph", content: [{ type: "text", text: "Complete native passage." }] }] };
+  const native = { id: "passage", kind: "writer", role: "body", context: "Native passage", locale: "en", value: passage, coordinates: { field: "passage", role: "body" } };
+  const result = projectAgentSpecimenPlan({ agent: "writer", plan: plan([native]) });
+  expect(result.issues).toEqual([]);
+  expect(result.cell.items).toEqual([{ id: "passage", label: "Native passage", coordinates: native.coordinates, value: { role: "body", context: "Native passage", locale: "en", dir: "ltr", passage } }]);
+  expect((result.cell.items[0]!.value as { passage: unknown }).passage).toBe(passage);
+  for (const item of [{ ...native, role: "headline" }, { ...native, value: { type: "doc", content: [{ type: "unknown-node" }] } }]) {
+    const unsupported = projectAgentSpecimenPlan({ agent: "writer", plan: plan([item]) });
+    expect(unsupported.issues).toContain("Native writer specimen item is unavailable or unsupported: passage");
+    expect(unsupported.cell.items).toEqual([]);
+  }
+});
 it("derives Publisher 1x2 axes from actual native page and viewport records, preserving source ids", () => {
   const items = [{ id: "desktop", width: 1440, height: 900 }, { id: "mobile", width: 390, height: 844 }].map(viewport => ({ id: `cell:${viewport.id}`, kind: "publisher", page: { id: "native-page", title: "Native page" }, viewport }));
   const result = projectAgentSpecimenPlan({ agent: "publisher", plan: plan(items) });

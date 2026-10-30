@@ -4,6 +4,7 @@ import { projectPageOutline } from "../content/taxonomy.js";
 import { CONTENT_MAP_MAX_DEPTH } from "./contract.js";
 import type { ContentMap, ContentMapNode, ContentMapFinding, ContentMapFindingCode } from "./contract.js";
 import { checkContentMapRedirects } from "./redirects.js";
+import { isContentMapPageBody } from "./page-body-validation.js";
 
 const text = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0 && value.trim() === value;
 const record = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -90,11 +91,12 @@ export function checkContentMap(input: unknown): readonly ContentMapFinding[] {
     const planSource = record(source) && fields(source, ["planItemId"]) && text(source.planItemId);
     const frameSource = record(source) && fields(source, ["frameId", "sectionIds"]) && text(source.frameId) && Array.isArray(source.sectionIds) && source.sectionIds.every(text) && new Set(source.sectionIds).size === source.sectionIds.length;
     const external = entry.kind === "external";
-    if (!fields(entry, ["id", "parentId", "order", "title", "path", "slug", "kind", "pin", "source", "icon", "description", "keywords", "manifest", "constructs", "pageConfig", "href", "indexing", "lastModified", "actions"]) || !text(entry.id) || !text(entry.title) || !Number.isSafeInteger(entry.order) || entry.order < 0
+    if (!fields(entry, ["id", "parentId", "order", "title", "path", "slug", "kind", "pin", "source", "icon", "description", "keywords", "manifest", "constructs", "pageConfig", "href", "indexing", "lastModified", "actions", "body"]) || !text(entry.id) || !text(entry.title) || !Number.isSafeInteger(entry.order) || entry.order < 0
       || !["page", "slide", "section", "group", "external"].includes(entry.kind) || (entry.parentId !== undefined && !text(entry.parentId)) || (!external && !planSource && !frameSource)
       || (external ? entry.source !== undefined || !text(entry.path) || !isContentMapExternalHref(entry.href) || entry.manifest !== undefined || entry.constructs !== undefined : Object.hasOwn(entry, "href"))
       || (entry.path === undefined) === (entry.slug === undefined) || !(text(entry.path) || text(entry.slug))
       || (entry.icon !== undefined && !text(entry.icon)) || (entry.description !== undefined && !text(entry.description)) || (entry.keywords !== undefined && (!Array.isArray(entry.keywords) || !entry.keywords.every(text)))) add("contract", at, "Invalid entry identity, content reference or metadata", entry.id);
+    if (Object.hasOwn(entry, "body") && (entry.kind !== "page" || !isContentMapPageBody(entry.body))) add("contract", `${at}.body`, "Only pages may declare an ia-scroll body with exact header and cards bands, exact columns and an optional specimen identity", entry.id);
     if (entry.actions !== undefined) {
       const actionIds = new Set<string>();
       if (entry.kind !== "page" || !Array.isArray(entry.actions)) add("contract", `${at}.actions`, "Only pages may declare an ordered actions array", entry.id);

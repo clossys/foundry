@@ -2,7 +2,8 @@
 import { sha256 } from "../catalog-core/digest.js";
 import { stableStringify } from "../catalog-core/stable.js";
 import { surfaceDigest, surfaceManifest, surfaceFault } from "../catalog-core/surface-library.js";
-import type { SurfaceCandidateDocument, SurfaceFile, SurfaceSectionEntry, SurfaceTransform, SurfacePackageEvidence, SurfaceDependency } from "../catalog-core/surface-types.js";
+import { measuredSurfaceConsumption } from "./foundry-surface-consumption.js";
+import type { SurfaceCandidateDocument, SurfaceFile, SurfaceSectionEntry, SurfaceTransform, SurfacePackageEvidence, SurfaceDependency, SurfacePackageDocument } from "../catalog-core/surface-types.js";
 
 export const SPECIMEN_SECTION_EXPORTS = [
   {
@@ -150,6 +151,25 @@ export interface SpecimenSectionSourceCatalog {
   readonly transforms: readonly SurfaceTransform[];
   readonly upstream: readonly SurfaceFile[];
 }
+/** The Writer specimen dispatches through its existing public, context-bound package implementation. */
+export function writerSpecimenPackageFill(): SurfacePackageDocument {
+  const slot = "sections.specimen-copy-in-context", name = "SpecimenCopyInContext";
+  const pin = { package: "@clossys/designer", version: "0.12.0", export: `./studio#${name}` };
+  return {
+    $extensions: { "com.clossys.fill": { id: `foundry/${slot}`, slot, source: "foundry", mode: "implementation", sourceAddress: pin.export, relation: "same-contract", builtOn: [], conforms: [], evidence: [], author: "foundry", trust: "foundry", license: "MIT", pin, status: "draft", originKinds: ["adopted"] } },
+    sections: { "specimen-copy-in-context": {
+      slot, source: "foundry", impl: { kind: "package", module: "@clossys/designer/studio", export: name },
+      slotMap: Object.fromEntries(["items", "axes", "context", "labels"].map(field => [field, `./studio#${name}.${field}`])),
+      propMap: {}, configs: {}, parts: [], license: "MIT", pin,
+      notes: ["The existing public specimen binds every component and content surface through its supplied DesignerSpecimenContext. Items and caller labels remain data; no source wrapper or fallback renderer is materialized."],
+      ...measuredSurfaceConsumption(slot, pin),
+    } },
+  };
+}
+
+export function generatedSpecimenPackageFiles(): Readonly<Record<string, string>> {
+  return { "sections.specimen-copy-in-context.json": stableStringify(writerSpecimenPackageFill()) };
+}
 /**
  * Source files are an immutable, content-addressed local tree. Hosts may supply exact installed dependency
  * evidence when deriving for their selected component closure; no dependency artifact is invented here.
@@ -158,6 +178,8 @@ export function specimenSectionSourceCatalog(packages: readonly SurfacePackageEv
   const upstream: SurfaceFile[] = [];
   const fills: SurfaceCandidateDocument[] = [], transforms: SurfaceTransform[] = [];
   for (const registration of SPECIMEN_SECTION_EXPORTS) {
+    // The existing surface catalog stores both package and source documents at this boundary.
+    if (registration.id === "sections.specimen-copy-in-context") { fills.push(writerSpecimenPackageFill() as unknown as SurfaceCandidateDocument); continue; }
     const entry = registration.id.replace(".", "/") + "/" + registration.name + ".tsx";
     const components = [...new Set([...registration.components, "components.grid-list", "components.disclosure"])] as `components.${string}`[];
     const ports = components.map(id => ({ id, name: publicName(id) }));

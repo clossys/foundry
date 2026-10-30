@@ -2,6 +2,7 @@ import type { SpecimenAxis, SpecimenItem, SpecimenLeafId, SpecimenLeafProps } fr
 import type { SpecimenAgent, SpecimenCoverageCell } from "./specimen-coverage.js";
 import { resolveSpecimenLeafBinding } from "./specimen-kind-map.js";
 import { studioSpecimenLeaves } from "./specimen-registry.js";
+import { isCopyInContextValue } from "./specimen-content.js";
 
 /** Structural Producer source-plan port. The Designer package imports no host implementation. */
 export interface NativeAgentSpecimenPlan {
@@ -28,8 +29,9 @@ export function projectAgentSpecimenPlan(input: {
     if (!text(item.id)) { issues.push("A native source item has no identity."); continue; }
     if (agent === "director" && item.kind === "director" && text(item.title) && text(item.value)) {
       items.push({ id: item.id, label: item.title, value: { passage: item.value } });
-    } else if (agent === "writer" && item.kind === "writer" && text(item.role) && ["headline", "body", "cta", "nav", "error", "empty"].includes(item.role) && text(item.context) && text(item.locale) && text(item.value)) {
+    } else if (agent === "writer" && item.kind === "writer" && text(item.role) && ["headline", "body", "cta", "nav", "error", "empty"].includes(item.role) && text(item.context) && text(item.locale)) {
       const value = { role: item.role, context: item.context, locale: item.locale, dir: /^(?:ar|fa|he|ur|ps|dv|yi)(?:-|$)/i.test(item.locale) ? "rtl" : "ltr", ...(item.role === "body" ? { passage: item.value } : { text: item.value }) };
+      if (!isCopyInContextValue(value)) { issues.push(`Native ${agent} specimen item is unavailable or unsupported: ${item.id}`); continue; }
       items.push({ id: item.id, label: item.context, value, ...(object(item.coordinates) ? { coordinates: item.coordinates as Record<string, string> } : {}) });
     } else if (agent === "publisher" && item.kind === "publisher" && object(item.page) && text(item.page.id) && object(item.viewport) && text(item.viewport.id) && typeof item.viewport.width === "number" && typeof item.viewport.height === "number" && Number.isFinite(item.viewport.width) && Number.isFinite(item.viewport.height)) {
       const page = item.page.id, viewport = item.viewport.id;

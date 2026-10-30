@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import type { DesignerSpecimenContext, DesignerSpecimenNeed } from "./DesignerSpecimen.js";
-import { componentSpecimenPreview, type ComponentSpecimenBinding, type ComponentSpecimenComponent } from "./component-specimens.js";
+import { bindComponentSpecimen, type ComponentSpecimenBinding, type ComponentSpecimenComponent } from "./component-specimens.js";
 
 /** Layout is an intrinsic property of a registered specimen leaf. */
 export type SpecimenLayout = "single" | "ladder" | "grid" | "matrix";
@@ -82,7 +82,7 @@ export function specimenLayoutNeeds({ id, layout, items, axes = [], context, exp
   return needs;
 }
 export function specimenComponent(context: DesignerSpecimenContext, leaf: string): ComponentSpecimenBinding | DesignerSpecimenNeed {
-  const bound = componentSpecimenPreview({ modules: context.modules }).bind(leaf, context.profile);
+  const bound = bindComponentSpecimen(context.modules, leaf, context.profile);
   return "binding" in bound ? bound.binding : { leaf, reason: `${bound.refusal.code}: ${bound.refusal.detail}` };
 }
 const component = (value: unknown): value is ComponentSpecimenComponent => typeof value === "function" || typeof value === "object" && value !== null && "$$typeof" in value;
@@ -151,10 +151,7 @@ export function SpecimenLayoutSection(props: LayoutProps): ReactNode {
         const lookup = (rowId: string, colId: string) => grouped.find(item => item.coordinates![row.id] === rowId && item.coordinates![column.id] === colId);
         const body = mobile ? <List data-ds-leaf="components.grid-list" aria-label={groupLabel || label} layout="stack" selectionMode="none">{rows.map(value => <Item id={value.id} key={value.id} textValue={value.label} className="min-w-0 flex-col items-start">
           <Content as="h4">{row.label}: {value.label}</Content>{column.values.map(col => { const item = lookup(value.id, col.id); return item ? <Content as="section" key={col.id} className="flex min-w-0 flex-col gap-sm"><Content as="h5">{column.label}: {col.label}</Content>{itemNode(item)}</Content> : null; })}
-        </Item>)}</List> : table.source === "shadcn@aria" ? <Table data-ds-leaf="components.table" aria-label={groupLabel || label}>
-          <Header><Row><Column scope="col">{row.label}</Column>{column.values.map(col => <Column key={col.id} scope="col">{col.label}</Column>)}</Row></Header>
-          <Body>{rows.map(value => <Row key={value.id}><Column scope="row">{value.label}</Column>{column.values.map(col => { const item = lookup(value.id, col.id); return <Cell key={col.id}>{item ? itemNode(item) : null}</Cell>; })}</Row>)}</Body>
-        </Table> : <Table data-ds-leaf="components.table" aria-label={groupLabel || label}>
+        </Item>)}</List> : <Table data-ds-leaf="components.table" aria-label={groupLabel || label}>
           <Header><Column isRowHeader>{row.label}</Column>{column.values.map(col => <Column key={col.id}>{col.label}</Column>)}</Header>
           <Body>{rows.map(value => <Row id={value.id} key={value.id}><Cell textValue={value.label}>{value.label}</Cell>{column.values.map(col => { const item = lookup(value.id, col.id); return <Cell key={col.id} textValue={item?.label ?? col.label}>{item ? itemNode(item) : null}</Cell>; })}</Row>)}</Body>
         </Table>;

@@ -44,6 +44,10 @@
     "./admin-copy": {
       "types": "./dist/admin-copy.d.ts",
       "import": "./dist/admin-copy.js"
+    },
+    "./specimen": {
+      "types": "./dist/specimen.d.ts",
+      "import": "./dist/specimen.js"
     }
   },
   "bin": {
@@ -70,8 +74,8 @@
     "capabilities": [
       {
         "id": "voice-record",
-        "subQuestion": "Is the voice record itself complete — every field bound, every rule derived from a real brand attribute?",
-        "worldClass": "The voice record is fully bound (no unedited template placeholder) and every rule traces to a brand-derivation attribute — checked as a record, before any copy is ever measured against it.",
+        "subQuestion": "Is the voice record itself complete \u2014 every field bound, every rule derived from a real brand attribute?",
+        "worldClass": "The voice record is fully bound (no unedited template placeholder) and every rule traces to a brand-derivation attribute \u2014 checked as a record, before any copy is ever measured against it.",
         "inputs": [
           {
             "producerRole": "@clossys/strategist",
@@ -89,7 +93,7 @@
       {
         "id": "copy-registry",
         "subQuestion": "Is every registry entry itself schema-valid, unique, and free of unfilled placeholders?",
-        "worldClass": "Every registry entry is schema-valid, has a unique id, and every declared placeholder is present in its own text — registry validity only; whether a component actually USES the registry by id is addressability's own question.",
+        "worldClass": "Every registry entry is schema-valid, has a unique id, and every declared placeholder is present in its own text \u2014 registry validity only; whether a component actually USES the registry by id is addressability's own question.",
         "inputs": [],
         "outputs": [
           "clossys/writer/copy-registry.json"
@@ -151,7 +155,7 @@
       {
         "id": "addressability",
         "subQuestion": "Is every piece of user-facing prose resolved from the registry by id, never typed directly into a component?",
-        "worldClass": "A rename is always cheap: renaming a piece of copy means editing one registry entry, never hunting every component that typed the sentence — #1208's site template reads copy by id on this guarantee.",
+        "worldClass": "A rename is always cheap: renaming a piece of copy means editing one registry entry, never hunting every component that typed the sentence \u2014 #1208's site template reads copy by id on this guarantee.",
         "inputs": [],
         "outputs": [
           "clossys/writer/.generated/addressability-report.json"
@@ -164,7 +168,7 @@
       {
         "id": "locale-coverage",
         "subQuestion": "Does the whole set of a project's locales actually cover the same ground, current and correctly interpolating?",
-        "worldClass": "Every target locale covers what the source locale covers, with no orphaned or stale translation — governance over WHICH locales are covered, not runtime translation itself.",
+        "worldClass": "Every target locale covers what the source locale covers, with no orphaned or stale translation \u2014 governance over WHICH locales are covered, not runtime translation itself.",
         "inputs": [],
         "outputs": [
           "clossys/writer/.generated/locale-coverage-report.json"
@@ -176,8 +180,8 @@
       },
       {
         "id": "voice-conformance",
-        "subQuestion": "Is shipped copy actually well said — in voice, in tense, in person, every claim supported?",
-        "worldClass": "Every mechanically detectable voice violation (forbidden term, wrong tense or person, an unsupported claim marked as requiring support) is caught against the bound voice record — the answer to \"is it well said\", not merely \"does it trace\".",
+        "subQuestion": "Is shipped copy actually well said \u2014 in voice, in tense, in person, every claim supported?",
+        "worldClass": "Every mechanically detectable voice violation (forbidden term, wrong tense or person, an unsupported claim marked as requiring support) is caught against the bound voice record \u2014 the answer to \"is it well said\", not merely \"does it trace\".",
         "inputs": [
           {
             "producerRole": "@clossys/writer",

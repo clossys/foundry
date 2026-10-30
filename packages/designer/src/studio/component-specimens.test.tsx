@@ -13,7 +13,7 @@ import { adoptedComponentIntegration } from "../catalog-core/__fixtures__/compon
 import type { CompositeResolved, ResolvedComponent } from "../catalog-core/index.js";
 import { componentSpecimenPreview, Studio as StudioView, WholeStudioProvider } from "./index.js";
 import * as studioEntry from "./index.js";
-import { componentSpecimenPreview as fromModule } from "./component-specimens.js";
+import { bindComponentSpecimen, componentSpecimenPreview as fromModule } from "./component-specimens.js";
 import { labels } from "./__fixtures__/studio.js";
 import { CandidateCell } from "./CandidateCell.js";
 import { boardRowLeaf } from "./canvas-boards.js";
@@ -40,6 +40,16 @@ const chosenCells = () => [...document.querySelectorAll<HTMLElement>("section[da
 
 it("is the public studio entry", () => {
   expect(studioEntry.componentSpecimenPreview).toBe(fromModule);
+});
+
+it('binds the same selected exports and refusals without constructing a sample preview', () => {
+  const profile = resolve(adoptedComponentIntegration());
+  const preview = componentSpecimenPreview({ modules: hostModules });
+  for (const leaf of ['components.button', 'components.select', 'tokens.text-color']) {
+    expect(bindComponentSpecimen(hostModules, leaf, profile)).toEqual(preview.bind(leaf, profile));
+  }
+  expect(bindComponentSpecimen({}, 'components.button', profile)).toEqual({ refusal: { leaf: 'components.button', code: 'module-unavailable', detail: '@clossys/designer/components' } });
+  expect('bindComponentSpecimen' in studioEntry).toBe(false);
 });
 
 it("host perspective: an adopted component library passed as modules renders every chosen component cell live", async () => {

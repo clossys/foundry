@@ -31,7 +31,8 @@ if (mode === "--write") writeFileSync(target, bytes);
 else assert.equal(readFileSync(target, "utf8"), bytes, "Surface descriptor measurements stale; run generate-surface-consumption.mjs --write");
 const { generatedFoundrySectionFiles } = await import(pathToFileURL(resolve(src, "importers/foundry-sections.ts")).href);
 const { generatedFoundryFrameFiles } = await import(pathToFileURL(resolve(src, "importers/foundry-frames.ts")).href);
-for (const [name, contents] of Object.entries({ ...generatedFoundrySectionFiles(), ...generatedFoundryFrameFiles() })) {
+const { generatedSpecimenPackageFiles } = await import(pathToFileURL(resolve(src, "importers/specimen-sections.ts")).href);
+for (const [name, contents] of Object.entries({ ...generatedFoundrySectionFiles(), ...generatedFoundryFrameFiles(), ...generatedSpecimenPackageFiles() })) {
   const path = resolve(src, "catalog/fills/foundry", name);
   if (mode === "--write") writeFileSync(path, contents);
   else assert.equal(readFileSync(path, "utf8"), contents, `Generated descriptor stale: ${name}`);

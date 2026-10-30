@@ -1,5 +1,6 @@
 import { COPY_FINGERPRINT_ALGORITHM, computeCopyFingerprint } from "../fingerprint.js";
 import type { Block, PassageRef, PatternInstance, WriterLibrary, WriterRecord } from "../model/types.js";
+import { resolveWriterRefText as nativeRefText } from "../model/resolve-text.js";
 import type { WriterCheckFinding, WriterCheckOptions } from "./freeze.js";
 
 const metadata = new Set(["id", "context", "status", "origin", "external", "approval", "translation"]);
@@ -66,29 +67,12 @@ function materializer(records: readonly WriterRecord[]) {
     }
     return content;
   };
-  const refText = (ref: PassageRef, ancestors: ReadonlySet<string>): string => {
-    const target = byId.get(ref.id);
-    if (!target) return `[unresolved:${ref.id}]`;
-    if (ancestors.has(target.id)) return `[cycle:${target.id}]`;
-    const seen = new Set([...ancestors, target.id]);
-    if (ref.ref === "string" && "text" in target) return target.text;
-    if (ref.ref === "term" && "kind" in target && target.kind === "term") return target.term;
-    if (ref.ref === "pattern" && "parts" in target) {
-      const keys = ref.part === undefined ? Object.keys(target.parts).sort() : [ref.part];
-      return keys.map(key => {
-        const value = target.parts[key];
-        if (!value) return `[unresolved:${ref.id}.${key}]`;
-        return "text" in value ? value.text : refText({ ref: "string", id: value.ref.id }, seen);
-      }).join("\n");
-    }
-    return `[invalid-ref:${ref.ref}:${ref.id}]`;
-  };
-  return { payload, refText };
+  return { payload };
 }
 
 /** Actual referenced wording for field-level checks; no cross-locale fallback. */
 export function resolveWriterRefText(ref: PassageRef, records: readonly WriterRecord[]): string {
-  return materializer(records).refText(ref, new Set());
+  return nativeRefText(ref, records);
 }
 
 /** Semantic approval subject, including wording reached through local references. */

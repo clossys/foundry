@@ -2359,7 +2359,8 @@
           "tokens.shift-distance",
           "tokens.body-size",
           "tokens.caption-size",
-          "tokens.text-color"
+          "tokens.text-color",
+          "tokens.accent-color"
         ],
         "assets": []
       },
@@ -4163,7 +4164,8 @@
         "components.breadcrumbs",
         "components.resize-handle",
         "components.button",
-        "components.icon"
+        "components.icon",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",

@@ -44,6 +44,7 @@
             "components.card"
           ],
           "tokens": [
+            "tokens.accent-color",
             "tokens.body-size",
             "tokens.caption-size",
             "tokens.spacing",
@@ -53,7 +54,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/RecordCards.tsx",
-            "sha256": "59e8212000d2b2e1ac6a62a5d1f0b237e3e4540fb625a519c99456069ff46567"
+            "sha256": "2834ab678bdd04f5e08275c422968e157d05aa78cc1265dd80189d9f2cedf85d"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -108,6 +109,7 @@
       "reads": {
         "assets": [],
         "tokens": [
+          "tokens.accent-color",
           "tokens.body-size",
           "tokens.caption-size",
           "tokens.spacing",

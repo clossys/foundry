@@ -45,15 +45,15 @@ export function agentSpecimenPlan(index: AgentCells, cell: CellDetail, publicati
     const records = projection.records.filter(copy => {
       if (!/^en(?:-|$)/i.test(copy.locale)) return false;
       // VoiceRules and glossary records feed Inspector, not the copy specimen stage.
-      const voiceOnly = copy.text === undefined && copy.role === 'unknown' &&
-        (copy.record.rules !== null && typeof copy.record.rules === 'object' && !Array.isArray(copy.record.rules) || Array.isArray(copy.record.glossary));
+      const voiceOnly = copy.text === undefined && (copy.inspectorOnly || copy.role === 'unknown' &&
+        (copy.record.rules !== null && typeof copy.record.rules === 'object' && !Array.isArray(copy.record.rules) || Array.isArray(copy.record.glossary)));
       return !voiceOnly;
     });
     plan.items = records.map((copy, position) => {
       const id = `${cell.id}:${copy.locale}:${copy.id}:${position + 1}`;
       if (copy.role === 'unknown') plan.issues.push(`Writer context has no supported specimen role: ${copy.context}`);
-      if (typeof copy.text !== 'string' || !copy.text.trim()) plan.issues.push(`Writer context has no produced copy: ${copy.context}`);
-      return { id, kind: 'writer', role: copy.role, context: copy.context, locale: copy.locale, coordinates: { string: id, context: copy.context }, ...(copy.text === undefined ? {} : { value: copy.text }), record: copy.record };
+      if ((!copy.passage || copy.role !== 'body') && (typeof copy.text !== 'string' || !copy.text.trim())) plan.issues.push(`Writer context has no produced copy: ${copy.context}`);
+      return { id, kind: 'writer', role: copy.role, context: copy.context, locale: copy.locale, coordinates: { string: id, context: copy.context }, ...(copy.passage && copy.role === 'body' ? { value: copy.passage } : copy.text === undefined ? {} : { value: copy.text }), record: copy.record };
     });
     plan.expectedVariantIds = plan.items.map(item => String(item.id));
     if (!records.length) plan.issues.push('No English Writer records are available.');

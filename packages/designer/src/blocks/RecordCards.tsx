@@ -16,6 +16,12 @@ export interface RecordCardsRecord {
   title: ReactNode;
   /** One or two lines of supporting copy. */
   description?: ReactNode;
+  /** Rich content owned by a selected section, outside the supporting-copy paragraph. */
+  body?: ReactNode;
+  /** Declared width of the section rendered in this card. @default "third" */
+  span?: "full" | "half" | "third";
+  /** Whether the record is the host's current selection. Selection controls remain in the title. */
+  selected?: boolean;
   /** Destination of the record. The title becomes the link; the card is not a nested interactive. */
   href?: string;
   /** Short status or category shown beside the title. */
@@ -33,8 +39,13 @@ export interface RecordCardsProps extends Omit<HTMLAttributes<HTMLUListElement>,
 }
 
 const LAYOUT_CLASSES: Record<RecordCardsLayout, string> = {
-  grid: "grid grid-cols-1 gap-md tablet:grid-cols-2 desktop:grid-cols-3",
+  grid: "grid grid-cols-1 gap-md tablet:grid-cols-2 desktop:grid-cols-6",
   list: "flex flex-col gap-sm",
+};
+const SPAN_CLASSES = {
+  full: "tablet:col-span-2 desktop:col-span-6",
+  half: "desktop:col-span-3",
+  third: "desktop:col-span-2",
 };
 
 /**
@@ -48,8 +59,8 @@ export function RecordCards({ records, layout = "grid", headingLevel = 3, classN
   return (
     <ul {...SECTION_STAMP} {...rest} role="list" data-layout={layout} className={cx(LAYOUT_CLASSES[layout], className)}>
       {records.map(record => (
-        <li key={record.id} className="flex min-w-0">
-          <Card variant="outline" className="flex w-full flex-col gap-xs p-lg">
+        <li key={record.id} data-record-id={record.id} data-selected={record.selected || undefined} data-card-span={record.span} className={cx("flex min-w-0", layout === "grid" && SPAN_CLASSES[record.span ?? "third"])}>
+          <Card variant="outline" className={cx("flex w-full flex-col gap-xs p-lg", record.selected && "ring-2 ring-accent")}>
             <div className="flex flex-wrap items-start justify-between gap-sm">
               <Heading className="m-0 text-body-l font-medium text-ink-primary">
                 {record.href ? <Link href={record.href} variant="standalone">{record.title}</Link> : record.title}
@@ -57,6 +68,7 @@ export function RecordCards({ records, layout = "grid", headingLevel = 3, classN
               {record.badge ? <Badge variant={record.badge.variant}>{record.badge.label}</Badge> : null}
             </div>
             {record.description ? <p className="text-body-s text-ink-secondary">{record.description}</p> : null}
+            {record.body !== undefined && record.body !== null ? <div className="min-w-0" data-record-body="">{record.body}</div> : null}
             {record.meta ? <p className="mt-auto text-caption text-ink-muted">{record.meta}</p> : null}
           </Card>
         </li>

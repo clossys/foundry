@@ -1,6 +1,7 @@
 import { constants } from "node:fs";
 import { lstat, open } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import { pathToFileURL } from "node:url";
 import { AGENT_PACKAGES, resolveAgent, type AgentKind } from "../agents.js";
 import type { AgentCells, CellSummary } from "./contract.js";
@@ -56,6 +57,34 @@ export async function readCells(root: string, agent: AgentKind, activeOnly = fal
     }
   }
   return cells;
+}
+
+/** Resolve references against the same native preview snapshot as the selected Writer version. */
+export async function writerSpecimenInventory(root: string, selected: StoredCell, all: StoredCell[]) {
+  const profile = await agentModule('writer', 'cells/parse.js');
+  const validator = await agentModule('writer', 'model/validate.js');
+  const versions = selected.status === 'active' ? await readCells(root, 'writer', true) : all;
+  const snapshot = new Map<string, StoredCell>();
+  for (const cell of versions) if ((snapshot.get(cell.id)?.version ?? 0) < cell.version) snapshot.set(cell.id, cell);
+  snapshot.set(selected.id, selected);
+  const issues: string[] = [];
+  const records = [...snapshot.values()].flatMap(cell => {
+    const parsed = profile.parseWriterCell(cell.source, cell.path);
+    return parsed.records.map((item: { locale: string; record: Record<string, unknown> }) => {
+      const layer = typeof item.record.leaf === 'string' ? item.record.leaf.split('.')[0] : undefined;
+      const findings = validator.validateWriterRecord(item.record, layer);
+      for (const finding of findings) issues.push(`${cell.id}@${cell.version}/${item.locale}: ${finding.path}: ${finding.message}`);
+      return { cellId: cell.id, version: cell.version, status: cell.status, locale: item.locale, record: item.record };
+    });
+  });
+  const unique = new Map<string, typeof records[number]>();
+  for (const entry of records) {
+    const key = `${entry.locale}:${entry.record.id}`;
+    const prior = unique.get(key);
+    if (prior && !isDeepStrictEqual(prior.record, entry.record)) issues.push(`Writer reference identity is ambiguous: ${key}`);
+    else if (!prior || entry.cellId === selected.id) unique.set(key, entry);
+  }
+  return { cellId: selected.id, version: selected.version, status: selected.status, records: [...unique.values()], issues };
 }
 
 export function summary(cell: StoredCell): CellSummary {

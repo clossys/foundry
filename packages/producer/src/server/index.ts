@@ -4,7 +4,7 @@ import { once } from "node:events";
 import { createServer, request as httpRequest, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AgentKind } from "../agents.js";
 import { resolveAgent } from "../agents.js";
-import { AGENT_KINDS, CELL_ID, agentRoot, hasCellTree, inventory, readCells, summary, type CompileResult } from "./cells.js";
+import { AGENT_KINDS, CELL_ID, agentRoot, hasCellTree, inventory, readCells, summary, writerSpecimenInventory, type CompileResult } from "./cells.js";
 import { TOKEN_HEADER } from "./contract.js";
 import { startStudio, studioEntry, type StudioChild } from "./studio.js";
 import { watchCells } from "./watch.js";
@@ -129,10 +129,11 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
         const query = new URL(raw, origin).searchParams;
         const versionText = query.get("version");
         if (versionText !== null && (!/^[1-9]\d*$/.test(versionText) || !Number.isSafeInteger(Number(versionText)))) { json(response, 400, { error: "Invalid cell version" }); return; }
-        const candidates = (await readCells(options.root, agent)).filter(cell => cell.id === id && (versionText === null || cell.version === Number(versionText))).sort((a, b) => b.version - a.version);
+        const all = await readCells(options.root, agent);
+        const candidates = all.filter(cell => cell.id === id && (versionText === null || cell.version === Number(versionText))).sort((a, b) => b.version - a.version);
         const cell = candidates[0];
         if (!cell) { json(response, 404, { agent, state: "missing", message: "Cell version is missing" }); return; }
-        json(response, 200, { agent, state: "ready", cell: { ...summary(cell), source: cell.source } }); return;
+        json(response, 200, { agent, state: "ready", cell: { ...summary(cell), source: cell.source, ...(agent === "writer" ? { writerInventory: await writerSpecimenInventory(options.root, cell, all) } : {}) } }); return;
       }
       json(response, 404, { error: "Unknown API route" }); return;
     }

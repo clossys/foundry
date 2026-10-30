@@ -160,42 +160,45 @@ const sampleKey = (specifier: string, exportName: string) => {
  * rule the emitted component index follows. A leaf that cannot bind stays unavailable with a named refusal;
  * nothing falls back to another library or to a placeholder.
  */
-export function componentSpecimenPreview(options: ComponentSpecimenOptions): ComponentSpecimenPreview {
+export function bindComponentSpecimen(modules: ComponentSpecimenOptions["modules"], leaf: string, profile: CompositeResolved): ReturnType<ComponentSpecimenPreview["bind"]> {
   const refuse = (leaf: string, code: ComponentSpecimenRefusalCode, detail: string) => ({ refusal: { leaf, code, detail } });
   const exportOf = (leaf: string, module: string, name: string): { value: ComponentSpecimenComponent; namespace: ComponentSpecimenModule } | ReturnType<typeof refuse> => {
-    const namespace = Object.hasOwn(options.modules, module) ? options.modules[module] : undefined;
+    const namespace = Object.hasOwn(modules, module) ? modules[module] : undefined;
     if (!namespace) return refuse(leaf, "module-unavailable", module);
     const value = Object.hasOwn(namespace, name) ? namespace[name] : undefined;
     return renderable(value) ? { value, namespace } : refuse(leaf, "export-unavailable", `${module}#${name}`);
   };
-  const bind: ComponentSpecimenPreview["bind"] = (leaf, profile) => {
-    if (!leaf.startsWith("components.")) return refuse(leaf, "not-a-component", leaf);
-    const component: ResolvedComponent | undefined = profile.components.components[leaf];
-    if (!component) return refuse(leaf, "not-chosen", leaf);
-    const specifier = component.impl.kind === "package" ? component.impl.module : component.impl.entry;
-    const base = exportOf(leaf, specifier, component.impl.export);
-    if ("refusal" in base) return base;
-    const members: ComponentSpecimenMember[] = [], unbound: { member: string; detail: string }[] = [];
-    for (const member of component.descriptor.members) {
-      const pointer = Object.hasOwn(component.propMap, member) ? component.propMap[member] : undefined;
-      if (!pointer) continue;
-      let binding: ReturnType<typeof componentMemberBinding>;
-      try { binding = componentMemberBinding(component, member, pointer); }
-      catch (error) { unbound.push({ member, detail: error instanceof Error ? error.message : String(error) }); continue; }
-      const target = exportOf(leaf, binding.module, binding.name);
-      // A member naming a non-renderable export (a props type such as `SliderPrimitiveProps`) drops that member, named.
-      if ("refusal" in target && target.refusal.code === "export-unavailable") { unbound.push({ member, detail: `export-unavailable: ${target.refusal.detail}` }); continue; }
-      if ("refusal" in target) return target;
-      // A compound sub-part (Disclosure.Group) is a static property of the export, as the emitted adapter dispatches it.
-      const part = binding.part === undefined ? target.value : (target.value as unknown as Record<string, unknown>)[binding.part];
-      if (!renderable(part)) { unbound.push({ member, detail: `export-unavailable: ${binding.module}#${binding.name}.${binding.part}` }); continue; }
-      const interaction = binding.intrinsic === true;
-      const drawn = !interaction && binding.property !== undefined && (typeof binding.value === "string" || (member.startsWith("state.") && binding.value === true));
-      members.push({ member, Component: part, specifier: binding.module, exportName: binding.name, props: binding.property ? { [binding.property]: binding.value } : {}, interaction, drawn });
-    }
-    const source = component.origin.kind === "adopted" ? component.origin.source : component.descriptor.source;
-    return { binding: { leaf, source, Component: base.value, specifier, exportName: component.impl.export, exports: base.namespace, members, unbound } };
-  };
+  if (!leaf.startsWith("components.")) return refuse(leaf, "not-a-component", leaf);
+  const component: ResolvedComponent | undefined = profile.components.components[leaf];
+  if (!component) return refuse(leaf, "not-chosen", leaf);
+  const specifier = component.impl.kind === "package" ? component.impl.module : component.impl.entry;
+  const base = exportOf(leaf, specifier, component.impl.export);
+  if ("refusal" in base) return base;
+  const members: ComponentSpecimenMember[] = [], unbound: { member: string; detail: string }[] = [];
+  for (const member of component.descriptor.members) {
+    const pointer = Object.hasOwn(component.propMap, member) ? component.propMap[member] : undefined;
+    if (!pointer) continue;
+    let binding: ReturnType<typeof componentMemberBinding>;
+    try { binding = componentMemberBinding(component, member, pointer); }
+    catch (error) { unbound.push({ member, detail: error instanceof Error ? error.message : String(error) }); continue; }
+    const target = exportOf(leaf, binding.module, binding.name);
+    // A member naming a non-renderable export (a props type such as `SliderPrimitiveProps`) drops that member, named.
+    if ("refusal" in target && target.refusal.code === "export-unavailable") { unbound.push({ member, detail: `export-unavailable: ${target.refusal.detail}` }); continue; }
+    if ("refusal" in target) return target;
+    // A compound sub-part (Disclosure.Group) is a static property of the export, as the emitted adapter dispatches it.
+    const part = binding.part === undefined ? target.value : (target.value as unknown as Record<string, unknown>)[binding.part];
+    if (!renderable(part)) { unbound.push({ member, detail: `export-unavailable: ${binding.module}#${binding.name}.${binding.part}` }); continue; }
+    const interaction = binding.intrinsic === true;
+    const drawn = !interaction && binding.property !== undefined && (typeof binding.value === "string" || (member.startsWith("state.") && binding.value === true));
+    members.push({ member, Component: part, specifier: binding.module, exportName: binding.name, props: binding.property ? { [binding.property]: binding.value } : {}, interaction, drawn });
+  }
+  const source = component.origin.kind === "adopted" ? component.origin.source : component.descriptor.source;
+  return { binding: { leaf, source, Component: base.value, specifier, exportName: component.impl.export, exports: base.namespace, members, unbound } };
+}
+
+/** Draw previews through the same selected component binding used by intrinsic content leaves. */
+export function componentSpecimenPreview(options: ComponentSpecimenOptions): ComponentSpecimenPreview {
+  const bind: ComponentSpecimenPreview["bind"] = (leaf, profile) => bindComponentSpecimen(options.modules, leaf, profile);
   return { bind, preview(leaf, profile) {
     const bound = bind(leaf, profile);
     if ("refusal" in bound) return undefined;

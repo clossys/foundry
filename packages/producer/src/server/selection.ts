@@ -186,7 +186,7 @@ export async function compileSelection(root: string, input: CompositeEngineInput
         names = await inspectedSourceExports(source, module);
       }
       if (!["AccordionItem", "AccordionTrigger", "AccordionContent"].every(name => names.includes(name))) throw new Error("NEED: selected disclosure does not expose its composition API");
-      disclosure = `import { createElement, useId } from "react";\nimport { Disclosure as SelectedDisclosure } from "./components/disclosure/index.ts";\nimport { AccordionItem, AccordionTrigger, AccordionContent } from ${JSON.stringify(selectedDisclosure.impl.kind === "source" ? "./" + module : module)};\nfunction Disclosure({ title, children, ...props }) { const id = useId(); return createElement(SelectedDisclosure, null, createElement(AccordionItem, {id,...props}, createElement(AccordionTrigger, null, title), createElement(AccordionContent, null, children))); }\nexport const disclosure = { Disclosure };\n`;
+      disclosure = `import { createElement, useId } from "react";\nimport { Disclosure as SelectedDisclosure } from "./components/disclosure/index.ts";\nimport { AccordionItem, AccordionTrigger, AccordionContent } from ${JSON.stringify(selectedDisclosure.impl.kind === "source" ? "./" + module : module)};\nfunction Disclosure({ title, children, ...props }) { const id = useId(); return createElement(SelectedDisclosure, null, createElement(AccordionItem, {id,...props}, createElement(AccordionTrigger, null, title), createElement(AccordionContent, null, children))); }\nexport const disclosure = { Disclosure, AccordionItem, AccordionTrigger, AccordionContent };\n`;
     }
   }
   const selectedDialog = profile.components.components["components.dialog"];
