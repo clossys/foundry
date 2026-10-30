@@ -36,19 +36,17 @@
           "components": [],
           "tokens": [
             "tokens.accent-color",
-            "tokens.body-size",
             "tokens.border-color",
             "tokens.caption-size",
             "tokens.radius",
             "tokens.spacing",
-            "tokens.text-color",
-            "tokens.typeface"
+            "tokens.text-color"
           ]
         },
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Timeline.tsx",
-            "sha256": "92260795e738ca9b716d439ecc4411a654e598ff428a728be1cec1a5effba401"
+            "sha256": "25bb2fa38b17b8f40076bd1a39eaec804734757187c0f24551956bf6b83ba117"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -105,13 +103,11 @@
         "assets": [],
         "tokens": [
           "tokens.accent-color",
-          "tokens.body-size",
           "tokens.border-color",
           "tokens.caption-size",
           "tokens.radius",
           "tokens.spacing",
-          "tokens.text-color",
-          "tokens.typeface"
+          "tokens.text-color"
         ]
       },
       "slot": "sections.timeline",

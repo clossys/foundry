@@ -27,24 +27,39 @@
   "sections": {
     "cards": {
       "composes": [],
-      "configs": {},
+      "configs": {
+        "case-study": "config=case-study",
+        "post": "config=post",
+        "post-featured": "config=post-featured"
+      },
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [],
         "scannedReads": {
-          "assets": [],
+          "assets": [
+            "assets.image"
+          ],
           "components": [],
           "tokens": [
             "tokens.body-size",
             "tokens.caption-size",
+            "tokens.heading-size",
             "tokens.spacing",
             "tokens.text-color"
           ]
         },
         "sourceFiles": [
           {
+            "path": "packages/designer/src/blocks/PageHeaderMetadata.tsx",
+            "sha256": "4ff4197c1b20718cdbe2e789d2b53b38916a9917a73b58ce082576382ba53c74"
+          },
+          {
             "path": "packages/designer/src/blocks/RecordCards.tsx",
-            "sha256": "270dca0c91f75bf516aea52e58203498d2ab94ab1d3ff6af0a300406e369a204"
+            "sha256": "0ac10fce292891b87343dfaaee5719fce9f92360b2d2b9a32ccef94f30bb6094"
+          },
+          {
+            "path": "packages/designer/src/catalog-assets/media.ts",
+            "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -87,7 +102,7 @@
       },
       "license": "MIT",
       "notes": [
-        "Each record renders a Foundry Card (outline) with the title as its single Link and an optional Badge. Loading, empty and error states stay host-owned around the list.",
+        "Editorial records use consumer-selected Card parts, Link, Badge and SemanticContent. Post, post-featured and case-study retain Writer labels and resolved assets.image; post-featured is full-width. Dates require the page locale; states remain host-owned.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -101,10 +116,13 @@
         "layout.list": "./blocks#RecordCards.layout=list"
       },
       "reads": {
-        "assets": [],
+        "assets": [
+          "assets.image"
+        ],
         "tokens": [
           "tokens.body-size",
           "tokens.caption-size",
+          "tokens.heading-size",
           "tokens.spacing",
           "tokens.text-color"
         ]

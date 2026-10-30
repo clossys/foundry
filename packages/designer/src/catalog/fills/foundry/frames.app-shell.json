@@ -105,7 +105,7 @@
           },
           {
             "path": "packages/designer/src/frames/AppFrame.tsx",
-            "sha256": "5bcd9f18b28a85cce42ee7c7a24c49fd368151d5842323d66f7b2484188b7aaf"
+            "sha256": "41b44789318df5f61e3c55d62086dd8d1b4ea1f5f28c42600d39518f1ed69971"
           },
           {
             "path": "packages/designer/src/frames/AppFrameBrand.tsx",

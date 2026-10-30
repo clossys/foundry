@@ -37,22 +37,12 @@
             "components.icon"
           ],
           "tokens": [
-            "tokens.accent-color",
-            "tokens.action-color",
-            "tokens.body-size",
             "tokens.border-color",
             "tokens.border-width",
-            "tokens.control-color",
-            "tokens.control-radius",
-            "tokens.duration",
-            "tokens.easing",
-            "tokens.focus-color",
             "tokens.spacing",
-            "tokens.status-color",
             "tokens.surface-color",
             "tokens.text-color",
             "tokens.touch-target",
-            "tokens.typeface",
             "tokens.z-index"
           ]
         },
@@ -66,12 +56,12 @@
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
           },
           {
-            "path": "packages/designer/src/components/button-classes.ts",
-            "sha256": "b8ebd6d815a52769cd0e02ca091f4c81d81e31f9558e1df767bfcf07dcc5f2a6"
-          },
-          {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           },
           {
             "path": "packages/designer/src/shell/internal/shell-ground.ts",
@@ -83,7 +73,7 @@
           },
           {
             "path": "packages/designer/src/shell/SiteHeader.tsx",
-            "sha256": "008e593324d160e9a41abd6623a3aa8104ca3fe219a1a3eae129dae3a8843c55"
+            "sha256": "116aa11b0e7d8494bee8b319ab5f0a915707dafeb30e04d4e5162b9ce62cb9d4"
           }
         ],
         "unresolved": [
@@ -98,6 +88,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },
@@ -131,22 +127,12 @@
       "reads": {
         "assets": [],
         "tokens": [
-          "tokens.accent-color",
-          "tokens.action-color",
-          "tokens.body-size",
           "tokens.border-color",
           "tokens.border-width",
-          "tokens.control-color",
-          "tokens.control-radius",
-          "tokens.duration",
-          "tokens.easing",
-          "tokens.focus-color",
           "tokens.spacing",
-          "tokens.status-color",
           "tokens.surface-color",
           "tokens.text-color",
           "tokens.touch-target",
-          "tokens.typeface",
           "tokens.z-index"
         ]
       },

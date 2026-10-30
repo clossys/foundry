@@ -27,16 +27,30 @@ describe("Hero backdrop kind specimen", () => {
     } else if (kind === "video") {
       expect(section.querySelector("[data-hero-backdrop] svg path")).toHaveAttribute("fill", "var(--color-accent)");
       expect(section.querySelector("video")).toBeNull();
-      expect(section.querySelector("[data-media-passive] img")).not.toBeNull();
-      expect(screen.queryByRole("status")).toBeNull();
+      expect(section.querySelector("[data-media-passive]")).toBeNull();
+      expect(screen.getByRole("status")).toHaveTextContent(HERO_BACKDROP_SPECIMENS[2].backdrop.missingVideoMessage);
     } else {
       expect(section.querySelector("[data-hero-live-backdrop]")).not.toBeNull();
       expect(section.querySelector("[data-hero-live-backdrop]")!.getAttribute("style")).toContain("radial-gradient");
       expect(screen.queryByRole("status")).toBeNull();
     }
   });
+  it("keeps the missing default video file inert even when motion is allowed", async () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
+    const play = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+    try {
+      const { container } = render(<MarketingComponentProvider><Suspense><HeroSpecimen backdrop={HERO_BACKDROP_SPECIMENS[2].backdrop} /></Suspense></MarketingComponentProvider>);
+      await screen.findByRole("heading", { name: HERO_SPECIMEN_COPY["header.heading"] });
+      expect(screen.getByRole("status")).toHaveTextContent(HERO_BACKDROP_SPECIMENS[2].backdrop.missingVideoMessage);
+      expect(container.querySelector("video,source")).toBeNull();
+      expect(container.querySelector("[data-hero-backdrop] svg path")).not.toBeNull();
+      expect(play).not.toHaveBeenCalled();
+      expect(screen.getByRole("status").textContent).not.toMatch(/NEED|components\.|renderer/i);
+      expect(JSON.stringify(HERO_BACKDROP_SPECIMENS[2].backdrop)).not.toContain("/specimens/");
+    } finally { play.mockRestore(); }
+  });
   it("requires a real poster policy and muted inline autoplay loop declaration for video", () => {
-    const video = HERO_BACKDROP_SPECIMENS[2].backdrop;
+    const video = { ...HERO_BACKDROP_SPECIMENS[2].backdrop, video: { src: "/owner-supplied.webm", poster: "/owner-supplied-poster.webp", mediaType: "video/webm", width: 1600, height: 900, reducedMotion: "poster" } } as const;
     expect(resolveHeroBackdrop(video)).toMatchObject({ kind: "video", art: HERO_SPECIMEN_BACKDROP });
     expect(() => resolveHeroBackdrop({ ...video, muted: false })).toThrow(/muted autoplay loop playsInline/);
     expect(() => resolveHeroBackdrop({ ...video, video: { ...video.video, reducedMotion: "paused" } })).toThrow(/poster policy/);

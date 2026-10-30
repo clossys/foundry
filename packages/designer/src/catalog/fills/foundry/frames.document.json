@@ -41,7 +41,7 @@
           },
           {
             "path": "packages/designer/src/frames/site-frame/types.ts",
-            "sha256": "5082a75480ef118eda6c17d091d966bceb23e0b42555fe20930cd5c24437359b"
+            "sha256": "a41d28d970abcc823288f449e5ec0e9a4b6bc3511eddfb65c68d3ff74240c353"
           },
           {
             "path": "packages/designer/src/runtime/frames/document.tsx",

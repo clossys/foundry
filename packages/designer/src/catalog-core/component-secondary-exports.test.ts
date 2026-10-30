@@ -191,11 +191,11 @@ describe("SYNTHETIC authenticated leaf secondary exports; no real runtime claim"
     const input = secondaryFixture([{ name: "ToggleGroupItem", export: "ToggleGroupItem" }], file.content);
     input.candidate.slot = "components.toggle-group";
     input.candidate.impl = { kind: "source", entry: file.path, export: "ToggleGroup" };
-    expect(componentSecondaryExports(input.candidate, [file])).toEqual([{ name: "ToggleGroupItem", export: "ToggleGroupItem" }]);
     const runtimeFiles = [...selected, ...["components/toggle-button/index.ts", "components/_parts/utils/index.ts"].map(path => ({ path, content: readFileSync(new URL(path, selectedRoot), "utf8") }))];
     const runtime = await selectedRuntime(runtimeFiles).loadAsync(file.path);
     expect(Object.keys(runtime).sort()).toEqual(exports);
     for (const name of functions) expect(typeof runtime[name]).toBe("function");
+    expect(componentSecondaryExports(input.candidate, [file])).toEqual([{ name: "ToggleGroupItem", export: "ToggleGroupItem" }]);
     for (const name of ["ToggleGroupContext", "VariantProps", "toggleVariants", "Missing", "React", "Context"]) {
       input.candidate.secondaryExports = [{ name: "PublicPart", export: name }];
       expect(() => componentSecondaryExports(input.candidate, [file])).toThrow(/secondary/);

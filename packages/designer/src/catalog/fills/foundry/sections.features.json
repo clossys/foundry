@@ -23,6 +23,7 @@
       "status": "draft",
       "trust": "foundry",
       "unmapped": [
+        "slot.header",
         "about.features"
       ]
     }
@@ -127,7 +128,7 @@
       },
       "license": "MIT",
       "notes": [
-        "The layout prop selects the column grid, a one-per-row list with the icon beside the copy, or the heading region beside a two-column grid from desktop. Items have icon, heading and description but no per-item link prop.",
+        "Grid, list and split retain the public FeatureGrid.layout API. Bento, tabs, alternate and scroll are private registered renderFeaturesSection compositions of the mapped items, implemented by FeatureLayouts; they do not extend the public layout prop.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -137,9 +138,13 @@
         "version": "0.12.0"
       },
       "propMap": {
+        "layout.alternating": "./blocks#FeatureGrid.items",
+        "layout.bento": "./blocks#FeatureGrid.items",
         "layout.grid": "./blocks#FeatureGrid.layout=grid",
         "layout.list": "./blocks#FeatureGrid.layout=list",
-        "layout.split": "./blocks#FeatureGrid.layout=split"
+        "layout.scroll": "./blocks#FeatureGrid.items",
+        "layout.split": "./blocks#FeatureGrid.layout=split",
+        "layout.tabs": "./blocks#FeatureGrid.items"
       },
       "reads": {
         "assets": [],

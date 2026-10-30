@@ -61,15 +61,11 @@
           },
           {
             "path": "packages/designer/src/blocks/Faq.tsx",
-            "sha256": "9ba5227dea9f41eee333452ab7fb70e0eeff5e842dddf70c76d1684051b2c94d"
+            "sha256": "a217276e90166a430c2c3424cc86e17cb02999336044e1e38113fcdb3c4bc788"
           },
           {
             "path": "packages/designer/src/blocks/internal/block-vars.ts",
             "sha256": "33e9c7bd8700ff201b8ba138ca4f10dd7de910a23d260019e676470b918cceb5"
-          },
-          {
-            "path": "packages/designer/src/blocks/internal/disclosure-row.tsx",
-            "sha256": "9c20a5226a3a94b1718208b89dcd67d992b7e1c97d0bb1427d3c9f8859b71e6e"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",

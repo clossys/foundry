@@ -50,22 +50,12 @@
             "components.semantic-content"
           ],
           "tokens": [
-            "tokens.accent-color",
-            "tokens.action-color",
             "tokens.body-size",
             "tokens.border-color",
             "tokens.border-width",
             "tokens.brandmark-size",
-            "tokens.control-color",
-            "tokens.control-radius",
-            "tokens.duration",
-            "tokens.easing",
-            "tokens.focus-color",
-            "tokens.focus-outline",
             "tokens.gutter",
             "tokens.spacing",
-            "tokens.state-opacity",
-            "tokens.status-color",
             "tokens.surface-color",
             "tokens.text-color",
             "tokens.touch-target",
@@ -83,28 +73,16 @@
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
           },
           {
-            "path": "packages/designer/src/components/button-classes.ts",
-            "sha256": "b8ebd6d815a52769cd0e02ca091f4c81d81e31f9558e1df767bfcf07dcc5f2a6"
-          },
-          {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
           },
           {
-            "path": "packages/designer/src/components/internal/ui-vars.ts",
-            "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
-          },
-          {
-            "path": "packages/designer/src/components/Link.server.tsx",
-            "sha256": "716f8c4a4057c2d78fe87465080a8c874c83c7788e4d7da8fd26692146d0ad7b"
-          },
-          {
-            "path": "packages/designer/src/components/Link.styles.ts",
-            "sha256": "d8467b36dc0716227896837f1aecf9f3e44c0fdb42c63ba359f3420249f77328"
-          },
-          {
             "path": "packages/designer/src/internal/brandmark.ts",
             "sha256": "8373e807f383bdf12d9f325223df75316b99ea60fa3d2e020991b283eb24c16a"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           },
           {
             "path": "packages/designer/src/shell/internal/shell-ground.ts",
@@ -116,7 +94,7 @@
           },
           {
             "path": "packages/designer/src/shell/SiteFooter.tsx",
-            "sha256": "6a10abd3dd944517371ea878d0319f1adef150b1c5edee69e8d4a334a3ca1286"
+            "sha256": "41a649a9396e86e76ad036d8a376f1851e300b0f202a31ddc75e8566565c26b8"
           }
         ],
         "unresolved": [
@@ -131,6 +109,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },
@@ -154,22 +138,12 @@
       "reads": {
         "assets": [],
         "tokens": [
-          "tokens.accent-color",
-          "tokens.action-color",
           "tokens.body-size",
           "tokens.border-color",
           "tokens.border-width",
           "tokens.brandmark-size",
-          "tokens.control-color",
-          "tokens.control-radius",
-          "tokens.duration",
-          "tokens.easing",
-          "tokens.focus-color",
-          "tokens.focus-outline",
           "tokens.gutter",
           "tokens.spacing",
-          "tokens.state-opacity",
-          "tokens.status-color",
           "tokens.surface-color",
           "tokens.text-color",
           "tokens.touch-target",

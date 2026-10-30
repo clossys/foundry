@@ -26,32 +26,31 @@
   },
   "sections": {
     "call-to-action": {
-      "composes": [
-        "sections.section-header"
-      ],
+      "composes": [],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "sections.section-header"
-        ],
+        "scannedComposes": [],
         "scannedReads": {
           "assets": [],
           "components": [],
           "tokens": [
+            "tokens.body-size",
             "tokens.border-color",
-            "tokens.radius",
+            "tokens.caption-size",
+            "tokens.heading-size",
+            "tokens.letter-spacing",
             "tokens.spacing",
             "tokens.status-color",
             "tokens.surface-color",
-            "tokens.surface-radius",
-            "tokens.text-color"
+            "tokens.text-color",
+            "tokens.typeface"
           ]
         },
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/CallToAction.tsx",
-            "sha256": "01787edd96b24b0c305ad8ecb1eb54ffa46dba529e766c1e1e7dbb29b92b6d65"
+            "sha256": "20eab1311a3d7a644cd6f00d4106236d9aecbda9041c685712e75d8b58486325"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -111,13 +110,16 @@
       "reads": {
         "assets": [],
         "tokens": [
+          "tokens.body-size",
           "tokens.border-color",
-          "tokens.radius",
+          "tokens.caption-size",
+          "tokens.heading-size",
+          "tokens.letter-spacing",
           "tokens.spacing",
           "tokens.status-color",
           "tokens.surface-color",
-          "tokens.surface-radius",
-          "tokens.text-color"
+          "tokens.text-color",
+          "tokens.typeface"
         ]
       },
       "slot": "sections.call-to-action",

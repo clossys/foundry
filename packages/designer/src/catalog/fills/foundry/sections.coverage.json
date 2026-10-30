@@ -67,7 +67,9 @@
       ],
       "slot": "sections.article",
       "status": "candidate",
-      "supportedMembers": [],
+      "supportedMembers": [
+        "typography.drop-cap"
+      ],
       "supportedSlots": [
         "body",
         "toc"
@@ -172,7 +174,7 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Each record renders a Foundry Card (outline) with the title as its single Link and an optional Badge. Loading, empty and error states stay host-owned around the list.",
+        "Editorial records use consumer-selected Card parts, Link, Badge and SemanticContent. Post, post-featured and case-study retain Writer labels and resolved assets.image; post-featured is full-width. Dates require the page locale; states remain host-owned.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.cards",
@@ -423,17 +425,23 @@
         "about.features"
       ],
       "missingRequiredSlots": [],
-      "missingSlots": [],
+      "missingSlots": [
+        "header"
+      ],
       "notes": [
-        "The layout prop selects the column grid, a one-per-row list with the icon beside the copy, or the heading region beside a two-column grid from desktop. Items have icon, heading and description but no per-item link prop.",
+        "Grid, list and split retain the public FeatureGrid.layout API. Bento, tabs, alternate and scroll are private registered renderFeaturesSection compositions of the mapped items, implemented by FeatureLayouts; they do not extend the public layout prop.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.features",
       "status": "subset",
       "supportedMembers": [
+        "layout.alternating",
+        "layout.bento",
         "layout.grid",
         "layout.list",
-        "layout.split"
+        "layout.scroll",
+        "layout.split",
+        "layout.tabs"
       ],
       "supportedSlots": [
         "items"
@@ -896,6 +904,328 @@
     },
     {
       "missingMembers": [],
+      "missingRequiredSlots": [
+        "context",
+        "items",
+        "labels"
+      ],
+      "missingSlots": [
+        "axes",
+        "context",
+        "items",
+        "labels"
+      ],
+      "notes": [
+        "No package implementation is available.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.specimen-asset-grid",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "context",
+        "items",
+        "labels"
+      ],
+      "missingSlots": [
+        "axes",
+        "context",
+        "items",
+        "labels"
+      ],
+      "notes": [
+        "No package implementation is available.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.specimen-color-ramp",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "context",
+        "items",
+        "labels"
+      ],
+      "missingSlots": [
+        "axes",
+        "context",
+        "items",
+        "labels"
+      ],
+      "notes": [
+        "No package implementation is available.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.specimen-copy-in-context",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "context",
+        "items",
+        "labels"
+      ],
+      "missingSlots": [
+        "axes",
+        "context",
+        "items",
+        "labels"
+      ],
+      "notes": [
+        "No package implementation is available.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.specimen-frame-viewports",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "context",
+        "items",
+        "labels"
+      ],
+      "missingSlots": [
+        "axes",
+        "context",
+        "items",
+        "labels"
+      ],
+      "notes": [
+        "No package implementation is available.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.specimen-icon-grid",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "context",
+        "items",
+        "labels"
+      ],
+      "missingSlots": [
+        "axes",
+        "context",
+        "items",
+        "labels"
+      ],
+      "notes": [
+        "No package implementation is available.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.specimen-motion-player",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "context",
+        "items",
+        "labels"
+      ],
+      "missingSlots": [
+        "axes",
+        "context",
+        "items",
+        "labels"
+      ],
+      "notes": [
+        "No package implementation is available.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.specimen-page-viewports",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "context",
+        "items",
+        "labels"
+      ],
+      "missingSlots": [
+        "axes",
+        "context",
+        "items",
+        "labels"
+      ],
+      "notes": [
+        "No package implementation is available.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.specimen-radius-ladder",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "context",
+        "items",
+        "labels"
+      ],
+      "missingSlots": [
+        "axes",
+        "context",
+        "items",
+        "labels"
+      ],
+      "notes": [
+        "No package implementation is available.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.specimen-rich-passage",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "context",
+        "items",
+        "labels"
+      ],
+      "missingSlots": [
+        "axes",
+        "context",
+        "items",
+        "labels"
+      ],
+      "notes": [
+        "No package implementation is available.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.specimen-section-viewports",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "context",
+        "items",
+        "labels"
+      ],
+      "missingSlots": [
+        "axes",
+        "context",
+        "items",
+        "labels"
+      ],
+      "notes": [
+        "No package implementation is available.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.specimen-spacing-ladder",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "context",
+        "items",
+        "labels"
+      ],
+      "missingSlots": [
+        "axes",
+        "context",
+        "items",
+        "labels"
+      ],
+      "notes": [
+        "No package implementation is available.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.specimen-swatch",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "context",
+        "items",
+        "labels"
+      ],
+      "missingSlots": [
+        "axes",
+        "context",
+        "items",
+        "labels"
+      ],
+      "notes": [
+        "No package implementation is available.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.specimen-type-ladder",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "context",
+        "items",
+        "labels"
+      ],
+      "missingSlots": [
+        "axes",
+        "context",
+        "items",
+        "labels"
+      ],
+      "notes": [
+        "No package implementation is available.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.specimen-variant-matrix",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
@@ -961,7 +1291,9 @@
       ],
       "slot": "sections.table-of-contents",
       "status": "candidate",
-      "supportedMembers": [],
+      "supportedMembers": [
+        "tracking.css"
+      ],
       "supportedSlots": [
         "active-id",
         "headings",

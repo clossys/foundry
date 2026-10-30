@@ -36,8 +36,8 @@
           "components": [],
           "tokens": [
             "tokens.body-size",
-            "tokens.border-color",
             "tokens.caption-size",
+            "tokens.duration",
             "tokens.heading-size",
             "tokens.spacing",
             "tokens.status-color",
@@ -56,11 +56,15 @@
           },
           {
             "path": "packages/designer/src/blocks/Stat.tsx",
-            "sha256": "956a151aab78433f31d79bef837000f1b797cd4be3defc456ccd1d8100f36e86"
+            "sha256": "cd084edd1fa77d9da716cda0325b082fcc682b3bf17da8fe0b432197f0abbbe4"
           },
           {
             "path": "packages/designer/src/blocks/StatGroup.tsx",
-            "sha256": "e32a9a69dfda580ae90ccfff1e25d051a0b551b8ba21dd8fe45ba1b3d999e729"
+            "sha256": "4f317c1660f2349945e74effcfe7f7dc67cd70cdb49bdeb20e429c71e42fec12"
+          },
+          {
+            "path": "packages/designer/src/blocks/Stats/parts.tsx",
+            "sha256": "79d199fdf761fa9604c48b8f954161df8d13b1c85c6d03c0978ceae882cfd2bf"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -69,6 +73,10 @@
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -83,6 +91,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },
@@ -110,8 +124,8 @@
         "assets": [],
         "tokens": [
           "tokens.body-size",
-          "tokens.border-color",
           "tokens.caption-size",
+          "tokens.duration",
           "tokens.heading-size",
           "tokens.spacing",
           "tokens.status-color",

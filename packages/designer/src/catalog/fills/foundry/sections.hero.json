@@ -26,20 +26,16 @@
   },
   "sections": {
     "hero": {
-      "composes": [
-        "components.semantic-content"
-      ],
+      "composes": [],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.semantic-content"
-        ],
+        "scannedComposes": [],
         "scannedReads": {
-          "assets": [],
-          "components": [
-            "components.semantic-content"
+          "assets": [
+            "assets.backdrop-graphic"
           ],
+          "components": [],
           "tokens": [
             "tokens.accent-color",
             "tokens.body-size",
@@ -69,15 +65,19 @@
           },
           {
             "path": "packages/designer/src/blocks/Hero.tsx",
-            "sha256": "d00b4b1ef112af1d5c0173d652ea33fdffae29c5eebca91df67840ba562efa04"
+            "sha256": "63d56433e2c187ccf1ce7995d6506e118ef72c634f3e62e31cfedd8fac04d210"
+          },
+          {
+            "path": "packages/designer/src/blocks/hero/hero-backdrop.ts",
+            "sha256": "7db9e2e510d186cbe052ba00dc9e6df25712ce44b34b7a25051ac0313e1a7da7"
           },
           {
             "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
-            "sha256": "a2e8b283a568e57dca59e4d65b5a300f6e862c23497ed86e5bff83fc1090a90f"
+            "sha256": "168d2703d891a585b18bce6d9eeb388bd50398cf24aa315c13bc425307c208b4"
           },
           {
             "path": "packages/designer/src/blocks/hero/StillBackdrop.tsx",
-            "sha256": "3cd095c351a42d82be72414039dc617dea447a316a20acf40c33706334e90685"
+            "sha256": "91c6c1f8b5fd752bc07815e29d99e16fd7ea8fe3a8f7dafcb0f166956f5f10c0"
           },
           {
             "path": "packages/designer/src/blocks/internal/block-vars.ts",
@@ -88,12 +88,28 @@
             "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
           },
           {
+            "path": "packages/designer/src/catalog-assets/a276-backdrop-graphic.contribution.ts",
+            "sha256": "b80231c94a71bf4a9488c6da8585bf33c00dac05600a8162242360a1c2577c51"
+          },
+          {
+            "path": "packages/designer/src/catalog-assets/backdrop-graphic.ts",
+            "sha256": "9182512c104a8cd7290b1497559d3112cb4a385ab96860adb4a08a5c2aad7bc9"
+          },
+          {
+            "path": "packages/designer/src/catalog-assets/media.ts",
+            "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
+          },
+          {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           },
           {
             "path": "packages/designer/src/tokens/color.ts",
@@ -125,7 +141,7 @@
             "code": "DF2",
             "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
             "file": "packages/designer/src/blocks/hero/StillBackdrop.tsx",
-            "line": 4
+            "line": 6
           },
           {
             "code": "DF2",
@@ -138,6 +154,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },
@@ -171,7 +193,9 @@
         "size.display": "./blocks#Hero.size=display"
       },
       "reads": {
-        "assets": [],
+        "assets": [
+          "assets.backdrop-graphic"
+        ],
         "tokens": [
           "tokens.accent-color",
           "tokens.body-size",

@@ -59,7 +59,7 @@ export function heroGraphicSpecimenValues(): Resolved {
 export const HERO_BACKDROP_SPECIMENS = [
   { kind: "none", backdrop: { kind: "none" } },
   { kind: "image", backdrop: { kind: "image", image: HERO_SPECIMEN_BACKDROP } },
-  { kind: "video", backdrop: { kind: "video", video: { src: "/specimens/example-hero.webm", poster: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 900'%3E%3Cpath d='M0 0H1600V900H0Z' fill='currentColor'/%3E%3C/svg%3E", mediaType: "video/webm", width: 1600, height: 900, reducedMotion: "poster" }, poster: HERO_SPECIMEN_BACKDROP, muted: true, autoplay: true, loop: true, playsInline: true } },
+  { kind: "video", backdrop: { kind: "video", missingVideoMessage: "A video file has not been provided. The poster is shown.", poster: HERO_SPECIMEN_BACKDROP, muted: true, autoplay: true, loop: true, playsInline: true } },
   { kind: "graphic", backdrop: { kind: "graphic", asset: "asset.backdrop.graphic" } },
 ] as const satisfies readonly { readonly kind: string; readonly backdrop: HeroBackdrop }[];
 

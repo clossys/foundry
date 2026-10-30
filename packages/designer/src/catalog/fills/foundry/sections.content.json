@@ -55,7 +55,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/ContentSection.tsx",
-            "sha256": "acbb04a6ed7bfca9a3ea986e3361865ef8908416986eb842ddc41ec6a2962d53"
+            "sha256": "6a90522c76468a0853eeb005662ebe62921ee9d2bf476cefc128b36cc8f4593a"
           },
           {
             "path": "packages/designer/src/blocks/internal/block-vars.ts",

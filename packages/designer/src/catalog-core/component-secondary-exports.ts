@@ -63,7 +63,7 @@ const selectedFunctionSources: Readonly<Record<string, { sha256: string; functio
     functions: ["DropdownMenu", "DropdownMenuTrigger", "DropdownMenuGroup", "DropdownMenuLabel", "DropdownMenuItem", "DropdownMenuSeparator", "DropdownMenuShortcut", "DropdownMenuSub", "DropdownMenuSubTrigger", "DropdownMenuSubContent"],
   },
   "components/toggle-group/toggle-group.tsx": {
-    sha256: "56f69f2968acbd448637ea5c84cc6d4808563231e6b9825c380bcb82a9e24fb9",
+    sha256: "498bbe56c2bdef19944e118cdb915962528c3905ad1b9739a07b04d0232b12a3",
     functions: ["ToggleGroup", "ToggleGroupItem"],
   },
 };

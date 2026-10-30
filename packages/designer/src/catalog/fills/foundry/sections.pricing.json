@@ -26,15 +26,11 @@
   },
   "sections": {
     "pricing": {
-      "composes": [
-        "sections.section-header"
-      ],
+      "composes": [],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "sections.section-header"
-        ],
+        "scannedComposes": [],
         "scannedReads": {
           "assets": [],
           "components": [],
@@ -42,47 +38,18 @@
             "tokens.accent-color",
             "tokens.body-size",
             "tokens.border-color",
-            "tokens.border-width",
             "tokens.heading-size",
-            "tokens.letter-spacing",
-            "tokens.line-height",
-            "tokens.radius",
             "tokens.spacing",
             "tokens.status-color",
             "tokens.surface-color",
-            "tokens.surface-radius",
             "tokens.text-color",
             "tokens.typeface"
           ]
         },
         "sourceFiles": [
           {
-            "path": "packages/designer/src/blocks/internal/trend.ts",
-            "sha256": "4aa7cce812d8e68674aca3ccfe5580fa421661d7652e2c2d1eabfd69d1c1b466"
-          },
-          {
-            "path": "packages/designer/src/blocks/items/policies.ts",
-            "sha256": "64cb8c3d85df5e6d1cc846d6bdb36755dbb26b935be7e4964d8e636a3f78631a"
-          },
-          {
-            "path": "packages/designer/src/blocks/Matrix.server.tsx",
-            "sha256": "17390517e76ce9591faadceaa1ff0275d38ec2b538f57b6a34b88017637fd791"
-          },
-          {
-            "path": "packages/designer/src/blocks/matrix/grid.tsx",
-            "sha256": "5bc770185b35ceb9ed75e74ce704b41d6533bc75e8ff83cd3b641c0a20569122"
-          },
-          {
-            "path": "packages/designer/src/blocks/matrix/harvey-mark.tsx",
-            "sha256": "8e50bf8776d3ff31b3f5a4ad08c1b889cb7850b578363c45b20a7f8de70bf323"
-          },
-          {
-            "path": "packages/designer/src/blocks/matrix/static.tsx",
-            "sha256": "d1dec49e866e2c673e7d1222f9ee1af5ba7497893ea5ae78774427a8127b8431"
-          },
-          {
             "path": "packages/designer/src/blocks/PricingTable.tsx",
-            "sha256": "f918b57a42e79a2f6813774724abb42d94437f36f5c8dca9cfbae30fb2311925"
+            "sha256": "4fe3d3b5eb331ae0b696e032a777ab6ff0f11e2920e0f4f791785b6899ce0e15"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -97,25 +64,11 @@
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
           },
           {
-            "path": "packages/designer/src/components/internal/ui-vars.ts",
-            "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
-          },
-          {
-            "path": "packages/designer/src/icons/Check.ts",
-            "sha256": "df7a0d203c39a358aba4b6cf7a9380e34352d38efe0947c0d30c0485ad509159"
-          },
-          {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
             "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
-          {
-            "code": "DF5",
-            "evidence": "unregistered asset import ../../icons/Check.js#Check",
-            "file": "packages/designer/src/blocks/matrix/static.tsx",
-            "line": 6
-          },
           {
             "code": "DF2",
             "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
@@ -159,15 +112,10 @@
           "tokens.accent-color",
           "tokens.body-size",
           "tokens.border-color",
-          "tokens.border-width",
           "tokens.heading-size",
-          "tokens.letter-spacing",
-          "tokens.line-height",
-          "tokens.radius",
           "tokens.spacing",
           "tokens.status-color",
           "tokens.surface-color",
-          "tokens.surface-radius",
           "tokens.text-color",
           "tokens.typeface"
         ]
