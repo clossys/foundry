@@ -35,26 +35,25 @@ export function WriterSpecimen({ index, selectedId }: { index: AgentCells; selec
   const contexts = [...new Set(projection.records.map(record => record.context))];
   return <ContentSection aria-label="Writer copy specimen">
     <SectionHeader title={specimenTitle(cell)} stats={<>{cell.status ? <Badge variant={cell.status === 'active' ? 'success' : 'warning'}>{cell.status}</Badge> : null}{cell.version !== undefined ? <Badge>v{cell.version}</Badge> : null}</>} />
-    <ContentSection layout="split-end">
+    <ContentSection layout="split-end" media={<ContentSection>
+      <SectionHeader title="Voice rules" level={3} />
+      {tone.length || banned.length ? <DetailView aria-label="Voice rule card" fields={[
+        ...(tone.length ? [{ label: 'Tone', value: tone.join(', ') }] : []),
+        ...(banned.length ? [{ label: 'Banned words', value: banned.join(', ') }] : []),
+      ]} /> : <EmptyState title="Voice rules unavailable" description="No tone or banned-word rules were found in the available Writer cells." />}
+    </ContentSection>}>
       <ContentSection>
         {contexts.length ? contexts.map(context => <ContentSection key={context}>
           <SectionHeader title={context} level={3} />
-          <ContentSection className="grid grid-cols-1 tablet:grid-cols-2 gap-lg" aria-label={`${context} locales`}>
-            {projection.locales.map(locale => <ContentSection key={locale} lang={locale} dir={localeDirection(locale)}>
-              <Badge>{locale}</Badge>
+          <DetailView aria-label={`${context} locales`} fields={projection.locales.map(locale => ({
+            label: <Badge>{locale}</Badge>,
+            value: <ContentSection lang={locale} dir={localeDirection(locale)}>
               {projection.records.filter(record => record.context === context && record.locale === locale).map(copy => <CopySpecimen key={copy.id} copy={copy} />)}
               {!projection.records.some(record => record.context === context && record.locale === locale) ? <EmptyState title="Locale copy missing" description={`No produced ${locale} copy for this context.`} /> : null}
-            </ContentSection>)}
-          </ContentSection>
+            </ContentSection>,
+          }))} />
         </ContentSection>) : <EmptyState title="No produced copy" description="This cell has no supported Writer copy records." />}
         {projection.gaps.map(gap => <EmptyState key={gap} title="Writer data gap" description={gap} />)}
-      </ContentSection>
-      <ContentSection>
-        <SectionHeader title="Voice rules" level={3} />
-        {tone.length || banned.length ? <DetailView aria-label="Voice rule card" fields={[
-          ...(tone.length ? [{ label: 'Tone', value: tone.join(', ') }] : []),
-          ...(banned.length ? [{ label: 'Banned words', value: banned.join(', ') }] : []),
-        ]} /> : <EmptyState title="Voice rules unavailable" description="No tone or banned-word rules were found in the available Writer cells." />}
       </ContentSection>
     </ContentSection>
   </ContentSection>;

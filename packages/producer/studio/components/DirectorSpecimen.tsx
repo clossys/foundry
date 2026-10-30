@@ -23,12 +23,11 @@ function Passage({ cell, selected, level }: { cell: CellDetail; selected: boolea
   return <ContentSection id={directorPassageId(cell.id)} aria-current={selected ? 'location' : undefined} data-specimen-cell={cell.id} data-specimen-status={cell.status}
     ground={cell.status === 'draft' ? 'sunken' : 'base'} className={selected ? 'outline outline-focus outline-offset-4' : undefined}>
     <SectionHeader title={typeof cell.fields?.title === 'string' && cell.fields.title ? cell.fields.title : cell.id.split('.').at(-1)} level={level} description={cell.status === 'draft' ? 'Draft passage' : undefined} />
-    <ContentSection layout="split-end">
+    <ContentSection layout="split-end" media={<DetailView aria-label="Passage metadata" fields={fields} />}>
       <ContentSection>{sections.length ? sections.map(section => <ContentSection key={section.title}>
         <SectionHeader title={section.title} level={Math.min(level + 1, 6) as 2 | 3 | 4 | 5 | 6} />
         <RichTextSpecimen value={section.value} readOnly />
       </ContentSection>) : <EmptyState title="Strategy passage unavailable" description="This cell has no canonical Direction, Because, or Watch content." />}</ContentSection>
-      <DetailView aria-label="Passage metadata" fields={fields} />
     </ContentSection>
   </ContentSection>;
 }
