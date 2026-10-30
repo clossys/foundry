@@ -1,5 +1,5 @@
 import { useId, type Key, type ReactNode } from "react";
-import { Card } from "../components/Card.js";
+import { Card, CardContent } from "../components/preview-runtime/components/card/card.js";
 import { cx } from "../components/internal/cx.js";
 
 export interface GroupedTableColumn<Row> {
@@ -47,8 +47,8 @@ export function GroupedTable<Row>({ caption, rowHeader, groups, rows, rowKey, em
   const columnId = (group: number, column: number) => prefix + "-" + group + "-" + column;
   const columnCount = 1 + groups.reduce((count, group) => count + group.columns.length, 0);
   return (
-    <Card variant="outline" className={cx("p-0 overflow-hidden", className)}>
-      <div role="region" aria-labelledby={captionId} tabIndex={0} className="overflow-x-auto focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent focus-visible:-outline-offset-2">
+    <Card className={cx("p-0 overflow-hidden", className)}>
+      <CardContent role="region" aria-labelledby={captionId} tabIndex={0} className="overflow-x-auto focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent focus-visible:-outline-offset-2">
         <table className="w-full border-collapse text-body-s text-ink-primary">
           <caption id={captionId} className="p-md text-start font-medium">{caption}</caption>
           <colgroup span={1} />
@@ -79,7 +79,7 @@ export function GroupedTable<Row>({ caption, rowHeader, groups, rows, rowKey, em
             {!rows.length && <tr><td colSpan={columnCount} className="p-md text-ink-secondary">{emptyMessage}</td></tr>}
           </tbody>
         </table>
-      </div>
+      </CardContent>
     </Card>
   );
 }
