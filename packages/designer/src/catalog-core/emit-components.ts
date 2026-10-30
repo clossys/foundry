@@ -49,11 +49,17 @@ export function assertComponentImportClosure(files: readonly ComponentFile[], pa
   for (const file of files.filter(file => /\.tsx?$/.test(file.path))) {
     // Comments can contain import-looking text; strip them without modifying quoted module text.
     const commentless = file.content.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
-    // A namespace import binds no individual name, so its closure is the package itself being an observed dependency.
-    const code = commentless.replace(/\bimport\s+(?:type\s+)?\*\s+as\s+[A-Za-z_$][\w$]*\s+from\s*["']([^"']+)["']\s*;?/g, (statement, specifier: string) => {
+    // Namespace types are erased. Lowercase member reads (React hooks/factories)
+    // still require observed runtime exports, just like named value imports.
+    const code = commentless.replace(/\bimport\s+(type\s+)?\*\s+as\s+([A-Za-z_$][\w$]*)\s+from\s*["']([^"']+)["']\s*;?/g, (statement, erased: string | undefined, local: string, specifier: string) => {
       if (specifier.startsWith(".")) throw new CatalogError(`components: unsupported import syntax in ${file.path}`);
       assertPackageSpecifier(specifier);
       if (!Object.hasOwn(packageExports, specifier)) throw new CatalogError(`components: unsupported import syntax in ${file.path}`);
+      const escaped = local.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      if (new RegExp(`\\b${escaped}\\s*\\[`).test(commentless)) throw new CatalogError(`components: unsupported computed namespace read in ${file.path}`);
+      for (const read of commentless.matchAll(new RegExp(`\\b${escaped}\\s*\\.\\s*([a-z_$][\\w$]*)`, "g"))) {
+        if (erased || !packageExports[specifier]!.includes(read[1]!)) throw new CatalogError(`components: unavailable namespace member ${read[1]} from ${specifier}`);
+      }
       return "";
     });
     if (/\b(?:import|require)\s*\(/.test(code) || /\bimport\s+(?!type\s*\{|\{)[^;\n]*\bfrom\b/.test(code) || /\bimport\s*["']/.test(code)) throw new CatalogError(`components: unsupported import syntax in ${file.path}`);

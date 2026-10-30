@@ -119,6 +119,14 @@ describe("SYNTHETIC component code generation; no shipped conformance claims", (
     expect(() => assertComponentImportClosure(file('import React from "react";'), { react: [] })).toThrow(/unsupported import syntax/);
     expect(() => assertComponentImportClosure(file('import * as React, { useState } from "react";'), { react: ["useState"] })).toThrow(/unsupported import syntax/);
   });
+  it("closes React context and hook namespace members against observed runtime exports", () => {
+    const source = 'import * as R from "react"; type Props = R.ComponentProps<"div">; const Context = R.createContext(null); function Part() { return R.useContext(Context); }';
+    const file = (content = source) => [{ path: "components/context/context.tsx", content }];
+    expect(() => assertComponentImportClosure(file(), { react: ["createContext", "useContext"] })).not.toThrow();
+    for (const names of [[], ["createContext"], ["useContext"]]) expect(() => assertComponentImportClosure(file(), { react: names })).toThrow(/namespace member/);
+    expect(() => assertComponentImportClosure(file(source.replace("import *", "import type *")), { react: ["createContext", "useContext"] })).toThrow(/namespace member/);
+    expect(() => assertComponentImportClosure(file(source.replace("R.useContext", 'R["useContext"]')), { react: ["createContext", "useContext"] })).toThrow(/computed namespace/);
+  });
   it("closes named imports and rejects unsupported mapping grammar or unavailable observations", () => {
     expect(() => assertComponentImportClosure([{ path: "components/calendar/calendar.tsx", content: 'import { buttonVariants } from "../button/index.js";' }, { path: "components/button/index.ts", content: 'export { Button } from "test-kit/components";' }], packageExports)).toThrow(/unavailable named import/);
     const profile = packageProfile();
