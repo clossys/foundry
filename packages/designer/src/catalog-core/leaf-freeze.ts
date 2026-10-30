@@ -103,7 +103,9 @@ export function assertFrozenLeafSets(
   placements: readonly Placement[],
   slots: readonly { id: string; layer: string }[],
   layers: readonly FrozenLeafLayer[],
+  report?: (finding: LeafFreezeFinding) => void,
 ): void {
   const findings = checkFrozenLeafSets(placements, slots, layers);
+  if (report) { findings.forEach(report); return; }
   if (findings.length) throw new Error(findings.map(finding => finding.message).join("; "));
 }

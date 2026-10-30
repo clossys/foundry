@@ -4,7 +4,8 @@ import { once } from "node:events";
 import { createServer, request as httpRequest, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AgentKind } from "../agents.js";
 import { resolveAgent } from "../agents.js";
-import { AGENT_KINDS, CELL_ID, agentRoot, hasCellTree, inventory, readCells, summary, type CompileResult } from "./cells.js";
+import { AGENT_KINDS, CELL_ID, agentRoot, hasCellTree, inventory, readStudioCells, summary, type CompileResult } from "./cells.js";
+import type { StudioGateReport } from './studio-render-policy.js';
 import { TOKEN_HEADER } from "./contract.js";
 import { startStudio, studioEntry, type StudioChild } from "./studio.js";
 import { watchCells } from "./watch.js";
@@ -107,7 +108,10 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
         if (!profile) { json(response, 404, { error: "Selected profile is unavailable; reload the Producer config" }); return; }
         json(response, 200, profile); return;
       }
-      if (pathname === "/api/cells") { json(response, 200, { agents: await Promise.all(AGENT_KINDS.map(agent => inventory(options.root, agent))) }); return; }
+      if (pathname === "/api/cells") {
+        const gateReports: StudioGateReport[] = [];
+        json(response, 200, { agents: await Promise.all(AGENT_KINDS.map(agent => inventory(options.root, agent, finding => gateReports.push(finding)))), gateReports }); return;
+      }
       if (pathname === "/api/publication") { json(response, 200, await publication(options.root, new URL(raw, origin).searchParams.get("publication") ?? undefined)); return; }
       if (pathname === "/api/apps") { json(response, 200, await consumerApps(options.root)); return; }
       if (pathname === "/api/checks") {
@@ -129,10 +133,11 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
         const query = new URL(raw, origin).searchParams;
         const versionText = query.get("version");
         if (versionText !== null && (!/^[1-9]\d*$/.test(versionText) || !Number.isSafeInteger(Number(versionText)))) { json(response, 400, { error: "Invalid cell version" }); return; }
-        const candidates = (await readCells(options.root, agent)).filter(cell => cell.id === id && (versionText === null || cell.version === Number(versionText))).sort((a, b) => b.version - a.version);
+        const gateReports: StudioGateReport[] = [];
+        const candidates = (await readStudioCells(options.root, agent, finding => gateReports.push(finding))).filter(cell => cell.id === id && (versionText === null || cell.version === Number(versionText))).sort((a, b) => b.version - a.version);
         const cell = candidates[0];
         if (!cell) { json(response, 404, { agent, state: "missing", message: "Cell version is missing" }); return; }
-        json(response, 200, { agent, state: "ready", cell: { ...summary(cell), source: cell.source } }); return;
+        json(response, 200, { agent, state: "ready", cell: { ...summary(cell), source: cell.source }, gateReports }); return;
       }
       json(response, 404, { error: "Unknown API route" }); return;
     }

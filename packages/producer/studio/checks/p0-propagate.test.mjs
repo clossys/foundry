@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createMutations, discoverAdapter, runCommand, runPropagation, validateAdapter } from './p0-propagate.mjs';
+import { createMutations, discoverAdapter, runCommand, runPropagation, validateAdapter, parseArgs } from './p0-propagate.mjs';
 
-const artifacts = fileURLToPath(new URL('../../../../ignoredtmp/p0b/propagation/', import.meta.url));
+const artifacts = fileURLToPath(new URL('../../../../tmp/p0b-resume/propagation/', import.meta.url));
 let sequence = 0;
 const originalCSS = ':root { --primary: oklch(0.42 0.09 243); }\n.dark { --primary: #ffffff; }\n';
 const originalButton = 'const buttonVariants = cva("inline-flex rounded-md", { default: "bg-primary text-primary-foreground" });\n';
@@ -31,6 +31,9 @@ test('mutations change a real primary declaration and a real shadcn radius token
   const result = createMutations(originalCSS, originalButton, 6);
   assert.equal(result.primary, ':root { --primary: color-mix(in srgb, oklch(0.42 0.09 243) 70%, transparent); }\n.dark { --primary: #ffffff; }\n');
   assert.equal(result.button, originalButton.replace('rounded-md', 'rounded-[9px]'));
+  const prefixed = ':root { --other--primary: #000000; --primary: #ffffff; }';
+  const exact = createMutations(prefixed, originalButton, 6);
+  assert.equal(exact.primary, ':root { --other--primary: #000000; --primary: color-mix(in srgb, #ffffff 70%, transparent); }');
   assert.throws(() => createMutations(originalCSS, 'const button = "rounded-md";', 6), /not the primary shadcn/);
 });
 
@@ -125,4 +128,43 @@ test('an aborted real compiler is stopped before restoration can begin', async (
   const pending = runCommand([process.execPath, '-e', 'setInterval(() => {}, 1000)'], f.root, controller.signal);
   controller.abort();
   await assert.rejects(pending, /cancelled/);
+});
+
+
+test('CSS variable, component source, rendered selector and rebuild seam are configurable without a UI path guess', async () => {
+  const f = await fixture();
+  const customCSS = originalCSS.replaceAll('--primary', '--brand-action');
+  await writeFile(join(f.root, f.adapter.primarySource), customCSS);
+  const parsed = parseArgs([
+    '--css-source', f.adapter.primarySource, '--component-source', f.adapter.buttonSource,
+    '--css-variable', '--brand-action', '--route', '/components/button',
+    '--build-command', '["fixture-build","ui"]', '--build-command', '["fixture-build","studio"]',
+  ]);
+  const adapter = await discoverAdapter(f.root, undefined, parsed.overrides);
+  assert.equal(adapter.buttonSelector, '[data-slot="button"]');
+  assert.equal(adapter.cssVariable, '--brand-action');
+  assert.equal(adapter.buttonSource, f.adapter.buttonSource);
+  assert.deepEqual(adapter.buildCommands, f.adapter.buildCommands);
+  const samples = [];
+  await runPropagation({ root: f.root, adapter, driver: { sample: async (url, selector, variable) => {
+    samples.push({ url, selector, variable });
+    return samples.length === 1 ? baseline : propagated;
+  } }, execute: async () => {} });
+  assert.equal(samples.length, 2);
+  assert.ok(samples.every(sample => sample.selector === '[data-slot="button"]' && sample.variable === '--brand-action'));
+  assert.deepEqual(await f.contents(), [customCSS, originalButton]);
+  const changed = createMutations(customCSS, originalButton, 6, 1, '--brand-action');
+  assert.match(changed.primary, /--brand-action: color-mix\(in srgb, #ffffff 70%, transparent\)/);
+  assert.throws(() => createMutations(customCSS, originalButton, 6, 0, '--other'), /no matching --other/);
+});
+
+test('CLI rejects ambiguous or shell-shaped build commands and invalid CSS property names', async () => {
+  assert.throws(() => parseArgs(['--build-command', 'npm run build']), /JSON executable/);
+  assert.throws(() => parseArgs(['--build-command', '"npm run build"']), /JSON executable/);
+  assert.throws(() => parseArgs(['--route', '/', '--route', '/other']), /Usage/);
+  assert.throws(() => parseArgs(['--unknown', 'value']), /Usage/);
+  const f = await fixture();
+  await assert.rejects(validateAdapter(f.root, { ...f.adapter, cssVariable: '--primary);color:red' }), /CSS custom property name/);
+  const adapter = await validateAdapter(f.root, { ...f.adapter, buttonSelector: undefined });
+  assert.equal(adapter.buttonSelector, '[data-slot="button"]');
 });

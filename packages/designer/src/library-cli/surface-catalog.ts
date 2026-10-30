@@ -11,13 +11,15 @@ import type { FrameSlot } from "../catalog-core/types.js";
 import { specimenSectionSourceCatalog } from "../importers/specimen-sections.js";
 
 let cached: SurfaceCatalog | undefined;
-export function foundrySurfaceCatalog(): SurfaceCatalog {
+export function foundrySurfaceCatalog(reportLeafFreeze?: Parameters<typeof loadBuildCatalog>[0]): SurfaceCatalog {
   const specimens = specimenSectionSourceCatalog();
-  cached ??= Object.freeze({
-    slots: [...loadSectionRegistry().slots, ...loadBuildCatalog().slots.filter((slot): slot is FrameSlot => slot.layer === "frames")],
+  const create = () => Object.freeze({
+    slots: [...loadSectionRegistry().slots, ...loadBuildCatalog(reportLeafFreeze).slots.filter((slot): slot is FrameSlot => slot.layer === "frames")],
     fills: [...importFoundrySections().fills, ...importFoundryFrames().fills, ...specimens.fills] as unknown as SurfaceCandidateDocument[],
     transforms: specimens.transforms, rules: [], materializations: [],
     packageHistory: loadFoundrySurfaceHistory(),
   });
-  return cached;
+  // Report-mode reads never populate the strict catalog cache.
+  if (reportLeafFreeze) return create();
+  return cached ??= create();
 }

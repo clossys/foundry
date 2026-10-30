@@ -47,7 +47,11 @@
     "check:studio-map": "node studio/checks/check-studio-map.cjs",
     "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "studio:check": "node studio/checks/p0-studio-check.cjs",
+    "studio:propagate": "node studio/checks/p0-propagate.mjs",
+    "studio:mutation-proof": "node studio/checks/p0-studio-mutations.cjs",
+    "studio:compose": "node scripts/compose-studio.mjs"
   },
   "dependencies": {
     "@tailwindcss/oxide": "4.3.3",

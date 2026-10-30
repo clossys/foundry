@@ -6,6 +6,7 @@ import { agentModule } from "./cells.js";
 import type { StudioDesignerLibrary } from "./theme.js";
 import type { StudioSelectionLeaf } from "./selection.js";
 import { DESIGNER_SPECIMEN_REQUIRED_LEAVES } from "./designer-specimen-requirements.js";
+import { studioEvidence, studioSurfaceDefaults, type StudioReportSink } from './studio-render-policy.js';
 
 const REQUIRED = ["frames.app-shell", "sections.band", "sections.section-header", "sections.content", "sections.article", "sections.empty-state", "components.badge", "components.disclosure", "components.icon", "components.link", "components.navigation-tree", "components.button", "components.rich-text", "components.semantic-content", "sections.record-detail", "sections.cards", "components.card", "components.table", ...DESIGNER_SPECIMEN_REQUIRED_LEAVES];
 const meta = (fill: any) => fill.$extensions["com.clossys.fill"];
@@ -15,7 +16,7 @@ interface SurfaceEvidenceProducer {
   specimenSurfaceEnvironment(input: CompositeEngineInput): Promise<{ input: CompositeEngineInput; dependencies: readonly SurfaceDependency[] }>;
   qualifySpecimenSurfaces(input: CompositeEngineInput): Promise<CompositeEngineInput>;
 }
-export async function prepareStudioSelection(stored?: StudioDesignerLibrary, sourceEvidence?: SurfaceEvidenceProducer): Promise<{ input: CompositeEngineInput; leaves: StudioSelectionLeaf[]; surfaceBundles: readonly SurfaceSourceBundle[] }> {
+export async function prepareStudioSelection(stored?: StudioDesignerLibrary, sourceEvidence?: SurfaceEvidenceProducer, report?: StudioReportSink): Promise<{ input: CompositeEngineInput; leaves: StudioSelectionLeaf[]; surfaceBundles: readonly SurfaceSourceBundle[] }> {
   const bundles = loadCatalogBundles();
   const surfaceApi = await agentModule("designer", "library-cli/surface-catalog.js");
   const evidenceApi = await agentModule("designer", "library-cli/surface-package-evidence.js");
@@ -25,8 +26,9 @@ export async function prepareStudioSelection(stored?: StudioDesignerLibrary, sou
   const decisionsApi = await agentModule("designer", "library-cli/apply-decisions.js");
   const composite = stored && "values" in stored.library;
   const original = stored?.library;
-  const valuesCatalog = stored && "values" in stored.catalog ? stored.catalog.values : stored?.catalog ?? loadCatalog();
-  const catalog: CompositeCatalogData = stored && "values" in stored.catalog ? { ...stored.catalog, surfaces: stored.catalog.surfaces ?? surfaceApi.foundrySurfaceCatalog() } : { values: valuesCatalog as any, components: { slots: loadComponentRegistry().slots, fills: bundles.componentFills, rules: loadComponentCompositionRules() }, surfaces: surfaceApi.foundrySurfaceCatalog() };
+  const freeze = report ? (finding: { message: string }) => report({ gate: 'LeafFreeze', blocking: false, state: 'reported', message: finding.message }) : undefined;
+  const valuesCatalog = stored && "values" in stored.catalog ? stored.catalog.values : stored?.catalog ?? loadCatalog(freeze);
+  const catalog: CompositeCatalogData = stored && "values" in stored.catalog ? { ...stored.catalog, surfaces: stored.catalog.surfaces ?? surfaceApi.foundrySurfaceCatalog(freeze) } : { values: valuesCatalog as any, components: { slots: loadComponentRegistry(freeze).slots, fills: bundles.componentFills, rules: loadComponentCompositionRules() }, surfaces: surfaceApi.foundrySurfaceCatalog(freeze) };
   const source = original?.source ?? { id: "studio", kind: "consumer" as const, author: "consumer" as const, license: "MIT", extends: "foundry" };
   const authored: CompositeLibraryData = composite ? structuredClone(original as CompositeLibraryData) : { source, adoptedAt: original?.adoptedAt ?? "2026-10-29", values: { fills: (original as LibraryData | undefined)?.fills ?? [] }, components: { fills: [], files: [] }, surfaces: { version: 1, fills: [], files: [] } };
   authored.surfaces ??= { version: 1, fills: [], files: [] };
@@ -68,21 +70,36 @@ export async function prepareStudioSelection(stored?: StudioDesignerLibrary, sou
   delete (library.values as any).source; delete (library.values as any).adoptedAt;
   const surfaceOptions = { packages: await evidenceApi.readSurfacePackageEvidence(surfaceCatalog.fills), measurements: [] };
   const componentDecisions = componentPlan.decisions.filter(row => needed.has(row.slot) && !own.has(row.slot));
-  if (componentDecisions.length) library = applyLibraryChange(catalog, library, decisionsApi.decisionChangeSet(catalog, library, componentDecisions, bundles.sourceBundles), { surfaceOptions });
-  const environment = await nativeEvidence.specimenSurfaceEnvironment({ catalog, library, componentOptions: stored?.componentOptions, surfaceOptions });
-  const preparedSurfaces = await prepareCatalogSurfaceDefaults(environment.input, {
+  if (componentDecisions.length) {
+    // A component default does not need a passing surface ceremony in Studio.
+    const { surfaces, ...componentsOnly } = library;
+    const current = report ? componentsOnly : library;
+    const changed = applyLibraryChange(catalog, current, decisionsApi.decisionChangeSet(catalog, current, componentDecisions, bundles.sourceBundles), { surfaceOptions });
+    library = report ? { ...changed, surfaces } : changed;
+  }
+  const base = { catalog, library, componentOptions: stored?.componentOptions, surfaceOptions };
+  const environment = report
+    ? await studioEvidence('specimen-certificates', () => nativeEvidence.specimenSurfaceEnvironment(base), () => ({ input: base, dependencies: [] as readonly SurfaceDependency[] }), report)
+    : await nativeEvidence.specimenSurfaceEnvironment(base);
+  const surfaceRequest = {
     slots: surfaceCatalog.slots.filter(slot => needed.has(slot.id) && !own.has(slot.id)).map(slot => slot.id), preference: DEFAULT_COMPONENT_PREFERENCE,
-  }, environment.dependencies);
+  };
+  const preparedSurfaces = report
+    ? await studioEvidence('S1-S8', () => prepareCatalogSurfaceDefaults(environment.input, surfaceRequest, environment.dependencies), () => ({ input: environment.input, surfaceBundles: [] as readonly SurfaceSourceBundle[], plan: planSurfaceDefaults({ ...surfaceRequest, catalog: surfaceCatalog }) }), report)
+    : await prepareCatalogSurfaceDefaults(environment.input, surfaceRequest, environment.dependencies);
   const preparedCatalog = preparedSurfaces.input.catalog;
   const surfaceChanges = preparedSurfaces.plan.decisions.map(row => ({ portion: "surfaces" as const, change: { op: "adopt" as const, slot: row.slot, source: row.source } }));
-  if (surfaceChanges.length) library = applyLibraryChange(preparedCatalog, library, { baseHash: libraryHash(library), changes: surfaceChanges, surfaceBundles: preparedSurfaces.surfaceBundles }, { componentOptions: environment.input.componentOptions, surfaceOptions: environment.input.surfaceOptions });
+  if (surfaceChanges.length) library = report
+    ? await studioSurfaceDefaults({ ...preparedSurfaces.input, library }, surfaceChanges, preparedSurfaces.surfaceBundles, report)
+    : applyLibraryChange(preparedCatalog, library, { baseHash: libraryHash(library), changes: surfaceChanges, surfaceBundles: preparedSurfaces.surfaceBundles }, { componentOptions: environment.input.componentOptions, surfaceOptions: environment.input.surfaceOptions });
   const effective = new Map<string, any>([...library.values.fills, ...library.components.fills, ...library.surfaces!.fills].map(fill => [meta(fill).slot, fill]));
   const leaves: StudioSelectionLeaf[] = [...needed].sort().map(leaf => {
     const fill = effective.get(leaf);
     const descriptor: any = fill ? Object.values(fill.components ?? fill.sections ?? fill.frames ?? {})[0] : undefined;
     const selectedFill = descriptor?.origin?.fill ?? descriptor?.origin?.base?.fill ?? (fill ? meta(fill).id : undefined);
-    return { leaf, source: own.has(leaf) ? "consumer" : fill ? "fallback" : "unavailable", ...(fill ? { fill: selectedFill } : {}), ...(!own.has(leaf) ? { message: fill ? "NEED: not selected by this consumer; using a planned default fill" : "NEED: no eligible default fill" } : {}) };
+    return { leaf, source: own.has(leaf) ? "consumer" : fill ? "fallback" : "unavailable", ...(fill ? { fill: selectedFill } : {}), ...(!own.has(leaf) ? { message: fill ? report ? "Using the planned Studio default fill" : "NEED: not selected by this consumer; using a planned default fill" : "NEED: no eligible default fill" } : {}) };
   });
-  const qualified = await nativeEvidence.qualifySpecimenSurfaces({ ...preparedSurfaces.input, library });
+  const selected = { ...preparedSurfaces.input, library };
+  const qualified = report ? await studioEvidence('specimen-certificates', () => nativeEvidence.qualifySpecimenSurfaces(selected), () => selected, report) : await nativeEvidence.qualifySpecimenSurfaces(selected);
   return { input: qualified, leaves, surfaceBundles: preparedSurfaces.surfaceBundles };
 }

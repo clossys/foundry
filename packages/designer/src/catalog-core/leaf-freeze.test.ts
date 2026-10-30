@@ -238,3 +238,12 @@ it("keeps the NativeAction amendment explicit and refuses missing or coordinated
     expect(checkFrozenLeafSets([ia], slots, ["components"]).map(finding => finding.source)).toEqual(["slots", "ia"]);
   }
 });
+
+
+it("Studio may report a freeze mismatch while strict callers still reject the same inputs", () => {
+  const findings: unknown[] = [];
+  expect(() => assertFrozenLeafSets([], [], ["components"], finding => findings.push(finding))).not.toThrow();
+  expect(findings.length).toBeGreaterThan(0);
+  expect(findings[0]).toMatchObject({ code: "LEAF_FREEZE", severity: "error" });
+  expect(() => assertFrozenLeafSets([], [], ["components"])).toThrow("LEAF_FREEZE");
+});

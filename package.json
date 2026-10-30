@@ -174,7 +174,11 @@
     "rehearse:publish-lifecycle": "node scripts/rehearse-publish-lifecycle.mjs",
     "check:conflict-markers": "node scripts/check-conflict-markers.mjs",
     "//check-qualification-deferral-issues": "Deliberately NOT part of `check` above, for the same reason as check:merge-policy immediately above: it reads the live GitHub API and needs a token, so wiring it into the offline, hermetic `check` chain would fail it for every contributor who isn't the repository owner. For every acknowledged deferral under governance/release-qualification-deferrals/, is the tracking issue it cites still open? (issue #1136 -- the deferral file's own $comment calls itself 'a countdown, not a standing exemption', but nothing previously checked the issue half of that promise.) The networked companion to check:qualification-record-required, which enforces only the record half and must stay dependency-free. Run on a schedule in .github/workflows/qualification-deferral-sweep.yml, the same cadence reasoning as conversation-safety-sweep.yml: an event-time check cannot re-ask a question whose answer (the issue's state) changed after the pull request that added the deferral already merged.",
-    "check:qualification-deferral-issues": "node scripts/check-qualification-deferral-issues.mjs"
+    "check:qualification-deferral-issues": "node scripts/check-qualification-deferral-issues.mjs",
+    "studio:check": "node packages/producer/studio/checks/p0-studio-check.cjs",
+    "studio:propagate": "node packages/producer/studio/checks/p0-propagate.mjs",
+    "studio:mutation-proof": "node packages/producer/studio/checks/p0-studio-mutations.cjs",
+    "studio:compose": "node packages/producer/scripts/compose-studio.mjs"
   },
   "devDependencies": {
     "@tailwindcss/oxide": "^4.3.3",
