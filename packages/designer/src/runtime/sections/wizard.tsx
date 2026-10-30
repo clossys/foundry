@@ -1,7 +1,10 @@
 import { FormWizard } from "../../blocks/FormWizard.js";
 import type { FormWizardStep } from "../../blocks/FormWizard.js";
-import { ProgressBar } from "../../components/ProgressBar.js";
+
 import { actionsOf, isObject, noop, recordsOf, refuseUnmapped, requiredAnatomy, requireSlot, slotValue, stringField, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
+import { componentLeaf } from "../component-leaf.js";
+
+const ProgressBar = componentLeaf<typeof import("../../components/ProgressBar.js").ProgressBar>("components.progress-bar");
 
 const LEAF = "sections.wizard";
 

@@ -26,20 +26,14 @@
   },
   "sections": {
     "column-mapper": {
-      "composes": [
-        "components.select"
-      ],
+      "composes": [],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.select"
-        ],
+        "scannedComposes": [],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.select"
-          ],
+          "components": [],
           "tokens": [
             "tokens.body-size",
             "tokens.caption-size",
@@ -63,7 +57,7 @@
           },
           {
             "path": "packages/designer/src/blocks/ColumnMapper.tsx",
-            "sha256": "cb313dfd7108bb177ef2ba1f05dc992c75d212313402192b6b185840b05da5ce"
+            "sha256": "e7a0f44f2450d975f34174742be8940cc6fbf07ef602ffe9166257678f05f093"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -72,6 +66,10 @@
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -86,6 +84,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

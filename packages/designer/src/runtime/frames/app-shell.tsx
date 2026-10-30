@@ -7,8 +7,7 @@
 import { Children, type ReactNode } from "react";
 import type { AccountMenuSection } from "../../blocks/account-menu-types.js";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
-import { ProgressBar } from "../../components/ProgressBar.js";
-import { Skeleton } from "../../components/Skeleton.js";
+
 import { ErrorState } from "../../blocks/ErrorState.js";
 import { appHeaderActions } from "./app-header.js";
 import { AppFrame } from "../../frames/AppFrame.js";
@@ -17,6 +16,11 @@ import { PageHeaderModule } from "../../shell/FrameSlots.js";
 import { runtimeMember, runtimeRecord, runtimeText, type SurfaceRendererEntry } from "../contract.js";
 import { plainJson } from "../sections/dataset-json.js";
 import { frameContent, guardedNavigate, type FrameHost as Host, type FrameJson as Json } from "./frame-content.js";
+
+import { componentLeaf } from "../../runtime/component-leaf.js";
+
+const ProgressBar = componentLeaf<typeof import("../../components/ProgressBar.js").ProgressBar>("components.progress-bar");
+const Skeleton = componentLeaf<typeof import("../../components/Skeleton.js").Skeleton>("components.skeleton");
 
 export { guardedNavigate } from "./frame-content.js";
 const { text, required, record: runtimeRecordOf, records, number, only, navigationTree, commandGroups } = frameContent("frames.app-shell");

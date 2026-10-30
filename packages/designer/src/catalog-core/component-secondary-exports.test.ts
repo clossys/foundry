@@ -134,6 +134,14 @@ describe("SYNTHETIC authenticated leaf secondary exports; no real runtime claim"
     const input = secondaryFixture([{ name: "PublicPart", export: "ButtonTrigger" }], source);
     expect(componentSecondaryExports(input.candidate, [input.file])).toEqual([{ name: "PublicPart", export: "ButtonTrigger" }]);
   });
+  it("namespace imports do not turn imported values or export aliases into concrete local functions", () => {
+    const proof = (source: string) => {
+      const input = secondaryFixture([{ name: "PublicPart", export: "ButtonTrigger" }], source);
+      return () => componentSecondaryExports(input.candidate, [input.file]);
+    };
+    expect(proof('import * as React from "react"; function ButtonTrigger(props: React.ComponentProps<"div">) { return <div {...props}/>; } export { ButtonTrigger };')()).toEqual([{ name: "PublicPart", export: "ButtonTrigger" }]);
+    for (const source of ['import * as ButtonTrigger from "other"; export { ButtonTrigger };', 'import * as React from "react"; function Local() {} export { Local as ButtonTrigger };', 'import * React from "react"; function ButtonTrigger() {} export { ButtonTrigger };']) expect(proof(source)).toThrow(/secondary/);
+  });
   it("G1-2 reads the normalized Select function grammar without adopting or measuring it", () => {
     const golden = JSON.parse(readFileSync(new URL("../importers/__fixtures__/shadcn-aria/select.golden.json", import.meta.url), "utf8")) as { files: { path: string; content: string }[] };
     const file = golden.files.find(file => file.path === "components/select/select.tsx")!;

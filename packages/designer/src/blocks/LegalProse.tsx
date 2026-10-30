@@ -1,9 +1,12 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { SemanticContent } from "../components/SemanticContent.js";
+
 import { cx } from "../components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { ArticleBody } from "./ArticleBody.js";
 import { SectionHeader, type SectionHeaderLevel } from "./SectionHeader.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 const SECTION_STAMP = dsAttrs("sections", "sections.legal-prose", "foundry/sections.legal-prose");
 

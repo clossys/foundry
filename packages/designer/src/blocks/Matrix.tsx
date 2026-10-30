@@ -1,7 +1,6 @@
 import { MatrixChoices, type MatrixChoicesProps } from "./matrix/choices.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Card } from "../components/Card.js";
-import { Icon } from "../components/Icon.js";
+
 import type { StatusMarkTone } from "../components/StatusMark.js";
 import { cx } from "../components/internal/cx.js";
 import { UI_BORDER_HAIRLINE } from "../components/internal/ui-vars.js";
@@ -11,6 +10,12 @@ import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js"
 import { MatrixGrid } from "./matrix/grid.js";
 import { LibraryBoardSection, type LibraryBoardSectionProps } from "./library-board/LibraryBoardSection.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const Card = componentLeaf<typeof import("../components/Card.js").Card>("components.card");
+const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.comparison", "foundry/sections.comparison");
 
@@ -143,20 +148,20 @@ function SideBody({ side, featured, headingLevel, ground, shared }: {
   const colors = SECTION_GROUND_CLASSES[ground];
   const emptyRow = shared.visual ? "hidden tablet-lg:block" : "hidden tablet:block";
   return <>
-    <div className="flex flex-col gap-xs">
-      {hasNode(side.label) ? <p className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{side.label}</p> : null}
-      <HeadingTag className={cx("text-h2 font-display leading-heading text-balance", colors.primary)}>{side.heading}</HeadingTag>
-    </div>
-    {shared.description ? hasNode(side.description) ? <p data-matrix-description="" className={cx("text-body text-pretty", colors.primary)}>{side.description}</p> : <div aria-hidden="true" data-matrix-empty-row="description" className={emptyRow} /> : null}
-    {shared.points ? side.points && side.points.length > 0 ? <ul className="flex flex-col gap-sm">
-      {side.points.map((point, index) => <li key={index} className={cx("flex items-start gap-sm text-body", colors.primary)}>
-        <span aria-hidden="true" className="mt-xs flex size-lg shrink-0 items-center justify-center">
-          {featured ? <Icon glyph={Check} decorative size="sm" className={CHECK_CLASSES[ground]} /> : <span className={DASH_CLASSES[ground]} />}
-        </span>
-        <span className="min-w-0">{point}</span>
-      </li>)}
-    </ul> : <div aria-hidden="true" data-matrix-empty-row="points" className={emptyRow} /> : null}
-    {shared.visual ? hasNode(side.visual) ? <div data-matrix-visual="" className="w-full min-w-0 pt-md">{side.visual}</div> : <div aria-hidden="true" data-matrix-empty-row="visual" className={emptyRow} /> : null}
+    <SemanticContent as="div" className="flex flex-col gap-xs">
+      {hasNode(side.label) ? <SemanticContent as="p" className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{side.label}</SemanticContent> : null}
+      <SemanticContent as={HeadingTag} className={cx("text-h2 font-display leading-heading text-balance", colors.primary)}>{side.heading}</SemanticContent>
+    </SemanticContent>
+    {shared.description ? hasNode(side.description) ? <SemanticContent as="p" data-matrix-description="" className={cx("text-body text-pretty", colors.primary)}>{side.description}</SemanticContent> : <SemanticContent as="div" aria-hidden="true" data-matrix-empty-row="description" className={emptyRow} /> : null}
+    {shared.points ? side.points && side.points.length > 0 ? <SemanticContent as="ul" className="flex flex-col gap-sm">
+      {side.points.map((point, index) => <SemanticContent as="li" key={index} className={cx("flex items-start gap-sm text-body", colors.primary)}>
+        <SemanticContent as="span" aria-hidden="true" className="mt-xs flex size-lg shrink-0 items-center justify-center">
+          {featured ? <Icon glyph={Check} decorative size="sm" className={CHECK_CLASSES[ground]} /> : <SemanticContent as="span" className={DASH_CLASSES[ground]} />}
+        </SemanticContent>
+        <SemanticContent as="span" className="min-w-0">{point}</SemanticContent>
+      </SemanticContent>)}
+    </SemanticContent> : <SemanticContent as="div" aria-hidden="true" data-matrix-empty-row="points" className={emptyRow} /> : null}
+    {shared.visual ? hasNode(side.visual) ? <SemanticContent as="div" data-matrix-visual="" className="w-full min-w-0 pt-md">{side.visual}</SemanticContent> : <SemanticContent as="div" aria-hidden="true" data-matrix-empty-row="visual" className={emptyRow} /> : null}
   </>;
 }
 
@@ -169,15 +174,15 @@ export function MatrixRenderer({ arrangement: _arrangement, sides, featured, hea
   };
   const rows = (1 + Number(shared.description) + Number(shared.points) + Number(shared.visual)) as 1 | 2 | 3 | 4;
   const sideGrid = SIDE_ROW_CLASSES[shared.visual ? "visual" : "plain"][rows];
-  return <div {...rest} data-matrix="" data-matrix-rows={rows} className={cx(
+  return <SemanticContent as="div" {...rest} data-matrix="" data-matrix-rows={rows} className={cx(
     shared.visual ? "relative grid grid-cols-1 gap-lg tablet-lg:grid-cols-2 tablet-lg:gap-x-4xl" : "relative grid grid-cols-1 gap-lg tablet:grid-cols-2 tablet:gap-x-4xl", className,
   )} style={style}>
-    {sides.map(side => <section key={side.id} data-matrix-side={side.id} className={cx("flex min-w-0 flex-col gap-md", sideGrid)}>
+    {sides.map(side => <SemanticContent as="section" key={side.id} data-matrix-side={side.id} className={cx("flex min-w-0 flex-col gap-md", sideGrid)}>
       <Card variant="plate" ground={ground} data-featured={side.id === featured ? "true" : undefined} className={cx("flex flex-1 flex-col gap-md tablet:p-xl", sideGrid, side.id === featured ? "border-t" : undefined, side.id === featured ? FEATURED_CLASSES[ground] : undefined)} style={side.id === featured ? { borderBlockStartWidth: UI_BORDER_HAIRLINE } : undefined}>
         <SideBody side={side} featured={side.id === featured} headingLevel={headingLevel} ground={ground} shared={shared} />
       </Card>
-    </section>)}
-  </div>;
+    </SemanticContent>)}
+  </SemanticContent>;
 }
 
 /** Two equal plates or one responsive comparison table. Server-safe. */

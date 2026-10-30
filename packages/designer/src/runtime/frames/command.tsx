@@ -6,11 +6,15 @@
 import { useState, type ReactNode } from "react";
 import { CommandMenu } from "../../blocks/CommandMenu.js";
 import type { CommandMenuProps } from "../../blocks/command-menu-types.js";
-import { Button } from "../../components/Button.js";
+
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { runtimeText, runtimeValue, type SurfaceRendererEntry } from "../contract.js";
 import { plainJson } from "../sections/dataset-json.js";
 import { frameContent, type FrameInput, type FrameJson } from "./frame-content.js";
+
+import { componentLeaf } from "../../runtime/component-leaf.js";
+
+const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
 
 const read = frameContent("frames.command");
 type CommandContent = Omit<CommandMenuProps, "isOpen" | "onOpenChange" | "query" | "onQueryChange"> & { triggerLabel: string };

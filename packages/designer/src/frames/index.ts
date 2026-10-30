@@ -17,6 +17,8 @@ export type { FrameStageProps, FrameStageSectionRef } from "./FrameStage.js";
 
 /** Package-owned surface runtime renderers (Frames and Sections) for ConsumerRuntimePorts. */
 export { surfaceRuntimeRenderers, surfaceRuntimePointers, surfaceRuntimeCallbacks, SURFACE_RUNTIME_POINTER, surfaceRendererId } from "../runtime/index.js";
+export { ConsumerComponentProvider } from "../runtime/index.js";
+export type { ConsumerComponentBinding, ConsumerComponentSelection } from "../runtime/index.js";
 export type { SurfaceRendererEntry, SurfaceRendererGroup, SurfaceRuntimeRenderer, SurfaceRuntimeLeaf } from "../runtime/index.js";
 
 export { useFrameNotice } from "./frame-notices.js";

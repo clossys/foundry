@@ -138,6 +138,20 @@
         ]
       },
       "root": "rac:Disclosure",
+      "secondaryExports": [
+        {
+          "export": "AccordionContent",
+          "name": "AccordionContent"
+        },
+        {
+          "export": "AccordionItem",
+          "name": "AccordionItem"
+        },
+        {
+          "export": "AccordionTrigger",
+          "name": "AccordionTrigger"
+        }
+      ],
       "slot": "components.disclosure",
       "source": "shadcn@aria",
       "transform": "shadcn-aria-rewrite@1"

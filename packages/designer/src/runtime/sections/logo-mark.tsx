@@ -1,8 +1,12 @@
 import { SectionFrame as DesignerSectionFrame } from "../../blocks/SectionFrame.js";
-import { Logomark } from "../../components/Logomark.js";
+
 import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
 import type { SurfaceRendererEntry } from "../contract.js";
 import { object, optionalText, readSectionContent, required, SectionContentError, text } from "./group-a-content.js";
+import { componentLeaf } from "../component-leaf.js";
+
+const Logomark = componentLeaf<typeof import("../../components/Logomark.js").Logomark>("components.logo");
+const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /**
  * A logo-only opening section. The consumer resolves its registered assets.mark
@@ -31,9 +35,9 @@ export const logoMarkRenderer: SurfaceRendererEntry = {
     const src = text(content, mark.src, "mark.src");
     const name = optionalText(content, mark.name, "mark.name");
     return <DesignerSectionFrame {...dsAttrs("sections", "sections.logo-mark", "foundry/sections.logo-mark")}>
-      <div role={name === undefined ? undefined : "img"} aria-label={name} dir="auto" className="flex min-h-screen items-center justify-center">
+      <SemanticContent as="div" role={name === undefined ? undefined : "img"} aria-label={name} dir="auto" className="flex min-h-screen items-center justify-center">
         <Logomark src={src} size="lg" />
-      </div>
+      </SemanticContent>
     </DesignerSectionFrame>;
   },
 };

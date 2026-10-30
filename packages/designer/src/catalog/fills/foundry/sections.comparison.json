@@ -27,16 +27,6 @@
   "sections": {
     "comparison": {
       "composes": [
-        "components.badge",
-        "components.button",
-        "components.card",
-        "components.dialog",
-        "components.icon",
-        "components.menu",
-        "components.radio-group",
-        "components.status-mark",
-        "components.table",
-        "components.tooltip",
         "sections.section-header"
       ],
       "configs": {
@@ -45,32 +35,11 @@
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
-          "components.badge",
-          "components.button",
-          "components.card",
-          "components.dialog",
-          "components.icon",
-          "components.menu",
-          "components.radio-group",
-          "components.status-mark",
-          "components.table",
-          "components.tooltip",
           "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.badge",
-            "components.button",
-            "components.card",
-            "components.dialog",
-            "components.icon",
-            "components.menu",
-            "components.radio-group",
-            "components.status-mark",
-            "components.table",
-            "components.tooltip"
-          ],
+          "components": [],
           "tokens": [
             "tokens.accent-color",
             "tokens.body-size",
@@ -95,7 +64,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/canvas/CanvasLod.tsx",
-            "sha256": "ae7e31e40831a4bf14e51887ec7c47b861b8dea2370ddbeb1b6e594f860638e2"
+            "sha256": "2faddc7545e1ef3159c6f08bb9fb73c172d468b5c31e82daafe854c448989097"
           },
           {
             "path": "packages/designer/src/blocks/internal/trend.ts",
@@ -111,15 +80,15 @@
           },
           {
             "path": "packages/designer/src/blocks/library-board/CandidatePromptDialog.tsx",
-            "sha256": "af2448b00e0dbb85f772e6818392711e21dd3b83c792fc4836ea621aed7def27"
+            "sha256": "0a9185a0b61b3cc4ba31f811ced8bff1669f71640ccd2592bf99c56ac0c17f19"
           },
           {
             "path": "packages/designer/src/blocks/library-board/LeafCell.tsx",
-            "sha256": "f03ad64139e9236f693d811022d6ca51edb6ff1cefdb23c510aa6e6219bbc9a0"
+            "sha256": "7c65867867830fb3f75e4320c5a0696eb33a6be458d36ef662f9a4f1d58d260a"
           },
           {
             "path": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
-            "sha256": "77b626f7d4f1cb7ca987fc57772cc391edcaee62d2beb4301200e89ebcdef9a2"
+            "sha256": "2d313b684c96034d7b33cc2e0521055a806e6a164cf2a41adc211b8138e437b5"
           },
           {
             "path": "packages/designer/src/blocks/library-board/model.ts",
@@ -127,19 +96,19 @@
           },
           {
             "path": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
-            "sha256": "6944de42b796e7391e7cd472dde2de47d45c6027e65e88f4281f9eeb54565bc9"
+            "sha256": "4694fe4e01b8f5d29f02fa9397332ef3d40a429e502a4801c8f9ccc04e505c97"
           },
           {
             "path": "packages/designer/src/blocks/Matrix.tsx",
-            "sha256": "164374d9d37494fccf4f5aad699f5408ba568af094ef97cde1f484178fcc80ed"
+            "sha256": "bf403bd0882fe25b9a7a8cfc6ef3343448a3a19a494e8cfb65afbc5b2487329d"
           },
           {
             "path": "packages/designer/src/blocks/matrix/choices.tsx",
-            "sha256": "e0326f70076fcb8c9b21cf88ff7eb840029dd6eada6eae5c5966d89ae2255774"
+            "sha256": "8b2e542f097f35a9bd42115e2979274c073e319155efb1d9027a0717bfc23b20"
           },
           {
             "path": "packages/designer/src/blocks/matrix/grid.tsx",
-            "sha256": "a7909a2486bdf24a4c9ff800d32e2a112080e95e8c45bbf342f3990b674ad3a3"
+            "sha256": "5bc770185b35ceb9ed75e74ce704b41d6533bc75e8ff83cd3b641c0a20569122"
           },
           {
             "path": "packages/designer/src/blocks/matrix/harvey-mark.tsx",
@@ -155,7 +124,7 @@
           },
           {
             "path": "packages/designer/src/catalog-core/runtime-ports.ts",
-            "sha256": "58f1483dafcefffde956d75d21acdd82e1a6101c36cf4d23b02de54d5bcad53f"
+            "sha256": "a57803847077519760f54df3277337f466bca2adb42c3e92aed53ea584f1ef45"
           },
           {
             "path": "packages/designer/src/catalog-core/runtime-snapshot-identity.ts",
@@ -180,6 +149,10 @@
           {
             "path": "packages/designer/src/icons/ExternalLink.ts",
             "sha256": "1803843525669af0f404ee8a5640a2c219753f1dbb9e8f5711cde00581b8c9f9"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -187,19 +160,19 @@
             "code": "DF5",
             "evidence": "unregistered asset import ../../icons/ChevronDown.js#ChevronDown",
             "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
-            "line": 7
+            "line": 4
           },
           {
             "code": "DF5",
             "evidence": "unregistered asset import ../../icons/ExternalLink.js#ExternalLink",
             "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
-            "line": 8
+            "line": 5
           },
           {
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/Check.js#Check",
             "file": "packages/designer/src/blocks/Matrix.tsx",
-            "line": 8
+            "line": 7
           },
           {
             "code": "DF2",
@@ -212,6 +185,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

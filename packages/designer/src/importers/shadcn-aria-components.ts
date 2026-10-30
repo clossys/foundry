@@ -306,14 +306,18 @@ const exportNames: Record<string, string> = { toggle: "Toggle", "dropdown-menu":
 /**
  * Approved same-entry secondary exports, by caller checkpoint. Each name is a local function value of the
  * item's own authenticated entry (proved again by componentSecondaryExports at resolve/emit); nothing else
- * in an entry's export list becomes public. Select: the five Calendar-caption parts (API-S1). Menu: the three
- * command-result parts under their caller names, aliasing the dropdown parts of the same entry (API-M1).
- * Dialog: the three naming parts of a host-labelled command dialog (API-D1).
+ * in an entry's export list becomes public. A243.2 admits existing Menu, Dialog, disclosure and
+ * table anatomy for surface consumers; A244.4 admits the five Card anatomy exports.
+ * Every target remains a concrete function of its own entry.
  */
 const secondaryExportApprovals: Readonly<Record<string, readonly { name: string; export: string }[]>> = {
   select: ["SelectContent", "SelectGroup", "SelectItem", "SelectTrigger", "SelectValue"].map(name => ({ name, export: name })),
-  "dropdown-menu": [{ name: "MenuGroup", export: "DropdownMenuGroup" }, { name: "MenuItem", export: "DropdownMenuItem" }, { name: "MenuLabel", export: "DropdownMenuLabel" }],
-  dialog: ["DialogDescription", "DialogHeader", "DialogTitle"].map(name => ({ name, export: name })),
+  "dropdown-menu": [{ name: "MenuGroup", export: "DropdownMenuGroup" }, { name: "MenuItem", export: "DropdownMenuItem" }, { name: "MenuLabel", export: "DropdownMenuLabel" }, { name: "MenuSeparator", export: "DropdownMenuSeparator" }, { name: "DropdownMenuTrigger", export: "DropdownMenuTrigger" }],
+  dialog: ["DialogDescription", "DialogHeader", "DialogTitle", "DialogTrigger"].map(name => ({ name, export: name })),
+  accordion: ["AccordionContent", "AccordionItem", "AccordionTrigger"].map(name => ({ name, export: name })),
+  collapsible: ["CollapsibleContent", "CollapsibleTrigger"].map(name => ({ name, export: name })),
+  table: ["TableBody", "TableCaption", "TableCell", "TableFooter", "TableHead", "TableHeader", "TableRow"].map(name => ({ name, export: name })),
+  card: ["CardHeader", "CardTitle", "CardAction", "CardContent", "CardFooter"].map(name => ({ name, export: name })),
 };
 const partExports: Readonly<Record<string, readonly string[]>> = { "input-group": ["InputGroup", "InputGroupAddon", "InputGroupButton", "InputGroupText", "InputGroupInput", "InputGroupTextarea"] };
 const utils = 'import { clsx, type ClassValue } from "clsx"\nimport { twMerge } from "tailwind-merge"\nexport function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }\n';

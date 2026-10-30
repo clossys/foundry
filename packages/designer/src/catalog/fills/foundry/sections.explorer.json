@@ -26,23 +26,14 @@
   },
   "sections": {
     "explorer": {
-      "composes": [
-        "components.button",
-        "components.icon"
-      ],
+      "composes": [],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.button",
-          "components.icon"
-        ],
+        "scannedComposes": [],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.button",
-            "components.icon"
-          ],
+          "components": [],
           "tokens": [
             "tokens.border-color",
             "tokens.caption-size",
@@ -53,7 +44,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Explorer.tsx",
-            "sha256": "9ef161b46c7d77a52b56d6257430351e51ca86cc3efc966756b1ee68bc3a2714"
+            "sha256": "610f83f327fdaac193f3e2e6a59eb25ba7f039214883c7aa36463479d781388f"
           },
           {
             "path": "packages/designer/src/blocks/tree-model.ts",
@@ -78,38 +69,36 @@
           {
             "path": "packages/designer/src/icons/Folder.ts",
             "sha256": "5f10987d0993f001109aaf7d553706b504ee8b92adaaabdf430a3be6f6617902"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
           {
-            "code": "DF2",
-            "evidence": "unresolved source export ../components/Link.js#Link",
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/ChevronRight.js#ChevronRight",
             "file": "packages/designer/src/blocks/Explorer.tsx",
             "line": 4
           },
           {
             "code": "DF5",
-            "evidence": "unregistered asset import ../icons/ChevronRight.js#ChevronRight",
-            "file": "packages/designer/src/blocks/Explorer.tsx",
-            "line": 6
-          },
-          {
-            "code": "DF5",
             "evidence": "unregistered asset import ../icons/FileText.js#FileText",
             "file": "packages/designer/src/blocks/Explorer.tsx",
-            "line": 7
+            "line": 5
           },
           {
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/Folder.js#Folder",
             "file": "packages/designer/src/blocks/Explorer.tsx",
-            "line": 8
+            "line": 6
           },
           {
             "code": "DF2",
             "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
             "file": "packages/designer/src/blocks/Explorer.tsx",
-            "line": 9
+            "line": 7
           },
           {
             "code": "DF2",
@@ -122,6 +111,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

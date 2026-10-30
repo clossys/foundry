@@ -1,8 +1,13 @@
 import type { ReactNode } from "react";
-import { Button } from "../components/Button.js";
-import { ProgressBar } from "../components/ProgressBar.js";
+
 import { cx } from "../components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+const ProgressBar = componentLeaf<typeof import("../components/ProgressBar.js").ProgressBar>("components.progress-bar");
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.wizard", "foundry/sections.wizard");
 
@@ -40,19 +45,19 @@ export function FormWizard({ steps, currentStep, onNext, onBack, progress, revie
   const index = steps.findIndex(step => step.id === currentStep);
   if (index < 0) throw new TypeError(`FormWizard: unknown step ${currentStep}.`);
   const position = index + 1, last = position === steps.length;
-  return <div {...SECTION_STAMP} className={cx("flex min-w-0 flex-col gap-lg text-body text-ink-primary", className)}>
+  return <SemanticContent as="div" {...SECTION_STAMP} className={cx("flex min-w-0 flex-col gap-lg text-body text-ink-primary", className)}>
     <ol aria-label={labels.steps} className="m-0 flex list-none flex-wrap gap-md p-0">
-      {steps.map((step, stepIndex) => <li key={step.id} aria-current={stepIndex === index ? "step" : undefined}
+      {steps.map((step, stepIndex) => <SemanticContent as="li" key={step.id} aria-current={stepIndex === index ? "step" : undefined}
         className={cx("inline-flex items-center gap-xs text-body-s", stepIndex === index ? "font-medium text-ink-primary" : "text-ink-secondary")}>
-        <span aria-hidden="true" className="tabular-nums">{stepIndex + 1}.</span>{step.label}
-      </li>)}
+        <SemanticContent as="span" aria-hidden="true" className="tabular-nums">{stepIndex + 1}.</SemanticContent>{step.label}
+      </SemanticContent>)}
     </ol>
     {progress ?? <ProgressBar label={labels.progress(position, steps.length)} value={position} minValue={0} maxValue={steps.length} valueLabel={labels.progress(position, steps.length)} />}
-    <div className="flex min-w-0 flex-col gap-md">{steps[index]!.content}</div>
-    {last && review ? <div role="region" aria-label={labels.review} className="rounded-surface border border-line-base bg-surface-raised p-md">{review}</div> : null}
-    <div className="flex flex-wrap items-center justify-between gap-sm border-t border-line-base pt-md">
-      {index > 0 && onBack ? <Button variant="secondary" onPress={onBack}>{labels.back}</Button> : <span aria-hidden="true" />}
+    <SemanticContent as="div" className="flex min-w-0 flex-col gap-md">{steps[index]!.content}</SemanticContent>
+    {last && review ? <SemanticContent as="div" role="region" aria-label={labels.review} className="rounded-surface border border-line-base bg-surface-raised p-md">{review}</SemanticContent> : null}
+    <SemanticContent as="div" className="flex flex-wrap items-center justify-between gap-sm border-t border-line-base pt-md">
+      {index > 0 && onBack ? <Button variant="secondary" onPress={onBack}>{labels.back}</Button> : <SemanticContent as="span" aria-hidden="true" />}
       <Button variant="primary" isDisabled={isNextDisabled} onPress={onNext}>{last ? labels.finish : labels.next}</Button>
-    </div>
-  </div>;
+    </SemanticContent>
+  </SemanticContent>;
 }

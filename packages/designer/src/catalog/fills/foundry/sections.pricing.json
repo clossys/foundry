@@ -27,30 +27,17 @@
   "sections": {
     "pricing": {
       "composes": [
-        "components.badge",
-        "components.card",
-        "components.icon",
-        "components.status-mark",
         "sections.section-header"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
-          "components.badge",
-          "components.card",
-          "components.icon",
-          "components.status-mark",
           "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.badge",
-            "components.card",
-            "components.icon",
-            "components.status-mark"
-          ],
+          "components": [],
           "tokens": [
             "tokens.accent-color",
             "tokens.body-size",
@@ -83,7 +70,7 @@
           },
           {
             "path": "packages/designer/src/blocks/matrix/grid.tsx",
-            "sha256": "a7909a2486bdf24a4c9ff800d32e2a112080e95e8c45bbf342f3990b674ad3a3"
+            "sha256": "5bc770185b35ceb9ed75e74ce704b41d6533bc75e8ff83cd3b641c0a20569122"
           },
           {
             "path": "packages/designer/src/blocks/matrix/harvey-mark.tsx",
@@ -91,11 +78,11 @@
           },
           {
             "path": "packages/designer/src/blocks/matrix/static.tsx",
-            "sha256": "092a72a5c25f4d00191d71b83e78521a8ba638c34ff6a4d87a4b66f55b39babb"
+            "sha256": "d1dec49e866e2c673e7d1222f9ee1af5ba7497893ea5ae78774427a8127b8431"
           },
           {
             "path": "packages/designer/src/blocks/PricingTable.tsx",
-            "sha256": "c885facff73d979aab79a67098c27a9b365daa6f430343b2aedf93f349080708"
+            "sha256": "f918b57a42e79a2f6813774724abb42d94437f36f5c8dca9cfbae30fb2311925"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -116,6 +103,10 @@
           {
             "path": "packages/designer/src/icons/Check.ts",
             "sha256": "df7a0d203c39a358aba4b6cf7a9380e34352d38efe0947c0d30c0485ad509159"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -123,7 +114,7 @@
             "code": "DF5",
             "evidence": "unregistered asset import ../../icons/Check.js#Check",
             "file": "packages/designer/src/blocks/matrix/static.tsx",
-            "line": 7
+            "line": 6
           },
           {
             "code": "DF2",
@@ -136,6 +127,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

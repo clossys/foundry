@@ -1,10 +1,13 @@
 import { DetailView, type DetailViewField } from "../../blocks/DetailView.js";
 import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
-import { Avatar } from "../../components/Avatar.js";
-import { Link } from "../../components/Link.js";
-import { SemanticContent } from "../../components/SemanticContent.js";
+
 import type { SurfaceRendererEntry } from "../contract.js";
 import { object, optionalText, readSectionContent, required, SectionContentError, text, type JsonObject, type SectionContent } from "./group-a-content.js";
+import { componentLeaf } from "../component-leaf.js";
+
+const Avatar = componentLeaf<typeof import("../../components/Avatar.js").Avatar>("components.avatar");
+const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
+const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 const LEAF = "sections.account-summary";
 export const accountSummaryInputs = { slots: ["heading", "identity", "rows", "actions"], members: [] } as const;

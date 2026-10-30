@@ -51,7 +51,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/DetailView.tsx",
-            "sha256": "ec0d42d4531a152b447143ff2544065bb18632fadfb6f10b963396905a6ea897"
+            "sha256": "d064b3374ab33365e05114f43207600b8e831477d017641bd6bcdeee1e449575"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -60,6 +60,10 @@
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -80,6 +84,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

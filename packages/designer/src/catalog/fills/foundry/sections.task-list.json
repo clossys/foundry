@@ -27,24 +27,17 @@
   "sections": {
     "task-list": {
       "composes": [
-        "components.icon",
-        "components.status-mark",
         "sections.section-header"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
-          "components.icon",
-          "components.status-mark",
           "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.icon",
-            "components.status-mark"
-          ],
+          "components": [],
           "tokens": [
             "tokens.accent-color",
             "tokens.body-size",
@@ -52,16 +45,13 @@
             "tokens.border-width",
             "tokens.caption-size",
             "tokens.control-radius",
-            "tokens.heading-size",
-            "tokens.line-height",
             "tokens.radius",
             "tokens.spacing",
             "tokens.status-color",
             "tokens.surface-color",
             "tokens.surface-radius",
             "tokens.text-color",
-            "tokens.touch-target",
-            "tokens.typeface"
+            "tokens.touch-target"
           ]
         },
         "sourceFiles": [
@@ -71,11 +61,11 @@
           },
           {
             "path": "packages/designer/src/blocks/stretched-link.tsx",
-            "sha256": "07229f9258b648250b757c748604848b4b869e285da70eb28f9cf472e93688c4"
+            "sha256": "d9edaa310f261df3c1845d8b989385ce560260b5c63d13c0abd1a7f46142b3cd"
           },
           {
             "path": "packages/designer/src/blocks/TaskList.tsx",
-            "sha256": "a6ac89beca65b7226fee25d50f9ffddb508982f6cc92a24c14389689d4cf4e69"
+            "sha256": "0f743fc94e24080b68b6c347a78f7e8c211d0733f910c76266db20fad71a9e45"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -90,12 +80,12 @@
             "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
           },
           {
-            "path": "packages/designer/src/components/Meter.server.tsx",
-            "sha256": "47b0f78c3f1478addaaf06ae71728a6c3bfd1dd3c8485d081837e4bcf0bdb905"
-          },
-          {
             "path": "packages/designer/src/icons/ChevronRight.ts",
             "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -116,6 +106,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },
@@ -145,16 +141,13 @@
           "tokens.border-width",
           "tokens.caption-size",
           "tokens.control-radius",
-          "tokens.heading-size",
-          "tokens.line-height",
           "tokens.radius",
           "tokens.spacing",
           "tokens.status-color",
           "tokens.surface-color",
           "tokens.surface-radius",
           "tokens.text-color",
-          "tokens.touch-target",
-          "tokens.typeface"
+          "tokens.touch-target"
         ]
       },
       "slot": "sections.task-list",

@@ -1,12 +1,17 @@
 import { SectionHeader } from "./SectionHeader.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Badge } from "../components/Badge.js";
-import { Card } from "../components/Card.js";
+
 import { cx } from "../components/internal/cx.js";
 import { Matrix } from "./Matrix.server.js";
 import type { MatrixCellData, MatrixGridProps } from "./Matrix.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const Badge = componentLeaf<typeof import("../components/Badge.js").Badge>("components.badge");
+const Card = componentLeaf<typeof import("../components/Card.js").Card>("components.card");
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.pricing", "foundry/sections.pricing");
 
@@ -211,12 +216,12 @@ export function PricingTable({
   }
 
   return (
-    <div {...SECTION_STAMP} {...rest} className={cx("flex flex-col gap-lg", className)} style={style}>
+    <SemanticContent as="div" {...SECTION_STAMP} {...rest} className={cx("flex flex-col gap-lg", className)} style={style}>
       {hasHeadingRegion ? (
         <SectionHeader density="standard" level={headingLevel} ground={ground} description={description} {...(heading ? { title: heading } : {})} />
       ) : null}
-      {controls !== undefined ? <div className="flex justify-center">{controls}</div> : null}
-      <div className="grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3">
+      {controls !== undefined ? <SemanticContent as="div" className="flex justify-center">{controls}</SemanticContent> : null}
+      <SemanticContent as="div" className="grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3">
         {tiers.map((tier) => {
           const selected = tier.priceByInterval !== undefined ? tier.priceByInterval[interval!] : undefined;
           return (
@@ -228,15 +233,15 @@ export function PricingTable({
               )}
             >
               {tier.badge ? <Badge variant="info">{tier.badge}</Badge> : null}
-              <p className="text-body font-body font-medium text-ink-primary">{tier.name}</p>
+              <SemanticContent as="p" className="text-body font-body font-medium text-ink-primary">{tier.name}</SemanticContent>
               {selected !== undefined ? <>
-                <p className="text-h1 font-display text-ink-primary"><span aria-hidden="true">{selected.amount}</span><span className="sr-only">{selected.priceText}</span></p>
-                {selected.note !== undefined ? <p className="text-body-s text-ink-secondary">{selected.note}</p> : null}
-              </> : <p className="text-h1 font-display text-ink-primary">{tier.price}</p>}
+                <SemanticContent as="p" className="text-h1 font-display text-ink-primary"><SemanticContent as="span" aria-hidden="true">{selected.amount}</SemanticContent><SemanticContent as="span" className="sr-only">{selected.priceText}</SemanticContent></SemanticContent>
+                {selected.note !== undefined ? <SemanticContent as="p" className="text-body-s text-ink-secondary">{selected.note}</SemanticContent> : null}
+              </> : <SemanticContent as="p" className="text-h1 font-display text-ink-primary">{tier.price}</SemanticContent>}
               {tier.description ? (
-                <p className="text-body-s text-ink-secondary">{tier.description}</p>
+                <SemanticContent as="p" className="text-body-s text-ink-secondary">{tier.description}</SemanticContent>
               ) : null}
-              <ul className="flex flex-1 flex-col gap-xs">
+              <SemanticContent as="ul" className="flex flex-1 flex-col gap-xs">
                 {/* Index as key: a feature list is fixed, ordered prose per
                     tier with no stable identity of its own — the same
                     reasoning `Faq`'s answer text and `DetailView`'s field
@@ -244,22 +249,22 @@ export function PricingTable({
                     together as one unit rather than individual rows
                     reordering independently. */}
                 {tier.features.map((feature, index) => (
-                  <li key={index} className="text-body-s text-ink-secondary">
+                  <SemanticContent as="li" key={index} className="text-body-s text-ink-secondary">
                     {feature}
-                  </li>
+                  </SemanticContent>
                 ))}
-              </ul>
-              <div className="w-full">{tier.cta}</div>
+              </SemanticContent>
+              <SemanticContent as="div" className="w-full">{tier.cta}</SemanticContent>
             </Card>
           );
         })}
-      </div>
-      {comparison !== undefined ? <div className="flex flex-col gap-xl">
+      </SemanticContent>
+      {comparison !== undefined ? <SemanticContent as="div" className="flex flex-col gap-xl">
         {comparison.groups.map(group => {
           const rows = comparisonRows(group);
           const hasMarks = rows.some(row => Object.values(row.cells).some(cell => cell.type === "mark"));
           const forwardMarkLabels = hasMarks || !comparisonHasMarks;
-          return <div key={group.id} className="flex flex-col gap-md">
+          return <SemanticContent as="div" key={group.id} className="flex flex-col gap-md">
             <GroupHeading className={cx("text-h3 font-display", colors.primary)}>{group.label}</GroupHeading>
             <Matrix
               arrangement="grid"
@@ -272,9 +277,9 @@ export function PricingTable({
               markLabels={forwardMarkLabels ? comparison.markLabels : undefined}
               keyLabel={forwardMarkLabels ? comparison.keyLabel : undefined}
             />
-          </div>;
+          </SemanticContent>;
         })}
-      </div> : null}
-    </div>
+      </SemanticContent> : null}
+    </SemanticContent>
   );
 }

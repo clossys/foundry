@@ -1,8 +1,12 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { SemanticContent } from "../components/SemanticContent.js";
+
 import { cx } from "../components/internal/cx.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.section-header", "foundry/sections.section-header");
 

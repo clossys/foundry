@@ -166,6 +166,10 @@
         {
           "export": "DialogTitle",
           "name": "DialogTitle"
+        },
+        {
+          "export": "DialogTrigger",
+          "name": "DialogTrigger"
         }
       ],
       "slot": "components.dialog",

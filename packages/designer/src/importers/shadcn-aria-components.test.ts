@@ -210,28 +210,54 @@ describe("pinned shadcn aria component import", () => {
     expect(componentSecondaryExports(select, materializeShadcnComponent(result, "select"))).toEqual(five);
     expect(select.impl).toEqual({ kind: "source", entry: "components/select/select.tsx", export: "Select" });
     for (const name of ["SelectList", "SelectInput", "SelectLabel", "SelectPopover", "SelectSeparator", "SelectEmpty", "Select"]) expect(select.secondaryExports!.map(row => row.name)).not.toContain(name);
-    expect(descriptors.filter(fill => fill.secondaryExports !== undefined).map(fill => fill.slot).sort()).toEqual(["components.dialog", "components.menu", "components.select"]);
+    expect(descriptors.filter(fill => fill.secondaryExports !== undefined).map(fill => fill.slot).sort()).toEqual(["components.card", "components.dialog", "components.disclosure", "components.menu", "components.select", "components.table"]);
   });
 
-  it("approves exactly the three command-result Menu parts as caller-named aliases of the same selected entry (API-M1)", () => {
+  it("approves the admitted Menu anatomy and native trigger from the same selected entry", () => {
     const result = importShadcnAriaComponents(pinnedInput());
     const menu = result.fills.map(doc => Object.values(doc.components)[0]!).find(fill => fill.slot === "components.menu")!;
-    const three = [{ name: "MenuGroup", export: "DropdownMenuGroup" }, { name: "MenuItem", export: "DropdownMenuItem" }, { name: "MenuLabel", export: "DropdownMenuLabel" }];
-    expect(menu.secondaryExports).toEqual(three);
-    expect(componentSecondaryExports(menu, result.rewrites["dropdown-menu"]!.files)).toEqual(three);
+    const parts = [{ name: "MenuGroup", export: "DropdownMenuGroup" }, { name: "MenuItem", export: "DropdownMenuItem" }, { name: "MenuLabel", export: "DropdownMenuLabel" }, { name: "MenuSeparator", export: "DropdownMenuSeparator" }, { name: "DropdownMenuTrigger", export: "DropdownMenuTrigger" }];
+    expect(menu.secondaryExports).toEqual(parts);
+    expect(componentSecondaryExports(menu, result.rewrites["dropdown-menu"]!.files)).toEqual([...parts].sort((a, b) => a.name.localeCompare(b.name)));
     expect(menu.impl).toEqual({ kind: "source", entry: "components/menu/dropdown-menu.tsx", export: "DropdownMenu" });
-    // No public InlineMenu, trigger, submenu, separator, shortcut or root alias.
-    for (const name of ["InlineMenu", "DropdownMenu", "DropdownMenuTrigger", "DropdownMenuSub", "DropdownMenuSubTrigger", "DropdownMenuSubContent", "DropdownMenuSeparator", "DropdownMenuShortcut", "DropdownMenuContent"]) expect(menu.secondaryExports!.map(row => row.export)).not.toContain(name);
+    for (const name of ["InlineMenu", "DropdownMenu", "DropdownMenuSub", "DropdownMenuSubTrigger", "DropdownMenuSubContent", "DropdownMenuShortcut", "DropdownMenuContent"]) expect(menu.secondaryExports!.map(row => row.export)).not.toContain(name);
   });
 
-  it("approves exactly the three Dialog naming parts as same-entry identity aliases (API-D1)", () => {
+  it("approves the Dialog naming parts and native trigger as same-entry identity exports", () => {
     const result = importShadcnAriaComponents(pinnedInput());
     const dialog = result.fills.map(doc => Object.values(doc.components)[0]!).find(fill => fill.slot === "components.dialog")!;
-    const three = ["DialogDescription", "DialogHeader", "DialogTitle"].map(name => ({ name, export: name }));
-    expect(dialog.secondaryExports).toEqual(three);
-    expect(componentSecondaryExports(dialog, result.rewrites.dialog!.files)).toEqual(three);
+    const parts = ["DialogDescription", "DialogHeader", "DialogTitle", "DialogTrigger"].map(name => ({ name, export: name }));
+    expect(dialog.secondaryExports).toEqual(parts);
+    expect(componentSecondaryExports(dialog, result.rewrites.dialog!.files)).toEqual(parts);
     expect(dialog.impl).toEqual({ kind: "source", entry: "components/dialog/dialog.tsx", export: "Dialog" });
-    for (const name of ["DialogTrigger", "DialogClose", "DialogOverlay", "DialogFooter", "DialogContent", "DialogPortal", "Dialog"]) expect(dialog.secondaryExports!.map(row => row.export)).not.toContain(name);
+    for (const name of ["DialogClose", "DialogOverlay", "DialogFooter", "DialogContent", "DialogPortal", "Dialog"]) expect(dialog.secondaryExports!.map(row => row.export)).not.toContain(name);
+  });
+
+  it("proves the five admitted Card parts against the authenticated pinned source closure", () => {
+    const result = importShadcnAriaComponents(pinnedInput());
+    const card = result.fills.map(doc => Object.values(doc.components)[0]!).find(fill => fill.slot === "components.card")!;
+    const parts = ["CardHeader", "CardTitle", "CardAction", "CardContent", "CardFooter"].map(name => ({ name, export: name }));
+    expect(card.secondaryExports).toEqual(parts);
+    const files = materializeShadcnComponent(result, "card");
+    const entry = "components/card/card.tsx";
+    expect(componentSecondaryExports(card, files)).toEqual([...parts].sort((a, b) => a.name.localeCompare(b.name)));
+    expect(card.impl).toEqual({ kind: "source", entry: "components/card/card.tsx", export: "Card" });
+    expect(card.secondaryExports!.map(row => row.name)).not.toContain("CardDescription");
+    expect(card.outputSha256).toContainEqual({ path: entry, sha256: sha256(files.find(file => file.path === entry)!.content) });
+    expect(() => componentSecondaryExports(card, files.filter(file => file.path !== entry))).toThrow(/unsupported secondary export/);
+  });
+
+  it("proves native Accordion and Table anatomy without adding a rejected Field candidate", () => {
+    const result = importShadcnAriaComponents(pinnedInput());
+    for (const [item, leaf, names] of [
+      ["accordion", "disclosure", ["AccordionContent", "AccordionItem", "AccordionTrigger"]],
+      ["table", "table", ["TableBody", "TableCaption", "TableCell", "TableFooter", "TableHead", "TableHeader", "TableRow"]],
+    ] as const) {
+      const descriptor = result.fills.map(doc => Object.values(doc.components)[0]!).find(fill => fill.slot === `components.${leaf}`)!;
+      expect(componentSecondaryExports(descriptor, materializeShadcnComponent(result, item))).toEqual(names.map(name => ({ name, export: name })));
+    }
+    expect(result.fills.some(doc => "field" in doc.components)).toBe(false);
+    expect(result.receipt.find(row => row.item === "field")).toMatchObject({ status: "rejected", reason: "K2: missing RAC root Label+Text+FieldError" });
   });
 
   it("keeps the borrowed CommandList as menu provenance without its unused command imports", () => {

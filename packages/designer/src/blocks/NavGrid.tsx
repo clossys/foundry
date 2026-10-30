@@ -1,13 +1,17 @@
 import type { CSSProperties, ReactNode } from "react";
-import { Button } from "../components/Button.js";
-import { SemanticContent } from "../components/SemanticContent.js";
-import { Link } from "../components/Link.client.js";
+
 import { ItemRenderer } from "./items/render.js";
 import { renderNavItems } from "./items/ItemsStatic.js";
 import { cx } from "../components/internal/cx.js";
 import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
 import { assertNoNestedInteractive, cardLinkContainerClassName, hasInteractiveContent } from "./stretched-link.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+const Link = componentLeaf<typeof import("../components/Link.client.js").Link>("components.link");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.link-index", "foundry/sections.link-index");
 

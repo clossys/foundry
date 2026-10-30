@@ -1,7 +1,6 @@
 'use client';
 import { useId, type Key, type ReactNode } from 'react';
-import { Button } from '../../components/Button.js';
-import { Table } from '../../components/Table.js';
+
 import { BOARD_SURFACE_CLASS, BoardHeader, LeafCell, LeafLabel } from './LeafCell.js';
 import { CandidatePromptDialog } from './CandidatePromptDialog.js';
 import { assertLibraryBoardRecords, assertLibraryPreviewIdentity, type LibraryBoardCommand, type LibraryBoardRecords, type LibraryPreviewIdentity } from './model.js';
@@ -21,6 +20,12 @@ export interface LibraryBoardSectionProps {
   readonly onCommand: (command: LibraryBoardCommand) => void;
 }
 import { dsPassThrough } from "../../catalog-core/provenance-attrs.js";
+import { componentLeaf } from "../../runtime/component-leaf.js";
+
+const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Table = componentLeaf<typeof import("../../components/Table.js").Table>("components.table");
+const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 /**
  * Existing comparison Section, rendered read-only from checked board records: each leaf row shows its chosen
  * cell, and selecting a row reveals it (the inspector opens). There is no edit mode, no source choice and no
@@ -44,11 +49,11 @@ export function LibraryBoardSection({ records, labels, previews, workflow, onCom
     const row = rows.items.find(row => row.id === String(key));
     if (row) onCommand({ version: 1, command: 'reveal', boardId: rows.boardId, leafId: row.id, ...(row.selectedSource ? { source: row.selectedSource } : {}) });
   };
-  return <section {...dsPassThrough(passthrough)} data-library-board={rows.boardId} data-board-mode="view" aria-labelledby={headingId} className={BOARD_SURFACE_CLASS}>
+  return <SemanticContent as="section" {...dsPassThrough(passthrough)} data-library-board={rows.boardId} data-board-mode="view" aria-labelledby={headingId} className={BOARD_SURFACE_CLASS}>
     <BoardHeader id={headingId} title={rows.label} />
     <Table aria-label={labels.matrix.label} className="w-max" onRowAction={reveal}>
-      <Table.Header><Table.Column id="leaf" isRowHeader>{labels.matrix.leaf}</Table.Column><Table.Column id="preview"><span className="sr-only">{labels.stageLabel}</span></Table.Column></Table.Header>
+      <Table.Header><Table.Column id="leaf" isRowHeader>{labels.matrix.leaf}</Table.Column><Table.Column id="preview"><SemanticContent as="span" className="sr-only">{labels.stageLabel}</SemanticContent></Table.Column></Table.Header>
       <Table.Body>{rows.items.map(row => <Table.Row key={row.id} id={row.id}><Table.Cell><LeafLabel id={row.id} label={row.label} /></Table.Cell><Table.Cell>{row.selectedSource ? cell(row.selectedPreview) : <LeafCell previewState="not-chosen" status={labels.board.notChosen} actions={<CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{labels.board.askAgent}</Button>} data={row.prompt} labels={labels} workflow={workflow} />} />}</Table.Cell></Table.Row>)}</Table.Body>
     </Table>
-  </section>;
+  </SemanticContent>;
 }

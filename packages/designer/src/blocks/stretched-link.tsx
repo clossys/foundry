@@ -1,8 +1,13 @@
 import { Children, isValidElement, type ReactNode } from "react";
-import { Icon, type IconSize } from "../components/Icon.js";
+import type { IconSize } from "../components/Icon.js";
 import { cx } from "../components/internal/cx.js";
 import { ChevronRight } from "../icons/ChevronRight.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const Link = componentLeaf<typeof import("../components/Link.js").Link>("components.link");
+const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /*
  * The linked-item anatomy shared by `Item`, `Items`, and `NavGrid`
@@ -93,11 +98,11 @@ export interface CardLinkTitleProps {
 /** The title as the item's one link, with its chevron. Place it inside the title element. */
 export function CardLinkTitle({ href, frame, ground, iconSize = "sm", children, className }: CardLinkTitleProps) {
   return (
-    <a href={href} data-card-link="" className={cx(ANCHOR_BASE, HIT_AREA_CLASSES[frame], RING_CLASSES[ground], className)}>
+    <Link href={href} variant="standalone" style={{ font: "inherit" }} data-card-link="" className={cx(ANCHOR_BASE, HIT_AREA_CLASSES[frame], RING_CLASSES[ground], className)}>
       {children}
-      <span aria-hidden="true">{" "}</span>
+      <SemanticContent as="span" aria-hidden="true">{" "}</SemanticContent>
       <Icon glyph={ChevronRight} decorative size={iconSize} className={cx("inline align-middle", SECTION_GROUND_CLASSES[ground].secondary)} />
-    </a>
+    </Link>
   );
 }
 

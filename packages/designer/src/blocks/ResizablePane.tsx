@@ -1,6 +1,11 @@
 import { useId, useState, type ReactNode } from "react";
-import { ResizeHandle, type ResizeHandleProps } from "../components/ResizeHandle.js";
+import type { ResizeHandleProps } from "../components/ResizeHandle.js";
 import { Panel, type PanelProps } from "./Panel.js";
+
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+const ResizeHandle = componentLeaf<typeof import("../components/ResizeHandle.js").ResizeHandle>("components.resize-handle");
 
 export interface ResizablePaneProps extends Omit<PanelProps, "onChange" | "defaultValue" | "children" | "role" | "aria-label" | "aria-labelledby"> {
   min: number;
@@ -45,11 +50,11 @@ export function ResizablePane({
       {...rest} id={rest.id ?? generatedId} role="region" aria-label={label}
       style={{ ...style, ...dimension }}
     >
-      <div className={orientation === "vertical" ? "flex h-full min-h-0 min-w-0" : "flex h-full min-h-0 min-w-0 flex-col"}>
+      <SemanticContent as="div" className={orientation === "vertical" ? "flex h-full min-h-0 min-w-0" : "flex h-full min-h-0 min-w-0 flex-col"}>
         {handleEdge === "start" ? handle : null}
-        <div className="min-h-0 min-w-0 flex-1 overflow-auto">{children}</div>
+        <SemanticContent as="div" className="min-h-0 min-w-0 flex-1 overflow-auto">{children}</SemanticContent>
         {handleEdge === "end" ? handle : null}
-      </div>
+      </SemanticContent>
     </Panel>
   );
 }

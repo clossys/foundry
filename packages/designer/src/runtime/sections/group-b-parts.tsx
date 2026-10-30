@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { Pagination } from "../../blocks/Pagination.js";
-import { Button } from "../../components/Button.js";
-import { Checkbox } from "../../components/Checkbox.js";
-import { Link } from "../../components/Link.js";
-import { SearchField } from "../../components/SearchField.js";
-import { TextField } from "../../components/TextField.js";
-import { Toolbar } from "../../components/Toolbar.js";
+
+import { componentLeaf } from "../component-leaf.js";
+
+const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Checkbox = componentLeaf<typeof import("../../components/Checkbox.js").Checkbox>("components.checkbox");
+const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
+const SearchField = componentLeaf<typeof import("../../components/SearchField.js").SearchField>("components.search-field");
+const TextField = componentLeaf<typeof import("../../components/TextField.js").TextField>("components.text-field");
+const Toolbar = componentLeaf<typeof import("../../components/Toolbar.js").Toolbar>("components.toolbar");
 
 /**
  * The region and action content shared by the group-b renderers, each rendered through a component the
  * leaf's contract lets it compose, or through its declared `sections.pagination` part. Content stays JSON;
- * the part owns every callback. Until L9 provides a consumer component-index port these compose the
- * package's own registered components directly, so a consumer component swap does not reach them yet.
+ * the part owns every callback, while component leaves dispatch through the consumer selection.
  */
 export interface FieldRegionContent { readonly search: { readonly label: string; readonly placeholder?: string } }
 export interface LinkRegionContent { readonly links: readonly { readonly id: string; readonly label: string; readonly href: string }[] }

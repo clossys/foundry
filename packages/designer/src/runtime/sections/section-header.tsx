@@ -1,10 +1,15 @@
 import { SectionHeader } from "../../blocks/SectionHeader.js";
-import { Badge } from "../../components/Badge.js";
-import { StatusMark, type StatusMarkTone } from "../../components/StatusMark.js";
-import { Menu } from "../../components/Menu.js";
-import { Button } from "../../components/Button.js";
-import { Link } from "../../components/Link.js";
+
+import type { StatusMarkTone } from "../../components/StatusMark.js";
+
 import { actionsOf, memberOf, noop, refuseUnmapped, requiredText, recordsOf, stringField, isObject, slotValue, textOf, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
+import { componentLeaf } from "../component-leaf.js";
+
+const Badge = componentLeaf<typeof import("../../components/Badge.js").Badge>("components.badge");
+const StatusMark = componentLeaf<typeof import("../../components/StatusMark.js").StatusMark>("components.status-mark");
+const Menu = componentLeaf<typeof import("../../components/Menu.js").Menu>("components.menu");
+const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
 
 const LEAF = "sections.section-header";
 const ALIGNS = ["start", "center"] as const;

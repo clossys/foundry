@@ -26,23 +26,14 @@
   },
   "sections": {
     "wizard": {
-      "composes": [
-        "components.button",
-        "components.progress-bar"
-      ],
+      "composes": [],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.button",
-          "components.progress-bar"
-        ],
+        "scannedComposes": [],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.button",
-            "components.progress-bar"
-          ],
+          "components": [],
           "tokens": [
             "tokens.body-size",
             "tokens.border-color",
@@ -56,7 +47,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/FormWizard.tsx",
-            "sha256": "13c05c95cd81dfaf054afcbc12477007b752dc5e020533100504a10c66476b4b"
+            "sha256": "c22ae0dd2031ead7b9b014b9ed7a68edfbd9679d8d69a8fa03fa1a5934b72c76"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -65,6 +56,10 @@
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -79,6 +74,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

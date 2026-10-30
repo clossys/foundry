@@ -116,6 +116,8 @@ export interface RuntimeContent {
 }
 export interface RuntimeCell { readonly theme: string; readonly state: string; readonly width: number }
 export interface RuntimeRenderInput<Node> {
+  /** Live consumer module index; stays in the client host graph, never a JSON snapshot. */
+  readonly componentIndex?: RuntimeComponentIndex;
   /** Canonical page locale supplied by the host through Writer. */
   readonly locale?: string;
   readonly path: string;
@@ -145,6 +147,12 @@ export const SECTION_HEADER_CONTENT_KEY = "header";
  * Each renderer that reads one owns and checks its exact shape.
  */
 export type RuntimeSectionHost = Readonly<Record<string, unknown>>;
+/** Actual imports keyed by selected impl.module/entry, with descriptor identities. */
+export interface RuntimeComponentIndex {
+  readonly selectionHash: string;
+  readonly modules: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
+  readonly descriptors: Readonly<Record<string, string>>;
+}
 export type RuntimeThemePreference = "system" | "light" | "dark";
 /** Host interaction port for the selected Frame. A Frame's props split in
  * two: JSON content (the fill's host-node slots, resolved through RuntimeContent) and
@@ -221,6 +229,8 @@ export function runtimeSectionHostFindings(hosts: unknown): string[] {
   ]);
 }
 export interface ConsumerRuntimePorts<Node> {
+  /** Attach from the client host; module values must never cross a server/client boundary. */
+  readonly componentIndex?: RuntimeComponentIndex;
   readonly manifest: ConsumerRuntimeManifest;
   readonly renderers: Readonly<Record<string, (input: RuntimeRenderInput<Node>) => Node>>;
   /** Behaviour for the selected Frame only (navigation guard, actions, icons, theme, panels). */

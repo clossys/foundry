@@ -26,9 +26,7 @@
   },
   "sections": {
     "section-header": {
-      "composes": [
-        "components.semantic-content"
-      ],
+      "composes": [],
       "configs": {
         "default": "level=2",
         "level-2": "level=2",
@@ -39,14 +37,10 @@
       },
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.semantic-content"
-        ],
+        "scannedComposes": [],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.semantic-content"
-          ],
+          "components": [],
           "tokens": [
             "tokens.accent-color",
             "tokens.body-size",
@@ -70,7 +64,7 @@
           },
           {
             "path": "packages/designer/src/blocks/SectionHeader.tsx",
-            "sha256": "aaa356d54d15e83bdc4ad4899b321f8bac6ac9d085ee6782cc3e11d6f349190e"
+            "sha256": "21394d59938905f29a573e214d30ad22b692e09d42f50b0a8e45f8816256f469"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -79,6 +73,10 @@
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -93,6 +91,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

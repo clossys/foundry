@@ -5,6 +5,10 @@ import { FAQ_ANSWER_STYLE, FAQ_ROW_CLASSES, faqColumns, faqLists } from "./Faq.s
 import { disclosureRow } from "./internal/disclosure-row.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.faq", "foundry/sections.faq");
 
@@ -60,27 +64,8 @@ export interface FaqProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> 
  * product-specific one further down the same page), which is what makes it
  * a block rather than a view (test 3).
  *
- * **Built on react-aria-components' own `Disclosure`/`DisclosurePanel`, one
- * per item, rather than a hand-rolled expand/collapse mechanism** (the same
- * primitives this package's `Disclosure` component wraps). They supply real
- * `aria-expanded`/`aria-controls` wiring, Enter/Space-and-click toggling,
- * and keep collapsed content in the DOM (`hidden`, not unmounted) so
- * browser find-in-page can still reach it. `Faq` composes them directly,
- * not through the component, so the row can take the FAQ recipe
- * (`FAQ_ROW_CLASSES`, shared with the server implementation): the whole row
- * as the hit area, the question at the body-l step, and a Designer
- * `ChevronDown` at the end that turns when open, and the answer's height
- * eases open and shut (`disclosure-panel-motion`, CSS on the
- * `--disclosure-panel-height` React Aria sets; instant under reduced
- * motion). Each
- * question/answer pair expands and collapses INDEPENDENTLY — `Faq` renders
- * no `DisclosureGroup` and holds no shared "which one is open" state of its
- * own, so opening one question never closes another (the single-section
- * primitive `Disclosure`'s own doc comment describes, not an accordion of
- * coordinated ones — a real accordion, where opening one closes the rest,
- * would compose react-aria-components' `DisclosureGroup` instead, and
- * isn't what a FAQ list needs: a reader routinely wants two answers open
- * at once to compare them).
+ * Each item consumes the selected disclosure leaf. The consumer binding owns
+ * the trigger, panel, keyboard behavior and independent expansion state.
  *
  * Items render inside a plain list between ground-matched hairlines (one
  * above the first question, one below each) — visual grouping only; the
@@ -105,11 +90,11 @@ export function Faq({
   const columns = faqColumns(items, layout).map(column => column.map(item => disclosureRow({ id: item.id, question: item.question, answer: item.answer, recipe: FAQ_ROW_CLASSES, colors, answerStyle: FAQ_ANSWER_STYLE })));
 
   return (
-    <div {...SECTION_STAMP} {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
+    <SemanticContent as="div" {...SECTION_STAMP} {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
         <SectionHeader density="standard" level={headingLevel} ground={ground} eyebrow={eyebrow} description={description} {...(heading ? { title: heading } : {})} titleClassName="leading-heading" />
       ) : null}
       {faqLists(columns, layout, colors.border)}
-    </div>
+    </SemanticContent>
   );
 }

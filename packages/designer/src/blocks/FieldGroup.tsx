@@ -1,5 +1,8 @@
 import { useId, type CSSProperties, type FieldsetHTMLAttributes, type ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 export type FieldGroupLayout = "single" | "multi";
 
@@ -79,11 +82,11 @@ export function FieldGroup({
     >
       <legend className="w-full p-0 text-body-s text-ink-secondary font-body">{legend}</legend>
       {description ? (
-        <p id={descriptionId} className="text-caption text-ink-muted">
+        <SemanticContent as="p" id={descriptionId} className="text-caption text-ink-muted">
           {description}
-        </p>
+        </SemanticContent>
       ) : null}
-      <div className={cx("grid gap-md", LAYOUT_CLASSES[layout])}>{children}</div>
+      <SemanticContent as="div" className={cx("grid gap-md", LAYOUT_CLASSES[layout])}>{children}</SemanticContent>
     </fieldset>
   );
 }

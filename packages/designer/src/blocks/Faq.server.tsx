@@ -6,6 +6,12 @@ import { SECTION_MEASURE_MAX } from "./internal/block-vars.js";
 import { nativeDisclosureRow } from "./internal/disclosure-row.server.js";
 import { SECTION_GROUND_CLASSES } from "./section-ground.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const Accordion = componentLeaf<typeof import("../components/preview-runtime/components/disclosure/accordion.js").Accordion>("components.disclosure");
+
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.faq", "foundry/sections.faq");
 
@@ -69,23 +75,15 @@ export function faqColumns<Item>(items: readonly Item[], layout: FaqLayout): rea
 
 /** Lays out the rendered question lists: the single list as before, or the two-column grid. */
 export function faqLists(columns: readonly ReactNode[], layout: FaqLayout, border: string): ReactNode {
-  if (layout !== "two-column") return <div className={cx(FAQ_ROW_CLASSES.list, border)}>{columns[0]}</div>;
+  if (layout !== "two-column") return <Accordion allowsMultipleExpanded className={cx(FAQ_ROW_CLASSES.list, border)}>{columns[0]}</Accordion>;
   return (
-    <div data-faq-columns="" className={FAQ_LAYOUT_CLASSES.columns}>
-      {columns.map((rows, index) => <div key={index} className={cx(index === 0 ? FAQ_ROW_CLASSES.list : FAQ_LAYOUT_CLASSES.followingColumn, border)}>{rows}</div>)}
-    </div>
+    <SemanticContent as="div" data-faq-columns="" className={FAQ_LAYOUT_CLASSES.columns}>
+      {columns.map((rows, index) => <Accordion allowsMultipleExpanded key={index} className={cx(index === 0 ? FAQ_ROW_CLASSES.list : FAQ_LAYOUT_CLASSES.followingColumn, border)}>{rows}</Accordion>)}
+    </SemanticContent>
   );
 }
 
-/**
- * The React-server-safe FAQ implementation. Native `details`/`summary`
- * preserves independent, keyboard-operable disclosure behavior without
- * reaching the client-only React Aria graph. The native marker is hidden and
- * a Designer `ChevronDown` (rotating on `[open]`, CSS only) is the cue; the
- * answer's height eases open and shut through `::details-content`, CSS only. The ordinary blocks barrel keeps
- * exporting the React Aria implementation from `Faq.tsx`; only
- * `@clossys/designer/blocks/server` selects this implementation.
- */
+/** The server entry keeps the same selected disclosure leaf as the interactive entry. */
 export function Faq({
   eyebrow,
   heading,
@@ -103,11 +101,11 @@ export function Faq({
   const columns = faqColumns(items, layout).map(column => column.map(item => nativeDisclosureRow({ id: item.id, question: item.question, answer: item.answer, recipe: FAQ_ROW_CLASSES, colors, answerStyle: FAQ_ANSWER_STYLE })));
 
   return (
-    <div {...SECTION_STAMP} {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
+    <SemanticContent as="div" {...SECTION_STAMP} {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
         <SectionHeader density="standard" level={headingLevel} ground={ground} eyebrow={eyebrow} description={description} {...(heading ? { title: heading } : {})} titleClassName="leading-heading" />
       ) : null}
       {faqLists(columns, layout, colors.border)}
-    </div>
+    </SemanticContent>
   );
 }

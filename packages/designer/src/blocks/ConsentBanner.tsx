@@ -1,10 +1,15 @@
 import { useId, type CSSProperties, type ReactNode } from "react";
-import { Icon } from "../components/Icon.js";
+
 import { Check } from "../icons/Check.js";
-import { Button } from "../components/Button.js";
-import { SemanticContent } from "../components/SemanticContent.js";
+
 import { cx } from "../components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
+const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.consent", "foundry/sections.consent");
 

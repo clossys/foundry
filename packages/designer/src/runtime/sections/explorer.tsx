@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { Explorer } from "../../blocks/Explorer.js";
-import { GridList } from "../../components/GridList.js";
+
 import { entryOf, recordsOf, type GroupBSection, type SectionRenderInput, type SelectionRecord } from "./group-b-support.js";
+import { componentLeaf } from "../component-leaf.js";
+
+const GridList = componentLeaf<typeof import("../../components/GridList.js").GridList>("components.grid-list");
 
 /** One tree node record: an id, a label and, for a folder, its children. */
 export interface TreeNodeRecord { readonly id: string; readonly label: string; readonly href?: string; readonly children?: readonly TreeNodeRecord[] }

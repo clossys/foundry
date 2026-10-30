@@ -1,14 +1,22 @@
 "use client";
 import { useState, type ReactNode } from "react";
-import { Button } from "../../components/Button.js";
-import { Dialog } from "../../components/Dialog.js";
+
 import { OpenWithActions } from "./OpenWithActions.js";
 import { candidatePrompt, type CandidatePromptData } from "./candidate-prompt.js";
 import type { LayerId } from "../../catalog-core/index.js";
 import type { CandidateWorkflow, LibraryBoardLabels, PendingCandidate } from "./types.js";
+import { componentLeaf } from "../../runtime/component-leaf.js";
 
-/** The prompt is data to copy, not to read in full: a bounded, scrollable mono region on the sunken ground. */
-const PROMPT_CODE = "max-h-[40vh] min-h-0 shrink overflow-auto whitespace-pre-wrap break-words rounded-control border border-overlay-border bg-surface-sunken p-md font-mono text-code-block text-ink-primary";
+const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Dialog = componentLeaf<typeof import("../../components/preview-runtime/components/dialog/dialog.js").Dialog>("components.dialog");
+const DialogTrigger = componentLeaf<typeof import("../../components/preview-runtime/components/dialog/dialog.js").DialogTrigger>("components.dialog", "DialogTrigger");
+const DialogHeader = componentLeaf<typeof import("../../components/preview-runtime/components/dialog/dialog.js").DialogHeader>("components.dialog", "DialogHeader");
+const DialogTitle = componentLeaf<typeof import("../../components/preview-runtime/components/dialog/dialog.js").DialogTitle>("components.dialog", "DialogTitle");
+const DialogDescription = componentLeaf<typeof import("../../components/preview-runtime/components/dialog/dialog.js").DialogDescription>("components.dialog", "DialogDescription");
+const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
+/** The prompt is data to copy, within the selected dialog's scrolling region. */
+const PROMPT_CODE = "block min-h-0 shrink overflow-auto whitespace-pre-wrap break-words rounded-control border border-overlay-border bg-surface-sunken p-md font-mono text-code-block text-ink-primary";
 /** The actions stay reachable while the dialog scrolls: a footer pinned to the dialog's bottom edge, across its padding. */
 const PROMPT_ACTIONS = "sticky bottom-0 prompt-actions-bleed flex flex-wrap items-center justify-end gap-sm border-t border-overlay-border bg-overlay-surface px-lg pt-md pb-lg";
 
@@ -32,17 +40,17 @@ export function CandidatePromptDialog({ trigger, data, labels, workflow }: { tri
     } catch { setNotice(labels.board.candidatesFailed); }
     finally { setChecking(false); }
   };
-  return <Dialog trigger={trigger} size="lg">{({ close }) => <>
-    <Dialog.Heading>{labels.board.promptTitle}</Dialog.Heading>
-    <p data-prompt-summary="" className="text-body-s text-ink-secondary">{data.board.label} · {data.slot.label} <span className="font-mono">{data.slot.id}</span></p>
-    <pre data-prompt-code="" tabIndex={0} className={PROMPT_CODE}><code>{prompt}</code></pre>
-    {notice ? <p role="status">{notice}</p> : null}
-    {pending.length ? <ul>{pending.map(candidate => <li key={candidate.id} data-pending-candidate={candidate.id}>{candidate.label} · {labels.board.pendingSelection}</li>)}</ul> : null}
-    <div data-dialog-actions="" className={PROMPT_ACTIONS}>
+  return <DialogTrigger>{trigger}<Dialog className="max-w-full">{({ close }) => <>
+    <DialogHeader><DialogTitle>{labels.board.promptTitle}</DialogTitle>
+    <DialogDescription data-prompt-summary="" className="text-body-s text-ink-secondary">{data.board.label} · {data.slot.label} <SemanticContent as="span" className="font-mono">{data.slot.id}</SemanticContent></DialogDescription></DialogHeader>
+    <SemanticContent as="code" data-prompt-code="" tabIndex={0} className={PROMPT_CODE}>{prompt}</SemanticContent>
+    {notice ? <SemanticContent as="p" role="status">{notice}</SemanticContent> : null}
+    {pending.length ? <SemanticContent as="ul">{pending.map(candidate => <SemanticContent as="li" key={candidate.id} data-pending-candidate={candidate.id}>{candidate.label} · {labels.board.pendingSelection}</SemanticContent>)}</SemanticContent> : null}
+    <SemanticContent as="div" data-dialog-actions="" className={PROMPT_ACTIONS}>
       <Button variant="ghost" onPress={close}>{labels.board.close}</Button>
       <Button variant="secondary" isDisabled={checking} onPress={() => { void check(); }}>{checking ? labels.board.checking : labels.board.checkCandidates}</Button>
       {workflow?.actions ? <OpenWithActions {...workflow.actions} taskPrompt={prompt} promptContext={{ projectPath: workflow.actions.projectPath, taskPrompt: prompt, prompt, layer: data.slot.id.split(".")[0] as LayerId, selectedId: data.slot.id }} /> : null}
       <Button onPress={() => { void copy(); }}>{labels.board.copy}</Button>
-    </div>
-  </>}</Dialog>;
+    </SemanticContent>
+  </>}</Dialog></DialogTrigger>;
 }

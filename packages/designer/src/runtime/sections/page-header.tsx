@@ -1,7 +1,10 @@
 import { PageHeader } from "../../blocks/PageHeader.js";
-import { Breadcrumb } from "../../components/Breadcrumb.js";
-import { Button } from "../../components/Button.js";
+
 import { actionsOf, noop, recordsOf, refuseUnmapped, requiredText, slotValue, stringField, textOf, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
+import { componentLeaf } from "../component-leaf.js";
+
+const Breadcrumb = componentLeaf<typeof import("../../components/Breadcrumb.js").Breadcrumb>("components.breadcrumbs");
+const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
 
 const LEAF = "sections.page-header";
 

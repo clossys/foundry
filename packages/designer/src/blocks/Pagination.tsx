@@ -1,13 +1,17 @@
 import type { CSSProperties, HTMLAttributes } from "react";
-import { Button } from "../components/Button.js";
-import { Select } from "../components/Select.js";
-import { Icon } from "../components/Icon.js";
-import { SemanticContent } from "../components/SemanticContent.js";
+
 import { useShellCopy } from "../components/Banner.copy-context.js";
 import type { ShellCopyResolver } from "../components/Banner.copy.js";
 import { useGlyph } from "../components/glyph-context.js";
 import { cx } from "../components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+const Select = componentLeaf<typeof import("../components/Select.js").Select>("components.select");
+const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.pagination", "foundry/sections.pagination");
 
@@ -177,7 +181,7 @@ export function Pagination({
       <SemanticContent as="p" className="text-body-s text-ink-secondary">
         {copyText(summary, "summary")}
       </SemanticContent>
-      <div className="flex min-w-0 flex-wrap items-center gap-xs">
+      <SemanticContent as="div" className="flex min-w-0 flex-wrap items-center gap-xs">
         <Button
           variant="ghost"
           size="sm"
@@ -213,7 +217,7 @@ export function Pagination({
         >
           <Icon glyph={nextGlyph} decorative size="sm" />
         </Button>
-      </div>
+      </SemanticContent>
       {showPageSizeSelector ? (
         <Select
           label={copyText(pageSizeLabel ?? copy(PAGINATION_COPY_REFS.pageSizeLabel), "pageSizeLabel")}

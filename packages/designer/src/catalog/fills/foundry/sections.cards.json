@@ -26,23 +26,14 @@
   },
   "sections": {
     "cards": {
-      "composes": [
-        "components.badge",
-        "components.card"
-      ],
+      "composes": [],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.badge",
-          "components.card"
-        ],
+        "scannedComposes": [],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.badge",
-            "components.card"
-          ],
+          "components": [],
           "tokens": [
             "tokens.body-size",
             "tokens.caption-size",
@@ -53,7 +44,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/RecordCards.tsx",
-            "sha256": "59e8212000d2b2e1ac6a62a5d1f0b237e3e4540fb625a519c99456069ff46567"
+            "sha256": "270dca0c91f75bf516aea52e58203498d2ab94ab1d3ff6af0a300406e369a204"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -62,15 +53,13 @@
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
-          {
-            "code": "DF2",
-            "evidence": "unresolved source export ../components/Link.js#Link",
-            "file": "packages/designer/src/blocks/RecordCards.tsx",
-            "line": 4
-          },
           {
             "code": "DF2",
             "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
@@ -82,6 +71,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

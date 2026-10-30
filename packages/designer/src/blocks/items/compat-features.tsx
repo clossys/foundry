@@ -1,9 +1,11 @@
-import { SemanticContent } from "../../components/SemanticContent.js";
 import { SectionHeader } from "../SectionHeader.js";
 import { ItemHeading, ItemIcon, ItemDescription } from "./anatomy.js";
 import type { FeatureGridLayout, FeatureGridProps } from "../FeatureGrid.js";
 import { cx } from "../../components/internal/cx.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "../section-ground.js";
+import { componentLeaf } from "../../runtime/component-leaf.js";
+
+const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /**
  * Per-layout class policy. `grid` is the published markup, unchanged. `split`

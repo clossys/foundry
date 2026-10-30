@@ -1,7 +1,11 @@
 import { Fragment, useState, type ReactNode } from "react";
-import { Button } from "../../components/Button.js";
-import { Link } from "../../components/Link.js";
+
 import type { ChatLabels } from "./types.js";
+import { componentLeaf } from "../../runtime/component-leaf.js";
+
+const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
+const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 interface InlinePart { text: string; isCode: boolean }
 
@@ -53,7 +57,7 @@ function inlineParts(text: string): InlinePart[] {
 function inline(text: string): ReactNode[] {
   return inlineParts(text).map(({ text: part, isCode }, index) => {
     if (isCode) {
-      return <code key={index} className="rounded-subtle bg-surface-sunken px-xs font-mono text-body-s">{part.slice(1, -1)}</code>;
+      return <SemanticContent as="code" key={index} className="rounded-subtle bg-surface-sunken px-xs font-mono text-body-s">{part.slice(1, -1)}</SemanticContent>;
     }
     const link = /^\[([^\]]+)\]\(([^\s)]+)\)$/.exec(part);
     if (link && !/[\\\u0000-\u0020\u007f]/.test(link[2]!) && /^(?:https?:\/\/|mailto:|\/(?!\/)|#)/i.test(link[2]!)) {
@@ -84,16 +88,16 @@ function CodeBlock({
     }
   }
   return (
-    <div className="min-w-0 rounded-control bg-surface-sunken p-sm">
-      <div className="flex flex-wrap items-center justify-end gap-xs">
+    <SemanticContent as="div" className="min-w-0 rounded-control bg-surface-sunken p-sm">
+      <SemanticContent as="div" className="flex flex-wrap items-center justify-end gap-xs">
         <Button variant="ghost" size="sm" onPress={() => { void copy(); }}>{copyCodeLabel}</Button>
-        <span role="status" className="text-caption text-ink-secondary">
-          {copyState === "copied" ? <span>{copiedLabel}</span> : null}
-          {copyState === "error" ? <span>{copyUnavailableLabel}</span> : null}
-        </span>
-      </div>
-      <pre className="max-w-full overflow-x-auto font-mono text-code-block"><code>{code}</code></pre>
-    </div>
+        <SemanticContent as="span" role="status" className="text-caption text-ink-secondary">
+          {copyState === "copied" ? <SemanticContent as="span">{copiedLabel}</SemanticContent> : null}
+          {copyState === "error" ? <SemanticContent as="span">{copyUnavailableLabel}</SemanticContent> : null}
+        </SemanticContent>
+      </SemanticContent>
+      <SemanticContent as="code" className="block max-w-full overflow-x-auto whitespace-pre font-mono text-code-block">{code}</SemanticContent>
+    </SemanticContent>
   );
 }
 
@@ -117,17 +121,17 @@ export function defaultContent(content: string, labels?: ChatLabels): ReactNode 
       const pattern = ordered ? /^\d+\.\s+/ : /^[-*]\s+/;
       const items: ReactNode[] = [];
       while (index < lines.length && pattern.test(lines[index]!)) {
-        items.push(<li key={items.length}>{inline(lines[index++]!.replace(pattern, ""))}</li>);
+        items.push(<SemanticContent as="li" key={items.length}>{inline(lines[index++]!.replace(pattern, ""))}</SemanticContent>);
       }
       blocks.push(ordered
         ? <ol key={blocks.length} className="list-decimal ps-lg">{items}</ol>
-        : <ul key={blocks.length} className="list-disc ps-lg">{items}</ul>);
+        : <SemanticContent as="ul" key={blocks.length} className="list-disc ps-lg">{items}</SemanticContent>);
       continue;
     }
     const paragraph: string[] = [line];
     index++;
     while (index < lines.length && lines[index]!.trim() && !/^(?:```|[-*]\s+|\d+\.\s+)/.test(lines[index]!)) paragraph.push(lines[index++]!);
-    blocks.push(<p key={blocks.length} className="whitespace-pre-wrap">{inline(paragraph.join("\n"))}</p>);
+    blocks.push(<SemanticContent as="p" key={blocks.length} className="whitespace-pre-wrap">{inline(paragraph.join("\n"))}</SemanticContent>);
   }
-  return <div className="flex min-w-0 flex-col gap-sm">{blocks}</div>;
+  return <SemanticContent as="div" className="flex min-w-0 flex-col gap-sm">{blocks}</SemanticContent>;
 }

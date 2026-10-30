@@ -6,12 +6,16 @@
  */
 import { useState, type ReactNode } from "react";
 import { AppNavigation, type AppNavigationProps } from "../../blocks/AppNavigation.js";
-import { Button } from "../../components/Button.js";
-import { Link } from "../../components/Link.js";
+
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { runtimeMember, runtimeValue, type SurfaceRendererEntry } from "../contract.js";
 import { plainJson } from "../sections/dataset-json.js";
 import { frameContent, guardedNavigate, type FrameInput, type FrameJson } from "./frame-content.js";
+
+import { componentLeaf } from "../../runtime/component-leaf.js";
+
+const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
 
 const read = frameContent("frames.app-sidebar");
 type Presentation = "docked" | "collapsed" | "overlay";

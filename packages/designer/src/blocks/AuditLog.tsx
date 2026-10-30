@@ -2,6 +2,10 @@ import type { ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { DataTable, type DataTableColumn } from "./DataTable.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.audit-log", "foundry/sections.audit-log");
 
@@ -44,7 +48,7 @@ export interface AuditLogProps {
 /** A read-only audit trail on DataTable: fixed time, actor, action and target columns plus filter and export slots. */
 export function AuditLog({ "aria-label": label, entries, labels, filter, exportAction, isLoading, emptyStateTitle, emptyStateDescription, footer, className }: AuditLogProps) {
   const columns: DataTableColumn<AuditLogEntry>[] = [
-    { id: "time", header: labels.time, isRowHeader: true, cell: entry => <time dateTime={entry.at}>{entry.timeText}</time> },
+    { id: "time", header: labels.time, isRowHeader: true, cell: entry => <SemanticContent as="time" dateTime={entry.at}>{entry.timeText}</SemanticContent> },
     { id: "actor", header: labels.actor, cell: entry => entry.actor },
     { id: "action", header: labels.action, cell: entry => entry.action },
     { id: "target", header: labels.target, cell: entry => entry.target },
@@ -63,10 +67,10 @@ export function AuditLog({ "aria-label": label, entries, labels, filter, exportA
       emptyStateDescription={emptyStateDescription}
       footer={footer}
       toolbar={hasToolbar ? (
-        <div data-audit-log-toolbar="" className="flex flex-wrap items-center justify-between gap-sm">
-          <div className="flex min-w-0 flex-wrap items-center gap-sm">{filter}</div>
-          {exportAction !== undefined && exportAction !== null ? <div className="shrink-0">{exportAction}</div> : null}
-        </div>
+        <SemanticContent as="div" data-audit-log-toolbar="" className="flex flex-wrap items-center justify-between gap-sm">
+          <SemanticContent as="div" className="flex min-w-0 flex-wrap items-center gap-sm">{filter}</SemanticContent>
+          {exportAction !== undefined && exportAction !== null ? <SemanticContent as="div" className="shrink-0">{exportAction}</SemanticContent> : null}
+        </SemanticContent>
       ) : undefined}
     />
   );

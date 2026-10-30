@@ -26,26 +26,14 @@
   },
   "sections": {
     "consent": {
-      "composes": [
-        "components.button",
-        "components.icon",
-        "components.semantic-content"
-      ],
+      "composes": [],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.button",
-          "components.icon",
-          "components.semantic-content"
-        ],
+        "scannedComposes": [],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.button",
-            "components.icon",
-            "components.semantic-content"
-          ],
+          "components": [],
           "tokens": [
             "tokens.body-size",
             "tokens.border-color",
@@ -60,7 +48,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/ConsentBanner.tsx",
-            "sha256": "62cadc6eb7498273082a1d73b74ba58349d777a4e305f5b525ede77c67c79232"
+            "sha256": "61fba7843dc3b778f7f83988565537211c6a7620823c3826cacbc19aa4ff74bf"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -73,6 +61,10 @@
           {
             "path": "packages/designer/src/icons/Check.ts",
             "sha256": "df7a0d203c39a358aba4b6cf7a9380e34352d38efe0947c0d30c0485ad509159"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -93,6 +85,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

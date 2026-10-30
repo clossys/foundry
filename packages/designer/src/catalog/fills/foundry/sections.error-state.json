@@ -27,21 +27,17 @@
   "sections": {
     "error-state": {
       "composes": [
-        "components.semantic-content",
         "sections.section-header"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
-          "components.semantic-content",
           "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.semantic-content"
-          ],
+          "components": [],
           "tokens": [
             "tokens.spacing"
           ]
@@ -49,7 +45,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/ErrorState.tsx",
-            "sha256": "7e216d93d7c31d30b66cc7c606f8b7d215bf8fc91aefdbabc0d684cfa0d4a89f"
+            "sha256": "27b778211984c6b02e3e21d173f774e408038a8f1c655d57b903845465974827"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -58,6 +54,10 @@
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -72,6 +72,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

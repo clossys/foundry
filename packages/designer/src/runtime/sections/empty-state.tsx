@@ -1,10 +1,13 @@
 import type { ReactNode } from "react";
 import { EmptyState } from "../../blocks/EmptyState.js";
-import { Button } from "../../components/Button.js";
-import { Icon } from "../../components/Icon.js";
-import { Link } from "../../components/Link.js";
+
 import * as icons from "../../icons/index.js";
 import { actionsOf, anatomyOf, noop, refuseUnmapped, requiredAnatomy, slotValue, stringField, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
+import { componentLeaf } from "../component-leaf.js";
+
+const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Icon = componentLeaf<typeof import("../../components/Icon.js").Icon>("components.icon");
+const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
 
 const LEAF = "sections.empty-state";
 const GLYPHS = icons as unknown as Readonly<Record<string, icons.IconNode | undefined>>;

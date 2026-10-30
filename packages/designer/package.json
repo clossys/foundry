@@ -356,6 +356,10 @@
   "scripts": {
     "check": "npm run check:usage-graph",
     "check:usage-graph": "node scripts/usage-graph.mjs --check",
+    "check:surface-leaves": "node scripts/check-surface-leaves.mjs",
+    "test:surface-leaves": "node --test scripts/surface-leaf-check.test.mjs",
+    "check:studio-page-modules": "node scripts/check-studio-page-modules.mjs",
+    "test:studio-page-modules": "node --test scripts/check-studio-page-modules.test.mjs",
     "test:usage-graph": "node --test scripts/usage-graph.test.mjs",
     "build": "tsc -p tsconfig.json",
     "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",

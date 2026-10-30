@@ -5,10 +5,16 @@
  */
 import type { ReactNode } from "react";
 import { Drawer, type DrawerProps } from "../../blocks/Drawer.js";
-import { Button } from "../../components/Button.js";
+
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { runtimeValue, type SurfaceRendererEntry } from "../contract.js";
 import { frameContent, type FrameInput, type FrameJson } from "./frame-content.js";
+
+import { componentLeaf } from "../../runtime/component-leaf.js";
+
+const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+
+const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 const read = frameContent("frames.sheet");
 const PLACEMENTS = ["start", "end", "bottom"] as const, WIDE = ["dismiss", "sheet"] as const;
@@ -16,14 +22,14 @@ const PLACEMENTS = ["start", "end", "bottom"] as const, WIDE = ["dismiss", "shee
 export function sheetProps(input: Pick<FrameInput, "content" | "selection" | "host">): DrawerProps {
   read.only(input, ["heading", "body", "footer"]);
   const panels = input.host?.panels, heading = read.record(runtimeValue(input, "heading")) ?? read.fail("heading content is required");
-  const body = panels?.body ?? read.text(runtimeValue(input, "body")) ?? read.fail("body content is required");
+  const body = panels?.body ?? <SemanticContent as="p">{read.text(runtimeValue(input, "body")) ?? read.fail("body content is required")}</SemanticContent>;
   const footer = panels?.footer ?? read.text(runtimeValue(input, "footer"));
   const placement = PLACEMENTS.find(value => input.selection.members.includes(`placement.${value}`));
   const wide = WIDE.find(value => input.selection.members.includes(`wide.${value}`));
   return {
     heading: read.required(heading.text, "heading.text"), closeLabel: read.required(heading.closeLabel, "heading.closeLabel"),
     trigger: <Button variant="secondary">{read.required(heading.triggerLabel, "heading.triggerLabel")}</Button>,
-    children: body, ...(footer !== undefined ? { footer } : {}),
+    children: body, ...(footer !== undefined ? { footer: typeof footer === "string" ? <SemanticContent as="p">{footer}</SemanticContent> : footer } : {}),
     ...(placement ? { placement } : {}), ...(wide ? { wide } : {}),
   };
 }

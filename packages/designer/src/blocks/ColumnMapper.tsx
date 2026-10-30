@@ -1,10 +1,16 @@
-import type { ReactNode } from "react";
-import { Select } from "../components/Select.js";
+import { useId, type ReactNode } from "react";
+
 import { cx } from "../components/internal/cx.js";
 import type { TableColumnKind } from "./table-model/types.js";
 import { useDebouncedSummary } from "./access-matrix/summary.js";
 import { assertColumnMapper, columnMapperIssues, mappedSource } from "./column-mapper/issues.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const Select = componentLeaf<typeof import("../components/Select.js").Select>("components.select");
+const Card = componentLeaf<typeof import("../components/Card.js").Card>("components.card");
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.column-mapper", "foundry/sections.column-mapper");
 
@@ -34,29 +40,30 @@ export interface ColumnMapperProps {
 
 /** Matches supplied source columns to targets; parsing and type rules belong to the host. */
 export function ColumnMapper(props: ColumnMapperProps) {
+  const headingId = useId();
   assertColumnMapper(props);
   const { targets, sourceColumns, mapping, onMappingChange, labels, className } = props;
   const issues = columnMapperIssues(props);
   const mapped = targets.filter(target => mappedSource(mapping, target.id) !== null).length;
   const announced = useDebouncedSummary(labels.summary(mapped, targets.length, issues.length));
   const options = [{ id: "", label: labels.notMapped }, ...sourceColumns.map(source => ({ id: source.id, label: source.header }))];
-  return <fieldset {...SECTION_STAMP} className={cx("m-0 flex min-w-0 flex-col gap-lg border-0 bg-surface-raised p-0 text-body text-ink-primary", className)}>
-    <legend className="mb-md text-body-l font-medium">{labels.legend}</legend>
+  return <Card {...SECTION_STAMP} role="group" aria-labelledby={headingId} className={cx("m-0 flex min-w-0 flex-col gap-lg border-0 bg-surface-raised p-0 text-body text-ink-primary", className)}>
+    <SemanticContent as="h3" id={headingId} className="mb-md text-body-l font-medium">{labels.legend}</SemanticContent>
     {targets.map(target => {
       const sourceId = mappedSource(mapping, target.id);
       const source = sourceColumns.find(column => column.id === sourceId);
       const errors = issues.filter(issue => issue.targetId === target.id);
-      return <div key={target.id} className="min-w-0">
+      return <SemanticContent as="div" key={target.id} className="min-w-0">
         <Select
-          label={<span className="inline-flex min-w-0 flex-wrap items-baseline gap-xs"><span className="wrap-anywhere">{target.label}</span>{target.required ? <span aria-hidden="true" className="text-caption text-ink-secondary">{labels.required}</span> : null}</span>}
+          label={<SemanticContent as="span" className="inline-flex min-w-0 flex-wrap items-baseline gap-xs"><SemanticContent as="span" className="wrap-anywhere">{target.label}</SemanticContent>{target.required ? <SemanticContent as="span" aria-hidden="true" className="text-caption text-ink-secondary">{labels.required}</SemanticContent> : null}</SemanticContent>}
           isRequired={target.required} validationBehavior="aria" selectedKey={sourceId ?? ""} placeholder={labels.notMapped}
           onSelectionChange={key => { if (typeof key === "string") onMappingChange({ ...mapping, [target.id]: key === "" ? null : key }); }}
           options={options} description={source ? labels.samples(source.samples) : undefined} isInvalid={errors.length > 0}
-          errorMessage={<>{errors.map((issue, index) => <span key={index} className="block">{issue.message}</span>)}</>}
+          errorMessage={<>{errors.map((issue, index) => <SemanticContent as="span" key={index} className="block">{issue.message}</SemanticContent>)}</>}
         />
-        {target.description ? <p className="mt-xs text-caption text-ink-secondary">{target.description}</p> : null}
-      </div>;
+        {target.description ? <SemanticContent as="p" className="mt-xs text-caption text-ink-secondary">{target.description}</SemanticContent> : null}
+      </SemanticContent>;
     })}
-    <span role="status" aria-live="polite" className="text-body-s text-ink-secondary">{announced}</span>
-  </fieldset>;
+    <SemanticContent as="span" role="status" aria-live="polite" className="text-body-s text-ink-secondary">{announced}</SemanticContent>
+  </Card>;
 }

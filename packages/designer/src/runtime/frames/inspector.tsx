@@ -9,12 +9,16 @@ import { InspectorFrame, type InspectorFrameProps } from "../../frames/Inspector
 import { runtimeMember, runtimeValue, type SurfaceRendererEntry } from "../contract.js";
 import { frameContent, type FrameInput, type FrameJson } from "./frame-content.js";
 
+import { componentLeaf } from "../../runtime/component-leaf.js";
+
+const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 const read = frameContent("frames.inspector");
 
 export function inspectorProps(input: Pick<FrameInput, "content" | "selection" | "host">): InspectorFrameProps {
   read.only(input, ["content"]);
   const content = read.record(runtimeValue(input, "content")) ?? read.fail("content is required");
-  const body = input.host?.panels?.content ?? read.text(content.body) ?? read.fail("content.body or the host content panel is required");
+  const body = input.host?.panels?.content ?? <SemanticContent as="p">{read.text(content.body) ?? read.fail("content.body or the host content panel is required")}</SemanticContent>;
   const presentation = runtimeMember<"docked" | "collapsed" | "overlay">(input, "presentation", "docked");
   return {
     label: read.required(content.label, "content.label"), handleLabel: read.required(content.handleLabel, "content.handleLabel"),

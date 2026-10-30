@@ -1,6 +1,9 @@
 import { ConsentBanner } from "../../blocks/ConsentBanner.js";
-import { Link } from "../../components/Link.js";
+
 import { actionsOf, noop, refuseUnmapped, requireSlot, stringField, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
+import { componentLeaf } from "../component-leaf.js";
+
+const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
 
 const LEAF = "sections.consent";
 

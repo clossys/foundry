@@ -251,6 +251,7 @@ export function prepareRuntimeAssembly<Node>(input: RuntimeAssemblyInput<Node>):
     // Behaviour, not data: shape-checked by checkConsumerRuntimePorts, frozen, never snapshotted or hashed.
     const frameHost = input.ports.frameHost && Object.freeze({ ...input.ports.frameHost });
     const sectionHosts = Object.freeze({ ...input.ports.sectionHosts });
+    const componentIndex = input.ports.componentIndex;
     const selections: Record<string, RuntimeFillSelection> = {};
     const childPaths: Record<string, readonly string[]> = {};
     const resolveFill = (selected: RuntimeFillSelection, path: string, kind: "frame" | "section"): void => {
@@ -417,7 +418,7 @@ export function prepareRuntimeAssembly<Node>(input: RuntimeAssemblyInput<Node>):
       const draw = (path: string, slots: Readonly<Record<string, readonly Node[]>> = childPaths[path] ? { children: childPaths[path]!.map(child => draw(child)) } : {}, frameStage?: RuntimeFrameStage<Node>): Node => {
         const fill = descriptors[path]!;
         const sectionHost = path === "frame" || !Object.hasOwn(sectionHosts, fill.leaf) ? undefined : sectionHosts[fill.leaf];
-        return renderers[fill.renderer.id]!({ path, fill, selection: selections[path]!, cell: runtimeSnapshot(cell), content: contentSnapshot[path]!, slots, profile, ...(path === "frame" && pageHeader ? { pageHeader } : {}), ...(path === "frame" && frameStage ? { stage: frameStage } : {}), ...(path === "frame" && frameHost ? { host: frameHost } : {}), ...(sectionHost ? { sectionHost } : {}) });
+        return renderers[fill.renderer.id]!({ path, fill, selection: selections[path]!, cell: runtimeSnapshot(cell), content: contentSnapshot[path]!, slots, profile, ...(componentIndex ? { componentIndex } : {}), ...(path === "frame" && pageHeader ? { pageHeader } : {}), ...(path === "frame" && frameStage ? { stage: frameStage } : {}), ...(path === "frame" && frameHost ? { host: frameHost } : {}), ...(sectionHost ? { sectionHost } : {}) });
       };
       const slots = Object.fromEntries(Object.entries(paths).map(([slot, values]) => [slot, values.map(path => draw(path))]));
       let frameStage: RuntimeFrameStage<Node> | undefined;

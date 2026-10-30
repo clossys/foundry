@@ -1,6 +1,11 @@
 "use client";
 import { useRef } from "react";
-import { Button } from "./Button.js";
+
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const SemanticContent = componentLeaf<typeof import("./SemanticContent.js").SemanticContent>("components.semantic-content");
+const Button = componentLeaf<typeof import("./Button.js").Button>("components.button");
+
 type CanvasRect = { x: number; y: number; width: number; height: number };
 type CanvasSize = { width: number; height: number };
 type Viewport = { x: number; y: number; zoom: number };
@@ -23,9 +28,9 @@ export function CanvasMap({ label, items, bounds, viewport, viewSize, onViewport
   const visible = { x: -viewport.x / viewport.zoom, y: -viewport.y / viewport.zoom, width: viewSize.width / viewport.zoom, height: viewSize.height / viewport.zoom };
   const center = (x: number, y: number) => onViewportChange({ zoom: viewport.zoom,
     x: viewSize.width / 2 - x * viewport.zoom, y: viewSize.height / 2 - y * viewport.zoom });
-  return <div data-studio-panel="minimap" className="w-full">
+  return <SemanticContent as="div" data-studio-panel="minimap" className="w-full">
     <Button aria-label={label} variant="ghost" className="block w-full p-0" onPress={event => { if (event.pointerType === "keyboard" || event.pointerType === "virtual") center(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2); }}
-      render={props => <button {...props} onPointerDown={event => {
+      onPointerDown={event => {
         const box = event.currentTarget.getBoundingClientRect();
         if (!box.width || !box.height) return;
         const x = bounds.x + (event.clientX - box.left) / box.width * bounds.width;
@@ -37,11 +42,11 @@ export function CanvasMap({ label, items, bounds, viewport, viewSize, onViewport
         const box = event.currentTarget.getBoundingClientRect(); if (!box.width || !box.height) return;
         onViewportChange({ ...current.viewport, x: current.viewport.x - (event.clientX - current.x) / box.width * bounds.width * current.viewport.zoom,
           y: current.viewport.y - (event.clientY - current.y) / box.height * bounds.height * current.viewport.zoom });
-      }} onPointerUp={event => { if (drag.current?.pointer === event.pointerId) { drag.current = null; event.currentTarget.releasePointerCapture(event.pointerId); } }} onPointerCancel={() => { drag.current = null; }} onLostPointerCapture={() => { drag.current = null; }} />}>
+      }} onPointerUp={event => { if (drag.current?.pointer === event.pointerId) { drag.current = null; event.currentTarget.releasePointerCapture(event.pointerId); } }} onPointerCancel={() => { drag.current = null; }} onLostPointerCapture={() => { drag.current = null; }}>
       <svg aria-hidden="true" focusable="false" viewBox={`${bounds.x} ${bounds.y} ${Math.max(1, bounds.width)} ${Math.max(1, bounds.height)}`} className="canvas-map-rail-height w-full overflow-hidden rounded-control border border-line-base bg-surface-sunken touch-none">
         {items.map(item => { const rect = within(item.rect, bounds); return rect ? <rect key={item.id} data-canvas-map-item={item.id} x={rect.x} y={rect.y} width={rect.width} height={rect.height} className="fill-surface-raised stroke-line-base" vectorEffect="non-scaling-stroke">{item.label ? <title>{item.label}</title> : null}</rect> : null; })}
         <rect data-canvas-map-viewport="" x={visible.x} y={visible.y} width={visible.width} height={visible.height} className="fill-accent-tint stroke-accent" vectorEffect="non-scaling-stroke" />
       </svg>
     </Button>
-  </div>;
+  </SemanticContent>;
 }
