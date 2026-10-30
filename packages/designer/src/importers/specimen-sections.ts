@@ -168,7 +168,7 @@ export function specimenSectionSourceCatalog(packages: readonly SurfacePackageEv
       `export function ${registration.name}(props: SpecimenLeafProps) {`,
       `  const context = bindNativeSpecimenContext(props.context, { ${ports.map(port => port.name).join(", ")} });`,
       '  if ("reason" in context) return props.need(context);',
-      '  return <RenderSpecimen {...props} context={context} />;',
+      '  return <RenderSpecimen items={props.items} axes={props.axes} context={context} need={props.need} expanded={props.expanded} labels={props.labels} />;',
       '}',
       'export function SpecimenLeaf() {',
       `  const definition = studioSpecimenLeaves.find(leaf => leaf.id === ${JSON.stringify(registration.id)});`,
