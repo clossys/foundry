@@ -361,14 +361,17 @@
     "check:studio-page-modules": "node scripts/check-studio-page-modules.mjs",
     "test:studio-page-modules": "node --test scripts/check-studio-page-modules.test.mjs",
     "test:usage-graph": "node --test scripts/usage-graph.test.mjs",
-    "build": "tsc -p tsconfig.json",
+    "build": "npm run check:process && tsc -p tsconfig.json",
     "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "generate:icons": "node scripts/generate-icons.mjs",
     "generate:compiled-css": "npm run build && node dist/compiled-css/cli.js --write",
     "check:compiled-css": "npm run build && node dist/compiled-css/cli.js --check",
-    "check:designer-receipt": "npm run build && node dist/library-cli/cli.js receipt"
+    "check:designer-receipt": "npm run build && node dist/library-cli/cli.js receipt",
+    "check:process": "node scripts/check-process-gates.mjs",
+    "test:process": "node --test scripts/check-one-leaf-source.test.mjs scripts/check-fill-source-imports.test.mjs scripts/check-rendered-class-rules.test.mjs scripts/check-process-gates.test.mjs",
+    "compose": "node scripts/compose-with-process-gates.mjs"
   },
   "peerDependencies": {
     "@internationalized/date": "^3.12.2",
