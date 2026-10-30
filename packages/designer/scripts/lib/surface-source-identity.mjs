@@ -6,6 +6,7 @@ import { createRequire } from "node:module";
 import { runInThisContext } from "node:vm";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createSurfaceLeafContext } from "./surface-leaf-check.mjs";
+import { runSourceEsm } from "./surface-source-runtime.mjs";
 
 const unwrap = node => {
   while (node && (ts.isAsExpression(node) || ts.isSatisfiesExpression(node) || ts.isParenthesizedExpression(node) || ts.isNonNullExpression(node))) node = node.expression;
@@ -541,7 +542,7 @@ export async function checkSurfaceSourceIdentity(repository) {
     defaultAdoptions = defaults.rows; findings.push(...defaults.findings);
     // Execute the shipped Producer caller, including its ordinary package evidence
     // reader and component/default dependency closure, against current source modules.
-    const shipping = await sourceModule(path.join(root, "packages/producer/src/server/selection-defaults.ts")).prepareStudioSelection();
+    const shipping = await runSourceEsm(root, async loadSourceModule => (await loadSourceModule(path.join(root, "packages/producer/src/server/selection-defaults.ts"))).prepareStudioSelection());
     const adopted = shipping.input.library.surfaces.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot.startsWith("sections.specimen-"));
     shippingDefaults = { sourceBundles: shipping.surfaceBundles.length, nativeAdopted: adopted.length, surfacesAdopted: shipping.input.library.surfaces.fills.length };
     const planner = sourceModule(path.join(root, "packages/designer/src/catalog-core/index.ts"));
