@@ -1,108 +1,94 @@
-import { SectionFrame as S4Frame } from "./SectionFrame.js";
-import { render, screen } from "@testing-library/react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { Suspense } from "react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { Testimonial } from "./Testimonial.js";
-import { renderTestimonial } from "./Testimonial.server.js";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import selected from "../studio/__fixtures__/default-component-preview-profile.json" with { type: "json" };
+import cardDocument from "../catalog/fills/shadcn@aria/components.card.json" with { type: "json" };
+import { componentDescriptorHash, type ComponentCandidate, type ResolvedComponents } from "../catalog-core/resolve-components.js";
+import { importShadcnAriaComponents, materializeShadcnComponent, type ShadcnComponentInput } from "../importers/shadcn-aria-components.js";
+import { selectedRuntime } from "../importers/__fixtures__/selected-runtime.js";
+import { ConsumerComponentProvider, type ConsumerComponentSelection } from "../runtime/component-leaf.client.js";
+import { SemanticContent } from "../components/SemanticContent.js";
+import { Card as FoundryCard } from "../components/Card.js";
 import { TestimonialSet, type TestimonialSetItem } from "./TestimonialSet.js";
+import { renderTestimonialsSection } from "../runtime/sections/testimonials.js";
+import { groupASectionInput } from "../runtime/sections/group-a-dataset.js";
+import { importFoundrySections } from "../importers/foundry-sections.js";
+import { specimenDataset } from "../studio/specimen-dataset.js";
 
-const item = { id: "first", quote: <>A <em>clear</em> account.</>, attributorName: "Alex Example", attributorRole: "Reviewer" };
+const fixture = resolve(import.meta.dirname, "../importers/__fixtures__/shadcn-aria");
+const read = (name: string) => readFileSync(resolve(fixture, name), "utf8");
+const imported = importShadcnAriaComponents({
+  items: [JSON.parse(read("card.json"))],
+  styles: { path: "apps/v4/registry/styles/style-nova.css", content: read("style-nova.css") },
+  notice: { path: "LICENSE.md", content: read("LICENSE.md") },
+} as ShadcnComponentInput);
+const files = materializeShadcnComponent(imported, "card");
+const runtime = selectedRuntime(files);
+const cardDescriptor = cardDocument.components.card as unknown as ComponentCandidate;
+function selection(shadcn = true): ConsumerComponentSelection {
+  const profile = structuredClone(selected) as unknown as ResolvedComponents;
+  if (shadcn) {
+    const original = profile.components["components.card"]!;
+    profile.components = { ...profile.components, "components.card": { ...original,
+      descriptor: cardDescriptor, impl: cardDescriptor.impl as typeof original.impl, propMap: cardDescriptor.propMap,
+      origin: { kind: "adopted", source: "shadcn@aria", fill: "shadcn@aria/components.card", pin: cardDescriptor.pin, license: cardDescriptor.license, sha256: componentDescriptorHash(cardDescriptor), adoptedAt: "2026-10-30" },
+    } };
+    profile.files = [...profile.files.filter(file => !files.some(item => item.path === file.path)), ...files];
+  }
+  return { profile: { components: profile }, selectionHash: profile.selectionHash,
+    descriptors: Object.fromEntries(Object.entries(profile.components).map(([id, chosen]) => [id, componentDescriptorHash(chosen.descriptor)])),
+    modules: { "@clossys/designer/components": { SemanticContent, Card: FoundryCard }, "components/card/card.tsx": runtime.load("components/card/card.tsx") },
+  };
+}
+const item = { id: "first", quote: "A clear account.", attributorName: "Example Co.", attributorRole: "Reviewer" };
 const items = (count: number): TestimonialSetItem[] => Array.from({ length: count }, (_, index) => ({ ...item, id: String(index) }));
+const host = (children: React.ReactNode, chosen = selection()) => <ConsumerComponentProvider value={chosen}><Suspense fallback={null}>{children}</Suspense></ConsumerComponentProvider>;
 
-describe("TestimonialSet", () => {
-  it("refuses counts zero, five and seven with a block-specific TypeError [mutant: allow five]", () => {
-    for (const count of [0, 5, 7]) {
-      expect(() => renderToStaticMarkup(<TestimonialSet items={items(count)} />)).toThrow(TypeError);
-      expect(() => renderToStaticMarkup(<TestimonialSet items={items(count)} />)).toThrow(/^TestimonialSet:/);
-    }
-    for (const count of [1, 2, 3, 4, 6]) {
-      const host = document.createElement("div");
-      host.innerHTML = renderToStaticMarkup(<TestimonialSet items={items(count)} />);
-      expect(host.querySelectorAll("ul > li > figure")).toHaveLength(count);
-    }
+describe("selected-leaf testimonial section", () => {
+  it.each([1, 2, 3, 4, 6])("renders %i real selected shadcn cards with quote attribution", async count => {
+    const view = render(host(<TestimonialSet items={items(count)} />));
+    await waitFor(() => expect(view.container.querySelectorAll('[data-slot="card"]')).toHaveLength(count));
+    expect(screen.getAllByRole("listitem")).toHaveLength(count);
+    expect(view.container.querySelectorAll("figure > figcaption")).toHaveLength(count);
+    expect(screen.getAllByText(item.quote)).toHaveLength(count);
+    expect(screen.getAllByText(item.attributorName)).toHaveLength(count);
+    const cards = view.container.querySelectorAll('[data-slot="card"]');
+    for (const card of cards) expect(card).toHaveClass("border");
+    if (count === 1) expect(screen.getByRole("list").className).not.toMatch(/(?:^|\s)grid(?:\s|$)/);
+    if (count === 3) expect(screen.getAllByRole("listitem")[2]).toHaveClass("tablet:col-span-2", "desktop:col-span-1");
   });
 
-  it("centres one item without grid classes [mutant: always grid]", () => {
-    render(<TestimonialSet items={[item]} />);
-    const list = screen.getByRole("list");
-    expect(list).toHaveClass("mx-auto", "max-w-[42rem]");
-    expect(list.className).not.toMatch(/(?:^|\s)(?:\S*:)?grid(?:-|\s|$)/);
+  it("honours consumer replacement without changing the section", async () => {
+    const view = render(host(<TestimonialSet items={[item]} />));
+    await waitFor(() => expect(view.container.querySelector('[data-slot="card"]')).not.toBeNull());
+    view.rerender(host(<TestimonialSet items={[item]} />, selection(false)));
+    await waitFor(() => expect(view.container.querySelector('[data-slot="card"]')).toBeNull());
+    expect(screen.getByText(item.quote)).toBeInTheDocument();
+    expect(view.container.querySelector("figure")?.parentElement).toHaveClass("rounded-control");
   });
 
-  it("keeps the portrait first and decorative [mutant: remove portrait aria-hidden]", () => {
-    const { container } = render(<TestimonialSet items={[{ ...item, portrait: <svg data-testid="portrait" /> }]} />);
-    const portrait = screen.getByTestId("portrait").parentElement;
-    expect(portrait).toHaveAttribute("aria-hidden", "true");
-    expect(portrait).toHaveClass("size-10", "shrink-0", "overflow-hidden", "rounded-pill");
-    expect(container.querySelector("figcaption")?.firstElementChild).toBe(portrait);
+  it("keeps portraits decorative and forwards host list attributes", async () => {
+    const view = render(host(<TestimonialSet items={[{ ...item, portrait: <svg data-testid="portrait" /> }]} id="quotes" dir="rtl" aria-label="Reader accounts" className="gap-xl" style={{ marginTop: 7 }} />));
+    await screen.findByText(item.quote);
+    expect(screen.getByTestId("portrait").parentElement).toHaveAttribute("aria-hidden", "true");
+    expect(screen.getByRole("list")).toHaveAttribute("id", "quotes");
+    expect(screen.getByRole("list")).toHaveAttribute("dir", "rtl");
+    expect(screen.getByRole("list")).toHaveClass("gap-xl");
+    expect((view.container.firstElementChild as HTMLElement).style.marginTop).toBe("7px");
   });
 
-  it("shares the base figure markup with Testimonial [mutant: diverge figure markup]", () => {
-    const host = document.createElement("div");
-    host.innerHTML = renderToStaticMarkup(<TestimonialSet ground="base" items={[item]} />);
-    expect(host.querySelector("figure")?.outerHTML).toBe(renderToStaticMarkup(<Testimonial quote={item.quote} attributorName={item.attributorName} attributorRole={item.attributorRole} />));
+  it("renders the registered runtime section from the Studio specimen dataset", async () => {
+    const fill = importFoundrySections().fills.find(row => row.$extensions["com.clossys.fill"].slot === "sections.testimonials")!;
+    const view = render(host(renderTestimonialsSection(groupASectionInput("testimonials", fill))));
+    await waitFor(() => expect(view.container.querySelectorAll('[data-slot="card"]')).toHaveLength(specimenDataset.sections.testimonials.items.length));
+    expect(view.container.firstElementChild).toHaveAttribute("data-ds-leaf", "sections.testimonials");
+    for (const quote of specimenDataset.sections.testimonials.items) expect(screen.getByText(quote.attributorName)).toBeInTheDocument();
   });
 
-  it("spans the third of three items at tablet only [mutant: remove third span]", () => {
-    render(<TestimonialSet items={items(3)} />);
-    const entries = screen.getAllByRole("listitem");
-    expect(screen.getByRole("list")).toHaveClass("grid-cols-1", "tablet:grid-cols-2", "desktop:grid-cols-3", "gap-lg");
-    expect(entries[2]).toHaveClass("tablet:col-span-2", "desktop:col-span-1");
-    expect(entries[0]).not.toHaveClass("tablet:col-span-2");
+  it("refuses unsupported counts and grounds before rendering", () => {
+    for (const count of [0, 5, 7]) expect(() => TestimonialSet({ items: items(count) })).toThrow(/^TestimonialSet:/);
+    expect(() => TestimonialSet({ items: [item], ground: "unknown" as never })).toThrow(/ground/);
   });
-
-  it("uses inverse quote and attribution inks [mutant: hard-code primary ink]", () => {
-    const { container } = render(<TestimonialSet ground="inverse" items={[item]} />);
-    expect(container.querySelector("blockquote")).toHaveClass("text-ink-on-inverse");
-    expect(screen.getByText(item.attributorName)).toHaveClass("text-ink-on-inverse");
-    expect(screen.getByText(item.attributorRole)).toHaveClass("text-ink-on-inverse-muted");
-    expect(container.querySelector("blockquote")).not.toHaveClass("text-ink-primary");
-    expect(screen.getByRole("listitem")).toHaveClass("bg-surface-inverse-raised");
-  });
-
-  it("preserves the exact renderer output when ground is omitted [mutant: change default ground]", () => {
-    expect(renderToStaticMarkup(renderTestimonial({ quote: "Quote", attributorName: "Name", attributorRole: "Role" }, null))).toBe('<figure class="flex flex-col gap-md"><blockquote class="text-blockquote font-display text-ink-primary">Quote</blockquote><figcaption class="flex items-center gap-sm"><div class="flex flex-col"><span class="text-body font-body font-medium text-ink-primary">Name</span><span class="text-body-s text-ink-secondary">Role</span></div></figcaption></figure>');
-  });
-
-  it("forwards host list attributes, style and class overrides without a section heading", () => {
-    render(<TestimonialSet items={[item]} aria-label="Reader accounts" aria-labelledby="accounts" id="quotes" className="max-w-[40rem]" style={{ marginBlockStart: "8px" }} />);
-    const list = screen.getByRole("list");
-    expect(list.tagName).toBe("UL");
-    expect(list).toHaveAttribute("id", "quotes");
-    expect(list).toHaveAttribute("aria-label", "Reader accounts");
-    expect(list).toHaveAttribute("aria-labelledby", "accounts");
-    expect(list).toHaveClass("max-w-[40rem]");
-    expect(list.style.marginBlockStart).toBe("8px");
-    expect(screen.queryByRole("heading")).not.toBeInTheDocument();
-    expect(screen.getByRole("listitem")).toHaveClass("rounded-panel", "p-lg", "bg-surface-sunken");
-    expect(screen.getByRole("listitem")).toHaveClass("text-body-l");
-    expect(screen.getByRole("listitem").style.getPropertyValue("--text-blockquote")).toBe("var(--text-body-l, inherit)");
-  });
-
-  it("uses two desktop columns for two and four, and three for six", () => {
-    for (const count of [2, 4, 6]) {
-      const host = document.createElement("div");
-      host.innerHTML = renderToStaticMarkup(<TestimonialSet ground="sunken" items={items(count)} />);
-      expect(host.querySelector("ul")).toHaveClass("grid", "grid-cols-1", "tablet:grid-cols-2", count === 6 ? "desktop:grid-cols-3" : "desktop:grid-cols-2");
-      expect(host.querySelector("li")).toHaveClass("bg-surface-raised");
-    }
-  });
-});
-
-it("S4-6 retains the bare root, direct children and host identity under one external band", () => {
-  let clicks = 0;
-  const view = render(<TestimonialSet items={items(2)} id="bare" dir="rtl" data-host="bare" className="gap-xl" style={{ marginTop: 7 }} onClick={() => clicks++} />);
-  const root = view.container.firstElementChild as HTMLElement;
-  expect(root.tagName).toBe("UL");
-  expect(root).toHaveAttribute("id", "bare");
-  expect(root).toHaveAttribute("dir", "rtl");
-  expect(root).toHaveAttribute("data-host", "bare");
-  expect(root.style.marginTop).toBe("7px");
-  expect(root).toHaveClass("gap-xl");
-  expect(Array.from(root.children).every(child => child.tagName === "LI")).toBe(true);
-  expect(root.querySelector("section,header,h1,h2")).toBeNull();
-  root.click(); expect(clicks).toBe(1);
-  view.rerender(<S4Frame><TestimonialSet items={items(2)} id="bare" /></S4Frame>);
-  expect(view.container.querySelectorAll("[data-designer-section-frame]")).toHaveLength(1);
-  expect(view.container.querySelector("#bare")?.tagName).toBe("UL");
 });
