@@ -16,7 +16,7 @@ function NotPublished({ ui, message }: { ui: UI; message?: string }) {
 function PublisherSelectionNeeds({ ui }: { ui: UI }) {
   const { selection, ContentSection, SectionHeader, Badge } = ui;
   const needs = selection.leaves.filter(leaf => leaf.source !== 'consumer');
-  return needs.length ? <ContentSection aria-label="Publisher design system needs"><SectionHeader title="Design system selection" description="Planned defaults are used for seats not selected by this consumer." />{needs.map(leaf => <Badge key={leaf.leaf} variant="warning">NEED: {leaf.leaf}{leaf.fill ? ` · ${leaf.fill}` : ''}</Badge>)}</ContentSection> : null;
+  return needs.length ? <ContentSection aria-label="Publisher design system needs"><SectionHeader title="Design system selection" description="Planned defaults are used for seats not selected by this consumer." />{needs.map(leaf => <Badge key={leaf.leaf} variant="secondary">NEED: {leaf.leaf}{leaf.fill ? ` · ${leaf.fill}` : ''}</Badge>)}</ContentSection> : null;
 }
 
 function PreviewMetadata({ ui, page, publication }: { ui: UI; page: PublicationPage; publication: string }) {
