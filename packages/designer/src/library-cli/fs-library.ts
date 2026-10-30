@@ -14,6 +14,7 @@ import type { SurfaceResolutionOptions, SurfaceDocument, SurfaceEntry, SurfaceFi
 import type { DogfoodFinding, NeedRecord, NeedStatus, NeedCandidate } from "../catalog-core/dogfood.js";
 import { foundrySurfaceCatalog } from "./surface-catalog.js";
 import { readSurfacePackageEvidence } from "./surface-package-evidence.js";
+import { verifySurfacePackageInputs } from "./surface-pin-context.js";
 import { checkReceipt, digest, inputDigest, libraryManifest, nextReceipt, readReceipt, resolveStamp, DESIGNER_RECEIPT_FILE, type DesignerReceiptVerdict, type DesignerWriteStamp } from "./write-receipt.js";
 export { DESIGNER_RECEIPT_FILE } from "./write-receipt.js";
 export type { DesignerReceipt, DesignerReceiptFinding, DesignerReceiptVerdict, DesignerWriteEntry, DesignerWriteStamp } from "./write-receipt.js";
@@ -228,6 +229,7 @@ async function readCompositeUnlocked(root: string, catalog: CompositeCatalogData
     const portion=canonicalSurfacePortion({version:1,fills:surfaces,files:surfaceFiles});const claimed=new Set(portion.fills.flatMap(doc=>ownedSurfacePaths(surfaceEntryOf(doc),portion.files)));
     if(portion.files.some(file=>!claimed.has(file.path)||ownedFiles.some(component=>component.path===file.path))||stableStringify(inventory.files)!==stableStringify(portion.files.map(file=>file.path)))throw new LibraryInputError("Orphan/overlapping/noncanonical surface inventory");
     for(const file of portion.files.filter(file=>file.path.startsWith("surfaces/receipts/"))){let receipt:unknown;try{receipt=JSON.parse(file.content);}catch{throw new LibraryInputError("Invalid surface receipt");}if(file.content!==stableStringify(receipt))throw new LibraryInputError("Noncanonical surface receipt");}
+    verifySurfacePackageInputs(catalog, portion.fills, slot => containedPath(root, `fills/${slot}.json`));
     library.surfaces=portion;const expected=stableStringify(surfaceSelection(library));if(new TextDecoder("utf-8",{fatal:true}).decode(await regularFile(containedPath(root,"surface-selection.json")))!==expected)throw new LibraryInputError("Surface selection drift");
   }
   if (stableStringify(generateSelection(valuePortion(library))) !== stableStringify(selection)) throw new LibraryInputError("Library selection drift");
