@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useRef, useState, type ReactNode } from "react";
-import { Badge } from "../components/Badge.js";
+import { Badge } from "../components/preview-runtime/components/badge/badge.js";
 import { SearchField } from "../components/SearchField.js";
 import { Select } from "../components/Select.js";
 import { Skeleton } from "../components/Skeleton.js";
