@@ -33,16 +33,7 @@ export function WriterSpecimen({ index, selectedId }: { index: AgentCells; selec
   const tone = [...new Set(allVoice.flatMap(item => item.tone))];
   const banned = [...new Set(allVoice.flatMap(item => item.banned))];
   const contexts = [...new Set(projection.records.map(record => record.context))];
-  return <ContentSection aria-label="Writer copy specimen">
-    <SectionHeader title={specimenTitle(cell)} stats={<>{cell.status ? <Badge variant={cell.status === 'active' ? 'success' : 'warning'}>{cell.status}</Badge> : null}{cell.version !== undefined ? <Badge>v{cell.version}</Badge> : null}</>} />
-    <ContentSection layout="split-end" media={<ContentSection>
-      <SectionHeader title="Voice rules" level={3} />
-      {tone.length || banned.length ? <DetailView aria-label="Voice rule card" fields={[
-        ...(tone.length ? [{ label: 'Tone', value: tone.join(', ') }] : []),
-        ...(banned.length ? [{ label: 'Banned words', value: banned.join(', ') }] : []),
-      ]} /> : <EmptyState title="Voice rules unavailable" description="No tone or banned-word rules were found in the available Writer cells." />}
-    </ContentSection>}>
-      <ContentSection>
+  const specimens = <ContentSection>
         {contexts.length ? contexts.map(context => <ContentSection key={context}>
           <SectionHeader title={context} level={3} />
           <DetailView aria-label={`${context} locales`} fields={projection.locales.map(locale => ({
@@ -54,7 +45,19 @@ export function WriterSpecimen({ index, selectedId }: { index: AgentCells; selec
           }))} />
         </ContentSection>) : <EmptyState title="No produced copy" description="This cell has no supported Writer copy records." />}
         {projection.gaps.map(gap => <EmptyState key={gap} title="Writer data gap" description={gap} />)}
-      </ContentSection>
-    </ContentSection>
+      </ContentSection>;
+  const voice = <ContentSection>
+    <SectionHeader title="Voice rules" level={3} />
+    <DetailView aria-label="Voice rule card" fields={[
+      ...(tone.length ? [{ label: 'Tone', value: tone.join(', ') }] : []),
+      ...(banned.length ? [{ label: 'Banned words', value: banned.join(', ') }] : []),
+    ]} />
+  </ContentSection>;
+  return <ContentSection aria-label="Writer copy specimen">
+    <SectionHeader title={specimenTitle(cell)} stats={<>{cell.status ? <Badge variant={cell.status === 'active' ? 'success' : 'warning'}>{cell.status}</Badge> : null}{cell.version !== undefined ? <Badge>v{cell.version}</Badge> : null}</>} />
+    {tone.length || banned.length ? <ContentSection layout="split-start" media={specimens}>{voice}</ContentSection> : <>
+      {specimens}
+      <EmptyState title="Voice rules unavailable" description="No tone or banned-word rules were found in the available Writer cells." />
+    </>}
   </ContentSection>;
 }
