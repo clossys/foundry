@@ -5,6 +5,7 @@ import { foundrySurfaceCatalog } from "./surface-catalog.js";
 
 /** Explicit source decisions take precedence over roster availability. */
 const sourceDecisions: Readonly<Record<string, string | undefined>> = {
+  "components.rich-text": "shadcn@aria",
   "components.semantic-content": "foundry",
 };
 

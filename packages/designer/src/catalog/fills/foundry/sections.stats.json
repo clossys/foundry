@@ -60,11 +60,15 @@
           },
           {
             "path": "packages/designer/src/blocks/StatGroup.tsx",
-            "sha256": "4f317c1660f2349945e74effcfe7f7dc67cd70cdb49bdeb20e429c71e42fec12"
+            "sha256": "02fa44d96de9f536d64bd28291e6f8710f06aef340e5a747321277c60a1f7f43"
           },
           {
             "path": "packages/designer/src/blocks/Stats/parts.tsx",
             "sha256": "79d199fdf761fa9604c48b8f954161df8d13b1c85c6d03c0978ceae882cfd2bf"
+          },
+          {
+            "path": "packages/designer/src/blocks/Stats/surface.tsx",
+            "sha256": "7699e1a08f448d47ff4a181aa4e291e6c321045fad77781cc22ae88ee2324ea8"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

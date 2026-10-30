@@ -83,6 +83,7 @@ it("reselects an existing known source through the shared native catalog without
 it("reads explicit native source policy and leaves ambiguous or absent policy undefined", () => {
   const policy = loadNativeDefaultSources(loadBuildCatalog());
   expect(policy["components.button"]).toBe("shadcn@aria");
+  expect(policy["components.rich-text"]).toBe("shadcn@aria");
   expect(policy["components.semantic-content"]).toBe("foundry");
   expect(policy["components.native-action"]).toBe("foundry");
   expect(policy["tokens.spacing"]).toBe("shadcn@aria");

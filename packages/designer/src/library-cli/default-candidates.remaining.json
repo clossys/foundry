@@ -1,0 +1,1344 @@
+{
+  "schemaVersion": 1,
+  "captureState": "Working tree after the integration fixes, before their commit; baseHead and sourceHead identify the measured base, not a final qualification head.",
+  "baseHead": "db231c67de01d5e1c435b96d01ab24a6abee30a0",
+  "sourceHead": "db231c67de01d5e1c435b96d01ab24a6abee30a0",
+  "command": "node packages/designer/scripts/check-default-candidates.mjs",
+  "exitCode": 2,
+  "status": "invalid-input",
+  "scope": "All native registered implementation descriptor reads, value references, composition inputs, and attached source-only lower-bound measurements. Registered slots without implementations require explicit native unavailable coverage; no runtime or full-program coverage claim.",
+  "counts": {
+    "registeredSlots": 250,
+    "registeredSurfaces": 144,
+    "implementationDescriptors": 175,
+    "checkedReads": 2162,
+    "checkedSlots": 94,
+    "missingSlots": 46
+  },
+  "remainingByLayer": {
+    "assets": 12,
+    "tokens": 34
+  },
+  "missing": [
+    {
+      "slot": "assets.backdrop-graphic",
+      "source": "",
+      "surfaces": [
+        "sections.hero"
+      ],
+      "reads": [
+        "assets.backdrop-graphic"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.icon-check",
+      "source": "",
+      "surfaces": [
+        "components.checkbox",
+        "components.combo-box",
+        "components.command",
+        "components.dropdown-menu",
+        "components.menu",
+        "components.select"
+      ],
+      "reads": [
+        "assets.icon-check"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.icon-chevron-down",
+      "source": "",
+      "surfaces": [
+        "components.breadcrumbs",
+        "components.combo-box",
+        "components.disclosure",
+        "components.number-field",
+        "components.select",
+        "sections.data-grid",
+        "sections.data-table"
+      ],
+      "reads": [
+        "assets.icon-chevron-down"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.icon-chevron-left",
+      "source": "",
+      "surfaces": [
+        "components.calendar",
+        "sections.pagination"
+      ],
+      "reads": [
+        "assets.icon-chevron-left"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.icon-chevron-right",
+      "source": "",
+      "surfaces": [
+        "components.breadcrumbs",
+        "components.button",
+        "components.calendar",
+        "components.dropdown-menu",
+        "components.media-player",
+        "components.menu",
+        "components.navigation-tree",
+        "components.tree",
+        "sections.data-grid",
+        "sections.data-table",
+        "sections.pagination"
+      ],
+      "reads": [
+        "assets.icon-chevron-right"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.icon-chevron-up",
+      "source": "",
+      "surfaces": [
+        "components.disclosure",
+        "components.number-field"
+      ],
+      "reads": [
+        "assets.icon-chevron-up"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.icon-close",
+      "source": "",
+      "surfaces": [
+        "components.combo-box",
+        "components.command",
+        "components.dialog",
+        "components.sheet",
+        "components.tag-group"
+      ],
+      "reads": [
+        "assets.icon-close"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.icon-date",
+      "source": "",
+      "surfaces": [
+        "components.date-picker"
+      ],
+      "reads": [
+        "assets.icon-date"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.icon-search",
+      "source": "",
+      "surfaces": [
+        "components.command",
+        "components.select"
+      ],
+      "reads": [
+        "assets.icon-search"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.lockup",
+      "source": "",
+      "surfaces": [
+        "assets.lockup"
+      ],
+      "reads": [
+        "assets.lockup",
+        "assets.lockup.positive"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.mark",
+      "source": "",
+      "surfaces": [
+        "assets.app-icon",
+        "assets.favicon",
+        "assets.mark"
+      ],
+      "reads": [
+        "assets.mark",
+        "assets.mark.positive"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.video",
+      "source": "foundry",
+      "surfaces": [
+        "components.media-player"
+      ],
+      "reads": [
+        "assets.video"
+      ],
+      "reasons": [
+        "A1: Member licence and adopted pin/hash trail required"
+      ]
+    },
+    {
+      "slot": "tokens.accent-color",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "assets.app-icon",
+        "assets.backdrop-graphic",
+        "components.badge",
+        "components.banner",
+        "components.button",
+        "components.calendar",
+        "components.checkbox",
+        "components.combo-box",
+        "components.command",
+        "components.date-field",
+        "components.grid-list",
+        "components.link",
+        "components.logo",
+        "components.meter",
+        "components.navigation-tree",
+        "components.number-field",
+        "components.progress-bar",
+        "components.radio-group",
+        "components.resize-handle",
+        "components.search-field",
+        "components.select",
+        "components.sheet",
+        "components.sidebar",
+        "components.slider",
+        "components.switch",
+        "components.table",
+        "components.tabs",
+        "components.tag-group",
+        "components.text-field",
+        "components.toggle-button",
+        "components.toggle-group",
+        "components.tree",
+        "frames.app-header",
+        "frames.app-shell",
+        "frames.app-sidebar",
+        "frames.auth-shell",
+        "frames.document",
+        "frames.inspector",
+        "frames.site-shell",
+        "sections.activity-feed",
+        "sections.comparison",
+        "sections.content",
+        "sections.faq",
+        "sections.features",
+        "sections.form",
+        "sections.hero",
+        "sections.link-index",
+        "sections.logo-cloud",
+        "sections.people",
+        "sections.pricing",
+        "sections.section-header",
+        "sections.sign-in-form",
+        "sections.steps",
+        "sections.table-of-contents",
+        "sections.task-list",
+        "sections.timeline",
+        "tokens.focus-color",
+        "tokens.focus-shadow",
+        "tokens.gradient"
+      ],
+      "reads": [
+        "tokens.accent-color",
+        "tokens.accent-color.default",
+        "tokens.accent-color.text",
+        "tokens.accent-color.tint"
+      ],
+      "reasons": [
+        "C4: coverage: tokens.accent-color.hover (emits --color-accent-hover) has no value in profile default-candidate-check",
+        "C4: coverage: tokens.accent-color.on-inverse (emits --color-accent-on-inverse) has no value in profile default-candidate-check",
+        "C4: coverage: tokens.accent-color.text (emits --color-accent-text) has no value in profile default-candidate-check",
+        "C4: coverage: tokens.accent-color.tint (emits --color-accent-tint) has no value in profile default-candidate-check",
+        "required native member is absent: tokens.accent-color.hover",
+        "required native member is absent: tokens.accent-color.on-inverse",
+        "required native member is absent: tokens.accent-color.text",
+        "required native member is absent: tokens.accent-color.tint"
+      ]
+    },
+    {
+      "slot": "tokens.action-color",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.avatar",
+        "components.badge",
+        "components.button",
+        "components.calendar",
+        "components.checkbox",
+        "components.command",
+        "components.empty",
+        "components.item",
+        "components.link",
+        "components.native-action",
+        "components.progress-bar",
+        "components.radio-group",
+        "components.sheet",
+        "components.sidebar",
+        "components.slider",
+        "components.switch",
+        "components.toggle-button"
+      ],
+      "reads": [
+        "tokens.action-color",
+        "tokens.action-color.default"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.behavior-timing",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.tooltip"
+      ],
+      "reads": [
+        "tokens.behavior-timing",
+        "tokens.behavior-timing.tooltip-close",
+        "tokens.behavior-timing.tooltip-delay"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.brandmark-size",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.logo",
+        "frames.site-footer",
+        "sections.table-of-contents"
+      ],
+      "reads": [
+        "tokens.brandmark-size"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.categorical-color",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.chart-area",
+        "components.chart-bar",
+        "components.chart-heatmap",
+        "components.chart-line",
+        "components.chart-range",
+        "components.chart-scatter",
+        "components.chart-sparkline",
+        "components.chart-status-strip",
+        "components.chart-waterfall"
+      ],
+      "reads": [
+        "tokens.categorical-color"
+      ],
+      "reasons": [
+        "C4: coverage: tokens.categorical-color.6 (emits --color-chart-categorical-6) has no value in profile default-candidate-check",
+        "C4: coverage: tokens.categorical-color.7 (emits --color-chart-categorical-7) has no value in profile default-candidate-check",
+        "C4: coverage: tokens.categorical-color.8 (emits --color-chart-categorical-8) has no value in profile default-candidate-check",
+        "required native member is absent: tokens.categorical-color.6",
+        "required native member is absent: tokens.categorical-color.7",
+        "required native member is absent: tokens.categorical-color.8"
+      ]
+    },
+    {
+      "slot": "tokens.chart-color",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.chart-area",
+        "components.chart-bar",
+        "components.chart-heatmap",
+        "components.chart-line",
+        "components.chart-range",
+        "components.chart-scatter",
+        "components.chart-sparkline",
+        "components.chart-status-strip",
+        "components.chart-waterfall"
+      ],
+      "reads": [
+        "tokens.chart-color"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.code-size",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.keyboard",
+        "components.rich-text",
+        "sections.article",
+        "sections.chat",
+        "sections.comparison"
+      ],
+      "reads": [
+        "tokens.code-size",
+        "tokens.code-size.block"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.color-ramp",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "sections.hero"
+      ],
+      "reads": [
+        "tokens.color-ramp"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.control-color",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.badge",
+        "components.button",
+        "components.command",
+        "components.link",
+        "components.sheet",
+        "components.sidebar",
+        "components.toggle-button",
+        "components.toggle-group",
+        "frames.app-sidebar",
+        "frames.site-shell"
+      ],
+      "reads": [
+        "tokens.control-color",
+        "tokens.control-color.tonal"
+      ],
+      "reasons": [
+        "C4: coverage: tokens.control-color.quiet (emits --color-control-quiet) has no value in profile default-candidate-check",
+        "C4: coverage: tokens.control-color.tonal-hover (emits --color-control-tonal-hover) has no value in profile default-candidate-check",
+        "C4: coverage: tokens.control-color.tonal-inverse (emits --color-control-tonal-inverse) has no value in profile default-candidate-check",
+        "C4: coverage: tokens.control-color.tonal-inverse-hover (emits --color-control-tonal-inverse-hover) has no value in profile default-candidate-check",
+        "required native member is absent: tokens.control-color.quiet",
+        "required native member is absent: tokens.control-color.tonal-hover",
+        "required native member is absent: tokens.control-color.tonal-inverse",
+        "required native member is absent: tokens.control-color.tonal-inverse-hover"
+      ]
+    },
+    {
+      "slot": "tokens.control-size",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.breadcrumbs",
+        "components.button",
+        "components.calendar",
+        "components.checkbox",
+        "components.color-picker",
+        "components.combo-box",
+        "components.command",
+        "components.date-field",
+        "components.number-field",
+        "components.radio-group",
+        "components.search-field",
+        "components.select",
+        "components.sheet",
+        "components.sidebar",
+        "components.slider",
+        "components.switch",
+        "components.tag-group",
+        "components.text-field",
+        "components.toggle-button",
+        "components.toggle-group",
+        "sections.data-grid",
+        "sections.data-table"
+      ],
+      "reads": [
+        "tokens.control-size",
+        "tokens.control-size.h-lg",
+        "tokens.control-size.h-md",
+        "tokens.control-size.h-sm",
+        "tokens.control-size.mark",
+        "tokens.control-size.switch-thumb"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.density",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "sections.chat"
+      ],
+      "reads": [
+        "tokens.density"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.display-size",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "sections.content",
+        "sections.hero",
+        "sections.section-header"
+      ],
+      "reads": [
+        "tokens.display-size"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.diverging-color",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.chart-area",
+        "components.chart-bar",
+        "components.chart-heatmap",
+        "components.chart-line",
+        "components.chart-range",
+        "components.chart-scatter",
+        "components.chart-sparkline",
+        "components.chart-status-strip",
+        "components.chart-waterfall"
+      ],
+      "reads": [
+        "tokens.diverging-color"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.duration",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.badge",
+        "components.breadcrumbs",
+        "components.button",
+        "components.checkbox",
+        "components.color-picker",
+        "components.combo-box",
+        "components.command",
+        "components.dialog",
+        "components.disclosure",
+        "components.dropdown-menu",
+        "components.item",
+        "components.menu",
+        "components.native-action",
+        "components.number-field",
+        "components.popover",
+        "components.progress-bar",
+        "components.select",
+        "components.sheet",
+        "components.sidebar",
+        "components.slider",
+        "components.switch",
+        "components.table",
+        "components.tabs",
+        "components.tag-group",
+        "components.toggle-button",
+        "components.tooltip",
+        "components.tree",
+        "frames.app-sidebar",
+        "sections.link-index",
+        "sections.stats",
+        "tokens.transition-duration"
+      ],
+      "reads": [
+        "tokens.duration",
+        "tokens.duration.default",
+        "tokens.duration.fast"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.easing",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.badge",
+        "components.breadcrumbs",
+        "components.button",
+        "components.checkbox",
+        "components.color-picker",
+        "components.combo-box",
+        "components.command",
+        "components.disclosure",
+        "components.item",
+        "components.link",
+        "components.native-action",
+        "components.number-field",
+        "components.progress-bar",
+        "components.select",
+        "components.sheet",
+        "components.sidebar",
+        "components.slider",
+        "components.switch",
+        "components.table",
+        "components.tabs",
+        "components.tag-group",
+        "components.toggle-button",
+        "components.toggle-group",
+        "components.tree",
+        "frames.app-sidebar",
+        "sections.link-index"
+      ],
+      "reads": [
+        "tokens.easing",
+        "tokens.easing.default"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.elevation",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.card",
+        "components.combo-box",
+        "components.command",
+        "components.dialog",
+        "components.dropdown-menu",
+        "components.menu",
+        "components.popover",
+        "components.select",
+        "components.sheet",
+        "components.sidebar",
+        "components.tabs",
+        "components.tooltip",
+        "tokens.elevation"
+      ],
+      "reads": [
+        "tokens.elevation",
+        "tokens.elevation.floating",
+        "tokens.elevation.none",
+        "tokens.elevation.raised"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.focus-color",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.badge",
+        "components.button",
+        "components.calendar",
+        "components.checkbox",
+        "components.combo-box",
+        "components.command",
+        "components.dialog",
+        "components.disclosure",
+        "components.dropdown-menu",
+        "components.item",
+        "components.link",
+        "components.media-player",
+        "components.menu",
+        "components.native-action",
+        "components.popover",
+        "components.radio-group",
+        "components.scroll-area",
+        "components.select",
+        "components.sheet",
+        "components.sidebar",
+        "components.slider",
+        "components.switch",
+        "components.tabs",
+        "components.tag-group",
+        "components.toggle-button",
+        "components.toggle-group",
+        "tokens.focus-shadow"
+      ],
+      "reads": [
+        "tokens.focus-color",
+        "tokens.focus-color.default",
+        "tokens.focus-color.on-inverse"
+      ],
+      "reasons": [
+        "C4: coverage: tokens.focus-color.on-inverse (emits --color-focus-ring-on-inverse) has no value in profile default-candidate-check",
+        "required native member is absent: tokens.focus-color.on-inverse"
+      ]
+    },
+    {
+      "slot": "tokens.focus-outline",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.badge",
+        "components.button",
+        "components.calendar",
+        "components.checkbox",
+        "components.combo-box",
+        "components.command",
+        "components.dialog",
+        "components.disclosure",
+        "components.dropdown-menu",
+        "components.item",
+        "components.link",
+        "components.media-player",
+        "components.menu",
+        "components.native-action",
+        "components.popover",
+        "components.radio-group",
+        "components.scroll-area",
+        "components.select",
+        "components.sheet",
+        "components.sidebar",
+        "components.slider",
+        "components.switch",
+        "components.tabs",
+        "components.tag-group",
+        "components.toggle-button",
+        "components.toggle-group"
+      ],
+      "reads": [
+        "tokens.focus-outline",
+        "tokens.focus-outline.offset",
+        "tokens.focus-outline.width"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.focus-shadow",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.button",
+        "components.calendar",
+        "components.checkbox",
+        "components.color-picker",
+        "components.combo-box",
+        "components.date-field",
+        "components.grid-list",
+        "components.link",
+        "components.navigation-tree",
+        "components.number-field",
+        "components.radio-group",
+        "components.search-field",
+        "components.select",
+        "components.slider",
+        "components.switch",
+        "components.table",
+        "components.tabs",
+        "components.tag-group",
+        "components.text-field",
+        "components.toggle-button",
+        "components.toggle-group",
+        "components.tree",
+        "sections.form",
+        "sections.sign-in-form"
+      ],
+      "reads": [
+        "tokens.focus-shadow"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.font-size",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.avatar",
+        "components.badge",
+        "components.banner",
+        "components.breadcrumbs",
+        "components.button",
+        "components.calendar",
+        "components.card",
+        "components.color-picker",
+        "components.command",
+        "components.dialog",
+        "components.disclosure",
+        "components.dropdown-menu",
+        "components.empty",
+        "components.item",
+        "components.menu",
+        "components.navigation-tree",
+        "components.number-field",
+        "components.popover",
+        "components.progress-bar",
+        "components.rich-text",
+        "components.sheet",
+        "components.sidebar",
+        "components.table",
+        "components.tabs",
+        "components.tag-group",
+        "components.toggle-button",
+        "components.tooltip",
+        "components.tree"
+      ],
+      "reads": [
+        "tokens.font-size",
+        "tokens.font-size.base",
+        "tokens.font-size.sm",
+        "tokens.font-size.xs"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.font-weight",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.badge",
+        "components.banner",
+        "components.breadcrumbs",
+        "components.button",
+        "components.calendar",
+        "components.card",
+        "components.color-picker",
+        "components.combo-box",
+        "components.command",
+        "components.dialog",
+        "components.disclosure",
+        "components.dropdown-menu",
+        "components.empty",
+        "components.item",
+        "components.keyboard",
+        "components.menu",
+        "components.navigation-tree",
+        "components.number-field",
+        "components.popover",
+        "components.progress-bar",
+        "components.rich-text",
+        "components.select",
+        "components.sheet",
+        "components.sidebar",
+        "components.table",
+        "components.tabs",
+        "components.tag-group",
+        "components.toggle-button",
+        "components.tree"
+      ],
+      "reads": [
+        "tokens.font-weight",
+        "tokens.font-weight.medium",
+        "tokens.font-weight.normal",
+        "tokens.font-weight.semibold"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.gutter",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "frames.auth-shell",
+        "frames.site-footer",
+        "sections.band",
+        "sections.logo-mark"
+      ],
+      "reads": [
+        "tokens.gutter"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.heading-size",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.dialog",
+        "components.meter",
+        "components.rich-text",
+        "sections.article",
+        "sections.call-to-action",
+        "sections.cards",
+        "sections.comparison",
+        "sections.consent",
+        "sections.content",
+        "sections.features",
+        "sections.form",
+        "sections.hero",
+        "sections.link-index",
+        "sections.page-header",
+        "sections.pricing",
+        "sections.section-header",
+        "sections.settings",
+        "sections.sign-in-form",
+        "sections.stats",
+        "sections.status-list"
+      ],
+      "reads": [
+        "tokens.heading-size"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.icon-size",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.icon",
+        "frames.app-sidebar",
+        "sections.features"
+      ],
+      "reads": [
+        "tokens.icon-size"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.icon-stroke",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.icon"
+      ],
+      "reads": [
+        "tokens.icon-stroke"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.radius",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.avatar",
+        "components.badge",
+        "components.banner",
+        "components.button",
+        "components.chart-area",
+        "components.chart-bar",
+        "components.chart-heatmap",
+        "components.chart-line",
+        "components.chart-range",
+        "components.chart-scatter",
+        "components.chart-sparkline",
+        "components.chart-status-strip",
+        "components.chart-waterfall",
+        "components.checkbox",
+        "components.combo-box",
+        "components.command",
+        "components.date-field",
+        "components.disclosure",
+        "components.link",
+        "components.media-player",
+        "components.menu",
+        "components.meter",
+        "components.progress-bar",
+        "components.radio-group",
+        "components.rich-text",
+        "components.select",
+        "components.sidebar",
+        "components.skeleton",
+        "components.switch",
+        "components.tag-group",
+        "components.toggle-button",
+        "components.toggle-group",
+        "components.tooltip",
+        "sections.access-matrix",
+        "sections.activity-feed",
+        "sections.article",
+        "sections.chat",
+        "sections.comparison",
+        "sections.data-grid",
+        "sections.data-table",
+        "sections.faq",
+        "sections.features",
+        "sections.filter-builder",
+        "sections.gallery",
+        "sections.link-index",
+        "sections.newsletter",
+        "sections.people",
+        "sections.settings",
+        "sections.status-list",
+        "sections.steps",
+        "sections.table-of-contents",
+        "sections.task-list",
+        "sections.testimonials",
+        "sections.timeline",
+        "sections.wizard"
+      ],
+      "reads": [
+        "tokens.radius",
+        "tokens.radius.default",
+        "tokens.radius.subtle"
+      ],
+      "reasons": [
+        "C4: coverage: tokens.radius.pill (emits --radius-pill) has no value in profile default-candidate-check",
+        "C4: coverage: tokens.radius.sharp (emits --radius-sharp) has no value in profile default-candidate-check",
+        "C4: coverage: tokens.radius.subtle (emits --radius-subtle) has no value in profile default-candidate-check",
+        "required native member is absent: tokens.radius.pill",
+        "required native member is absent: tokens.radius.sharp",
+        "required native member is absent: tokens.radius.subtle"
+      ]
+    },
+    {
+      "slot": "tokens.region-width",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.sidebar",
+        "frames.app-shell",
+        "frames.app-sidebar",
+        "sections.comparison"
+      ],
+      "reads": [
+        "tokens.region-width",
+        "tokens.region-width.sidebar",
+        "tokens.region-width.sidebar-rail"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.scrim-color",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.command",
+        "components.dialog",
+        "components.sheet",
+        "sections.hero"
+      ],
+      "reads": [
+        "tokens.scrim-color",
+        "tokens.scrim-color.default"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.sequential-color",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.chart-area",
+        "components.chart-bar",
+        "components.chart-heatmap",
+        "components.chart-line",
+        "components.chart-range",
+        "components.chart-scatter",
+        "components.chart-sparkline",
+        "components.chart-status-strip",
+        "components.chart-waterfall"
+      ],
+      "reads": [
+        "tokens.sequential-color"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.shift-distance",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.combo-box",
+        "components.dropdown-menu",
+        "components.menu",
+        "components.popover",
+        "components.select",
+        "components.sidebar",
+        "components.tooltip"
+      ],
+      "reads": [
+        "tokens.shift-distance",
+        "tokens.shift-distance.default"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.state-opacity",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.button",
+        "components.calendar",
+        "components.checkbox",
+        "components.color-picker",
+        "components.combo-box",
+        "components.command",
+        "components.date-field",
+        "components.disclosure",
+        "components.dropdown-menu",
+        "components.field",
+        "components.grid-list",
+        "components.link",
+        "components.menu",
+        "components.native-action",
+        "components.navigation-tree",
+        "components.number-field",
+        "components.radio-group",
+        "components.search-field",
+        "components.select",
+        "components.sheet",
+        "components.sidebar",
+        "components.slider",
+        "components.switch",
+        "components.tabs",
+        "components.tag-group",
+        "components.text-field",
+        "components.toggle-button",
+        "components.toggle-group",
+        "components.tree"
+      ],
+      "reads": [
+        "tokens.state-opacity",
+        "tokens.state-opacity.disabled",
+        "tokens.state-opacity.stale"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.surface-radius",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.card",
+        "components.media-player",
+        "sections.access-matrix",
+        "sections.comparison",
+        "sections.features",
+        "sections.filter-builder",
+        "sections.gallery",
+        "sections.link-index",
+        "sections.newsletter",
+        "sections.people",
+        "sections.settings",
+        "sections.table-of-contents",
+        "sections.task-list",
+        "sections.testimonials",
+        "sections.wizard",
+        "tokens.surface-radius"
+      ],
+      "reads": [
+        "tokens.surface-radius",
+        "tokens.surface-radius.default"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "tokens.text-color",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "assets.app-icon",
+        "assets.favicon",
+        "assets.lockup",
+        "assets.mark",
+        "components.avatar",
+        "components.badge",
+        "components.banner",
+        "components.breadcrumbs",
+        "components.button",
+        "components.calendar",
+        "components.card",
+        "components.chart-area",
+        "components.chart-bar",
+        "components.chart-heatmap",
+        "components.chart-line",
+        "components.chart-range",
+        "components.chart-scatter",
+        "components.chart-sparkline",
+        "components.chart-status-strip",
+        "components.chart-waterfall",
+        "components.checkbox",
+        "components.color-picker",
+        "components.combo-box",
+        "components.command",
+        "components.date-field",
+        "components.dialog",
+        "components.disclosure",
+        "components.dropdown-menu",
+        "components.empty",
+        "components.field",
+        "components.grid-list",
+        "components.item",
+        "components.keyboard",
+        "components.link",
+        "components.logo",
+        "components.media-player",
+        "components.menu",
+        "components.meter",
+        "components.native-action",
+        "components.navigation-tree",
+        "components.number-field",
+        "components.popover",
+        "components.progress-bar",
+        "components.radio-group",
+        "components.rich-text",
+        "components.search-field",
+        "components.select",
+        "components.sheet",
+        "components.sidebar",
+        "components.spinner",
+        "components.status-mark",
+        "components.switch",
+        "components.table",
+        "components.tabs",
+        "components.tag-group",
+        "components.text-field",
+        "components.toggle-button",
+        "components.toggle-group",
+        "components.tooltip",
+        "components.tree",
+        "frames.app-header",
+        "frames.app-shell",
+        "frames.app-sidebar",
+        "frames.auth-shell",
+        "frames.command",
+        "frames.site-footer",
+        "frames.site-header",
+        "frames.site-shell",
+        "sections.access-matrix",
+        "sections.account-summary",
+        "sections.activity-feed",
+        "sections.article",
+        "sections.band",
+        "sections.boundary-message",
+        "sections.call-to-action",
+        "sections.cards",
+        "sections.chat",
+        "sections.column-mapper",
+        "sections.comparison",
+        "sections.consent",
+        "sections.content",
+        "sections.data-grid",
+        "sections.data-table",
+        "sections.empty-state",
+        "sections.explorer",
+        "sections.faq",
+        "sections.features",
+        "sections.filter-builder",
+        "sections.form",
+        "sections.gallery",
+        "sections.hero",
+        "sections.legal-prose",
+        "sections.link-index",
+        "sections.logo-cloud",
+        "sections.logo-mark",
+        "sections.media",
+        "sections.newsletter",
+        "sections.pagination",
+        "sections.people",
+        "sections.pricing",
+        "sections.record-detail",
+        "sections.resource-list",
+        "sections.section-header",
+        "sections.settings",
+        "sections.sign-in-form",
+        "sections.stats",
+        "sections.status-list",
+        "sections.steps",
+        "sections.table-of-contents",
+        "sections.task-list",
+        "sections.testimonials",
+        "sections.timeline",
+        "sections.usage",
+        "sections.wizard",
+        "tokens.chart-color",
+        "tokens.control-color",
+        "tokens.focus-color",
+        "tokens.text-color"
+      ],
+      "reads": [
+        "tokens.text-color",
+        "tokens.text-color.muted",
+        "tokens.text-color.on-action",
+        "tokens.text-color.on-inverse",
+        "tokens.text-color.primary"
+      ],
+      "reasons": [
+        "C4: coverage: tokens.text-color.link (emits --color-ink-link) has no value in profile default-candidate-check",
+        "C4: coverage: tokens.text-color.on-action (emits --color-ink-on-action) has no value in profile default-candidate-check",
+        "C4: coverage: tokens.text-color.on-inverse (emits --color-ink-on-inverse) has no value in profile default-candidate-check",
+        "C4: coverage: tokens.text-color.on-inverse-muted (emits --color-ink-on-inverse-muted) has no value in profile default-candidate-check",
+        "C4: coverage: tokens.text-color.secondary (emits --color-ink-secondary) has no value in profile default-candidate-check",
+        "required native member is absent: tokens.text-color.link",
+        "required native member is absent: tokens.text-color.on-action",
+        "required native member is absent: tokens.text-color.on-inverse",
+        "required native member is absent: tokens.text-color.on-inverse-muted",
+        "required native member is absent: tokens.text-color.secondary"
+      ]
+    },
+    {
+      "slot": "tokens.transition-easing",
+      "source": "shadcn@aria",
+      "surfaces": [
+        "components.combo-box",
+        "components.command",
+        "components.dialog",
+        "components.disclosure",
+        "components.dropdown-menu",
+        "components.menu",
+        "components.popover",
+        "components.select",
+        "components.sidebar",
+        "components.tooltip"
+      ],
+      "reads": [
+        "tokens.transition-easing",
+        "tokens.transition-easing.enter",
+        "tokens.transition-easing.exit"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    }
+  ],
+  "invalid": [
+    "MISSING_POLICY assets.backdrop-graphic: default source definition is missing",
+    "MISSING_POLICY assets.icon-check: default source definition is missing",
+    "MISSING_POLICY assets.icon-chevron-down: default source definition is missing",
+    "MISSING_POLICY assets.icon-chevron-left: default source definition is missing",
+    "MISSING_POLICY assets.icon-chevron-right: default source definition is missing",
+    "MISSING_POLICY assets.icon-chevron-up: default source definition is missing",
+    "MISSING_POLICY assets.icon-close: default source definition is missing",
+    "MISSING_POLICY assets.icon-date: default source definition is missing",
+    "MISSING_POLICY assets.icon-search: default source definition is missing",
+    "MISSING_POLICY assets.lockup: default source definition is missing",
+    "MISSING_POLICY assets.mark: default source definition is missing"
+  ]
+}
