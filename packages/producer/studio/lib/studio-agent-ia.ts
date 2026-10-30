@@ -1,6 +1,7 @@
 import { cellHierarchy, type AgentCells, type CellNode, type CellSummary } from './cells-client';
 import { cellContentTarget } from './cell-content';
 import { AGENT_LABELS } from './agents';
+import { directorStudioCell } from './director-studio-copy';
 
 export interface StudioIACollection { id: string; label: string; cells: CellSummary[] }
 export interface StudioIAGroup { id: string; label: string; collections: StudioIACollection[] }
@@ -14,7 +15,7 @@ export function projectStudioAgentIA(index: AgentCells): StudioAgentIA {
   const root = { id: `agent:${index.agent}`, label: AGENT_LABELS[index.agent] };
   if (index.state !== 'ready' || !Array.isArray(index.tree?.tree)) return { ...root, state: index.state === 'error' ? 'error' : 'missing', groups: [], tree: [], error: index.error };
   try {
-    const nodes = cellHierarchy(index.cells, index.tree);
+    const nodes = cellHierarchy(index.agent === 'director' ? index.cells.map(cell => directorStudioCell(cell)) : index.cells, index.tree);
     const groups = nodes.map(node => {
       if (!node.group) throw new Error('The authored IA has no L1 grouping.');
       return { id: node.id, label: node.title, collections: node.children.map(section => {

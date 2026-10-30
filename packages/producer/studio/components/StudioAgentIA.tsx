@@ -28,7 +28,7 @@ export function StudioAgentIA({ index, indexes, selectedId, onSelect, onCoverage
   index: AgentCells; indexes: readonly AgentCells[]; selectedId?: string; onSelect: (id: string) => void; onCoverage?: (coverage: StudioCoverageResult) => void;
 }) {
   const { selection, runtime } = useStudioSelection();
-  const { EmptyState, Link, Icon } = useStudioUI();
+  const { EmptyState, Button, Link, Icon } = useStudioUI();
   const ia = projectStudioAgentIA(index);
   const body = studioIABands(StudioMap, index.agent);
   const [evidence, setEvidence] = useState<{ index: AgentCells; rows: Record<string, StudioCoverageEvidence> }>({ index, rows: {} });
@@ -53,9 +53,9 @@ export function StudioAgentIA({ index, indexes, selectedId, onSelect, onCoverage
           id={studioIAAnchor(collection.id)} data-studio-ia-node={collection.id} aria-label={collection.label} layout="grid"
           records={collection.cells.map(cell => ({
             id: cell.id,
-            title: <><Link id={studioIAAnchor(cell.id)} data-studio-ia-node={cell.id} href={studioIAHref(cell.id)} buttonVariant={selectedId === cell.id ? 'secondary' : 'ghost'} onPress={() => onSelect(cell.id)} aria-current={selectedId === cell.id ? 'true' : undefined}>{cell.title}</Link><Link {...cellContentTarget(index.agent, cell.id)} buttonVariant="ghost" aria-label={`Open ${cell.title} content`}><Icon asset="assets.icon-external-link" decorative /></Link></>,
+            title: index.agent === 'director' ? cell.title : <><Link id={studioIAAnchor(cell.id)} data-studio-ia-node={cell.id} href={studioIAHref(cell.id)} buttonVariant={selectedId === cell.id ? 'secondary' : 'ghost'} onPress={() => onSelect(cell.id)} aria-current={selectedId === cell.id ? 'true' : undefined}>{cell.title}</Link><Link {...cellContentTarget(index.agent, cell.id)} buttonVariant="ghost" aria-label={`Open ${cell.title} content`}><Icon asset="assets.icon-external-link" decorative /></Link></>,
             ...(cell.status ? { badge: { label: cell.status, variant: cell.status === 'draft' ? 'warning' : cell.status === 'active' ? 'success' : 'neutral' } } : {}),
-            meta: `${cell.version === undefined ? 'Version unavailable' : `v${cell.version}`} · ${usedByLabel(indexes, index.agent, cell)}`,
+            meta: index.agent === 'director' ? <><Button id={studioIAAnchor(cell.id)} data-studio-ia-node={cell.id} variant={selectedId === cell.id ? 'secondary' : 'ghost'} onPress={() => onSelect(cell.id)} aria-label={cell.directorInspectAction?.text} aria-pressed={selectedId === cell.id} isDisabled={!cell.directorInspectAction}>{cell.directorInspectAction?.text ?? 'This action is not available yet.'}</Button><Link {...cellContentTarget(index.agent, cell.id)} buttonVariant="ghost" aria-label={`Open ${cell.title} content`}><Icon asset="assets.icon-external-link" decorative /></Link>{`${cell.version === undefined ? 'Version unavailable' : `v${cell.version}`} · ${usedByLabel(indexes, index.agent, cell)}`}</> : `${cell.version === undefined ? 'Version unavailable' : `v${cell.version}`} · ${usedByLabel(indexes, index.agent, cell)}`,
             description: BODY_NEED,
           }))}
         /> : null}

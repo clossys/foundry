@@ -1,7 +1,9 @@
 import { cellHierarchy, type AgentCells, type CellDetail, type CellNode, type CellSummary } from './cells-client';
+import { directorStudioCell } from './director-studio-copy';
+import type { DirectorCopyBindings } from './director-copy-bindings';
 
-export function specimenTitle(cell: CellSummary): string {
-  return typeof cell.fields?.title === 'string' && cell.fields.title.trim() ? cell.fields.title : cell.id.split('.').at(-1)!;
+export function specimenTitle(cell: CellSummary, bindings?: DirectorCopyBindings): string {
+  return directorStudioCell(cell, bindings).title;
 }
 
 /** Only the semantic strategy sections enter the document; source stays in Source. */

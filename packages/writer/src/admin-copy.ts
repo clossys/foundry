@@ -117,6 +117,27 @@ export function resolveAdminDirectorCellTitle(cellId: string, copy: AdminCopy = 
   const resolved = resolveAdminCopyRef(ref, copy, options);
   return resolved ? { ...resolved, ref, binding, role: binding.role } : undefined;
 }
+
+/** The existing Director inspection control uses action copy, separate from headings. */
+export function resolveAdminDirectorInspectAction(title: string, copy: AdminCopy = ADMIN_COPY_EN, options: AdminCopyResolveOptions = {}) {
+  if (typeof title !== "string" || !title.trim()) return undefined;
+  const canonicalRecord = ADMIN_STUDIO_COPY_EN.records.find(record => record.context === "director.action.inspectCell");
+  if (!canonicalRecord) return undefined;
+  const record = getAdminCopyRecord(canonicalRecord.id, copy);
+  if (!record || record.context !== canonicalRecord.context || record.leaf !== "strings.actions" || record.text !== canonicalRecord.text) return undefined;
+  const canonicalBindings = ADMIN_STUDIO_COPY_EN.bindings.filter(binding => binding.recordId === canonicalRecord.id);
+  const binding = canonicalBindings[0];
+  if (canonicalBindings.length !== 1 || !binding || binding.cellId !== canonicalRecord.context || binding.kind !== "CopyRef" || !("role" in binding) || binding.role !== "action") return undefined;
+  const envelopes = copy.envelopes.filter(envelope => envelope.records.some(row => row.id === canonicalRecord.id));
+  if (!envelopes.length || envelopes.some(envelope => {
+    if (!("bindings" in envelope)) return true;
+    const bindings = envelope.bindings.filter(row => row.recordId === canonicalRecord.id);
+    return bindings.length !== 1 || !bindings.every(row => row.cellId === binding.cellId && row.kind === binding.kind && row.target === binding.target && "role" in row && row.role === "action");
+  })) return undefined;
+  const ref: AdminCopyRef = { id: canonicalRecord.id, values: { title } };
+  const resolved = resolveAdminCopyRef(ref, copy, options);
+  return resolved ? { ...resolved, ref, binding, role: "action" as const } : undefined;
+}
 /** Admin resolution shares the production approval policy; drafts require explicit preview. */
 export type AdminCopyResolveOptions = Pick<CopyResolveOptions, "target" | "now" | "timeZone" | "approvalPlan" | "acceptDelegateInProduction">;
 

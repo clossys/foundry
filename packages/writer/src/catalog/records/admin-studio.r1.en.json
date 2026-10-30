@@ -5571,6 +5571,24 @@
         "maxChars": 65,
         "maxWords": 12
       }
+    },
+    {
+      "id": "st.1ca05f4614",
+      "leaf": "strings.actions",
+      "context": "director.action.inspectCell",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Inspect {title}",
+      "args": [
+        {
+          "name": "title",
+          "type": "string"
+        }
+      ],
+      "limits": {
+        "maxChars": 90,
+        "maxWords": 16
+      }
     }
   ],
   "reviews": [
@@ -18656,6 +18674,13 @@
       "kind": "item-name",
       "target": "packages/strategist/src/catalog/cells/strategy.json",
       "role": "heading"
+    },
+    {
+      "cellId": "director.action.inspectCell",
+      "recordId": "st.1ca05f4614",
+      "target": "packages/producer/studio/components/StudioAgentIA.tsx",
+      "kind": "CopyRef",
+      "role": "action"
     }
   ],
   "needs": [

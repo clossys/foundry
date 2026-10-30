@@ -4,6 +4,7 @@ import {
   createAdminCopy,
   getAdminDirectorCellTitleBinding,
   resolveAdminDirectorCellTitle,
+  resolveAdminDirectorInspectAction,
   type AdminCopy,
 } from '@clossys/writer/admin-copy';
 import { ADMIN_STUDIO_COPY_EN } from '@clossys/writer/admin-studio';
@@ -87,6 +88,30 @@ describe('Director Writer title binding through the public package API', () => {
     expect(getAdminDirectorCellTitleBinding(cellId, copy)).toBeUndefined();
     expect(resolveAdminDirectorCellTitle(cellId, copy, preview)).toBeUndefined();
     expectNeed(createDirectorCopyBindings({ copy, options: preview }).cellTitle(cellId));
+  });
+});
+
+describe('Director inspection action stays separate from its heading', () => {
+  it('resolves the authored action with a title only in explicit draft preview', () => {
+    expect(resolveAdminDirectorInspectAction('Market size', undefined, preview)).toMatchObject({
+      text: 'Inspect Market size', role: 'action', servedLocale: 'en', status: 'draft', activation: 'none',
+      ref: { values: { title: 'Market size' } },
+      binding: { cellId: 'director.action.inspectCell', kind: 'CopyRef', role: 'action', target: 'packages/producer/studio/components/StudioAgentIA.tsx' },
+    });
+    expect(resolveAdminDirectorInspectAction('Market size')).toBeUndefined();
+    expect(resolveAdminDirectorInspectAction('Market size', undefined, { target: 'production' })).toBeUndefined();
+  });
+
+  it.each([
+    ['heading role', (binding: Record<string, unknown>) => { binding.role = 'heading'; }],
+    ['altered target', (binding: Record<string, unknown>) => { binding.target = 'another/public-consumer.tsx'; }],
+    ['altered identity', (binding: Record<string, unknown>) => { binding.cellId = 'director.action.other'; }],
+  ] as const)('refuses an inspection control with %s', (_name, change) => {
+    const envelope = JSON.parse(JSON.stringify(ADMIN_STUDIO_COPY_EN));
+    const record = envelope.records.find((row: Record<string, unknown>) => row.context === 'director.action.inspectCell');
+    const binding = envelope.bindings.find((row: Record<string, unknown>) => row.recordId === record.id);
+    change(binding);
+    expect(resolveAdminDirectorInspectAction('Market size', createAdminCopy([envelope]), preview)).toBeUndefined();
   });
 });
 
