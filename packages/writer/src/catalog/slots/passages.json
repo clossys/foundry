@@ -1525,6 +1525,24 @@
               "en": 480
             },
             "dir": "auto"
+          },
+          {
+            "key": "aside[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 1000
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "aside[].value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 1000
+            },
+            "dir": "auto"
           }
         ]
       }

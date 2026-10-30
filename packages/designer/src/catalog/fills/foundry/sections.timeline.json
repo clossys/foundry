@@ -26,14 +26,22 @@
   },
   "sections": {
     "timeline": {
-      "composes": [],
+      "composes": [
+        "components.semantic-content",
+        "sections.section-header"
+      ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.semantic-content",
+          "sections.section-header"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.semantic-content"
+          ],
           "tokens": [
             "tokens.accent-color",
             "tokens.body-size",
@@ -47,8 +55,12 @@
         },
         "sourceFiles": [
           {
+            "path": "packages/designer/src/blocks/items/anatomy.tsx",
+            "sha256": "03dfd69bf9c7fa703e2a4232673b23e43826c884ba704b43fc9da2916334febc"
+          },
+          {
             "path": "packages/designer/src/blocks/Timeline.tsx",
-            "sha256": "47fb177ea19c99d18868fa749d48e82a06fc42a895174250e59b5de62bc9e7fc"
+            "sha256": "374bc38e5f01b15de7fa94b13c66b5fd6179b04d37a3f4ed77c9904b3fa269d9"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
