@@ -44,13 +44,19 @@ export async function publishTarget(
   dependencies: PublishDependencies = {},
 ): Promise<PublishResult> {
   const config = await (dependencies.config ?? loadConfig)(options.root);
-  if (!Object.hasOwn(config.targets, options.target)) throw new Error(`Unknown publish target: ${options.target}`);
-  const target = config.targets[options.target]!;
+  const preview = options.target === "preview";
+  let target: ProducerTarget;
+  if (Object.hasOwn(config.targets, options.target)) target = config.targets[options.target]!;
+  else if (preview) {
+    const candidates = Object.entries(config.targets).filter(([id, value]) => id !== "studio" && value.format === "web.page.responsive");
+    if (candidates.length !== 1) throw new Error("Preview requires one web target or an explicit preview target");
+    target = candidates[0]![1];
+  } else throw new Error(`Unknown publish target: ${options.target}`);
   if (target.format !== "web.page.responsive") throw new Error("Publisher app-local currently supports web.page.responsive targets");
-  const output = resolve(options.root, target.app, "src", "clossys");
+  const output = preview ? resolve(options.root, "clossys/.producer/preview", target.publication, "src/clossys") : resolve(options.root, target.app, "src", "clossys");
   const emitter = await (dependencies.emitter ?? loadEmitter)();
   try {
-    const expected = await emitter.emitAppLocal({ root: options.root, target: { ...target, format: target.format }, outDir: output });
+    const expected = await emitter.emitAppLocal({ root: options.root, target: { ...target, format: target.format }, outDir: output, ...(preview ? { destination: "producer-preview" as const } : {}) });
     if (!options.check) await emitter.writeAppLocal(output, expected);
     const findings = await emitter.verifyAppLocal(output, expected);
     if (!Array.isArray(findings)) throw new Error("Publisher verification did not return findings");

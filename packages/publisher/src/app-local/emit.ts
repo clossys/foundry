@@ -22,6 +22,8 @@ export interface EmitAppLocalOptions {
   readonly root: string;
   readonly target: AppLocalTarget;
   readonly outDir?: string;
+  /** Producer-only snapshot destination; the selected app remains the source/dependency authority. */
+  readonly destination?: "producer-preview";
   /** Optional selected catalog bundles; the default is Designer's installed catalog. */
   readonly catalog?: CompositeCatalogData;
 }
@@ -50,10 +52,14 @@ export async function emitAppLocal(options: EmitAppLocalOptions): Promise<AppLoc
   const studio = target.app === "packages/producer/studio";
   if (target.format !== "web.page.responsive" || (!/^apps\/[a-zA-Z0-9][a-zA-Z0-9._/-]*$/.test(target.app) && !studio)) throw new Error("A web application target under apps/ or the exact Producer Studio target is required");
   safeAppLocalPath(target.app);
-  const appDir = containedAppLocalPath(root, target.app), defaultOut = join(appDir, "src/clossys");
+  const preview = options.destination === "producer-preview";
+  if (options.destination !== undefined && !preview) throw new Error("Unsupported app-local destination");
+  if (preview && (!/^[a-z][a-z0-9.-]*$/.test(target.publication) || target.publication.includes(".."))) throw new Error("Invalid publication identity");
+  const appDir = containedAppLocalPath(root, target.app);
+  const defaultOut = preview ? join(root, "clossys/.producer/preview", target.publication, "src/clossys") : join(appDir, "src/clossys");
   const outDir = options.outDir === undefined ? defaultOut : isAbsolute(options.outDir) ? resolve(options.outDir) : containedAppLocalPath(root, options.outDir);
   const outputRelative = relative(appDir, outDir);
-  if (!outputRelative || outputRelative === ".." || outputRelative.startsWith(`..${sep}`) || isAbsolute(outputRelative)) throw new Error("Generated output must stay inside the selected app");
+  if (preview ? outDir !== defaultOut : !outputRelative || outputRelative === ".." || outputRelative.startsWith(`..${sep}`) || isAbsolute(outputRelative)) throw new Error(preview ? "Producer preview output must use its exact publication directory" : "Generated output must stay inside the selected app");
   await noAppLocalSymlink(appDir); await noAppLocalSymlink(outDir);
   const catalog = options.catalog ?? defaultCatalog();
   const library = await readActiveSourceLibrary(join(root, "clossys/agents/designer"), catalog) as CompositeLibraryData;
@@ -96,6 +102,7 @@ export async function emitAppLocal(options: EmitAppLocalOptions): Promise<AppLoc
   }, transformSource: printAppLocalSource });
   const files: Record<string, string> = {};
   for (const file of closure.files) files[file.path] = generatedText(file.content);
+  if (preview) files["preview.json"] = generatedText(`${JSON.stringify({ schemaVersion: 1, publication: target.publication, sourceApp: target.app, format: target.format, routes: manifest.routes.map(route => ({ id: map.entries.find(entry => entry.kind === "page" && entry.path === route.path)?.id ?? route.slotId, path: route.path, locale: route.locale, source: route.source })), contentMap: map }, null, 2)}\n`);
   files["dependencies.json"] = generatedText(`${JSON.stringify(closure.dependencies, null, 2)}\n`);
   files[".manifest.json"] = generatedText(`${JSON.stringify(Object.fromEntries(Object.entries(files).sort(([a], [b]) => a.localeCompare(b)).map(([path, source]) => [path, appLocalHash(source)])), null, 2)}\n`);
   return { outDir, appDir, files: Object.fromEntries(Object.entries(files).sort(([a], [b]) => a.localeCompare(b))), dependencies: closure.dependencies };

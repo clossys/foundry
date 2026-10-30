@@ -1,7 +1,7 @@
 import { afterEach, expect, it } from "vitest";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cp, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, readdir, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -124,3 +124,34 @@ it("supports only the exact internal Studio target without widening arbitrary pa
     await expect(emitAppLocal({...options,target:{...target,app}})).rejects.toThrow(/web application target/);
   }
 },120_000);
+
+
+it("publishes native preview snapshots without changing target app bytes and checks without writes", async () => {
+  const options = await fixture();
+  await put(options.root, "clossys/clossys.config.ts", `export default {id:"example",archetype:"product",locales:{default:"en",supported:["en"]},targets:{site:${JSON.stringify(options.target)}}};`);
+  const original = await snapshot(options.root);
+  const result = await publishTarget({ root: options.root, target: "preview" });
+  expect(result.output).toBe(join(options.root, "clossys/.producer/preview/example/src/clossys"));
+  expect(result.exitCode).toBe(1); // Missing third-party app dependencies remain findings.
+  const emitted = await snapshot(options.root);
+  for (const [path, metadata] of Object.entries(original)) expect(emitted[path], path).toEqual(metadata);
+  for (const path of Object.keys(emitted).filter(path => !Object.hasOwn(original, path))) expect(path).toMatch(/^clossys\/\.producer\/preview\/example\/src\/clossys\//);
+  expect(parseAppLocalJson(await readFile(join(result.output, "preview.json"), "utf8"))).toMatchObject({ schemaVersion: 1, publication: "example", sourceApp: "apps/web", routes: [{ id: "home", path: "/", source: { file: "site/app/page.tsx", export: "default" } }] });
+  const dependencies = parseAppLocalJson(await readFile(join(result.output, "dependencies.json"), "utf8"));
+  await put(options.root, "apps/web/package.json", JSON.stringify({ private: true, dependencies }));
+  const beforeCheck = await snapshot(options.root);
+  const cli = spawnSync(process.execPath, [fileURLToPath(new URL("../dist/cli/index.js", import.meta.url)), "publish", "--target", "preview", "--check", "--json"], { cwd: options.root, encoding: "utf8" });
+  expect(cli.error).toBeUndefined(); expect(cli.status, cli.stderr || cli.stdout).toBe(0);
+  expect(JSON.parse(cli.stdout)).toMatchObject({ target: "preview", exitCode: 0, check: true, output: result.output });
+  expect(await snapshot(options.root)).toEqual(beforeCheck);
+  await writeFile(join(result.output, "preview.json"), "manual edit");
+  const edited = await snapshot(options.root);
+  expect(await publishTarget({ root: options.root, target: "preview", check: true })).toMatchObject({ exitCode: 1, findings: expect.arrayContaining([expect.objectContaining({ kind: "hand-edit", path: "preview.json" })]) });
+  expect(await snapshot(options.root)).toEqual(edited);
+  await expect(emitAppLocal({ ...options, destination: "producer-preview", outDir: join(options.root, "apps/web/src/clossys") })).rejects.toThrow(/exact publication directory/);
+  await expect(emitAppLocal({ ...options, destination: "producer-preview", target: { ...options.target, publication: "../outside" } })).rejects.toThrow(/publication identity/);
+  await expect(emitAppLocal({ ...options, outDir: result.output })).rejects.toThrow(/inside the selected app/);
+  await rm(join(options.root, "clossys/.producer/preview"), { recursive: true });
+  await symlink(join(options.root, "apps/web"), join(options.root, "clossys/.producer/preview"));
+  await expect(publishTarget({ root: options.root, target: "preview" })).rejects.toThrow(/Symbolic links/);
+}, 120_000);

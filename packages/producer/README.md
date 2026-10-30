@@ -121,6 +121,17 @@ The installed Publisher must expose its app-local emitter; its absence is an
 explicit error, rather than a fallback emitter. Dynamic configuration expressions
 and imports other than the configuration helper are unsupported.
 
+### Publication preview
+
+`clossys publish --target preview` emits a read-only snapshot for Producer Studio.
+An explicit `preview` web target takes priority; otherwise exactly one configured
+web target (excluding Studio) is required. Multiple publications require an explicit
+preview target. The original app supplies source and dependencies. Generated files
+go only to `clossys/.producer/preview/<publication>/src/clossys`, including
+`preview.json` with route entry files and the content map. The app stays unchanged.
+`--check` verifies the snapshot without writing. Producer serves the rendered
+snapshot; emitted TSX files are source modules rather than directly served HTML.
+
 ## Agent mapping API
 
 | Export | Purpose |
