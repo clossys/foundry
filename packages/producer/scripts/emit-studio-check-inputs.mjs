@@ -14,6 +14,7 @@ import { readStudioDesignerLibrary } from "../dist/server/theme.js";
 import { prepareStudioSelection } from "../dist/server/selection-defaults.js";
 import { readPageCheckSource } from "../dist/check/page-manifest.js";
 import { discoverRoot } from "../dist/cli/root.js";
+import { generateStudioMap } from "./generate-studio-map.mjs";
 
 const producerRoot = fileURLToPath(new URL("../", import.meta.url));
 const repositoryRoot = resolve(producerRoot, "../..");
@@ -58,7 +59,7 @@ async function moduleFile(base) {
 
 /** Census real App Router pages and copy the unchanged sources their imports reference. */
 export async function studioSourcePacket(studioRoot = join(producerRoot, "studio")) {
-  const files = new Map(), pages = [], modules = new Set();
+  const files = new Map(), pages = [], modules = new Set(), localImports = new Map();
   const snapshotRoot = dirname(resolve(studioRoot));
   const producerManifest = JSON.parse(await regular(join(producerRoot, "package.json")));
   const repository = producerManifest.repository.url;
@@ -69,9 +70,14 @@ export async function studioSourcePacket(studioRoot = join(producerRoot, "studio
     if (files.has(name)) return;
     const content = await regular(file);
     files.set(name, content);
+    localImports.set(file, []);
     if (/^studio\/app\/(?:.*\/)?page\.tsx$/.test(name)) pages.push(name);
     for (const module of imports(file, content)) {
-      if (module.startsWith(".")) await copySource(await moduleFile(resolve(dirname(file), module)));
+      if (module.startsWith(".")) {
+        const target = await moduleFile(resolve(dirname(file), module));
+        localImports.get(file).push(target);
+        await copySource(target);
+      }
       else modules.add(module);
     }
   }
@@ -85,6 +91,19 @@ export async function studioSourcePacket(studioRoot = join(producerRoot, "studio
     }
   }
   await walk(studioRoot);
+  const bindings = join(studioRoot, "generated/view-bindings.ts");
+  if (localImports.has(bindings)) {
+    const reachable = new Set();
+    const visit = file => { if (reachable.has(file)) return; reachable.add(file); for (const target of localImports.get(file) ?? []) visit(target); };
+    for (const page of pages) visit(join(snapshotRoot, page));
+    if (!reachable.has(bindings)) throw new Error("Studio route view bindings are not imported by its actual pages");
+    const source = ts.createSourceFile(bindings, files.get(portable(relative(snapshotRoot, bindings))), ts.ScriptTarget.Latest, true);
+    for (const statement of source.statements) if (ts.isImportDeclaration(statement) && statement.importClause?.name && !statement.importClause.isTypeOnly && ts.isStringLiteral(statement.moduleSpecifier)) {
+      const target = await moduleFile(resolve(dirname(bindings), statement.moduleSpecifier.text));
+      if (!target.endsWith(".tsx") || !files.has(portable(relative(snapshotRoot, target)))) throw new Error("Studio bound page must reference its actual TSX source");
+      pages.push(portable(relative(snapshotRoot, target)));
+    }
+  }
   const sources = {}, visited = new Set();
   async function packageOwner(file) {
     for (let directory = dirname(file);;) {
@@ -115,7 +134,7 @@ export async function studioSourcePacket(studioRoot = join(producerRoot, "studio
     if (owner.manifest.repository?.url !== repository) continue;
     sources[module] = await copyModule(file, owner);
   }
-  const contract = parseConsumerDogfoodContract({ version: 1, sources: Object.fromEntries(Object.entries(sources).sort(([a], [b]) => a < b ? -1 : 1)), pages: pages.sort() });
+  const contract = parseConsumerDogfoodContract({ version: 1, sources: Object.fromEntries(Object.entries(sources).sort(([a], [b]) => a < b ? -1 : 1)), pages: [...new Set(pages)].sort() });
   files.set("consumer-dogfood.json", stableStringify(contract));
   return { files, contract };
 }
@@ -126,6 +145,7 @@ export async function emitStudioCheckInputs({ root, output, sourceHead }) {
   const receipt = await readPageCheckSource();
   if (receipt.sourceDirty || receipt.sourceHead !== sourceHead) throw new Error("Studio check emit requires its clean native build source head");
   requireSourceHead(sourceHead);
+  await generateStudioMap({ check: true });
   output = resolve(output);
   if (inside(join(producerRoot, "studio"), output)) throw new Error("Studio check output cannot replace its source tree");
   const packet = await studioSourcePacket();

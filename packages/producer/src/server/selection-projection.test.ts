@@ -62,7 +62,9 @@ describe("native Studio selection and generated dogfood inputs", () => {
       }
     }
     await visit(join(packageRoot, "studio/app"), "studio/app");
-    expect(packet.contract.pages).toEqual(pages.sort());
+    const projection = JSON.parse(await readFile(join(packageRoot, "studio/generated/studio-map.json"), "utf8"));
+    pages.push(...projection.routes.map((route: { entry: { file: string } }) => route.entry.file));
+    expect(packet.contract.pages).toEqual([...new Set(pages)].sort());
     for (const page of pages) expect(packet.files.get(page)).toBe(await readFile(join(packageRoot, page), "utf8"));
     for (const [module, target] of Object.entries(packet.contract.sources) as [string, string][]) {
       expect(packet.files.has(target)).toBe(true);
