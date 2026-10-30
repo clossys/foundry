@@ -19,6 +19,10 @@
     "./cell-format": {
       "types": "./dist/cell-format/index.d.ts",
       "import": "./dist/cell-format/index.js"
+    },
+    "./cell-format/schema": {
+      "types": "./dist/cell-format/schema.d.ts",
+      "import": "./dist/cell-format/schema.js"
     }
   },
   "bin": {

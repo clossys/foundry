@@ -66,6 +66,19 @@ describe('read-only Writer Director handoff',()=>{
     expect(result.exitCode).toBe(2);expect(result.findings).toContainEqual(expect.objectContaining({rule:'director-link-missing',cell:'site.home@1'}));
     expect(result.checks?.voiceDerivation.rulesChecked).toBe(0);expect(result.findings.filter(f=>f.rule==='voice-derivation-coverage:missing')).toHaveLength(3);
   });
+  it.each([
+    {ref:'writer:identity.verbal.voice@1',line:14},
+    {ref:'director:identity.verbal.voice@1',line:0},
+    {ref:'director:identity.verbal.voice@1',line:14,extra:true},
+    {ref:'director:identity.verbal.voice@1'},
+  ])('rejects malformed source metadata before counting it as a realisation: %j',async source=>{
+    cell.records[0]!.record.directorSources=[source];await putWriter();
+    const result=await checkWriterDerivation(director,writer);
+    expect(result.exitCode).not.toBe(0);
+    expect(result.findings).toContainEqual(expect.objectContaining({rule:'director-source-invalid',cell:'site.home@1'}));
+    expect(result.checks?.voiceDerivation.rulesChecked).toBe(0);
+    expect(result.findings.filter(f=>f.rule==='voice-derivation-coverage:missing')).toHaveLength(3);
+  });
   it('detects drift to a new active Director version, ignoring an unactivated higher draft',async()=>{
     await putDirector('identity.verbal.voice',2,'draft','- Sound: Still a draft.');
     expect((await checkWriterDerivation(director,writer)).exitCode).toBe(0);

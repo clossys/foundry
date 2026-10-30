@@ -3,6 +3,7 @@ import { isValidWriterLeafId, WRITER_LAYERS, type WriterLayer } from "../catalog
 import { loadWriterCatalog } from "../catalog/ia/index.js";
 import { canonicalLocale, intlDirectionFor } from "../locale.js";
 import type { WriterShapeIssue } from "./types.js";
+import { isDirectorSource } from "./director-sources.js";
 
 type Obj = Record<string, unknown>;
 type Check = (value: unknown, path: string) => void;
@@ -58,6 +59,7 @@ class Shape {
     return {
       id: this.id(PREFIX[layer]), leaf: this.leaf(layer), context: this.string,
       status: this.one("draft", "approved", "retired"), origin: this.one("authored", "external", "foundry-default"),
+      directorSources: this.array((v, p) => { if (!isDirectorSource(v)) this.issue(p, "Expected only a Director cell ref and positive safe integer line"); }),
       external: this.fields({ publisher: this.string, reference: this.string, retrievedAt: this.string, license: this.string }, ["license"]),
       approval: this.fields({ approvedBy: this.one("owner", "delegate"), approvedAt: this.string, textFingerprint: this.string, fingerprintAlgorithm: this.string,
         delegate: this.fields({ id: this.string, scope: this.array(this.string) }), pendingOwnerReview: this.boolean, expiresAt: this.string }, ["delegate", "pendingOwnerReview", "expiresAt"]),
@@ -108,7 +110,7 @@ export function validateWriterManifest(value: unknown, path = "writer.json"): Wr
   return s.issues;
 }
 
-const COMMON_OPTIONAL = ["external", "approval", "translation"];
+const COMMON_OPTIONAL = ["external", "approval", "translation", "directorSources"];
 
 export function validateWriterRecord(value: unknown, layer: WriterLayer, path = "record"): WriterShapeIssue[] {
   const s = new Shape();

@@ -12,6 +12,8 @@ export interface RecordBase {
   context: string;
   status: LocaleStatus;
   origin: "authored" | "external" | "foundry-default";
+  /** Native Director cell and source-line citations; freshness is checked separately. */
+  directorSources?: { ref: string; line: number }[];
   external?: { publisher: string; reference: string; retrievedAt: string; license?: string };
   approval?: CopyApproval;
   translation?: CopyTranslationProvenance;
