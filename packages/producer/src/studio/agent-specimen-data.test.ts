@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { serializeWriterCell } from '../../../writer/src/cells/parse';
 import type { AgentCells, CellDetail } from '../../studio/lib/cells-client';
 import { agentSpecimenPlan } from '../../studio/lib/agent-specimen-data';
+import { agentSpecimenCoverage } from '../../studio/lib/agent-specimen-coverage';
 import type { PublicationResponse } from '../../studio/lib/publisher-preview';
 
 const cell = (agent: CellDetail['agent'], content: string, fields: Record<string, unknown> = {}): CellDetail => ({ agent, id: 'example.page', title: 'Page', version: 2, status: 'draft', fields, content });
@@ -78,15 +79,15 @@ describe('full semantic agent specimen source plans', () => {
     const detail = writer([{ locale: 'ar', record: { id: 'copy.1', context: 'page.hero.cta', text: 'متابعة' } }]);
     expect(agentSpecimenPlan(index(detail), detail)).toMatchObject({ items: [], expectedVariantIds: [], issues: ['No English Writer records are available.'] });
   });
-  it('uses actual emitted page linkage from detail and preserves desktop plus mobile source variants', () => {
+  it('uses actual emitted page linkage from detail and preserves all three device source variants', () => {
     const detail = cell('publisher', '', { path: '/' });
     const plan = agentSpecimenPlan(index(detail), detail, publication());
-    expect(plan.items.map(item => item.viewport)).toEqual([{ id: 'desktop', width: 1440, height: 900 }, { id: 'mobile', width: 390, height: 844 }]);
-    expect(plan.expectedVariantIds).toEqual(['example.page:desktop', 'example.page:mobile']);
+    expect(plan.items.map(item => item.viewport)).toEqual([{ id: 'desktop', width: 1440, height: 900 }, { id: 'tablet', width: 768, height: 1024 }, { id: 'mobile', width: 390, height: 844 }]);
+    expect(plan.expectedVariantIds).toEqual(['example.page:desktop', 'example.page:tablet', 'example.page:mobile']);
     expect(plan.items[0]).toMatchObject({ kind: 'publisher', page: { previewUrl: '/preview/example/pages/home.html', emitted: true } });
     expect(plan.issues).toEqual([]);
   });
-  it.each(['missing', 'not-emitted', 'unsafe'] as const)('keeps both expected page variants when publication is %s', failure => {
+  it.each(['missing', 'not-emitted', 'unsafe'] as const)('keeps all expected page variants when publication is %s', failure => {
     const detail = cell('publisher', '', { path: '/' });
     const emitted = publication();
     if (emitted.state !== 'ready') throw new Error('Invalid fixture');
@@ -94,8 +95,12 @@ describe('full semantic agent specimen source plans', () => {
     if (failure === 'unsafe') emitted.pages[0]!.previewUrl = 'https://example.invalid/page';
     const plan = agentSpecimenPlan(index(detail), detail, failure === 'missing' ? { state: 'missing', message: 'Not published yet', command: 'clossys publish --target preview' } : emitted);
     expect(plan.items).toEqual([]);
-    expect(plan.expectedVariantIds).toHaveLength(2);
+    expect(plan.expectedVariantIds).toEqual(['example.page:desktop', 'example.page:tablet', 'example.page:mobile']);
     expect(plan.issues.length).toBeGreaterThan(0);
+    const coverage = agentSpecimenCoverage(plan);
+    expect(coverage).toMatchObject({ ready: false, inventoryComplete: false, itemCount: 0 });
+    expect(coverage.variants).toHaveLength(3);
+    expect(coverage.variants.every(variant => !variant.renderable)).toBe(true);
   });
   it('reports pending Designer capability and rejects a foreign agent cell', () => {
     const detail = cell('designer', 'Actual designer source');

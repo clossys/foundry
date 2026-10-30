@@ -31,6 +31,19 @@ describe('native Producer emitted-page specimen port', () => {
     expect(mobile).toContain('width="390" height="844"');
     expect(mobile).toContain('zoom:1');
   });
+  it('renders the tablet source case at 768 pixels with the same loopback sandbox boundary', () => {
+    const port = producerPagePreview(publication(), origin)!;
+    const tablet = { id: 'tablet', label: 'Tablet', width: 768, height: 1024 };
+    const html = renderToStaticMarkup(port.renderViewport({ page: port.pages[0]!, viewport: tablet, interactive: false, fullSize: true }));
+    expect(html).toMatch(/^<iframe /);
+    expect(html).toContain('src="http://127.0.0.1:4300/preview/example/pages/home.html"');
+    expect(html).toContain('title="Tablet"');
+    expect(html).toContain('width="768" height="1024"');
+    expect(html).toContain('sandbox=""');
+    expect(html).toContain('referrerPolicy="no-referrer"');
+    expect(html).toContain('zoom:1');
+    expect(html).not.toMatch(/allow-scripts|allow-same-origin/);
+  });
   it.each(['https://127.0.0.1:4300', 'http://localhost:4300', 'http://example.invalid:4300', 'http://127.0.0.1:4300/', 'http://127.0.0.1:4300?token=value', 'http://127.0.0.1:65536', 'http://127.0.0.1:04300'])('rejects noncanonical or remote origin %s', badOrigin => {
     expect(producerPagePreview(publication(), badOrigin)).toBeUndefined();
   });

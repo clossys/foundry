@@ -1,6 +1,6 @@
 import type { AgentCells, CellDetail, CellContentScope } from './cells-client';
 import { directorSections } from './director-specimen';
-import { safePreviewUrl, selectedPublishedPage, type PublicationResponse } from './publisher-preview';
+import { PUBLISHER_DEVICES, safePreviewUrl, selectedPublishedPage, type PublicationResponse } from './publisher-preview';
 import { writerProjection } from './writer-specimen';
 
 /** Source inventory only. A registered Designer section decides whether each item renders. */
@@ -68,7 +68,7 @@ export function agentSpecimenPlan(index: AgentCells, cell: CellDetail, publicati
     return plan;
   }
   if (cell.agent === 'publisher') {
-    const viewports = [{ id: 'desktop', width: 1440, height: 900 }, { id: 'mobile', width: 390, height: 844 }];
+    const viewports = Object.entries(PUBLISHER_DEVICES).map(([id, { width, height }]) => ({ id, width, height }));
     plan.expectedVariantIds = viewports.map(viewport => `${cell.id}:${viewport.id}`);
     if (!publication || publication.state !== 'ready') {
       plan.issues.push(publication ? publication.message : 'The emitted publication is unavailable.');
