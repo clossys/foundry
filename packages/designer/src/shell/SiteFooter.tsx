@@ -1,11 +1,15 @@
-import { Children, cloneElement, isValidElement, type HTMLAttributes, type ReactNode } from "react";
+import { Children, cloneElement, isValidElement, type HTMLAttributes, type ReactNode, type ComponentType } from "react";
 import { cx } from "../components/internal/cx.js";
 import { SITE_CHROME_GROUND_CLASSES, siteChromeHasBorder, type SiteChromeGround } from "./internal/shell-ground.js";
 import { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE } from "./badge-plate.js";
 import { UI_BORDER_HAIRLINE, UI_BRANDMARK_HEIGHT_SM, UI_LAYOUT_TAP_TARGET, UI_WIDTH_PAGE_PADDING_X, UI_Z_SHELL } from "./internal/shell-vars.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { SemanticContent } from "../components/SemanticContent.js";
-import { Link } from "../components/Link.server.js";
+import type { LinkProps } from "react-aria-components";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+/** The selected pinned shadcn button module owns navigation semantics and styling. */
+const FooterLink = componentLeaf<ComponentType<LinkProps & { variant?: "link" }>>("components.button", "LinkButton");
 import { Logomark } from "../components/Logomark.js";
 import { Icon } from "../components/Icon.js";
 import type { IconNode } from "../icons/types.js";
@@ -146,11 +150,11 @@ function SiteFooterSocialLink({ label, href, image, icon }: SiteFooterSocialLink
     const protocol = new URL(image.src, PARSE_BASES[0]).protocol;
     if (protocol !== "https:" && protocol !== "http:") throw new TypeError("Footer social image destination is unsafe.");
   } else if (!Array.isArray(icon)) throw new TypeError("Footer social glyphs must be plain icon data.");
-  return <Link variant="standalone" href={href} aria-label={label} rel={externalRel(href)}
+  return <FooterLink variant="link" href={href} aria-label={label} rel={externalRel(href)}
     className="inline-flex items-center gap-sm text-inherit no-underline hover:underline" style={LEGAL_LINK_STYLE}>
     {image !== undefined ? <Logomark src={image.src} size="sm" plate="shared" tone="inverse" /> : <Icon glyph={icon!} decorative />}
     {label}
-  </Link>;
+  </FooterLink>;
 }
 
 export interface SiteFooterLegalProps {
@@ -292,9 +296,9 @@ function SiteFooterLegal({ entity, links, linksLabel, icons = [], home, iconsLab
     <SemanticContent as="ul" role="list" className="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0">
       {links.map((link, index) => (
         <SemanticContent as="li" key={index}>
-          <Link variant="standalone" href={link.href} rel={externalRel(link.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>
+          <FooterLink variant="link" href={link.href} rel={externalRel(link.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>
             {link.label}
-          </Link>
+          </FooterLink>
         </SemanticContent>
       ))}
     </SemanticContent>
@@ -302,13 +306,13 @@ function SiteFooterLegal({ entity, links, linksLabel, icons = [], home, iconsLab
   const iconList = (
     <SemanticContent as="ul" role="list" className="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0">
       {icons.map((link, index) => <SemanticContent as="li" key={index}>
-        <Link variant="standalone" href={link.href} aria-label={link.label} rel={externalRel(link.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>{link.icon}</Link>
+        <FooterLink variant="link" href={link.href} aria-label={link.label} rel={externalRel(link.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>{link.icon}</FooterLink>
       </SemanticContent>)}
-      {home ? <SemanticContent as="li"><Link variant="standalone" href={home.href} aria-label={home.label} rel={externalRel(home.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>
+      {home ? <SemanticContent as="li"><FooterLink variant="link" href={home.href} aria-label={home.label} rel={externalRel(home.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>
         <SemanticContent as="span" data-footer-home-plate="" aria-hidden="true" className="inline-flex items-center justify-center bg-surface-base" style={HOME_PLATE_STYLE}>
           <Logomark src={home.markSrc} size="sm" />
         </SemanticContent>
-      </Link></SemanticContent> : null}
+      </FooterLink></SemanticContent> : null}
     </SemanticContent>
   );
   return (
@@ -320,4 +324,4 @@ function SiteFooterLegal({ entity, links, linksLabel, icons = [], home, iconsLab
   );
 }
 
-export const SiteFooter = Object.assign(SiteFooterRoot, { Column: SiteFooterColumn, Legal: SiteFooterLegal, SocialLink: SiteFooterSocialLink });
+export const SiteFooter = Object.assign(SiteFooterRoot, { Column: SiteFooterColumn, Legal: SiteFooterLegal, SocialLink: SiteFooterSocialLink, Link: FooterLink });
