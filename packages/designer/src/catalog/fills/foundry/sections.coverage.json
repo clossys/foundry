@@ -172,7 +172,7 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Each record renders a Foundry Card (outline) with the title as its single Link and an optional Badge. Loading, empty and error states stay host-owned around the list.",
+        "Editorial records use consumer-selected Card parts, Link, Badge and SemanticContent. Post, post-featured and case-study retain Writer labels and resolved assets.image; post-featured is full-width. Dates require the page locale; states remain host-owned.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.cards",
