@@ -82,7 +82,11 @@ export function createRegistryResolver(program, root) {
     }
     const hasLoop = body.statements.some(ts.isForOfStatement);
     if (!hasLoop) {
-      const returns = body.statements.filter(ts.isReturnStatement);
+      const returns = [];
+      walk(body, node => {
+        if (node !== body && ts.isFunctionLike(node)) return false;
+        if (ts.isReturnStatement(node)) returns.push(node);
+      });
       if (returns.length !== 1 || !returns[0].expression) fail(body, "Registry producer needs one resolved return expression");
       return evaluate(returns[0].expression, env);
     }
@@ -242,6 +246,17 @@ export function checkSurfaceSourceIdentity(repository) {
   const componentFile = path.join(root, "packages/designer/src/runtime/component-leaf.tsx");
   function reaches(render, canonical) {
     const seen = new Set();
+    const surfaceBoundaries = new Set(fills.flatMap(fill => fill.packageRoots.map(key)));
+    const bodyReturns = node => {
+      const expressions = [];
+      if (!node?.body) return expressions;
+      if (!ts.isBlock(node.body)) return [node.body];
+      walk(node.body, child => {
+        if (child !== node.body && ts.isFunctionLike(child)) return false;
+        if (ts.isReturnStatement(child) && child.expression) expressions.push(child.expression);
+      });
+      return expressions;
+    };
     function callable(expression, env, aliases = new Set()) {
       expression = unwrap(expression);
       if (!expression || aliases.has(expression)) return [];
@@ -259,6 +274,28 @@ export function checkSurfaceSourceIdentity(repository) {
     }
     function match(expression) {
       return resolver.declarations(ts.isPropertyAccessExpression(expression) ? expression.name : expression).find(declaration => canonical.has(key(declaration)));
+    }
+    // A canonical block can dispatch to its own private variant components
+    // (Matrix -> LibraryBoardSection). Those same declarations remain one
+    // implementation when the JSON adapter selects the identical variant.
+    // Selected component leaves and other registered surfaces stop this walk.
+    const queue = fills.flatMap(fill => fill.packageRoots).filter(node => canonical.has(key(node))), owned = new Set();
+    while (queue.length) {
+      const node = queue.shift();
+      if (owned.has(node)) continue;
+      owned.add(node);
+      for (const expression of bodyReturns(ts.isVariableDeclaration(node) ? unwrap(node.initializer) : node)) walk(expression, child => {
+        if (!ts.isJsxElement(child) && !ts.isJsxSelfClosingElement(child)) return;
+        const tag = ts.isJsxElement(child) ? child.openingElement.tagName : child.tagName;
+        for (const declaration of resolver.declarations(tag)) {
+          if (surfaceBoundaries.has(key(declaration)) && !canonical.has(key(declaration))) continue;
+          if (ts.isVariableDeclaration(declaration) && declaration.initializer && ts.isCallExpression(unwrap(declaration.initializer)) && resolver.declarations(unwrap(declaration.initializer).expression).some(node => node.getSourceFile().fileName === componentFile)) continue;
+          if (!declaration.getSourceFile().fileName.startsWith(root + path.sep) || declaration.getSourceFile().fileName.includes("/node_modules/")) continue;
+          if (ts.isFunctionDeclaration(declaration) && declaration.body || ts.isVariableDeclaration(declaration) && declaration.initializer && (ts.isArrowFunction(unwrap(declaration.initializer)) || ts.isFunctionExpression(unwrap(declaration.initializer)))) {
+            canonical.add(key(declaration)); queue.push(declaration);
+          }
+        }
+      });
     }
     function inspect(node, env) {
       node = unwrap(node);
@@ -293,20 +330,20 @@ export function checkSurfaceSourceIdentity(repository) {
       return result;
     }
     function inspectFunction(value) {
-      const body = value.node.body;
-      if (!body) return undefined;
-      const expressions = [];
-      if (!ts.isBlock(body)) expressions.push(body);
-      else walk(body, node => {
-        if (node !== body && ts.isFunctionLike(node)) return false;
-        if (ts.isReturnStatement(node) && node.expression) expressions.push(node.expression);
-      });
-      for (const expression of expressions) {
+      for (const expression of bodyReturns(value.node)) {
         const trace = inspect(expression, value.env);
         if (trace) return [key(value.node), ...trace];
       }
     }
-    return inspectFunction(render);
+    const expressions = bodyReturns(render.node).filter(expression => {
+      expression = unwrap(expression);
+      if (!ts.isCallExpression(expression)) return true;
+      const targets = callable(expression.expression, render.env);
+      // A source-proven throw is a refused input, not another UI implementation.
+      return !targets.length || !targets.every(target => target.node.body && ts.isBlock(target.node.body) && target.node.body.statements.length === 1 && ts.isThrowStatement(target.node.body.statements[0]));
+    });
+    const branches = expressions.map(expression => { seen.clear(); return inspect(expression, render.env); });
+    return { delegation: branches.length && branches.every(Boolean) ? [key(render.node), ...new Set(branches.flat())] : undefined, unproven: expressions.filter((_, index) => !branches[index]) };
   }
   const native = new Map(), nativeOutputs = [];
   try {
@@ -362,8 +399,8 @@ export function checkSurfaceSourceIdentity(repository) {
     try {
       const route = candidates[0], value = resolver.force(route.value), routeLeaf = resolver.get(value, "leaf", route.node), render = resolver.get(value, "render", route.node);
       if (routeLeaf !== leaf || render?.kind !== "function") resolver.fail(route.node, "Route leaf/render source is unresolved", "unresolved-source");
-      const delegation = reaches(render, new Set(canonical.map(key)));
-      if (!delegation) add("competing-implementation", leaf, render.node, `Runtime does not delegate to canonical ${key(canonical[0])}`);
+      const proof = reaches(render, new Set(canonical.map(key))), delegation = proof.delegation;
+      if (!delegation) for (const branch of proof.unproven.length ? proof.unproven : [render.node]) add("competing-implementation", leaf, branch, `Runtime return does not delegate to canonical ${key(canonical[0])}: ${branch.getText().slice(0, 240)}`);
       inventory.push({ leaf, fill: fill.id, descriptor: fill.descriptor, canonical: key(canonical[0]), runtime: key(render.node), delegation, route: resolver.location(route.node) });
     } catch (error) { findings.push({ leaf, ...(error.finding ?? { code: "unresolved-source", detail: error.message }) }); }
   }

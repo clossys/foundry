@@ -51,3 +51,7 @@ test("missing and dynamic unknown registry sources fail closed", () => {
     assert.throws(fixture(`const registry = ${expression};`), error => error.finding?.code === "unresolved-source");
   }
 });
+test("a producer cannot hide an alternate registration in a conditional early return", () => {
+  const run = fixture(`function producer() { if (unknownRuntimeCondition) return { 'sections.hero': () => null }; return {}; } const registry = producer();`);
+  assert.throws(run, error => error.finding?.code === "unresolved-source" && error.finding.detail.includes("one resolved return"));
+});
