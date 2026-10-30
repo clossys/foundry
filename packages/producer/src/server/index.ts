@@ -13,6 +13,7 @@ import { studioTheme } from "./theme.js";
 import { publication, servePreview } from "./publication.js";
 import { selectionProfile, selectionRuntime, studioSelection } from "./selection.js";
 import { consumerApps } from "./publications.js";
+import { DESIGNER_FONT_PREFIX, consumerBrand, consumerFontFile, consumerGlobals } from "./designer-globals.js";
 
 export type { AgentCells, CellSummary, CellsResponse, ChangeEvent } from "./contract.js";
 export { TOKEN_HEADER } from "./contract.js";
@@ -94,6 +95,29 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
       if (pathname === "/api/config") {
         const [theme, selection] = await Promise.all([studioTheme(options.root), studioSelection(options.root)]);
         json(response, 200, { token, tokenHeader: TOKEN_HEADER, readOnly: true, theme, selection, compilation: options.compilation ?? [], agents: AGENT_KINDS.map(agent => ({ agent, packageName: resolveAgent(agent).packageName })) }); return;
+      }
+      if (pathname === "/api/designer/globals.css") {
+        const globals = await consumerGlobals(options.root).catch(() => undefined);
+        response.writeHead(200, { "Content-Type": "text/css; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...(globals ? { ETag: `"${globals.hash}"` } : {}) });
+        response.end(globals?.css ?? "/* The consumer has no Designer globals; Studio keeps its stock component theme. */\n"); return;
+      }
+      if (pathname.startsWith(DESIGNER_FONT_PREFIX)) {
+        const font = await consumerFontFile(options.root, pathname).catch(() => undefined);
+        if (!font) { json(response, 404, { error: "Font is not part of the consumer's Designer globals" }); return; }
+        response.writeHead(200, { "Content-Type": font.type, "Cache-Control": "public, max-age=3600", "X-Content-Type-Options": "nosniff" });
+        response.end(font.body); return;
+      }
+      if (pathname === "/api/brand") {
+        const brand = await consumerBrand(options.root);
+        json(response, 200, { ...(brand.name ? { name: brand.name } : {}), mark: !!brand.mark }); return;
+      }
+      if (pathname === "/api/brand/mark.svg") {
+        const brand = await consumerBrand(options.root);
+        const ground = new URL(raw, origin).searchParams.get("ground") === "dark" ? "dark" : "light";
+        // Without a consumer mark, Studio's own shipped mark stands in.
+        if (!brand.mark) { response.writeHead(302, { Location: "/studio-mark.svg", "Cache-Control": "no-store" }); response.end(); return; }
+        response.writeHead(200, { "Content-Type": "image/svg+xml; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'" });
+        response.end(brand.mark[ground]); return;
       }
       if (pathname === "/api/selection/runtime.js") {
         const hash = new URL(raw, origin).searchParams.get("hash") ?? "";

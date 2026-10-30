@@ -29,7 +29,14 @@ const LAYER_ORDER = ['frames', 'sections', 'components', 'tokens', 'assets'];
 
 /** Explorer tree. Designer cells carry no authored grouping, so their layer becomes the group. */
 function explorerTree(index: AgentCells): CellNode[] {
-  if (index.agent !== 'designer') return cellHierarchy(index.cells, index.tree);
+  if (index.agent !== 'designer') {
+    const tree = cellHierarchy(index.cells, index.tree);
+    // An ungrouped flat list of dotted identities groups by its leading domain.
+    if (tree.some(node => node.group || node.children.length) || !index.cells.every(cell => cell.id.includes('.'))) return tree;
+    const domains = new Map<string, CellNode[]>();
+    for (const node of tree) { const domain = node.id.split('.')[0]!; domains.set(domain, [...(domains.get(domain) ?? []), node]); }
+    return domains.size < 2 ? tree : [...domains].map(([domain, children]) => ({ id: `domain-${domain}`, title: humanize(domain), group: true, children }));
+  }
   const layers = new Map<string, CellNode[]>();
   for (const cell of index.cells) {
     const layer = designerLayer(cell.id);
@@ -58,7 +65,7 @@ function Explorer({ nodes, selectedId, onSelect }: { nodes: readonly CellNode[];
     return list.map(node => node.group
       ? <div key={node.id} className={depth ? 'mt-2 flex flex-col gap-0.5' : 'mt-4 flex flex-col gap-0.5 first:mt-0'}>
         <div className={depth ? 'flex items-center justify-between px-2 py-1 text-xs text-muted-foreground' : 'flex items-center justify-between px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground'}>
-          <span>{node.title}</span><span className="tabular-nums">{leafCount(node)}</span>
+          <span>{/^[a-z0-9]+(?:[-_][a-z0-9]+)+$/.test(node.title) ? humanize(node.title) : node.title}</span><span className="tabular-nums">{leafCount(node)}</span>
         </div>
         {render(node.children, depth + 1)}
       </div>
@@ -129,7 +136,7 @@ function Needs({ detail, reports }: { detail?: CellDetail; reports: readonly Stu
   const owner = detail ? presentText(detail.content).ownerInput : false;
   const items: StudioReport[] = [
     ...(owner ? [{ id: 'owner', area: 'compile' as const, severity: 'warning' as const, title: 'Awaiting owner input', detail: 'Some statements in this cell wait for a decision from the owner.' }] : []),
-    ...reports.filter(report => report.severity !== 'info'),
+    ...reports.filter(report => report.severity !== 'info' && report.area !== 'compile'),
   ];
   return <ReportList reports={items} empty="Nothing is waiting on you." />;
 }
@@ -200,9 +207,10 @@ function AgentWorkspace({ agent, indexes, revision, reports }: { agent: Agent; i
 function HomeOverview({ indexes, reports }: { indexes: Resource<AgentCells[]>; reports: Resource<StudioReport[]> }) {
   const { isOpen } = usePageModules();
   const list = reports.state === 'ready' ? reports.value : [];
+  const needs = isOpen('needs');
   return <div className="flex flex-col">
-    <PageHeader title="Home" description="Your agents, what they have written, and anything that needs attention." />
-    <div className="grid gap-6 p-4 md:p-8 2xl:grid-cols-[minmax(0,1fr)_20rem]">
+    <PageHeader title="Home" description="Your agents and what they have written for this workspace." />
+    <div className={needs ? 'grid gap-6 p-4 md:p-8 2xl:grid-cols-[minmax(0,1fr)_20rem]' : 'p-4 md:p-8'}>
       <section aria-labelledby="home-agents" className="flex flex-col gap-4">
         <h2 id="home-agents" className="text-base font-semibold tracking-tight">Agents</h2>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -222,13 +230,7 @@ function HomeOverview({ indexes, reports }: { indexes: Resource<AgentCells[]>; r
           })}
         </div>
       </section>
-      <aside className="flex flex-col gap-4">
-        <Card size="sm">
-          <CardHeader><CardTitle>Reports</CardTitle><CardDescription>Producer facts that do not block Studio.</CardDescription></CardHeader>
-          <CardContent>{reports.state === 'loading' ? <Skeleton className="h-16 w-full" /> : reports.state === 'error' ? <p className="text-sm text-destructive">{reports.message}</p> : <ReportList reports={list} />}</CardContent>
-        </Card>
-        {isOpen('needs') && <ModuleCard id="needs" title="Needs" description="Open requests for the owner."><Needs reports={list} /></ModuleCard>}
-      </aside>
+      {needs && <aside className="flex flex-col gap-4"><ModuleCard id="needs" title="Needs" description="Open requests for the owner."><Needs reports={list} /></ModuleCard></aside>}
     </div>
   </div>;
 }

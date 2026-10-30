@@ -73,6 +73,18 @@ export function DesignerDetail({ detail, titles }: { detail: CellDetail; titles:
       {rationale.length ? <ul className="flex list-disc flex-col gap-2 pl-5 text-sm leading-relaxed">{rationale.map((line, index) => <li key={index}><Prose value={line} titles={titles} /></li>)}</ul> : <Empty>No rationale recorded yet.</Empty>}
     </Section>
     {!fill ? <Section title="Fill"><Empty>This cell has no readable fill.</Empty></Section> : <>
+      {fill.artwork.length > 0 && <Section title="Artwork" description="Each variant as the Designer drew it.">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{fill.artwork.map(art => {
+          const inverse = /revers|invers|dark|knockout/i.test(art.variant);
+          return <figure key={art.variant} className="flex flex-col overflow-hidden rounded-xl ring-1 ring-foreground/10">
+            <div className={`flex h-36 items-center justify-center p-8 ${inverse ? 'bg-neutral-950' : 'bg-white'}`}>
+              {/* An <img> renders the SVG inert: no script or event handlers run. */}
+              <img alt={`${humanize(art.variant)} variant`} src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(art.svg)}`} className="size-full object-contain" />
+            </div>
+            <figcaption className="border-t px-3 py-2 text-xs text-muted-foreground">{humanize(art.variant)}</figcaption>
+          </figure>;
+        })}</div>
+      </Section>}
       {fill.tokens.length > 0 && <Section title="Values" description="Light and dark values this token resolves to.">
         <Card className="py-0"><Table aria-label="Token values">
           <TableHeader><TableHead isRowHeader>Step</TableHead><TableHead>Light</TableHead><TableHead>Dark</TableHead></TableHeader>
@@ -124,13 +136,13 @@ export function WriterDetail({ detail }: { detail: CellDetail }) {
   const projection = writerProjection(detail);
   const tone = [...new Set(projection.tone)];
   return <div className="flex flex-col gap-8">
-    {(tone.length > 0 || projection.locales.length > 0) && <Section title="Voice">
-      <div className="flex flex-wrap gap-2">
-        {projection.locales.map(locale => <Badge key={locale} variant="outline">{locale.toUpperCase()}</Badge>)}
-        {tone.map(entry => <Badge key={entry} variant="secondary">{entry}</Badge>)}
-      </div>
+    {tone.length > 0 && <Section title="Voice">
+      <div className="flex flex-wrap gap-2">{tone.map(entry => <Badge key={entry} variant="secondary">{entry}</Badge>)}</div>
     </Section>}
-    <Section title="Copy" description="Every string this cell supplies, in the order it appears.">
+    {projection.banned.length > 0 && <Section title="Words to avoid" description="The voice never uses these.">
+      <div className="flex flex-wrap gap-2">{projection.banned.map(word => <Badge key={word} variant="outline" className="line-through decoration-muted-foreground/60">{word}</Badge>)}</div>
+    </Section>}
+    <Section title="Copy" description="Every string this cell supplies, in the order it appears." action={projection.locales.length > 0 ? <div className="flex flex-wrap justify-end gap-1.5">{projection.locales.map(locale => <Badge key={locale} variant="outline" aria-label={`Locale ${locale}`}>{locale.toUpperCase()}</Badge>)}</div> : undefined}>
       {projection.records.length ? <Card className="py-0"><Table aria-label="Copy records">
         <TableHeader><TableHead isRowHeader className="w-40">Context</TableHead><TableHead>Text</TableHead></TableHeader>
         <TableBody>{projection.records.map(record => {
@@ -139,7 +151,7 @@ export function WriterDetail({ detail }: { detail: CellDetail }) {
             <TableCell className="align-top font-medium">{humanize(record.context)}</TableCell>
             <TableCell className="whitespace-normal">
               <span className="flex flex-col items-start gap-1">
-                <span className={shown.ownerInput ? 'text-muted-foreground' : undefined}>{shown.text || 'No text yet'}</span>
+                <span className={shown.ownerInput ? 'text-muted-foreground' : undefined}>{shown.text || 'Awaiting copy'}</span>
                 {shown.ownerInput && <Badge variant="secondary">Owner input</Badge>}
               </span>
             </TableCell>

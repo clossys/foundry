@@ -16,6 +16,17 @@ export function copyRole(record: Record<string, unknown>): CopyRole {
   if (/(?:^|[.\s-])(?:body|description|paragraph|paragraphs|passage|passages|narrative|narratives)(?:$|[.\s-])/.test(context)) return 'body';
   return 'unknown';
 }
+/** Produced text of a record: plain strings, plus the Writer lexicon kinds (voice rules, terms, claims). */
+function recordText(record: Record<string, unknown>): string | undefined {
+  if (typeof record.text === 'string' && record.text.trim()) return record.text;
+  if (record.kind === 'voice-rule' && typeof record.value === 'string' && record.value.trim()) return record.value;
+  if (record.kind === 'term' && typeof record.term === 'string' && record.term.trim()) {
+    const forms = strings(record.forms).filter(form => form.trim());
+    return forms.length ? `${record.term} (${forms.join(', ')})` : record.term;
+  }
+  if (record.kind === 'claim') { const phrasings = strings(record.phrasings).filter(entry => entry.trim()); if (phrasings.length) return phrasings.join('\n'); }
+  return typeof record.text === 'string' ? record.text : undefined;
+}
 export function localeDirection(locale: string): 'rtl' | 'ltr' { return /^(?:ar|fa|he|ur|ps|dv|yi)(?:-|$)/i.test(locale) ? 'rtl' : 'ltr'; }
 
 /** Browser projection of the Writer cell profile, including older Rationale/Fill envelopes. */
@@ -26,9 +37,11 @@ export function writerProjection(cell: CellDetail): WriterProjection {
     if (object(record.rules)) projection.tone.push(...strings(record.rules.tone));
     if (Array.isArray(record.glossary)) projection.banned.push(...record.glossary.filter(object).filter(term => term.status === 'forbidden').map(term => String(term.term ?? '')).filter(Boolean));
     projection.tone.push(...strings(record.tone)); projection.banned.push(...strings(record.bannedWords));
+    if (record.kind === 'term' && typeof record.term === 'string' && (record.termStatus === 'avoid' || record.termStatus === 'forbidden')) projection.banned.push(record.term);
     if (typeof record.id !== 'string' || !record.id.trim() || typeof record.context !== 'string' || !record.context.trim()) { projection.gaps.push('Writer record identity or context unavailable.'); return; }
     if (!projection.locales.includes(locale)) projection.locales.push(locale);
-    projection.records.push({ id: record.id, context: record.context, locale, role: copyRole(record), ...(typeof record.text === 'string' ? { text: record.text } : {}), record });
+    const text = recordText(record);
+    projection.records.push({ id: record.id, context: record.context, locale, role: copyRole(record), ...(text === undefined ? {} : { text }), record });
   };
   const envelope = (value: unknown, defaultLocale = 'und') => {
     if (Array.isArray(value)) { for (const record of value) add(record, defaultLocale); return; }

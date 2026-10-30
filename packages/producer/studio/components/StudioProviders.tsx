@@ -10,8 +10,10 @@ import { studioReports, type StudioReport } from '../lib/studio-report';
 export type Resource<T> = { state: 'loading' } | { state: 'error'; message: string } | { state: 'ready'; value: T };
 export type ThemeMode = 'light' | 'dark' | 'system';
 
-interface StudioData { cells: Resource<AgentCells[]>; revision: number; reports: Resource<StudioReport[]> }
-const DataContext = createContext<StudioData>({ cells: { state: 'loading' }, revision: 0, reports: { state: 'loading' } });
+/** The consumer's brand as its Designer output names it; the mark image is served by Producer. */
+export interface StudioBrandInfo { name?: string }
+interface StudioData { cells: Resource<AgentCells[]>; revision: number; reports: Resource<StudioReport[]>; brand: Resource<StudioBrandInfo> }
+const DataContext = createContext<StudioData>({ cells: { state: 'loading' }, revision: 0, reports: { state: 'loading' }, brand: { state: 'loading' } });
 const ThemeContext = createContext<{ mode: ThemeMode; resolved: 'light' | 'dark'; setMode: (mode: ThemeMode) => void }>({ mode: 'system', resolved: 'light', setMode: () => {} });
 
 export function useStudioData() { return useContext(DataContext); }
@@ -40,11 +42,19 @@ async function loadReports(signal: AbortSignal): Promise<StudioReport[]> {
   return studioReports({ selection: config.selection, theme: config.theme, compilation: config.compilation });
 }
 
+async function loadBrand(signal: AbortSignal): Promise<StudioBrandInfo> {
+  const response = await fetch('/api/brand', { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
+  if (!response.ok) return {};
+  const value = await response.json() as Record<string, unknown>;
+  return typeof value.name === 'string' && value.name.trim() ? { name: value.name.trim() } : {};
+}
+
 export function StudioProviders({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [revision, setRevision] = useState(0);
   const [cells, setCells] = useState<Resource<AgentCells[]>>({ state: 'loading' });
   const [reports, setReports] = useState<Resource<StudioReport[]>>({ state: 'loading' });
+  const [brand, setBrand] = useState<Resource<StudioBrandInfo>>({ state: 'loading' });
   const [mode, setModeState] = useState<ThemeMode>('system');
   const [resolved, setResolved] = useState<'light' | 'dark'>('light');
 
@@ -75,10 +85,14 @@ export function StudioProviders({ children }: { children: ReactNode }) {
     const controller = new AbortController();
     loadCells(controller.signal).then(value => setCells({ state: 'ready', value }), error => { if (!controller.signal.aborted) setCells({ state: 'error', message: error instanceof Error ? error.message : 'Producer is unavailable.' }); });
     loadReports(controller.signal).then(value => setReports({ state: 'ready', value }), error => { if (!controller.signal.aborted) setReports({ state: 'error', message: error instanceof Error ? error.message : 'Producer is unavailable.' }); });
+    loadBrand(controller.signal).then(value => {
+      setBrand({ state: 'ready', value });
+      document.title = value.name ? `${value.name} Studio` : 'Studio';
+    }, () => { if (!controller.signal.aborted) setBrand({ state: 'ready', value: {} }); });
     return () => controller.abort();
   }, [revision]);
 
-  const data = useMemo(() => ({ cells, revision, reports }), [cells, revision, reports]);
+  const data = useMemo(() => ({ cells, revision, reports, brand }), [cells, revision, reports, brand]);
   const theme = useMemo(() => ({ mode, resolved, setMode }), [mode, resolved, setMode]);
   return <RouterProvider navigate={href => router.push(href)}>
     <ThemeContext.Provider value={theme}><DataContext.Provider value={data}>{children}</DataContext.Provider></ThemeContext.Provider>

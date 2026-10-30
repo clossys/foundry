@@ -3,7 +3,8 @@ import type { CellSummary } from './cells-client';
 /** Readable label for an identity segment: "accent-color" becomes "Accent color". */
 export function humanize(value: string): string {
   const last = value.split('.').at(-1) ?? value;
-  const words = last.replace(/[-_]+/g, ' ').trim();
+  // camelCase/PascalCase names ("RightPanel") read as words; acronyms stay intact.
+  const words = last.replace(/[-_]+/g, ' ').replace(/([a-z0-9])([A-Z])(?=[a-z])/g, (_, a: string, b: string) => `${a} ${b.toLowerCase()}`).trim();
   return words ? words.charAt(0).toUpperCase() + words.slice(1) : value;
 }
 
@@ -39,11 +40,13 @@ export function presentText(value: string, titles: ReadonlyMap<string, string> =
   text = text.replace(/^\s*fact:([\w.-]+)\s+is\s+[^:]{1,80}?:\s*/i, (_, name: string) => cite(name));
   text = text.replace(/\s*\((?:finding|fact):([\w.-]+)\)/gi, (_, name: string) => cite(name));
   text = text.replace(/TODO-OWNER/g, () => { ownerInput = true; return 'awaiting owner input'; });
+  // Request identifiers are bookkeeping; readers see what they refer to.
+  text = text.replace(/\b(?:REQ|req)-\d{1,6}\b/g, 'the open request');
   text = text.replace(IDENTITY, (match, id: string, version?: string) => {
     const known = titles.get(id);
     if (!known && !LAYER_PREFIX.test(id)) return match;
     const label = known ?? humanize(id);
-    return version ? `${label} (v${version})` : label;
+    return version ? `${label} v${version}` : label;
   });
   return { text: text.replace(/[ \t]{2,}/g, ' ').trim(), citations, ownerInput };
 }

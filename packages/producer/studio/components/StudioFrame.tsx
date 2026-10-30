@@ -10,7 +10,7 @@ import {
   CommandInput, CommandItem, CommandList, CommandShortcut, Popover, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger,
   ScrollArea, Separator, Sheet, SheetDescription, SheetHeader, SheetTitle, Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
   SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
-  SidebarProvider, SidebarRail, SidebarTrigger, Textarea, useSidebar, Tooltip, TooltipTrigger,
+  SidebarProvider, SidebarRail, SidebarTrigger, Skeleton, Textarea, useSidebar, Tooltip, TooltipTrigger,
 } from '@clossys/designer-ui';
 import { studioBreadcrumbs, studioCommands, studioHome, studioNavigation, studioPageActions, studioRouteForPath, type StudioPageAction } from '../generated/studio-map';
 import { studioIcon } from '../lib/studio-icons';
@@ -73,7 +73,25 @@ function ReportsPopover() {
   </PopoverTrigger>;
 }
 
-const THEME_OPTIONS: { mode: ThemeMode; label: string; Icon: typeof SunIcon }[] = [
+/** The consumer's own mark and name from its Designer output; Studio is the product beneath it. */
+function BrandButton() {
+  const { brand } = useStudioData();
+  const name = brand.state === 'ready' ? brand.value.name : undefined;
+  return <SidebarMenuButton size="lg" href={studioHome.href} tooltip={name ? `${name} Studio` : 'Studio'}>
+    <span aria-hidden className="flex size-8 shrink-0 items-center justify-center">
+      {/* eslint-disable-next-line @next/next/no-img-element -- Producer serves the consumer's SVG mark. */}
+      <img src="/api/brand/mark.svg?ground=light" alt="" className="size-7 dark:hidden" />
+      {/* eslint-disable-next-line @next/next/no-img-element -- Producer serves the consumer's SVG mark. */}
+      <img src="/api/brand/mark.svg?ground=dark" alt="" className="hidden size-7 dark:block" />
+    </span>
+    <span className="grid flex-1 text-left leading-tight">
+      {brand.state === 'loading' ? <Skeleton className="h-4 w-20" /> : <span className="truncate font-heading text-[15px] font-semibold tracking-tight">{name ?? 'Studio'}</span>}
+      <span className="truncate text-xs text-muted-foreground">{name ? 'Studio' : 'Local workspace'}</span>
+    </span>
+  </SidebarMenuButton>;
+}
+
+const THEME_OPTIONS:{ mode: ThemeMode; label: string; Icon: typeof SunIcon }[] = [
   { mode: 'light', label: 'Light', Icon: SunIcon },
   { mode: 'dark', label: 'Dark', Icon: MoonIcon },
   { mode: 'system', label: 'System', Icon: MonitorIcon },
@@ -201,13 +219,7 @@ function AppFrame({ navigation, commands, breadcrumbs, actions, children }: AppF
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" href={studioHome.href} tooltip="Studio">
-              <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground"><svg viewBox="0 0 32 32" className="size-5" fill="none"><path d="M23 10H13a6 6 0 0 0 0 12h10M23 16H13" stroke="currentColor" strokeWidth="2.5" /></svg></span>
-              <span className="grid flex-1 text-left leading-tight">
-                <span className="truncate text-sm font-semibold">Studio</span>
-                <span className="truncate text-xs text-muted-foreground">Clossys Producer</span>
-              </span>
-            </SidebarMenuButton>
+            <BrandButton />
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton tooltip="Search" onPress={() => setSearchOpen(true)} aria-label="Search pages">

@@ -1,7 +1,9 @@
 import { stripFrontMatter } from './studio-text';
 
 export interface DesignerTokenValue { token: string; step: string; type?: string; value: string; dark?: string; color: boolean }
-export interface DesignerFill { layer: string; tokens: DesignerTokenValue[]; composes: string[]; members: string[]; slots: [string, string][]; reads: string[]; implementation?: string; source?: string; trust?: string; status?: string; conforms: string[] }
+/** An inline SVG variant of an asset (for example a mark's positive and reversed forms). */
+export interface DesignerArtwork { variant: string; svg: string }
+export interface DesignerFill { layer: string; tokens: DesignerTokenValue[]; artwork: DesignerArtwork[]; composes: string[]; members: string[]; slots: [string, string][]; reads: string[]; implementation?: string; source?: string; trust?: string; status?: string; conforms: string[] }
 
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
 const COLOR = /^(?:#[0-9a-f]{3,8}|(?:rgb|rgba|hsl|hsla|oklch|oklab|color-mix)\(.+\))$/i;
@@ -24,6 +26,7 @@ export function designerFill(source: string, layer: string): DesignerFill | unde
   const result: DesignerFill = {
     layer,
     tokens: [],
+    artwork: [],
     composes: [],
     members: [],
     slots: [],
@@ -45,6 +48,13 @@ export function designerFill(source: string, layer: string): DesignerFill | unde
         const dark = typeof modes.dark === 'string' ? modes.dark : undefined;
         result.tokens.push({ token, step, ...(typeof entry.$type === 'string' ? { type: entry.$type } : {}), value: shown, ...(dark ? { dark } : {}), color: entry.$type === 'color' || COLOR.test(shown) });
       }
+    }
+  }
+  if (object(value.assets)) for (const variants of Object.values(value.assets)) {
+    if (!object(variants)) continue;
+    for (const [variant, entry] of Object.entries(variants)) {
+      const svg = object(entry) && typeof entry.$value === 'string' ? entry.$value.trim() : '';
+      if (/^<svg[\s>]/.test(svg) && svg.endsWith('</svg>')) result.artwork.push({ variant, svg });
     }
   }
   for (const group of ['sections', 'frames', 'components'] as const) {

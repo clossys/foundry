@@ -35,6 +35,18 @@ describe('Writer specimen projection', () => {
     const source = serializeWriterCell({ id: 'example.page', version: 1, status: 'draft', updated: '2026-10-29', links: [], locales: ['en'], records: [{ locale: 'en', record: voice, bindings: [] }] });
     expect(writerProjection(cell(source, ['en']))).toMatchObject({ tone: ['direct', 'warm'], banned: ['effortless'] });
   });
+  it('presents lexicon voice rules, terms and claims as their produced text and lists avoided terms', () => {
+    const json = (value: Record<string, unknown>) => `<!-- ${JSON.stringify({ id: value.id })} -->\n\`\`\`json\n${JSON.stringify(value, null, 2)}\n\`\`\``;
+    const projection = writerProjection(cell([
+      '## en',
+      '### brand.voice.energy', json({ id: 'lx.1', context: 'brand.voice.energy', kind: 'voice-rule', rule: 'energy', value: 'Calm and direct.' }),
+      '### brand.voice.avoid-jargon', json({ id: 'lx.2', context: 'brand.voice.avoid-jargon', kind: 'term', term: 'synergy', forms: ['synergies'], termStatus: 'avoid' }),
+      '### brand.claims.promise', json({ id: 'lx.3', context: 'brand.claims.promise', kind: 'claim', phrasings: ['One loop from plan to page.'] }),
+      '### brand.voice.unknown', json({ id: 'lx.4', context: 'brand.voice.unknown', value: 'Not a known shape' }),
+    ].join('\n'), ['en']));
+    expect(projection.records.map(copy => copy.text)).toEqual(['Calm and direct.', 'synergy (synergies)', 'One loop from plan to page.', undefined]);
+    expect(projection.banned).toEqual(['synergy']);
+  });
   it('shows a named gap instead of fabricated copy for an invalid fill', () => {
     expect(writerProjection(cell('## Fill\n```json\ninvalid\n```')).gaps).toContain('Writer Fill JSON is invalid.');
     expect(writerProjection(cell('## Rationale\n- Write a headline')).records).toEqual([]);
