@@ -70,4 +70,4 @@ native packages build cleanly on the recorded integration baseline.
 Known visible limit: the unbound native token root displays its CSS-generated
 “No brand binding” debug badge. The DOM copy probe does not inspect CSS-generated
 text. Theme selection does not establish brand binding. Draft evidence and exact
-merged inputs are recorded in `evidence.json` when the current rehearsal finishes.
+merged inputs are recorded in `evidence.json`; `capture-report.json` pins all 504 real image hashes.
