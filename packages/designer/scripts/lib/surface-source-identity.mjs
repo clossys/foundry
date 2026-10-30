@@ -4,6 +4,7 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
 import { runInThisContext } from "node:vm";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { createSurfaceLeafContext } from "./surface-leaf-check.mjs";
 
 const unwrap = node => {
@@ -16,20 +17,79 @@ const fn = (node, env) => ({ kind: "function", node, env });
 
 // Run the real pure native importer against current TS source, never stale dist.
 // Resolution is confined to source modules; third-party imports use normal Node resolution.
-function sourceModule(file, cache = new Map()) {
+export function sourceModule(file, cache = new Map()) {
   if (file.endsWith(".json")) return JSON.parse(fs.readFileSync(file, "utf8"));
   if (cache.has(file)) return cache.get(file).exports;
   const module = { exports: {} }; cache.set(file, module);
-  const output = ts.transpileModule(fs.readFileSync(file, "utf8"), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, esModuleInterop: true } }).outputText;
+  const root = file.slice(0, file.indexOf(`${path.sep}packages${path.sep}`));
+  const output = ts.transpileModule(fs.readFileSync(file, "utf8"), {
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, esModuleInterop: true, jsx: ts.JsxEmit.ReactJSX },
+    transformers: { before: [context => {
+      const visit = node => ts.isMetaProperty(node) && node.keywordToken === ts.SyntaxKind.ImportKeyword
+        ? context.factory.createObjectLiteralExpression([
+          context.factory.createPropertyAssignment("url", context.factory.createStringLiteral(pathToFileURL(file).href)),
+          context.factory.createPropertyAssignment("dirname", context.factory.createStringLiteral(path.dirname(file))),
+        ]) : ts.visitEachChild(node, visit, context);
+      return node => ts.visitNode(node, visit);
+    }] },
+  }).outputText;
   const localRequire = specifier => {
-    if (!specifier.startsWith(".")) return createRequire(file)(specifier);
-    const target = path.resolve(path.dirname(file), specifier);
-    const source = target.replace(/\.js$/, ".ts");
-    if (!fs.existsSync(source)) throw new Error(`Native source dependency missing: ${specifier}`);
+    let target;
+    if (specifier.startsWith("file:")) target = fileURLToPath(specifier).replace(`${path.sep}dist${path.sep}`, `${path.sep}src${path.sep}`);
+    else if (specifier.startsWith(".")) target = path.resolve(path.dirname(file), specifier);
+    else if (specifier.startsWith("@clossys/")) {
+      const [scope, name, ...parts] = specifier.split("/");
+      const directory = path.join(root, "packages", name), manifest = JSON.parse(fs.readFileSync(path.join(directory, "package.json"), "utf8"));
+      const entry = manifest.exports?.[parts.length ? "./" + parts.join("/") : "."];
+      const output = typeof entry === "string" ? entry : entry?.import ?? entry?.default;
+      if (!output) throw new Error(`Native source export missing: ${specifier}`);
+      target = path.resolve(directory, output).replace(`${path.sep}dist${path.sep}`, `${path.sep}src${path.sep}`);
+    } else return createRequire(file)(specifier);
+    const candidates = target.endsWith(".js") ? [target.replace(/\.js$/, ".ts"), target.replace(/\.js$/, ".tsx")] : [target];
+    const source = candidates.find(candidate => fs.existsSync(candidate));
+    if (!source) throw new Error(`Native source dependency missing: ${specifier}`);
     return sourceModule(source, cache);
   };
   runInThisContext(`(function(exports,require,module){${output}\n})`, { filename: file })(module.exports, localRequire, module);
   return module.exports;
+}
+
+/** Replay every planned adoption with the real engine. Package pointers must exist;
+ * source receipts and bytes must pass the same S2/provenance/hash guards as Studio.
+ */
+export async function checkPreparedDefaultAdoptions(repository, supplied) {
+  const root = path.resolve(repository), cache = new Map();
+  const native = sourceModule(path.join(root, "packages/designer/src/catalog-core/index.ts"), cache);
+  const bundles = sourceModule(path.join(root, "packages/designer/src/catalog-bundles.ts"), cache);
+  const surfaces = sourceModule(path.join(root, "packages/designer/src/library-cli/surface-catalog.ts"), cache);
+  const libraryApi = sourceModule(path.join(root, "packages/designer/src/catalog-core/surface-library.ts"), cache);
+  const prepared = supplied ?? await bundles.prepareCatalogSurfaceDefaults({
+    catalog: { values: native.loadCatalog(), components: { slots: native.loadComponentRegistry().slots, fills: [] }, surfaces: surfaces.foundrySurfaceCatalog() },
+    library: { source: { id: "surface-default-probe", kind: "consumer", author: "consumer", license: "MIT" }, adoptedAt: "2026-10-30", values: { fills: [] }, components: { fills: [], files: [] }, surfaces: { version: 1, fills: [], files: [] } },
+    surfaceOptions: { packages: [], measurements: [] },
+  }, { slots: surfaces.foundrySurfaceCatalog().slots.map(slot => slot.id), preference: native.DEFAULT_COMPONENT_PREFERENCE });
+  const findings = [], rows = [];
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, "packages/designer/package.json"), "utf8"));
+  const data = JSON.parse(fs.readFileSync(path.join(root, "packages/designer/src/catalog-bundles.data.json"), "utf8"));
+  if (data.package.name !== manifest.name || data.package.version !== manifest.version) findings.push({ code: "stale-catalog-bundles", detail: "Offline bundle package identity differs from the shipped manifest" });
+  for (const decision of prepared.plan.decisions) {
+    const operation = { op: "adopt", slot: decision.slot, source: decision.source };
+    const matching = prepared.surfaceBundles.filter(bundle => bundle.operation === operation.op && bundle.slot === operation.slot);
+    const packages = prepared.input.catalog.surfaces.fills.filter(doc => {
+      const meta = doc.$extensions["com.clossys.fill"];
+      return meta.slot === operation.slot && meta.source === operation.source && meta.mode === "implementation" && libraryApi.isSurfacePackageEntry(libraryApi.surfaceEntryOf(doc));
+    });
+    const row = { slot: operation.slot, op: operation.op, source: operation.source, matchingBundles: matching.length, packageCandidates: packages.length };
+    try {
+      native.applyLibraryChange(prepared.input.catalog, prepared.input.library, { baseHash: native.libraryHash(prepared.input.library), changes: [{ portion: "surfaces", change: operation }], surfaceBundles: prepared.surfaceBundles }, { surfaceOptions: prepared.input.surfaceOptions });
+      rows.push({ ...row, status: "PASS" });
+    } catch (error) {
+      const finding = { code: "default-adoption-source", leaf: operation.slot, ...row, detail: error.message };
+      findings.push(finding); rows.push({ ...row, status: "FAIL", detail: error.message });
+    }
+  }
+  if (!rows.length || rows.length !== prepared.plan.rows.filter(row => row.status !== "not-chosen").length) findings.push({ code: "default-adoption-inventory", detail: "Every planned default seat must have an adoption" });
+  return { findings, rows };
 }
 
 /** Interpret the registry's data flow, retaining every entry before JS could overwrite it.
@@ -191,7 +251,42 @@ export function createRegistryResolver(program, root) {
 }
 
 /** Source identities, not UI names: barrels, aliases and transparent adapters converge here. */
-export function checkSurfaceSourceIdentity(repository) {
+/** Check registration objects before JavaScript flattens duplicate fields/spreads. */
+export function requireUniqueRecord(resolver, expression) {
+  const record = resolver.evaluate(expression);
+  if (record?.kind !== "object") resolver.fail(expression, "Registration record is unresolved");
+  const keys = new Set();
+  for (const entry of record.entries) {
+    if (keys.has(entry.key)) resolver.fail(entry.node, `Shadowed catalog registration field ${entry.key}`, "shadowed-registration");
+    keys.add(entry.key);
+  }
+  return record;
+}
+
+function checkCatalogConstructors(program, resolver, root) {
+  const catalog = program.getSourceFile(path.join(root, "packages/designer/src/library-cli/surface-catalog.ts"));
+  const factory = catalog.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === "foundrySurfaceCatalog");
+  const records = [], returns = [];
+  walk(factory.body, node => {
+    if (node !== factory.body && ts.isFunctionLike(node)) return false;
+    if (ts.isReturnStatement(node)) returns.push(node);
+    if (ts.isCallExpression(node) && node.expression.getText() === "Object.freeze") records.push(node);
+  });
+  if (records.length !== 1 || returns.length !== 1 || !returns[0].expression) resolver.fail(factory, "Live catalog needs one registration record and return");
+  const writer = records[0].parent, cache = resolver.symbol(returns[0].expression), writes = [];
+  if (!ts.isBinaryExpression(writer) || writer.operatorToken.kind !== ts.SyntaxKind.QuestionQuestionEqualsToken || resolver.symbol(writer.left) !== cache) resolver.fail(records[0], "Catalog record does not supply the returned cache");
+  walk(catalog, node => { if (ts.isBinaryExpression(node) && node.operatorToken.kind >= ts.SyntaxKind.FirstAssignment && node.operatorToken.kind <= ts.SyntaxKind.LastAssignment && resolver.symbol(node.left) === cache) writes.push(node); });
+  if (writes.length !== 1 || writes[0] !== writer || cache?.declarations?.length !== 1 || cache.declarations[0].initializer) resolver.fail(records[0], "Catalog cache has another source writer");
+  const record = requireUniqueRecord(resolver, records[0]);
+  if (!["slots", "fills"].every(key => record.entries.some(entry => entry.key === key))) resolver.fail(records[0], "Catalog record needs slots and fills");
+  const bundleSource = program.getSourceFile(path.join(root, "packages/designer/src/catalog-bundles.ts"));
+  const prepare = bundleSource.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === "prepareCatalogSurfaceDefaults"), outputs = [];
+  walk(prepare.body, node => { if (node !== prepare.body && ts.isFunctionLike(node)) return false; if (ts.isReturnStatement(node)) outputs.push(node); });
+  if (outputs.length !== 1 || !outputs[0].expression) resolver.fail(prepare, "Bundle preparation needs one resolved output record");
+  requireUniqueRecord(resolver, outputs[0].expression);
+}
+
+export async function checkSurfaceSourceIdentity(repository) {
   const root = path.resolve(repository), context = createSurfaceLeafContext(root), { program, fills } = context;
   const resolver = createRegistryResolver(program, root), findings = [], inventory = [];
   const key = node => `${path.relative(root, node.getSourceFile().fileName).split(path.sep).join("/")}#${node.name?.getText() ?? ts.SyntaxKind[node.kind]}:${node.getStart()}`;
@@ -207,6 +302,7 @@ export function checkSurfaceSourceIdentity(repository) {
   try {
     // This is the live catalog used by CLI, disk boundary and Studio cells. Its
     // source offers count even when absent from the package JSON/runtime tables.
+    checkCatalogConstructors(program, resolver, root);
     const live = sourceModule(path.join(root, "packages/designer/src/library-cli/surface-catalog.ts")).foundrySurfaceCatalog();
     offers = live.fills.map(doc => {
       const meta = doc.$extensions["com.clossys.fill"], entry = Object.values(doc[meta.slot.split(".")[0]])[0];
@@ -227,7 +323,7 @@ export function checkSurfaceSourceIdentity(repository) {
         if (implementation?.kind !== "package" || implementation.module !== stored.pin?.package + (subpath === "." ? "" : subpath?.slice(1)) || implementation.export !== name) findings.push({ code: "catalog-source-mismatch", leaf, detail: "Live package implementation and canonical source pointer differ" });
       }
     }
-  } catch (error) { findings.push({ code: "unresolved-source", detail: `Live catalog: ${error.message}` }); }
+  } catch (error) { findings.push(error.finding ?? { code: "unresolved-source", detail: `Live catalog: ${error.message}` }); }
   const entry = program.getSourceFile(path.join(root, "packages/designer/src/runtime/index.ts"));
   const registry = entry.statements.filter(ts.isVariableStatement).flatMap(statement => statement.declarationList.declarations).find(node => node.name.getText() === "surfaceRuntimeRenderers");
   let routes;
@@ -439,12 +535,28 @@ export function checkSurfaceSourceIdentity(repository) {
     } catch (error) { findings.push({ leaf, ...(error.finding ?? { code: "unresolved-source", detail: error.message }) }); }
   }
   for (const fill of fills) if (!registered.has(fill.leaf)) findings.push({ code: "unregistered-descriptor", leaf: fill.leaf, detail: fill.descriptor });
+  let defaultAdoptions = [], shippingDefaults;
+  try {
+    const defaults = await checkPreparedDefaultAdoptions(root);
+    defaultAdoptions = defaults.rows; findings.push(...defaults.findings);
+    // Execute the shipped Producer caller, including its ordinary package evidence
+    // reader and component/default dependency closure, against current source modules.
+    const shipping = await sourceModule(path.join(root, "packages/producer/src/server/selection-defaults.ts")).prepareStudioSelection();
+    const adopted = shipping.input.library.surfaces.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot.startsWith("sections.specimen-"));
+    shippingDefaults = { sourceBundles: shipping.surfaceBundles.length, nativeAdopted: adopted.length, surfacesAdopted: shipping.input.library.surfaces.fills.length };
+    const planner = sourceModule(path.join(root, "packages/designer/src/catalog-core/index.ts"));
+    const replay = await checkPreparedDefaultAdoptions(root, { ...shipping, plan: planner.planSurfaceDefaults({ catalog: shipping.input.catalog.surfaces, slots: adopted.map(doc => doc.$extensions["com.clossys.fill"].slot), preference: planner.DEFAULT_COMPONENT_PREFERENCE }) });
+    findings.push(...replay.findings.map(finding => ({ ...finding, caller: "Producer.prepareStudioSelection" })));
+    if (adopted.length !== native.size || shipping.surfaceBundles.length !== native.size) findings.push({ code: "shipping-default-inventory", detail: "Shipped Studio preparation must retain every native specimen and its bundle", ...shippingDefaults });
+  } catch (error) { findings.push({ code: "shipping-default-adoption", detail: error.message }); }
   const sourceFiles = new Set([...resolver.files, ...fills.map(fill => path.join(root, fill.descriptor)), ...["sections", "frames"].map(layer => path.join(root, `packages/designer/src/catalog/slots/${layer}.json`)), ...["package.json", "package-lock.json", "packages/designer/package.json", "packages/publisher/package.json"].map(file => path.join(root, file))]);
   // Hash the complete candidate source universe as well as the gate itself. A green
   // report cannot be reused after an unvisited new competing source file is added.
   const collect = directory => { for (const entry of fs.readdirSync(directory, { withFileTypes: true })) { const file = path.join(directory, entry.name); if (entry.isDirectory()) collect(file); else if (/\.(?:[cm]?tsx?|mjs|json)$/.test(file)) sourceFiles.add(file); } };
   collect(path.join(root, "packages/designer/src")); collect(path.join(root, "packages/designer/scripts"));
   collect(path.join(root, "packages/publisher/src"));
+  collect(path.join(root, "packages/producer/src")); collect(path.join(root, "packages/producer/scripts")); collect(path.join(root, "packages/producer/studio"));
+  sourceFiles.add(path.join(root, "packages/producer/package.json"));
   const sources = [...sourceFiles].filter(file => file.startsWith(root + path.sep) && !file.includes("/node_modules/")).sort().map(file => ({ file: path.relative(root, file).split(path.sep).join("/"), sha256: createHash("sha256").update(fs.readFileSync(file)).digest("hex") }));
-  return { status: findings.length ? "FAIL" : "PASS", counts: { registered: slots.length, sections: slots.filter(leaf => leaf.startsWith("sections.")).length, frames: slots.filter(leaf => leaf.startsWith("frames.")).length, resolved: inventory.length, packageRoutes: routes.length, nativeRoutes: native.size, catalogOffers: offers.length }, findings, inventory: slots.map(leaf => ({ ...(inventory.find(row => row.leaf === leaf) ?? { leaf }), status: !inventory.some(row => row.leaf === leaf) || findings.some(finding => finding.leaf === leaf || !finding.leaf) ? "FAIL" : "PASS", offers: offers.filter(offer => offer.leaf === leaf), findings: findings.filter(finding => finding.leaf === leaf) })), sources, nativeOutputs, sourceHash: createHash("sha256").update(JSON.stringify({ sources, nativeOutputs })).digest("hex") };
+  return { status: findings.length ? "FAIL" : "PASS", counts: { registered: slots.length, sections: slots.filter(leaf => leaf.startsWith("sections.")).length, frames: slots.filter(leaf => leaf.startsWith("frames.")).length, resolved: inventory.length, packageRoutes: routes.length, nativeRoutes: native.size, catalogOffers: offers.length, defaultAdoptions: defaultAdoptions.length, preparedSourceBundles: defaultAdoptions.filter(row => row.matchingBundles === 1).length, packageDefaultCandidates: defaultAdoptions.filter(row => row.packageCandidates === 1).length }, findings, defaultAdoptions, shippingDefaults, inventory: slots.map(leaf => ({ ...(inventory.find(row => row.leaf === leaf) ?? { leaf }), status: !inventory.some(row => row.leaf === leaf) || offers.filter(offer => offer.leaf === leaf).length !== 1 || findings.some(finding => finding.leaf === leaf || !finding.leaf) ? "FAIL" : "PASS", offers: offers.filter(offer => offer.leaf === leaf), findings: findings.filter(finding => finding.leaf === leaf) })), sources, nativeOutputs, sourceHash: createHash("sha256").update(JSON.stringify({ sources, nativeOutputs })).digest("hex") };
 }

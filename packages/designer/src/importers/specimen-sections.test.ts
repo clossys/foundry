@@ -63,3 +63,19 @@ it("materializes and replays all14 retained native sources with immutable receip
   const bundle = prepared.bundles[0]!, fill = surfaceOf(bundle.document);
   expect(() => verifySurfaceFiles(fill, bundle.files.map(file => file.path === fill.impl.entry ? { ...file, content: file.content + "\n" } : file))).toThrow("S2 output hash differs");
 });
+
+it("the public shipping preparation retains all14 native source bundles and the matching catalog receipts", async () => {
+  const { prepareCatalogSurfaceDefaults } = await import("../catalog-bundles.js");
+  const original = input(), before = JSON.stringify(original.library);
+  const prepared = await prepareCatalogSurfaceDefaults(original, { slots: SPECIMEN_SECTION_EXPORTS.map(row => row.id), preference: ["foundry"] });
+  expect(prepared.surfaceBundles.map(bundle => bundle.slot).sort()).toEqual(SPECIMEN_SECTION_EXPORTS.map(row => row.id).sort());
+  expect(prepared.plan.decisions).toHaveLength(14);
+  expect(prepared.input.catalog.surfaces!.materializations).toHaveLength(14);
+  const changes = prepared.plan.decisions.map(row => ({ portion: "surfaces" as const, change: { op: "adopt" as const, slot: row.slot, source: row.source } }));
+  const adopted = applyLibraryChange(prepared.input.catalog, original.library, { baseHash: libraryHash(original.library), changes, surfaceBundles: prepared.surfaceBundles }, { surfaceOptions: prepared.input.surfaceOptions! });
+  expect(adopted.surfaces!.fills).toHaveLength(14);
+  expect(JSON.stringify(original.library)).toBe(before);
+  for (const bundles of [prepared.surfaceBundles.slice(1), [...prepared.surfaceBundles, prepared.surfaceBundles[0]!]]) {
+    expect(() => applyLibraryChange(prepared.input.catalog, original.library, { baseHash: libraryHash(original.library), changes, surfaceBundles: bundles }, { surfaceOptions: prepared.input.surfaceOptions! })).toThrow("S2 unique bundle required");
+  }
+});
