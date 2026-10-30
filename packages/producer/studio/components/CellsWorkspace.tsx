@@ -7,6 +7,7 @@ import { AGENT_LABELS, isAgent, type Agent } from '../lib/agents';
 import { cellHierarchy, loadCell, loadCells, type AgentCells, type CellDetail, type CellNode } from '../lib/cells-client';
 import { StudioFrame } from './StudioFrame';
 import { SourceDisclosure } from './SourceDisclosure';
+import { studioHome } from '../generated/studio-map';
 
 type Resource<T> = { state: 'loading' } | { state: 'error'; message: string } | { state: 'ready'; value: T };
 
@@ -102,11 +103,11 @@ export function CellsWorkspace({ agent }: { agent?: Agent }) {
     return () => controller.abort();
   }, [selectedAgent, selectedId, revision]);
   const visible = index.state === 'ready' ? index.value.filter(item => agent === undefined || item.agent === agent) : [];
-  const title = agent ? AGENT_LABELS[agent] : 'Home';
+  const title = agent ? AGENT_LABELS[agent] : studioHome.label;
   const selectedCell = visible.find(item => item.agent === selectedAgent)?.cells.find(cell => cell.id === selectedId);
-  return <StudioFrame page={{ title, breadcrumb: agent ? [{ id: 'agents', label: 'Agents' }] : undefined, description: 'Read-only agent cells', actions: [
+  return <StudioFrame page={{ title, description: 'Read-only agent cells', actions: [
     { id: 'refresh', label: 'Reload cells', icon: <Icon asset="assets.icon-document" decorative />, onAction: () => { setRevision(value => value + 1); router.refresh(); } },
-    ...(agent ? [{ id: 'home', label: 'Open Home', href: '/', icon: <Icon asset="assets.icon-home" decorative /> }] : []),
+    ...(agent ? [{ id: studioHome.id, label: `Open ${studioHome.label}`, href: studioHome.href, icon: <Icon asset="assets.icon-home" decorative /> }] : []),
   ] }}>
     <SectionFrame measure="wide">
       <SectionHeader role="status" description={live ? 'Changes refresh automatically.' : 'Use Reload cells to check for changes.'} />

@@ -9,6 +9,7 @@ import { startStudio, studioEntry, type StudioChild } from "./studio.js";
 import { watchCells } from "./watch.js";
 import { studioTheme } from "./theme.js";
 import { selectionProfile, selectionRuntime, studioSelection } from "./selection.js";
+import { consumerApps } from "./publications.js";
 
 export type { AgentCells, CellSummary, CellsResponse, ChangeEvent } from "./contract.js";
 export { TOKEN_HEADER } from "./contract.js";
@@ -105,6 +106,7 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
         json(response, 200, profile); return;
       }
       if (pathname === "/api/cells") { json(response, 200, { agents: await Promise.all(AGENT_KINDS.map(agent => inventory(options.root, agent))) }); return; }
+      if (pathname === "/api/apps") { json(response, 200, await consumerApps(options.root)); return; }
       if (pathname === "/api/events") {
         response.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-store", Connection: "keep-alive", "X-Accel-Buffering": "no" });
         streams.add(response); response.write(`event: ready\ndata: ${JSON.stringify({ reload: true })}\n\n`);
