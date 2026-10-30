@@ -225,15 +225,18 @@ function FrameContent({ brand, navigation, account, commands, children, main: su
   }, [hasToasts, dir]);
   const changeCollapsed = (next: boolean) => { setPanelCollapsed(next); rightPanel?.onCollapsedChange?.(next); };
   const [themeAnnouncement, setThemeAnnouncement] = useState("");
-  const themeLabels = theme?.preferenceLabels ?? { system: copy(SHELL_COPY_REFS.theme.system), light: copy(SHELL_COPY_REFS.theme.light), dark: copy(SHELL_COPY_REFS.theme.dark) };
-  const targetTheme = resolvedTheme === "dark" ? "light" : "dark";
-  const themeLabel = theme?.toggleLabel?.(preference, targetTheme, themeLabels) ?? themeLabels[targetTheme];
-  const themeSlot = themeControl === null ? null : <SemanticContent as="div" data-application-frame-slot="theme-control" className="shrink-0">{themeControl ?? <Tooltip trigger={
-    <Button variant="ghost" aria-label={themeLabel} aria-pressed={resolvedTheme === "dark"} className={CORNER_CONTROL} onPress={() => {
-      setPreference(targetTheme);
-      setThemeAnnouncement(theme?.preferenceAnnouncement?.(targetTheme, themeLabels) ?? copy(SHELL_COPY_REFS.theme.announcement, { theme: themeLabels[targetTheme] }));
-    }}><Icon glyph={resolvedTheme === "dark" ? Sun : Moon} decorative /></Button>
-  }>{themeLabel}</Tooltip>}</SemanticContent>;
+  function defaultThemeToggle() {
+    const themeLabels = theme?.preferenceLabels ?? { system: copy(SHELL_COPY_REFS.theme.system), light: copy(SHELL_COPY_REFS.theme.light), dark: copy(SHELL_COPY_REFS.theme.dark) };
+    const targetTheme = resolvedTheme === "dark" ? "light" : "dark";
+    const themeLabel = theme?.toggleLabel?.(preference, targetTheme, themeLabels) ?? themeLabels[targetTheme];
+    return <Tooltip trigger={
+      <Button variant="ghost" aria-label={themeLabel} aria-pressed={resolvedTheme === "dark"} className={CORNER_CONTROL} onPress={() => {
+        setPreference(targetTheme);
+        setThemeAnnouncement(theme?.preferenceAnnouncement?.(targetTheme, themeLabels) ?? copy(SHELL_COPY_REFS.theme.announcement, { theme: themeLabels[targetTheme] }));
+      }}><Icon glyph={resolvedTheme === "dark" ? Sun : Moon} decorative /></Button>
+    }>{themeLabel}</Tooltip>;
+  }
+  const themeSlot = themeControl === null ? null : <SemanticContent as="div" data-application-frame-slot="theme-control" className="shrink-0">{themeControl ?? defaultThemeToggle()}</SemanticContent>;
   const footer = <SemanticContent as="div" data-application-frame-footer={footerLayout} className="flex w-full min-w-0 items-center gap-sm">
     <SemanticContent as="div" data-application-frame-slot="account" className="min-w-0 flex-1">{account.actor
       ? <AccountMenu {...account} actor={{ ...account.actor, image: account.avatar === "initials" ? account.actor.image : markSrc }}
