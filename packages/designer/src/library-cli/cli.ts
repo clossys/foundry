@@ -6,9 +6,9 @@ import { fileURLToPath } from "node:url";
 import { runDogfood, dogfoodSourceModules, DOGFOOD_PACKAGE_NAME, type DogfoodException, type NeedStatus } from "../catalog-core/dogfood.js";
 import { consumerDogfoodSources, parseConsumerDogfoodContract, runConsumerDogfood } from "./consumer-dogfood.js";
 import tokenSlots from "../catalog/slots/tokens.json" with { type: "json" };
-import { libraryHash, loadCatalog, loadComponentCompositionRules, loadComponentRegistry, type CompositeFinding, type CompositeEmitTarget } from "../catalog-core/index.js";
+import { libraryHash, loadCatalog, type CompositeFinding, type CompositeEmitTarget } from "../catalog-core/index.js";
 import type { CompositeEngineInput } from "../catalog-core/types.js";
-import { loadCatalogBundles } from "../catalog-bundles.js";
+import { loadNativeCompositeCatalog } from "./native-catalog.js";
 import type { SurfaceResolutionOptions } from "../catalog-core/surface-types.js";
 import { readSurfacePackageEvidence } from "./surface-package-evidence.js";
 import { isSurfacePackageEntry, surfaceEntryOf, surfaceContractDiff, resolveSurfacePackageDescriptor } from "../catalog-core/surface-library.js";
@@ -189,7 +189,6 @@ async function readObservations(root: string, explicit?: string): Promise<Compon
     || Object.values(value.packageExports).some(names => !Array.isArray(names) || names.some(name => typeof name !== "string"))) throw new LibraryInputError(`observations malformed: expected { packageExports: { <module>: string[] } } ${path}`);
   return { packageExports: value.packageExports as ComponentOptions["packageExports"] & object };
 }
-let bundledComponentFills: ReturnType<typeof loadCatalogBundles>["componentFills"] | undefined;
 type CompositeCatalogInput = Parameters<typeof readLibrary>[1] & { values: ReturnType<typeof loadCatalog>; components: { slots: readonly { id: string }[] }; surfaces: ReturnType<typeof foundrySurfaceCatalog> };
 /**
  * Usage-graph inputs for one consumer library, derived only from existing producers: consumptionReport
@@ -270,9 +269,7 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
       io.out(args.json ? JSON.stringify({ needs, open: open.length, parents }) : `${open.length} needs are open; ${parents.length} block these parents.\nID\tStatus\tParent\tMissing\n${needs.map(row => `${row.id}\t${row.status}\t${row.raisedBy}\t${row.missing}`).join("\n")}`); return 0;
     }
     const catalog = loadCatalog();
-    // The engine's normal component catalog: registry slots, the offline bundle fills and the registered composition rules.
-    bundledComponentFills ??= loadCatalogBundles().componentFills;
-    const compositeCatalog = { values: catalog, components: { slots: loadComponentRegistry().slots, fills: bundledComponentFills, rules: loadComponentCompositionRules() }, surfaces: foundrySurfaceCatalog() };
+    const compositeCatalog = loadNativeCompositeCatalog(catalog);
     // Package-pointer leaves are checked against the export inventory of the packages actually installed beside this CLI.
     const surfaceOptions = async (): Promise<SurfaceResolutionOptions> => ({ packages: await readSurfacePackageEvidence(compositeCatalog.surfaces.fills), measurements: [] });
     if (args.command === "surfaces") {

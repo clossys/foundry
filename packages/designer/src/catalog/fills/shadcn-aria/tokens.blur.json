@@ -1,0 +1,277 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [
+        "tailwind-default/tokens.blur",
+        "foundry/tokens.blur"
+      ],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "shadcn@aria/tokens.blur",
+      "license": "MIT",
+      "mode": "derived",
+      "pin": {
+        "file": "theme.css",
+        "package": "tailwindcss",
+        "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+        "version": "4.3.3"
+      },
+      "relation": "derived",
+      "slot": "tokens.blur",
+      "source": "shadcn@aria",
+      "sourceAddress": "tailwindcss/theme.css",
+      "status": "draft",
+      "trust": "foundry",
+      "derivation": {
+        "from": "dtcg#alias",
+        "rule": "Retain all Tailwind4.3.3 blur scale members; add Foundry-authored glass=20px and notice=12px role mappings."
+      }
+    }
+  },
+  "tokens": {
+    "blur": {
+      "2xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "40px"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Tailwind4.3.3",
+            "sourceAddress": "tailwindcss/theme.css",
+            "sourceVariable": "--blur-2xl",
+            "pin": {
+              "package": "tailwindcss",
+              "version": "4.3.3",
+              "file": "theme.css",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167"
+            }
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 40
+        }
+      },
+      "3xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "64px"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Tailwind4.3.3",
+            "sourceAddress": "tailwindcss/theme.css",
+            "sourceVariable": "--blur-3xl",
+            "pin": {
+              "package": "tailwindcss",
+              "version": "4.3.3",
+              "file": "theme.css",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167"
+            }
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 64
+        }
+      },
+      "default": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "8px"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Tailwind4.3.3",
+            "sourceAddress": "tailwindcss/theme.css",
+            "sourceVariable": "--blur",
+            "pin": {
+              "package": "tailwindcss",
+              "version": "4.3.3",
+              "file": "theme.css",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167"
+            }
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 8
+        }
+      },
+      "lg": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "16px"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Tailwind4.3.3",
+            "sourceAddress": "tailwindcss/theme.css",
+            "sourceVariable": "--blur-lg",
+            "pin": {
+              "package": "tailwindcss",
+              "version": "4.3.3",
+              "file": "theme.css",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167"
+            }
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 16
+        }
+      },
+      "md": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "12px"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Tailwind4.3.3",
+            "sourceAddress": "tailwindcss/theme.css",
+            "sourceVariable": "--blur-md",
+            "pin": {
+              "package": "tailwindcss",
+              "version": "4.3.3",
+              "file": "theme.css",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167"
+            }
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 12
+        }
+      },
+      "sm": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "8px"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Tailwind4.3.3",
+            "sourceAddress": "tailwindcss/theme.css",
+            "sourceVariable": "--blur-sm",
+            "pin": {
+              "package": "tailwindcss",
+              "version": "4.3.3",
+              "file": "theme.css",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167"
+            }
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 8
+        }
+      },
+      "xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "24px"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Tailwind4.3.3",
+            "sourceAddress": "tailwindcss/theme.css",
+            "sourceVariable": "--blur-xl",
+            "pin": {
+              "package": "tailwindcss",
+              "version": "4.3.3",
+              "file": "theme.css",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167"
+            }
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 24
+        }
+      },
+      "xs": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "4px"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Tailwind4.3.3",
+            "sourceAddress": "tailwindcss/theme.css",
+            "sourceVariable": "--blur-xs",
+            "pin": {
+              "package": "tailwindcss",
+              "version": "4.3.3",
+              "file": "theme.css",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167"
+            }
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 4
+        }
+      },
+      "glass": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "20px"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "src/catalog/fills/foundry/tokens.blur.json",
+            "mappingLabel": "Foundry-authored",
+            "pin": {
+              "file": "src/catalog/fills/foundry/tokens.blur.json",
+              "sha256": "a68491906dd667467bf27447ef1bc7fb27aad259229be347bd9598c8b64bc089"
+            },
+            "note": "Retained authored glass role at 20px; upstream publishes no glass role or 20px blur scale entry."
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 20
+        }
+      },
+      "notice": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "12px"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "src/catalog/fills/foundry/tokens.blur.json",
+            "mappingLabel": "Foundry-authored",
+            "pin": {
+              "file": "src/catalog/fills/foundry/tokens.blur.json",
+              "sha256": "a68491906dd667467bf27447ef1bc7fb27aad259229be347bd9598c8b64bc089"
+            },
+            "sourceVariable": "--blur-md",
+            "note": "Retained authored notice role at 12px. The numeric value matches Tailwind --blur-md; assigning it to notice is Foundry-authored."
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 12
+        }
+      }
+    }
+  }
+}

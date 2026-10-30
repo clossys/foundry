@@ -3,13 +3,12 @@ import * as fs from "node:fs/promises";
 import { dirname, join, resolve, relative, isAbsolute, sep } from "node:path";
 import { constants } from "node:fs";
 import { activate, cellPath, isoDate, parseConfirmRef, parseDocument, parseLinkRef, positiveInteger, propose, readActive, serializeScalar, strings, tokenizeBody, validateGenericTree, type GenericTree } from "@clossys/strategist/cell-format";
-import { generateSelection, loadCatalog, loadComponentRegistry, loadComponentCompositionRules, stableStringify, type CatalogData, type CompositeCatalogData, type CompositeEngineInput, type CompositeLibraryData, type LibraryData } from "../catalog-core/index.js";
-import { loadCatalogBundles } from "../catalog-bundles.js";
+import { generateSelection, loadCatalog, stableStringify, type CatalogData, type CompositeCatalogData, type CompositeEngineInput, type CompositeLibraryData, type LibraryData } from "../catalog-core/index.js";
+import { loadNativeCompositeCatalog } from "./native-catalog.js";
 import { componentOf, type ComponentDocument } from "../catalog-core/resolve-components.js";
 import { surfaceEntryOf, surfaceSelection } from "../catalog-core/surface-library.js";
 import type { SurfaceDocument, SurfaceResolutionOptions } from "../catalog-core/surface-types.js";
 import { libraryFiles, readLibrary } from "./fs-library.js";
-import { foundrySurfaceCatalog } from "./surface-catalog.js";
 import { readSurfacePackageEvidence } from "./surface-package-evidence.js";
 
 const SLOT = /^(tokens|assets|components|sections|frames)\.[a-z][a-z0-9-]*$(?![\s\S])/;
@@ -77,7 +76,7 @@ async function text(root: string, name: string): Promise<string> {
 async function readJson(root: string, name: string): Promise<any> { return JSON.parse(await text(root, name)); }
 function defaultCatalog(composite: boolean): Catalog {
   const values = loadCatalog();
-  return composite ? { values, components: { slots: loadComponentRegistry().slots, fills: loadCatalogBundles().componentFills, rules: loadComponentCompositionRules() }, surfaces: foundrySurfaceCatalog() } : values;
+  return composite ? loadNativeCompositeCatalog(values) : values;
 }
 function valueLibrary(library: LibraryData | CompositeLibraryData): LibraryData {
   return "values" in library ? { ...library.values, source: library.source, ...(library.adoptedAt === undefined ? {} : { adoptedAt: library.adoptedAt }) } : library;
