@@ -1,0 +1,103 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "shadcn@aria/tokens.surface-radius",
+      "license": "MIT",
+      "mode": "derived",
+      "relation": "derived",
+      "slot": "tokens.surface-radius",
+      "source": "shadcn@aria",
+      "sourceAddress": "packages/designer/src/library-cli/default-candidates.questions.json",
+      "status": "draft",
+      "trust": "foundry",
+      "pin": {
+        "file": "packages/designer/src/library-cli/default-candidates.questions.json",
+        "sha256": "9a52a3ed145eb6882f6805a2e3bdd4cc76880e2e8747c5ead94c5c44f3860085"
+      },
+      "derivation": {
+        "from": "dtcg#alias",
+        "rule": "Approved native default adaptation; exact scalar sources and Foundry-authored role mappings are recorded per member."
+      }
+    }
+  },
+  "tokens": {
+    "surface-radius": {
+      "default": {
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 0.625
+        },
+        "$extensions": {
+          "com.clossys.provenance": {
+            "sourceLabel": "shadcn",
+            "sourceAddress": "apps/v4/app/globals.css",
+            "sourceVariable": "--radius-lg = var(--radius)",
+            "pin": {
+              "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+              "file": "apps/v4/app/globals.css",
+              "sha256": "c5e271374236f23bcfd559ce64aaf6b8641ee7276156c0f803dd9cb24277af12"
+            },
+            "mappingLabel": "Foundry-authored",
+            "note": "Approved G3 mapping. Use active shadcn radius override; panel may retain alias to surface-radius.default. Overlay changes its existing control-radius alias only with explicit H3."
+          }
+        }
+      },
+      "overlay": {
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 0.875
+        },
+        "$extensions": {
+          "com.clossys.provenance": {
+            "sourceLabel": "shadcn",
+            "sourceAddress": "apps/v4/app/globals.css",
+            "sourceVariable": "--radius-xl = calc(var(--radius) * 1.4)",
+            "pin": {
+              "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+              "file": "apps/v4/app/globals.css",
+              "sha256": "c5e271374236f23bcfd559ce64aaf6b8641ee7276156c0f803dd9cb24277af12"
+            },
+            "mappingLabel": "Foundry-authored",
+            "note": "Approved G3 mapping. Use active shadcn radius override; panel may retain alias to surface-radius.default. Overlay changes its existing control-radius alias only with explicit H3."
+          }
+        }
+      },
+      "panel": {
+        "$type": "dimension",
+        "$value": "{tokens.surface-radius.default}",
+        "$extensions": {
+          "com.clossys.provenance": {
+            "sourceLabel": "shadcn",
+            "sourceAddress": "apps/v4/app/globals.css",
+            "sourceVariable": "--radius-lg = var(--radius)",
+            "pin": {
+              "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+              "file": "apps/v4/app/globals.css",
+              "sha256": "c5e271374236f23bcfd559ce64aaf6b8641ee7276156c0f803dd9cb24277af12"
+            },
+            "mappingLabel": "Foundry-authored",
+            "note": "Approved G3 mapping. Use active shadcn radius override; panel may retain alias to surface-radius.default. Overlay changes its existing control-radius alias only with explicit H3."
+          }
+        }
+      }
+    }
+  }
+}
