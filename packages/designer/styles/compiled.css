@@ -943,11 +943,11 @@
   .items-order-terminal-track {
     inset-inline-start: calc((1 - var(--items-wide, 0)) * (var(--spacing-2xl, 32px) / 2 + var(--items-lane-narrow, 0px)) + var(--items-wide, 0) * var(--spacing-2xl, 32px));
     inset-block-start: calc((1 - var(--items-wide, 0)) * var(--spacing-2xl, 32px) + var(--items-wide, 0) * (var(--spacing-2xl, 32px) / 2 + var(--items-lane-wide, 0px)));
-    inline-size: calc((1 - var(--items-wide, 0)) * var(--ui-border-hairline, 1px) + var(--items-wide, 0) * (100% - var(--spacing-2xl, 32px)));
+    inline-size: calc((1 - var(--items-wide, 0)) * var(--ui-border-hairline, 1px) + var(--items-wide, 0) * (100% - var(--spacing-2xl, 32px) - var(--ui-icon-sm, var(--spacing-lg, 16px)) / 2));
     block-size: calc((1 - var(--items-wide, 0)) * (100% + var(--spacing-xl, 24px) - var(--spacing-2xl, 32px)) + var(--items-wide, 0) * var(--ui-border-hairline, 1px));
   }
   .items-order-end {
-    inset-inline-start: calc((1 - var(--items-wide, 0)) * (var(--spacing-2xl, 32px) / 2 + var(--items-lane-narrow, 0px)) + var(--items-wide, 0) * 100%);
+    inset-inline-start: calc((1 - var(--items-wide, 0)) * (var(--spacing-2xl, 32px) / 2 + var(--items-lane-narrow, 0px)) + var(--items-wide, 0) * (100% - var(--ui-icon-sm, var(--spacing-lg, 16px)) / 2));
     inset-block-start: calc((1 - var(--items-wide, 0)) * (100% + var(--spacing-xl, 24px)) + var(--items-wide, 0) * (var(--spacing-2xl, 32px) / 2 + var(--items-lane-wide, 0px)));
   }
   .items-order-ordinal {
