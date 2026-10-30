@@ -313,57 +313,71 @@
     },
     {
       "path": "catalog/fills/foundry/assets.image-ratio.json",
-      "sha256": "ba4f91c147ccd920f8bc48712ca5fbf2bae6896fb30cd3e574ada58145e22127",
+      "sha256": "d9e384a2aa70d1889f31b5a572886528cbd5af24d3dd1497c8247502fa34517e",
       "document": {
         "$extensions": {
           "com.clossys.fill": {
-            "author": "foundry",
+            "id": "foundry/assets.image-ratio",
+            "slot": "assets.image-ratio",
+            "source": "foundry",
+            "mode": "implementation",
+            "sourceAddress": "importers/image-ratio.ts",
+            "relation": "same-contract",
             "builtOn": [],
             "conforms": [],
             "evidence": [],
-            "id": "foundry/assets.image-ratio",
+            "author": "foundry",
+            "trust": "foundry",
             "license": "MIT",
-            "mode": "implementation",
-            "reads": {
-              "assets": [],
-              "tokens": []
-            },
-            "relation": "same-contract",
-            "slot": "assets.image-ratio",
-            "source": "foundry",
-            "sourceAddress": "importers/image-ratio.ts",
             "status": "draft",
-            "trust": "foundry"
+            "reads": {
+              "tokens": [],
+              "assets": []
+            }
           }
         },
         "assets": {
           "image-ratio": {
-            "landscape": {
+            "square": {
               "$type": "rules",
               "$value": {
-                "height": 3,
-                "width": 4
+                "width": 1,
+                "height": 1
               }
             },
             "portrait": {
               "$type": "rules",
               "$value": {
-                "height": 4,
-                "width": 3
+                "width": 3,
+                "height": 4
               }
             },
-            "square": {
+            "landscape": {
               "$type": "rules",
               "$value": {
-                "height": 1,
-                "width": 1
+                "width": 4,
+                "height": 3
               }
             },
             "wide": {
               "$type": "rules",
               "$value": {
-                "height": 9,
-                "width": 16
+                "width": 16,
+                "height": 9
+              }
+            },
+            "cinema": {
+              "$type": "rules",
+              "$value": {
+                "width": 21,
+                "height": 9
+              }
+            },
+            "share": {
+              "$type": "rules",
+              "$value": {
+                "width": 191,
+                "height": 100
               }
             }
           }

@@ -460,22 +460,29 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [
-        "form.contact"
-      ],
+      "missingMembers": [],
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Submit binds to the actions region; the host supplies the submit button. Error-summary content uses the errors and errorSummaryMessage API. Form is a block, not the unavailable components.form leaf.",
+        "The form.contact configuration opts into the public Form composition=contact API. Its consumer-owned onSubmit promise controls the send; the package implements no endpoint, transport or persistence.",
+        "Fields compose the native Field, TextField, Textarea and Select components; submit binds to a native Button in the actions region. The error-summary uses errors and errorSummaryMessage, while host-authored success and error regions render through Banner after the submit promise resolves or rejects. Rejected submits retain the field values.",
+        "Honeypot and Turnstile regions pass through consumer-owned host nodes. They do not create anti-abuse services, tokens or verification behavior. The runtime adapter resolves live nodes and the submit callback through sectionHosts[\"sections.form\"].",
+        "Form is the public block anchor, not a claim that the components.form leaf is adopted. Source declarations do not qualify a consumer handler or consent host.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.form",
-      "status": "subset",
-      "supportedMembers": [],
+      "status": "candidate",
+      "supportedMembers": [
+        "form.contact"
+      ],
       "supportedSlots": [
+        "error",
         "error-summary",
         "fields",
-        "submit"
+        "honeypot",
+        "submit",
+        "success",
+        "turnstile"
       ],
       "unresolvedMemberAxes": []
     },
@@ -537,9 +544,9 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Private runtime composes existing ContentSection plus ArticleBody; ContentSection is the public fill pointer. heading binds to heading; revision {label,value} adapts to description; body typed paragraph/heading/list records adapt to ArticleBody children within ContentSection children. These bindings are adaptation points, not direct JSON prop equivalence.",
-        "The host owns the legal heading, revision label/value and every policy section. A short placeholder is supported while final Writer-authored policy text remains host-owned. The renderer supplies no policy wording beyond isolated specimen preview content.",
-        "Body accepts only paragraph/heading text and lists of text; React escapes text. Unknown node kinds and fields, arbitrary HTML and undeclared inputs are refused. Paragraph/list nodes use dir=auto and body headings render as h3 below the host heading at h2.",
+        "Public LegalProse composes ArticleBody, SectionHeader and SemanticContent. heading binds to heading; revision {label,value,dateTime?} binds to revision; typed body records adapt to ArticleBody children. These are host adaptation points, not direct JSON prop equivalence.",
+        "The host owns the legal heading, revision label/value and every policy section. Optional revision.dateTime is valid YYYY-MM-DD calendar metadata, separate from existing Writer-authored display copy; authored dates render through time while legacy label/value revisions retain their display.",
+        "The registered runtime accepts paragraph/heading text and lists of text; React escapes text. Unknown node kinds and fields, arbitrary HTML and undeclared inputs are refused. Paragraph/list nodes use dir=auto and body headings render as h3 below the default h2 legal heading.",
         "Requires an external Designer SectionFrame; the surrounding page must use a Designer Frame. No legal route, data fetching or document ownership is introduced. Source checks and consumer runtime qualification remain separate.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
@@ -561,7 +568,7 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "CompatNavGrid renders fixed linked/action cards; list and plain-grid modes are absent. No generic Items recipe configuration is invented.",
+        "NavGrid composes SemanticContent and shared item anatomy for linked/action cards, preserving its published heading markup. Eligible linked collections use the existing linked-item treatment; list and plain-grid configuration modes are absent.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.link-index",
@@ -639,13 +646,20 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Host supplies the image node and its src/alt/ratio; caption is a separate prop. Does not validate a structured figure record or bind anatomy.",
+        "The figure-to-children pointer is an adaptation point. The private sections.media runtime adapts figure.media={kind:image,resource:ImageResource} to the public image prop, optional figure.ratio to a canonical image-ratio member, figure.caption to caption and figure.chromeLabel to the browser-only chromeLabel. Existing registered chart and mark content remains supported as children.",
+        "The closed chrome members select browser, device or bare; bare is the default. Chrome is token-drawn around the existing media renderer and does not change its intrinsic image ratio. Optional callouts maps to {label,items:[{id,body}]} with a nonempty host-authored list label and item bodies and unique nonempty item ids.",
+        "The host supplies all visible and accessible copy through the Writer passage contract. This package descriptor does not bind shared anatomy or prove consumer runtime conformance.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.media",
       "status": "candidate",
-      "supportedMembers": [],
+      "supportedMembers": [
+        "chrome.bare",
+        "chrome.browser",
+        "chrome.device"
+      ],
       "supportedSlots": [
+        "callouts",
         "figure"
       ],
       "unresolvedMemberAxes": []

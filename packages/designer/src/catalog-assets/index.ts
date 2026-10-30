@@ -6,3 +6,6 @@ export type { AssetFinding, AssetCheckCode, ImageRecord } from './check.js';
 export { emitGlyphModule, emitIdentityFiles, assetNotices } from './emit.js';
 export type { AssetFile } from './emit.js';
 export { withAssetCatalog } from './catalog.js';
+export { isImageResource, isVideoResource, VIDEO_REDUCED_MOTION } from './media.js';
+export type { ImageResource, ImageSource, VideoResource } from './media.js';
+export { IMAGE_RATIOS } from '../importers/image-ratio.js';

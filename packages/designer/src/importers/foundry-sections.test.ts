@@ -158,7 +158,13 @@ describe("Foundry section package descriptors", () => {
     // Built-in regions: the block renders the contract's composed component itself.
     expect(source("chat/Chat.tsx")).toMatch(/<Textarea label=\{composerLabel\}/);
     expect(source("NewsletterBand.tsx")).toMatch(/<TextField\s+type="email"/);
-    expect(source("Hero.tsx")).toMatch(/<SectionIntro[\s\S]*heading=/);
+    expect(source("Hero.tsx")).toContain('import { HeroIntro } from "./hero/HeroIntro.js"');
+    expect(source("Hero.tsx")).toMatch(/<HeroIntro[\s\S]*heading=[\s\S]*description=\{description\}[\s\S]*actions=\{actions\}/);
+    const heroIntro = source("hero/HeroIntro.tsx");
+    expect(heroIntro).toContain('import { SemanticContent } from "../../components/SemanticContent.js"');
+    expect(heroIntro).toMatch(/<SemanticContent as=\{HeadingTag\}[\s\S]*\{heading\}[\s\S]*<\/SemanticContent>/);
+    expect(heroIntro).toMatch(/<SemanticContent as="p"[\s\S]*\{description\}[\s\S]*<\/SemanticContent>/);
+    expect(heroIntro).toMatch(/data-section-intro-actions=""[\s\S]*\{actions\}/);
     // The list pane is a host region the Explorer lays out beside its tree.
     expect(source("Explorer.tsx")).toMatch(/list\?: ReactNode/);
     for (const leaf of ["chat", "hero", "newsletter"]) expect(FOUNDRY_SECTION_MAP[leaf]!.notes!.join(" "), leaf).toMatch(/built.in/i);

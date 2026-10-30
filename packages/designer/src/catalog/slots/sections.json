@@ -1239,7 +1239,8 @@
       },
       "allowedComposes": [
         "components.button",
-        "components.link"
+        "components.link",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -2080,7 +2081,8 @@
         "components.button",
         "components.link",
         "components.card",
-        "components.icon"
+        "components.icon",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -3446,7 +3448,8 @@
       "allowedComposes": [
         "components.card",
         "components.icon",
-        "components.link"
+        "components.link",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -3473,7 +3476,8 @@
           "tokens.typeface"
         ],
         "assets": [
-          "assets.icon-*"
+          "assets.icon-*",
+          "assets.image"
         ]
       },
       "data": "host-injected",
@@ -3748,6 +3752,26 @@
           "name": "error-summary",
           "type": "region",
           "required": false
+        },
+        {
+          "name": "success",
+          "type": "region",
+          "required": false
+        },
+        {
+          "name": "error",
+          "type": "region",
+          "required": false
+        },
+        {
+          "name": "honeypot",
+          "type": "region",
+          "required": false
+        },
+        {
+          "name": "turnstile",
+          "type": "region",
+          "required": false
         }
       ],
       "members": {
@@ -3903,6 +3927,24 @@
             "required": false,
             "maxLength": {
               "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "success.message",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "error.message",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
             },
             "dir": "auto"
           }
@@ -4122,7 +4164,8 @@
           "tokens.scrim-color"
         ],
         "assets": [
-          "assets.image-ratio"
+          "assets.image-ratio",
+          "assets.image"
         ]
       },
       "data": "host-injected",
@@ -4237,6 +4280,10 @@
       "allowedComposes": [
         "components.semantic-content"
       ],
+      "composes": [
+        "sections.article",
+        "sections.section-header"
+      ],
       "parts": [
         "sections.band"
       ],
@@ -4344,7 +4391,8 @@
         "components.icon",
         "components.badge",
         "components.button",
-        "components.status-mark"
+        "components.status-mark",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -4485,7 +4533,8 @@
         ]
       },
       "allowedComposes": [
-        "components.link"
+        "components.link",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -4506,10 +4555,20 @@
           "tokens.control-radius",
           "tokens.status-color",
           "tokens.text-color",
-          "tokens.touch-target"
+          "tokens.touch-target",
+          "tokens.action-color",
+          "tokens.body-size",
+          "tokens.control-color",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.state-opacity",
+          "tokens.typeface"
         ],
         "assets": [
-          "assets.image-ratio"
+          "assets.image-ratio",
+          "assets.image"
         ]
       },
       "data": "host-injected",
@@ -4705,13 +4764,24 @@
           "name": "figure",
           "type": "media",
           "required": true
+        },
+        {
+          "name": "callouts",
+          "type": "records",
+          "required": false
         }
       ],
       "members": {
         "mode": "closed",
-        "names": []
+        "names": [
+          "chrome.browser",
+          "chrome.device",
+          "chrome.bare"
+        ]
       },
-      "allowedComposes": [],
+      "allowedComposes": [
+        "components.semantic-content"
+      ],
       "parts": [
         "sections.band",
         "sections.section-header"
@@ -4734,7 +4804,8 @@
           "tokens.text-color"
         ],
         "assets": [
-          "assets.image-ratio"
+          "assets.image-ratio",
+          "assets.image"
         ]
       },
       "data": "host-injected",
@@ -4794,6 +4865,33 @@
             "required": false,
             "maxLength": {
               "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.chromeLabel",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "callouts.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "callouts.items[].body",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
             },
             "dir": "auto"
           }
@@ -5437,7 +5535,8 @@
         "components.avatar",
         "components.card",
         "components.link",
-        "components.icon"
+        "components.icon",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -5463,7 +5562,9 @@
           "tokens.text-color",
           "tokens.touch-target"
         ],
-        "assets": []
+        "assets": [
+          "assets.image"
+        ]
       },
       "data": "host-injected",
       "surface": "site",
@@ -7007,7 +7108,8 @@
         ]
       },
       "allowedComposes": [
-        "components.status-mark"
+        "components.status-mark",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -7246,7 +7348,8 @@
         "names": []
       },
       "allowedComposes": [
-        "components.status-mark"
+        "components.status-mark",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -7704,7 +7807,8 @@
       },
       "allowedComposes": [
         "components.avatar",
-        "components.card"
+        "components.card",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -7728,7 +7832,9 @@
           "tokens.text-color",
           "tokens.typeface"
         ],
-        "assets": []
+        "assets": [
+          "assets.image"
+        ]
       },
       "data": "host-injected",
       "surface": "site",
