@@ -25,9 +25,9 @@ describe('Director specimen projection', () => {
     expect(chapters[0]!.children[0]!.title).toBe('Segment');
     expect(directorPassages(chapters).map(cell => [cell.id, cell.status])).toEqual([['focus.segment.next', 'draft'], ['focus.segment.core', 'active']]);
   });
-  it('uses fields.title then ID leaf without guessing an active state', () => {
-    expect(specimenTitle(index.cells[0]!)).toBe('Core segment');
-    expect(specimenTitle(index.cells[1]!)).toBe('next');
+  it('uses Writer headings rather than fields.title or an ID leaf without guessing an active state', () => {
+    expect(specimenTitle({ id: 'context.market.size', title: 'size', fields: { title: 'Untrusted local heading' } })).toBe('Market size');
+    expect(specimenTitle({ id: 'focus.segment.unknown', title: 'Unknown' })).toBe('This card title is not available yet.');
     expect(directorPassages(directorDocument({ ...index, tree: undefined, cells: [{ id: 'focus.segment.unknown', title: 'Unknown' }] }))).toEqual([]);
   });
   it('never projects template fences or unexpected instruction sections', () => {

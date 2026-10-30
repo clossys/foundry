@@ -4,6 +4,7 @@ import { cellContentHref } from './cell-content';
 import { isAgent, type Agent } from './agents';
 import type { StudioSelection } from './selection-client';
 import { studioAgentHref } from '../generated/studio-map';
+import { directorStudioCell } from './director-studio-copy';
 
 export type StudioModulePayload = Record<string, unknown>;
 export type StudioModulePayloads = Readonly<Record<string, StudioModulePayload>>;
@@ -18,7 +19,8 @@ function cellRef(reference: string, agent: Agent) {
   return { agent: owner, id: match[2]!, version: Number(match[3]), reference };
 }
 function linkedCell(cell: CellSummary, agent: Agent) {
-  return { agent, id: cell.id, version: cell.version, status: cell.status, title: typeof cell.fields?.title === 'string' ? cell.fields.title : cell.id.split('.').at(-1), href: `${studioAgentHref(agent)}${studioIAHref(cell.id)}`, contentHref: cellContentHref(agent, cell.id), contentTarget: '_blank', contentRel: 'noopener noreferrer' };
+  const display = agent === 'director' ? directorStudioCell(cell) : cell;
+  return { agent, id: cell.id, version: cell.version, status: cell.status, title: agent === 'director' ? display.title : typeof cell.fields?.title === 'string' ? cell.fields.title : cell.id.split('.').at(-1), ...(display.directorLabel ? { directorLabel: display.directorLabel } : {}), href: `${studioAgentHref(agent)}${studioIAHref(cell.id)}`, contentHref: cellContentHref(agent, cell.id), contentTarget: '_blank', contentRel: 'noopener noreferrer' };
 }
 
 /** Only stored facts and resolvable cell references become module data. */

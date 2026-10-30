@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import type { AgentCells, CellDetail } from '../lib/cells-client';
-import { directorDocument, directorSections, directorVersions, evidenceHref, evidenceReferences, type DirectorChapter } from '../lib/director-specimen';
+import { directorDocument, directorSections, directorVersions, evidenceHref, evidenceReferences, specimenTitle, type DirectorChapter } from '../lib/director-specimen';
 import { useSpecimenCells } from '../lib/director-specimen-resource';
 import { Badge, ContentSection, DetailView, EmptyState, Link, SectionHeader } from './director-specimen-ds';
 import { RichTextSpecimen } from './RichTextSpecimen';
@@ -22,7 +22,7 @@ function Passage({ cell, selected, level }: { cell: CellDetail; selected: boolea
   ];
   return <ContentSection id={directorPassageId(cell.id, cell.version)} aria-current={selected ? 'location' : undefined} data-specimen-cell={cell.id} data-specimen-status={cell.status} data-specimen-version={cell.version}
     ground={cell.status === 'draft' ? 'sunken' : 'base'} className={[cell.status === 'draft' ? 'bg-surface-sunken' : '', selected ? 'outline outline-solid' : ''].filter(Boolean).join(' ')} style={selected ? { outlineColor: 'var(--color-focus-ring)', outlineOffset: 'var(--ui-focus-offset)' } : undefined}>
-    <SectionHeader title={typeof cell.fields?.title === 'string' && cell.fields.title ? cell.fields.title : cell.id.split('.').at(-1)} level={level} description={cell.status === 'draft' ? 'Draft passage' : undefined} />
+    <SectionHeader title={specimenTitle(cell)} level={level} description={cell.status === 'draft' ? 'Draft passage' : undefined} />
     <ContentSection layout="split-end" media={<DetailView aria-label="Passage metadata" fields={fields} />}>
       <ContentSection>{sections.length ? sections.map(section => <ContentSection key={section.title}>
         <SectionHeader title={section.title} level={Math.min(level + 1, 6) as 2 | 3 | 4 | 5 | 6} />

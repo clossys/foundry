@@ -68,26 +68,75 @@ export interface AdminItemNameBinding {
   readonly kind: "item-name";
 }
 
-const designerItemNames = new Map(ADMIN_STUDIO_COPY_EN.records.filter(record =>
-  record.leaf === "strings.names" && record.context.startsWith("designer.item.")
+const itemNames = new Map(ADMIN_STUDIO_COPY_EN.records.filter(record =>
+  record.leaf === "strings.names" && (record.context.startsWith("designer.item.") || record.context.startsWith("director.item."))
 ).map(record => [record.id, record]));
 
 /** Authenticate an item name against the shipped Writer source binding.
- * A context-shaped string alone grants no authority to name a Designer item. */
+ * A context-shaped string alone grants no authority to name an item. */
 export function getAdminItemNameBinding(id: string, copy: AdminCopy = ADMIN_COPY_EN): AdminItemNameBinding | undefined {
-  const canonicalRecord = designerItemNames.get(id);
+  const canonicalRecord = itemNames.get(id);
   const record = getAdminCopyRecord(id, copy);
   if (!canonicalRecord || !record || record.leaf !== canonicalRecord.leaf || record.context !== canonicalRecord.context) return undefined;
   const canonicalBindings = ADMIN_STUDIO_COPY_EN.bindings.filter(binding => binding.recordId === id);
   const canonicalBinding = canonicalBindings[0];
   if (canonicalBindings.length !== 1 || !canonicalBinding || canonicalBinding.kind !== "item-name" || canonicalBinding.cellId !== canonicalRecord.context) return undefined;
+  const directorTitle = canonicalRecord.context.startsWith("director.item.");
+  if (directorTitle && (record.text !== canonicalRecord.text || !("role" in canonicalBinding) || canonicalBinding.role !== "heading"
+    || !("sourceCellId" in canonicalBinding) || canonicalRecord.context !== `director.item.${canonicalBinding.sourceCellId}`)) return undefined;
   const envelopes = copy.envelopes.filter(envelope => envelope.records.some(row => row.id === id));
   if (!envelopes.length || envelopes.some(envelope => {
     if (!("bindings" in envelope)) return true;
     const bindings = envelope.bindings.filter(binding => binding.recordId === id);
-    return bindings.length !== 1 || !bindings.every(binding => binding.kind === canonicalBinding.kind && binding.cellId === canonicalBinding.cellId && binding.target === canonicalBinding.target);
+    return bindings.length !== 1 || !bindings.every(binding => binding.kind === canonicalBinding.kind && binding.cellId === canonicalBinding.cellId && binding.target === canonicalBinding.target
+      && (!directorTitle || "role" in binding && binding.role === "heading" && "sourceCellId" in binding && "sourceCellId" in canonicalBinding && binding.sourceCellId === canonicalBinding.sourceCellId));
   })) return undefined;
   return { ...canonicalBinding, kind: "item-name" };
+}
+
+/** Director card titles are headings; an action or link binding cannot name one. */
+export interface AdminDirectorCellTitleBinding extends AdminItemNameBinding {
+  readonly sourceCellId: string;
+  readonly role: "heading";
+}
+
+/** Address the authored title by its exact public Director cell identity. */
+export function getAdminDirectorCellTitleBinding(cellId: string, copy: AdminCopy = ADMIN_COPY_EN): AdminDirectorCellTitleBinding | undefined {
+  const candidates = ADMIN_STUDIO_COPY_EN.bindings.filter(binding => "sourceCellId" in binding && binding.sourceCellId === cellId);
+  const canonicalBinding = candidates[0];
+  if (candidates.length !== 1 || !canonicalBinding || !("role" in canonicalBinding) || canonicalBinding.role !== "heading"
+    || canonicalBinding.cellId !== `director.item.${cellId}` || !getAdminItemNameBinding(canonicalBinding.recordId, copy)) return undefined;
+  return { ...canonicalBinding, kind: "item-name", sourceCellId: cellId, role: "heading" };
+}
+
+/** Resolve the bound heading through the same locale, ICU and approval policy. */
+export function resolveAdminDirectorCellTitle(cellId: string, copy: AdminCopy = ADMIN_COPY_EN, options: AdminCopyResolveOptions = {}) {
+  const binding = getAdminDirectorCellTitleBinding(cellId, copy);
+  if (!binding) return undefined;
+  const ref: AdminCopyRef = { id: binding.recordId };
+  const resolved = resolveAdminCopyRef(ref, copy, options);
+  return resolved ? { ...resolved, ref, binding, role: binding.role } : undefined;
+}
+
+/** The existing Director inspection control uses action copy, separate from headings. */
+export function resolveAdminDirectorInspectAction(title: string, copy: AdminCopy = ADMIN_COPY_EN, options: AdminCopyResolveOptions = {}) {
+  if (typeof title !== "string" || !title.trim()) return undefined;
+  const canonicalRecord = ADMIN_STUDIO_COPY_EN.records.find(record => record.context === "director.action.inspectCell");
+  if (!canonicalRecord) return undefined;
+  const record = getAdminCopyRecord(canonicalRecord.id, copy);
+  if (!record || record.context !== canonicalRecord.context || record.leaf !== "strings.actions" || record.text !== canonicalRecord.text) return undefined;
+  const canonicalBindings = ADMIN_STUDIO_COPY_EN.bindings.filter(binding => binding.recordId === canonicalRecord.id);
+  const binding = canonicalBindings[0];
+  if (canonicalBindings.length !== 1 || !binding || binding.cellId !== canonicalRecord.context || binding.kind !== "CopyRef" || !("role" in binding) || binding.role !== "action") return undefined;
+  const envelopes = copy.envelopes.filter(envelope => envelope.records.some(row => row.id === canonicalRecord.id));
+  if (!envelopes.length || envelopes.some(envelope => {
+    if (!("bindings" in envelope)) return true;
+    const bindings = envelope.bindings.filter(row => row.recordId === canonicalRecord.id);
+    return bindings.length !== 1 || !bindings.every(row => row.cellId === binding.cellId && row.kind === binding.kind && row.target === binding.target && "role" in row && row.role === "action");
+  })) return undefined;
+  const ref: AdminCopyRef = { id: canonicalRecord.id, values: { title } };
+  const resolved = resolveAdminCopyRef(ref, copy, options);
+  return resolved ? { ...resolved, ref, binding, role: "action" as const } : undefined;
 }
 /** Admin resolution shares the production approval policy; drafts require explicit preview. */
 export type AdminCopyResolveOptions = Pick<CopyResolveOptions, "target" | "now" | "timeZone" | "approvalPlan" | "acceptDelegateInProduction">;
@@ -99,7 +148,7 @@ export function resolveAdminCopyRef(ref: AdminCopyRef, copy: AdminCopy = ADMIN_C
   const record = getAdminCopyRecord(ref.id, copy);
   const envelope = copy.envelopes.find(envelope => envelope.records.some(row => row.id === ref.id));
   if (!record || !envelope || envelope.locale !== "en") return undefined;
-  if ((designerItemNames.has(ref.id) || record.context.startsWith("designer.item.")) && !getAdminItemNameBinding(ref.id, copy)) return undefined;
+  if ((itemNames.has(ref.id) || record.context.startsWith("designer.item.") || record.context.startsWith("director.item.")) && !getAdminItemNameBinding(ref.id, copy)) return undefined;
   const resolve = createCopyResolver({
     id: "admin-copy",
     locale: envelope.locale,
