@@ -153,16 +153,17 @@ describe("SYNTHETIC authenticated leaf secondary exports; no real runtime claim"
   it("proves only the exact adopted ToggleGroup concrete functions, independently of private context and CVA", async () => {
     const root = new URL("../", import.meta.url);
     const fixtures = new URL("importers/__fixtures__/shadcn-aria/", root);
+    const selectedRoot = new URL("components/preview-runtime/", root);
     const styles = readFileSync(new URL("style-nova.css", fixtures), "utf8");
     const selected = ["toggle-group", "toggle"].map(item => {
       const raw = JSON.parse(readFileSync(new URL(`${item}.json`, fixtures), "utf8")).files[0];
       const result = rewriteShadcnAria({ item, leaf: item === "toggle" ? "toggle-button" : item,
-        files: [toggleExecutableSource(item, raw)], styles, leafByItem: { toggle: "toggle-button", "toggle-group": "toggle-group" } });
+        files: [toggleExecutableSource(item, raw)], styles, leafByItem: { toggle: "toggle-button", "toggle-group": "toggle-group" }, styleDefaults: true });
       expect(result.issues).toEqual([]);
       const file = normalizeSelectedSource(result.files[0]!);
-      const materialized = readFileSync(new URL(file.path, root), "utf8");
-      // The UI handoff retains its old materialized module until the Mid owner
-      // applies this exact closure correction. No other byte difference is allowed.
+      const materialized = readFileSync(new URL(file.path, selectedRoot), "utf8");
+      // Compare the selected concrete source, independently of the public logical
+      // control wrapper. No other selected-materialization byte difference is allowed.
       // The package's own copy keeps NodeNext .js specifiers; consumer output is extensionless.
       expect(materialized.replace(/(from "\.\.?\/[^"]*)\.js"/g, '$1"')).toBe(file.content);
       if (item === "toggle-group") {
@@ -191,7 +192,7 @@ describe("SYNTHETIC authenticated leaf secondary exports; no real runtime claim"
     input.candidate.slot = "components.toggle-group";
     input.candidate.impl = { kind: "source", entry: file.path, export: "ToggleGroup" };
     expect(componentSecondaryExports(input.candidate, [file])).toEqual([{ name: "ToggleGroupItem", export: "ToggleGroupItem" }]);
-    const runtimeFiles = [...selected, ...["components/toggle-button/index.ts", "components/_parts/utils/index.ts"].map(path => ({ path, content: readFileSync(new URL(path, root), "utf8") }))];
+    const runtimeFiles = [...selected, ...["components/toggle-button/index.ts", "components/_parts/utils/index.ts"].map(path => ({ path, content: readFileSync(new URL(path, selectedRoot), "utf8") }))];
     const runtime = await selectedRuntime(runtimeFiles).loadAsync(file.path);
     expect(Object.keys(runtime).sort()).toEqual(exports);
     for (const name of functions) expect(typeof runtime[name]).toBe("function");
@@ -260,7 +261,7 @@ describe("SYNTHETIC authenticated leaf secondary exports; no real runtime claim"
     const missing = structuredClone(profile); missing.files = missing.files.filter(file => file.path !== "components/button/button.tsx");
     expect(() => emitComponents(missing, ["component-index"])).toThrow();
     const failed = structuredClone(profile); failed.check.ok = false;
-    expect(() => emitComponents(failed, ["component-index"])).toThrow(/observations/);
+    expect(() => emitComponents(failed, ["component-index"])).toThrow("components: checks failed; code generation refused");
     const collision = { ...profile, files: [...profile.files, { path: "components/button/index.ts", content: "export {};" }] };
     expect(() => emitComponents(collision, ["component-index"])).toThrow(/conflicts/);
     expect(() => assertComponentImportClosure([{ path: "components/button/button.tsx", content: 'export * from "other";' }], {})).toThrow(/wildcard/);

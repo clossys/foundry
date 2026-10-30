@@ -85,8 +85,16 @@ describe("pinned shadcn aria component import", () => {
   it("regenerates every committed descriptor and coverage byte", () => {
     const files = generatedShadcnComponentFiles(pinnedInput());
     const destination = resolve(import.meta.dirname, "../catalog/fills/shadcn@aria");
-    expect([...Object.keys(files), "components.command.json", "components.dropdown-menu.json", "components.empty.json", "components.item.json", "components.scroll-area.json", "components.sheet.json", "components.sidebar.json"].sort()).toEqual(readdirSync(destination).sort());
+    expect([...Object.keys(files), "components.command.json", "components.dropdown-menu.json", "components.empty.json", "components.item.json", "components.rich-text.json", "components.scroll-area.json", "components.sheet.json", "components.sidebar.json"].sort()).toEqual(readdirSync(destination).sort());
     for (const [name, bytes] of Object.entries(files)) expect(readFileSync(resolve(destination, name), "utf8"), name).toBe(bytes);
+    // This admitted Tiptap exception is authored as a package-backed composition,
+    // rather than regenerated from a pinned shadcn registry item.
+    const richText = JSON.parse(readFileSync(resolve(destination, "components.rich-text.json"), "utf8"));
+    expect(richText.$extensions["com.clossys.fill"]).toMatchObject({ author: "foundry", trust: "foundry",
+      id: "shadcn@aria/components.rich-text", sourceAddress: "./components#RichText" });
+    expect(richText.$extensions["com.clossys.engine-exception"]).toMatchObject({ component: "components.rich-text", engine: "Tiptap 3 / ProseMirror" });
+    expect(richText.components["rich-text"].impl).toEqual({ kind: "package", module: "@clossys/designer/components", export: "RichText" });
+    expect(richText.components["rich-text"].composes).toEqual(["components.badge", "components.link", "components.semantic-content", "components.table"]);
   });
   it("classifies every inspected item at the immutable commit with no unknown runtime result", () => {
     const result = importShadcnAriaComponents(pinnedInput());
@@ -210,7 +218,13 @@ describe("pinned shadcn aria component import", () => {
     expect(componentSecondaryExports(select, materializeShadcnComponent(result, "select"))).toEqual(five);
     expect(select.impl).toEqual({ kind: "source", entry: "components/select/select.tsx", export: "Select" });
     for (const name of ["SelectList", "SelectInput", "SelectLabel", "SelectPopover", "SelectSeparator", "SelectEmpty", "Select"]) expect(select.secondaryExports!.map(row => row.name)).not.toContain(name);
-    expect(descriptors.filter(fill => fill.secondaryExports !== undefined).map(fill => fill.slot).sort()).toEqual(["components.card", "components.dialog", "components.disclosure", "components.menu", "components.select", "components.table"]);
+    expect(descriptors.filter(fill => fill.secondaryExports !== undefined).map(fill => fill.slot).sort()).toEqual(["components.button", "components.card", "components.dialog", "components.disclosure", "components.menu", "components.select", "components.table", "components.tabs"]);
+    for (const [slot, names] of [["components.button", ["LinkButton"]], ["components.tabs", ["TabsList", "TabsTrigger", "TabsContent"]]] as const) {
+      const descriptor = descriptors.find(fill => fill.slot === slot)!;
+      const parts = names.map(name => ({ name, export: name }));
+      expect(descriptor.secondaryExports).toEqual(parts);
+      expect(componentSecondaryExports(descriptor, result.rewrites[descriptor.item!]!.files)).toEqual([...parts].sort((a, b) => a.name.localeCompare(b.name)));
+    }
   });
 
   it("approves the admitted Menu anatomy and native trigger from the same selected entry", () => {

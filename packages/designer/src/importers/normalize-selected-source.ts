@@ -71,6 +71,17 @@ export function normalizeSelectedSource(file: SourceFile): SourceFile {
     file = { ...file, content: file.content.replace(/\b(group-)?data-(horizontal|vertical)(?=[:/])/g,
       (_match, group: string | undefined, orientation: string) => `${group ?? ""}data-[orientation=${orientation}]`) };
   }
+  // The selected toggle sources use semantic inline icon placement and group
+  // edges. Keep those edits in the authenticated materialization recipe too,
+  // so RTL behavior is not an unreceipted edit of the compiled source copy.
+  if (file.path === "components/toggle-group/toggle-group.tsx" || file.path === "components/toggle-button/toggle.tsx") {
+    file = { ...file, content: file.content
+      .replaceAll("has-data-[icon=inline-end]:pr-", "has-data-[icon=inline-end]:pe-")
+      .replaceAll("has-data-[icon=inline-start]:pl-", "has-data-[icon=inline-start]:ps-")
+      .replaceAll("first:rounded-l-", "first:rounded-s-")
+      .replaceAll("last:rounded-r-", "last:rounded-e-")
+      .replaceAll(":border-l-", ":border-s-") };
+  }
   const allowed = membersByPath[file.path];
   if (!allowed) return file;
   const all = tokensOf(file.content, file.path), tokens = all.filter(token => token.kind !== "comment");

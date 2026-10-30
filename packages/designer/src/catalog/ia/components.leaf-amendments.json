@@ -13,6 +13,7 @@
     "components.item",
     "components.scroll-area",
     "components.dropdown-menu",
-    "components.rich-text"
+    "components.rich-text",
+    "components.media-player"
   ]
 }

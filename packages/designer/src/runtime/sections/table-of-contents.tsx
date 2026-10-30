@@ -11,7 +11,7 @@ const LEAF = "sections.table-of-contents";
 const LANDMARK_LABEL = "On this page";
 
 /** headings -> TableOfContents.items (id, label, level 2 or 3); active-id -> currentId. */
-export const tableOfContentsInputs: SectionInputs = { slots: ["headings", "active-id", "label"], members: [] };
+export const tableOfContentsInputs: SectionInputs = { slots: ["headings", "active-id", "label"], members: ["tracking.css"] };
 
 export const renderTableOfContents: SectionRenderer = input => {
   refuseUnmapped(input, tableOfContentsInputs);
@@ -21,5 +21,8 @@ export const renderTableOfContents: SectionRenderer = input => {
     if (level !== undefined && level !== 2 && level !== 3 && level !== 4) throw new TypeError(`${LEAF}: heading ${id} level must be 2, 3 or 4`);
     return level === 2 || level === 3 || level === 4 ? { id, label: text, level } : { id, label: text };
   });
-  return <TableOfContents label={textOf(slotValue(input, "label")) ?? LANDMARK_LABEL} items={items} nested={items.some(item => item.level === 4)} currentId={textOf(slotValue(input, "active-id"))} trackCurrent={input.sectionHost?.trackCurrent === true} onCurrentChange={typeof input.sectionHost?.onActiveChange === "function" ? input.sectionHost.onActiveChange as (id: string) => void : undefined} onNavigate={typeof input.sectionHost?.navigate === "function" ? input.sectionHost.navigate as (id: string) => void : undefined} />;
+  const css = input.selection.members.includes("tracking.css");
+  const label = textOf(slotValue(input, "label"));
+  if (css && !label) throw new TypeError(`${LEAF}: CSS tracking requires a host label`);
+  return <TableOfContents label={label ?? LANDMARK_LABEL} items={items} nested={items.some(item => item.level === 4)} currentId={textOf(slotValue(input, "active-id"))} trackCurrent={css ? "css" : input.sectionHost?.trackCurrent === true} onCurrentChange={typeof input.sectionHost?.onActiveChange === "function" ? input.sectionHost.onActiveChange as (id: string) => void : undefined} onNavigate={typeof input.sectionHost?.navigate === "function" ? input.sectionHost.navigate as (id: string) => void : undefined} />;
 };

@@ -1,12 +1,20 @@
+import type { MediaPlayer as MediaPlayerComponent } from "../components/media-player/media-player.js";
+import type { Mode, Resolved } from "../catalog-core/types.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
+import type { SemanticContent as SemanticContentComponent } from "../components/SemanticContent.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
 import { cx } from "../components/internal/cx.js";
 import type { SectionIntroProps } from "./SectionIntro.js";
 import { HeroIntro } from "./hero/HeroIntro.js";
-import { StillBackdrop, type HeroBackdropScrim } from "./hero/StillBackdrop.js";
-import type { StillBackdropArt } from "../backdrop/consumer-art.js";
+import { StillBackdrop, HERO_SCRIM_PASSES, type HeroBackdropScrim } from "./hero/StillBackdrop.js";
+import { resolveHeroBackdrop, type HeroBackdrop } from "./hero/hero-backdrop.js";
+export type { HeroBackdrop, HeroBackdropKind, HeroImageBackdrop, HeroVideoBackdrop, HeroGraphicBackdrop } from "./hero/hero-backdrop.js";
 export type { HeroBackdropScrim } from "./hero/StillBackdrop.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+const MediaPlayer = componentLeaf<typeof MediaPlayerComponent>("components.media-player");
+const SemanticContent = componentLeaf<typeof SemanticContentComponent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.hero", "foundry/sections.hero");
 
@@ -42,8 +50,10 @@ export interface HeroProps extends HTMLAttributes<HTMLElement> {
    * Passing `media` does not choose a layout — set `composition` explicitly.
    */
   media?: ReactNode;
-  /** Checked decorative still art behind the message. The same static source serves reduced motion. */
-  backdrop?: StillBackdropArt;
+  /** Declared none, image, video or Assets graphic; existing checked still art stays valid. */
+  backdrop?: HeroBackdrop;
+  backdropValues?: Resolved;
+  backdropMode?: Mode;
   /** Scalar protection over the media-scrim gradient. @default "light" */
   backdropScrim?: HeroBackdropScrim;
   /**
@@ -102,6 +112,8 @@ export function Hero({
   actions,
   media,
   backdrop,
+  backdropValues,
+  backdropMode = "light",
   backdropScrim = "light",
   composition = "editorial",
   headingLevel = 1,
@@ -112,13 +124,15 @@ export function Hero({
   style,
   ...rest
 }: HeroProps) {
+  const resolvedBackdrop = resolveHeroBackdrop(backdrop, backdropValues, backdropMode);
+  const hasBackdropArt = Boolean(resolvedBackdrop.art || resolvedBackdrop.graphic);
   const colors = SECTION_GROUND_CLASSES[ground];
   const splitLayout = Boolean(media) && composition === "split";
   const centred = align === "center";
 
   const content = (
     <HeroIntro
-      backdropInk={Boolean(backdrop)}
+      backdropInk={hasBackdropArt}
       emphasis={size === "compact" ? "section" : "display"}
       headingLevel={headingLevel}
       align={align}
@@ -134,11 +148,11 @@ export function Hero({
   );
 
   return (
-    <section
+    <SemanticContent as="section"
       {...SECTION_STAMP} {...rest}
       className={cx(
         colors.surface,
-        backdrop ? "relative isolate overflow-hidden" : undefined,
+        hasBackdropArt ? "relative isolate overflow-hidden" : undefined,
         composition === "full-bleed" ? "w-full" : undefined,
         splitLayout
           ? "grid grid-cols-1 items-center gap-xl tablet:grid-cols-2"
@@ -146,10 +160,17 @@ export function Hero({
         className,
       )}
       style={style}
+      data-hero-backdrop-kind={resolvedBackdrop.kind}
     >
-      {backdrop ? <StillBackdrop art={backdrop} scrim={backdropScrim} /> : null}
-      {backdrop ? <div className="relative">{content}</div> : content}
-      {media ? <div className={cx("w-full", backdrop ? "relative" : "", splitLayout ? "" : "max-w-display", centred && !splitLayout ? "mx-auto" : "")}>{media}</div> : null}
-    </section>
+      {resolvedBackdrop.art ? <StillBackdrop art={resolvedBackdrop.art} scrim={backdropScrim} /> : null}
+      {resolvedBackdrop.video || resolvedBackdrop.graphic ? <SemanticContent as="div" data-hero-live-backdrop="" aria-hidden="true" className="absolute inset-0" style={{ pointerEvents: "none", ...resolvedBackdrop.graphic?.style }}>
+        {resolvedBackdrop.video ? <MediaPlayer decorative video={resolvedBackdrop.video.video} poster={{ kind: "photo", src: resolvedBackdrop.video.video.poster!, width: resolvedBackdrop.video.poster.width, height: resolvedBackdrop.video.poster.height, decorative: true }} muted autoplay loop /> : null}
+        <SemanticContent as="div" className="absolute inset-0" style={{ pointerEvents: "none", backgroundImage: "var(--gradient-media-scrim)" }} />
+        {Array.from({ length: HERO_SCRIM_PASSES[backdropScrim] }, (_, index) => <SemanticContent as="div" key={index} data-hero-live-scrim={backdropScrim} className="absolute inset-0" style={{ pointerEvents: "none", backgroundColor: "var(--color-overlay-scrim)" }} />)}
+      </SemanticContent> : null}
+      {resolvedBackdrop.need ? <SemanticContent as="aside" role="status" className="relative" style={hasBackdropArt ? { color: "var(--color-neutral-50)" } : undefined}>{resolvedBackdrop.need}</SemanticContent> : null}
+      {hasBackdropArt ? <SemanticContent as="div" className="relative">{content}</SemanticContent> : content}
+      {media ? <SemanticContent as="div" className={cx("w-full", hasBackdropArt ? "relative" : "", splitLayout ? "" : "max-w-display", centred && !splitLayout ? "mx-auto" : "")}>{media}</SemanticContent> : null}
+    </SemanticContent>
   );
 }

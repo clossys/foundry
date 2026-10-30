@@ -280,6 +280,15 @@
     {
       "missing": [],
       "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.command",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.date-field",
@@ -328,6 +337,24 @@
       "supported": [
         "scope.group"
       ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.dropdown-menu",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.empty",
+      "status": "unavailable",
+      "supported": []
     },
     {
       "missing": [],
@@ -399,6 +426,15 @@
       ]
     },
     {
+      "missing": [],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.item",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
       "missing": [
         "scope.chord",
         "scope.single"
@@ -443,6 +479,18 @@
     {
       "missing": [],
       "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.media-player",
+      "status": "candidate",
+      "supported": [
+        "controls.full",
+        "controls.minimal"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
         "Menu is the trigger-owned popup; Menu.Inline presents the same menu inline. Root selectionMode applies to both; selected items show the check glyph.",
         "Frozen reads omit source-consumed tokens.accent-color; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
@@ -467,6 +515,24 @@
       "supported": [
         "emphasis",
         "tone"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Fixed primary/md/base appearance is intrinsic, not a variant API. Native button activation and disabled state; no RAC root or press/pending abstraction. Source and runtime qualification remain unmeasured.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.native-action",
+      "status": "candidate",
+      "supported": [
+        "appearance.primary",
+        "ground.base",
+        "size.md",
+        "state.disabled",
+        "state.focus-visible",
+        "state.hover",
+        "state.pressed"
       ]
     },
     {
@@ -544,6 +610,29 @@
       ]
     },
     {
+      "missing": [
+        "state.editable",
+        "state.read-only",
+        "value.json",
+        "value.markdown"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.rich-text",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.scroll-area",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
       "missing": [],
       "notes": [
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
@@ -575,6 +664,49 @@
     {
       "missing": [],
       "notes": [
+        "One explicit native content element with forwarded attributes and refs, no wrapper or internal paint. Caller presentation reads and actual runtime qualification remain separate.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.semantic-content",
+      "status": "candidate",
+      "supported": [
+        "as.article",
+        "as.aside",
+        "as.blockquote",
+        "as.code",
+        "as.dd",
+        "as.div",
+        "as.dl",
+        "as.dt",
+        "as.figcaption",
+        "as.figure",
+        "as.footer",
+        "as.h1",
+        "as.h2",
+        "as.h3",
+        "as.h4",
+        "as.h5",
+        "as.h6",
+        "as.img",
+        "as.li",
+        "as.main",
+        "as.nav",
+        "as.ol",
+        "as.p",
+        "as.picture",
+        "as.section",
+        "as.small",
+        "as.source",
+        "as.span",
+        "as.strong",
+        "as.sup",
+        "as.time",
+        "as.ul"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.separator",
@@ -583,6 +715,24 @@
         "orientation.horizontal",
         "orientation.vertical"
       ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.sheet",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.sidebar",
+      "status": "unavailable",
+      "supported": []
     },
     {
       "missing": [],

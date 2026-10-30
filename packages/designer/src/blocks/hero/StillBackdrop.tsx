@@ -1,11 +1,15 @@
+import type { SemanticContent as SemanticContentComponent } from "../../components/SemanticContent.js";
+import { componentLeaf } from "../../runtime/component-leaf.js";
 import { checkStillBackdrop, type StillBackdropArt, type ImageBackdropContract, type StillBackdropReport } from "../../backdrop/consumer-art.js";
 import type { BackdropCheckOptions } from "../../backdrop/contract.js";
 import { parseOklch } from "../../tokens/color.js";
 import { TOKENS } from "../../tokens/tokens.js";
 
+const SemanticContent = componentLeaf<typeof SemanticContentComponent>("components.semantic-content");
+
 /** Four existing scrim passes are the lighter treatment; five are stronger. */
 export type HeroBackdropScrim = "light" | "strong";
-const SCRIM_PASSES: Record<HeroBackdropScrim, number> = { light: 4, strong: 5 };
+export const HERO_SCRIM_PASSES: Record<HeroBackdropScrim, number> = { light: 4, strong: 5 };
 
 /**
  * The gradient is below every scalar scrim pass. On any raster pixel or gradient
@@ -20,7 +24,7 @@ export function stillBackdropPolicy(art: StillBackdropArt, scrim: HeroBackdropSc
   options: BackdropCheckOptions;
   report: StillBackdropReport;
 } {
-  const passes = SCRIM_PASSES[scrim];
+  const passes = HERO_SCRIM_PASSES[scrim];
   if (!passes) throw new TypeError("Unknown hero backdrop scrim");
   const source = TOKENS["--color-overlay-scrim"];
   if (!source) throw new TypeError("Hero backdrop scrim token is unavailable");
@@ -43,7 +47,7 @@ export function StillBackdrop({ art, scrim = "light" }: { art: StillBackdropArt;
   if (!policy.report.ok) throw new TypeError("Invalid hero still backdrop declaration");
   const pointerEvents = "none" as const;
   return (
-    <div data-hero-backdrop="" aria-hidden="true" className="absolute inset-0" style={{ pointerEvents, backgroundColor: `var(${art.backgroundToken})` }}>
+    <SemanticContent as="div" data-hero-backdrop="" aria-hidden="true" className="absolute inset-0" style={{ pointerEvents, backgroundColor: `var(${art.backgroundToken})` }}>
       {art.source.format === "svg" ? (
         <svg viewBox={`0 0 ${art.width} ${art.height}`} width={art.width} height={art.height} preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false" className="h-full w-full" style={{ pointerEvents }}>
           {art.source.paths.map((path, index) => <path key={index} d={path.d} fill={`var(${path.fillToken})`} stroke={path.strokeToken ? `var(${path.strokeToken})` : "none"} strokeWidth={path.strokeWidth} style={{ pointerEvents }} />)}
@@ -51,8 +55,8 @@ export function StillBackdrop({ art, scrim = "light" }: { art: StillBackdropArt;
       ) : (
         <img src={art.source.src} alt="" width={art.width} height={art.height} loading="lazy" decoding="async" draggable={false} className="h-full w-full object-cover" style={{ pointerEvents }} />
       )}
-      <div data-hero-gradient="media-scrim" className="absolute inset-0" style={{ pointerEvents, backgroundImage: "var(--gradient-media-scrim)" }} />
-      {Array.from({ length: policy.passes }, (_, index) => <div key={index} data-hero-scrim={scrim} className="absolute inset-0" style={{ pointerEvents, backgroundColor: "var(--color-overlay-scrim)" }} />)}
-    </div>
+      <SemanticContent as="div" data-hero-gradient="media-scrim" className="absolute inset-0" style={{ pointerEvents, backgroundImage: "var(--gradient-media-scrim)" }} />
+      {Array.from({ length: policy.passes }, (_, index) => <SemanticContent as="div" key={index} data-hero-scrim={scrim} className="absolute inset-0" style={{ pointerEvents, backgroundColor: "var(--color-overlay-scrim)" }} />)}
+    </SemanticContent>
   );
 }

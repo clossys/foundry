@@ -1,3 +1,4 @@
+import { withA276BackdropGraphic } from "../catalog-assets/a276-backdrop-graphic.contribution.js";
 import actionColorFill from "../catalog/fills/foundry/tokens.action-color.json" with { type: "json" };
 import gradientFill from "../catalog/fills/foundry/tokens.gradient.json" with { type: "json" };
 import animationFill from "../catalog/fills/foundry/tokens.animation.json" with { type: "json" };
@@ -123,7 +124,7 @@ export function loadCatalog(): CatalogData {
     const right = b.$extensions["com.clossys.fill"].id;
     return left < right ? -1 : left > right ? 1 : 0;
   });
-  const catalog = withAssetCatalog({
+  const catalog = withA276BackdropGraphic(withAssetCatalog({
     slots: slots as unknown as readonly Slot[],
     standards: [standard0, standard1, standard2, standard3, standard4] as unknown as readonly Standard[],
     sources: [source0, source1, source2, source3, source4, source5, lucideSource] as unknown as readonly Source[],
@@ -131,7 +132,7 @@ export function loadCatalog(): CatalogData {
     fills,
     placements: [tokenPlacement] as unknown as readonly Placement[],
     retired: retired as unknown as readonly Retired[],
-  });
+  }));
   assertFrozenLeafSets(catalog.placements, catalog.slots, ["tokens", "assets"]);
   assertIAPlacements(catalog.placements, catalog.slots);
   return structuredClone(catalog);

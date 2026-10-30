@@ -305,11 +305,11 @@ const sections = {
     submit: "Save",
   },
   pricing: {
-    heading: "Plans",
+    heading: "Compare plans",
     tiers: [
-      { id: "starter", name: "Starter", price: "$0", features: ["3 seats", "Email support"], cta: "Start free", featured: false, badge: undefined },
-      { id: "team", name: "Team", price: "$24", features: ["25 seats", "Version history", "Priority support"], cta: "Choose Team", featured: true, badge: "Most popular" },
-      { id: "scale", name: "Scale", price: "Contact us", features: ["Unlimited seats", "Dedicated support"], cta: "Talk to sales", featured: false, badge: undefined },
+      { id: "starter", name: "Starter", price: null, features: ["Shared workspace", "Core tools"], cta: "Explore Starter", featured: false, badge: undefined },
+      { id: "team", name: "Team", price: null, features: ["Shared workspace", "Team workflows", "Review tools"], cta: "Explore Team", featured: true, badge: "Team workflows" },
+      { id: "scale", name: "Scale", price: null, features: ["Shared workspace", "Advanced workflows", "Flexible support"], cta: "Explore Scale", featured: false, badge: undefined },
     ],
   },
   resourceList,

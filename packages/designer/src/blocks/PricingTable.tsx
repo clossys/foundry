@@ -1,15 +1,22 @@
-import { SectionHeader } from "./SectionHeader.js";
-import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
+import type { ComponentType, CSSProperties, HTMLAttributes, ReactNode } from "react";
 
 import { cx } from "../components/internal/cx.js";
-import { Matrix } from "./Matrix.server.js";
-import type { MatrixCellData, MatrixGridProps } from "./Matrix.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
 const Badge = componentLeaf<typeof import("../components/Badge.js").Badge>("components.badge");
+type Part = ComponentType<HTMLAttributes<HTMLElement>>;
 const Card = componentLeaf<typeof import("../components/Card.js").Card>("components.card");
+const CardHeader = componentLeaf<Part>("components.card", "CardHeader");
+const CardContent = componentLeaf<Part>("components.card", "CardContent");
+const CardFooter = componentLeaf<Part>("components.card", "CardFooter");
+const Table = componentLeaf<Part>("components.table");
+const TableHeader = componentLeaf<Part>("components.table", "TableHeader");
+const TableBody = componentLeaf<Part>("components.table", "TableBody");
+const TableRow = componentLeaf<ComponentType<HTMLAttributes<HTMLElement> & { textValue?: string }>>("components.table", "TableRow");
+const TableHead = componentLeaf<ComponentType<HTMLAttributes<HTMLElement> & { isRowHeader?: boolean }>>("components.table", "TableHead");
+const TableCell = componentLeaf<Part>("components.table", "TableCell");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -60,7 +67,7 @@ export interface PricingTierPrice {
   note?: ReactNode;
 }
 
-/** A tier supplies either a fixed price or amounts keyed by interval. */
+/** A tier supplies a fixed price, null for a generic plan comparison, or interval amounts. */
 export type PricingTier = PricingTierBase & (
   | { price: ReactNode; priceByInterval?: never }
   | { price?: never; priceByInterval: Readonly<Record<string, PricingTierPrice>> }
@@ -105,7 +112,7 @@ export interface PricingTableProps extends Omit<HTMLAttributes<HTMLDivElement>, 
   headingLevel?: PricingTableHeadingLevel;
   /** Selects an amount when a tier supplies interval prices. */
   interval?: string;
-  /** One to four groups of tier comparison rows. */
+  /** One to four groups of tier comparison rows through the selected Table leaf. */
   comparison?: PricingComparison;
   /** Host-owned controls between the heading region and tier grid. */
   controls?: ReactNode;
@@ -136,21 +143,6 @@ function assertPrices(tiers: readonly PricingTier[], interval: string | undefine
     }
   }
   if (interval !== undefined && sharedKeys === undefined) throw new TypeError("PricingTable: interval requires interval prices.");
-}
-
-function comparisonCell(cell: PricingCellData): MatrixCellData {
-  return cell.kind === "mark"
-    ? { type: "mark", value: cell.included ? 4 : 0 }
-    : { type: "text", text: cell.text };
-}
-
-function comparisonRows(group: PricingComparisonGroup): MatrixGridProps["rows"] {
-  return group.rows.map(row => ({
-    id: row.id,
-    label: row.label,
-    description: row.description,
-    cells: Object.fromEntries(Object.entries(row.cells).map(([id, cell]) => [id, comparisonCell(cell)])),
-  }));
 }
 
 /**
@@ -184,7 +176,7 @@ function comparisonRows(group: PricingComparisonGroup): MatrixGridProps["rows"] 
  * see this package's README) for each tier's raised surface; an
  * `isHighlighted` tier layers an accent border on top via `className`,
  * merged last so it always wins over `Card`'s own default styling. When
- * `comparison` is supplied each group is a `Matrix` grid, and `ground`
+ * `comparison` is supplied each group uses the selected Table sub-parts, and `ground`
  * selects the shared section-ground inks for the heading region.
  */
 export function PricingTable({
@@ -205,20 +197,28 @@ export function PricingTable({
   const colors = SECTION_GROUND_CLASSES[ground];
   const groupHeadingLevel = Math.min(headingLevel + 1, 6) as PricingTableHeadingLevel;
   const GroupHeading = `h${groupHeadingLevel}` as `h${PricingTableHeadingLevel}`;
-  const rowHeadingLevel = Math.min(headingLevel + 2, 6) as PricingTableHeadingLevel;
   const highlighted = tiers.filter(tier => tier.isHighlighted);
   const featuredTier = highlighted[0];
-  const comparisonHasMarks = comparison?.groups.some(group => group.rows.some(row => Object.values(row.cells).some(cell => cell.kind === "mark"))) ?? false;
   if (comparison !== undefined) {
     if (comparison.groups.length < 1 || comparison.groups.length > 4) throw new TypeError("PricingTable: comparison needs one to four groups.");
     if (new Set(comparison.groups.map(group => group.id)).size !== comparison.groups.length) throw new TypeError("PricingTable: comparison group ids must be distinct.");
     if (highlighted.length > 1) throw new TypeError("PricingTable: comparison supports one highlighted tier.");
+    if (featuredTier && comparison.featuredLabel === undefined) throw new TypeError("PricingTable: featuredLabel is required.");
+    const hasMarks = comparison.groups.some(group => group.rows.some(row => Object.values(row.cells).some(cell => cell.kind === "mark")));
+    if (hasMarks && (!comparison.markLabels || comparison.keyLabel === undefined)) throw new TypeError("PricingTable: mark cells need markLabels and keyLabel.");
+    if (!hasMarks && comparison.markLabels) throw new TypeError("PricingTable: unused markLabels.");
+    for (const group of comparison.groups) for (const row of group.rows) {
+      if (Object.keys(row.cells).length !== tiers.length || tiers.some(tier => !Object.hasOwn(row.cells, tier.id))) throw new TypeError("PricingTable: row cells must match tier ids.");
+    }
   }
 
   return (
     <SemanticContent as="div" {...SECTION_STAMP} {...rest} className={cx("flex flex-col gap-lg", className)} style={style}>
       {hasHeadingRegion ? (
-        <SectionHeader density="standard" level={headingLevel} ground={ground} description={description} {...(heading ? { title: heading } : {})} />
+        <SemanticContent as="div" className="flex flex-col gap-xs">
+          {heading ? <SemanticContent as={`h${headingLevel}`} className={cx("text-h2 font-display", colors.primary)}>{heading}</SemanticContent> : null}
+          {description !== undefined ? <SemanticContent as="p" className={cx("text-body", colors.secondary)}>{description}</SemanticContent> : null}
+        </SemanticContent>
       ) : null}
       {controls !== undefined ? <SemanticContent as="div" className="flex justify-center">{controls}</SemanticContent> : null}
       <SemanticContent as="div" className="grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3">
@@ -232,16 +232,19 @@ export function PricingTable({
                 tier.isHighlighted ? "border-2 border-accent" : undefined,
               )}
             >
-              {tier.badge ? <Badge variant="info">{tier.badge}</Badge> : null}
+              <CardHeader>
+              {tier.badge ? <Badge>{tier.badge}</Badge> : null}
               <SemanticContent as="p" className="text-body font-body font-medium text-ink-primary">{tier.name}</SemanticContent>
               {selected !== undefined ? <>
                 <SemanticContent as="p" className="text-h1 font-display text-ink-primary"><SemanticContent as="span" aria-hidden="true">{selected.amount}</SemanticContent><SemanticContent as="span" className="sr-only">{selected.priceText}</SemanticContent></SemanticContent>
                 {selected.note !== undefined ? <SemanticContent as="p" className="text-body-s text-ink-secondary">{selected.note}</SemanticContent> : null}
-              </> : <SemanticContent as="p" className="text-h1 font-display text-ink-primary">{tier.price}</SemanticContent>}
+              </> : tier.price !== null ? <SemanticContent as="p" className="text-h1 font-display text-ink-primary">{tier.price}</SemanticContent> : null}
               {tier.description ? (
                 <SemanticContent as="p" className="text-body-s text-ink-secondary">{tier.description}</SemanticContent>
               ) : null}
-              <SemanticContent as="ul" className="flex flex-1 flex-col gap-xs">
+              </CardHeader>
+              <CardContent className="flex-1">
+              <SemanticContent as="ul" className="flex flex-col gap-xs">
                 {/* Index as key: a feature list is fixed, ordered prose per
                     tier with no stable identity of its own — the same
                     reasoning `Faq`'s answer text and `DetailView`'s field
@@ -254,29 +257,32 @@ export function PricingTable({
                   </SemanticContent>
                 ))}
               </SemanticContent>
-              <SemanticContent as="div" className="w-full">{tier.cta}</SemanticContent>
+              </CardContent>
+              <CardFooter className="w-full">{tier.cta}</CardFooter>
             </Card>
           );
         })}
       </SemanticContent>
       {comparison !== undefined ? <SemanticContent as="div" className="flex flex-col gap-xl">
+        {comparison.keyLabel !== undefined ? <SemanticContent as="p" className={colors.secondary}>{comparison.keyLabel}</SemanticContent> : null}
         {comparison.groups.map(group => {
-          const rows = comparisonRows(group);
-          const hasMarks = rows.some(row => Object.values(row.cells).some(cell => cell.type === "mark"));
-          const forwardMarkLabels = hasMarks || !comparisonHasMarks;
           return <SemanticContent as="div" key={group.id} className="flex flex-col gap-md">
-            <GroupHeading className={cx("text-h3 font-display", colors.primary)}>{group.label}</GroupHeading>
-            <Matrix
-              arrangement="grid"
-              columns={tiers.map(tier => ({ id: tier.id, label: tier.name }))}
-              rows={rows}
-              headingLevel={rowHeadingLevel}
-              ground={ground}
-              featured={featuredTier !== undefined ? { column: featuredTier.id } : undefined}
-              featuredLabel={comparison.featuredLabel}
-              markLabels={forwardMarkLabels ? comparison.markLabels : undefined}
-              keyLabel={forwardMarkLabels ? comparison.keyLabel : undefined}
-            />
+            <SemanticContent as={GroupHeading} className={cx("text-h3 font-display", colors.primary)}>{group.label}</SemanticContent>
+            <Table aria-label={typeof group.label === "string" ? group.label : undefined}>
+              <TableHeader>
+                <TableHead id="feature" isRowHeader>{group.label}</TableHead>
+                {tiers.map(tier => <TableHead key={tier.id} id={tier.id}>{tier.name}{tier.id === featuredTier?.id ? comparison.featuredLabel : null}</TableHead>)}
+              </TableHeader>
+              <TableBody>{group.rows.map(row => <TableRow key={row.id} id={row.id} textValue={typeof row.label === "string" ? row.label : undefined}>
+                <TableCell>{row.label}{row.description !== undefined ? <SemanticContent as="p">{row.description}</SemanticContent> : null}</TableCell>
+                {tiers.map(tier => {
+                  const cell = row.cells[tier.id];
+                  if (!cell) throw new TypeError("PricingTable: row cells must include every tier.");
+                  if (cell.kind === "mark" && !comparison.markLabels) throw new TypeError("PricingTable: mark cells need mark labels.");
+                  return <TableCell key={tier.id}>{cell.kind === "text" ? cell.text : comparison.markLabels![cell.included ? 4 : 0]}</TableCell>;
+                })}
+              </TableRow>)}</TableBody>
+            </Table>
           </SemanticContent>;
         })}
       </SemanticContent> : null}

@@ -1,10 +1,15 @@
-import type { HTMLAttributes, ReactNode } from "react";
+import type { ComponentProps, ComponentType, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
-import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import type { SemanticContent as SemanticContentType } from "../components/SemanticContent.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 
-const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
-
+const SemanticContent = componentLeaf<typeof SemanticContentType>("components.semantic-content");
+type CardPart = ComponentType<ComponentProps<"div">>;
+const Card = componentLeaf<ComponentType<ComponentProps<"div"> & { size?: "default" | "sm" }>>("components.card");
+const CardHeader = componentLeaf<CardPart>("components.card", "CardHeader");
+const CardTitle = componentLeaf<CardPart>("components.card", "CardTitle");
+const CardContent = componentLeaf<CardPart>("components.card", "CardContent");
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.timeline", "foundry/sections.timeline");
 
@@ -27,12 +32,11 @@ export interface TimelineProps extends Omit<HTMLAttributes<HTMLOListElement>, "c
   headingLevel?: TimelineHeadingLevel;
 }
 
-/** A server-safe dated sequence: one ordered list with a marker rail, dates and event headings. */
+/** Caller-ordered dated events composed through the consumer's selected component leaves. */
 export function Timeline({ events, headingLevel = 3, className, ...rest }: TimelineProps) {
   if (events.length === 0) throw new TypeError("Timeline: events must not be empty.");
-  const Heading = `h${headingLevel}` as const;
   return (
-    <ol {...SECTION_STAMP} {...rest} className={cx("flex min-w-0 flex-col font-body", className)}>
+    <ol {...SECTION_STAMP} {...rest} className={cx("flex min-w-0 flex-col", className)}>
       {events.map((event, index) => {
         const rail = index < events.length - 1;
         return (
@@ -41,11 +45,15 @@ export function Timeline({ events, headingLevel = 3, className, ...rest }: Timel
               <SemanticContent as="span" className="mt-xs size-2 shrink-0 rounded-pill bg-accent forced-colors:bg-current" />
               {rail ? <SemanticContent as="span" className="mt-xs w-px flex-1 bg-line-base" /> : null}
             </SemanticContent>
-            <SemanticContent as="div" className="flex min-w-0 flex-col gap-xs break-words">
-              <SemanticContent as="time" dateTime={event.at} className="text-caption text-ink-muted">{event.dateText}</SemanticContent>
-              <SemanticContent as={Heading} className="text-body font-semibold text-ink-primary">{event.heading}</SemanticContent>
-              {event.description !== undefined && event.description !== null ? <SemanticContent as="p" className="text-body-s text-ink-secondary">{event.description}</SemanticContent> : null}
-            </SemanticContent>
+            <Card className="min-w-0 flex-1">
+              <CardHeader>
+                <SemanticContent as="time" dateTime={event.at} className="text-caption text-ink-muted">{event.dateText}</SemanticContent>
+                <CardTitle>
+                  <SemanticContent as={headingLevel === 2 ? "h2" : headingLevel === 4 ? "h4" : "h3"}>{event.heading}</SemanticContent>
+                </CardTitle>
+              </CardHeader>
+              {event.description !== undefined && event.description !== null ? <CardContent>{event.description}</CardContent> : null}
+            </Card>
           </SemanticContent>
         );
       })}

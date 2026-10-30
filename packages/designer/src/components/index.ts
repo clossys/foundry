@@ -243,3 +243,5 @@ export { DropdownMenuTrigger, DropdownMenu, DropdownMenuGroup, DropdownMenuLabel
 
 export { RichText } from "./RichText.js";
 export type { RichTextProps, RichTextValue } from "./RichText.js";
+
+export { MediaPlayer, type MediaPlayerProps, type MediaPlayerPassage } from "./media-player/index.js";

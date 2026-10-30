@@ -1,4 +1,5 @@
 import type { RuntimeJson } from "../../catalog-core/runtime-ports.js";
+import { blogSpecimenRecords } from "../../studio/blog-specimen-data.js";
 import type { SpecimenDataset } from "../../studio/specimen-dataset.js";
 import { cardsInputs, renderCards } from "./cards.js";
 import { chatInputs, renderChat } from "./chat.js";
@@ -77,7 +78,7 @@ const rows = (list: readonly RuntimeObject[]): readonly RuntimeObject[] => list;
  */
 export const sectionDatasetC: Readonly<Record<GroupCLeaf, (dataset: SpecimenDataset) => Content>> = {
   cards: ({ sections: S }) => ({
-    records: plainJson(S.recordCards.records),
+    records: plainJson(blogSpecimenRecords(S.recordCards.records)),
   }),
   chat: ({ sections: S }) => ({
     parts: plainJson(S.chat.messages),

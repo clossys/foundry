@@ -1650,11 +1650,15 @@
       ],
       "members": {
         "mode": "closed",
-        "names": []
+        "names": [
+          "typography.drop-cap"
+        ]
       },
       "allowedComposes": [
         "components.link",
-        "components.separator"
+        "components.separator",
+        "components.semantic-content",
+        "components.card"
       ],
       "parts": [
         "sections.band",
@@ -1678,7 +1682,9 @@
           "tokens.heading-size",
           "tokens.radius",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.caption-size",
+          "tokens.display-size"
         ],
         "assets": []
       },
@@ -2339,7 +2345,8 @@
       "allowedComposes": [
         "components.card",
         "components.link",
-        "components.badge"
+        "components.badge",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -2359,9 +2366,12 @@
           "tokens.shift-distance",
           "tokens.body-size",
           "tokens.caption-size",
-          "tokens.text-color"
+          "tokens.text-color",
+          "tokens.heading-size"
         ],
-        "assets": []
+        "assets": [
+          "assets.image"
+        ]
       },
       "data": "host-injected",
       "surface": "both",
@@ -2484,6 +2494,96 @@
           },
           {
             "key": "records[].badge.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].image.alt",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.author.name",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.author.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.date.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.readingTime.value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.readingTime.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.tags[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.summary",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.outcomeStats[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.outcomeStats[].value",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -4402,6 +4502,11 @@
           "name": "items",
           "type": "records",
           "required": true
+        },
+        {
+          "name": "header",
+          "type": "records",
+          "required": false
         }
       ],
       "members": {
@@ -4410,6 +4515,10 @@
           "layout.grid",
           "layout.list",
           "layout.split",
+          "layout.bento",
+          "layout.tabs",
+          "layout.alternating",
+          "layout.scroll",
           "about.features"
         ]
       },
@@ -4417,7 +4526,10 @@
         "components.card",
         "components.icon",
         "components.link",
-        "components.semantic-content"
+        "components.item",
+        "components.tabs",
+        "components.semantic-content",
+        "sections.media"
       ],
       "parts": [
         "sections.band",
@@ -5501,7 +5613,9 @@
         ]
       },
       "allowedComposes": [
+        "components.item",
         "components.link",
+        "components.logo",
         "components.semantic-content"
       ],
       "parts": [
@@ -6636,7 +6750,10 @@
         "components.card",
         "components.badge",
         "components.icon",
-        "components.status-mark"
+        "components.status-mark",
+        "components.semantic-content",
+        "components.table",
+        "components.link"
       ],
       "parts": [
         "sections.band",
@@ -8438,11 +8555,14 @@
       ],
       "members": {
         "mode": "closed",
-        "names": []
+        "names": [
+          "tracking.css"
+        ]
       },
       "allowedComposes": [
         "components.link",
-        "components.disclosure"
+        "components.disclosure",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band"
