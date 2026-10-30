@@ -20,8 +20,8 @@
     "outputs": {
       "status": "new",
       "shape": "a non-empty array of package-relative path strings",
-      "meaning": "The files this role owns and may write, declared so Advisor, Launcher, and every skill can list what a role produces without reading its source. Every path must fall under this role's own `clossys/<role>/` folder, per the layout docs/contracts/consumer-layout.json defines (issue #1171). `<role>` is the manifest's own package name with its scope removed (`@clossys/advisor` -> `clossys/advisor/`).",
-      "pathRule": "relative, no leading '/', no '..' segment, first two path segments must be exactly `clossys/<role-name>`"
+      "meaning": "The files this role owns and may write, declared so Advisor, Launcher, and every skill can list what a role produces without reading its source. Safe owned descendants of `clossys/<role>/` remain valid. The implemented native CellAgent roles strategist, writer, designer and publisher may additionally declare owned descendants of `clossys/agents/<role>/`, per docs/contracts/consumer-layout.json. `<role>` is the manifest package name with its scope removed. This is declaration compatibility, not a runtime fallback, rename or migration decision.",
+      "pathRule": "relative owned descendant of exactly `clossys/<role-name>/`, or additionally `clossys/agents/<role-name>/` only for strategist, writer, designer and publisher. Reject absolute paths, '..' segments, backslashes, NUL characters and sibling or arbitrary-agent folders; the role-root directory alone is not an output descendant."
     },
     "status": {
       "status": "new",
@@ -71,7 +71,7 @@
       "status": "new (schema version 2)",
       "shape": "an array of { artifact: string, path: string } (may be empty)",
       "meaning": "Artifacts this role produces for other roles to consume.",
-      "pathRule": "same rule as `outputs`: relative, no leading '/', no '..' segment, first two path segments must be exactly `clossys/<role-name>`"
+      "pathRule": "same owned descendant rule as `outputs`, including the four implemented native CellAgent roles; no runtime legacy fallback is enabled"
     },
     "capabilities": {
       "status": "new (schema version 3, issue #1196)",
@@ -107,7 +107,7 @@
     "$comment": "Version 4 (2026-09-23): four framework design questions settled in one change, each with its issue. Each entry says what was chosen and what was rejected; the gates named carry the rule, report-mode first, exactly as before.",
     "producerConformanceItems": {
       "issue": "#1381",
-      "chosen": "Stage B items 3 (lifecycle words) and 8 (STATUS.md) are reported `n/a` for a producer package, with the reason printed, and never counted as gaps. Item 5 (layout) grades the paths the package's own manifest declares (`outputs`, `feeds`, `capabilities[].outputs`) all sitting under clossys/<role>/. scripts/scaffold-package.mjs writes no clossys/<role>/ state.",
+      "chosen": "Stage B items 3 (lifecycle words) and 8 (STATUS.md) are reported `n/a` for a producer package, with the reason printed, and never counted as gaps. Item 5 (layout) grades the paths the package's own manifest declares (`outputs`, `feeds`, `capabilities[].outputs`) all satisfying the same owned-output rule: safe clossys/<role>/ descendants remain valid, and only strategist, writer, designer and publisher may additionally declare clossys/agents/<role>/ descendants. scripts/scaffold-package.mjs writes no clossys/<role>/ state.",
       "why": "loop.json and STATUS.md are consumer state the loop engine writes in a staffed repository (./loop.json `state`). A role package ships neither, and this repository staffs no role (it has no clossys/brief.json), so grading its root clossys/<role>/ graded state that does not exist here, and the only way to pass was a placeholder: fabricated state.",
       "alternativesRejected": {
         "ship a template loop.json / STATUS.md in each package and grade that": "a template carries no lifecycle state to grade, and its section headings are already fixed by the engine's own renderer (packages/controller/src/loop/status.ts), so the item would pass by construction and prove nothing",
