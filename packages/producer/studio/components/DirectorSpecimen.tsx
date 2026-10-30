@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import type { AgentCells, CellDetail } from '../lib/cells-client';
 import { directorDocument, directorSections, evidenceHref, evidenceReferences, type DirectorChapter } from '../lib/director-specimen';
 import { useSpecimenCells } from '../lib/director-specimen-resource';
-import { Badge, ContentSection, DetailView, EmptyState, Link, SectionHeader } from './director-specimen-ds';
+import { Badge, ContentSection, DetailView, EmptyState, Link, SectionHeader, SpecimenSelectionNeeds } from './director-specimen-ds';
 import { RichTextSpecimen } from './RichTextSpecimen';
 
 export const directorPassageId = (id: string) => `director-passage-${id}`;
@@ -21,7 +21,7 @@ function Passage({ cell, selected, level }: { cell: CellDetail; selected: boolea
     </ContentSection>) }] : []),
   ];
   return <ContentSection id={directorPassageId(cell.id)} aria-current={selected ? 'location' : undefined} data-specimen-cell={cell.id} data-specimen-status={cell.status}
-    ground={cell.status === 'draft' ? 'sunken' : 'base'} className={[cell.status === 'draft' ? 'bg-surface-sunken' : '', selected ? 'outline outline-focus outline-offset-4' : ''].filter(Boolean).join(' ')}>
+    ground={cell.status === 'draft' ? 'sunken' : 'base'} className={[cell.status === 'draft' ? 'bg-surface-sunken' : '', selected ? 'outline outline-solid' : ''].filter(Boolean).join(' ')} style={selected ? { outlineColor: 'var(--color-focus-ring)', outlineOffset: 'var(--ui-focus-offset)' } : undefined}>
     <SectionHeader title={typeof cell.fields?.title === 'string' && cell.fields.title ? cell.fields.title : cell.id.split('.').at(-1)} level={level} description={cell.status === 'draft' ? 'Draft passage' : undefined} />
     <ContentSection layout="split-end" media={<DetailView aria-label="Passage metadata" fields={fields} />}>
       <ContentSection>{sections.length ? sections.map(section => <ContentSection key={section.title}>
@@ -53,5 +53,5 @@ export function DirectorSpecimen({ index, selectedId }: { index: AgentCells; sel
   if (resource.state === 'loading') return <EmptyState role="status" title="Loading strategy document…" />;
   if (resource.state === 'error') return <EmptyState role="alert" title="Strategy unavailable" description={resource.message} />;
   const cells = new Map(resource.cells.map(cell => [cell.id, cell]));
-  return <ContentSection aria-label="Director strategy specimen">{chapters.map(chapter => <Chapter key={chapter.id} chapter={chapter} cells={cells} selectedId={selectedId} />)}</ContentSection>;
+  return <ContentSection aria-label="Director strategy specimen"><SpecimenSelectionNeeds />{chapters.map(chapter => <Chapter key={chapter.id} chapter={chapter} cells={cells} selectedId={selectedId} />)}</ContentSection>;
 }

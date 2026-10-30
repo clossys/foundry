@@ -4,7 +4,7 @@ import type { AgentCells } from '../lib/cells-client';
 import { specimenTitle } from '../lib/director-specimen';
 import { useSpecimenCells } from '../lib/director-specimen-resource';
 import { localeDirection, writerProjection, type WriterCopy } from '../lib/writer-specimen';
-import { Badge, Button, ContentSection, DetailView, EmptyState, NavigationTree, NavigationTreeItem, NavigationTreeItemContent, SectionHeader } from './director-specimen-ds';
+import { Badge, Button, ContentSection, DetailView, EmptyState, NavigationTree, NavigationTreeItem, NavigationTreeItemContent, SectionHeader, SpecimenSelectionNeeds } from './director-specimen-ds';
 import { RichTextSpecimen } from './RichTextSpecimen';
 
 function CopySpecimen({ copy }: { copy: WriterCopy }) {
@@ -54,6 +54,7 @@ export function WriterSpecimen({ index, selectedId }: { index: AgentCells; selec
     ]} />
   </ContentSection>;
   return <ContentSection aria-label="Writer copy specimen">
+    <SpecimenSelectionNeeds />
     <SectionHeader title={specimenTitle(cell)} stats={<>{cell.status ? <Badge variant={cell.status === 'active' ? 'success' : 'warning'}>{cell.status}</Badge> : null}{cell.version !== undefined ? <Badge>v{cell.version}</Badge> : null}</>} />
     {tone.length || banned.length ? <ContentSection layout="split-start" media={specimens}>{voice}</ContentSection> : <>
       {specimens}

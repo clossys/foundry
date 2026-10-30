@@ -1,9 +1,8 @@
-import { Badge, ContentSection } from './director-specimen-ds';
+'use client';
+import type { RichTextValue } from '@clossys/designer/components';
+import { RichText } from './director-specimen-ds';
 
-/** TEMPORARY ST1 adapter. Replace with the official Designer RichText leaf when available. */
-export function RichTextSpecimen({ value, readOnly }: { value: string | Record<string, unknown>; readOnly: true }) {
-  const text = typeof value === 'string' ? value.replace(/^\s*[-*]\s/gm, '').replace(/^#{1,6}\s/gm, '') : undefined;
-  return <ContentSection aria-readonly={readOnly} description={text}>
-    <Badge variant="warning">NEED: RichText</Badge>
-  </ContentSection>;
+/** All Studio documents use the selected Designer document leaf in read-only mode. */
+export function RichTextSpecimen({ value, readOnly }: { value: RichTextValue; readOnly: true }) {
+  return <RichText value={value} readOnly={readOnly} />;
 }

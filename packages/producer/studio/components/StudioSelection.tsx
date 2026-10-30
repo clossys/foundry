@@ -35,6 +35,9 @@ export function useStudioUI() {
     ArticleBody: exported<typeof Blocks.ArticleBody>(runtime.surfaces, 'Article'),
     EmptyState: exported<typeof Blocks.EmptyState>(runtime.surfaces, 'EmptyState'),
     Badge: exported<typeof Components.Badge>(runtime.components, 'Badge'),
+    Button: exported<typeof Components.Button>(runtime.components, 'Button'),
+    RichText: exported<typeof Components.RichText>(runtime.components, 'RichText'),
+    DetailView: exported<typeof Blocks.DetailView>(runtime.surfaces, 'RecordDetail'),
     Disclosure: exported<ComponentType<Components.DisclosureProps>>(runtime.disclosure, 'Disclosure'),
     Link: exported<typeof Components.Link>(runtime.components, 'Link'),
     Icon: exported<ComponentType<Omit<Components.IconProps, 'glyph'> & { asset: string }>>(runtime.components, 'Icon'),
@@ -74,8 +77,8 @@ export function StudioSelectionProvider({ children }: { children: ReactNode }) {
       void loadSelection(controller.signal).then(async selection => {
         if (!selection.runtimeUrl) throw new Error(selection.message ?? 'Producer could not compile the current selected fills.');
         const [runtime, , profile] = await Promise.all([importStudioRuntime(selection.runtimeUrl), verifySelectionCss(selection), loadSelectionProfile(selection, controller.signal)]);
-        for (const name of ['AppShell', 'Band', 'SectionHeader', 'Content', 'Article', 'EmptyState']) exported(runtime.surfaces, name);
-        for (const name of ['Badge', 'Link', 'Icon', 'NavigationTree']) exported(runtime.components, name);
+        for (const name of ['AppShell', 'Band', 'SectionHeader', 'Content', 'Article', 'EmptyState', 'RecordDetail']) exported(runtime.surfaces, name);
+        for (const name of ['Badge', 'Link', 'Icon', 'NavigationTree', 'Button', 'RichText']) exported(runtime.components, name);
         for (const name of ['NavigationTreeItem', 'NavigationTreeItemContent']) exported(runtime.tree, name);
         exported(runtime.disclosure, 'Disclosure');
         if (controller.signal.aborted) return;
