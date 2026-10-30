@@ -24,26 +24,16 @@
   "frames": {
     "inspector": {
       "composes": [
-        "components.button",
-        "components.card",
-        "components.resize-handle",
         "frames.sheet"
       ],
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
-          "components.button",
-          "components.card",
-          "components.resize-handle",
           "frames.sheet"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.button",
-            "components.card",
-            "components.resize-handle"
-          ],
+          "components": [],
           "tokens": [
             "tokens.accent-color",
             "tokens.border-color",
@@ -54,11 +44,11 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Panel.tsx",
-            "sha256": "472398e3a3e376cf2f63dbdba831f18ffad241507f15900f1dd54f5e9f2b5340"
+            "sha256": "a9a814cdb5bfe434994fcb51526df8dc03a82e3f153040b0a1f5ea157db0181f"
           },
           {
             "path": "packages/designer/src/blocks/ResizablePane.tsx",
-            "sha256": "ab46f265b7911fe4355ac58c0199978723d08a2056c808ac03a71f58cfbc351e"
+            "sha256": "adc91e0cc0c92c625f710f5ab562d5c28a394e323bcb49be20ff1e57ced2eb27"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -70,11 +60,15 @@
           },
           {
             "path": "packages/designer/src/frames/InspectorFrame.tsx",
-            "sha256": "4717570d2798d31d6bfb0460f006f76da6ed5ea68951eda91b3f970e17686c3e"
+            "sha256": "37d1be126da5b3c63159eafc3c6b798cca9de4ac1715f35d3bdd005073eeb1e7"
           },
           {
             "path": "packages/designer/src/frames/right-panel-config.ts",
             "sha256": "2ee8f0200da935f594212fc6cd4095c1f373dad8eabb3e28e46caa69fce4f160"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -95,6 +89,12 @@
             "evidence": "unresolved injected runtime inventory ../tokens/index.js#TOKENS",
             "file": "packages/designer/src/frames/right-panel-config.ts",
             "line": 1
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

@@ -3,16 +3,23 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type AriaAttributes,
   type FormEvent,
-  type FormHTMLAttributes,
   type ReactNode,
   type RefObject,
 } from "react";
-import { Link } from "../components/Link.js";
+
 import { cx } from "../components/internal/cx.js";
 import { actionRowClassName } from "../components/internal/action-row.js";
 import { UI_RING_FOCUS } from "../components/internal/ui-vars.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import type { FormProps as SelectedFormProps } from "../components/Form.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const LeafForm = componentLeaf<typeof import("../components/Form.js").Form>("components.form");
+const Link = componentLeaf<typeof import("../components/Link.js").Link>("components.link");
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.form", "foundry/sections.form");
 
@@ -68,7 +75,10 @@ export interface FormValidationBinding {
 }
 
 export interface FormProps
-  extends Omit<FormHTMLAttributes<HTMLFormElement>, "children" | "onSubmit"> {
+  extends Omit<SelectedFormProps, "children" | "onSubmit" | "validationBehavior"> {
+  "aria-busy"?: AriaAttributes["aria-busy"];
+  /** Uses the selected form's ARIA validation mode instead of native constraint validation. */
+  noValidate?: boolean;
   /** Contact submissions retain field values and announce the consumer promise's outcome. */
   composition?: "contact";
   /** Optional heading region, rendered above the fields. */
@@ -221,6 +231,7 @@ export function Form({
   actions,
   actionsLayout = "end",
   onSubmit,
+  noValidate,
   className,
   style,
   ...rest
@@ -289,10 +300,10 @@ export function Form({
   const endAlignedActions = actionsLayout === "end";
 
   return (
-    <form
+    <LeafForm
       {...SECTION_STAMP} {...rest}
       ref={validation?.formRef}
-      noValidate={validation ? true : rest.noValidate}
+      validationBehavior={validation || noValidate ? "aria" : "native"}
       aria-busy={submission === "pending" || validation?.isSubmitting ? true : rest["aria-busy"]}
       onSubmit={
         composition === "contact" ? submitContact : validation
@@ -306,9 +317,9 @@ export function Form({
       className={cx("flex flex-col gap-lg", className)}
       style={style}
     >
-      {heading ? <h2 className="text-h2 font-display text-ink-primary">{heading}</h2> : null}
+      {heading ? <SemanticContent as="h2" className="text-h2 font-display text-ink-primary">{heading}</SemanticContent> : null}
       {showSummary ? (
-        <div
+        <SemanticContent as="div"
           ref={summaryRef}
           role="alert"
           tabIndex={-1}
@@ -317,10 +328,10 @@ export function Form({
           className="flex flex-col gap-sm rounded-control border border-status-danger bg-status-danger-tint p-md text-status-danger-text outline-none"
           style={summaryFocused ? { boxShadow: UI_RING_FOCUS } : undefined}
         >
-          <h2 className="text-body font-body font-semibold">{errorSummaryMessage?.(errorList.length)}</h2>
-          <ul className="flex flex-col gap-xs text-body-s">
+          <SemanticContent as="h2" className="text-body font-body font-semibold">{errorSummaryMessage?.(errorList.length)}</SemanticContent>
+          <SemanticContent as="ul" className="flex flex-col gap-xs text-body-s">
             {errorList.map((error, index) => (
-              <li key={`${error.fieldId}-${index}`}>
+              <SemanticContent as="li" key={`${error.fieldId}-${index}`}>
                 <Link
                   href={`#${error.fieldId}`}
                   className="text-status-danger-text"
@@ -333,26 +344,26 @@ export function Form({
                 >
                   {error.message}
                 </Link>
-              </li>
+              </SemanticContent>
             ))}
-          </ul>
-        </div>
+          </SemanticContent>
+        </SemanticContent>
       ) : null}
-      <div className="flex flex-col gap-md">{children}</div>
+      <SemanticContent as="div" className="flex flex-col gap-md">{children}</SemanticContent>
       {honeypot}
       {turnstile}
       {submitError && composition !== "contact" ? (
-        <div
+        <SemanticContent as="div"
           role="alert"
           className="rounded-control border border-status-danger bg-status-danger-tint p-md text-body-s text-status-danger-text"
         >
           {submitError}
-        </div>
+        </SemanticContent>
       ) : null}
       {composition === "contact" && submission === "error" ? submitError : null}
       {composition === "contact" && submission === "success" ? submitSuccess : null}
       {actions ? (
-        <div
+        <SemanticContent as="div"
           data-actions-layout={actionsLayout}
           className={cx(
             actionsRowClasses,
@@ -360,8 +371,8 @@ export function Form({
           )}
         >
           {actions}
-        </div>
+        </SemanticContent>
       ) : null}
-    </form>
+    </LeafForm>
   );
 }

@@ -1,6 +1,9 @@
-import type { KeyboardEvent, MouseEvent, ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { UI_Z_SKIP_LINK } from "./internal/shell-vars.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const Link = componentLeaf<typeof import("../components/Link.js").Link>("components.link");
 
 export interface SkipLinkProps {
   /**
@@ -63,7 +66,7 @@ export function SkipLink({ targetId, children, className }: SkipLinkProps) {
     return document.activeElement === target;
   };
 
-  const onClick = (event: MouseEvent<HTMLAnchorElement>) => {
+  const onClick: NonNullable<ComponentProps<typeof Link>["onClick"]> = event => {
     if (event.defaultPrevented) return;
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (jumpToTarget()) event.preventDefault();
@@ -74,15 +77,15 @@ export function SkipLink({ targetId, children, className }: SkipLinkProps) {
   // an `href` on its own, so when focus cannot move to the target the handler
   // clicks the link, which runs the `href` fragment fallback exactly as Enter
   // does, and also keeps Space from scrolling the page.
-  const onKeyDown = (event: KeyboardEvent<HTMLAnchorElement>) => {
+  const onKeyDown: NonNullable<ComponentProps<typeof Link>["onKeyDown"]> = event => {
     if (event.defaultPrevented || event.key !== " ") return;
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
-    if (!jumpToTarget()) event.currentTarget.click();
+    if (!jumpToTarget() && event.currentTarget instanceof HTMLElement) event.currentTarget.click();
   };
 
   return (
-    <a
+    <Link
       href={`#${targetId}`}
       onClick={onClick}
       onKeyDown={onKeyDown}
@@ -95,6 +98,6 @@ export function SkipLink({ targetId, children, className }: SkipLinkProps) {
       style={{ zIndex: UI_Z_SKIP_LINK }}
     >
       {children}
-    </a>
+    </Link>
   );
 }

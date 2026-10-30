@@ -23,43 +23,26 @@
   },
   "frames": {
     "sheet": {
-      "composes": [
-        "components.button",
-        "components.card",
-        "components.dialog",
-        "components.icon"
-      ],
+      "composes": [],
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.button",
-          "components.card",
-          "components.dialog",
-          "components.icon"
-        ],
+        "scannedComposes": [],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.button",
-            "components.card",
-            "components.dialog",
-            "components.icon"
-          ],
+          "components": [],
           "tokens": [
-            "tokens.accent-color",
             "tokens.breakpoint",
-            "tokens.region-width",
             "tokens.spacing"
           ]
         },
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Drawer.tsx",
-            "sha256": "295e9bb1783d23687972f32f6cd551304bbf043f127bd18bf126bf86e591faec"
+            "sha256": "bee8b2f5da66237d651ed627b7c2a948cab8be593fc9b740de2c615e805adf65"
           },
           {
             "path": "packages/designer/src/blocks/Panel.tsx",
-            "sha256": "472398e3a3e376cf2f63dbdba831f18ffad241507f15900f1dd54f5e9f2b5340"
+            "sha256": "a9a814cdb5bfe434994fcb51526df8dc03a82e3f153040b0a1f5ea157db0181f"
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",
@@ -68,6 +51,10 @@
           {
             "path": "packages/designer/src/icons/X.ts",
             "sha256": "8f72143caaadd154476c699ee02546dd60ca49217afc4215220b8fbe9867f29e"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -94,6 +81,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },
@@ -119,9 +112,7 @@
       "reads": {
         "assets": [],
         "tokens": [
-          "tokens.accent-color",
           "tokens.breakpoint",
-          "tokens.region-width",
           "tokens.spacing"
         ]
       },

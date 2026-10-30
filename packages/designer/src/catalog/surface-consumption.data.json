@@ -2,24 +2,10 @@
   "frames.app-header": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.button",
-        "components.icon",
-        "components.menu",
-        "components.popover",
-        "components.toggle-button",
-        "components.tooltip"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.button",
-          "components.icon",
-          "components.menu",
-          "components.popover",
-          "components.toggle-button",
-          "components.tooltip"
-        ],
+        "components": [],
         "tokens": [
           "tokens.accent-color",
           "tokens.blur",
@@ -49,7 +35,7 @@
         },
         {
           "path": "packages/designer/src/blocks/PageBar.tsx",
-          "sha256": "e660980f7f08780c4e579af41090275a9abd1222f0b877de9d5dee5ff4e2c951"
+          "sha256": "1e8c53bf7bfd59e9d40c61d60e7807471cb840b956cf5155bbcf20609f7097d5"
         },
         {
           "path": "packages/designer/src/catalog-core/frame-header-options.ts",
@@ -66,6 +52,10 @@
         {
           "path": "packages/designer/src/icons/ChevronDown.ts",
           "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -76,22 +66,22 @@
           "line": 1
         },
         {
-          "code": "DF2",
-          "evidence": "unresolved source export ../components/Link.js#Link",
-          "file": "packages/designer/src/blocks/PageBar.tsx",
-          "line": 8
-        },
-        {
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/ChevronDown.js#ChevronDown",
           "file": "packages/designer/src/blocks/PageBar.tsx",
-          "line": 11
+          "line": 6
         },
         {
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/Check.js#Check",
           "file": "packages/designer/src/blocks/PageBar.tsx",
-          "line": 13
+          "line": 8
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -105,17 +95,6 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.avatar",
-        "components.banner",
-        "components.button",
-        "components.card",
-        "components.icon",
-        "components.logo",
-        "components.menu",
-        "components.resize-handle",
-        "components.tabs",
-        "components.toggle-button",
-        "components.tooltip",
         "frames.app-header",
         "frames.app-sidebar",
         "frames.command",
@@ -123,19 +102,7 @@
       ],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.avatar",
-          "components.banner",
-          "components.button",
-          "components.card",
-          "components.icon",
-          "components.logo",
-          "components.menu",
-          "components.resize-handle",
-          "components.tabs",
-          "components.toggle-button",
-          "components.tooltip"
-        ],
+        "components": [],
         "tokens": [
           "tokens.accent-color",
           "tokens.blur",
@@ -157,7 +124,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/AccountMenu.tsx",
-          "sha256": "929f0396b0cb3433a4092ed6c55d70372866b3812ff79a9b5f2924805c203936"
+          "sha256": "5a297bacb790e09542aafa14416d86e847f1e1c15c7a0790b5a39badd371fbf2"
         },
         {
           "path": "packages/designer/src/blocks/canvas/models.ts",
@@ -165,15 +132,15 @@
         },
         {
           "path": "packages/designer/src/blocks/CommandMenu.tsx",
-          "sha256": "a6aed4bf309c563a34e3548263253163e1e6454007dbdeb4a27887c5f8065274"
+          "sha256": "0c2a9838f06fae066ecbfa7087445664c595f5c299a526068b1da3d8d7b022da"
         },
         {
           "path": "packages/designer/src/blocks/Panel.tsx",
-          "sha256": "472398e3a3e376cf2f63dbdba831f18ffad241507f15900f1dd54f5e9f2b5340"
+          "sha256": "a9a814cdb5bfe434994fcb51526df8dc03a82e3f153040b0a1f5ea157db0181f"
         },
         {
           "path": "packages/designer/src/blocks/ResizablePane.tsx",
-          "sha256": "ab46f265b7911fe4355ac58c0199978723d08a2056c808ac03a71f58cfbc351e"
+          "sha256": "adc91e0cc0c92c625f710f5ab562d5c28a394e323bcb49be20ff1e57ced2eb27"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -201,7 +168,7 @@
         },
         {
           "path": "packages/designer/src/frames/AppFrame.tsx",
-          "sha256": "e96ec4fb21566aaad06715b668271b7b8b95181aaddd344257f749b874a1b63f"
+          "sha256": "5bcd9f18b28a85cce42ee7c7a24c49fd368151d5842323d66f7b2484188b7aaf"
         },
         {
           "path": "packages/designer/src/frames/AppFrameBrand.tsx",
@@ -209,7 +176,7 @@
         },
         {
           "path": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
-          "sha256": "bd6a6a972c41308d44396a619ecd991c381defd6f7e55271b6c89e8e9264821a"
+          "sha256": "c3a929cab0785f2840c5362ae2cbd2202bc8c81683d0fe3f92e328ac5cd0118a"
         },
         {
           "path": "packages/designer/src/frames/frame-dock-layout.ts",
@@ -225,7 +192,7 @@
         },
         {
           "path": "packages/designer/src/frames/FrameDock.tsx",
-          "sha256": "9d1c352e83c87277f867cb8fb661be32dcfe5e8e6de918cd00877c8d4ac3c213"
+          "sha256": "421f9a3bcc956f89c38413ccaf63e8325196b81f010910c0f421673ce5f9522b"
         },
         {
           "path": "packages/designer/src/icons/ChevronDown.ts",
@@ -256,12 +223,16 @@
           "sha256": "8667df53d290ac14195b44a8a39a1b88e0bda24fb236637c1f30b6fea19a1a2f"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+        },
+        {
           "path": "packages/designer/src/shell/FrameSlots.tsx",
           "sha256": "516a1b13236d14591e8400d5fb17597f83b651c1b637909905ee7672bdf86300"
         },
         {
           "path": "packages/designer/src/shell/SkipLink.tsx",
-          "sha256": "940d32dea44bdbde6f2ef1f5470f539425e34586f96f90750e34e17ffc82f20c"
+          "sha256": "8d46afb50775a3692938663a50ec56f39da8d45c527cc94d22586e0c796945c9"
         },
         {
           "path": "packages/designer/src/shell/Toaster.tsx",
@@ -281,7 +252,7 @@
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/ChevronUp.js#ChevronUp",
           "file": "packages/designer/src/blocks/AccountMenu.tsx",
-          "line": 9
+          "line": 5
         },
         {
           "code": "DF2",
@@ -317,19 +288,19 @@
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/Monitor.js#Monitor",
           "file": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
-          "line": 8
+          "line": 7
         },
         {
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/Moon.js#Moon",
           "file": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
-          "line": 9
+          "line": 8
         },
         {
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/Sun.js#Sun",
           "file": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
-          "line": 10
+          "line": 9
         },
         {
           "code": "DF2",
@@ -342,6 +313,12 @@
           "evidence": "unregistered asset import ../icons/index.js#ChevronDown",
           "file": "packages/designer/src/frames/FrameDock.tsx",
           "line": 6
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         },
         {
           "code": "DF2",
@@ -361,25 +338,17 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.button",
-        "components.card",
-        "components.icon",
-        "components.tooltip",
         "frames.sheet"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.button",
-          "components.card",
-          "components.icon",
-          "components.tooltip"
-        ],
+        "components": [],
         "tokens": [
           "tokens.accent-color",
           "tokens.body-size",
           "tokens.border-color",
           "tokens.border-width",
+          "tokens.breakpoint",
           "tokens.control-color",
           "tokens.control-radius",
           "tokens.duration",
@@ -402,7 +371,7 @@
         },
         {
           "path": "packages/designer/src/blocks/AppNavigation.tsx",
-          "sha256": "c794f90745499e7771b4ccf38bd01ec64586a9b1156e13a44d31b0d68cf9d921"
+          "sha256": "13e4aa53205e1b02f468eb6c96685823c32b3292caec81df7a6f92bd710bcd55"
         },
         {
           "path": "packages/designer/src/blocks/frame-navigation.ts",
@@ -410,7 +379,7 @@
         },
         {
           "path": "packages/designer/src/blocks/Panel.tsx",
-          "sha256": "472398e3a3e376cf2f63dbdba831f18ffad241507f15900f1dd54f5e9f2b5340"
+          "sha256": "a9a814cdb5bfe434994fcb51526df8dc03a82e3f153040b0a1f5ea157db0181f"
         },
         {
           "path": "packages/designer/src/blocks/tree-model.ts",
@@ -447,62 +416,48 @@
         {
           "path": "packages/designer/src/icons/Folder.ts",
           "sha256": "5f10987d0993f001109aaf7d553706b504ee8b92adaaabdf430a3be6f6617902"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
         {
-          "code": "DF2",
-          "evidence": "unresolved source export ../components/Link.js#Link",
-          "file": "packages/designer/src/blocks/AppNavigation.tsx",
-          "line": 6
-        },
-        {
-          "code": "DF2",
-          "evidence": "unresolved source export ../components/NavigationTree.js#NavigationTree",
-          "file": "packages/designer/src/blocks/AppNavigation.tsx",
-          "line": 9
-        },
-        {
-          "code": "DF2",
-          "evidence": "unresolved source export ../components/NavigationTree.js#NavigationTreeItem",
-          "file": "packages/designer/src/blocks/AppNavigation.tsx",
-          "line": 9
-        },
-        {
-          "code": "DF2",
-          "evidence": "unresolved source export ../components/NavigationTree.js#NavigationTreeItemContent",
-          "file": "packages/designer/src/blocks/AppNavigation.tsx",
-          "line": 9
-        },
-        {
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/FileText.js#FileText",
           "file": "packages/designer/src/blocks/AppNavigation.tsx",
-          "line": 12
+          "line": 9
         },
         {
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/Folder.js#Folder",
           "file": "packages/designer/src/blocks/AppNavigation.tsx",
-          "line": 13
+          "line": 10
         },
         {
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/ChevronDown.js#ChevronDown",
           "file": "packages/designer/src/blocks/AppNavigation.tsx",
-          "line": 14
+          "line": 11
         },
         {
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/ChevronLeft.js#ChevronLeft",
           "file": "packages/designer/src/blocks/AppNavigation.tsx",
-          "line": 15
+          "line": 12
         },
         {
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/ChevronRight.js#ChevronRight",
           "file": "packages/designer/src/blocks/AppNavigation.tsx",
-          "line": 16
+          "line": 13
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/blocks/AppNavigation.tsx",
+          "line": 20
         },
         {
           "code": "DF2",
@@ -515,6 +470,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -527,14 +488,10 @@
   "frames.auth-shell": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.semantic-content"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.semantic-content"
-        ],
+        "components": [],
         "tokens": [
           "tokens.accent-color",
           "tokens.body-size",
@@ -557,11 +514,15 @@
         },
         {
           "path": "packages/designer/src/frames/AuthFrame.tsx",
-          "sha256": "607437d63bbf84a1ac784828d3e95a29ec4934cf4dc1b7dfd0952ecb54613f4e"
+          "sha256": "c1b37b67981225166fc2862982beea16e55d6ef17663b92e6eb7d588ce23c341"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         },
         {
           "path": "packages/designer/src/shell/SkipLink.tsx",
-          "sha256": "940d32dea44bdbde6f2ef1f5470f539425e34586f96f90750e34e17ffc82f20c"
+          "sha256": "8d46afb50775a3692938663a50ec56f39da8d45c527cc94d22586e0c796945c9"
         }
       ],
       "unresolved": [
@@ -576,6 +537,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         },
         {
           "code": "DF2",
@@ -594,40 +561,21 @@
   "frames.command": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.button",
-        "components.dialog",
-        "components.icon",
-        "components.search-field",
-        "components.tooltip"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.button",
-          "components.dialog",
-          "components.icon",
-          "components.search-field",
-          "components.tooltip"
-        ],
+        "components": [],
         "tokens": [
-          "tokens.accent-color",
           "tokens.body-size",
-          "tokens.border-color",
-          "tokens.caption-size",
-          "tokens.control-color",
           "tokens.control-radius",
-          "tokens.focus-color",
-          "tokens.focus-outline",
           "tokens.spacing",
-          "tokens.state-opacity",
           "tokens.text-color"
         ]
       },
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/CommandMenu.tsx",
-          "sha256": "a6aed4bf309c563a34e3548263253163e1e6454007dbdeb4a27887c5f8065274"
+          "sha256": "0c2a9838f06fae066ecbfa7087445664c595f5c299a526068b1da3d8d7b022da"
         },
         {
           "path": "packages/designer/src/components/Banner.copy-context.tsx",
@@ -638,16 +586,12 @@
           "sha256": "9a37518f0d4ab5d04c55cfd4706daaecaad2a490b9a36d83db9108215d48e658"
         },
         {
-          "path": "packages/designer/src/components/button-classes.ts",
-          "sha256": "b8ebd6d815a52769cd0e02ca091f4c81d81e31f9558e1df767bfcf07dcc5f2a6"
-        },
-        {
-          "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
-        },
-        {
           "path": "packages/designer/src/icons/X.ts",
           "sha256": "8f72143caaadd154476c699ee02546dd60ca49217afc4215220b8fbe9867f29e"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -655,7 +599,13 @@
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/X.js#X",
           "file": "packages/designer/src/blocks/CommandMenu.tsx",
-          "line": 11
+          "line": 5
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -702,18 +652,11 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.button",
-        "components.card",
-        "components.resize-handle",
         "frames.sheet"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.button",
-          "components.card",
-          "components.resize-handle"
-        ],
+        "components": [],
         "tokens": [
           "tokens.accent-color",
           "tokens.border-color",
@@ -724,11 +667,11 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/Panel.tsx",
-          "sha256": "472398e3a3e376cf2f63dbdba831f18ffad241507f15900f1dd54f5e9f2b5340"
+          "sha256": "a9a814cdb5bfe434994fcb51526df8dc03a82e3f153040b0a1f5ea157db0181f"
         },
         {
           "path": "packages/designer/src/blocks/ResizablePane.tsx",
-          "sha256": "ab46f265b7911fe4355ac58c0199978723d08a2056c808ac03a71f58cfbc351e"
+          "sha256": "adc91e0cc0c92c625f710f5ab562d5c28a394e323bcb49be20ff1e57ced2eb27"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -740,11 +683,15 @@
         },
         {
           "path": "packages/designer/src/frames/InspectorFrame.tsx",
-          "sha256": "4717570d2798d31d6bfb0460f006f76da6ed5ea68951eda91b3f970e17686c3e"
+          "sha256": "37d1be126da5b3c63159eafc3c6b798cca9de4ac1715f35d3bdd005073eeb1e7"
         },
         {
           "path": "packages/designer/src/frames/right-panel-config.ts",
           "sha256": "2ee8f0200da935f594212fc6cd4095c1f373dad8eabb3e28e46caa69fce4f160"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -765,6 +712,12 @@
           "evidence": "unresolved injected runtime inventory ../tokens/index.js#TOKENS",
           "file": "packages/designer/src/frames/right-panel-config.ts",
           "line": 1
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -777,35 +730,23 @@
   "frames.sheet": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.button",
-        "components.card",
-        "components.dialog",
-        "components.icon"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.button",
-          "components.card",
-          "components.dialog",
-          "components.icon"
-        ],
+        "components": [],
         "tokens": [
-          "tokens.accent-color",
           "tokens.breakpoint",
-          "tokens.region-width",
           "tokens.spacing"
         ]
       },
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/Drawer.tsx",
-          "sha256": "295e9bb1783d23687972f32f6cd551304bbf043f127bd18bf126bf86e591faec"
+          "sha256": "bee8b2f5da66237d651ed627b7c2a948cab8be593fc9b740de2c615e805adf65"
         },
         {
           "path": "packages/designer/src/blocks/Panel.tsx",
-          "sha256": "472398e3a3e376cf2f63dbdba831f18ffad241507f15900f1dd54f5e9f2b5340"
+          "sha256": "a9a814cdb5bfe434994fcb51526df8dc03a82e3f153040b0a1f5ea157db0181f"
         },
         {
           "path": "packages/designer/src/components/internal/cx.ts",
@@ -814,6 +755,10 @@
         {
           "path": "packages/designer/src/icons/X.ts",
           "sha256": "8f72143caaadd154476c699ee02546dd60ca49217afc4215220b8fbe9867f29e"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -840,6 +785,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -1158,20 +1109,10 @@
   "sections.access-matrix": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.button",
-        "components.checkbox",
-        "components.icon",
-        "components.tooltip"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.button",
-          "components.checkbox",
-          "components.icon",
-          "components.tooltip"
-        ],
+        "components": [],
         "tokens": [
           "tokens.body-size",
           "tokens.border-color",
@@ -1194,7 +1135,7 @@
         },
         {
           "path": "packages/designer/src/blocks/AccessMatrix.tsx",
-          "sha256": "a045d6f9f9b254a8f11b4b5224bc353c050d08e37ba71152ea2fdb0a153998d9"
+          "sha256": "12cb9bd0366357681943bfac0b79bae0b6c764c6a2b6c8e12471716f57facb45"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -1207,6 +1148,10 @@
         {
           "path": "packages/designer/src/icons/Lock.ts",
           "sha256": "baaf147a4a1580802e2cecd2598df14c060fc829191a64af549a42ae175b15c2"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -1214,7 +1159,7 @@
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/Lock.js#Lock",
           "file": "packages/designer/src/blocks/AccessMatrix.tsx",
-          "line": 7
+          "line": 4
         },
         {
           "code": "DF2",
@@ -1227,6 +1172,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -1255,7 +1206,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/DetailView.tsx",
-          "sha256": "ec0d42d4531a152b447143ff2544065bb18632fadfb6f10b963396905a6ea897"
+          "sha256": "d064b3374ab33365e05114f43207600b8e831477d017641bd6bcdeee1e449575"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -1264,6 +1215,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -1284,6 +1239,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -1297,14 +1258,11 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.icon",
         "sections.empty-state"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.icon"
-        ],
+        "components": [],
         "tokens": [
           "tokens.accent-color",
           "tokens.body-size",
@@ -1320,19 +1278,15 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/ActivityFeed.tsx",
-          "sha256": "b39e426ebf5ffe748c31edddc1faf31e2c748d713c44fb28ca057997fde5012b"
+          "sha256": "2be69d4abbef5944b3e739ad362a229c497c5a1c89a7f9884c1fcc733cfac668"
         },
         {
           "path": "packages/designer/src/blocks/EventItem.tsx",
-          "sha256": "ccfd86797c47b55e4be6cc2d87718c28e47b3bb9b73bf681613dcc0a5138adf8"
+          "sha256": "1539ac734b51b1e87dc41121ac6cb7d9e4929bcd1ae00e93bb6a893ba001c536"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
           "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
-        },
-        {
-          "path": "packages/designer/src/components/Avatar.server.tsx",
-          "sha256": "ab46302d1b6d63c4e1380433f6c37035677e1f10e28fe2b234322216d2901c04"
         },
         {
           "path": "packages/designer/src/components/internal/cx.ts",
@@ -1345,6 +1299,10 @@
         {
           "path": "packages/designer/src/icons/Settings.ts",
           "sha256": "3eccf9da3ebd4c7db312a650d60d41d0ce2fa5489086df235573934bbc0710a3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -1352,13 +1310,13 @@
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/ArrowRight.js#ArrowRight",
           "file": "packages/designer/src/blocks/EventItem.tsx",
-          "line": 5
+          "line": 4
         },
         {
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/Settings.js#Settings",
           "file": "packages/designer/src/blocks/EventItem.tsx",
-          "line": 6
+          "line": 5
         },
         {
           "code": "DF2",
@@ -1371,6 +1329,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -1449,7 +1413,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/AuditLog.tsx",
-          "sha256": "8839c8f8d3333c161217e896e68e047afb51046444d8506c39730633936eba2e"
+          "sha256": "9a56cc9b0ea7aeb05b9c57c08dfb98a42058fd8d704efdb319d6aef36174ac15"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -1458,6 +1422,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -1478,6 +1446,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -1490,14 +1464,10 @@
   "sections.band": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.semantic-content"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.semantic-content"
-        ],
+        "components": [],
         "tokens": [
           "tokens.border-color",
           "tokens.content-size",
@@ -1519,7 +1489,7 @@
         },
         {
           "path": "packages/designer/src/blocks/SectionFrame.tsx",
-          "sha256": "a6d8d6398d38d5e4df2b81cccd01f4236d04dd24c8dd76c59921a631c427d25b"
+          "sha256": "a4e1c5df3f8887cc3283b41955c1a3342ab3f21ad3fc62aed11f2f9feedfcf29"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -1528,6 +1498,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -1542,6 +1516,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -1555,14 +1535,11 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.semantic-content",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.semantic-content"
-        ],
+        "components": [],
         "tokens": [
           "tokens.spacing",
           "tokens.text-color"
@@ -1571,7 +1548,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/EmptyState.tsx",
-          "sha256": "179499fbddf4ce79fa0a9888a2faaf4c1afa5795566a3e6ffa5fcfba183a4c0b"
+          "sha256": "061a364db62ee42ea514ec459062d3d60546556187adb58f2304c97b3d81492f"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -1580,6 +1557,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -1594,6 +1575,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -1607,14 +1594,11 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.semantic-content",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.semantic-content"
-        ],
+        "components": [],
         "tokens": [
           "tokens.border-color",
           "tokens.radius",
@@ -1628,7 +1612,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/CallToAction.tsx",
-          "sha256": "1f5bf1589a079c5c39e23345d0988d6af53bc6d2ca8fafefccc0cd90a1ba557f"
+          "sha256": "01787edd96b24b0c305ad8ecb1eb54ffa46dba529e766c1e1e7dbb29b92b6d65"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
@@ -1641,6 +1625,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -1655,6 +1643,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -1667,16 +1661,10 @@
   "sections.cards": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.badge",
-        "components.card"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.badge",
-          "components.card"
-        ],
+        "components": [],
         "tokens": [
           "tokens.body-size",
           "tokens.caption-size",
@@ -1687,7 +1675,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/RecordCards.tsx",
-          "sha256": "59e8212000d2b2e1ac6a62a5d1f0b237e3e4540fb625a519c99456069ff46567"
+          "sha256": "270dca0c91f75bf516aea52e58203498d2ab94ab1d3ff6af0a300406e369a204"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -1696,15 +1684,13 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
-        {
-          "code": "DF2",
-          "evidence": "unresolved source export ../components/Link.js#Link",
-          "file": "packages/designer/src/blocks/RecordCards.tsx",
-          "line": 4
-        },
         {
           "code": "DF2",
           "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
@@ -1716,6 +1702,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -1728,20 +1720,10 @@
   "sections.chat": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.avatar",
-        "components.button",
-        "components.text-field",
-        "components.tooltip"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.avatar",
-          "components.button",
-          "components.text-field",
-          "components.tooltip"
-        ],
+        "components": [],
         "tokens": [
           "tokens.body-size",
           "tokens.border-color",
@@ -1759,11 +1741,11 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/chat/Chat.tsx",
-          "sha256": "6be3533f1cff810a96567fab3756e616164748f465386008f1b6848852df27a3"
+          "sha256": "d1cc7290af8fe33be8762554a70ab686af9793aba7c2180c5ad781e23819d9de"
         },
         {
           "path": "packages/designer/src/blocks/chat/content.tsx",
-          "sha256": "6488cafd39cbeb9641ed1bed1407ed0ec8ab96199a2a152586eda4aced018d51"
+          "sha256": "59e19ceed7d4a0a27dcd95952fc6f29a79229fd3d2115598aebe615884bb4621"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -1784,6 +1766,10 @@
         {
           "path": "packages/designer/src/icons/FileText.ts",
           "sha256": "64a84d19799a4300dafca2175cc2ef9da054708f92a2fa18e7c95a40b39ab59f"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -1791,31 +1777,31 @@
           "code": "DF5",
           "evidence": "unregistered asset import ../../icons/ArrowRight.js#ArrowRight",
           "file": "packages/designer/src/blocks/chat/Chat.tsx",
-          "line": 7
+          "line": 3
         },
         {
           "code": "DF5",
           "evidence": "unregistered asset import ../../icons/ChevronUp.js#ChevronUp",
           "file": "packages/designer/src/blocks/chat/Chat.tsx",
-          "line": 8
+          "line": 4
         },
         {
           "code": "DF5",
           "evidence": "unregistered asset import ../../icons/ChevronDown.js#ChevronDown",
           "file": "packages/designer/src/blocks/chat/Chat.tsx",
-          "line": 9
+          "line": 5
         },
         {
           "code": "DF5",
           "evidence": "unregistered asset import ../../icons/FileText.js#FileText",
           "file": "packages/designer/src/blocks/chat/Chat.tsx",
-          "line": 10
+          "line": 6
         },
         {
           "code": "DF2",
-          "evidence": "unresolved source export ../../components/Link.js#Link",
-          "file": "packages/designer/src/blocks/chat/content.tsx",
-          "line": 3
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -1828,14 +1814,10 @@
   "sections.column-mapper": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.select"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.select"
-        ],
+        "components": [],
         "tokens": [
           "tokens.body-size",
           "tokens.caption-size",
@@ -1859,7 +1841,7 @@
         },
         {
           "path": "packages/designer/src/blocks/ColumnMapper.tsx",
-          "sha256": "cb313dfd7108bb177ef2ba1f05dc992c75d212313402192b6b185840b05da5ce"
+          "sha256": "e7a0f44f2450d975f34174742be8940cc6fbf07ef602ffe9166257678f05f093"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -1868,6 +1850,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -1882,6 +1868,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -1895,32 +1887,11 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.badge",
-        "components.button",
-        "components.card",
-        "components.dialog",
-        "components.icon",
-        "components.menu",
-        "components.radio-group",
-        "components.status-mark",
-        "components.table",
-        "components.tooltip",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.badge",
-          "components.button",
-          "components.card",
-          "components.dialog",
-          "components.icon",
-          "components.menu",
-          "components.radio-group",
-          "components.status-mark",
-          "components.table",
-          "components.tooltip"
-        ],
+        "components": [],
         "tokens": [
           "tokens.accent-color",
           "tokens.body-size",
@@ -1945,7 +1916,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/canvas/CanvasLod.tsx",
-          "sha256": "ae7e31e40831a4bf14e51887ec7c47b861b8dea2370ddbeb1b6e594f860638e2"
+          "sha256": "2faddc7545e1ef3159c6f08bb9fb73c172d468b5c31e82daafe854c448989097"
         },
         {
           "path": "packages/designer/src/blocks/internal/trend.ts",
@@ -1961,15 +1932,15 @@
         },
         {
           "path": "packages/designer/src/blocks/library-board/CandidatePromptDialog.tsx",
-          "sha256": "af2448b00e0dbb85f772e6818392711e21dd3b83c792fc4836ea621aed7def27"
+          "sha256": "0a9185a0b61b3cc4ba31f811ced8bff1669f71640ccd2592bf99c56ac0c17f19"
         },
         {
           "path": "packages/designer/src/blocks/library-board/LeafCell.tsx",
-          "sha256": "f03ad64139e9236f693d811022d6ca51edb6ff1cefdb23c510aa6e6219bbc9a0"
+          "sha256": "7c65867867830fb3f75e4320c5a0696eb33a6be458d36ef662f9a4f1d58d260a"
         },
         {
           "path": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
-          "sha256": "77b626f7d4f1cb7ca987fc57772cc391edcaee62d2beb4301200e89ebcdef9a2"
+          "sha256": "2d313b684c96034d7b33cc2e0521055a806e6a164cf2a41adc211b8138e437b5"
         },
         {
           "path": "packages/designer/src/blocks/library-board/model.ts",
@@ -1977,19 +1948,19 @@
         },
         {
           "path": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
-          "sha256": "6944de42b796e7391e7cd472dde2de47d45c6027e65e88f4281f9eeb54565bc9"
+          "sha256": "4694fe4e01b8f5d29f02fa9397332ef3d40a429e502a4801c8f9ccc04e505c97"
         },
         {
           "path": "packages/designer/src/blocks/Matrix.tsx",
-          "sha256": "164374d9d37494fccf4f5aad699f5408ba568af094ef97cde1f484178fcc80ed"
+          "sha256": "bf403bd0882fe25b9a7a8cfc6ef3343448a3a19a494e8cfb65afbc5b2487329d"
         },
         {
           "path": "packages/designer/src/blocks/matrix/choices.tsx",
-          "sha256": "e0326f70076fcb8c9b21cf88ff7eb840029dd6eada6eae5c5966d89ae2255774"
+          "sha256": "8b2e542f097f35a9bd42115e2979274c073e319155efb1d9027a0717bfc23b20"
         },
         {
           "path": "packages/designer/src/blocks/matrix/grid.tsx",
-          "sha256": "a7909a2486bdf24a4c9ff800d32e2a112080e95e8c45bbf342f3990b674ad3a3"
+          "sha256": "5bc770185b35ceb9ed75e74ce704b41d6533bc75e8ff83cd3b641c0a20569122"
         },
         {
           "path": "packages/designer/src/blocks/matrix/harvey-mark.tsx",
@@ -2005,7 +1976,7 @@
         },
         {
           "path": "packages/designer/src/catalog-core/runtime-ports.ts",
-          "sha256": "58f1483dafcefffde956d75d21acdd82e1a6101c36cf4d23b02de54d5bcad53f"
+          "sha256": "a57803847077519760f54df3277337f466bca2adb42c3e92aed53ea584f1ef45"
         },
         {
           "path": "packages/designer/src/catalog-core/runtime-snapshot-identity.ts",
@@ -2030,6 +2001,10 @@
         {
           "path": "packages/designer/src/icons/ExternalLink.ts",
           "sha256": "1803843525669af0f404ee8a5640a2c219753f1dbb9e8f5711cde00581b8c9f9"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -2037,19 +2012,19 @@
           "code": "DF5",
           "evidence": "unregistered asset import ../../icons/ChevronDown.js#ChevronDown",
           "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
-          "line": 7
+          "line": 4
         },
         {
           "code": "DF5",
           "evidence": "unregistered asset import ../../icons/ExternalLink.js#ExternalLink",
           "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
-          "line": 8
+          "line": 5
         },
         {
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/Check.js#Check",
           "file": "packages/designer/src/blocks/Matrix.tsx",
-          "line": 8
+          "line": 7
         },
         {
           "code": "DF2",
@@ -2062,6 +2037,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -2074,18 +2055,10 @@
   "sections.consent": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.button",
-        "components.icon",
-        "components.semantic-content"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.button",
-          "components.icon",
-          "components.semantic-content"
-        ],
+        "components": [],
         "tokens": [
           "tokens.body-size",
           "tokens.border-color",
@@ -2100,7 +2073,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/ConsentBanner.tsx",
-          "sha256": "62cadc6eb7498273082a1d73b74ba58349d777a4e305f5b525ede77c67c79232"
+          "sha256": "61fba7843dc3b778f7f83988565537211c6a7620823c3826cacbc19aa4ff74bf"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -2113,6 +2086,10 @@
         {
           "path": "packages/designer/src/icons/Check.ts",
           "sha256": "df7a0d203c39a358aba4b6cf7a9380e34352d38efe0947c0d30c0485ad509159"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -2133,6 +2110,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -2145,14 +2128,10 @@
   "sections.content": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.semantic-content"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.semantic-content"
-        ],
+        "components": [],
         "tokens": [
           "tokens.accent-color",
           "tokens.body-size",
@@ -2174,7 +2153,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/ContentSection.tsx",
-          "sha256": "1a8d3f0cd0835a9842eef51f303bff1a3adfbea4ee9de6297f2de0ae5532006b"
+          "sha256": "acbb04a6ed7bfca9a3ea986e3361865ef8908416986eb842ddc41ec6a2962d53"
         },
         {
           "path": "packages/designer/src/blocks/internal/block-vars.ts",
@@ -2186,7 +2165,7 @@
         },
         {
           "path": "packages/designer/src/blocks/SectionIntro.tsx",
-          "sha256": "68bddd1ff6ac3183d13a397915e5b21e19567110d0c1d014c953dfb138f423dd"
+          "sha256": "5abb7ce8e5f7e13607b2065acbcb8048d7879e24a0d1f6b33fc4e5aafd6c2664"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -2199,6 +2178,10 @@
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
           "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -2213,6 +2196,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -2226,45 +2215,22 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.button",
-        "components.checkbox",
-        "components.dialog",
-        "components.icon",
-        "components.popover",
-        "components.select",
-        "components.table",
-        "components.text-field",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [
           "assets.icon-chevron-down",
-          "assets.icon-chevron-right",
-          "assets.icon-close"
+          "assets.icon-chevron-right"
         ],
-        "components": [
-          "components.button",
-          "components.checkbox",
-          "components.dialog",
-          "components.icon",
-          "components.popover",
-          "components.select",
-          "components.table",
-          "components.text-field"
-        ],
+        "components": [],
         "tokens": [
-          "tokens.accent-color",
           "tokens.body-size",
           "tokens.border-color",
           "tokens.breakpoint",
-          "tokens.caption-size",
           "tokens.control-radius",
           "tokens.control-size",
-          "tokens.focus-shadow",
-          "tokens.letter-spacing",
           "tokens.radius",
           "tokens.spacing",
-          "tokens.state-opacity",
           "tokens.surface-color",
           "tokens.text-color",
           "tokens.typeface"
@@ -2277,11 +2243,11 @@
         },
         {
           "path": "packages/designer/src/blocks/data-table/FilterEditor.tsx",
-          "sha256": "93c57ef44c802178834251b2e99cfd514b63b97c8526ba2b302c36da4ca70b57"
+          "sha256": "358323f41873984a9f7af00a7a8989fef65915c01a3b6e1a42b1db3971cff688"
         },
         {
           "path": "packages/designer/src/blocks/data-table/FlatGrid.tsx",
-          "sha256": "defca6b60a72096a42ca48915af28836c64a2108046f679a3472fac0d61f0f9d"
+          "sha256": "698120d91a2ec0fef3f634701d9f49eb4ef98eb54159e4aa249db40309e40bf3"
         },
         {
           "path": "packages/designer/src/blocks/data-table/messages.ts",
@@ -2289,11 +2255,11 @@
         },
         {
           "path": "packages/designer/src/blocks/data-table/ModelTable.tsx",
-          "sha256": "9f752383f5047113f1e83bdeeddf2ba05502b3d8428f00f3f3d2f761b3a00a76"
+          "sha256": "2eb90e4571137cce8a58109d221d32a64602201a26a2126d1f0e5fe7158ed2b1"
         },
         {
           "path": "packages/designer/src/blocks/data-table/PivotGrid.tsx",
-          "sha256": "ba0ac41b063acc765e614c22c63e5502aad1445b994335d0eee1ee65b877b761"
+          "sha256": "9a960ecfb59ae3f6e8a4bb019727c73439f76571feab842b26d23c04f9d0e896"
         },
         {
           "path": "packages/designer/src/blocks/data-table/presentation.ts",
@@ -2301,7 +2267,7 @@
         },
         {
           "path": "packages/designer/src/blocks/data-table/TableSurface.tsx",
-          "sha256": "26ff35fde373eb71c293af32071ade5974dbe5a8a8d336633f982c67c6561734"
+          "sha256": "b4806634d3950d6c2195edef9148e5001d0bd618b1cc3d3b0cb963d741a6106b"
         },
         {
           "path": "packages/designer/src/blocks/data-table/view-model.ts",
@@ -2309,7 +2275,7 @@
         },
         {
           "path": "packages/designer/src/blocks/data-table/ViewOptions.tsx",
-          "sha256": "25fc7536f83d781693465f3f7cbeb10559ee02d2f3a3e1e81a69977cdcf76ada"
+          "sha256": "037d972207096c89567e6ab8ad7f937b659d3a64e0817fe008ddb8492dc0135d"
         },
         {
           "path": "packages/designer/src/blocks/DataTable.tsx",
@@ -2328,16 +2294,12 @@
           "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
         },
         {
-          "path": "packages/designer/src/components/Chip.tsx",
-          "sha256": "1818b30d8256686d9dd6df16dcd6f8b78c78a024f3808d918b9481563ce1da2f"
-        },
-        {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
         },
         {
-          "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -2351,18 +2313,12 @@
           "code": "DF2",
           "evidence": "unresolved injected runtime inventory ../../components/glyph-context.js#useGlyph",
           "file": "packages/designer/src/blocks/data-table/ModelTable.tsx",
-          "line": 6
+          "line": 5
         },
         {
           "code": "DF2",
           "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
           "file": "packages/designer/src/blocks/data-table/TableSurface.tsx",
-          "line": 2
-        },
-        {
-          "code": "DF2",
-          "evidence": "unresolved injected runtime inventory ./glyph-context.js#useGlyph",
-          "file": "packages/designer/src/components/Chip.tsx",
           "line": 2
         },
         {
@@ -2376,6 +2332,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -2389,45 +2351,22 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.button",
-        "components.checkbox",
-        "components.dialog",
-        "components.icon",
-        "components.popover",
-        "components.select",
-        "components.table",
-        "components.text-field",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [
           "assets.icon-chevron-down",
-          "assets.icon-chevron-right",
-          "assets.icon-close"
+          "assets.icon-chevron-right"
         ],
-        "components": [
-          "components.button",
-          "components.checkbox",
-          "components.dialog",
-          "components.icon",
-          "components.popover",
-          "components.select",
-          "components.table",
-          "components.text-field"
-        ],
+        "components": [],
         "tokens": [
-          "tokens.accent-color",
           "tokens.body-size",
           "tokens.border-color",
           "tokens.breakpoint",
-          "tokens.caption-size",
           "tokens.control-radius",
           "tokens.control-size",
-          "tokens.focus-shadow",
-          "tokens.letter-spacing",
           "tokens.radius",
           "tokens.spacing",
-          "tokens.state-opacity",
           "tokens.surface-color",
           "tokens.text-color",
           "tokens.typeface"
@@ -2440,11 +2379,11 @@
         },
         {
           "path": "packages/designer/src/blocks/data-table/FilterEditor.tsx",
-          "sha256": "93c57ef44c802178834251b2e99cfd514b63b97c8526ba2b302c36da4ca70b57"
+          "sha256": "358323f41873984a9f7af00a7a8989fef65915c01a3b6e1a42b1db3971cff688"
         },
         {
           "path": "packages/designer/src/blocks/data-table/FlatGrid.tsx",
-          "sha256": "defca6b60a72096a42ca48915af28836c64a2108046f679a3472fac0d61f0f9d"
+          "sha256": "698120d91a2ec0fef3f634701d9f49eb4ef98eb54159e4aa249db40309e40bf3"
         },
         {
           "path": "packages/designer/src/blocks/data-table/messages.ts",
@@ -2452,11 +2391,11 @@
         },
         {
           "path": "packages/designer/src/blocks/data-table/ModelTable.tsx",
-          "sha256": "9f752383f5047113f1e83bdeeddf2ba05502b3d8428f00f3f3d2f761b3a00a76"
+          "sha256": "2eb90e4571137cce8a58109d221d32a64602201a26a2126d1f0e5fe7158ed2b1"
         },
         {
           "path": "packages/designer/src/blocks/data-table/PivotGrid.tsx",
-          "sha256": "ba0ac41b063acc765e614c22c63e5502aad1445b994335d0eee1ee65b877b761"
+          "sha256": "9a960ecfb59ae3f6e8a4bb019727c73439f76571feab842b26d23c04f9d0e896"
         },
         {
           "path": "packages/designer/src/blocks/data-table/presentation.ts",
@@ -2464,7 +2403,7 @@
         },
         {
           "path": "packages/designer/src/blocks/data-table/TableSurface.tsx",
-          "sha256": "26ff35fde373eb71c293af32071ade5974dbe5a8a8d336633f982c67c6561734"
+          "sha256": "b4806634d3950d6c2195edef9148e5001d0bd618b1cc3d3b0cb963d741a6106b"
         },
         {
           "path": "packages/designer/src/blocks/data-table/view-model.ts",
@@ -2472,7 +2411,7 @@
         },
         {
           "path": "packages/designer/src/blocks/data-table/ViewOptions.tsx",
-          "sha256": "25fc7536f83d781693465f3f7cbeb10559ee02d2f3a3e1e81a69977cdcf76ada"
+          "sha256": "037d972207096c89567e6ab8ad7f937b659d3a64e0817fe008ddb8492dc0135d"
         },
         {
           "path": "packages/designer/src/blocks/DataTable.tsx",
@@ -2491,16 +2430,12 @@
           "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
         },
         {
-          "path": "packages/designer/src/components/Chip.tsx",
-          "sha256": "1818b30d8256686d9dd6df16dcd6f8b78c78a024f3808d918b9481563ce1da2f"
-        },
-        {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
         },
         {
-          "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -2514,18 +2449,12 @@
           "code": "DF2",
           "evidence": "unresolved injected runtime inventory ../../components/glyph-context.js#useGlyph",
           "file": "packages/designer/src/blocks/data-table/ModelTable.tsx",
-          "line": 6
+          "line": 5
         },
         {
           "code": "DF2",
           "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
           "file": "packages/designer/src/blocks/data-table/TableSurface.tsx",
-          "line": 2
-        },
-        {
-          "code": "DF2",
-          "evidence": "unresolved injected runtime inventory ./glyph-context.js#useGlyph",
-          "file": "packages/designer/src/components/Chip.tsx",
           "line": 2
         },
         {
@@ -2539,6 +2468,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -2552,14 +2487,11 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.semantic-content",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.semantic-content"
-        ],
+        "components": [],
         "tokens": [
           "tokens.spacing",
           "tokens.text-color"
@@ -2568,7 +2500,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/EmptyState.tsx",
-          "sha256": "179499fbddf4ce79fa0a9888a2faaf4c1afa5795566a3e6ffa5fcfba183a4c0b"
+          "sha256": "061a364db62ee42ea514ec459062d3d60546556187adb58f2304c97b3d81492f"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -2577,6 +2509,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -2591,6 +2527,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -2604,14 +2546,11 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.semantic-content",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.semantic-content"
-        ],
+        "components": [],
         "tokens": [
           "tokens.spacing"
         ]
@@ -2619,7 +2558,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/ErrorState.tsx",
-          "sha256": "7e216d93d7c31d30b66cc7c606f8b7d215bf8fc91aefdbabc0d684cfa0d4a89f"
+          "sha256": "27b778211984c6b02e3e21d173f774e408038a8f1c655d57b903845465974827"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -2628,6 +2567,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -2642,6 +2585,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -2654,16 +2603,10 @@
   "sections.explorer": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.button",
-        "components.icon"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.button",
-          "components.icon"
-        ],
+        "components": [],
         "tokens": [
           "tokens.border-color",
           "tokens.caption-size",
@@ -2674,7 +2617,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/Explorer.tsx",
-          "sha256": "9ef161b46c7d77a52b56d6257430351e51ca86cc3efc966756b1ee68bc3a2714"
+          "sha256": "610f83f327fdaac193f3e2e6a59eb25ba7f039214883c7aa36463479d781388f"
         },
         {
           "path": "packages/designer/src/blocks/tree-model.ts",
@@ -2699,38 +2642,36 @@
         {
           "path": "packages/designer/src/icons/Folder.ts",
           "sha256": "5f10987d0993f001109aaf7d553706b504ee8b92adaaabdf430a3be6f6617902"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
         {
-          "code": "DF2",
-          "evidence": "unresolved source export ../components/Link.js#Link",
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/ChevronRight.js#ChevronRight",
           "file": "packages/designer/src/blocks/Explorer.tsx",
           "line": 4
         },
         {
           "code": "DF5",
-          "evidence": "unregistered asset import ../icons/ChevronRight.js#ChevronRight",
-          "file": "packages/designer/src/blocks/Explorer.tsx",
-          "line": 6
-        },
-        {
-          "code": "DF5",
           "evidence": "unregistered asset import ../icons/FileText.js#FileText",
           "file": "packages/designer/src/blocks/Explorer.tsx",
-          "line": 7
+          "line": 5
         },
         {
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/Folder.js#Folder",
           "file": "packages/designer/src/blocks/Explorer.tsx",
-          "line": 8
+          "line": 6
         },
         {
           "code": "DF2",
           "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
           "file": "packages/designer/src/blocks/Explorer.tsx",
-          "line": 9
+          "line": 7
         },
         {
           "code": "DF2",
@@ -2743,6 +2684,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -2756,14 +2703,11 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.disclosure",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.disclosure"
-        ],
+        "components": [],
         "tokens": [
           "tokens.accent-color",
           "tokens.body-size",
@@ -2780,11 +2724,11 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/Faq.server.tsx",
-          "sha256": "20bc7f2013c873fa29a9613bc658be32f9acfb5883c8e63fb7d2fa5726f79438"
+          "sha256": "ac11eeb6bc4559f788be6bc9f7d6c938935acd86c0c6804446534dd4ff5e6e73"
         },
         {
           "path": "packages/designer/src/blocks/Faq.tsx",
-          "sha256": "f63b4b7575ad743ad399a8d34eacb4b1fa0b495842751c211110affd93aee98f"
+          "sha256": "9ba5227dea9f41eee333452ab7fb70e0eeff5e842dddf70c76d1684051b2c94d"
         },
         {
           "path": "packages/designer/src/blocks/internal/block-vars.ts",
@@ -2792,7 +2736,7 @@
         },
         {
           "path": "packages/designer/src/blocks/internal/disclosure-row.tsx",
-          "sha256": "0b07c869fbe7df493484537ed87a8e8705ff05dbc9d3ed65f4b36c6eef4ba9a9"
+          "sha256": "9c20a5226a3a94b1718208b89dcd67d992b7e1c97d0bb1427d3c9f8859b71e6e"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
@@ -2805,6 +2749,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -2819,6 +2767,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -2832,16 +2786,11 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.icon",
-        "components.semantic-content",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.icon",
-          "components.semantic-content"
-        ],
+        "components": [],
         "tokens": [
           "tokens.accent-color",
           "tokens.body-size",
@@ -2863,11 +2812,11 @@
         },
         {
           "path": "packages/designer/src/blocks/items/anatomy.tsx",
-          "sha256": "03dfd69bf9c7fa703e2a4232673b23e43826c884ba704b43fc9da2916334febc"
+          "sha256": "687f460f46f64902a99b5bef501d22b02e3001e039ace5f203e31d86486ffe44"
         },
         {
           "path": "packages/designer/src/blocks/items/compat-features.tsx",
-          "sha256": "c89160205a2e2db71824a6f13c11e27882b7c34cad00516619f9ff8e86e6848e"
+          "sha256": "dde7091159c3f7f50c10ca635acfb81873a0f8d66c4dad29a53b0fe66cdaf166"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
@@ -2875,7 +2824,7 @@
         },
         {
           "path": "packages/designer/src/blocks/stretched-link.tsx",
-          "sha256": "07229f9258b648250b757c748604848b4b869e285da70eb28f9cf472e93688c4"
+          "sha256": "d9edaa310f261df3c1845d8b989385ce560260b5c63d13c0abd1a7f46142b3cd"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -2888,6 +2837,10 @@
         {
           "path": "packages/designer/src/icons/ChevronRight.ts",
           "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -2908,6 +2861,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -2920,18 +2879,10 @@
   "sections.filter-builder": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.button",
-        "components.select",
-        "components.text-field"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.button",
-          "components.select",
-          "components.text-field"
-        ],
+        "components": [],
         "tokens": [
           "tokens.body-size",
           "tokens.border-color",
@@ -2945,7 +2896,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/FilterBuilder.tsx",
-          "sha256": "734215207798947f82566be9c9401fff91440d38b35d1c487a67d62acf05344a"
+          "sha256": "b7aeb50a703ba244f2a19fb6662e94927c374d8a11b4d6e444b4b6e233b6d0ca"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -2954,6 +2905,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -2968,6 +2923,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -2999,7 +2960,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/Form.tsx",
-          "sha256": "1a1017d0bed99a6d22dce148602985fb57923c008937d622cac697451f79b87e"
+          "sha256": "74e76470057f394b6e0f8ab032dfdd03e6ef77c8596a3fff0b63839f64fbefb6"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -3016,15 +2977,13 @@
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
           "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
-        {
-          "code": "DF2",
-          "evidence": "unresolved source export ../components/Link.js#Link",
-          "file": "packages/designer/src/blocks/Form.tsx",
-          "line": 11
-        },
         {
           "code": "DF2",
           "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
@@ -3036,6 +2995,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -3225,15 +3190,12 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.semantic-content",
         "sections.article",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.semantic-content"
-        ],
+        "components": [],
         "tokens": [
           "tokens.body-size",
           "tokens.spacing",
@@ -3243,7 +3205,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/LegalProse.tsx",
-          "sha256": "89a8d7871721dbb7db052c2b52f86a85423d68fb6499e406bbab8a3577096dd7"
+          "sha256": "0659eb2b766a806f319ee76acbda3d72a584194eccc69bdb22b07d6bcbbcd358"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -3252,6 +3214,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -3266,6 +3232,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -3278,26 +3250,10 @@
   "sections.link-index": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.badge",
-        "components.button",
-        "components.card",
-        "components.icon",
-        "components.link",
-        "components.semantic-content",
-        "components.status-mark"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.badge",
-          "components.button",
-          "components.card",
-          "components.icon",
-          "components.link",
-          "components.semantic-content",
-          "components.status-mark"
-        ],
+        "components": [],
         "tokens": [
           "tokens.accent-color",
           "tokens.body-size",
@@ -3327,11 +3283,11 @@
         },
         {
           "path": "packages/designer/src/blocks/items/anatomy.tsx",
-          "sha256": "03dfd69bf9c7fa703e2a4232673b23e43826c884ba704b43fc9da2916334febc"
+          "sha256": "687f460f46f64902a99b5bef501d22b02e3001e039ace5f203e31d86486ffe44"
         },
         {
           "path": "packages/designer/src/blocks/items/ItemsStatic.tsx",
-          "sha256": "eeda5551dee2886ebba46fd50c15b857b0aa0d127fa04ad43443b696174bb5b6"
+          "sha256": "5960ebcfe2394927f14a489d004d6a6b3460382dc26dd2839a2c69e19dbc6f59"
         },
         {
           "path": "packages/designer/src/blocks/items/policies.ts",
@@ -3339,11 +3295,11 @@
         },
         {
           "path": "packages/designer/src/blocks/items/render.tsx",
-          "sha256": "57ff8f65a9ca4ca2ff934a386eef47559f71372800f76cb85615eec8e0a1c612"
+          "sha256": "ecf9c180fdc864f9fe3cbc0729c289ab85a264638290da5732fa1c425802aeb4"
         },
         {
           "path": "packages/designer/src/blocks/NavGrid.tsx",
-          "sha256": "5f5f826e5a87ac928605bae0a3f04b4ae91a1063478dc742c632332939afdeef"
+          "sha256": "21fef41eb452ff91e79d82e4d68b1b4531dca9a4845ee2be6ea08e818b11db45"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
@@ -3351,7 +3307,7 @@
         },
         {
           "path": "packages/designer/src/blocks/stretched-link.tsx",
-          "sha256": "07229f9258b648250b757c748604848b4b869e285da70eb28f9cf472e93688c4"
+          "sha256": "d9edaa310f261df3c1845d8b989385ce560260b5c63d13c0abd1a7f46142b3cd"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -3368,6 +3324,10 @@
         {
           "path": "packages/designer/src/icons/ChevronRight.ts",
           "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -3388,6 +3348,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -3486,24 +3452,24 @@
   "sections.logo-hero": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.logo"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.logo"
-        ],
+        "components": [],
         "tokens": []
       },
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/LogoHero.tsx",
-          "sha256": "c4d81259bccc7648c61e9846b2c5a25f9b03c23d9fd23c7ce5bd5dc07b2f4d4c"
+          "sha256": "18747d6185ec0ec9d773ea1a30aea39143025e283c2f93365772f730c038050d"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
           "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -3511,7 +3477,13 @@
           "code": "DF5",
           "evidence": "ambiguous slot ownership ./SectionFrame.js#SectionFrame: sections.band, sections.logo-mark",
           "file": "packages/designer/src/blocks/LogoHero.tsx",
-          "line": 3
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -3524,14 +3496,10 @@
   "sections.logo-mark": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.semantic-content"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.semantic-content"
-        ],
+        "components": [],
         "tokens": [
           "tokens.border-color",
           "tokens.content-size",
@@ -3553,7 +3521,7 @@
         },
         {
           "path": "packages/designer/src/blocks/SectionFrame.tsx",
-          "sha256": "a6d8d6398d38d5e4df2b81cccd01f4236d04dd24c8dd76c59921a631c427d25b"
+          "sha256": "a4e1c5df3f8887cc3283b41955c1a3342ab3f21ad3fc62aed11f2f9feedfcf29"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -3562,6 +3530,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -3576,6 +3548,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -3762,16 +3740,10 @@
   "sections.notices": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.banner",
-        "components.semantic-content"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.banner",
-          "components.semantic-content"
-        ],
+        "components": [],
         "tokens": [
           "tokens.spacing"
         ]
@@ -3783,7 +3755,7 @@
         },
         {
           "path": "packages/designer/src/blocks/NoticeList.tsx",
-          "sha256": "31f39e9b381714db89d75232b2553e92de949e758709ab57e743fd8a5ac4330c"
+          "sha256": "798becd61ed2db2cd98afc649f0426a33d315db0b725b93db101b333bcaa16f7"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -3792,6 +3764,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -3806,6 +3782,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -3867,23 +3849,13 @@
   "sections.pagination": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.button",
-        "components.icon",
-        "components.select",
-        "components.semantic-content"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [
           "assets.icon-chevron-left",
           "assets.icon-chevron-right"
         ],
-        "components": [
-          "components.button",
-          "components.icon",
-          "components.select",
-          "components.semantic-content"
-        ],
+        "components": [],
         "tokens": [
           "tokens.body-size",
           "tokens.spacing",
@@ -3893,7 +3865,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/Pagination.tsx",
-          "sha256": "1dc4425f71a5c15f0595ef4ec97d9590a7a07aec8f480eb98d53063f2b99dca7"
+          "sha256": "292c7ceaad3bd984c291e00ad5c1cd432ce3da02c6e15b01525c7ffbc3f1289e"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -3910,6 +3882,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -3917,7 +3893,7 @@
           "code": "DF2",
           "evidence": "unresolved injected runtime inventory ../components/glyph-context.js#useGlyph",
           "file": "packages/designer/src/blocks/Pagination.tsx",
-          "line": 8
+          "line": 5
         },
         {
           "code": "DF2",
@@ -3930,6 +3906,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -3942,16 +3924,10 @@
   "sections.people": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.icon",
-        "components.semantic-content"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.icon",
-          "components.semantic-content"
-        ],
+        "components": [],
         "tokens": [
           "tokens.accent-color",
           "tokens.body-size",
@@ -3969,7 +3945,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/PeopleGrid.tsx",
-          "sha256": "cb44863c7b61ef29d0f592899f7aa88c9dbf7e6601f4c190aa0ce34326e16899"
+          "sha256": "86482a968e12987e764c98a56c65274dd904266b9d819d051a5a04168f5d766e"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
@@ -3977,7 +3953,7 @@
         },
         {
           "path": "packages/designer/src/blocks/stretched-link.tsx",
-          "sha256": "07229f9258b648250b757c748604848b4b869e285da70eb28f9cf472e93688c4"
+          "sha256": "d9edaa310f261df3c1845d8b989385ce560260b5c63d13c0abd1a7f46142b3cd"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -3994,6 +3970,10 @@
         {
           "path": "packages/designer/src/icons/ChevronRight.ts",
           "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -4014,6 +3994,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -4027,20 +4013,11 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.badge",
-        "components.card",
-        "components.icon",
-        "components.status-mark",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.badge",
-          "components.card",
-          "components.icon",
-          "components.status-mark"
-        ],
+        "components": [],
         "tokens": [
           "tokens.accent-color",
           "tokens.body-size",
@@ -4073,7 +4050,7 @@
         },
         {
           "path": "packages/designer/src/blocks/matrix/grid.tsx",
-          "sha256": "a7909a2486bdf24a4c9ff800d32e2a112080e95e8c45bbf342f3990b674ad3a3"
+          "sha256": "5bc770185b35ceb9ed75e74ce704b41d6533bc75e8ff83cd3b641c0a20569122"
         },
         {
           "path": "packages/designer/src/blocks/matrix/harvey-mark.tsx",
@@ -4081,11 +4058,11 @@
         },
         {
           "path": "packages/designer/src/blocks/matrix/static.tsx",
-          "sha256": "092a72a5c25f4d00191d71b83e78521a8ba638c34ff6a4d87a4b66f55b39babb"
+          "sha256": "d1dec49e866e2c673e7d1222f9ee1af5ba7497893ea5ae78774427a8127b8431"
         },
         {
           "path": "packages/designer/src/blocks/PricingTable.tsx",
-          "sha256": "c885facff73d979aab79a67098c27a9b365daa6f430343b2aedf93f349080708"
+          "sha256": "f918b57a42e79a2f6813774724abb42d94437f36f5c8dca9cfbae30fb2311925"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
@@ -4106,6 +4083,10 @@
         {
           "path": "packages/designer/src/icons/Check.ts",
           "sha256": "df7a0d203c39a358aba4b6cf7a9380e34352d38efe0947c0d30c0485ad509159"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -4113,7 +4094,7 @@
           "code": "DF5",
           "evidence": "unregistered asset import ../../icons/Check.js#Check",
           "file": "packages/designer/src/blocks/matrix/static.tsx",
-          "line": 7
+          "line": 6
         },
         {
           "code": "DF2",
@@ -4126,6 +4107,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -4154,7 +4141,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/DetailView.tsx",
-          "sha256": "ec0d42d4531a152b447143ff2544065bb18632fadfb6f10b963396905a6ea897"
+          "sha256": "d064b3374ab33365e05114f43207600b8e831477d017641bd6bcdeee1e449575"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -4163,6 +4150,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -4183,6 +4174,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -4196,20 +4193,11 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.button",
-        "components.grid-list",
-        "components.menu",
-        "components.skeleton",
         "sections.empty-state"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.button",
-          "components.grid-list",
-          "components.menu",
-          "components.skeleton"
-        ],
+        "components": [],
         "tokens": [
           "tokens.body-size",
           "tokens.caption-size",
@@ -4225,7 +4213,7 @@
         },
         {
           "path": "packages/designer/src/blocks/ResourceList.tsx",
-          "sha256": "312fd19b60366dc18fb333f3ca09b099c1a69e6416227993e3db3b4581104bec"
+          "sha256": "ffecdc2257f75763dd530570de1bf9905114a50d068a6e2578d7338b1286b225"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -4242,6 +4230,10 @@
         {
           "path": "packages/designer/src/icons/ChevronDown.ts",
           "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -4249,7 +4241,7 @@
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/ChevronDown.js#ChevronDown",
           "file": "packages/designer/src/blocks/ResourceList.tsx",
-          "line": 12
+          "line": 8
         },
         {
           "code": "DF2",
@@ -4262,6 +4254,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -4274,14 +4272,10 @@
   "sections.section-header": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.semantic-content"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.semantic-content"
-        ],
+        "components": [],
         "tokens": [
           "tokens.accent-color",
           "tokens.body-size",
@@ -4305,7 +4299,7 @@
         },
         {
           "path": "packages/designer/src/blocks/SectionHeader.tsx",
-          "sha256": "aaa356d54d15e83bdc4ad4899b321f8bac6ac9d085ee6782cc3e11d6f349190e"
+          "sha256": "21394d59938905f29a573e214d30ad22b692e09d42f50b0a8e45f8816256f469"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -4314,6 +4308,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -4328,6 +4326,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -4361,11 +4365,11 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/FieldGroup.tsx",
-          "sha256": "9edf92ca3b243a04a0cce2e33709b08e58c5ee3ac7fd78c4fe36177f56d004a3"
+          "sha256": "84565a33469c93941625708527b706766affec68e30e30b38abe93adb2378bea"
         },
         {
           "path": "packages/designer/src/blocks/SettingsSection.tsx",
-          "sha256": "bc6f463855ad47ff6e58150725ac30a1158bf45e727999af35e4cc4e8bc4898f"
+          "sha256": "9c7a57357fb6106ae16a3daabb8336d023a308851583e40c5da21a2f75f5f2d5"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -4374,6 +4378,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -4388,6 +4396,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -4419,7 +4433,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/Form.tsx",
-          "sha256": "1a1017d0bed99a6d22dce148602985fb57923c008937d622cac697451f79b87e"
+          "sha256": "74e76470057f394b6e0f8ab032dfdd03e6ef77c8596a3fff0b63839f64fbefb6"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -4436,15 +4450,13 @@
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
           "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
-        {
-          "code": "DF2",
-          "evidence": "unresolved source export ../components/Link.js#Link",
-          "file": "packages/designer/src/blocks/Form.tsx",
-          "line": 11
-        },
         {
           "code": "DF2",
           "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
@@ -4456,6 +4468,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -4534,14 +4552,11 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.semantic-content",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.semantic-content"
-        ],
+        "components": [],
         "tokens": [
           "tokens.body-size",
           "tokens.border-color",
@@ -4562,7 +4577,7 @@
         },
         {
           "path": "packages/designer/src/blocks/StatusList.tsx",
-          "sha256": "8e4e494b27240033b653ee293fe97dabd53f2c78557973f633da51c613a5693f"
+          "sha256": "73e83e96e60d9681a56697ce03582984e1be1afbb2be1b94089fdf009812ac82"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -4571,6 +4586,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -4585,6 +4604,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -4598,14 +4623,11 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.semantic-content",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.semantic-content"
-        ],
+        "components": [],
         "tokens": [
           "tokens.accent-color",
           "tokens.body-size",
@@ -4622,7 +4644,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/OrderedStepSequence.tsx",
-          "sha256": "938aa49497a81d308afe81cab3af970f47ab4f0359af7433a5299dd837931ddd"
+          "sha256": "781475d5b202ae176c42b630d88c38b3afa70c03746a21e7de0db5179f7ec74d"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
@@ -4635,6 +4657,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -4649,6 +4675,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -4739,16 +4771,11 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.icon",
-        "components.status-mark",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.icon",
-          "components.status-mark"
-        ],
+        "components": [],
         "tokens": [
           "tokens.accent-color",
           "tokens.body-size",
@@ -4756,16 +4783,13 @@
           "tokens.border-width",
           "tokens.caption-size",
           "tokens.control-radius",
-          "tokens.heading-size",
-          "tokens.line-height",
           "tokens.radius",
           "tokens.spacing",
           "tokens.status-color",
           "tokens.surface-color",
           "tokens.surface-radius",
           "tokens.text-color",
-          "tokens.touch-target",
-          "tokens.typeface"
+          "tokens.touch-target"
         ]
       },
       "sourceFiles": [
@@ -4775,11 +4799,11 @@
         },
         {
           "path": "packages/designer/src/blocks/stretched-link.tsx",
-          "sha256": "07229f9258b648250b757c748604848b4b869e285da70eb28f9cf472e93688c4"
+          "sha256": "d9edaa310f261df3c1845d8b989385ce560260b5c63d13c0abd1a7f46142b3cd"
         },
         {
           "path": "packages/designer/src/blocks/TaskList.tsx",
-          "sha256": "a6ac89beca65b7226fee25d50f9ffddb508982f6cc92a24c14389689d4cf4e69"
+          "sha256": "0f743fc94e24080b68b6c347a78f7e8c211d0733f910c76266db20fad71a9e45"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -4794,12 +4818,12 @@
           "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
         },
         {
-          "path": "packages/designer/src/components/Meter.server.tsx",
-          "sha256": "47b0f78c3f1478addaaf06ae71728a6c3bfd1dd3c8485d081837e4bcf0bdb905"
-        },
-        {
           "path": "packages/designer/src/icons/ChevronRight.ts",
           "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -4820,6 +4844,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -4916,7 +4946,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/Timeline.tsx",
-          "sha256": "47fb177ea19c99d18868fa749d48e82a06fc42a895174250e59b5de62bc9e7fc"
+          "sha256": "92260795e738ca9b716d439ecc4411a654e598ff428a728be1cec1a5effba401"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -4925,6 +4955,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -4939,6 +4973,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -4952,16 +4992,11 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.meter",
-        "components.status-mark",
         "sections.empty-state"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.meter",
-          "components.status-mark"
-        ],
+        "components": [],
         "tokens": [
           "tokens.body-size",
           "tokens.spacing",
@@ -4972,11 +5007,11 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/UsageMeter.tsx",
-          "sha256": "9b9bdc80878a10a9645a968a23617b171fd1dc6147eaf9492d30fa68193bc56a"
+          "sha256": "3d69b266f801c25a55fd76b173709368f17e6142b2b018e95764bc878e165995"
         },
         {
           "path": "packages/designer/src/blocks/UsageSummary.tsx",
-          "sha256": "93d12c7fa7b485edde0af489e6a83078f371572e39a32d7085c394c952cccf30"
+          "sha256": "c5078528d88acf4d01366ae7b5c0cc7c95f520d55c5c7271d8591aea4748f30d"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -4985,6 +5020,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -4999,6 +5038,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -5011,16 +5056,10 @@
   "sections.wizard": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.button",
-        "components.progress-bar"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.button",
-          "components.progress-bar"
-        ],
+        "components": [],
         "tokens": [
           "tokens.body-size",
           "tokens.border-color",
@@ -5034,7 +5073,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/FormWizard.tsx",
-          "sha256": "13c05c95cd81dfaf054afcbc12477007b752dc5e020533100504a10c66476b4b"
+          "sha256": "c22ae0dd2031ead7b9b014b9ed7a68edfbd9679d8d69a8fa03fa1a5934b72c76"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -5043,6 +5082,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -5057,6 +5100,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },

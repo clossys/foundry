@@ -1,21 +1,27 @@
 "use client";
 import { useLocale } from "react-aria-components";
 
-import { useEffect, useRef, useState, type ComponentPropsWithRef, type ReactNode } from "react";
-import { Button } from "../components/Button.js";
-import { ToggleButton } from "../components/ToggleButton.js";
-import { Icon } from "../components/Icon.js";
-import { Link } from "../components/Link.js";
-import { Menu } from "../components/Menu.js";
-import { Popover } from "../components/Popover.js";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+
 import { ChevronDown } from "../icons/ChevronDown.js";
 import type { FramePageHeader, FramePageHeaderNav, FramePageHeaderActions, FramePageHeaderDestination } from "../frame-page-header.js";
 import { Check } from "../icons/Check.js";
-import { Tooltip } from "../components/Tooltip.js";
+
 import { frameLinkNavigation, type FrameNavigate } from "./frame-navigation.js";
 import { frameHeaderOverflow } from "./frame-header-layout.js";
 import { CONTROL, TAP, PAGE_BAR_LAYOUT } from "./page-bar-layout.js";
 import { resolveFrameHeaderOptions } from "../catalog-core/frame-header-options.js";
+
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+const Popover = componentLeaf<typeof import("../components/Popover.js").Popover>("components.popover");
+const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+const ToggleButton = componentLeaf<typeof import("../components/ToggleButton.js").ToggleButton>("components.toggle-button");
+const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
+const Link = componentLeaf<typeof import("../components/Link.js").Link>("components.link");
+const Menu = componentLeaf<typeof import("../components/Menu.js").Menu>("components.menu");
+const Tooltip = componentLeaf<typeof import("../components/Tooltip.js").Tooltip>("components.tooltip");
 
 const EMBEDDED_HEADER = "frame-header-row";
 const GLASS_SURFACE = "bg-surface-glass";
@@ -89,13 +95,13 @@ function PageAction({ label, href, onAction, isDisabled, primary, icon, isSelect
   if (icon) return href !== undefined ? <Link href={href} aria-label={label} buttonVariant="ghost" isDisabled={isDisabled}>{icon}</Link> : <Button aria-label={label} className={CONTROL} style={TAP} variant="ghost" onPress={onAction} isDisabled={isDisabled}>{icon}</Button>;
   return href !== undefined
     ? <Link href={href} buttonVariant={primary ? "primary" : "ghost"} isDisabled={isDisabled} className="min-w-0 max-w-full"
-        data-application-frame-action={primary ? "primary" : "secondary"}><span className="min-w-0 truncate">{label}</span></Link>
+        data-application-frame-action={primary ? "primary" : "secondary"}><SemanticContent as="span" className="min-w-0 truncate">{label}</SemanticContent></Link>
     : <Button variant={primary ? "primary" : "ghost"} onPress={onAction} isDisabled={isDisabled} className="min-w-0 max-w-full"
-        data-application-frame-action={primary ? "primary" : "secondary"}><span className="min-w-0 truncate">{label}</span></Button>;
+        data-application-frame-action={primary ? "primary" : "secondary"}><SemanticContent as="span" className="min-w-0 truncate">{label}</SemanticContent></Button>;
 }
 
 function CrumbMenu({ label, href, id, siblings }: PageBarCrumb) {
-  return <Menu trigger={<Button variant="ghost" className={CONTROL + " min-w-0 gap-xs"} style={TAP}><span className="truncate">{label}</span><Icon glyph={ChevronDown} decorative size="sm" /></Button>}>
+  return <Menu trigger={<Button variant="ghost" className={CONTROL + " min-w-0 gap-xs"} style={TAP}><SemanticContent as="span" className="truncate">{label}</SemanticContent><Icon glyph={ChevronDown} decorative size="sm" /></Button>}>
     {href && <Menu.Item id={id} href={href}>{label}</Menu.Item>}
     {siblings?.map(item => <Menu.Item key={item.id} id={item.id} href={item.href}>{item.label}</Menu.Item>)}
   </Menu>;
@@ -108,24 +114,24 @@ function PageTrail({ root, title, breadcrumb = [], workspaces, narrow,
   const ancestors = current ? breadcrumb.slice(0, -1) : breadcrumb;
   return <nav aria-label={breadcrumbLabel} className="min-w-0 flex-1">
     <ol className="m-0 flex min-w-0 list-none items-center gap-xs p-0">
-      {root && <li className="min-w-0 shrink-0">
+      {root && <SemanticContent as="li" className="min-w-0 shrink-0">
         {workspaces?.length ? <CrumbMenu id="workspace" label={root.label} siblings={workspaces} /> :
           <Link href={root.href} variant="standalone" className={CONTROL} style={TAP}>{root.label}</Link>}
-      </li>}
+      </SemanticContent>}
       {narrow && ancestors.length > 0
-        ? <li className="shrink-0"><Menu trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={collapsedBreadcrumbLabel}><span aria-hidden="true">...</span></Button>}>
+        ? <SemanticContent as="li" className="shrink-0"><Menu trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={collapsedBreadcrumbLabel}><SemanticContent as="span" aria-hidden="true">...</SemanticContent></Button>}>
             {ancestors.map(item => <Menu.Section key={item.id} heading={item.label}>
               <Menu.Item id={JSON.stringify([item.id])} href={item.href}>{item.label}</Menu.Item>
               {item.siblings?.map(sibling => <Menu.Item key={sibling.id} id={JSON.stringify([item.id, sibling.id])} href={sibling.href}>{sibling.label}</Menu.Item>)}
             </Menu.Section>)}
-          </Menu></li>
-        : ancestors.map(item => <li key={item.id} className="min-w-0 shrink-0">
+          </Menu></SemanticContent>
+        : ancestors.map(item => <SemanticContent as="li" key={item.id} className="min-w-0 shrink-0">
             {item.siblings?.length ? <CrumbMenu {...item} /> : <Link href={item.href} variant="standalone" className={CONTROL} style={TAP}>{item.label}</Link>}
-          </li>)}
-      <li className="min-w-0 flex-1">
-        <h1 aria-current="page" className="m-0 truncate text-body font-semibold">{title}</h1>
+          </SemanticContent>)}
+      <SemanticContent as="li" className="min-w-0 flex-1">
+        <SemanticContent as="h1" aria-current="page" className="m-0 truncate text-body font-semibold">{title}</SemanticContent>
         {current?.siblings?.length ? <CrumbMenu {...current} /> : null}
-      </li>
+      </SemanticContent>
     </ol>
   </nav>;
 }
@@ -201,21 +207,21 @@ export function PageBar({ root, context, page, workspaces, header, onNavigate, l
   const primary = page?.actions?.find(action => action.primary);
   const information = page && [page.status, page.description, page.updatedAt, page.meta, page.scope].some(value => value !== undefined && value !== null && value !== false);
   const content = header ? <HeaderSlots header={header} onNavigate={onNavigate} embedded={embedded} /> : <>
-    {context === undefined || context === null ? null : <div data-application-frame-slot="context" className="min-w-0 max-w-full">{context}</div>}
+    {context === undefined || context === null ? null : <SemanticContent as="div" data-application-frame-slot="context" className="min-w-0 max-w-full">{context}</SemanticContent>}
     {page && <PageTrail root={root} title={page.title} breadcrumb={page.breadcrumb} workspaces={workspaces} narrow={narrow} labels={labels} />}
     {information && <Popover anchorRef={bar} className="text-body text-ink-primary" aria-label={pageInfoLabel} placement="bottom start" offset={0} isOpen={infoOpen} onOpenChange={setInfoOpen}
       trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={pageInfoLabel} aria-expanded={infoOpen}><Icon glyph={ChevronDown} decorative className={infoOpen ? "rotate-180" : undefined} /></Button>}
       style={{ direction, inlineSize: barWidth, maxInlineSize: `calc(100vw - 2 * ${PAGE_BAR_LAYOUT.gutter})` }}>
-      <div data-application-frame-region="page-info" className="flex flex-wrap items-start gap-sm">
-        <div>{page?.status}</div><div>{page?.description}</div><div>{page?.updatedAt}</div><div>{page?.meta}</div><div>{page?.scope}</div>
-      </div>
+      <SemanticContent as="div" data-application-frame-region="page-info" className="flex flex-wrap items-start gap-sm">
+        <SemanticContent as="div">{page?.status}</SemanticContent><SemanticContent as="div">{page?.description}</SemanticContent><SemanticContent as="div">{page?.updatedAt}</SemanticContent><SemanticContent as="div">{page?.meta}</SemanticContent><SemanticContent as="div">{page?.scope}</SemanticContent>
+      </SemanticContent>
     </Popover>}
-    <div ref={legacyActions} data-application-frame-region="bar-actions" className={"ms-auto flex min-w-0 items-center justify-end gap-xs" + (embedded ? " shrink-0" : "")} style={{ flexBasis: narrow && !embedded ? "100%" : undefined }}>
+    <SemanticContent as="div" ref={legacyActions} data-application-frame-region="bar-actions" className={"ms-auto flex min-w-0 items-center justify-end gap-xs" + (embedded ? " shrink-0" : "")} style={{ flexBasis: narrow && !embedded ? "100%" : undefined }}>
       {page?.actions?.map(action => (!narrow || action === primary) && <PageAction key={action.id} {...action} primary={action === primary} />)}
       {narrow && page?.actions?.some(action => action !== primary) && <Menu trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={pageActionsLabel}><Icon glyph={ChevronDown} decorative /></Button>}>
         {page.actions.filter(action => action !== primary).map(action => <Menu.Item key={action.id} id={action.id} href={action.href} isDisabled={action.isDisabled} onAction={action.onAction}>{action.label}</Menu.Item>)}
       </Menu>}
-    </div>
+    </SemanticContent>
     </>;
   return <header onClick={event => frameLinkNavigation(event, onNavigate)} ref={bar} data-application-frame-region="bar" className={legacy
       ? "relative flex min-w-0 flex-wrap items-center gap-xs rounded-control border border-line-base p-sm text-ink-primary " + (glass ? GLASS_SURFACE : RAISED_SURFACE)
@@ -231,8 +237,8 @@ export function PageBar({ root, context, page, workspaces, header, onNavigate, l
       paddingInlineEnd: reserveEnd ? `calc(${PAGE_BAR_LAYOUT.tap} + ${PAGE_BAR_LAYOUT.gap})` : PAGE_BAR_LAYOUT.gap,
       backdropFilter: glass ? PAGE_BAR_LAYOUT.blur : "none", WebkitBackdropFilter: glass ? PAGE_BAR_LAYOUT.blur : "none",
       ...(headerPosition === "sticky" ? { zIndex: PAGE_BAR_LAYOUT.barLayer }
-        : headerPosition === "fixed" ? { zIndex: "var(--ui-z-shell, 20)" } : {}) }}>
-    {embedded ? <>{start}<div ref={body} className="flex min-w-0 flex-1 items-center gap-xs">{content}</div>{end}</> : content}
+        : headerPosition === "fixed" ? { zIndex: "var(--ui-z-shell)" } : {}) }}>
+    {embedded ? <>{start}<SemanticContent as="div" ref={body} className="flex min-w-0 flex-1 items-center gap-xs">{content}</SemanticContent>{end}</> : content}
   </header>;
 }
 
@@ -266,20 +272,16 @@ function HeaderSlots({ header, onNavigate, embedded = false }: { header: PageBar
     return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
   }, [header, overflow.compactActions, overflow.compactNav]);
   const active = header.nav?.items.find(item => item.id === header.nav?.activeId);
-  return <div ref={root} data-frame-header-overflow={overflow.compactNav ? "navigation" : overflow.compactActions ? "actions" : "none"}
+  return <SemanticContent as="div" ref={root} data-frame-header-overflow={overflow.compactNav ? "navigation" : overflow.compactActions ? "actions" : "none"}
     className="frame-header-grid relative grid w-full min-w-0 items-center gap-xs" style={embedded ? { rowGap: 0 } : undefined}>
-    <div className="w-full min-w-0 justify-self-start" style={embedded ? { gridColumn: 1, gridRow: 1 } : undefined}>
-      {overflow.compactNav && header.nav ? <Menu trigger={<Button variant="ghost" className="min-w-0 max-w-full gap-xs" style={TAP}><h1 className="m-0 truncate text-body font-semibold">{header.title}{active ? ` / ${active.label}` : ""}</h1><Icon glyph={ChevronDown} decorative /></Button>}>
+    <SemanticContent as="div" className="w-full min-w-0 justify-self-start" style={embedded ? { gridColumn: 1, gridRow: 1 } : undefined}>
+      {overflow.compactNav && header.nav ? <Menu trigger={<Button variant="ghost" className="min-w-0 max-w-full gap-xs" style={TAP}><SemanticContent as="h1" className="m-0 truncate text-body font-semibold">{header.title}{active ? ` / ${active.label}` : ""}</SemanticContent><Icon glyph={ChevronDown} decorative /></Button>}>
         {header.nav.items.map(item => <Menu.Item key={item.id} id={item.id} href={item.href} textValue={item.label}
-          render={props => {
-            // This item has href, so select the anchor branch of Menu.Item's div-or-link render contract.
-            const anchorProps = props as ComponentPropsWithRef<"a">;
-            return <a {...anchorProps} aria-current={item.id === header.nav?.activeId ? "page" : undefined} onClick={event => { frameLinkNavigation(event, onNavigate); anchorProps.onClick?.(event); }} />;
-          }}>
+          aria-current={item.id === header.nav?.activeId ? "page" : undefined}>
           {item.id === header.nav?.activeId && <Icon glyph={Check} decorative />}{item.label}
         </Menu.Item>)}
-      </Menu> : <Tooltip trigger={<h1 ref={title} tabIndex={0} className="m-0 max-w-full truncate text-body font-semibold">{header.title}</h1>}>{header.title}</Tooltip>}
-    </div>
+      </Menu> : <Tooltip trigger={<SemanticContent as="h1" ref={title} tabIndex={0} className="m-0 max-w-full truncate text-body font-semibold">{header.title}</SemanticContent>}>{header.title}</Tooltip>}
+    </SemanticContent>
     <nav ref={nav} aria-label={header.nav?.label} aria-hidden={overflow.compactNav || undefined} inert={overflow.compactNav}
       className={(overflow.compactNav ? (embedded ? "invisible pointer-events-none " : "invisible pointer-events-none absolute ") : "") + "flex w-max min-w-0 items-center justify-center gap-xs"}
       style={embedded && overflow.compactNav ? { gridColumn: "1 / -1", gridRow: 2, blockSize: 0, inlineSize: 0, overflow: "hidden" } : undefined}>
@@ -289,6 +291,6 @@ function HeaderSlots({ header, onNavigate, embedded = false }: { header: PageBar
           className={"whitespace-nowrap border-b-2 " + (selected ? "border-accent text-ink-primary" : "border-transparent")} style={TAP}>{item.label}</Link>;
       })}
     </nav>
-    <div ref={actions} style={embedded ? { gridColumn: "-2 / -1", gridRow: 1 } : undefined} className="flex min-w-0 items-center justify-self-end" data-frame-header-actions="">{header.actions?.render({ compact: overflow.compactActions })}</div>
-  </div>;
+    <SemanticContent as="div" ref={actions} style={embedded ? { gridColumn: "-2 / -1", gridRow: 1 } : undefined} className="flex min-w-0 items-center justify-self-end" data-frame-header-actions="">{header.actions?.render({ compact: overflow.compactActions })}</SemanticContent>
+  </SemanticContent>;
 }

@@ -1,13 +1,18 @@
 "use client";
 
 import { Fragment } from "react";
-import { Avatar } from "../components/Avatar.js";
-import { Button } from "../components/Button.js";
-import { Icon } from "../components/Icon.js";
-import { Menu } from "../components/Menu.js";
-import { Tooltip } from "../components/Tooltip.js";
+
 import { ChevronUp } from "../icons/ChevronUp.js";
 import type { AccountMenuProps, AccountMenuSection } from "./account-menu-types.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+const Avatar = componentLeaf<typeof import("../components/Avatar.js").Avatar>("components.avatar");
+const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
+const Menu = componentLeaf<typeof import("../components/Menu.js").Menu>("components.menu");
+const Tooltip = componentLeaf<typeof import("../components/Tooltip.js").Tooltip>("components.tooltip");
+
 export type { AccountMenuProps } from "./account-menu-types.js";
 
 /** The same destination boundary used by Items; no identity or routing service. */
@@ -44,12 +49,12 @@ export function AccountMenu({ actor, sections, contextLabel, triggerLabel, colla
   const keyFor = (sectionId: string, entryId: string) => JSON.stringify([sectionId, entryId]);
   const trigger = <Button variant="ghost" aria-label={collapsed ? label : actor.name}
     className={collapsed ? "icon-control-md border-0 bg-transparent p-0 forced-colors:focus-visible:outline forced-colors:focus-visible:outline-solid" : "control-h-lg border-0 bg-transparent w-full min-w-0 justify-start gap-sm py-sm whitespace-normal text-start forced-colors:focus-visible:outline forced-colors:focus-visible:outline-solid"}>
-    <span aria-hidden="true" className="shrink-0"><Avatar alt={actor.name} src={actor.image} /></span>
+    <SemanticContent as="span" aria-hidden="true" className="shrink-0"><Avatar alt={actor.name} src={actor.image} /></SemanticContent>
     {!collapsed && <>
-      <span className="flex min-w-0 flex-1 flex-col text-start">
-        <span className="break-words whitespace-normal">{actor.name}</span>
-        {contextLabel && <span className="break-words whitespace-normal text-caption text-ink-muted">{contextLabel}</span>}
-      </span>
+      <SemanticContent as="span" className="flex min-w-0 flex-1 flex-col text-start">
+        <SemanticContent as="span" className="break-words whitespace-normal">{actor.name}</SemanticContent>
+        {contextLabel && <SemanticContent as="span" className="break-words whitespace-normal text-caption text-ink-muted">{contextLabel}</SemanticContent>}
+      </SemanticContent>
       <Icon glyph={ChevronUp} decorative size="sm" className="shrink-0" />
     </>}
   </Button>;
@@ -64,14 +69,14 @@ export function AccountMenu({ actor, sections, contextLabel, triggerLabel, colla
     {populated.map((section, index) => index > 0 && !section.label?.trim()
       ? <Fragment key={section.id}><Menu.Separator />{entriesFor(section, close)}</Fragment>
       : <Menu.Section key={section.id}
-      aria-label={section.label}
-      heading={index === 0 ? <span className="flex min-w-0 flex-col gap-xs"
-        style={{ maxInlineSize: "min(var(--ui-layout-sidebar-w, 256px), calc(100vw - 2 * var(--spacing-2xl, 32px)))" }}>
-        <span className="break-words whitespace-normal">{actor.name}</span>
-        {actor.secondaryText && <span className="truncate">{actor.secondaryText}</span>}
-        {contextLabel && <span className="truncate">{contextLabel}</span>}
-        {section.label && <span className="truncate">{section.label}</span>}
-      </span> : section.label}
+      aria-label={section.label?.trim() ? section.label : index === 0 ? actor.name : undefined}
+      heading={index === 0 ? <SemanticContent as="span" className="flex min-w-0 flex-col gap-xs"
+        style={{ maxInlineSize: "min(var(--ui-layout-sidebar-w), calc(100vw - 2 * var(--spacing-2xl)))" }}>
+        <SemanticContent as="span" className="break-words whitespace-normal">{actor.name}</SemanticContent>
+        {actor.secondaryText && <SemanticContent as="span" className="truncate">{actor.secondaryText}</SemanticContent>}
+        {contextLabel && <SemanticContent as="span" className="truncate">{contextLabel}</SemanticContent>}
+        {section.label && <SemanticContent as="span" className="truncate">{section.label}</SemanticContent>}
+      </SemanticContent> : section.label}
       selectionMode={section.kind === "preferences" ? "multiple" : "none"}
       selectedKeys={section.kind === "preferences" ? section.entries.filter(entry => entry.checked).map(entry => keyFor(section.id, entry.id)) : undefined}
       shouldCloseOnSelect={section.kind === "preferences" ? false : undefined}

@@ -3,12 +3,16 @@ import { useId } from "react";
 import type { ReactNode } from "react";
 import { Form as FoundryForm } from "../../blocks/Form.js";
 import { ContentSection } from "../../blocks/ContentSection.js";
-import { Button } from "../../components/Button.js";
-import { TextField } from "../../components/TextField.js";
+
 import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import type { SurfaceRendererEntry } from "../contract.js";
 import { object, optionalText, readSectionContent, required, SectionContentError, text, type JsonObject, type SectionContent } from "./group-a-content.js";
+import { componentLeaf } from "../component-leaf.js";
+
+const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const TextField = componentLeaf<typeof import("../../components/TextField.js").TextField>("components.text-field");
+const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 const LEAF = "sections.sign-in-form";
 const STAMP = dsAttrs("sections", LEAF, "foundry/sections.sign-in-form");
@@ -105,37 +109,37 @@ function SignInForm({ copy, host }: { readonly copy: SignInCopy; readonly host?:
   const values = host?.values ?? { identifier: "", password: "", code: "" };
   const change = (key: ValueKey, value: string) => { if (host && !pending) host.onValueChange(key, value); };
   return (
-    <ContentSection {...STAMP} headingId={headingId} heading={<span dir="auto">{copy.heading}</span>}
-      description={copy.description ? <span dir="auto">{copy.description}</span> : undefined}>
+    <ContentSection {...STAMP} headingId={headingId} heading={<SemanticContent as="span" dir="auto">{copy.heading}</SemanticContent>}
+      description={copy.description ? <SemanticContent as="span" dir="auto">{copy.description}</SemanticContent> : undefined}>
       <FoundryForm {...STAMP} aria-labelledby={headingId} aria-busy={pending || undefined} noValidate actionsLayout="stretch"
         onSubmit={event => { event.preventDefault(); if (host && !pending) host.onSubmit(phase); }}
-        submitError={copy.error ? <span dir="auto">{copy.error}</span> : undefined}
+        submitError={copy.error ? <SemanticContent as="span" dir="auto">{copy.error}</SemanticContent> : undefined}
         actions={<>
           {phase === "code" ? <>
-            <Button type="button" variant="secondary" isDisabled={!host || pending} onPress={() => host?.onBack?.()}><span dir="auto">{copy.back}</span></Button>
-            <Button type="button" variant="ghost" isDisabled={!host || pending} onPress={() => host?.onResend?.()}><span dir="auto">{copy.resend}</span></Button>
+            <Button type="button" variant="secondary" isDisabled={!host || pending} onPress={() => host?.onBack?.()}><SemanticContent as="span" dir="auto">{copy.back}</SemanticContent></Button>
+            <Button type="button" variant="ghost" isDisabled={!host || pending} onPress={() => host?.onResend?.()}><SemanticContent as="span" dir="auto">{copy.resend}</SemanticContent></Button>
           </> : null}
           <Button type="submit" variant="primary" isDisabled={!host} isPending={pending}>
-            <span dir="auto">{pending ? copy.pending : phase === "code" ? copy.verify : copy.submit}</span>
+            <SemanticContent as="span" dir="auto">{pending ? copy.pending : phase === "code" ? copy.verify : copy.submit}</SemanticContent>
           </Button>
         </>}>
         {phase === "credentials" ? <>
           {copy.providers.length ? <>
-            <div className="flex flex-col gap-sm">
+            <SemanticContent as="div" className="flex flex-col gap-sm">
               {copy.providers.map(provider => <Button key={provider.id} type="button" variant="secondary" isDisabled={!host || pending}
-                onPress={() => { if (host && !pending) host.onProvider?.(provider.id); }}><span dir="auto">{provider.label}</span></Button>)}
-            </div>
-            <p dir="auto" className="text-body-s text-ink-muted">{copy.divider}</p>
+                onPress={() => { if (host && !pending) host.onProvider?.(provider.id); }}><SemanticContent as="span" dir="auto">{provider.label}</SemanticContent></Button>)}
+            </SemanticContent>
+            <SemanticContent as="p" dir="auto" className="text-body-s text-ink-muted">{copy.divider}</SemanticContent>
           </> : null}
           <TextField name="identifier" type="text" dir="auto" autoComplete="username" value={values.identifier} onChange={value => change("identifier", value)}
-            label={<span dir="auto">{copy.identifierLabel}</span>} placeholder={copy.identifierPlaceholder} isRequired isDisabled={!host} isReadOnly={pending}
-            validationBehavior="aria" isInvalid={!!copy.identifierError} errorMessage={copy.identifierError ? <span dir="auto">{copy.identifierError}</span> : undefined} />
+            label={<SemanticContent as="span" dir="auto">{copy.identifierLabel}</SemanticContent>} placeholder={copy.identifierPlaceholder} isRequired isDisabled={!host} isReadOnly={pending}
+            validationBehavior="aria" isInvalid={!!copy.identifierError} errorMessage={copy.identifierError ? <SemanticContent as="span" dir="auto">{copy.identifierError}</SemanticContent> : undefined} />
           <TextField name="password" type="password" dir="auto" autoComplete="current-password" value={values.password} onChange={value => change("password", value)}
-            label={<span dir="auto">{copy.passwordLabel}</span>} placeholder={copy.passwordPlaceholder} isRequired isDisabled={!host} isReadOnly={pending}
-            validationBehavior="aria" isInvalid={!!copy.passwordError} errorMessage={copy.passwordError ? <span dir="auto">{copy.passwordError}</span> : undefined} />
+            label={<SemanticContent as="span" dir="auto">{copy.passwordLabel}</SemanticContent>} placeholder={copy.passwordPlaceholder} isRequired isDisabled={!host} isReadOnly={pending}
+            validationBehavior="aria" isInvalid={!!copy.passwordError} errorMessage={copy.passwordError ? <SemanticContent as="span" dir="auto">{copy.passwordError}</SemanticContent> : undefined} />
         </> : <TextField name="code" type="text" dir="auto" autoComplete="one-time-code" value={values.code} onChange={value => change("code", value)}
-          label={<span dir="auto">{copy.codeLabel}</span>} description={copy.codeDescription ? <span dir="auto">{copy.codeDescription}</span> : undefined} placeholder={copy.codePlaceholder} isRequired isReadOnly={pending}
-          validationBehavior="aria" isInvalid={!!copy.codeError} errorMessage={copy.codeError ? <span dir="auto">{copy.codeError}</span> : undefined} />}
+          label={<SemanticContent as="span" dir="auto">{copy.codeLabel}</SemanticContent>} description={copy.codeDescription ? <SemanticContent as="span" dir="auto">{copy.codeDescription}</SemanticContent> : undefined} placeholder={copy.codePlaceholder} isRequired isReadOnly={pending}
+          validationBehavior="aria" isInvalid={!!copy.codeError} errorMessage={copy.codeError ? <SemanticContent as="span" dir="auto">{copy.codeError}</SemanticContent> : undefined} />}
       </FoundryForm>
     </ContentSection>
   );

@@ -6,12 +6,15 @@
  * renderer's declared inputs, or a value of the wrong shape. Nothing here renders markup of its own.
  */
 import type { ReactNode } from "react";
-import { BarChart } from "../../charts/BarChart.js";
-import { LineChart } from "../../charts/LineChart.js";
-import { Link } from "../../components/Link.js";
-import { Logomark } from "../../components/Logomark.js";
-import { SemanticContent } from "../../components/SemanticContent.js";
+
 import type { RuntimeJson, RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
+import { componentLeaf } from "../component-leaf.js";
+
+const BarChart = componentLeaf<typeof import("../../charts/BarChart.js").BarChart>("components.chart-bar");
+const LineChart = componentLeaf<typeof import("../../charts/LineChart.js").LineChart>("components.chart-line");
+const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
+const Logomark = componentLeaf<typeof import("../../components/Logomark.js").Logomark>("components.logo");
+const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 export type SectionRenderInput = RuntimeRenderInput<ReactNode>;
 export type SectionRenderer = (input: SectionRenderInput) => ReactNode;

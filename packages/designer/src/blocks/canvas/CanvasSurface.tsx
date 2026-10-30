@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode, type Ref } from "react";
-import { Icon } from "../../components/Icon.js";
+import { useCallback, useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode, type Ref, type RefAttributes } from "react";
+
 import { List } from "../../icons/List.js";
 import { Info } from "../../icons/Info.js";
 import { X } from "../../icons/X.js";
-import { Button } from "../../components/Button.js";
+
 import { cx } from "../../components/internal/cx.js";
 import { PATTERN_RECIPES, patternBackground, type PatternRecipe } from "../../tokens/pattern.js";
 import { UI_BORDER_HAIRLINE, UI_ELEVATION_FLOATING } from "../../components/internal/ui-vars.js";
@@ -12,6 +12,12 @@ import {
   selectSingle, toggleSelection, toWorld, validateCanvasItems, zoomAt, wheelZoomFactor, gestureZoomFactor, CANVAS_ZOOM_REQUEST_EVENT,
   type CanvasDirection, type CanvasZoomRequestDetail, type CanvasItem, type CanvasPoint, type CanvasRect, type CanvasSize, type Selection, type Viewport,
 } from "./models.js";
+
+import { componentLeaf } from "../../runtime/component-leaf.js";
+
+const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+const Button = componentLeaf<(props: import("../../components/Button.js").ButtonProps & RefAttributes<HTMLButtonElement>) => ReactNode>("components.button");
+const Icon = componentLeaf<typeof import("../../components/Icon.js").Icon>("components.icon");
 
 export interface CanvasSurfaceActions {
   read(): Viewport;
@@ -479,7 +485,7 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
     cancel();
   };
 
-  return <div ref={surface} role="region" aria-label={label} aria-describedby={instructionId}
+  return <SemanticContent as="div" ref={surface} role="region" aria-label={label} aria-describedby={instructionId}
     data-canvas-surface="" data-canvas-layout={contentLayout}
     onScroll={event => { if (!flowing && event.target === event.currentTarget) neutralizeScroll(); }}
     tabIndex={items.length ? -1 : 0} onKeyDown={keydown} onPointerDown={pointerdown} onPointerMove={pointermove}
@@ -494,12 +500,12 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
     className={cx("relative isolate h-full min-h-0 min-w-0 overflow-hidden rounded-control border border-line-base bg-surface-base text-ink-primary focus-ring-inset", className)}
     /* Named inline-style exception: the camera-relative pattern layer (recipe from assets.pattern, offset by pan, scaled by zoom). */
     style={{ ...(grid && !flowing ? { ...patternBackground(gridPattern ?? PATTERN_RECIPES[grid === "dots" ? "dots" : "grid"], viewport.zoom), backgroundPosition: `${viewport.x}px ${viewport.y}px`, "--canvas-grid-zoom": viewport.zoom } : {}), ...style, touchAction: flowing ? "auto" : "none", overflow: flowing ? contentScroll === "document" ? "visible" : "auto" : "hidden", ...(viewSize ? { width: viewSize.width, height: flowing && contentScroll === "document" ? "auto" : viewSize.height, boxSizing: "content-box" } : {}) }}>
-    <p id={instructionId} className="sr-only">{instructionText}</p>
-    <div ref={world} data-canvas-world="" dir="ltr" className={cx(flowing ? "relative" : "absolute inset-0", worldClassName, (fitting || moving) && !reducedMotion && "transition-transform motion-reduce:transition-none")}
+    <SemanticContent as="p" id={instructionId} className="sr-only">{instructionText}</SemanticContent>
+    <SemanticContent as="div" ref={world} data-canvas-world="" dir="ltr" className={cx(flowing ? "relative" : "absolute inset-0", worldClassName, (fitting || moving) && !reducedMotion && "transition-transform motion-reduce:transition-none")}
       onTransitionEnd={event => { if (event.target !== event.currentTarget) return; setFitting(false); onViewportTransitionEnd?.(); }}
       style={{ transformOrigin: "0 0", transform: flowing ? undefined : `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
-        transitionDuration: reducedMotion ? "0s" : moving ? viewportTransition.duration : fitting ? "var(--ui-duration-fast, 120ms)" : "0s",
-        transitionTimingFunction: moving ? viewportTransition.easing : "var(--ease-default, cubic-bezier(.2, 0, 0, 1))" }}>
+        transitionDuration: reducedMotion ? "0s" : moving ? viewportTransition.duration : fitting ? "var(--ui-duration-fast)" : "0s",
+        transitionTimingFunction: moving ? viewportTransition.easing : "var(--ease-default)" }}>
       {edges.length ? <svg data-canvas-edges="" aria-hidden="true" focusable="false" className="pointer-events-none absolute text-ink-muted"
         viewBox={`${worldBounds.x} ${worldBounds.y} ${worldBounds.width} ${worldBounds.height}`}
         style={{ left: worldBounds.x, top: worldBounds.y, width: worldBounds.width, height: worldBounds.height }}>
@@ -510,14 +516,14 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
         })}
       </svg> : null}
       {children}
-      {items.map(item => itemInteraction === "content" ? <section key={item.id} data-canvas-item={item.id} aria-label={item.label} tabIndex={item.id === roving ? 0 : -1}
+      {items.map(item => itemInteraction === "content" ? <SemanticContent as="section" key={item.id} data-canvas-item={item.id} aria-label={item.label} tabIndex={item.id === roving ? 0 : -1}
         ref={node => { if (node) itemRefs.current.set(item.id, node); else itemRefs.current.delete(item.id); }}
         onFocus={event => { if (event.target === event.currentTarget) focusItem(item); }}
         className="absolute rounded-control border border-line-base bg-surface-raised text-body-s text-ink-primary focus-ring"
         style={{ left: item.rect.x, top: item.rect.y, width: item.rect.width, height: item.rect.height, borderWidth: UI_BORDER_HAIRLINE }}>
         {renderItem ? renderItem(item) : item.label}
-      </section> : <button key={item.id} type="button" data-canvas-item={item.id} aria-label={item.label}
-        aria-pressed={selectedIds.has(item.id)} tabIndex={item.id === roving ? 0 : -1}
+      </SemanticContent> : <Button key={item.id} type="button" variant="ghost" data-canvas-item={item.id} aria-label={item.label}
+        aria-pressed={selectedIds.has(item.id)} excludeFromTabOrder={item.id !== roving}
         ref={node => { if (node) itemRefs.current.set(item.id, node); else itemRefs.current.delete(item.id); }}
         onFocus={() => focusItem(item)} onClick={event => {
           if (space.current) return;
@@ -535,14 +541,14 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
         className="absolute rounded-control border border-line-base bg-surface-raised text-body-s text-ink-primary aria-pressed:border-accent focus-ring"
         style={{ left: item.rect.x, top: item.rect.y, width: item.rect.width, height: item.rect.height, borderWidth: UI_BORDER_HAIRLINE }}>
         {renderItem ? renderItem(item) : item.label}
-      </button>)}
-    </div>
+      </Button>)}
+    </SemanticContent>
     {overlays.map(panel => {
       const compactOpen = overlayLayout !== "wide" && panel.isOpen;
       const otherTrigger = overlays.some(other => other.placement !== panel.placement);
       const triggerReserve = "var(--ui-control-h-md) + var(--spacing-md)";
       const contentId = `${instructionId}-${panel.placement}`;
-      return <div key={panel.placement} ref={node => { if (node) panelRefs.current.set(panel.placement, node); else panelRefs.current.delete(panel.placement); }} data-canvas-panel={panel.placement}
+      return <SemanticContent as="div" key={panel.placement} ref={node => { if (node) panelRefs.current.set(panel.placement, node); else panelRefs.current.delete(panel.placement); }} data-canvas-panel={panel.placement}
         onKeyDown={event => {
           if (event.key === "Escape" && !event.defaultPrevented && panel.isOpen) {
             event.stopPropagation(); changePanel(panel, false); focusPanelTrigger(panel.placement);
@@ -554,19 +560,19 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
           insetInlineEnd: panel.placement === "inspector" ? endInset : compactOpen ? otherTrigger ? `calc(${endInset} + ${triggerReserve})` : endInset : undefined,
           inlineSize: !panel.isOpen || compactOpen ? "auto" : panel.placement === "explorer" ? "var(--ui-layout-sidebar-w)" : "var(--ui-layout-aside-w)",
           zIndex: "var(--ui-z-sticky)", boxShadow: UI_ELEVATION_FLOATING }}>
-        <div className={cx("flex items-center justify-between", panel.isOpen && "gap-sm border-b border-line-base p-xs")}>
-          {panel.isOpen ? <h2 className="min-w-0 truncate px-sm text-body-s font-semibold">{panel.label}</h2> : null}
+        <SemanticContent as="div" className={cx("flex items-center justify-between", panel.isOpen && "gap-sm border-b border-line-base p-xs")}>
+          {panel.isOpen ? <SemanticContent as="h2" className="min-w-0 truncate px-sm text-body-s font-semibold">{panel.label}</SemanticContent> : null}
           <Button data-canvas-panel-toggle="" variant="ghost" size="sm" className="icon-control-md shrink-0 p-0" aria-label={panel.isOpen ? panel.closeLabel : panel.openLabel}
             aria-expanded={panel.isOpen} aria-controls={contentId} onPress={() => changePanel(panel, !panel.isOpen)}>
             <Icon glyph={panel.isOpen ? X : panel.placement === "explorer" ? List : Info} decorative size="sm" />
           </Button>
-        </div>
-        <div id={contentId} hidden={!panel.isOpen} inert={!panel.isOpen}>{panel.content}</div>
-      </div>;
+        </SemanticContent>
+        <SemanticContent as="div" id={contentId} hidden={!panel.isOpen} inert={!panel.isOpen}>{panel.content}</SemanticContent>
+      </SemanticContent>;
     })}
-    {marquee && <div aria-hidden="true" data-canvas-marquee="" className="pointer-events-none absolute border border-accent bg-accent-tint"
+    {marquee && <SemanticContent as="div" aria-hidden="true" data-canvas-marquee="" className="pointer-events-none absolute border border-accent bg-accent-tint"
       style={{ left: marquee.x, top: marquee.y, width: marquee.width, height: marquee.height, borderWidth: UI_BORDER_HAIRLINE }} />}
-    {minimap && !flowing && <button type="button" data-canvas-minimap="" aria-label={recenterLabel} hidden={collapsedMap} inert={collapsedMap}
+    {minimap && !flowing && <Button type="button" variant="ghost" data-canvas-minimap="" aria-label={recenterLabel} hidden={collapsedMap} inert={collapsedMap}
       className={cx("absolute overflow-hidden rounded-control border border-line-base bg-surface-sunken focus-ring-inset", itemInteraction === "content" ? "bottom-md start-md" : "bottom-sm start-sm h-24 w-40")}
       style={itemInteraction === "content" ? { inlineSize: "var(--ui-layout-sidebar-w)", maxInlineSize: `calc(100% - ${startInset} - ${endInset})`, aspectRatio: "5 / 3", insetInlineStart: startInset, insetBlockEnd: bottomInset, zIndex: "var(--ui-z-sticky)" } : { zIndex: "var(--ui-z-sticky)" }}
       onClick={event => {
@@ -578,14 +584,14 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
         requestViewport({ x: size.width / 2 - (worldBounds.x + worldBounds.width * x) * viewport.zoom,
           y: size.height / 2 - (worldBounds.y + worldBounds.height * y) * viewport.zoom, zoom: viewport.zoom });
       }}>
-      <span aria-hidden="true" className="pointer-events-none absolute border border-accent bg-accent-tint"
+      <SemanticContent as="span" aria-hidden="true" className="pointer-events-none absolute border border-accent bg-accent-tint"
         style={{ left: `${map.visible.x * 100}%`, top: `${map.visible.y * 100}%`, width: `${map.visible.width * 100}%`, height: `${map.visible.height * 100}%`, borderWidth: UI_BORDER_HAIRLINE }} />
-    </button>}
-    {zoomControls && !flowing && <div data-canvas-controls="" role="group" aria-label={zoomGroupLabel} className={cx("absolute flex max-w-full flex-wrap items-center gap-xs rounded-control bg-surface-raised p-xs", itemInteraction === "content" ? "bottom-md end-md" : "bottom-sm end-sm")} style={itemInteraction === "content" ? { insetInlineEnd: endInset, insetBlockEnd: bottomInset, maxInlineSize: `calc(100% - ${startInset} - ${endInset})`, zIndex: "var(--ui-z-sticky)" } : { zIndex: "var(--ui-z-sticky)" }}>
+    </Button>}
+    {zoomControls && !flowing && <SemanticContent as="div" data-canvas-controls="" role="group" aria-label={zoomGroupLabel} className={cx("absolute flex max-w-full flex-wrap items-center gap-xs rounded-control bg-surface-raised p-xs", itemInteraction === "content" ? "bottom-md end-md" : "bottom-sm end-sm")} style={itemInteraction === "content" ? { insetInlineEnd: endInset, insetBlockEnd: bottomInset, maxInlineSize: `calc(100% - ${startInset} - ${endInset})`, zIndex: "var(--ui-z-sticky)" } : { zIndex: "var(--ui-z-sticky)" }}>
       <Button size="sm" variant="ghost" aria-label={zoomOutLabel} onPress={() => requestZoom(1 / 1.2)}>−</Button>
-      <output aria-label={zoomPercentageLabel} className="text-body-s tabular-nums">{Math.round(viewport.zoom * 100)}%</output>
+      <SemanticContent as="span" role="status" aria-label={zoomPercentageLabel} className="text-body-s tabular-nums">{Math.round(viewport.zoom * 100)}%</SemanticContent>
       <Button size="sm" variant="ghost" aria-label={zoomInLabel} onPress={() => requestZoom(1.2)}>+</Button>
       <Button size="sm" variant="ghost" onPress={requestFit}>{fitLabel}</Button>
-    </div>}
-  </div>;
+    </SemanticContent>}
+  </SemanticContent>;
 }

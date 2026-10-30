@@ -1,17 +1,19 @@
 import { DetailView } from "../../blocks/DetailView.js";
-import { Badge } from "../../components/Badge.js";
-import { Button } from "../../components/Button.js";
-import { Menu } from "../../components/Menu.js";
+
 import { ActionPart, type ActionContent } from "./group-b-parts.js";
 import { entryOf, type GroupBSection, type SectionRenderInput } from "./group-b-support.js";
 import { recordDetailCopyOf } from "./copy-ports.js";
+import { componentLeaf } from "../component-leaf.js";
+
+const Badge = componentLeaf<typeof import("../../components/Badge.js").Badge>("components.badge");
+const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Menu = componentLeaf<typeof import("../../components/Menu.js").Menu>("components.menu");
 
 /**
  * sections.record-detail: fields render as DetailView's description list, actions as Buttons (at most two,
  * per the contract) and the status copy as a Badge in the title row. DetailView has no grouped ledger API, so
  * the fill leaves groups unmapped and the renderer never invents it.
  */
-
 
 export function renderRecordDetail(input: SectionRenderInput) {
   const copy = recordDetailCopyOf(input);

@@ -1,13 +1,18 @@
 import { useId } from "react";
-import { Button } from "../components/Button.js";
-import { Checkbox } from "../components/Checkbox.js";
-import { Icon } from "../components/Icon.js";
-import { Tooltip } from "../components/Tooltip.js";
+
 import { cx } from "../components/internal/cx.js";
 import { Lock } from "../icons/Lock.js";
 import { accessCell, assertAccessMatrix } from "./access-matrix/validate.js";
 import { accessSummary, useDebouncedSummary } from "./access-matrix/summary.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+const Checkbox = componentLeaf<typeof import("../components/Checkbox.js").Checkbox>("components.checkbox");
+const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
+const Tooltip = componentLeaf<typeof import("../components/Tooltip.js").Tooltip>("components.tooltip");
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.access-matrix", "foundry/sections.access-matrix");
 
@@ -56,8 +61,8 @@ export function AccessMatrix(props: AccessMatrixProps) {
     }
     onChange({ ...value, [role.id]: cells }, { roleId: role.id, permissionIds, state });
   };
-  return <div {...SECTION_STAMP} className={cx("min-w-0 space-y-md text-body text-ink-primary", className)}>
-    <div className="max-w-full overflow-x-auto">
+  return <SemanticContent as="div" {...SECTION_STAMP} className={cx("min-w-0 space-y-md text-body text-ink-primary", className)}>
+    <SemanticContent as="div" className="max-w-full overflow-x-auto">
       <table aria-label={props["aria-label"]} role="table" className="block w-full border-separate border-spacing-0 tablet:table tablet:table-fixed">
         <thead className="sr-only focus-within:not-sr-only focus-within:block focus-within:w-full focus-within:overflow-x-auto tablet:not-sr-only tablet:table-header-group tablet:focus-within:table-header-group tablet:focus-within:w-auto tablet:focus-within:overflow-visible">
           <tr role="row">
@@ -65,12 +70,12 @@ export function AccessMatrix(props: AccessMatrixProps) {
             {roles.map((role, roleIndex) => {
               const reasonId = `${id}-role-${roleIndex}`;
               return <th key={role.id} scope="col" role="columnheader" className="px-md py-sm text-start align-top text-body-s font-medium">
-              <span className="flex min-w-0 flex-col gap-xs"><span className="wrap-anywhere">{role.label}</span>{role.isLocked ? <>
+              <SemanticContent as="span" className="flex min-w-0 flex-col gap-xs"><SemanticContent as="span" className="wrap-anywhere">{role.label}</SemanticContent>{role.isLocked ? <>
                 {role.lockedReason ? <Tooltip trigger={<Button variant="ghost" aria-describedby={reasonId} className="justify-start px-0">
-                  <Icon glyph={Lock} decorative size="sm" /><span>{labels.locked}</span>
-                </Button>}>{role.lockedReason}</Tooltip> : <span className="inline-flex items-center gap-xs"><Icon glyph={Lock} decorative size="sm" />{labels.locked}</span>}
-                {role.lockedReason ? <span id={reasonId} className="sr-only">{role.lockedReason}</span> : null}
-              </> : null}</span>
+                  <Icon glyph={Lock} decorative size="sm" /><SemanticContent as="span">{labels.locked}</SemanticContent>
+                </Button>}>{role.lockedReason}</Tooltip> : <SemanticContent as="span" className="inline-flex items-center gap-xs"><Icon glyph={Lock} decorative size="sm" />{labels.locked}</SemanticContent>}
+                {role.lockedReason ? <SemanticContent as="span" id={reasonId} className="sr-only">{role.lockedReason}</SemanticContent> : null}
+              </> : null}</SemanticContent>
             </th>;
             })}
           </tr>
@@ -83,18 +88,18 @@ export function AccessMatrix(props: AccessMatrixProps) {
               const granted = editable.filter(permission => accessCell(value, role.id, permission.id)?.state === "granted").length;
               const all = editable.length > 0 && granted === editable.length;
               return <td key={role.id} role="cell" className={CELL}>
-                <span aria-hidden="true" className="min-w-0 wrap-anywhere text-body-s text-ink-secondary tablet:hidden">{role.label}</span>
+                <SemanticContent as="span" aria-hidden="true" className="min-w-0 wrap-anywhere text-body-s text-ink-secondary tablet:hidden">{role.label}</SemanticContent>
                 <Checkbox isSelected={all} isIndeterminate={granted > 0 && !all} isReadOnly={!onChange || editable.length === 0}
                   onChange={() => emit(role, editable.map(permission => permission.id), all ? "denied" : "granted")}>
-                  <span className="sr-only">{labels.groupAll(role.label, group.label)}</span>
+                  <SemanticContent as="span" className="sr-only">{labels.groupAll(role.label, group.label)}</SemanticContent>
                 </Checkbox>
               </td>;
             })}
           </tr>
           {group.permissions.map((permission, permissionIndex) => <tr key={permission.id} role="row" className="flex min-w-0 flex-col gap-sm rounded-panel border-b border-line-base bg-surface-raised p-sm tablet:table-row tablet:rounded-none tablet:p-0">
             <th scope="row" role="rowheader" className={cx(FIRST, "flex min-w-0 flex-col gap-xs px-md py-sm text-start font-normal tablet:table-cell")}>
-              <span className="wrap-anywhere text-body-s font-medium">{permission.label}</span>
-              {permission.description ? <span className="wrap-anywhere text-caption text-ink-secondary">{permission.description}</span> : null}
+              <SemanticContent as="span" className="wrap-anywhere text-body-s font-medium">{permission.label}</SemanticContent>
+              {permission.description ? <SemanticContent as="span" className="wrap-anywhere text-caption text-ink-secondary">{permission.description}</SemanticContent> : null}
             </th>
             {roles.map((role, roleIndex) => {
               const cell = accessCell(value, role.id, permission.id);
@@ -103,21 +108,21 @@ export function AccessMatrix(props: AccessMatrixProps) {
               const reasonId = `${id}-cell-${groupIndex}-${permissionIndex}-${roleIndex}`;
               const control = <Checkbox isSelected={cell?.state === "granted"} isReadOnly={!onChange || !!role.isLocked || inherited}
                 aria-describedby={reason ? reasonId : undefined} onChange={selected => emit(role, [permission.id], selected ? "granted" : "denied")}>
-                <span className="sr-only">{labels.cell(role.label, permission.label)}</span>
+                <SemanticContent as="span" className="sr-only">{labels.cell(role.label, permission.label)}</SemanticContent>
               </Checkbox>;
               return <td key={role.id} role="cell" className={CELL}>
-                <span aria-hidden="true" className="min-w-0 wrap-anywhere text-body-s text-ink-secondary tablet:hidden">{role.label}</span>
-                <span className="inline-flex min-w-0 flex-wrap items-center gap-xs">
+                <SemanticContent as="span" aria-hidden="true" className="min-w-0 wrap-anywhere text-body-s text-ink-secondary tablet:hidden">{role.label}</SemanticContent>
+                <SemanticContent as="span" className="inline-flex min-w-0 flex-wrap items-center gap-xs">
                   {reason ? <Tooltip trigger={control}>{reason}</Tooltip> : control}
-                  {inherited ? <span className="inline-flex min-w-0 items-center gap-xs text-caption text-ink-secondary"><Icon glyph={Lock} decorative size="sm" /><span className="wrap-anywhere">{labels.inherited}</span></span> : null}
-                  {reason ? <span id={reasonId} className="sr-only">{reason}</span> : null}
-                </span>
+                  {inherited ? <SemanticContent as="span" className="inline-flex min-w-0 items-center gap-xs text-caption text-ink-secondary"><Icon glyph={Lock} decorative size="sm" /><SemanticContent as="span" className="wrap-anywhere">{labels.inherited}</SemanticContent></SemanticContent> : null}
+                  {reason ? <SemanticContent as="span" id={reasonId} className="sr-only">{reason}</SemanticContent> : null}
+                </SemanticContent>
               </td>;
             })}
           </tr>)}
         </tbody>)}
       </table>
-    </div>
-    {baseline ? <span role="status" aria-live="polite" className="block text-body-s text-ink-secondary">{announced}</span> : null}
-  </div>;
+    </SemanticContent>
+    {baseline ? <SemanticContent as="span" role="status" aria-live="polite" className="block text-body-s text-ink-secondary">{announced}</SemanticContent> : null}
+  </SemanticContent>;
 }

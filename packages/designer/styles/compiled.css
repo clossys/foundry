@@ -1621,9 +1621,6 @@
   .max-h-64 {
     max-height: calc(var(--spacing, 0.25rem) * 64);
   }
-  .max-h-\[40vh\] {
-    max-height: 40vh;
-  }
   .max-h-\[85vh\] {
     max-height: 85vh;
   }
@@ -3077,6 +3074,9 @@
   }
   .whitespace-nowrap {
     white-space: nowrap;
+  }
+  .whitespace-pre {
+    white-space: pre;
   }
   .whitespace-pre-wrap {
     white-space: pre-wrap;

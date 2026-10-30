@@ -1,6 +1,9 @@
 "use client";
 import { createContext, useContext, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { TOKENS } from "../../tokens/tokens.js";
+import { componentLeaf } from "../../runtime/component-leaf.js";
+
+const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /** The three canvas detail tiers, from most to least detailed. */
 export const CANVAS_LOD_TIERS = ["full", "compact", "overview"] as const;
@@ -33,7 +36,7 @@ const Tier = createContext<CanvasLodTier>("full");
  */
 export function CanvasLod({ zoom, children }: { zoom: number; children: ReactNode }) {
   const tier = canvasLodTier(zoom);
-  return <Tier.Provider value={tier}><div data-canvas-lod={tier} className="contents" style={{ [CANVAS_ZOOM_VAR]: zoom } as CSSProperties}>{children}</div></Tier.Provider>;
+  return <Tier.Provider value={tier}><SemanticContent as="div" data-canvas-lod={tier} className="contents" style={{ [CANVAS_ZOOM_VAR]: zoom } as CSSProperties}>{children}</SemanticContent></Tier.Provider>;
 }
 /** The camera zoom, exposed to world content as a unitless custom property. */
 export const CANVAS_ZOOM_VAR = "--canvas-zoom";
@@ -70,9 +73,9 @@ export function CanvasLodLayers({ full, compact, overview }: { full: ReactNode; 
     if (layer?.dataset.canvasLodLayer === active || (current !== last && current !== document.body && current !== null)) return;
     root.parentElement?.closest<HTMLElement>("[tabindex]")?.focus({ preventScroll: true });
   }, [active]);
-  return <div ref={host} data-canvas-lod-layers="" onFocus={event => { focused.current = event.target; }} style={{ display: "grid" }}>
-    {supplied.map(id => <div key={id} data-canvas-lod-layer={id} inert={id !== active} aria-hidden={id === active ? undefined : true}
+  return <SemanticContent as="div" ref={host} data-canvas-lod-layers="" onFocus={event => { focused.current = event.target; }} style={{ display: "grid" }}>
+    {supplied.map(id => <SemanticContent as="div" key={id} data-canvas-lod-layer={id} inert={id !== active} aria-hidden={id === active ? undefined : true}
       hidden={id !== active && id !== "full"}
-      style={{ gridArea: "1 / 1", ...(id === "full" ? id === active ? {} : COLLAPSED : { inlineSize: 0, minInlineSize: "100%" }) }}>{layers[id]}</div>)}
-  </div>;
+      style={{ gridArea: "1 / 1", ...(id === "full" ? id === active ? {} : COLLAPSED : { inlineSize: 0, minInlineSize: "100%" }) }}>{layers[id]}</SemanticContent>)}
+  </SemanticContent>;
 }

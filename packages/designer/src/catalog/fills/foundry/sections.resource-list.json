@@ -27,30 +27,17 @@
   "sections": {
     "resource-list": {
       "composes": [
-        "components.button",
-        "components.grid-list",
-        "components.menu",
-        "components.skeleton",
         "sections.empty-state"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
-          "components.button",
-          "components.grid-list",
-          "components.menu",
-          "components.skeleton",
           "sections.empty-state"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.button",
-            "components.grid-list",
-            "components.menu",
-            "components.skeleton"
-          ],
+          "components": [],
           "tokens": [
             "tokens.body-size",
             "tokens.caption-size",
@@ -66,7 +53,7 @@
           },
           {
             "path": "packages/designer/src/blocks/ResourceList.tsx",
-            "sha256": "312fd19b60366dc18fb333f3ca09b099c1a69e6416227993e3db3b4581104bec"
+            "sha256": "ffecdc2257f75763dd530570de1bf9905114a50d068a6e2578d7338b1286b225"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -83,6 +70,10 @@
           {
             "path": "packages/designer/src/icons/ChevronDown.ts",
             "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -90,7 +81,7 @@
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/ChevronDown.js#ChevronDown",
             "file": "packages/designer/src/blocks/ResourceList.tsx",
-            "line": 12
+            "line": 8
           },
           {
             "code": "DF2",
@@ -103,6 +94,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

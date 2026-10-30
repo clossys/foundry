@@ -31,29 +31,14 @@
   },
   "sections": {
     "chat": {
-      "composes": [
-        "components.avatar",
-        "components.button",
-        "components.text-field",
-        "components.tooltip"
-      ],
+      "composes": [],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.avatar",
-          "components.button",
-          "components.text-field",
-          "components.tooltip"
-        ],
+        "scannedComposes": [],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.avatar",
-            "components.button",
-            "components.text-field",
-            "components.tooltip"
-          ],
+          "components": [],
           "tokens": [
             "tokens.body-size",
             "tokens.border-color",
@@ -71,11 +56,11 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/chat/Chat.tsx",
-            "sha256": "6be3533f1cff810a96567fab3756e616164748f465386008f1b6848852df27a3"
+            "sha256": "d1cc7290af8fe33be8762554a70ab686af9793aba7c2180c5ad781e23819d9de"
           },
           {
             "path": "packages/designer/src/blocks/chat/content.tsx",
-            "sha256": "6488cafd39cbeb9641ed1bed1407ed0ec8ab96199a2a152586eda4aced018d51"
+            "sha256": "59e19ceed7d4a0a27dcd95952fc6f29a79229fd3d2115598aebe615884bb4621"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -96,6 +81,10 @@
           {
             "path": "packages/designer/src/icons/FileText.ts",
             "sha256": "64a84d19799a4300dafca2175cc2ef9da054708f92a2fa18e7c95a40b39ab59f"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -103,31 +92,31 @@
             "code": "DF5",
             "evidence": "unregistered asset import ../../icons/ArrowRight.js#ArrowRight",
             "file": "packages/designer/src/blocks/chat/Chat.tsx",
-            "line": 7
+            "line": 3
           },
           {
             "code": "DF5",
             "evidence": "unregistered asset import ../../icons/ChevronUp.js#ChevronUp",
             "file": "packages/designer/src/blocks/chat/Chat.tsx",
-            "line": 8
+            "line": 4
           },
           {
             "code": "DF5",
             "evidence": "unregistered asset import ../../icons/ChevronDown.js#ChevronDown",
             "file": "packages/designer/src/blocks/chat/Chat.tsx",
-            "line": 9
+            "line": 5
           },
           {
             "code": "DF5",
             "evidence": "unregistered asset import ../../icons/FileText.js#FileText",
             "file": "packages/designer/src/blocks/chat/Chat.tsx",
-            "line": 10
+            "line": 6
           },
           {
             "code": "DF2",
-            "evidence": "unresolved source export ../../components/Link.js#Link",
-            "file": "packages/designer/src/blocks/chat/content.tsx",
-            "line": 3
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

@@ -27,59 +27,28 @@
   "sections": {
     "data-table": {
       "composes": [
-        "components.button",
-        "components.checkbox",
-        "components.dialog",
-        "components.icon",
-        "components.popover",
-        "components.select",
-        "components.table",
-        "components.text-field",
         "sections.section-header"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
-          "components.button",
-          "components.checkbox",
-          "components.dialog",
-          "components.icon",
-          "components.popover",
-          "components.select",
-          "components.table",
-          "components.text-field",
           "sections.section-header"
         ],
         "scannedReads": {
           "assets": [
             "assets.icon-chevron-down",
-            "assets.icon-chevron-right",
-            "assets.icon-close"
+            "assets.icon-chevron-right"
           ],
-          "components": [
-            "components.button",
-            "components.checkbox",
-            "components.dialog",
-            "components.icon",
-            "components.popover",
-            "components.select",
-            "components.table",
-            "components.text-field"
-          ],
+          "components": [],
           "tokens": [
-            "tokens.accent-color",
             "tokens.body-size",
             "tokens.border-color",
             "tokens.breakpoint",
-            "tokens.caption-size",
             "tokens.control-radius",
             "tokens.control-size",
-            "tokens.focus-shadow",
-            "tokens.letter-spacing",
             "tokens.radius",
             "tokens.spacing",
-            "tokens.state-opacity",
             "tokens.surface-color",
             "tokens.text-color",
             "tokens.typeface"
@@ -92,11 +61,11 @@
           },
           {
             "path": "packages/designer/src/blocks/data-table/FilterEditor.tsx",
-            "sha256": "93c57ef44c802178834251b2e99cfd514b63b97c8526ba2b302c36da4ca70b57"
+            "sha256": "358323f41873984a9f7af00a7a8989fef65915c01a3b6e1a42b1db3971cff688"
           },
           {
             "path": "packages/designer/src/blocks/data-table/FlatGrid.tsx",
-            "sha256": "defca6b60a72096a42ca48915af28836c64a2108046f679a3472fac0d61f0f9d"
+            "sha256": "698120d91a2ec0fef3f634701d9f49eb4ef98eb54159e4aa249db40309e40bf3"
           },
           {
             "path": "packages/designer/src/blocks/data-table/messages.ts",
@@ -104,11 +73,11 @@
           },
           {
             "path": "packages/designer/src/blocks/data-table/ModelTable.tsx",
-            "sha256": "9f752383f5047113f1e83bdeeddf2ba05502b3d8428f00f3f3d2f761b3a00a76"
+            "sha256": "2eb90e4571137cce8a58109d221d32a64602201a26a2126d1f0e5fe7158ed2b1"
           },
           {
             "path": "packages/designer/src/blocks/data-table/PivotGrid.tsx",
-            "sha256": "ba0ac41b063acc765e614c22c63e5502aad1445b994335d0eee1ee65b877b761"
+            "sha256": "9a960ecfb59ae3f6e8a4bb019727c73439f76571feab842b26d23c04f9d0e896"
           },
           {
             "path": "packages/designer/src/blocks/data-table/presentation.ts",
@@ -116,7 +85,7 @@
           },
           {
             "path": "packages/designer/src/blocks/data-table/TableSurface.tsx",
-            "sha256": "26ff35fde373eb71c293af32071ade5974dbe5a8a8d336633f982c67c6561734"
+            "sha256": "b4806634d3950d6c2195edef9148e5001d0bd618b1cc3d3b0cb963d741a6106b"
           },
           {
             "path": "packages/designer/src/blocks/data-table/view-model.ts",
@@ -124,7 +93,7 @@
           },
           {
             "path": "packages/designer/src/blocks/data-table/ViewOptions.tsx",
-            "sha256": "25fc7536f83d781693465f3f7cbeb10559ee02d2f3a3e1e81a69977cdcf76ada"
+            "sha256": "037d972207096c89567e6ab8ad7f937b659d3a64e0817fe008ddb8492dc0135d"
           },
           {
             "path": "packages/designer/src/blocks/DataTable.tsx",
@@ -143,16 +112,12 @@
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
           },
           {
-            "path": "packages/designer/src/components/Chip.tsx",
-            "sha256": "1818b30d8256686d9dd6df16dcd6f8b78c78a024f3808d918b9481563ce1da2f"
-          },
-          {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
           },
           {
-            "path": "packages/designer/src/components/internal/ui-vars.ts",
-            "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -166,18 +131,12 @@
             "code": "DF2",
             "evidence": "unresolved injected runtime inventory ../../components/glyph-context.js#useGlyph",
             "file": "packages/designer/src/blocks/data-table/ModelTable.tsx",
-            "line": 6
+            "line": 5
           },
           {
             "code": "DF2",
             "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
             "file": "packages/designer/src/blocks/data-table/TableSurface.tsx",
-            "line": 2
-          },
-          {
-            "code": "DF2",
-            "evidence": "unresolved injected runtime inventory ./glyph-context.js#useGlyph",
-            "file": "packages/designer/src/components/Chip.tsx",
             "line": 2
           },
           {
@@ -191,6 +150,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },
@@ -214,22 +179,16 @@
       "reads": {
         "assets": [
           "assets.icon-chevron-down",
-          "assets.icon-chevron-right",
-          "assets.icon-close"
+          "assets.icon-chevron-right"
         ],
         "tokens": [
-          "tokens.accent-color",
           "tokens.body-size",
           "tokens.border-color",
           "tokens.breakpoint",
-          "tokens.caption-size",
           "tokens.control-radius",
           "tokens.control-size",
-          "tokens.focus-shadow",
-          "tokens.letter-spacing",
           "tokens.radius",
           "tokens.spacing",
-          "tokens.state-opacity",
           "tokens.surface-color",
           "tokens.text-color",
           "tokens.typeface"

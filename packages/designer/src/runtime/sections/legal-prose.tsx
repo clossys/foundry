@@ -1,7 +1,10 @@
 import { LegalProse, type LegalProseRevision } from "../../blocks/LegalProse.js";
-import { SemanticContent } from "../../components/SemanticContent.js";
+
 import type { SurfaceRendererEntry } from "../contract.js";
 import { list, object, readSectionContent, required, SectionContentError, text, type JsonObject, type SectionContent } from "./group-a-content.js";
+import { componentLeaf } from "../component-leaf.js";
+
+const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 const LEAF = "sections.legal-prose";
 export const legalProseInputs = { slots: ["heading", "revision", "body"], members: [] } as const;

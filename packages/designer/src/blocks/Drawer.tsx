@@ -1,11 +1,22 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { Button } from "../components/Button.js";
-import { Dialog, type DialogProps } from "../components/Dialog.js";
-import { Icon } from "../components/Icon.js";
+
+import type { DialogProps } from "../components/Dialog.js";
+
 import { cx } from "../components/internal/cx.js";
 import { X } from "../icons/X.js";
 import { TOKENS } from "../tokens/tokens.js";
 import { Panel } from "./Panel.js";
+
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+const Dialog = componentLeaf<typeof import("../components/Dialog.js").Dialog>("components.dialog");
+const Sheet = componentLeaf<typeof import("../components/sheet/index.js").Sheet>("components.sheet");
+const SheetTrigger = componentLeaf<typeof import("../components/sheet/index.js").SheetTrigger>("components.sheet", "SheetTrigger");
+const SheetTitle = componentLeaf<typeof import("../components/sheet/index.js").SheetTitle>("components.sheet", "SheetTitle");
+const SheetClose = componentLeaf<typeof import("../components/sheet/index.js").SheetClose>("components.sheet", "SheetClose");
+const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
 
 const TABLET_QUERY = `(min-width: ${TOKENS["--breakpoint-tablet"]!.value})`;
 
@@ -28,11 +39,11 @@ export interface DrawerProps extends Omit<DialogProps, "children" | "size" | "is
   wide?: "dismiss" | "sheet";
 }
 
-/** Material composing the existing Dialog lifecycle and Panel regions, never a second overlay owner. */
+/** Selected Sheet owns overlay geometry; the frame retains navigation and responsive state. */
 export function Drawer({
   trigger, heading, closeLabel, children, footer, fullViewport = false, placement = "start",
   navigationKey, dismissAt = TABLET_QUERY, wide = "dismiss", isOpen, defaultOpen = false,
-  onOpenChange, className, style, closeButtonStyle, ...rest
+  onOpenChange, className, style, closeButtonStyle, role = "dialog", ...rest
 }: DrawerProps) {
   const [internal, setInternal] = useState(defaultOpen);
   const [dismissed, setDismissed] = useState(false);
@@ -67,37 +78,28 @@ export function Drawer({
     media.addEventListener("change", sync);
     return () => media.removeEventListener("change", sync);
   }, [dismissAt, isOpen, sheet]);
-  const bottom = placement === "bottom";
-  return (
-    <Dialog {...rest} trigger={trigger} isOpen={requested && !dismissed && !blocked} onOpenChange={change}
-      overlayClassName={bottom ? "items-end p-0" : placement === "start" ? "items-stretch justify-start p-0" : "items-stretch justify-end p-0"}
-      modalClassName="h-full max-w-none"
-      modalStyle={{
-        width: bottom || fullViewport ? "100%" : "var(--ui-layout-drawer-w, min(20rem, 85vw))",
-        maxWidth: "100%", height: bottom ? "85vh" : "100%",
-        maxHeight: bottom ? "85vh" : "100%",
-      }}
-      className={bottom ? "h-full min-h-0 max-h-[85vh] rounded-none border-0 p-0" : "h-full min-h-0 max-h-none rounded-none border-0 p-0"} style={style}
-    >
-      {({ close }) => (
-        <Panel
-          className={cx("h-full min-h-0 flex-1 rounded-none", className)}
-          data-drawer-placement={placement} data-drawer-wide={wide} footer={footer}
-          header={(
-            <div className="flex items-start justify-between gap-md">
-              <Dialog.Heading>{heading}</Dialog.Heading>
-              <Button variant="ghost" aria-label={closeLabel} onPress={close} style={closeButtonStyle} aria-expanded={closeButtonStyle ? true : undefined}
-                className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent">
-                <Icon glyph={X} decorative size="md" />
-              </Button>
-            </div>
-          )}
-          onClick={event => {
-            const anchor = (event.target as Element).closest("a[href]");
-            if (anchor && !event.defaultPrevented && event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) close();
-          }}
-        >{children}</Panel>
-      )}
-    </Dialog>
-  );
+  const open = requested && !dismissed && !blocked;
+  const panel = (close: () => void, title: ReactNode, closeControl: ReactNode) => <Panel
+    className={cx("h-full min-h-0 flex-1 rounded-none", className)} style={style}
+    data-drawer-placement={placement} data-drawer-wide={wide} footer={footer}
+    header={<SemanticContent as="div" className="flex items-start justify-between gap-md">{title}{closeControl}</SemanticContent>}
+    onClick={event => {
+      const anchor = (event.target as Element).closest("a[href]");
+      if (anchor && !event.defaultPrevented && event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) close();
+    }}
+  >{children}</Panel>;
+  // Sheet exposes a dialog role only. The existing Dialog leaf retains the explicit alertdialog capability.
+  if (role === "alertdialog") return <Dialog {...rest} role={role} trigger={trigger} isOpen={open} onOpenChange={change}
+    overlayClassName={placement === "bottom" ? "items-end p-0" : placement === "start" ? "items-stretch justify-start p-0" : "items-stretch justify-end p-0"}>
+    {({ close }) => panel(close, <Dialog.Heading>{heading}</Dialog.Heading>, <Button variant="ghost" aria-label={closeLabel} onPress={close} style={closeButtonStyle}
+      aria-expanded={closeButtonStyle ? true : undefined} className="icon-control-md shrink-0 border-0 bg-transparent p-0"><Icon glyph={X} decorative size="md" /></Button>)}
+  </Dialog>;
+  return <SheetTrigger {...rest} isOpen={open} onOpenChange={change}>
+    {trigger}
+    <Sheet side={placement === "bottom" ? "bottom" : placement === "start" ? "left" : "right"} showCloseButton={false}
+      className={fullViewport ? "w-full max-w-full" : undefined}>
+      {panel(() => change(false), <SheetTitle>{heading}</SheetTitle>, <SheetClose variant="ghost" size="icon" aria-label={closeLabel} style={closeButtonStyle}
+        aria-expanded={closeButtonStyle ? true : undefined} className="icon-control-md shrink-0 border-0 bg-transparent p-0"><Icon glyph={X} decorative size="md" /></SheetClose>)}
+    </Sheet>
+  </SheetTrigger>;
 }

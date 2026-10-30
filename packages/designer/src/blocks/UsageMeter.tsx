@@ -1,7 +1,11 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { Meter } from "../components/Meter.js";
-import { StatusMark } from "../components/StatusMark.js";
+
 import { cx } from "../components/internal/cx.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const Meter = componentLeaf<typeof import("../components/Meter.js").Meter>("components.meter");
+const StatusMark = componentLeaf<typeof import("../components/StatusMark.js").StatusMark>("components.status-mark");
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 export interface UsageMeterThreshold {
   /** Fraction of the limit; finite, positive and strictly ascending. */
@@ -58,17 +62,17 @@ export function UsageMeter({
   const gapClass = size === "compact" ? "gap-xs" : "gap-sm";
 
   return (
-    <section
+    <SemanticContent as="section"
       {...rest}
       id={id}
       aria-labelledby={labelId ?? rest["aria-labelledby"]}
       data-size={size}
       className={cx("flex min-w-0 flex-col break-words font-body", gapClass, className)}
     >
-      <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-sm gap-y-xs">
-        <div id={labelId} className="m-0 min-w-0 text-body font-semibold text-ink-primary">{label}</div>
-        <p className="m-0 min-w-0 text-body-s text-ink-secondary">{periodText}</p>
-      </div>
+      <SemanticContent as="div" className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-sm gap-y-xs">
+        <SemanticContent as="div" id={labelId} className="m-0 min-w-0 text-body font-semibold text-ink-primary">{label}</SemanticContent>
+        <SemanticContent as="p" className="m-0 min-w-0 text-body-s text-ink-secondary">{periodText}</SemanticContent>
+      </SemanticContent>
       <Meter
         className="min-w-0"
         value={used}
@@ -81,8 +85,8 @@ export function UsageMeter({
         tone={matched ? matched.tone : "accent"}
       />
       {matched ? <StatusMark className="min-w-0" tone={matched.tone}>{matched.message}</StatusMark> : null}
-      {size !== "compact" && projectedText !== undefined ? <p className="m-0 min-w-0 text-body-s text-ink-secondary">{projectedText}</p> : null}
-      {action != null ? <div className="min-w-0">{action}</div> : null}
-    </section>
+      {size !== "compact" && projectedText !== undefined ? <SemanticContent as="p" className="m-0 min-w-0 text-body-s text-ink-secondary">{projectedText}</SemanticContent> : null}
+      {action != null ? <SemanticContent as="div" className="min-w-0">{action}</SemanticContent> : null}
+    </SemanticContent>
   );
 }

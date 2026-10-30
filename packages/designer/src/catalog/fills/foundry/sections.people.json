@@ -26,23 +26,14 @@
   },
   "sections": {
     "people": {
-      "composes": [
-        "components.icon",
-        "components.semantic-content"
-      ],
+      "composes": [],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.icon",
-          "components.semantic-content"
-        ],
+        "scannedComposes": [],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.icon",
-            "components.semantic-content"
-          ],
+          "components": [],
           "tokens": [
             "tokens.accent-color",
             "tokens.body-size",
@@ -60,7 +51,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/PeopleGrid.tsx",
-            "sha256": "cb44863c7b61ef29d0f592899f7aa88c9dbf7e6601f4c190aa0ce34326e16899"
+            "sha256": "86482a968e12987e764c98a56c65274dd904266b9d819d051a5a04168f5d766e"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -68,7 +59,7 @@
           },
           {
             "path": "packages/designer/src/blocks/stretched-link.tsx",
-            "sha256": "07229f9258b648250b757c748604848b4b869e285da70eb28f9cf472e93688c4"
+            "sha256": "d9edaa310f261df3c1845d8b989385ce560260b5c63d13c0abd1a7f46142b3cd"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -85,6 +76,10 @@
           {
             "path": "packages/designer/src/icons/ChevronRight.ts",
             "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -105,6 +100,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

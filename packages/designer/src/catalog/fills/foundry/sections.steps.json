@@ -27,21 +27,17 @@
   "sections": {
     "steps": {
       "composes": [
-        "components.semantic-content",
         "sections.section-header"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
-          "components.semantic-content",
           "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.semantic-content"
-          ],
+          "components": [],
           "tokens": [
             "tokens.accent-color",
             "tokens.body-size",
@@ -58,7 +54,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/OrderedStepSequence.tsx",
-            "sha256": "938aa49497a81d308afe81cab3af970f47ab4f0359af7433a5299dd837931ddd"
+            "sha256": "781475d5b202ae176c42b630d88c38b3afa70c03746a21e7de0db5179f7ec74d"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -71,6 +67,10 @@
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -85,6 +85,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

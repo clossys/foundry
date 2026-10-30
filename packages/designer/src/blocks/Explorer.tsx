@@ -1,7 +1,5 @@
-import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactElement, type ReactNode, type Ref } from "react";
-import { Button } from "../components/Button.js";
-import { Icon } from "../components/Icon.js";
-import { Link } from "../components/Link.js";
+import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactElement, type ReactNode } from "react";
+
 import { cx } from "../components/internal/cx.js";
 import { ChevronRight } from "../icons/ChevronRight.js";
 import { FileText } from "../icons/FileText.js";
@@ -9,6 +7,13 @@ import { Folder } from "../icons/Folder.js";
 import { TOKENS } from "../tokens/tokens.js";
 import { indexTree, type TreeNode } from "./tree-model.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
+const Link = componentLeaf<typeof import("../components/Link.js").Link>("components.link");
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.explorer", "foundry/sections.explorer");
 
@@ -71,30 +76,30 @@ function Row<T extends TreeNode & { children?: readonly T[] }>(props: RowProps<T
     "aria-owns": folder ? groupId : undefined,
   } as const;
   const content = <>
-    {Array.from({ length: level - 1 }, (_, index) => <span key={index} data-explorer-guide="" aria-hidden="true"
+    {Array.from({ length: level - 1 }, (_, index) => <SemanticContent as="span" key={index} data-explorer-guide="" aria-hidden="true"
       className={cx(GUIDE, index === level - 2 && GUIDE_BRANCH)}
       style={{ insetInlineStart: `calc(${SPACING_MD} * ${Math.min(index, 5)})`, insetBlockStart: 0,
         insetBlockEnd: index === level - 2 ? "50%" : 0, inlineSize: index === level - 2 ? SPACING_MD : 0 }} />)}
     {folder ? <Icon glyph={ChevronRight} decorative size="sm" className={open ? OPEN_ICON : CLOSED_ICON} /> : null}
     {node.icon ?? <Icon glyph={folder ? Folder : FileText} data-explorer-icon="" decorative size="sm" />}
-    <span className={LABEL}>{node.label}</span>
-    {details !== undefined && details !== null ? <span id={descriptionId} className={DETAILS}>{details}</span> : null}
+    <SemanticContent as="span" className={LABEL}>{node.label}</SemanticContent>
+    {details !== undefined && details !== null ? <SemanticContent as="span" id={descriptionId} className={DETAILS}>{details}</SemanticContent> : null}
   </>;
-  return <div role="none">
-    <div role="none" ref={element => register(node.id, element?.querySelector<HTMLElement>("button, a") ?? null)}>
+  return <SemanticContent as="div" role="none">
+    <SemanticContent as="div" role="none" ref={element => register(node.id, element?.querySelector<HTMLElement>("button, a") ?? null)}>
       {node.href !== undefined ? <Link id={rowId} href={node.href} buttonVariant={selectedId === node.id ? "secondary" : "ghost"}
         className={ROW} style={style} aria-label={node.label} aria-describedby={details == null ? undefined : descriptionId}
-        render={domProps => <a {...domProps} {...semantics} ref={domProps.ref as Ref<HTMLAnchorElement>} />}
+        {...semantics}
         onFocus={() => focus(node.id)} onKeyDown={event => keyboard(event, node)} onPress={() => activate(node)}>{content}</Link> :
         <Button id={rowId} variant={selectedId === node.id ? "secondary" : "ghost"}
           className={ROW} style={style} aria-label={node.label} aria-describedby={details == null ? undefined : descriptionId}
-          render={domProps => <button {...domProps} {...semantics} />}
+          {...semantics}
           onFocus={() => focus(node.id)} onKeyDown={event => keyboard(event, node)} onPress={() => activate(node)}>{content}</Button>}
-    </div>
-    {folder ? <div id={groupId} role="group" aria-labelledby={rowId} hidden={!open}>
+    </SemanticContent>
+    {folder ? <SemanticContent as="div" id={groupId} role="group" aria-labelledby={rowId} hidden={!open}>
       {open ? (node.children as readonly T[]).map((child, index) => <Row {...props} key={child.id} node={child} level={level + 1} position={index + 1} count={node.children!.length} />) : null}
-    </div> : null}
-  </div>;
+    </SemanticContent> : null}
+  </SemanticContent>;
 }
 
 /** Single-select files and folders, with unrestricted semantic depth and independent disclosure. */
@@ -139,14 +144,14 @@ export function Explorer<T extends TreeNode & { children?: readonly T[] }>({ tre
   useLayoutEffect(() => { if (ownsFocus.current && active !== undefined) controls.current.get(active)?.focus(); }, [active]);
   const register = (id: string, element: HTMLElement | null) => { if (element) controls.current.set(id, element); else controls.current.delete(id); };
   const panes = list !== undefined && list !== null && list !== false;
-  const treeElement = <div {...(panes ? {} : SECTION_STAMP)} role="tree" aria-label={label} aria-multiselectable={false} data-explorer="" className={cx(TREE, panes ? TREE_PANE : className)}
+  const treeElement = <SemanticContent as="div" {...(panes ? {} : SECTION_STAMP)} role="tree" aria-label={label} aria-multiselectable={false} data-explorer="" className={cx(TREE, panes ? TREE_PANE : className)}
     onFocusCapture={() => { ownsFocus.current = true; }} onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) ownsFocus.current = false; }}>
     {tree.map((node, position) => <Row key={node.id} node={node} level={1} position={position + 1} count={tree.length}
       expanded={expanded} active={active} selectedId={selectedId} activate={activate} focus={setFocused} keyboard={keyboard} register={register} renderDetails={renderDetails} />)}
-  </div>;
+  </SemanticContent>;
   if (!panes) return treeElement;
-  return <div {...SECTION_STAMP} data-explorer-layout="panes" className={cx(PANES, className)}>
+  return <SemanticContent as="div" {...SECTION_STAMP} data-explorer-layout="panes" className={cx(PANES, className)}>
     {treeElement}
-    <section aria-label={listLabel} data-explorer-region="list" className={LIST_PANE}>{list}</section>
-  </div>;
+    <SemanticContent as="section" aria-label={listLabel} data-explorer-region="list" className={LIST_PANE}>{list}</SemanticContent>
+  </SemanticContent>;
 }

@@ -121,7 +121,7 @@ it.each(["default", "react-server"])("resolves the %s skip island binding and pr
       const { SiteSkipLink } = await import("#designer-frame-skip-link");
       const node = SiteSkipLink({ targetId: "example-main", label: "Jump to content", followHeaderGround: true });
       const link = node.type(node.props);
-      anchor = { type: link.type, href: link.props.href, label: link.props.children, className: link.props.className };
+      anchor = { componentLeaf: link.type.displayName, href: link.props.href, label: link.props.children, className: link.props.className };
     }
     console.log(JSON.stringify({ target, anchor }));
   `;
@@ -130,7 +130,32 @@ it.each(["default", "react-server"])("resolves the %s skip island binding and pr
   ], { cwd: packageRoot, encoding: "utf8", timeout: 10_000 }));
   expect(observed.target).toMatch(condition === "react-server" ? /SkipLink\.server\.js$/ : /SkipLink\.client\.js$/);
   if (condition === "react-server") {
-    expect(observed.anchor).toMatchObject({ type: "a", href: "#example-main", label: "Jump to content" });
+    expect(observed.anchor).toMatchObject({ componentLeaf: "components.link", href: "#example-main", label: "Jump to content" });
     expect(observed.anchor.className).toContain("focus:not-sr-only");
   }
+});
+
+it("streams the real consumer-selected server skip anchor with its href, accessible name and focus styling", () => {
+  const script = `
+    import { createElement } from 'react';
+    import { renderToPipeableStream } from 'react-dom/server';
+    import { Writable } from 'node:stream';
+    const { SiteSkipLink } = await import('./dist/frames/site-frame/SkipLink.server.js');
+    const { ConsumerComponentProvider } = await import('./dist/runtime/component-leaf.client.js');
+    const { fixtureConsumerComponents } = await import('./dist/catalog-core/__fixtures__/surface-consumer-components.js');
+    const value = fixtureConsumerComponents();
+    const node = createElement(ConsumerComponentProvider, {value}, createElement(SiteSkipLink,{targetId:'example-main',label:'Jump to content'}));
+    const html = await new Promise((resolve,reject)=>{
+      let output=''; const destination=new Writable({write(chunk,encoding,done){output+=chunk.toString();done()}});
+      destination.on('finish',()=>resolve(output)); destination.on('error',reject);
+      const stream=renderToPipeableStream(node,{onAllReady(){stream.pipe(destination)},onError:reject});
+    });
+    console.log(JSON.stringify({html}));
+  `;
+  const observed = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "--eval", script], {
+    cwd: packageRoot, encoding: "utf8", timeout: 10_000, stdio: ["ignore", "pipe", "pipe"],
+  }));
+  expect(observed.html).toMatch(/<a\b[^>]*href="#example-main"/);
+  expect(observed.html).toContain("Jump to content</a>");
+  expect(observed.html).toContain("sr-only focus:not-sr-only");
 });

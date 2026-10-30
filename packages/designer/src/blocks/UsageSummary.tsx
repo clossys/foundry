@@ -3,6 +3,10 @@ import { cx } from "../components/internal/cx.js";
 import { EmptyState, type EmptyStateProps } from "./EmptyState.js";
 import { UsageMeter, type UsageMeterProps } from "./UsageMeter.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.usage", "foundry/sections.usage");
 
@@ -21,12 +25,12 @@ export interface UsageSummaryProps extends Omit<HTMLAttributes<HTMLElement>, "ch
 export function UsageSummary({ meters, emptyState, className, ...rest }: UsageSummaryProps) {
   if (meters.length === 0 && !emptyState) throw new RangeError("UsageSummary: meters is empty and no emptyState was supplied.");
   return (
-    <section {...SECTION_STAMP} {...rest} className={cx("flex min-w-0 flex-col gap-md font-body", className)}>
+    <SemanticContent as="section" {...SECTION_STAMP} {...rest} className={cx("flex min-w-0 flex-col gap-md font-body", className)}>
       {meters.length === 0 && emptyState ? <EmptyState {...emptyState} /> : (
-        <ul className="grid grid-cols-1 gap-lg tablet:grid-cols-2">
-          {meters.map(meter => <li key={meter.id} className="min-w-0"><UsageMeter {...meter} /></li>)}
-        </ul>
+        <SemanticContent as="ul" className="grid grid-cols-1 gap-lg tablet:grid-cols-2">
+          {meters.map(meter => <SemanticContent as="li" key={meter.id} className="min-w-0"><UsageMeter {...meter} /></SemanticContent>)}
+        </SemanticContent>
       )}
-    </section>
+    </SemanticContent>
   );
 }

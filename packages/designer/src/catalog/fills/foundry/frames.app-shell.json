@@ -24,17 +24,6 @@
   "frames": {
     "app-shell": {
       "composes": [
-        "components.avatar",
-        "components.banner",
-        "components.button",
-        "components.card",
-        "components.icon",
-        "components.logo",
-        "components.menu",
-        "components.resize-handle",
-        "components.tabs",
-        "components.toggle-button",
-        "components.tooltip",
         "frames.app-header",
         "frames.app-sidebar",
         "frames.command",
@@ -43,17 +32,6 @@
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
-          "components.avatar",
-          "components.banner",
-          "components.button",
-          "components.card",
-          "components.icon",
-          "components.logo",
-          "components.menu",
-          "components.resize-handle",
-          "components.tabs",
-          "components.toggle-button",
-          "components.tooltip",
           "frames.app-header",
           "frames.app-sidebar",
           "frames.command",
@@ -61,19 +39,7 @@
         ],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.avatar",
-            "components.banner",
-            "components.button",
-            "components.card",
-            "components.icon",
-            "components.logo",
-            "components.menu",
-            "components.resize-handle",
-            "components.tabs",
-            "components.toggle-button",
-            "components.tooltip"
-          ],
+          "components": [],
           "tokens": [
             "tokens.accent-color",
             "tokens.blur",
@@ -95,7 +61,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/AccountMenu.tsx",
-            "sha256": "929f0396b0cb3433a4092ed6c55d70372866b3812ff79a9b5f2924805c203936"
+            "sha256": "5a297bacb790e09542aafa14416d86e847f1e1c15c7a0790b5a39badd371fbf2"
           },
           {
             "path": "packages/designer/src/blocks/canvas/models.ts",
@@ -103,15 +69,15 @@
           },
           {
             "path": "packages/designer/src/blocks/CommandMenu.tsx",
-            "sha256": "a6aed4bf309c563a34e3548263253163e1e6454007dbdeb4a27887c5f8065274"
+            "sha256": "0c2a9838f06fae066ecbfa7087445664c595f5c299a526068b1da3d8d7b022da"
           },
           {
             "path": "packages/designer/src/blocks/Panel.tsx",
-            "sha256": "472398e3a3e376cf2f63dbdba831f18ffad241507f15900f1dd54f5e9f2b5340"
+            "sha256": "a9a814cdb5bfe434994fcb51526df8dc03a82e3f153040b0a1f5ea157db0181f"
           },
           {
             "path": "packages/designer/src/blocks/ResizablePane.tsx",
-            "sha256": "ab46f265b7911fe4355ac58c0199978723d08a2056c808ac03a71f58cfbc351e"
+            "sha256": "adc91e0cc0c92c625f710f5ab562d5c28a394e323bcb49be20ff1e57ced2eb27"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -139,7 +105,7 @@
           },
           {
             "path": "packages/designer/src/frames/AppFrame.tsx",
-            "sha256": "e96ec4fb21566aaad06715b668271b7b8b95181aaddd344257f749b874a1b63f"
+            "sha256": "5bcd9f18b28a85cce42ee7c7a24c49fd368151d5842323d66f7b2484188b7aaf"
           },
           {
             "path": "packages/designer/src/frames/AppFrameBrand.tsx",
@@ -147,7 +113,7 @@
           },
           {
             "path": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
-            "sha256": "bd6a6a972c41308d44396a619ecd991c381defd6f7e55271b6c89e8e9264821a"
+            "sha256": "c3a929cab0785f2840c5362ae2cbd2202bc8c81683d0fe3f92e328ac5cd0118a"
           },
           {
             "path": "packages/designer/src/frames/frame-dock-layout.ts",
@@ -163,7 +129,7 @@
           },
           {
             "path": "packages/designer/src/frames/FrameDock.tsx",
-            "sha256": "9d1c352e83c87277f867cb8fb661be32dcfe5e8e6de918cd00877c8d4ac3c213"
+            "sha256": "421f9a3bcc956f89c38413ccaf63e8325196b81f010910c0f421673ce5f9522b"
           },
           {
             "path": "packages/designer/src/icons/ChevronDown.ts",
@@ -194,12 +160,16 @@
             "sha256": "8667df53d290ac14195b44a8a39a1b88e0bda24fb236637c1f30b6fea19a1a2f"
           },
           {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          },
+          {
             "path": "packages/designer/src/shell/FrameSlots.tsx",
             "sha256": "516a1b13236d14591e8400d5fb17597f83b651c1b637909905ee7672bdf86300"
           },
           {
             "path": "packages/designer/src/shell/SkipLink.tsx",
-            "sha256": "940d32dea44bdbde6f2ef1f5470f539425e34586f96f90750e34e17ffc82f20c"
+            "sha256": "8d46afb50775a3692938663a50ec56f39da8d45c527cc94d22586e0c796945c9"
           },
           {
             "path": "packages/designer/src/shell/Toaster.tsx",
@@ -219,7 +189,7 @@
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/ChevronUp.js#ChevronUp",
             "file": "packages/designer/src/blocks/AccountMenu.tsx",
-            "line": 9
+            "line": 5
           },
           {
             "code": "DF2",
@@ -255,19 +225,19 @@
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/Monitor.js#Monitor",
             "file": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
-            "line": 8
+            "line": 7
           },
           {
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/Moon.js#Moon",
             "file": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
-            "line": 9
+            "line": 8
           },
           {
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/Sun.js#Sun",
             "file": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
-            "line": 10
+            "line": 9
           },
           {
             "code": "DF2",
@@ -280,6 +250,12 @@
             "evidence": "unregistered asset import ../icons/index.js#ChevronDown",
             "file": "packages/designer/src/frames/FrameDock.tsx",
             "line": 6
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           },
           {
             "code": "DF2",

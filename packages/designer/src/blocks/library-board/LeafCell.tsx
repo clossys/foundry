@@ -1,8 +1,12 @@
 'use client';
 import type { HTMLAttributes, ReactNode } from 'react';
-import { Card, type CardGround } from '../../components/Card.js';
+import type { CardGround } from "../../components/Card.js";
 import { SectionHeader } from '../SectionHeader.js';
 import { CANVAS_COUNTER_SCALED_TITLE } from '../canvas/CanvasLod.js';
+import { componentLeaf } from "../../runtime/component-leaf.js";
+
+const Card = componentLeaf<typeof import("../../components/Card.js").Card>("components.card");
+const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /**
  * What a leaf cell shows, decided by its caller from the same branch that picks the status line:
@@ -36,8 +40,8 @@ export interface LeafCellProps extends Omit<HTMLAttributes<HTMLDivElement>, 'chi
 export function LeafCell({ preview, status, actions, previewState, className, ...rest }: LeafCellProps) {
   return <Card {...rest} variant="plate" ground={LEAF_CELL_GROUND} data-candidate-cell="" data-preview-state={previewState} data-ground={PLATE_FILL_GROUND[LEAF_CELL_GROUND]} className={['flex w-max items-center gap-md p-sm', className].filter(Boolean).join(' ')}>
     {preview}
-    <div data-cell-status="" hidden={status == null} className={status == null ? undefined : 'text-ink-muted'}>{status}</div>
-    <div data-cell-actions="" hidden={actions == null} className={actions == null ? undefined : 'flex items-center gap-sm'}>{actions}</div>
+    <SemanticContent as="div" data-cell-status="" hidden={status == null} className={status == null ? undefined : 'text-ink-muted'}>{status}</SemanticContent>
+    <SemanticContent as="div" data-cell-actions="" hidden={actions == null} className={actions == null ? undefined : 'flex items-center gap-sm'}>{actions}</SemanticContent>
   </Card>;
 }
 
@@ -54,7 +58,7 @@ export interface BoardHeaderProps {
  * edit mode, so there is no gear and no Done (a change is handed to a coding agent).
  */
 export function BoardHeader({ id, title, action }: BoardHeaderProps) {
-  return <SectionHeader data-board-header="" title={<span id={id} data-canvas-title="" className={CANVAS_COUNTER_SCALED_TITLE}>{title}</span>} level={3} {...(action ? { actions: action } : {})} />;
+  return <SectionHeader data-board-header="" title={<SemanticContent as="span" id={id} data-canvas-title="" className={CANVAS_COUNTER_SCALED_TITLE}>{title}</SemanticContent>} level={3} {...(action ? { actions: action } : {})} />;
 }
 
 /**
@@ -71,8 +75,8 @@ export const BOARD_SURFACE_CLASS = 'flex h-max w-max shrink-0 flex-col gap-sm ro
  */
 export function LeafLabel({ id, label }: { readonly id: string; readonly label: ReactNode }) {
   const human = label !== id && label != null && label !== '' ? label : undefined;
-  return <span data-leaf-label="" className="flex min-w-0 flex-col text-start font-normal">
-    {human !== undefined ? <span className="break-words text-ink-primary">{human}</span> : null}
-    <span data-leaf-id="" className={human !== undefined ? 'break-words font-mono tabular-nums text-caption text-ink-secondary' : 'break-words font-mono tabular-nums text-ink-primary'}>{id}</span>
-  </span>;
+  return <SemanticContent as="span" data-leaf-label="" className="flex min-w-0 flex-col text-start font-normal">
+    {human !== undefined ? <SemanticContent as="span" className="break-words text-ink-primary">{human}</SemanticContent> : null}
+    <SemanticContent as="span" data-leaf-id="" className={human !== undefined ? 'break-words font-mono tabular-nums text-caption text-ink-secondary' : 'break-words font-mono tabular-nums text-ink-primary'}>{id}</SemanticContent>
+  </SemanticContent>;
 }

@@ -1,12 +1,16 @@
 "use client";
 import { useEffect, useState, type ReactNode } from "react";
-import { Button } from "../../components/Button.js";
-import { Menu } from "../../components/Menu.js";
-import { Tooltip } from "../../components/Tooltip.js";
-import { Icon } from "../../components/Icon.js";
+
 import { ChevronDown } from "../../icons/ChevronDown.js";
 import { ExternalLink } from "../../icons/ExternalLink.js";
 import { type StudioOpenContext } from "./open-context.js";
+import { componentLeaf } from "../../runtime/component-leaf.js";
+
+const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Menu = componentLeaf<typeof import("../../components/Menu.js").Menu>("components.menu");
+const Tooltip = componentLeaf<typeof import("../../components/Tooltip.js").Tooltip>("components.tooltip");
+const Icon = componentLeaf<typeof import("../../components/Icon.js").Icon>("components.icon");
+const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 export interface StudioOpenTarget {
   id: string;
@@ -61,8 +65,8 @@ export function OpenWithActions({ promptContext, projectPath, taskPrompt, viewHr
     <Menu.Item id="copy-prompt" onAction={() => { void copy(context().prompt, { kind: "copied" }); }}>{labels.copyPrompt}</Menu.Item>
     <Menu.Item id="copy-link" onAction={() => { void copy(viewHref, { kind: "link-copied" }); }}>{labels.copyLink}</Menu.Item>
   </Menu>;
-  return <div className="flex shrink-0 items-center gap-xs" data-studio-actions="">
+  return <SemanticContent as="div" className="flex shrink-0 items-center gap-xs" data-studio-actions="">
     {!compact ? <Button variant="secondary" onPress={() => { if (selected) void open(selected); else void copy(context().prompt, { kind: "copied" }); }}>{selected?.icon}{labels.openIn}{selected ? ` ${selected.label}` : ""}</Button> : null}
     {compact ? <Tooltip trigger={menu}>{labels.openIn}</Tooltip> : menu}
-  </div>;
+  </SemanticContent>;
 }

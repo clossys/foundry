@@ -1,17 +1,23 @@
 import { useState, type ReactNode } from "react";
 import { SectionHeader, type SectionHeaderLevel } from "../../blocks/SectionHeader.js";
 import { Pagination } from "../../blocks/Pagination.js";
-import { Badge } from "../../components/Badge.js";
-import { Button } from "../../components/Button.js";
-import { Link } from "../../components/Link.js";
-import { StatusMark, type StatusMarkTone } from "../../components/StatusMark.js";
-import { Tooltip } from "../../components/Tooltip.js";
+
+import type { StatusMarkTone } from "../../components/StatusMark.js";
+
 import { FieldRegion, PaginationRegion, type FieldRegionContent, type PaginationRegionContent } from "./group-b-parts.js";
 import { entryOf, recordsOf, stateOf, type GroupBSection, type SectionRenderInput, type SelectionRecord } from "./group-b-support.js";
 import type { TableColumnKind } from "../../blocks/table-model/index.js";
 import { TableFill, type ColumnRecord, type DimensionRecord, type RowRecord, type SortRecord } from "./group-b-table.js";
 import { isObject } from "./group-c-content.js";
 import { tableCopyOf, type PaginationSummaryMessage, type WriterCopyFormatter } from "./copy-ports.js";
+import { componentLeaf } from "../component-leaf.js";
+
+const Badge = componentLeaf<typeof import("../../components/Badge.js").Badge>("components.badge");
+const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
+const StatusMark = componentLeaf<typeof import("../../components/StatusMark.js").StatusMark>("components.status-mark");
+const Tooltip = componentLeaf<typeof import("../../components/Tooltip.js").Tooltip>("components.tooltip");
+const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 const RECORDS_PER_PAGE = 100;
 const COLLAPSED_RECORDS = 10;
@@ -62,7 +68,7 @@ function ScrollDataTable({ input }: { input: SectionRenderInput }) {
       case "date": {
         const date = isObject(value) ? value : undefined;
         if (!date || typeof date.relative !== "string" || typeof date.absolute !== "string") throw new TypeError("sections.data-table: date requires consumer-formatted relative and absolute values");
-        return <Tooltip trigger={<span tabIndex={0}>{date.relative}</span>}>{date.absolute}</Tooltip>;
+        return <Tooltip trigger={<SemanticContent as="span" tabIndex={0}>{date.relative}</SemanticContent>}>{date.absolute}</Tooltip>;
       }
       default: return column.id === primaryColumnId && typeof row.href === "string" ? <Link href={row.href}>{text}</Link> : text;
     }

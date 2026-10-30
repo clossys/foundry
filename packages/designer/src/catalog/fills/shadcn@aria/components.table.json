@@ -126,6 +126,36 @@
         ]
       },
       "root": "rac:Table",
+      "secondaryExports": [
+        {
+          "export": "TableBody",
+          "name": "TableBody"
+        },
+        {
+          "export": "TableCaption",
+          "name": "TableCaption"
+        },
+        {
+          "export": "TableCell",
+          "name": "TableCell"
+        },
+        {
+          "export": "TableFooter",
+          "name": "TableFooter"
+        },
+        {
+          "export": "TableHead",
+          "name": "TableHead"
+        },
+        {
+          "export": "TableHeader",
+          "name": "TableHeader"
+        },
+        {
+          "export": "TableRow",
+          "name": "TableRow"
+        }
+      ],
       "slot": "components.table",
       "source": "shadcn@aria",
       "transform": "shadcn-aria-rewrite@1"

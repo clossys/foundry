@@ -1,6 +1,10 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.timeline", "foundry/sections.timeline");
 
@@ -32,17 +36,17 @@ export function Timeline({ events, headingLevel = 3, className, ...rest }: Timel
       {events.map((event, index) => {
         const rail = index < events.length - 1;
         return (
-          <li key={event.id} data-timeline-rail={rail ? "" : undefined} className={cx("relative flex gap-md", rail ? "pb-lg" : undefined)}>
-            <span aria-hidden="true" className="flex shrink-0 flex-col items-center">
-              <span className="mt-xs size-2 shrink-0 rounded-pill bg-accent forced-colors:bg-current" />
-              {rail ? <span className="mt-xs w-px flex-1 bg-line-base" /> : null}
-            </span>
-            <div className="flex min-w-0 flex-col gap-xs break-words">
-              <time dateTime={event.at} className="text-caption text-ink-muted">{event.dateText}</time>
-              <Heading className="text-body font-semibold text-ink-primary">{event.heading}</Heading>
-              {event.description !== undefined && event.description !== null ? <p className="text-body-s text-ink-secondary">{event.description}</p> : null}
-            </div>
-          </li>
+          <SemanticContent as="li" key={event.id} data-timeline-rail={rail ? "" : undefined} className={cx("relative flex gap-md", rail ? "pb-lg" : undefined)}>
+            <SemanticContent as="span" aria-hidden="true" className="flex shrink-0 flex-col items-center">
+              <SemanticContent as="span" className="mt-xs size-2 shrink-0 rounded-pill bg-accent forced-colors:bg-current" />
+              {rail ? <SemanticContent as="span" className="mt-xs w-px flex-1 bg-line-base" /> : null}
+            </SemanticContent>
+            <SemanticContent as="div" className="flex min-w-0 flex-col gap-xs break-words">
+              <SemanticContent as="time" dateTime={event.at} className="text-caption text-ink-muted">{event.dateText}</SemanticContent>
+              <SemanticContent as={Heading} className="text-body font-semibold text-ink-primary">{event.heading}</SemanticContent>
+              {event.description !== undefined && event.description !== null ? <SemanticContent as="p" className="text-body-s text-ink-secondary">{event.description}</SemanticContent> : null}
+            </SemanticContent>
+          </SemanticContent>
         );
       })}
     </ol>

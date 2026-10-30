@@ -92,6 +92,20 @@ describe("canonical runtime Stage/body seam (synthetic metadata only)", () => {
   });
 });
 describe("SYNTHETIC runtime assembly unit corpus (not full-library proof)", () => {
+  it("delivers the live consumer module index only to renderers, outside the assembly snapshot", () => {
+    const input = fixture(), initial = prepareRuntimeAssembly(input);
+    const componentIndex = { selectionHash: "synthetic-index", descriptors: {}, modules: { selected: { Button: () => null } } };
+    const captured: unknown[] = [];
+    const ports = { ...input.ports, componentIndex, renderers: Object.fromEntries(Object.entries(input.ports.renderers).map(([id, render]) => [id, (current: Parameters<typeof render>[0]) => { captured.push(current.componentIndex); return render(current); }])) };
+    const result = prepareRuntimeAssembly({ ...input, ports });
+    expect(result.status, JSON.stringify(result)).toBe("ready");
+    if (result.status !== "ready" || initial.status !== "ready") return;
+    expect(result.assembly.snapshot.hash).toBe(initial.assembly.snapshot.hash);
+    expect(JSON.stringify(result.assembly.snapshot)).not.toContain("synthetic-index");
+    result.assembly.render(result.assembly.snapshot.cells[0]!);
+    expect(captured).toHaveLength(3);
+    expect(captured.every(value => value === componentIndex)).toBe(true);
+  });
   it("resolves fixture frame and sections with an immutable fixture matrix", () => {
     const input = fixture(); const result = prepareRuntimeAssembly(input);
     expect(result.status, JSON.stringify(result)).toBe("ready");
@@ -215,6 +229,9 @@ it("binds synthetic consumer glyph payload changes and component descriptors", a
   const { componentTokensHash } = await import("./check-components.js");
   const { cssText } = await import("./model.js");
   const component = adoptedComponentIntegration();
+  // Evidence is a snapshot input: replace its top-level identity after each
+  // deliberate mutation so the resolver observes the new fixture evidence.
+  const refreshEvidence = () => { component.componentOptions = { ...component.componentOptions, evidence: { ...component.componentOptions!.evidence! } }; };
   const pixels = resolve(input.engine).values.members;
   const tokens = Object.fromEntries(Object.entries(pixels).filter(([, member]) => member.slot === "tokens.breakpoint").map(([id, member]) => [id.slice("tokens.breakpoint.".length), { $type: "dimension" as const, $value: member.value.light }]));
   component.library = applyLibraryChange(component.catalog, component.library, { baseHash: libraryHash(component.library), changes: [{ portion: "values", change: { op: "author", slot: "tokens.breakpoint", tokens } }] });
@@ -227,9 +244,11 @@ it("binds synthetic consumer glyph payload changes and component descriptors", a
   }));
   const incomplete = Object.fromEntries(Object.entries(observations).filter(([id]) => id !== "tokens.breakpoint.sm"));
   component.componentOptions!.evidence!.observations["components.button"]!.tokensHash = componentTokensHash(incomplete);
+  refreshEvidence();
   const stale = resolve(component).check.findings.filter(finding => finding.severity === "error");
   expect(stale).toEqual(expect.arrayContaining([expect.objectContaining({ code: "K5" }), expect.objectContaining({ code: "K6" })]));
   component.componentOptions!.evidence!.observations["components.button"]!.tokensHash = componentTokensHash(observations);
+  refreshEvidence();
   const configure = () => {
     const runtime = standardM1Runtime({ engine: component, identity: input.identity, source: input.layout.descriptor.renderer.source, css: input.css });
     return { ...runtime, ports: { ...runtime.ports, manifest: { ...runtime.ports.manifest, assetClosure: { complete: true, ids: ["assets.icon-close"] } } } };
@@ -239,9 +258,11 @@ it("binds synthetic consumer glyph payload changes and component descriptors", a
   const componentEvidence: Record<string, unknown> = component.componentOptions!.evidence!.observations;
   const observed = componentEvidence["components.button"];
   delete componentEvidence["components.button"];
+  refreshEvidence();
   expect(resolve(component).check.ok).toBe(true);
   expect(prepareRuntimeAssembly(configure())).toEqual({ status: "pending", findings: ["component runtime observations required: components.button"] });
   componentEvidence["components.button"] = observed;
+  refreshEvidence();
   component.library.components.fills[0]!.components.button!.license = "ISC";
   const after = prepareRuntimeAssembly(configure());
   expect(after.status).not.toBe("pending");

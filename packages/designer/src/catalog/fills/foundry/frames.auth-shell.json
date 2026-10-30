@@ -23,19 +23,13 @@
   },
   "frames": {
     "auth-shell": {
-      "composes": [
-        "components.semantic-content"
-      ],
+      "composes": [],
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.semantic-content"
-        ],
+        "scannedComposes": [],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.semantic-content"
-          ],
+          "components": [],
           "tokens": [
             "tokens.accent-color",
             "tokens.body-size",
@@ -58,11 +52,15 @@
           },
           {
             "path": "packages/designer/src/frames/AuthFrame.tsx",
-            "sha256": "607437d63bbf84a1ac784828d3e95a29ec4934cf4dc1b7dfd0952ecb54613f4e"
+            "sha256": "c1b37b67981225166fc2862982beea16e55d6ef17663b92e6eb7d588ce23c341"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           },
           {
             "path": "packages/designer/src/shell/SkipLink.tsx",
-            "sha256": "940d32dea44bdbde6f2ef1f5470f539425e34586f96f90750e34e17ffc82f20c"
+            "sha256": "8d46afb50775a3692938663a50ec56f39da8d45c527cc94d22586e0c796945c9"
           }
         ],
         "unresolved": [
@@ -77,6 +75,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           },
           {
             "code": "DF2",

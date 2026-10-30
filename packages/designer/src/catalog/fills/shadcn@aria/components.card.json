@@ -116,6 +116,28 @@
         ]
       },
       "root": "presentational",
+      "secondaryExports": [
+        {
+          "export": "CardHeader",
+          "name": "CardHeader"
+        },
+        {
+          "export": "CardTitle",
+          "name": "CardTitle"
+        },
+        {
+          "export": "CardAction",
+          "name": "CardAction"
+        },
+        {
+          "export": "CardContent",
+          "name": "CardContent"
+        },
+        {
+          "export": "CardFooter",
+          "name": "CardFooter"
+        }
+      ],
       "slot": "components.card",
       "source": "shadcn@aria",
       "transform": "shadcn-aria-rewrite@1"

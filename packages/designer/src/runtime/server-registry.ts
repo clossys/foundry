@@ -26,7 +26,10 @@ const serverFrames: Readonly<Record<string, ServerSurfaceRendererEntry>> = {
 export const surfaceRuntimeRenderers: Readonly<Record<string, ServerSurfaceRendererEntry>> = Object.freeze(Object.fromEntries(
   [...frameSlots, ...sectionSlots].map(({ id: leaf }): [string, ServerSurfaceRendererEntry] => [leaf, serverFrames[leaf] ?? {
     leaf: leaf as SurfaceRuntimeLeaf,
-    render: input => createElement(ClientSurfaceRuntime, { leaf, input }),
+    render: input => {
+      if (input.componentIndex) throw new Error("NEED component selection: install the module index in the client host before rendering server surface references");
+      return createElement(ClientSurfaceRuntime, { leaf, input });
+    },
   }]),
 ));
 

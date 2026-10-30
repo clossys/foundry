@@ -3,7 +3,8 @@
  * (SURFACE_RUNTIME_POINTER). Hosts build ConsumerRuntimePorts.renderers from it; the
  * manifest producer (catalog-core/surface-runtime-manifest) names the same pointer.
  */
-import type { ReactNode } from "react";
+import { createElement, type ReactNode } from "react";
+import { ConsumerComponentProvider } from "./component-leaf.client.js";
 import type { RuntimeRenderInput } from "../catalog-core/runtime-ports.js";
 import { mergeRendererGroups, surfaceRendererId, SURFACE_RUNTIME_POINTER, type SurfaceRendererGroup } from "./contract.js";
 import { frameRenderers } from "./frames/index.js";
@@ -21,9 +22,17 @@ export function surfaceRuntimeCallbacks(leaves: readonly string[] = Object.keys(
   for (const leaf of leaves) {
     const entry = surfaceRuntimeRenderers[leaf];
     if (!entry) throw new TypeError(`surface runtime: no package renderer for ${leaf}`);
-    callbacks[surfaceRendererId(leaf)] = entry.render;
+    callbacks[surfaceRendererId(leaf)] = input => {
+      // A client host may already own the provider outside runtime assembly.
+      if (!input.componentIndex) return entry.render(input);
+      const value = { ...input.componentIndex, profile: input.profile };
+      return createElement(ConsumerComponentProvider, { value, children: entry.render(input) });
+    };
   }
   return callbacks;
 }
 export { SURFACE_RUNTIME_POINTER, surfaceRendererId, mergeRendererGroups, runtimeValue, runtimeText, runtimeRecord, runtimeMember } from "./contract.js";
 export type { SurfaceRuntimeLeaf, SurfaceRuntimeRenderer, SurfaceRendererEntry, SurfaceRendererGroup } from "./contract.js";
+
+export { ConsumerComponentProvider };
+export type { ConsumerComponentBinding, ConsumerComponentSelection } from "./component-leaf.client.js";

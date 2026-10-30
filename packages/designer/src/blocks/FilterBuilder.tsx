@@ -1,8 +1,14 @@
-import { Button } from "../components/Button.js";
-import { Select } from "../components/Select.js";
-import { TextField } from "../components/TextField.js";
+import { useId } from "react";
 import { cx } from "../components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+const Card = componentLeaf<typeof import("../components/Card.js").Card>("components.card");
+const Select = componentLeaf<typeof import("../components/Select.js").Select>("components.select");
+const TextField = componentLeaf<typeof import("../components/TextField.js").TextField>("components.text-field");
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.filter-builder", "foundry/sections.filter-builder");
 
@@ -48,6 +54,7 @@ function nextId(prefix: string, used: readonly string[]): string {
 
 /** Edits host-owned condition groups; evaluating them against records belongs to the host. */
 export function FilterBuilder({ fields, operators, groups, onGroupsChange, labels, className }: FilterBuilderProps) {
+  const headingId = useId();
   if (!fields.length || !operators.length) throw new TypeError("FilterBuilder: fields and operators must not be empty.");
   for (const group of groups) for (const condition of group.conditions) {
     if (!fields.some(field => field.id === condition.field)) throw new TypeError(`FilterBuilder: unknown field ${condition.field}.`);
@@ -60,32 +67,32 @@ export function FilterBuilder({ fields, operators, groups, onGroupsChange, label
     replace(groupId, group => ({ ...group, conditions: group.conditions.map(condition => condition.id === conditionId ? { ...condition, ...patch } : condition) }));
   const fieldOptions = fields.map(field => ({ id: field.id, label: field.label }));
   const operatorOptions = operators.map(operator => ({ id: operator.id, label: operator.label }));
-  return <fieldset {...SECTION_STAMP} className={cx("m-0 flex min-w-0 flex-col gap-lg border-0 p-0 text-body text-ink-primary", className)}>
-    <legend className="mb-md text-body-l font-medium">{labels.legend}</legend>
-    {groups.map((group, groupIndex) => <div key={group.id} role="group" aria-label={labels.group(groupIndex + 1)} className="flex min-w-0 flex-col gap-md rounded-surface border border-line-base bg-surface-raised p-md">
+  return <Card {...SECTION_STAMP} role="group" aria-labelledby={headingId} className={cx("m-0 flex min-w-0 flex-col gap-lg border-0 p-0 text-body text-ink-primary", className)}>
+    <SemanticContent as="h3" id={headingId} className="mb-md text-body-l font-medium">{labels.legend}</SemanticContent>
+    {groups.map((group, groupIndex) => <SemanticContent as="div" key={group.id} role="group" aria-label={labels.group(groupIndex + 1)} className="flex min-w-0 flex-col gap-md rounded-surface border border-line-base bg-surface-raised p-md">
       <Select label={labels.match} size="sm" className="filter-match-width" selectedKey={group.match}
         options={[{ id: "all", label: labels.matchAll }, { id: "any", label: labels.matchAny }]}
         onSelectionChange={key => { if (key === "all" || key === "any") replace(group.id, current => ({ ...current, match: key })); }} />
-      <ol className="m-0 flex list-none flex-col gap-sm p-0">
+      <SemanticContent as="ul" className="m-0 flex list-none flex-col gap-sm p-0">
         {group.conditions.map((condition, conditionIndex) => {
           const takesValue = operators.find(operator => operator.id === condition.operator)?.takesValue !== false;
-          return <li key={condition.id} className="grid grid-cols-1 items-end gap-sm tablet:grid-cols-4">
+          return <SemanticContent as="li" key={condition.id} className="grid grid-cols-1 items-end gap-sm tablet:grid-cols-4">
             <Select label={labels.field} size="sm" selectedKey={condition.field} options={fieldOptions}
               onSelectionChange={key => { if (typeof key === "string") update(group.id, condition.id, { field: key }); }} />
             <Select label={labels.operator} size="sm" selectedKey={condition.operator} options={operatorOptions}
               onSelectionChange={key => { if (typeof key === "string") update(group.id, condition.id, { operator: key }); }} />
-            {takesValue ? <TextField label={labels.value} size="sm" value={condition.value} onChange={value => update(group.id, condition.id, { value })} /> : <span aria-hidden="true" />}
+            {takesValue ? <TextField label={labels.value} size="sm" value={condition.value} onChange={value => update(group.id, condition.id, { value })} /> : <SemanticContent as="span" aria-hidden="true" />}
             <Button variant="quiet" size="sm" onPress={() => replace(group.id, current => ({ ...current, conditions: current.conditions.filter(row => row.id !== condition.id) }))}>
               {labels.removeCondition(conditionIndex + 1)}
             </Button>
-          </li>;
+          </SemanticContent>;
         })}
-      </ol>
-      <div><Button variant="secondary" size="sm" onPress={() => replace(group.id, current => ({ ...current, conditions: [...current.conditions, blank(current.id, allIds)] }))}>{labels.addCondition}</Button></div>
-    </div>)}
-    <div><Button variant="outline" size="sm" onPress={() => {
+      </SemanticContent>
+      <SemanticContent as="div"><Button variant="secondary" size="sm" onPress={() => replace(group.id, current => ({ ...current, conditions: [...current.conditions, blank(current.id, allIds)] }))}>{labels.addCondition}</Button></SemanticContent>
+    </SemanticContent>)}
+    <SemanticContent as="div"><Button variant="outline" size="sm" onPress={() => {
       const id = nextId("group", allIds);
       onGroupsChange([...groups, { id, match: "all", conditions: [blank(id, allIds)] }]);
-    }}>{labels.addGroup}</Button></div>
-  </fieldset>;
+    }}>{labels.addGroup}</Button></SemanticContent>
+  </Card>;
 }

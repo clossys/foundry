@@ -1,5 +1,3 @@
-import { Badge } from "../../components/Badge.js";
-import { StatusMark } from "../../components/StatusMark.js";
 import { cx } from "../../components/internal/cx.js";
 import { UI_BORDER_HAIRLINE } from "../../components/internal/ui-vars.js";
 import type { MatrixProps } from "../Matrix.js";
@@ -7,6 +5,11 @@ import { TREND_TEXT_CLASSES } from "../internal/trend.js";
 import { hasContent } from "../items/policies.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "../section-ground.js";
 import { HarveyMark } from "./harvey-mark.js";
+import { componentLeaf } from "../../runtime/component-leaf.js";
+
+const Badge = componentLeaf<typeof import("../../components/Badge.js").Badge>("components.badge");
+const StatusMark = componentLeaf<typeof import("../../components/StatusMark.js").StatusMark>("components.status-mark");
+const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 type GridProps = Extract<MatrixProps, { arrangement: "grid" }>;
 type Cell = GridProps["rows"][number]["cells"][string];
@@ -102,17 +105,17 @@ function assertGrid({ columns, rows, featured, featuredLabel, emptyLabel, markLa
 
 function CellValue({ cell, ground, emptyLabel, markLabels }: { cell: Cell; ground: SectionGround; emptyLabel: GridProps["emptyLabel"]; markLabels: GridProps["markLabels"] }) {
   switch (cell.type) {
-    case "text": return <span className="min-w-0 wrap-anywhere text-body-s">{cell.text}</span>;
+    case "text": return <SemanticContent as="span" className="min-w-0 wrap-anywhere text-body-s">{cell.text}</SemanticContent>;
     case "figure": {
       const trend = cell.trend ?? "neutral";
-      return <span className="inline-flex min-w-0 flex-col items-end gap-xs">
-      <span className="wrap-anywhere text-end text-body-l font-display leading-heading tabular-nums">{cell.value}</span>
-      {cell.delta !== undefined ? <span className={cx("text-body-s font-body tabular-nums", TREND_TEXT_CLASSES[trend], BACKING_CLASSES[ground])}>{cell.delta}</span> : null}
-    </span>;
+      return <SemanticContent as="span" className="inline-flex min-w-0 flex-col items-end gap-xs">
+      <SemanticContent as="span" className="wrap-anywhere text-end text-body-l font-display leading-heading tabular-nums">{cell.value}</SemanticContent>
+      {cell.delta !== undefined ? <SemanticContent as="span" className={cx("text-body-s font-body tabular-nums", TREND_TEXT_CLASSES[trend], BACKING_CLASSES[ground])}>{cell.delta}</SemanticContent> : null}
+    </SemanticContent>;
     }
     case "status": return <StatusMark tone={cell.tone} className={BACKING_CLASSES[ground]}>{cell.label}</StatusMark>;
-    case "mark": return <span className="inline-flex min-w-0 items-center"><HarveyMark value={cell.value} ground={ground} /><span className="sr-only">{markLabels![cell.value]}</span></span>;
-    case "empty": return <span className="sr-only">{emptyLabel}</span>;
+    case "mark": return <SemanticContent as="span" className="inline-flex min-w-0 items-center"><HarveyMark value={cell.value} ground={ground} /><SemanticContent as="span" className="sr-only">{markLabels![cell.value]}</SemanticContent></SemanticContent>;
+    case "empty": return <SemanticContent as="span" className="sr-only">{emptyLabel}</SemanticContent>;
   }
 }
 
@@ -128,31 +131,31 @@ export function MatrixGrid(props: GridProps) {
     <thead className={layout.head}><tr role="row">
       <td role="cell" aria-hidden="true" />
       {columns.map(column => <th key={column.id} scope="col" role="columnheader" className={cx("px-md py-lg align-top text-body-s font-body font-medium", figureColumn(column.id) ? "text-end tabular-nums" : "text-start")}>
-        <span className={cx("inline-flex flex-wrap items-center gap-sm", figureColumn(column.id) ? "justify-end" : undefined)}>{column.label}{featured?.column === column.id ? <Badge className="shrink-0 whitespace-nowrap">{featuredLabel}</Badge> : null}</span>
+        <SemanticContent as="span" className={cx("inline-flex flex-wrap items-center gap-sm", figureColumn(column.id) ? "justify-end" : undefined)}>{column.label}{featured?.column === column.id ? <Badge className="shrink-0 whitespace-nowrap">{featuredLabel}</Badge> : null}</SemanticContent>
       </th>)}
     </tr></thead>
     <tbody className={layout.body}>{rows.map(row => <tr key={row.id} role="row" className={cx(PLATE_CLASSES[ground], layout.row)}>
       <th scope="row" role="rowheader" className={cx(layout.header, "text-start align-top font-normal")}>
-        <Heading className="m-0 text-body-l font-display leading-heading">{row.label}</Heading>
+        <SemanticContent as={Heading} className="m-0 text-body-l font-display leading-heading">{row.label}</SemanticContent>
         {featured?.row === row.id ? <Badge className="shrink-0 whitespace-nowrap">{featuredLabel}</Badge> : null}
-        {row.description !== undefined ? <p className={cx("m-0 text-body-s text-pretty", colors.secondary)}>{row.description}</p> : null}
+        {row.description !== undefined ? <SemanticContent as="p" className={cx("m-0 text-body-s text-pretty", colors.secondary)}>{row.description}</SemanticContent> : null}
       </th>
       {columns.map(column => {
         const cell = row.cells[column.id]!;
         const highlighted = featured?.column === column.id;
         const figure = cell.type === "figure";
         return <td key={column.id} role="cell" className={cx(layout.cell, "border-b align-top", colors.border, figure ? "text-end tabular-nums" : "text-start")} style={{ borderBlockEndWidth: UI_BORDER_HAIRLINE }}>
-          <span aria-hidden="true" className={cx(layout.label, "text-body-s font-medium", colors.secondary)} {...INERT_LABEL_ATTRIBUTES}>{column.label}{highlighted ? <Badge className="shrink-0 whitespace-nowrap">{featuredLabel}</Badge> : null}</span>
+          <SemanticContent as="span" aria-hidden="true" className={cx(layout.label, "text-body-s font-medium", colors.secondary)} {...INERT_LABEL_ATTRIBUTES}>{column.label}{highlighted ? <Badge className="shrink-0 whitespace-nowrap">{featuredLabel}</Badge> : null}</SemanticContent>
           <CellValue cell={cell} ground={ground} emptyLabel={emptyLabel} markLabels={markLabels} />
         </td>;
       })}
     </tr>)}</tbody>
   </table>;
   if (!hasMark) return table;
-  return <>{table}<div dir={props.dir} className={cx("mt-md flex flex-col gap-sm", colors.surface, colors.primary)}>
-    <Heading className="m-0 text-body-s font-body font-medium">{keyLabel}</Heading>
-    <ul role="list" className="m-0 flex list-none flex-wrap gap-md p-0">
-      {MARK_VALUES.map(value => <li key={value} className="inline-flex min-w-0 items-center gap-xs text-body-s"><HarveyMark value={value} ground={ground} /><span className="min-w-0 wrap-anywhere">{markLabels![value]}</span></li>)}
-    </ul>
-  </div></>;
+  return <>{table}<SemanticContent as="div" dir={props.dir} className={cx("mt-md flex flex-col gap-sm", colors.surface, colors.primary)}>
+    <SemanticContent as={Heading} className="m-0 text-body-s font-body font-medium">{keyLabel}</SemanticContent>
+    <SemanticContent as="ul" role="list" className="m-0 flex list-none flex-wrap gap-md p-0">
+      {MARK_VALUES.map(value => <SemanticContent as="li" key={value} className="inline-flex min-w-0 items-center gap-xs text-body-s"><HarveyMark value={value} ground={ground} /><SemanticContent as="span" className="min-w-0 wrap-anywhere">{markLabels![value]}</SemanticContent></SemanticContent>)}
+    </SemanticContent>
+  </SemanticContent></>;
 }

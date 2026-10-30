@@ -27,49 +27,24 @@
   },
   "frames": {
     "command": {
-      "composes": [
-        "components.button",
-        "components.dialog",
-        "components.icon",
-        "components.search-field",
-        "components.tooltip"
-      ],
+      "composes": [],
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.button",
-          "components.dialog",
-          "components.icon",
-          "components.search-field",
-          "components.tooltip"
-        ],
+        "scannedComposes": [],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.button",
-            "components.dialog",
-            "components.icon",
-            "components.search-field",
-            "components.tooltip"
-          ],
+          "components": [],
           "tokens": [
-            "tokens.accent-color",
             "tokens.body-size",
-            "tokens.border-color",
-            "tokens.caption-size",
-            "tokens.control-color",
             "tokens.control-radius",
-            "tokens.focus-color",
-            "tokens.focus-outline",
             "tokens.spacing",
-            "tokens.state-opacity",
             "tokens.text-color"
           ]
         },
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/CommandMenu.tsx",
-            "sha256": "a6aed4bf309c563a34e3548263253163e1e6454007dbdeb4a27887c5f8065274"
+            "sha256": "0c2a9838f06fae066ecbfa7087445664c595f5c299a526068b1da3d8d7b022da"
           },
           {
             "path": "packages/designer/src/components/Banner.copy-context.tsx",
@@ -80,16 +55,12 @@
             "sha256": "9a37518f0d4ab5d04c55cfd4706daaecaad2a490b9a36d83db9108215d48e658"
           },
           {
-            "path": "packages/designer/src/components/button-classes.ts",
-            "sha256": "b8ebd6d815a52769cd0e02ca091f4c81d81e31f9558e1df767bfcf07dcc5f2a6"
-          },
-          {
-            "path": "packages/designer/src/components/internal/ui-vars.ts",
-            "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
-          },
-          {
             "path": "packages/designer/src/icons/X.ts",
             "sha256": "8f72143caaadd154476c699ee02546dd60ca49217afc4215220b8fbe9867f29e"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -97,7 +68,13 @@
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/X.js#X",
             "file": "packages/designer/src/blocks/CommandMenu.tsx",
-            "line": 11
+            "line": 5
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },
@@ -111,16 +88,9 @@
       "reads": {
         "assets": [],
         "tokens": [
-          "tokens.accent-color",
           "tokens.body-size",
-          "tokens.border-color",
-          "tokens.caption-size",
-          "tokens.control-color",
           "tokens.control-radius",
-          "tokens.focus-color",
-          "tokens.focus-outline",
           "tokens.spacing",
-          "tokens.state-opacity",
           "tokens.text-color"
         ]
       },

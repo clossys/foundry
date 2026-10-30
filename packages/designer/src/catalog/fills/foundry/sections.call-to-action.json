@@ -27,21 +27,17 @@
   "sections": {
     "call-to-action": {
       "composes": [
-        "components.semantic-content",
         "sections.section-header"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
-          "components.semantic-content",
           "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.semantic-content"
-          ],
+          "components": [],
           "tokens": [
             "tokens.border-color",
             "tokens.radius",
@@ -55,7 +51,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/CallToAction.tsx",
-            "sha256": "1f5bf1589a079c5c39e23345d0988d6af53bc6d2ca8fafefccc0cd90a1ba557f"
+            "sha256": "01787edd96b24b0c305ad8ecb1eb54ffa46dba529e766c1e1e7dbb29b92b6d65"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -68,6 +64,10 @@
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -82,6 +82,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

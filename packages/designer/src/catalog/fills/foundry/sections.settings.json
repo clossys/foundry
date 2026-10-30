@@ -51,11 +51,11 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/FieldGroup.tsx",
-            "sha256": "9edf92ca3b243a04a0cce2e33709b08e58c5ee3ac7fd78c4fe36177f56d004a3"
+            "sha256": "84565a33469c93941625708527b706766affec68e30e30b38abe93adb2378bea"
           },
           {
             "path": "packages/designer/src/blocks/SettingsSection.tsx",
-            "sha256": "bc6f463855ad47ff6e58150725ac30a1158bf45e727999af35e4cc4e8bc4898f"
+            "sha256": "9c7a57357fb6106ae16a3daabb8336d023a308851583e40c5da21a2f75f5f2d5"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -64,6 +64,10 @@
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -78,6 +82,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

@@ -10,6 +10,9 @@ import { CanvasMap } from '../components/CanvasMap.js';
 import { CanvasZoom, type CanvasZoomProps } from '../components/CanvasZoom.js';
 import { SlotModule } from '../shell/FrameSlots.js';
 import { frameSectionRefKey, type FrameStageSectionRef } from './frame-stage-ref.js';
+import { componentLeaf } from '../runtime/component-leaf.js';
+
+const SemanticContent = componentLeaf<typeof import('../components/SemanticContent.js').SemanticContent>('components.semantic-content');
 export { frameSectionRefKey } from './frame-stage-ref.js';
 export type { FrameStageSectionRef } from './frame-stage-ref.js';
 
@@ -127,23 +130,23 @@ export function FrameStage<Section extends FrameStageSectionRef>(props: FrameSta
     const slots: Record<string, ReactNode[]> = {};
     for (const reference of props.body.sections) (slots[reference.slot] ??= [])[reference.index] = sectionNodes[frameSectionRefKey(reference)]!.node;
     if (Object.values(slots).some(nodes => Object.keys(nodes).length !== nodes.length)) throw new TypeError('FrameStage selected Section slots must be dense');
-    return <div ref={host} role="region" aria-label={props['aria-label']} aria-busy={size.width <= 0 || undefined} data-frame-stage="" data-frame-stage-scroll={contract.scroll} data-frame-stage-layout="flow" className="relative min-h-0 min-w-0" style={{ overflow: contract.scroll === 'region' ? 'auto' : 'visible', height: contract.scroll === 'region' ? '100%' : 'auto' }}>
+    return <SemanticContent as="div" ref={host} role="region" aria-label={props['aria-label']} aria-busy={size.width <= 0 || undefined} data-frame-stage="" data-frame-stage-scroll={contract.scroll} data-frame-stage-layout="flow" className="relative min-h-0 min-w-0" style={{ overflow: contract.scroll === 'region' ? 'auto' : 'visible', height: contract.scroll === 'region' ? '100%' : 'auto' }}>
       {size.width > 0 ? props.layout.render({ slots, cell: props.cell, profile: props.profile, stageWidth: size.width }) : null}
-    </div>;
+    </SemanticContent>;
   }
   if (body.kind !== 'canvas' || !canvas || !camera) throw new TypeError('FrameStage canvas inputs unavailable');
   const canvasSize = { width: Math.max(1, size.width), height: Math.max(1, size.height) };
-  return <div ref={host} data-frame-stage="" data-frame-bleed="" data-frame-stage-scroll={contract.scroll} className="relative h-full min-h-0 min-w-0" onKeyDownCapture={keydown}>
+  return <SemanticContent as="div" ref={host} data-frame-stage="" data-frame-bleed="" data-frame-stage-scroll={contract.scroll} className="relative h-full min-h-0 min-w-0" onKeyDownCapture={keydown}>
     <CanvasSurface aria-label={props['aria-label']} viewport={camera.viewport} onViewportChange={camera.onViewportChange} selection={[]} onSelectionChange={() => {}}
       worldBounds={{ ...bounds, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height) }} items={[]} itemInteraction="content" contentLayout={flowing ? 'flow' : 'positioned'} contentScroll={contract.scroll}
       viewSize={canvasSize} minZoom={camera.minZoom} maxZoom={camera.maxZoom} fitPadding={flowing ? 0 : camera.fitPadding} actionsRef={setActions} grid="dots">
-      <div role="list" aria-label={props['aria-label']} data-frame-stage-layout={flowing ? 'flow' : body.arrangement.kind} data-frame-stage-bounds={`${bounds.width},${bounds.height}`}
+      <SemanticContent as="div" role="list" aria-label={props['aria-label']} data-frame-stage-layout={flowing ? 'flow' : body.arrangement.kind} data-frame-stage-bounds={`${bounds.width},${bounds.height}`}
         className={flowing ? 'flex flex-col items-start gap-md' : 'relative'} style={flowing ? undefined : { width: bounds.width, height: bounds.height }}>
         {order.map(id => {
           const board = body.boards.find(board => board.id === id)!;
           const selected = sectionNodes[frameSectionRefKey(board.section)]!, position = ready?.positions.find(item => item.id === board.id);
-          return <div key={board.id} role="listitem" data-frame-stage-board={board.id} className={flowing ? 'relative max-w-full' : 'absolute'} style={flowing || !position ? undefined : { insetInlineStart: position.x, top: position.y }}>
-            <section aria-label={selected.label} tabIndex={board.id === (active ?? order[0]) ? 0 : -1}
+          return <SemanticContent as="div" key={board.id} role="listitem" data-frame-stage-board={board.id} className={flowing ? 'relative max-w-full' : 'absolute'} style={flowing || !position ? undefined : { insetInlineStart: position.x, top: position.y }}>
+            <SemanticContent as="section" aria-label={selected.label} tabIndex={board.id === (active ?? order[0]) ? 0 : -1}
               ref={node => { if (node) elements.current.set(board.id, node); else elements.current.delete(board.id); }}
               onFocus={event => {
                 const target = event.target as HTMLElement;
@@ -154,13 +157,13 @@ export function FrameStage<Section extends FrameStageSectionRef>(props: FrameSta
                 const stageRect = host.current!.getBoundingClientRect(), targetRect = target.getBoundingClientRect();
                 if (target === event.currentTarget || targetRect.left < stageRect.left || targetRect.top < stageRect.top || targetRect.right > stageRect.right || targetRect.bottom > stageRect.bottom) actions.current?.flyTo(target);
               }}>
-              <div data-frame-stage-measure={board.id} className="w-max" ref={measureRef(board.id)}>{selected.node}</div>
-            </section>
-          </div>;
+              <SemanticContent as="div" data-frame-stage-measure={board.id} className="w-max" ref={measureRef(board.id)}>{selected.node}</SemanticContent>
+            </SemanticContent>
+          </SemanticContent>;
         })}
-      </div>
+      </SemanticContent>
     </CanvasSurface>
     {!flowing && modules?.map ? <SlotModule id={modules.map.id} slot="dock-tab" label={modules.map.label}><CanvasMap label={modules.map.label} items={ready!.positions.map(item => ({ id: item.id, rect: item }))} bounds={bounds} viewport={camera.viewport} viewSize={canvasSize} onViewportChange={camera.onViewportChange} /></SlotModule> : null}
     {!flowing && modules?.zoom ? <SlotModule id={modules.zoom.id} slot="dock-strip" label={modules.zoom.labels.group}><CanvasZoom value={camera.viewport.zoom} min={camera.minZoom} max={camera.maxZoom} labels={modules.zoom.labels} onChange={value => actions.current?.zoom(value / camera.viewport.zoom)} onFit={() => actions.current?.fit()} /></SlotModule> : null}
-  </div>;
+  </SemanticContent>;
 }

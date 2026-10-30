@@ -3,6 +3,10 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { TOKENS } from "../tokens/tokens.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.record-detail", "foundry/sections.record-detail");
 
@@ -62,11 +66,11 @@ export interface DetailViewProps extends Omit<HTMLAttributes<HTMLElement>, "titl
 export function DetailView({ title, fields, actions, compactActions, className, style, ...rest }: DetailViewProps) {
   const hasHeader = title !== undefined || actions !== undefined || compactActions !== undefined;
   const responsiveActions = compactActions !== undefined ? <>
-    <span data-detail-actions-wide="" className="flex flex-wrap items-center gap-sm">{actions}</span>
-    <span data-detail-actions-compact="">{compactActions}</span>
+    <SemanticContent as="span" data-detail-actions-wide="" className="flex flex-wrap items-center gap-sm">{actions}</SemanticContent>
+    <SemanticContent as="span" data-detail-actions-compact="">{compactActions}</SemanticContent>
   </> : actions;
   return (
-    <section {...SECTION_STAMP} {...rest} data-record-detail="" className={cx("flex min-w-0 max-w-full flex-col gap-md", className)} style={{ containerType: "inline-size", overflowWrap: "anywhere", ...style }}>
+    <SemanticContent as="section" {...SECTION_STAMP} {...rest} data-record-detail="" className={cx("flex min-w-0 max-w-full flex-col gap-md", className)} style={{ containerType: "inline-size", overflowWrap: "anywhere", ...style }}>
       {hasHeader ? (
         <SectionHeader data-detail-header="" density="standard" level={2}
           {...(title !== undefined ? { title } : {})}
@@ -80,17 +84,17 @@ export function DetailView({ title, fields, actions, compactActions, className, 
        * own `--breakpoint-tablet` token — no JS breakpoint state, the same
        * pattern `Shell.SideNav` uses for its own responsive collapse.
        */}
-      <dl className="grid grid-cols-1 gap-lg tablet:grid-cols-2">
+      <SemanticContent as="dl" className="grid grid-cols-1 gap-lg tablet:grid-cols-2">
         {fields.map((field, index) => (
-          <div
+          <SemanticContent as="div"
             key={index}
             className={cx("flex flex-col gap-xs", field.span === 2 ? "tablet:col-span-2" : "")}
           >
-            <dt className="text-body-s text-ink-secondary">{field.label}</dt>
-            <dd className="text-body text-ink-primary">{field.value}</dd>
-          </div>
+            <SemanticContent as="dt" className="text-body-s text-ink-secondary">{field.label}</SemanticContent>
+            <SemanticContent as="dd" className="text-body text-ink-primary">{field.value}</SemanticContent>
+          </SemanticContent>
         ))}
-      </dl>
+      </SemanticContent>
       <style>{`
         [data-detail-header] > div > div { min-inline-size: 0; max-inline-size: 100%; }
         [data-detail-header] > div > div:last-child { flex-wrap: wrap; }
@@ -100,6 +104,6 @@ export function DetailView({ title, fields, actions, compactActions, className, 
           [data-detail-actions-compact] { display: inline-flex; }
         }
       `}</style>
-    </section>
+    </SemanticContent>
   );
 }

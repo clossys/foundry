@@ -51,7 +51,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Form.tsx",
-            "sha256": "1a1017d0bed99a6d22dce148602985fb57923c008937d622cac697451f79b87e"
+            "sha256": "74e76470057f394b6e0f8ab032dfdd03e6ef77c8596a3fff0b63839f64fbefb6"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -68,15 +68,13 @@
           {
             "path": "packages/designer/src/components/internal/ui-vars.ts",
             "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
-          {
-            "code": "DF2",
-            "evidence": "unresolved source export ../components/Link.js#Link",
-            "file": "packages/designer/src/blocks/Form.tsx",
-            "line": 11
-          },
           {
             "code": "DF2",
             "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
@@ -88,6 +86,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

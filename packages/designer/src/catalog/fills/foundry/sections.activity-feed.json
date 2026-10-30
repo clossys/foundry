@@ -27,21 +27,17 @@
   "sections": {
     "activity-feed": {
       "composes": [
-        "components.icon",
         "sections.empty-state"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
-          "components.icon",
           "sections.empty-state"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.icon"
-          ],
+          "components": [],
           "tokens": [
             "tokens.accent-color",
             "tokens.body-size",
@@ -57,19 +53,15 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/ActivityFeed.tsx",
-            "sha256": "b39e426ebf5ffe748c31edddc1faf31e2c748d713c44fb28ca057997fde5012b"
+            "sha256": "2be69d4abbef5944b3e739ad362a229c497c5a1c89a7f9884c1fcc733cfac668"
           },
           {
             "path": "packages/designer/src/blocks/EventItem.tsx",
-            "sha256": "ccfd86797c47b55e4be6cc2d87718c28e47b3bb9b73bf681613dcc0a5138adf8"
+            "sha256": "1539ac734b51b1e87dc41121ac6cb7d9e4929bcd1ae00e93bb6a893ba001c536"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
-          },
-          {
-            "path": "packages/designer/src/components/Avatar.server.tsx",
-            "sha256": "ab46302d1b6d63c4e1380433f6c37035677e1f10e28fe2b234322216d2901c04"
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",
@@ -82,6 +74,10 @@
           {
             "path": "packages/designer/src/icons/Settings.ts",
             "sha256": "3eccf9da3ebd4c7db312a650d60d41d0ce2fa5489086df235573934bbc0710a3"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -89,13 +85,13 @@
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/ArrowRight.js#ArrowRight",
             "file": "packages/designer/src/blocks/EventItem.tsx",
-            "line": 5
+            "line": 4
           },
           {
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/Settings.js#Settings",
             "file": "packages/designer/src/blocks/EventItem.tsx",
-            "line": 6
+            "line": 5
           },
           {
             "code": "DF2",
@@ -108,6 +104,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

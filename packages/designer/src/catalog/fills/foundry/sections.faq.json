@@ -30,21 +30,17 @@
   "sections": {
     "faq": {
       "composes": [
-        "components.disclosure",
         "sections.section-header"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
-          "components.disclosure",
           "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.disclosure"
-          ],
+          "components": [],
           "tokens": [
             "tokens.accent-color",
             "tokens.body-size",
@@ -61,11 +57,11 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Faq.server.tsx",
-            "sha256": "20bc7f2013c873fa29a9613bc658be32f9acfb5883c8e63fb7d2fa5726f79438"
+            "sha256": "ac11eeb6bc4559f788be6bc9f7d6c938935acd86c0c6804446534dd4ff5e6e73"
           },
           {
             "path": "packages/designer/src/blocks/Faq.tsx",
-            "sha256": "f63b4b7575ad743ad399a8d34eacb4b1fa0b495842751c211110affd93aee98f"
+            "sha256": "9ba5227dea9f41eee333452ab7fb70e0eeff5e842dddf70c76d1684051b2c94d"
           },
           {
             "path": "packages/designer/src/blocks/internal/block-vars.ts",
@@ -73,7 +69,7 @@
           },
           {
             "path": "packages/designer/src/blocks/internal/disclosure-row.tsx",
-            "sha256": "0b07c869fbe7df493484537ed87a8e8705ff05dbc9d3ed65f4b36c6eef4ba9a9"
+            "sha256": "9c20a5226a3a94b1718208b89dcd67d992b7e1c97d0bb1427d3c9f8859b71e6e"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -86,6 +82,10 @@
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -100,6 +100,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

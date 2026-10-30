@@ -1,9 +1,5 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { Avatar } from "../../components/Avatar.js";
-import { Button } from "../../components/Button.js";
-import { IconButton } from "../../components/IconButton.js";
-import { Textarea } from "../../components/Textarea.js";
-import { Tooltip } from "../../components/Tooltip.js";
+
 import { ArrowRight } from "../../icons/ArrowRight.js";
 import { ChevronUp } from "../../icons/ChevronUp.js";
 import { ChevronDown } from "../../icons/ChevronDown.js";
@@ -12,6 +8,15 @@ import type { IconNode } from "../../icons/types.js";
 import { defaultContent } from "./content.js";
 import type { ChatActions, ChatLabels, ChatMessage, ChatProps } from "./types.js";
 import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
+import { componentLeaf } from "../../runtime/component-leaf.js";
+
+const Avatar = componentLeaf<typeof import("../../components/Avatar.js").Avatar>("components.avatar");
+const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const IconButton = componentLeaf<typeof import("../../components/IconButton.js").IconButton>("components.button", "IconButton");
+const Textarea = componentLeaf<typeof import("../../components/Textarea.js").Textarea>("components.text-field", "Textarea");
+const Tooltip = componentLeaf<typeof import("../../components/Tooltip.js").Tooltip>("components.tooltip");
+const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.chat", "foundry/sections.chat");
 
@@ -37,7 +42,7 @@ function MessageActions({
   unhelpfulLabel = "Unhelpful response",
 }: MessageActionsProps) {
   return (
-    <div className="flex flex-wrap gap-xs" role="group" aria-label={actionGroupLabel}>
+    <SemanticContent as="div" className="flex flex-wrap gap-xs" role="group" aria-label={actionGroupLabel}>
       {actions.onCopy ? <MessageAction label={copyMessageLabel} icon={FileText} onPress={() => actions.onCopy?.(message)} /> : null}
       {message.role === "assistant" ? <>
         {actions.onRegenerate ? <MessageAction label={regenerateLabel} icon={ArrowRight} onPress={() => actions.onRegenerate?.(message)} /> : null}
@@ -46,18 +51,18 @@ function MessageActions({
           <MessageAction label={unhelpfulLabel} icon={ChevronDown} onPress={() => actions.onFeedback?.(message, "down")} />
         </> : null}
       </> : null}
-    </div>
+    </SemanticContent>
   );
 }
 
 function AuthorGroup({ label, children }: { label: string; children: ReactNode }) {
-  return <div role="group" aria-label={label} className="flex min-w-0 items-start gap-sm">
+  return <SemanticContent as="div" role="group" aria-label={label} className="flex min-w-0 items-start gap-sm">
     <Avatar alt={label} size="sm" />
-    <div className="flex min-w-0 flex-1 flex-col gap-sm">
-      <p className="text-body-s font-semibold">{label}</p>
+    <SemanticContent as="div" className="flex min-w-0 flex-1 flex-col gap-sm">
+      <SemanticContent as="p" className="text-body-s font-semibold">{label}</SemanticContent>
       {children}
-    </div>
-  </div>;
+    </SemanticContent>
+  </SemanticContent>;
 }
 
 /** A controlled thread and composer. The host supplies and updates every message. */
@@ -144,51 +149,51 @@ function ChatView({
   }
 
   return (
-    <section {...SECTION_STAMP} aria-label={label} className="flex h-full min-h-0 min-w-0 w-full flex-col bg-surface-base text-body text-ink-primary" onKeyDown={keyDown}>
-      <div ref={logRef} role="log" aria-label={logLabel} aria-live="polite" className="flex min-h-0 min-w-0 flex-1 flex-col gap-lg overflow-y-auto break-words p-md" onScroll={() => {
+    <SemanticContent as="section" {...SECTION_STAMP} aria-label={label} className="flex h-full min-h-0 min-w-0 w-full flex-col bg-surface-base text-body text-ink-primary" onKeyDown={keyDown}>
+      <SemanticContent as="div" ref={logRef} role="log" aria-label={logLabel} aria-live="polite" className="flex min-h-0 min-w-0 flex-1 flex-col gap-lg overflow-y-auto break-words p-md" onScroll={() => {
         const log = logRef.current;
         if (!log) return;
         stickToBottom.current = Math.ceil(log.scrollTop + log.clientHeight) >= log.scrollHeight;
         setReadingEarlier(!stickToBottom.current);
       }}>
-        {messages.length === 0 ? <div className="flex flex-col gap-sm">
-          <p className="text-ink-secondary">{emptyLabel}</p>
-          {suggestions.length ? <div className="flex flex-wrap gap-sm">
+        {messages.length === 0 ? <SemanticContent as="div" className="flex flex-col gap-sm">
+          <SemanticContent as="p" className="text-ink-secondary">{emptyLabel}</SemanticContent>
+          {suggestions.length ? <SemanticContent as="div" className="flex flex-wrap gap-sm">
             {suggestions.map((suggestion, index) => <Button key={index} size="sm" variant="secondary" className="max-w-full whitespace-normal rounded-pill" isDisabled={!onSuggest || streaming} onPress={() => onSuggest?.(suggestion)}>{suggestion}</Button>)}
-          </div> : null}
-        </div> : null}
+          </SemanticContent> : null}
+        </SemanticContent> : null}
         {groups.map(group => {
-          const content = group.map(message => <div key={message.id} className="flex min-w-0 flex-col gap-xs">
+          const content = group.map(message => <SemanticContent as="div" key={message.id} className="flex min-w-0 flex-col gap-xs">
             {renderContent ? renderContent(message, defaultContent(message.content, labels)) : defaultContent(message.content, labels)}
-            {message.timestamp ? <time className="text-caption text-ink-secondary">{message.timestamp}</time> : null}
+            {message.timestamp ? <SemanticContent as="time" className="text-caption text-ink-secondary">{message.timestamp}</SemanticContent> : null}
             {actions ? <MessageActions message={message} actions={actions} {...labels} /> : null}
-          </div>);
+          </SemanticContent>);
           return group[0]!.role === "user"
             ? <AuthorGroup key={group[0]!.id} label={userLabel}>{content}</AuthorGroup>
             : <AuthorGroup key={group[0]!.id} label={assistantLabel}>{content}</AuthorGroup>;
         })}
-      </div>
-      <div className="flex shrink-0 flex-col gap-sm border-t border-line-base p-md">
+      </SemanticContent>
+      <SemanticContent as="div" className="flex shrink-0 flex-col gap-sm border-t border-line-base p-md">
         {readingEarlier ? <Button variant="secondary" size="sm" onPress={() => {
           stickToBottom.current = true;
           setReadingEarlier(false);
           if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
           focusComposer();
         }}>{jumpLabel}</Button> : null}
-        <div role="status" aria-live="polite" className={PROGRESS_ROW_CLASSES} style={{ minHeight: "var(--ui-density-row, var(--spacing-3xl, 48px))" }}>
-          {streaming ? <span>{streamingLabel}</span> : status === "error" ? <>
-            <span>{errorLabel}</span>
+        <SemanticContent as="div" role="status" aria-live="polite" className={PROGRESS_ROW_CLASSES} style={{ minHeight: "var(--ui-density-row, var(--spacing-3xl, 48px))" }}>
+          {streaming ? <SemanticContent as="span">{streamingLabel}</SemanticContent> : status === "error" ? <>
+            <SemanticContent as="span">{errorLabel}</SemanticContent>
             {onRetry ? <Button size="sm" variant="secondary" onPress={onRetry}>{retryLabel}</Button> : null}
           </> : null}
-        </div>
-        <div ref={composerRef} className="min-w-0">
+        </SemanticContent>
+        <SemanticContent as="div" ref={composerRef} className="min-w-0">
           <Textarea label={composerLabel} value={draft} onChange={setDraft} rows={1} placeholder={placeholder} textareaClassName="min-w-0 w-full resize-none overflow-y-auto max-h-6xl" />
-        </div>
-        <div className="flex flex-wrap justify-end gap-sm">
+        </SemanticContent>
+        <SemanticContent as="div" className="flex flex-wrap justify-end gap-sm">
           {streaming && onStop ? <Button variant="secondary" onPress={onStop}>{stopLabel}</Button> : null}
           <Button isDisabled={!canSend} onPress={send}>{sendLabel}</Button>
-        </div>
-      </div>
-    </section>
+        </SemanticContent>
+      </SemanticContent>
+    </SemanticContent>
   );
 }

@@ -1,8 +1,11 @@
 import type { ReactNode } from "react";
-import { Button } from "../../components/Button.js";
-import { Link } from "../../components/Link.js";
+
 import type { RuntimeRenderInput, RuntimeJson } from "../../catalog-core/runtime-ports.js";
 import { object, SectionContentError, text, type SectionContent } from "./group-a-content.js";
+import { componentLeaf } from "../component-leaf.js";
+
+const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
 
 /** Live commands are consumer-owned and never enter the JSON content snapshot. */
 export interface MessageSectionHost {

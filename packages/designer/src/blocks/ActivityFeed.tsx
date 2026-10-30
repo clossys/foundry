@@ -3,6 +3,10 @@ import { cx } from "../components/internal/cx.js";
 import { EmptyState, type EmptyStateProps } from "./EmptyState.js";
 import { EventItem, type EventLabels, type EventRecord } from "./EventItem.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.activity-feed", "foundry/sections.activity-feed");
 
@@ -31,9 +35,9 @@ function eventList(events: readonly EventRecord[], labels: EventLabels) {
   return (
     <ol className="flex flex-col">
       {events.map((event, index) => (
-        <li key={event.id} data-event-id={event.id} className={cx("py-md", index > 0 ? "border-t border-line-base" : undefined)}>
+        <SemanticContent as="li" key={event.id} data-event-id={event.id} className={cx("py-md", index > 0 ? "border-t border-line-base" : undefined)}>
           <EventItem event={event} labels={labels} />
-        </li>
+        </SemanticContent>
       ))}
     </ol>
   );
@@ -56,18 +60,18 @@ export function ActivityFeed({ events, groups, labels, filters, emptyState, clas
     if (loose) throw new RangeError(`ActivityFeed: event ${loose.id} is in no group.`);
   }
   return (
-    <section {...SECTION_STAMP} {...rest} className={cx("flex min-w-0 flex-col gap-md font-body", className)}>
-      {filters !== undefined && filters !== null ? <div data-activity-filters="" className="flex flex-wrap items-center gap-sm">{filters}</div> : null}
+    <SemanticContent as="section" {...SECTION_STAMP} {...rest} className={cx("flex min-w-0 flex-col gap-md font-body", className)}>
+      {filters !== undefined && filters !== null ? <SemanticContent as="div" data-activity-filters="" className="flex flex-wrap items-center gap-sm">{filters}</SemanticContent> : null}
       {events.length === 0 ? <EmptyState {...emptyState} /> : grouped ? (
         <ol className="flex flex-col gap-lg">
           {grouped.map(({ group, events: rows }) => (
-            <li key={group.id} data-activity-group={group.id} className="flex flex-col gap-xs">
-              <h3 className="text-body-s font-semibold text-ink-secondary">{group.label}</h3>
+            <SemanticContent as="li" key={group.id} data-activity-group={group.id} className="flex flex-col gap-xs">
+              <SemanticContent as="h3" className="text-body-s font-semibold text-ink-secondary">{group.label}</SemanticContent>
               {eventList(rows, labels)}
-            </li>
+            </SemanticContent>
           ))}
         </ol>
       ) : eventList(events, labels)}
-    </section>
+    </SemanticContent>
   );
 }

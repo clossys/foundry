@@ -23,34 +23,13 @@
   },
   "frames": {
     "app-header": {
-      "composes": [
-        "components.button",
-        "components.icon",
-        "components.menu",
-        "components.popover",
-        "components.toggle-button",
-        "components.tooltip"
-      ],
+      "composes": [],
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.button",
-          "components.icon",
-          "components.menu",
-          "components.popover",
-          "components.toggle-button",
-          "components.tooltip"
-        ],
+        "scannedComposes": [],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.button",
-            "components.icon",
-            "components.menu",
-            "components.popover",
-            "components.toggle-button",
-            "components.tooltip"
-          ],
+          "components": [],
           "tokens": [
             "tokens.accent-color",
             "tokens.blur",
@@ -80,7 +59,7 @@
           },
           {
             "path": "packages/designer/src/blocks/PageBar.tsx",
-            "sha256": "e660980f7f08780c4e579af41090275a9abd1222f0b877de9d5dee5ff4e2c951"
+            "sha256": "1e8c53bf7bfd59e9d40c61d60e7807471cb840b956cf5155bbcf20609f7097d5"
           },
           {
             "path": "packages/designer/src/catalog-core/frame-header-options.ts",
@@ -97,6 +76,10 @@
           {
             "path": "packages/designer/src/icons/ChevronDown.ts",
             "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -107,22 +90,22 @@
             "line": 1
           },
           {
-            "code": "DF2",
-            "evidence": "unresolved source export ../components/Link.js#Link",
-            "file": "packages/designer/src/blocks/PageBar.tsx",
-            "line": 8
-          },
-          {
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/ChevronDown.js#ChevronDown",
             "file": "packages/designer/src/blocks/PageBar.tsx",
-            "line": 11
+            "line": 6
           },
           {
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/Check.js#Check",
             "file": "packages/designer/src/blocks/PageBar.tsx",
-            "line": 13
+            "line": 8
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

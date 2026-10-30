@@ -1,8 +1,11 @@
 import { ErrorState } from "../../blocks/ErrorState.js";
 import type { ErrorStateKind } from "../../blocks/ErrorState.js";
-import { Button } from "../../components/Button.js";
-import { Link } from "../../components/Link.js";
+
 import { actionsOf, anatomyOf, memberOf, noop, refuseUnmapped, requiredAnatomy, slotValue, textOf, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
+import { componentLeaf } from "../component-leaf.js";
+
+const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
 
 const LEAF = "sections.error-state";
 const KINDS: readonly ErrorStateKind[] = ["not-found", "failure", "forbidden", "offline"];

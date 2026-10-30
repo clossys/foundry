@@ -29,30 +29,28 @@
   },
   "sections": {
     "logo-hero": {
-      "composes": [
-        "components.logo"
-      ],
+      "composes": [],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.logo"
-        ],
+        "scannedComposes": [],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.logo"
-          ],
+          "components": [],
           "tokens": []
         },
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/LogoHero.tsx",
-            "sha256": "c4d81259bccc7648c61e9846b2c5a25f9b03c23d9fd23c7ce5bd5dc07b2f4d4c"
+            "sha256": "18747d6185ec0ec9d773ea1a30aea39143025e283c2f93365772f730c038050d"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -60,7 +58,13 @@
             "code": "DF5",
             "evidence": "ambiguous slot ownership ./SectionFrame.js#SectionFrame: sections.band, sections.logo-mark",
             "file": "packages/designer/src/blocks/LogoHero.tsx",
-            "line": 3
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },

@@ -178,6 +178,14 @@
         {
           "export": "DropdownMenuLabel",
           "name": "MenuLabel"
+        },
+        {
+          "export": "DropdownMenuSeparator",
+          "name": "MenuSeparator"
+        },
+        {
+          "export": "DropdownMenuTrigger",
+          "name": "DropdownMenuTrigger"
         }
       ],
       "slot": "components.menu",

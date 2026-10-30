@@ -1,9 +1,15 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { Badge, type BadgeVariant } from "../components/Badge.js";
-import { Card } from "../components/Card.js";
-import { Link } from "../components/Link.js";
+import type { BadgeVariant } from "../components/Badge.js";
+
 import { cx } from "../components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const Badge = componentLeaf<typeof import("../components/Badge.js").Badge>("components.badge");
+const Card = componentLeaf<typeof import("../components/Card.js").Card>("components.card");
+const Link = componentLeaf<typeof import("../components/Link.js").Link>("components.link");
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.cards", "foundry/sections.cards");
 
@@ -46,21 +52,21 @@ const LAYOUT_CLASSES: Record<RecordCardsLayout, string> = {
 export function RecordCards({ records, layout = "grid", headingLevel = 3, className, ...rest }: RecordCardsProps) {
   const Heading = `h${headingLevel}` as "h2" | "h3" | "h4";
   return (
-    <ul {...SECTION_STAMP} {...rest} role="list" data-layout={layout} className={cx(LAYOUT_CLASSES[layout], className)}>
+    <SemanticContent as="ul" {...SECTION_STAMP} {...rest} role="list" data-layout={layout} className={cx(LAYOUT_CLASSES[layout], className)}>
       {records.map(record => (
-        <li key={record.id} className="flex min-w-0">
+        <SemanticContent as="li" key={record.id} className="flex min-w-0">
           <Card variant="outline" className="flex w-full flex-col gap-xs p-lg">
-            <div className="flex flex-wrap items-start justify-between gap-sm">
-              <Heading className="m-0 text-body-l font-medium text-ink-primary">
+            <SemanticContent as="div" className="flex flex-wrap items-start justify-between gap-sm">
+              <SemanticContent as={Heading} className="m-0 text-body-l font-medium text-ink-primary">
                 {record.href ? <Link href={record.href} variant="standalone">{record.title}</Link> : record.title}
-              </Heading>
+              </SemanticContent>
               {record.badge ? <Badge variant={record.badge.variant}>{record.badge.label}</Badge> : null}
-            </div>
-            {record.description ? <p className="text-body-s text-ink-secondary">{record.description}</p> : null}
-            {record.meta ? <p className="mt-auto text-caption text-ink-muted">{record.meta}</p> : null}
+            </SemanticContent>
+            {record.description ? <SemanticContent as="p" className="text-body-s text-ink-secondary">{record.description}</SemanticContent> : null}
+            {record.meta ? <SemanticContent as="p" className="mt-auto text-caption text-ink-muted">{record.meta}</SemanticContent> : null}
           </Card>
-        </li>
+        </SemanticContent>
       ))}
-    </ul>
+    </SemanticContent>
   );
 }
