@@ -42,7 +42,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "node scripts/generate-studio-map.mjs && tsc -p tsconfig.json",
+    "build": "node scripts/generate-studio-map.mjs && tsc -p tsconfig.json && node scripts/generate-page-check-receipt.mjs",
     "generate:studio-map": "node scripts/generate-studio-map.mjs",
     "check:studio-map": "node studio/checks/check-studio-map.cjs",
     "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
