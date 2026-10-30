@@ -112,8 +112,11 @@
           "template": "ia-scroll",
           "bands": {
             "L0": "sections.section-header",
-            "L1": "sections.section-header",
-            "L2": "sections.data-table"
+            "L1": "sections.section-header"
+          },
+          "container": {
+            "section": "sections.cards",
+            "mode": "stack"
           },
           "row": {
             "columns": [
@@ -194,8 +197,30 @@
           "template": "ia-scroll",
           "bands": {
             "L0": "sections.section-header",
-            "L1": "sections.section-header",
-            "L2": "sections.data-table"
+            "L1": "sections.section-header"
+          },
+          "container": {
+            "byLayer": {
+              "tokens": {
+                "section": "sections.data-table"
+              },
+              "assets": {
+                "section": "sections.cards",
+                "mode": "grid"
+              },
+              "components": {
+                "section": "sections.cards",
+                "mode": "grid"
+              },
+              "sections": {
+                "section": "sections.cards",
+                "mode": "grid"
+              },
+              "frames": {
+                "section": "sections.cards",
+                "mode": "grid"
+              }
+            }
           },
           "row": {
             "columns": [
@@ -276,8 +301,11 @@
           "template": "ia-scroll",
           "bands": {
             "L0": "sections.section-header",
-            "L1": "sections.section-header",
-            "L2": "sections.data-table"
+            "L1": "sections.section-header"
+          },
+          "container": {
+            "section": "sections.cards",
+            "mode": "stack"
           },
           "row": {
             "columns": [
@@ -358,8 +386,10 @@
           "template": "ia-scroll",
           "bands": {
             "L0": "sections.section-header",
-            "L1": "sections.section-header",
-            "L2": "sections.data-table"
+            "L1": "sections.section-header"
+          },
+          "container": {
+            "section": "sections.data-table"
           },
           "row": {
             "columns": [
@@ -869,8 +899,11 @@
       "template": "ia-scroll",
       "bands": {
         "L0": "sections.section-header",
-        "L1": "sections.section-header",
-        "L2": "sections.data-table"
+        "L1": "sections.section-header"
+      },
+      "container": {
+        "section": "sections.cards",
+        "mode": "stack"
       },
       "row": {
         "columns": [
@@ -887,8 +920,30 @@
       "template": "ia-scroll",
       "bands": {
         "L0": "sections.section-header",
-        "L1": "sections.section-header",
-        "L2": "sections.data-table"
+        "L1": "sections.section-header"
+      },
+      "container": {
+        "byLayer": {
+          "tokens": {
+            "section": "sections.data-table"
+          },
+          "assets": {
+            "section": "sections.cards",
+            "mode": "grid"
+          },
+          "components": {
+            "section": "sections.cards",
+            "mode": "grid"
+          },
+          "sections": {
+            "section": "sections.cards",
+            "mode": "grid"
+          },
+          "frames": {
+            "section": "sections.cards",
+            "mode": "grid"
+          }
+        }
       },
       "row": {
         "columns": [
@@ -905,8 +960,11 @@
       "template": "ia-scroll",
       "bands": {
         "L0": "sections.section-header",
-        "L1": "sections.section-header",
-        "L2": "sections.data-table"
+        "L1": "sections.section-header"
+      },
+      "container": {
+        "section": "sections.cards",
+        "mode": "stack"
       },
       "row": {
         "columns": [
@@ -923,8 +981,10 @@
       "template": "ia-scroll",
       "bands": {
         "L0": "sections.section-header",
-        "L1": "sections.section-header",
-        "L2": "sections.data-table"
+        "L1": "sections.section-header"
+      },
+      "container": {
+        "section": "sections.data-table"
       },
       "row": {
         "columns": [

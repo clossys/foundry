@@ -96,7 +96,7 @@ export function checkContentMap(input: unknown): readonly ContentMapFinding[] {
       || (external ? entry.source !== undefined || !text(entry.path) || !isContentMapExternalHref(entry.href) || entry.manifest !== undefined || entry.constructs !== undefined : Object.hasOwn(entry, "href"))
       || (entry.path === undefined) === (entry.slug === undefined) || !(text(entry.path) || text(entry.slug))
       || (entry.icon !== undefined && !text(entry.icon)) || (entry.description !== undefined && !text(entry.description)) || (entry.keywords !== undefined && (!Array.isArray(entry.keywords) || !entry.keywords.every(text)))) add("contract", at, "Invalid entry identity, content reference or metadata", entry.id);
-    if (Object.hasOwn(entry, "body") && (entry.kind !== "page" || !isContentMapPageBody(entry.body))) add("contract", `${at}.body`, "Only pages may declare an ia-scroll body with exact bands, columns and an optional specimen identity", entry.id);
+    if (Object.hasOwn(entry, "body") && (entry.kind !== "page" || !isContentMapPageBody(entry.body))) add("contract", `${at}.body`, "Only pages may declare an ia-scroll body with exact header bands, an authored container, exact columns and an optional specimen identity", entry.id);
     if (entry.actions !== undefined) {
       const actionIds = new Set<string>();
       if (entry.kind !== "page" || !Array.isArray(entry.actions)) add("contract", `${at}.actions`, "Only pages may declare an ordered actions array", entry.id);
