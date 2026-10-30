@@ -1188,13 +1188,6 @@
     {
       "issues": [],
       "item": "skeleton",
-      "notes": [
-        {
-          "file": "apps/v4/registry/bases/aria/ui/skeleton.tsx",
-          "message": "Restyled selected loading surface to its static shape and surface; no unbound pulse duration or opacity",
-          "value": "animate-pulse"
-        }
-      ],
       "reason": "Pinned source has no foreign headless engine; token, glyph, dependency and runtime checks remain required",
       "runtime": "U-V",
       "slot": "components.skeleton",

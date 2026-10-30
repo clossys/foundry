@@ -17,7 +17,9 @@ describe("native shadcn CSS", () => {
     expect(hash(badge)).toBe("49832966326dc361eb2af6a33d8293e6db02ef2ae585cdf1621e56f99a1c1dc6");
     const upstream = readFileSync(resolve(stylesDir, "../src/importers/__fixtures__/shadcn-aria/style-nova.css"), "utf8");
     const separator = upstream.slice(upstream.indexOf("  /* MARK: Separator */"), upstream.indexOf("  /* MARK: Sheet */"));
-    expect(css.slice(css.indexOf("  /* MARK: Separator */"), css.lastIndexOf("}\n"))).toBe(separator);
+    expect(css.slice(css.indexOf("  /* MARK: Separator */"), css.indexOf("  /* MARK: Skeleton */"))).toBe(separator);
+    const skeleton = upstream.slice(upstream.indexOf("  /* MARK: Skeleton */"), upstream.indexOf("  /* MARK: Slider */"));
+    expect(css.slice(css.indexOf("  /* MARK: Skeleton */"), css.lastIndexOf("}\n"))).toBe(skeleton);
   });
 
   it("compiles fixed source values and reads the existing primary token contract", async () => {
@@ -37,5 +39,8 @@ describe("native shadcn CSS", () => {
     expect(css).toContain("background-color: var(--border)");
     expect(css).toContain(".aria-\\[orientation\\=vertical\\]\\:self-stretch");
     expect(css).toContain("height: 1px");
+    expect(css).toMatch(/\.style-nova \.cn-skeleton \{\s*border-radius: calc\(var\(--radius\) \* 0\.8\);\s*background-color: var\(--muted\)/);
+    expect(css).toContain(".animate-pulse");
+    expect(css).toContain("@keyframes pulse");
   });
 });

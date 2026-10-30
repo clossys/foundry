@@ -110,4 +110,9 @@
     @apply h-full w-px;
   }
 
+  /* MARK: Skeleton */
+  .cn-skeleton {
+    @apply bg-muted rounded-md;
+  }
+
 }

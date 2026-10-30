@@ -19,6 +19,20 @@ export function pinnedInput(): ShadcnComponentInput {
 }
 
 describe("pinned shadcn aria component import", () => {
+  it("materializes native Skeleton and refuses changes to its authenticated output", () => {
+    const input = pinnedInput(), imported = importShadcnAriaComponents(input);
+    const original = input.items.find(item => item.name === "skeleton")!.files[0]!;
+    const files = materializeShadcnComponent(imported, "skeleton");
+    const native = files.find(file => file.path === "components/skeleton/skeleton.tsx")!;
+    expect(native.content).toBe(original.content.replace('from "cn"', 'from "../_parts/utils/index.js"'));
+    const fill = imported.fills.find(fill => fill.components.skeleton)!.components.skeleton!;
+    expect(fill.outputSha256).toContainEqual({ path: native.path, sha256: sha256(native.content) });
+    expect(fill.reads.tokens).toEqual(["tokens.control-radius.default", "tokens.surface-color.sunken"]);
+    expect(fill.blockers).toEqual([]);
+    native.content = native.content.replace("animate-pulse", "animate-none");
+    expect(() => materializeShadcnComponent(imported, "skeleton")).toThrow(/output hash differs/);
+  });
+
   it("materializes native Badge without flattening or restyling its pinned classes", () => {
     const input = pinnedInput(), imported = importShadcnAriaComponents(input);
     const original = input.items.find(item => item.name === "badge")!.files[0]!;
