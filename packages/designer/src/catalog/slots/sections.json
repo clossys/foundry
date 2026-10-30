@@ -4510,7 +4510,9 @@
         ]
       },
       "allowedComposes": [
+        "components.item",
         "components.link",
+        "components.logo",
         "components.semantic-content"
       ],
       "parts": [

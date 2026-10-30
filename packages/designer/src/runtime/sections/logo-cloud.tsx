@@ -1,13 +1,14 @@
 /** sections.logo-cloud: LogoCloud marks drawn by Logomark. The count member must match the logos supplied. */
 import type { ReactNode } from "react";
 import { LogoCloud } from "../../blocks/LogoCloud.js";
-import { Logomark } from "../../components/Logomark.js";
+import { componentLeaf } from "../component-leaf.js";
 import { list, memberValue, object, optionalText, readSectionContent, required, SectionContentError, text, type SectionRenderInput, type SectionRendererInputs } from "./group-a-content.js";
 
 export const logoCloudInputs: SectionRendererInputs = {
   slots: ["logos"],
   members: ["count.3", "count.4", "count.6", "count.8", "count.12", "monochrome.true", "monochrome.false"],
 };
+const Logomark = componentLeaf<typeof import("../../components/Logomark.js").Logomark>("components.logo");
 
 export function renderLogoCloudSection(input: SectionRenderInput): ReactNode {
   const content = readSectionContent(input, "sections.logo-cloud", logoCloudInputs);
