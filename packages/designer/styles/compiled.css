@@ -1187,8 +1187,14 @@
   .my-lg {
     margin-block: var(--spacing-lg, 16px);
   }
+  .my-md {
+    margin-block: var(--spacing-md, 12px);
+  }
   .my-sm {
     margin-block: var(--spacing-sm, 8px);
+  }
+  .my-xl {
+    margin-block: var(--spacing-xl, 24px);
   }
   .my-xs {
     margin-block: var(--spacing-xs, 4px);
@@ -1608,6 +1614,9 @@
   }
   .h-px {
     height: 1px;
+  }
+  .h-sm {
+    height: var(--spacing-sm, 8px);
   }
   .h-svh {
     height: 100svh;
@@ -3037,6 +3046,10 @@
     --tw-leading: 1;
     line-height: 1;
   }
+  .font-bold {
+    --tw-font-weight: var(--font-weight-bold, 700);
+    font-weight: var(--font-weight-bold, 700);
+  }
   .font-medium {
     --tw-font-weight: var(--font-weight-medium, 500);
     font-weight: var(--font-weight-medium, 500);
@@ -3164,6 +3177,9 @@
   }
   .uppercase {
     text-transform: uppercase;
+  }
+  .italic {
+    font-style: italic;
   }
   .ordinal {
     --tw-ordinal: ordinal;
