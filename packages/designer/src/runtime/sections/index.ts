@@ -16,7 +16,6 @@ import { boundaryMessageRenderer } from "./boundary-message.js";
 import { legalProseRenderer } from "./legal-prose.js";
 import { accountSummaryRenderer } from "./account-summary.js";
 import { logoHeroRenderer } from "./logo-hero.js";
-import { withLibraryBoard } from "./library-board.js";
 
 type SampleContent = Readonly<Record<string, RuntimeJson>>;
 type SampleOf = (dataset: SpecimenDataset) => SampleContent;
@@ -38,9 +37,7 @@ function member<Leaf extends string>(leaves: readonly Leaf[], leaf: string): Lea
   return (leaves as readonly string[]).includes(short) ? short as Leaf : undefined;
 }
 
-// sections.comparison: the arrangement.library-board member draws the live board through its Section host port.
-const groupARenderers = { ...GROUP_A_SECTION_RENDERERS, "sections.comparison": withLibraryBoard(GROUP_A_SECTION_RENDERERS["sections.comparison"]!) };
-const groupA = adaptSectionGroup(groupARenderers, leaf => {
+const groupA = adaptSectionGroup(GROUP_A_SECTION_RENDERERS, leaf => {
   const short = member<GroupALeaf>(GROUP_A_LEAVES, leaf);
   return short ? () => GROUP_A_CONTENT[short] : undefined;
 });

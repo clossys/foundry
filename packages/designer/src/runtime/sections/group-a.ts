@@ -9,6 +9,7 @@ import { articleInputs, renderArticleSection } from "./article.js";
 import { bandInputs, renderBandSection } from "./band.js";
 import { callToActionInputs, renderCallToActionSection } from "./call-to-action.js";
 import { comparisonInputs, renderComparisonSection } from "./comparison.js";
+import { withLibraryBoard } from "./library-board.js";
 import { contentInputs, renderContentSection } from "./content.js";
 import { faqInputs, renderFaqSection } from "./faq.js";
 import { featuresInputs, renderFeaturesSection } from "./features.js";
@@ -25,7 +26,7 @@ export const GROUP_A_SECTION_RENDERERS: Readonly<Record<string, SectionRenderer>
   "sections.article": renderArticleSection,
   "sections.band": renderBandSection,
   "sections.call-to-action": renderCallToActionSection,
-  "sections.comparison": renderComparisonSection,
+  "sections.comparison": withLibraryBoard(renderComparisonSection),
   "sections.content": renderContentSection,
   "sections.faq": renderFaqSection,
   "sections.features": renderFeaturesSection,
