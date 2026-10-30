@@ -21,6 +21,51 @@ function chain(count: number): TreeNode[] {
 }
 
 describe("Explorer", () => {
+  it("places a protected link-out beside the treeitem without selecting or disclosing its node", async () => {
+    const onSelect = vi.fn();
+    render(<Explorer tree={[{ id: "folder", label: "Folder", children: [] }]} label="Files" onSelect={onSelect}
+      externalAction={() => ({ href: "#standalone", label: "Open Folder in a new tab", icon: <span>↗</span> })} />);
+    const row = screen.getByRole("treeitem", { name: "Folder" });
+    const action = screen.getByRole("link", { name: "Open Folder in a new tab" });
+    expect(action.parentElement).toBe(row.parentElement);
+    expect(row.contains(action)).toBe(false);
+    expect(action.closest("button, [role=treeitem]")).toBeNull();
+    expect(action).toHaveAttribute("href", "#standalone");
+    expect(action).toHaveAttribute("target", "_blank");
+    expect(action).toHaveAttribute("rel", "noopener noreferrer");
+    await userEvent.click(action);
+    expect(action).toHaveFocus();
+    expect(row).toHaveAttribute("aria-expanded", "false");
+    expect(onSelect).not.toHaveBeenCalled();
+    await userEvent.keyboard("{Enter}");
+    expect(row).toHaveAttribute("aria-expanded", "false");
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+  it("keeps visible sibling actions in native tab order while arrows retain tree navigation", async () => {
+    const onSelect = vi.fn();
+    render(<Explorer tree={[{ id: "one", label: "One" }, { id: "two", label: "Two" }]} label="Files" onSelect={onSelect}
+      externalAction={node => ({ href: `#${node.id}`, label: `Open ${node.label}`, icon: <span>↗</span> })} />);
+    const one = screen.getByRole("treeitem", { name: "One" }), two = screen.getByRole("treeitem", { name: "Two" });
+    const actionOne = screen.getByRole("link", { name: "Open One" }), actionTwo = screen.getByRole("link", { name: "Open Two" });
+    expect(actionOne.tabIndex).toBe(0); expect(actionTwo.tabIndex).toBe(0);
+    act(() => one.focus());
+    await userEvent.tab(); expect(actionOne).toHaveFocus();
+    await userEvent.tab(); expect(actionTwo).toHaveFocus();
+    await userEvent.tab({ shift: true }); expect(actionOne).toHaveFocus();
+    await userEvent.tab({ shift: true }); expect(one).toHaveFocus();
+    await userEvent.keyboard("{ArrowDown}"); expect(two).toHaveFocus();
+    expect(actionOne.tabIndex).toBe(0); expect(actionTwo.tabIndex).toBe(0);
+    await userEvent.tab(); expect(actionTwo).toHaveFocus();
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+  it("removes collapsed descendants' actions and preserves the row href independently", async () => {
+    render(<Explorer tree={[{ id: "folder", label: "Folder", children: [{ id: "leaf", label: "Leaf", href: "#selected" }] }]} label="Files" defaultExpandedIds={["folder"]}
+      externalAction={node => node.id === "leaf" ? { href: "#standalone", label: "Open Leaf", icon: <span>↗</span> } : null} />);
+    expect(screen.getByRole("treeitem", { name: "Leaf" })).toHaveAttribute("href", "#selected");
+    expect(screen.getByRole("link", { name: "Open Leaf" })).toHaveAttribute("href", "#standalone");
+    await userEvent.click(screen.getByRole("treeitem", { name: "Folder" }));
+    expect(screen.queryByRole("link", { name: "Open Leaf" })).toBeNull();
+  });
   it("honors controlled folder selection and both callbacks once per activation while arrows only disclose", async () => {
     const action = vi.fn(); const onSelect = vi.fn();
     const tree = [{ id: "folder", label: "Folder", onSelect: action, children: [] }];

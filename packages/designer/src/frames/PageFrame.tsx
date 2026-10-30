@@ -1,8 +1,9 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useId, useRef, useState, type ReactNode } from "react";
 import { Breadcrumb, Button, SemanticContent, Tooltip } from "../components/index.js";
 import { ModuleFrame } from "./ModuleFrame.js";
+import { AppFrameChromeStyle, useAppFrameChromeMotion } from "./shadcn-aria/chrome.js";
 
 export interface PageFrameBreadcrumb {
   id: string;
@@ -69,6 +70,8 @@ export function PageFrame(props: PageFrameProps) {
 function PageContent({ manifest, breadcrumbLabel, actionsLabel, modulesLabel, children, openModuleIds, defaultOpenModuleIds,
   onOpenModuleIdsChange, onNavigate, mainId, mainBusy, stage = "padded", className, headerSurface = "solid" }: PageFrameProps) {
   const instance = useId();
+  const geometry = useRef<HTMLDivElement>(null);
+  useAppFrameChromeMotion(geometry);
   const [ownOpenIds, setOwnOpenIds] = useState<readonly string[]>(() => defaultOpenModuleIds ?? manifest.actions.filter(action => action.defaultOpen).map(action => action.module.sectionId));
   const declaredIds = manifest.actions.map(action => action.module.sectionId);
   const openIds = declaredIds.filter(id => (openModuleIds ?? ownOpenIds).includes(id));
@@ -79,7 +82,8 @@ function PageContent({ manifest, breadcrumbLabel, actionsLabel, modulesLabel, ch
     onOpenModuleIdsChange?.(next);
   };
   const BreadcrumbItem = Breadcrumb.Item;
-  return <SemanticContent as="div" data-page-id={manifest.id} className={["frame-page flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden", className].filter(Boolean).join(" ")}>
+  return <SemanticContent as="div" ref={geometry} data-page-id={manifest.id} data-page-modules-open={openIds.length > 0} className={["frame-page flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden", className].filter(Boolean).join(" ")}>
+    <AppFrameChromeStyle />
     <SemanticContent as="div" data-page-frame-header="" className={["frame-page-header sticky top-0 z-sticky flex min-w-0 items-center justify-between gap-sm border-b border-line-base px-md py-sm", { solid: "bg-surface-raised", transparent: "bg-transparent", glass: "bg-surface-glass" }[headerSurface]].join(" ")}
       onClickCapture={event => {
         if (!onNavigate || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -94,7 +98,7 @@ function PageContent({ manifest, breadcrumbLabel, actionsLabel, modulesLabel, ch
           {manifest.breadcrumbs.map(crumb => <BreadcrumbItem key={crumb.id} href={crumb.href}>{crumb.label}</BreadcrumbItem>)}
         </Breadcrumb>
       </SemanticContent>
-      <SemanticContent as="div" role="group" aria-label={actionsLabel} className="flex shrink-0 items-center gap-xs">
+      <SemanticContent as="div" role="group" aria-label={actionsLabel} className="flex max-w-full shrink-0 flex-wrap items-center justify-end gap-xs">
         {manifest.actions.map(action => <Tooltip key={action.id} trigger={
           <Button variant="ghost" size="md" data-page-action={action.id} aria-label={action.label}
             aria-pressed={openIds.includes(action.module.sectionId)} aria-controls={openIds.includes(action.module.sectionId) ? moduleDomId(action.module.sectionId) : undefined}
@@ -104,13 +108,13 @@ function PageContent({ manifest, breadcrumbLabel, actionsLabel, modulesLabel, ch
         }>{action.label}</Tooltip>)}
       </SemanticContent>
     </SemanticContent>
-    <SemanticContent as="div" className="frame-page-layout flex min-h-0 min-w-0 flex-1 overflow-hidden">
+    <SemanticContent as="div" className="frame-page-layout min-h-0 min-w-0 flex-1 overflow-hidden">
       <SemanticContent as="main" id={mainId} tabIndex={-1} aria-busy={mainBusy || undefined} data-page-frame-stage=""
         className={stage === "full" ? "frame-page-stage frame-main-bleed focus-ring-inset flex min-h-0 min-w-0 flex-1 flex-col overflow-auto" : "frame-page-stage frame-main-gap frame-main-bleed focus-ring-inset flex min-h-0 min-w-0 flex-1 flex-col gap-lg overflow-auto p-lg"}>
         {children}
       </SemanticContent>
       {openIds.length > 0 && <SemanticContent as="aside" data-page-frame-modules="" aria-label={modulesLabel}
-        className="frame-page-modules flex min-h-0 min-w-0 shrink-0 basis-[var(--frame-module-width)] flex-col gap-md overflow-auto border-s border-line-base bg-surface-sunken p-md">
+        className="frame-page-modules flex min-h-0 min-w-0 flex-col gap-md overflow-auto border-s border-line-base bg-surface-sunken p-md">
         {manifest.actions.filter(action => openIds.includes(action.module.sectionId)).map(action => <SemanticContent as="div" key={action.module.sectionId} id={moduleDomId(action.module.sectionId)}>
           <ModuleFrame id={action.module.sectionId} label={action.module.label} defaultExpanded={action.module.defaultExpanded}>{action.module.children}</ModuleFrame>
         </SemanticContent>)}

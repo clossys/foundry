@@ -261,7 +261,7 @@ export type { AppNavigationNode, AppNavigationLeaf, AppNavigationDestination, Ap
 export { RelationGraph } from "./RelationGraph.js";
 export type { RelationGraphProps, RelationGraphNode, RelationGraphEdge } from "./relation-graph-types.js";
 export { Explorer } from "./Explorer.js";
-export type { ExplorerProps } from "./Explorer.js";
+export type { ExplorerProps, ExplorerExternalAction } from "./Explorer.js";
 export { indexTree, getTreeAncestry, getTreeBreadcrumbs } from "./tree-model.js";
 export type { TreeNode, TreeTarget, TreeBreadcrumb, TreeValidationOptions, TreeIndex } from "./tree-model.js";
 export { FlowCanvas } from "./FlowCanvas.js";

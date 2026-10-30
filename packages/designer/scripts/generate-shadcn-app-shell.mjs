@@ -39,6 +39,7 @@ for (const [path, destination] of sources) {
     ["../../components/Banner.copy.js", "@clossys/designer/frames"],
     ["../app-frame-types.js", "@clossys/designer/frames"],
     ["../PageFrame.js", "./PageFrame.js"],
+    ["./shadcn-aria/chrome.js", "./chrome.js"],
   ]) content = content.replaceAll(JSON.stringify(from), JSON.stringify(to));
   content = content.replace('import { ShellI18nProvider } from "#designer-frame-i18n";', 'import { I18nProvider as ShellI18nProvider } from "react-aria-components";');
   content = content.replace('import animation from "../../catalog/fills/foundry/tokens.animation.json" with { type: "json" };', `const animation = ${JSON.stringify(animation)};`);
