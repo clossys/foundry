@@ -5,6 +5,7 @@ import { foundrySurfaceCatalog } from "./surface-catalog.js";
 
 /** Explicit source decisions take precedence over roster availability. */
 const sourceDecisions: Readonly<Record<string, string | undefined>> = {
+  "components.rich-text": "shadcn@aria",
   "components.semantic-content": "foundry",
   // H3-A01..A12: asset policy is independent of candidate availability.
   "assets.backdrop-graphic": "foundry",

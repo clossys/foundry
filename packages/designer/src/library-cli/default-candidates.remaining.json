@@ -1,0 +1,224 @@
+{
+  "schemaVersion": 1,
+  "captureState": "Working tree after the focused rich-text integration fixes, before their commit; baseHead and sourceHead identify the measured base, not the final committed head.",
+  "baseHead": "a0c11655c91f8405dc8313cc14791d9d56195abc",
+  "command": "node packages/designer/scripts/check-default-candidates.mjs",
+  "exitCode": 2,
+  "sourceHead": "a0c11655c91f8405dc8313cc14791d9d56195abc",
+  "status": "invalid-input",
+  "scope": "All native registered implementation descriptor reads, value references, composition inputs, and attached source-only lower-bound measurements. Registered slots without implementations require explicit native unavailable coverage; no runtime or full-program coverage claim.",
+  "counts": {
+    "registeredSlots": 250,
+    "registeredSurfaces": 144,
+    "implementationDescriptors": 175,
+    "checkedReads": 2180,
+    "checkedSlots": 94,
+    "missingSlots": 12
+  },
+  "remainingByLayer": {
+    "assets": 12
+  },
+  "missing": [
+    {
+      "slot": "assets.backdrop-graphic",
+      "source": "",
+      "surfaces": [
+        "sections.hero"
+      ],
+      "reads": [
+        "assets.backdrop-graphic"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.icon-check",
+      "source": "",
+      "surfaces": [
+        "components.checkbox",
+        "components.combo-box",
+        "components.command",
+        "components.dropdown-menu",
+        "components.menu",
+        "components.select"
+      ],
+      "reads": [
+        "assets.icon-check"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.icon-chevron-down",
+      "source": "",
+      "surfaces": [
+        "components.breadcrumbs",
+        "components.combo-box",
+        "components.disclosure",
+        "components.number-field",
+        "components.select",
+        "sections.data-grid",
+        "sections.data-table"
+      ],
+      "reads": [
+        "assets.icon-chevron-down"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.icon-chevron-left",
+      "source": "",
+      "surfaces": [
+        "components.calendar",
+        "sections.pagination"
+      ],
+      "reads": [
+        "assets.icon-chevron-left"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.icon-chevron-right",
+      "source": "",
+      "surfaces": [
+        "components.breadcrumbs",
+        "components.button",
+        "components.calendar",
+        "components.dropdown-menu",
+        "components.media-player",
+        "components.menu",
+        "components.navigation-tree",
+        "components.tree",
+        "sections.data-grid",
+        "sections.data-table",
+        "sections.pagination"
+      ],
+      "reads": [
+        "assets.icon-chevron-right"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.icon-chevron-up",
+      "source": "",
+      "surfaces": [
+        "components.disclosure",
+        "components.number-field"
+      ],
+      "reads": [
+        "assets.icon-chevron-up"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.icon-close",
+      "source": "",
+      "surfaces": [
+        "components.combo-box",
+        "components.command",
+        "components.dialog",
+        "components.sheet",
+        "components.tag-group"
+      ],
+      "reads": [
+        "assets.icon-close"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.icon-date",
+      "source": "",
+      "surfaces": [
+        "components.date-picker"
+      ],
+      "reads": [
+        "assets.icon-date"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.icon-search",
+      "source": "",
+      "surfaces": [
+        "components.command",
+        "components.select"
+      ],
+      "reads": [
+        "assets.icon-search"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.lockup",
+      "source": "",
+      "surfaces": [
+        "assets.lockup"
+      ],
+      "reads": [
+        "assets.lockup",
+        "assets.lockup.positive"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.mark",
+      "source": "",
+      "surfaces": [
+        "assets.app-icon",
+        "assets.favicon",
+        "assets.mark"
+      ],
+      "reads": [
+        "assets.mark",
+        "assets.mark.positive"
+      ],
+      "reasons": [
+        "no implementation candidate in the default source"
+      ]
+    },
+    {
+      "slot": "assets.video",
+      "source": "foundry",
+      "surfaces": [
+        "components.media-player"
+      ],
+      "reads": [
+        "assets.video"
+      ],
+      "reasons": [
+        "A1: Member licence and adopted pin/hash trail required"
+      ]
+    }
+  ],
+  "invalid": [
+    "MISSING_POLICY assets.backdrop-graphic: default source definition is missing",
+    "MISSING_POLICY assets.icon-check: default source definition is missing",
+    "MISSING_POLICY assets.icon-chevron-down: default source definition is missing",
+    "MISSING_POLICY assets.icon-chevron-left: default source definition is missing",
+    "MISSING_POLICY assets.icon-chevron-right: default source definition is missing",
+    "MISSING_POLICY assets.icon-chevron-up: default source definition is missing",
+    "MISSING_POLICY assets.icon-close: default source definition is missing",
+    "MISSING_POLICY assets.icon-date: default source definition is missing",
+    "MISSING_POLICY assets.icon-search: default source definition is missing",
+    "MISSING_POLICY assets.lockup: default source definition is missing",
+    "MISSING_POLICY assets.mark: default source definition is missing"
+  ]
+}
