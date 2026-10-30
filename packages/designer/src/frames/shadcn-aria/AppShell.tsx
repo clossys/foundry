@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { Sidebar, SidebarProvider, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton, Sheet, SheetHeader, SheetTitle, Tooltip, SemanticContent, Button, Logomark, Menu } from "../../components/index.js";
 import { AccountMenu, CommandMenu, ResizablePane, useCommandMenuShortcut, validateAppNavigationTree, type AppNavigationNode } from "../../blocks/index.js";
 import { Icon as AssetIcon } from "../../components/icon/index.js";
@@ -77,6 +77,19 @@ function Content(props: AppFrameProps) {
   const panelCollapsed = rightPanel?.collapsed ?? ownPanelCollapsed;
   const changePanel = (next: boolean) => { if (rightPanel?.collapsed === undefined) setOwnPanelCollapsed(next); rightPanel?.onCollapsedChange?.(next); };
   const isCollapsed = navigation.collapsed ?? collapsed;
+  const navigationRegion = useRef<HTMLDivElement>(null), panelRegion = useRef<HTMLElement>(null);
+  const previousCollapse = useRef({ navigation: isCollapsed, panel: panelCollapsed });
+  useLayoutEffect(() => {
+    const previous = previousCollapse.current;
+    previousCollapse.current = { navigation: isCollapsed, panel: panelCollapsed };
+    // Desktop regions stay mounted when collapsed. Move only their current focus;
+    // mobile Sheets retain their own modal focus restoration.
+    if (narrow) return;
+    const active = document.activeElement;
+    const region = !previous.navigation && isCollapsed && navigationRegion.current?.contains(active) ? "navigation"
+      : !previous.panel && panelCollapsed && panelRegion.current?.contains(active) ? "panel" : null;
+    if (region) chrome.current?.querySelector<HTMLElement>(`[data-app-frame-toggle="${region}"]`)?.focus();
+  }, [isCollapsed, panelCollapsed, narrow]);
   const changeCollapsed = (next: boolean) => { if (navigation.collapsed === undefined) setCollapsed(next); navigation.onCollapsedChange?.(next); };
   const mainId = props.mainId ?? `main-content-${id.replaceAll(":", "")}`;
   const mark = theme.resolvedTheme === "dark" ? brand.reversedMarkSrc ?? brand.markSrc : brand.markSrc;
@@ -114,7 +127,7 @@ function Content(props: AppFrameProps) {
       {corner("navigation", true, () => changeDrawer(false))}
       <SheetHeader><SheetTitle>{navigation.label ?? openNavigation}</SheetTitle></SheetHeader>
       <SemanticContent as="div" role="navigation" aria-label={navigation.label ?? openNavigation}>{sidebar}</SemanticContent>
-    </Sheet> : <Sidebar {...SIDEBAR} variant="inset" collapsible="icon" copyResolver={railCopy} aria-hidden={isCollapsed} inert={isCollapsed} aria-label={navigation.label ?? openNavigation} role="navigation" onClickCapture={event => {
+    </Sheet> : <Sidebar {...SIDEBAR} ref={navigationRegion} variant="inset" collapsible="icon" copyResolver={railCopy} aria-hidden={isCollapsed} inert={isCollapsed} aria-label={navigation.label ?? openNavigation} role="navigation" onClickCapture={event => {
       if (!props.onNavigate || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const anchor = (event.target as Element).closest<HTMLAnchorElement>("a[href]");
       if (!anchor || anchor.hasAttribute("download") || anchor.target && anchor.target !== "_self") return;
@@ -135,7 +148,7 @@ function Content(props: AppFrameProps) {
       {rightPanel && (narrow ? <Sheet side="right" showCloseButton={false} isOpen={!panelCollapsed} onOpenChange={open => changePanel(!open)} copyResolver={railCopy}>
         {corner("panel", true, () => changePanel(true))}<SheetHeader><SheetTitle>{rightPanel.label}</SheetTitle></SheetHeader>
         {props.inspectorContext ?? rightPanel.children}
-      </Sheet> : <SemanticContent as="aside" aria-label={rightPanel.label} hidden={panelCollapsed} className="frame-docked-panel min-h-0 shrink-0 overflow-hidden" style={{ paddingBlockStart: "calc(var(--ui-layout-tap-target) + var(--spacing-md))" }}>
+      </Sheet> : <SemanticContent as="aside" ref={panelRegion} aria-label={rightPanel.label} hidden={panelCollapsed} className="frame-docked-panel min-h-0 shrink-0 overflow-hidden" style={{ paddingBlockStart: "calc(var(--ui-layout-tap-target) + var(--spacing-md))" }}>
         <ResizablePane {...rightPanel} handleEdge="start" className="h-full min-h-0 border-s border-line-base">{props.inspectorContext ?? rightPanel.children}</ResizablePane>
       </SemanticContent>)}
     </SemanticContent>
