@@ -73,3 +73,10 @@ export { StudioCopyNeedsError, readStudioCopy, readStudioMessage } from "./copy-
 export type { StudioCopyBinding, StudioCopyRef, StudioCopyResolver } from "./copy-binding.js";
 export { StudioCopyProvider } from "./copy-context.js";
 export { StudioDataValue } from "./data-value.js";
+export { SPECIMEN_KIND_MAP, resolveSpecimenLeafBinding } from "./specimen-kind-map.js";
+export type { SpecimenCellKind, SpecimenLeafBinding } from "./specimen-kind-map.js";
+export { validateSpecimenCoverage, collectSpecimenDomEvidence } from "./specimen-coverage.js";
+export type { SpecimenAgent, SpecimenCoverageCell, RegisteredSpecimenCases, SpecimenCoverageFinding, SpecimenDomCaseEvidence, SpecimenDomEvidence, SpecimenAgentCoverage, SpecimenCoverageReport } from "./specimen-coverage.js";
+export { studioSpecimenLeaves, enumerateRegisteredDesignerSpecimenCases } from "./specimen-registry.js";
+export { projectAgentSpecimenPlan, bindAgentSpecimenPlan } from "./specimen-plan.js";
+export type { NativeAgentSpecimenPlan } from "./specimen-plan.js";
