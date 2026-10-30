@@ -5,7 +5,7 @@ import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js"
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
-const Badge = componentLeaf<typeof import("../components/Badge.js").Badge>("components.badge");
+const Badge = componentLeaf<typeof import("../components/preview-runtime/components/badge/badge.js").Badge>("components.badge");
 type Part = ComponentType<HTMLAttributes<HTMLElement>>;
 const Card = componentLeaf<typeof import("../components/Card.js").Card>("components.card");
 const CardHeader = componentLeaf<Part>("components.card", "CardHeader");

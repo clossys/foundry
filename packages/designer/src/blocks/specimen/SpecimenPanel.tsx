@@ -1,8 +1,8 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Badge, type BadgeVariant } from "../../components/Badge.js";
+import { Badge } from "../../components/preview-runtime/components/badge/badge.js";
 import { hasContent } from "../items/policies.js";
 import { Card } from "../../components/Card.js";
-import { StatusMark } from "../../components/StatusMark.js";
+import { StatusMark, type StatusMarkTone } from "../../components/StatusMark.js";
 import { cx } from "../../components/internal/cx.js";
 import { UI_BORDER_HAIRLINE, UI_ELEVATION_PANEL } from "../../components/internal/ui-vars.js";
 import { AnatomyMarker, SpecimenPartView, type SpecimenPart, type SpecimenStatus } from "./parts.js";
@@ -12,7 +12,7 @@ import { AnatomyMarker, SpecimenPartView, type SpecimenPart, type SpecimenStatus
  * field columns follow the panel's own width, so the same panel reads at a
  * third of a row, half a row, or the full width of a phone.
  */
-const PANEL_CLASSES = "@container h-full min-w-0 p-0";
+const PANEL_CLASSES = "style-nova @container h-full min-w-0 p-0";
 const PANEL_BODY_CLASSES = "flex h-full min-w-0 flex-col gap-lg p-lg font-body @md:p-xl";
 const SECTION_DIVIDER = "border-t border-line-base pt-md";
 const HEADER_CLASSES = "flex flex-wrap items-start justify-between gap-x-md gap-y-xs";
@@ -53,7 +53,7 @@ export interface SpecimenPanelContent {
   /** The record's state, beside the title. */
   status?: SpecimenStatus;
   /** A separate record label using the existing Badge tones. */
-  badge?: { label: ReactNode; tone?: BadgeVariant };
+  badge?: { label: ReactNode; tone?: StatusMarkTone };
   /** 1 to 3 parts, separated by hairlines. */
   parts: readonly SpecimenPart[];
   footer?: SpecimenFooter;
@@ -128,7 +128,7 @@ export function SpecimenPanel({ title, meta, status, badge, parts, footer, marke
   const headerMarker = markerAt("header");
   const footerMarker = markerAt("footer");
   const hasHeader = present(title) || present(meta) || status !== undefined || badge !== undefined;
-  const badgeElement = badge !== undefined ? <Badge variant={badge.tone}>{badge.label}</Badge> : null;
+  const badgeElement = badge !== undefined ? <Badge variant={badge.tone === "danger" ? "destructive" : "secondary"}>{badge.label}</Badge> : null;
   // Status tint/text pairs are qualified over base, as in Item.
   const statusBadge = badge?.tone !== undefined && badge.tone !== "neutral";
   const assignee = footer?.assignee;

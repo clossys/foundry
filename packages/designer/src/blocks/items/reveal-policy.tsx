@@ -1,5 +1,5 @@
 import { UI_BORDER_HAIRLINE } from "../../components/internal/ui-vars.js";
-import { Badge } from "../../components/Badge.js";
+import { Badge } from "../../components/preview-runtime/components/badge/badge.js";
 import { cx } from "../../components/internal/cx.js";
 import { FAQ_ANSWER_STYLE, FAQ_ROW_CLASSES } from "../Faq.server.js";
 import type { DisclosureRowOptions } from "../internal/disclosure-row-types.js";
@@ -16,10 +16,10 @@ export function itemDisclosureOptions(item: ItemData, props: ItemsProps): Disclo
   const withStatus = item.status !== undefined;
   const rule = treatment === "rule" ? "border-t" : undefined;
   const status = item.badge?.tone !== undefined && item.badge.tone !== "neutral";
-  const badge = item.badge ? <Badge variant={item.badge.tone}>{item.badge.label}</Badge> : null;
+  const badge = item.badge ? <Badge variant={item.badge.tone === "danger" ? "destructive" : "secondary"}>{item.badge.label}</Badge> : null;
   const icon = hasContent(item.icon) ? <span aria-hidden="true" className={cx("inline-flex", index ? "shrink-0" : undefined, colors.secondary)}>{item.icon}</span> : null;
   const copy = <>
-    {hasContent(item.eyebrow) || hasContent(item.meta) || item.badge ? <span data-item-meta="" className={cx("flex flex-wrap items-center gap-sm", withStatus ? "tablet:w-full" : undefined)}>
+    {hasContent(item.eyebrow) || hasContent(item.meta) || item.badge ? <span data-item-meta="" className={cx("style-nova flex flex-wrap items-center gap-sm", withStatus ? "tablet:w-full" : undefined)}>
       {hasContent(item.eyebrow) ? <span data-item-eyebrow="" className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{item.eyebrow}</span> : null}
       {status ? <span className="inline-flex rounded-pill bg-surface-base">{badge}</span> : badge}
       {hasContent(item.meta) ? <span className={cx("text-caption font-body", colors.secondary, withStatus ? "tablet:min-w-0 tablet:flex-1" : undefined)}>{item.meta}</span> : null}

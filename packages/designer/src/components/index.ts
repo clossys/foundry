@@ -74,8 +74,8 @@ export type { IconProps, IconSize, IconAccessibilityProps, IconNode } from "./Ic
 export { TextField } from "./TextField.js";
 export type { TextFieldProps } from "./TextField.js";
 
-export { Badge } from "./Badge.js";
-export type { BadgeProps, BadgeVariant } from "./Badge.js";
+export { Badge, badgeVariants } from "./preview-runtime/components/badge/badge.js";
+export type { BadgeProps, BadgeVariant } from "./Badge.types.js";
 
 export { Card } from "./Card.js";
 export type { CardProps, CardVariant, CardGround } from "./Card.js";

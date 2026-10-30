@@ -32,7 +32,7 @@ import userEvent from "@testing-library/user-event";
 import { Logomark } from "../components/Logomark.js";
 import { Lockup } from "../blocks/Lockup.js";
 import { Avatar } from "../components/Avatar.js";
-import { Badge } from "../components/Badge.js";
+import { Badge } from "../components/preview-runtime/components/badge/badge.js";
 import { Banner } from "../components/Banner.js";
 import { Breadcrumb } from "../components/Breadcrumb.js";
 import { Button } from "../components/Button.js";
@@ -418,11 +418,12 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     trees.push(["Button ghost lg", render(<Button variant="ghost" size="lg">Save</Button>)]);
     trees.push(["Button danger", render(<Button variant="danger">Delete</Button>)]);
     trees.push(["Button outline lg", render(<Button variant="outline" size="lg">See an example</Button>)]);
-    trees.push(["Badge neutral", render(<Badge>Active</Badge>)]);
-    trees.push(["Badge success", render(<Badge variant="success">Active</Badge>)]);
-    trees.push(["Badge warning", render(<Badge variant="warning">Active</Badge>)]);
-    trees.push(["Badge danger", render(<Badge variant="danger">Active</Badge>)]);
-    trees.push(["Badge info", render(<Badge variant="info">Active</Badge>)]);
+    trees.push(["Badge default", render(<Badge>Active</Badge>)]);
+    trees.push(["Badge ghost", render(<Badge variant="ghost">Active</Badge>)]);
+    trees.push(["Badge outline", render(<Badge variant="outline">Active</Badge>)]);
+    trees.push(["Badge destructive", render(<Badge variant="destructive">Active</Badge>)]);
+    trees.push(["Badge secondary", render(<Badge variant="secondary">Active</Badge>)]);
+    trees.push(["Badge link", render(<Badge variant="link">Active</Badge>)]);
     trees.push(["Card", render(<Card>Content</Card>)]);
     for (const ground of ["base", "sunken", "inverse"] as const) {
       trees.push([`Card plate ${ground}`, render(<Card variant="plate" ground={ground}>Content</Card>)]);

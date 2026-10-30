@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { BadgeVariant } from "../../components/Badge.js";
+import type { StatusMarkTone } from "../../components/StatusMark.js";
 import type { CatalogWorkspaceSize } from "../catalog-workspace/types.js";
 
 /** Every entry carries one lifecycle. Parked entries are hidden from browse until shown. */
@@ -81,7 +81,7 @@ export interface CatalogBrowserField {
 /** A status badge in the entry header. */
 export interface CatalogBrowserBadge {
   readonly label: string;
-  readonly tone?: BadgeVariant;
+  readonly tone?: StatusMarkTone;
 }
 
 /** The host's slots and data bindings for one catalog kind. Previews are always host-supplied. */

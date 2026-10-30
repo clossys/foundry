@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from "react";
-import { Badge, type BadgeVariant } from "../../components/Badge.js";
+import { Badge } from "../../components/preview-runtime/components/badge/badge.js";
 import { Button } from "../../components/Button.js";
 import { DetailView } from "../DetailView.js";
 import { EmptyState } from "../EmptyState.js";
@@ -9,8 +9,8 @@ import type {
   CatalogBrowserLabels, CatalogBrowserLifecycle, CatalogBrowserReference,
 } from "./types.js";
 
-const LIFECYCLE_TONE: Readonly<Record<CatalogBrowserLifecycle, BadgeVariant>> = {
-  draft: "info", stable: "success", deprecated: "warning", parked: "neutral",
+const LIFECYCLE_VARIANT: Readonly<Record<CatalogBrowserLifecycle, "secondary" | "default" | "outline">> = {
+  draft: "secondary", stable: "default", deprecated: "outline", parked: "secondary",
 };
 const HEADING = "text-body font-body text-ink-primary";
 
@@ -59,13 +59,13 @@ export function EntryDetail<E extends CatalogBrowserEntry>({ entry, catalog, cat
     ...(binding.fields?.(entry) ?? []),
     ...(entry.notes?.length ? [{ label: labels.notes, value: <ul className="flex flex-col gap-xs">{entry.notes.map((note, index) => <li key={index}>{note}</li>)}</ul>, span: 2 as const }] : []),
   ];
-  return <article className="flex min-w-0 flex-col gap-lg">
+  return <article className="style-nova flex min-w-0 flex-col gap-lg">
     <SectionHeader level={4} eyebrow={`${binding.label} / ${l1.label} / ${l2.label}`} title={entry.label}
       description={<code>{entry.id}</code>}
       actions={<>
-        <Badge variant={LIFECYCLE_TONE[entry.lifecycle]}>{labels.lifecycle[entry.lifecycle]}</Badge>
-        {notBuilt !== undefined ? <Badge variant="warning">{labels.notBuilt}</Badge> : null}
-        {(binding.badges?.(entry) ?? []).map((badge, index) => <Badge key={index} variant={badge.tone}>{badge.label}</Badge>)}
+        <Badge variant={LIFECYCLE_VARIANT[entry.lifecycle]}>{labels.lifecycle[entry.lifecycle]}</Badge>
+        {notBuilt !== undefined ? <Badge variant="outline">{labels.notBuilt}</Badge> : null}
+        {(binding.badges?.(entry) ?? []).map((badge, index) => <Badge key={index} variant={badge.tone === "danger" ? "destructive" : "secondary"}>{badge.label}</Badge>)}
       </>} />
     <Section title={labels.livePreview}>
       {notBuilt !== undefined ? <EmptyState role="status" title={labels.notBuilt} description={notBuilt} /> :

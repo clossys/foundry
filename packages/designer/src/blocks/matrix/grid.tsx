@@ -7,7 +7,7 @@ import { SECTION_GROUND_CLASSES, type SectionGround } from "../section-ground.js
 import { HarveyMark } from "./harvey-mark.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
-const Badge = componentLeaf<typeof import("../../components/Badge.js").Badge>("components.badge");
+const Badge = componentLeaf<typeof import("../../components/preview-runtime/components/badge/badge.js").Badge>("components.badge");
 const StatusMark = componentLeaf<typeof import("../../components/StatusMark.js").StatusMark>("components.status-mark");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 

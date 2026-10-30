@@ -145,9 +145,9 @@ const DEFAULT_WIDTHS: readonly number[] = [390, 1024, 1440];
 const FRAME_HEIGHT = 640;
 
 const STATUS_VARIANT: Readonly<Record<PackReviewStatus, BadgeVariant>> = {
-  draft: "neutral",
-  delegated: "warning",
-  approved: "success",
+  draft: "secondary",
+  delegated: "outline",
+  approved: "default",
 };
 
 /** A same-site address: one leading slash, no second slash, no backslash, no control character. Anything else is refused, not rendered. */
@@ -277,7 +277,7 @@ export function PackReviewView({
   ]);
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="style-nova flex min-h-dvh flex-col">
       <SiteHeader {...siteHeaderPresentation(ground)} brand={brand} nav={nav} actions={<>{secondaryAction}{headerAction}</>} />
       <main
         className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl max-w-[var(--ui-width-form-max,none)]"

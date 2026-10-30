@@ -7,7 +7,7 @@ import type { CellLodTier } from "../../blocks/canvas/cell-lod.js";
 import type { CanvasRect, CanvasSize, Viewport } from "../../blocks/canvas/models.js";
 import type { LayerId, Placement } from "../../catalog-core/index.js";
 import { SemanticContent } from "../../components/SemanticContent.js";
-import { Badge } from "../../components/Badge.js";
+import { Badge } from "../../components/preview-runtime/components/badge/badge.js";
 import { Breadcrumb } from "../../components/Breadcrumb.js";
 import { Button } from "../../components/Button.js";
 import { cx } from "../../components/internal/cx.js";
@@ -245,7 +245,7 @@ export function SystemCanvas({ copy, data, labels, edges = [], selectedLeaf, onS
         className={cx("flex flex-col gap-xs overflow-hidden rounded-control border bg-surface-raised p-xs", cell.leaf === selectedLeaf ? "border-accent" : "border-line-base")}>
         <div className="flex min-w-0 items-center justify-between gap-xs">
           <Button variant="ghost" size="sm" className={cx(CANVAS_COUNTER_SCALED_TITLE, "min-w-0 truncate")} onPress={() => onSelect?.(cell.leaf)}>{readStudioMessage(copy,`studio.ia.item.${cell.leaf}`)}</Button>
-          {info?.source ? <Badge variant={info.tone ?? "neutral"}><StudioDataValue kind="source" value={info.source}/></Badge> : null}
+          {info?.source ? <Badge variant={info.tone === "danger" ? "destructive" : "secondary"}><StudioDataValue kind="source" value={info.source}/></Badge> : null}
         </div>
         {cellBody(cell, tier)}
       </CanvasPlaced>;

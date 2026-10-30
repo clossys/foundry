@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Skeleton } from "../../../components/Skeleton.js";
-import { Badge } from "../../../components/Badge.js";
+import { Badge } from "../../../components/preview-runtime/components/badge/badge.js";
 
 export interface SystemThumbnailProps { leaf: string; src: string; state: "missing" | "fresh" | "stale"; label: string; staleLabel: string }
 function ThumbnailImage({ leaf, src, state, label, staleLabel }: SystemThumbnailProps) {

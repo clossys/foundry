@@ -12,7 +12,7 @@ import { isObject } from "./group-c-content.js";
 import { tableCopyOf, type PaginationSummaryMessage, type WriterCopyFormatter } from "./copy-ports.js";
 import { componentLeaf } from "../component-leaf.js";
 
-const Badge = componentLeaf<typeof import("../../components/Badge.js").Badge>("components.badge");
+const Badge = componentLeaf<typeof import("../../components/preview-runtime/components/badge/badge.js").Badge>("components.badge");
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
 const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
 const StatusMark = componentLeaf<typeof import("../../components/StatusMark.js").StatusMark>("components.status-mark");

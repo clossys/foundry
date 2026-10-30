@@ -5,7 +5,7 @@ import { entryOf, type GroupBSection, type SectionRenderInput } from "./group-b-
 import { recordDetailCopyOf } from "./copy-ports.js";
 import { componentLeaf } from "../component-leaf.js";
 
-const Badge = componentLeaf<typeof import("../../components/Badge.js").Badge>("components.badge");
+const Badge = componentLeaf<typeof import("../../components/preview-runtime/components/badge/badge.js").Badge>("components.badge");
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
 const Menu = componentLeaf<typeof import("../../components/Menu.js").Menu>("components.menu");
 

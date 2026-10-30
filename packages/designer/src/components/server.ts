@@ -62,8 +62,8 @@ assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVer
 export { Avatar } from "./Avatar.server.js";
 export type { AvatarProps, AvatarSize } from "./Avatar.js";
 
-export { Badge } from "./Badge.js";
-export type { BadgeProps, BadgeVariant } from "./Badge.js";
+export { Badge, badgeVariants } from "./preview-runtime/components/badge/badge.js";
+export type { BadgeProps, BadgeVariant } from "./Badge.types.js";
 
 export { Banner } from "./Banner.server.js";
 export type { BannerProps, BannerVariant } from "./Banner.js";

@@ -10,7 +10,7 @@ import { hasContent } from "./policies.js";
 import type { ItemData, ItemSize, ItemTreatment } from "./types.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
-const Badge = componentLeaf<typeof import("../../components/Badge.js").Badge>("components.badge");
+const Badge = componentLeaf<typeof import("../../components/preview-runtime/components/badge/badge.js").Badge>("components.badge");
 const StatusMark = componentLeaf<typeof import("../../components/StatusMark.js").StatusMark>("components.status-mark");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
@@ -53,7 +53,7 @@ export function ItemRenderer({ item, treatment, size, ground, headingLevel, stat
   const scaleClasses = explain ? EXPLAIN_SCALE_CLASSES : SCALE_CLASSES;
   const scaleClassName = index ? "text-body font-body font-medium leading-heading" : statement ? scaleClasses.statement : scaleClasses[size];
   const figureTrend = item.figure?.trend ?? "neutral";
-  const badge = item.badge !== undefined ? <Badge variant={item.badge.tone}>{item.badge.label}</Badge> : null;
+  const badge = item.badge !== undefined ? <Badge variant={item.badge.tone === "danger" ? "destructive" : "secondary"}>{item.badge.label}</Badge> : null;
   // Status tint/text pairs are checked on base, so give them that opaque backing on every ground.
   const statusBadge = item.badge?.tone !== undefined && item.badge.tone !== "neutral";
   const legacy = navigation !== undefined;
@@ -63,8 +63,8 @@ export function ItemRenderer({ item, treatment, size, ground, headingLevel, stat
   const backedBadge = statusBadge ? <SemanticContent as="span" className="inline-flex rounded-pill bg-surface-base">{badge}</SemanticContent> : badge;
   const metadata = hasContent(item.meta) ? <SemanticContent as="p" className={cx("text-caption font-body", colors.secondary)}>{item.meta}</SemanticContent> : null;
   const meta = !legacy && (hasContent(item.eyebrow) || hasContent(item.meta) || item.badge !== undefined || item.status !== undefined) ? item.status === undefined
-    ? <SemanticContent as="div" data-item-meta="" className="flex flex-wrap items-center gap-sm">{eyebrow}{backedBadge}{metadata}</SemanticContent>
-    : <SemanticContent as="div" data-item-meta="" className={cx("flex flex-wrap items-center gap-sm", row ? "w-full" : undefined)}>{eyebrow}{backedBadge}{metadata}{renderItemStatus(item, row, ground)}</SemanticContent> : null;
+    ? <SemanticContent as="div" data-item-meta="" className="style-nova flex flex-wrap items-center gap-sm">{eyebrow}{backedBadge}{metadata}</SemanticContent>
+    : <SemanticContent as="div" data-item-meta="" className={cx("style-nova flex flex-wrap items-center gap-sm", row ? "w-full" : undefined)}>{eyebrow}{backedBadge}{metadata}{renderItemStatus(item, row, ground)}</SemanticContent> : null;
   const heading = <ItemHeading data-item-heading={legacy ? undefined : ""} as={legacy ? control ? "span" : "p" : headingLevel === 4 ? "h4" : headingLevel === 3 ? "h3" : "p"} heading={item.heading} href={item.href} variant={legacy ? control ? "control" : "plate" : frame} ground={ground} className={legacy ? cx("text-body font-body font-medium", control ? undefined : "m-0 leading-heading", colors.primary) : cx("m-0", scaleClassName, colors.primary, (display || explain) && item.href !== undefined ? "transform-none" : undefined)} anchorClassName={navigation === "plate" ? "active:decoration-current link-grid-active" : undefined} iconSize={display && !legacy ? "md" : "sm"} />;
   const description = (legacy ? Boolean(item.description) : hasContent(item.description)) ? <ItemDescription as={control ? "span" : "p"} data-item-description={legacy ? undefined : ""} data-link-grid-description={legacy && navigation !== "action" ? "" : undefined} className={legacy ? cx("text-body-s", control ? undefined : "m-0", colors.secondary) : cx("m-0 text-pretty", index ? "text-body-s" : "text-body", colors.secondary)}>{item.description}</ItemDescription> : null;
   const figure = !legacy && item.figure !== undefined ? <SemanticContent as="div" data-item-figure="" className="flex flex-col gap-xs">

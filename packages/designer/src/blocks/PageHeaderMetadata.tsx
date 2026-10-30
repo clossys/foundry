@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { SemanticContent as SemanticContentType } from "../components/SemanticContent.js";
-import type { Badge as BadgeType } from "../components/Badge.js";
+import type { Badge as BadgeType } from "../components/preview-runtime/components/badge/badge.js";
 import type { Link as LinkType } from "../components/Link.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 const SemanticContent = componentLeaf<typeof SemanticContentType>("components.semantic-content");
@@ -32,7 +32,7 @@ export function PageHeaderMetadata({ metadata, locale }: { metadata: EditorialMe
     date ? { id: "date", label: date.label, value: <SemanticContent as="time" dateTime={date.value}>{editorialDate(date.value, locale)}</SemanticContent> } : null,
     readingTime ? { id: "reading-time", label: readingTime.label, value: readingTime.value } : null,
   ].filter(entry => entry !== null);
-  return <SemanticContent as="div" className="flex flex-col gap-sm">
+  return <SemanticContent as="div" className="style-nova flex flex-col gap-sm">
     {summary ? <SemanticContent as="p" dir="auto" className="text-body-l text-ink-secondary">{summary}</SemanticContent> : null}
     {entries.length ? <SemanticContent as="div" className="flex flex-wrap gap-md text-body-s text-ink-secondary">
       {entries.map(entry => entry.label ? <SemanticContent as="dl" key={entry.id} className="m-0">
