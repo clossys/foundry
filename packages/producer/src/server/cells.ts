@@ -4,6 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { AGENT_PACKAGES, resolveAgent, type AgentKind } from "../agents.js";
 import type { AgentCells, CellSummary } from "./contract.js";
+import { designerCellHierarchy } from "./designer-cell-hierarchy.js";
 
 export const AGENT_KINDS = Object.keys(AGENT_PACKAGES) as AgentKind[];
 export const CELL_ID = /^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*){1,2}$(?![\s\S])/;
@@ -75,7 +76,9 @@ export async function inventory(root: string, agent: AgentKind): Promise<AgentCe
     const store = await agentModule("director", "cell-format/index.js");
     const validated = store.validateGenericTree(tree, { cellIds: [...latest.keys()], maxDepth: 3 });
     if (!validated.ok) throw new Error("Invalid agent tree");
-    return { agent, packageName, state: "ready", tree, cells: [...latest.values()].map(summary) };
+    const cells = [...latest.values()].map(summary);
+    const hierarchy = agent === "designer" && tree.tree === undefined ? await designerCellHierarchy(cells) : undefined;
+    return { agent, packageName, state: "ready", tree: hierarchy ? { ...tree, tree: hierarchy.tree } : tree, cells, ...(hierarchy ? { designerLayers: hierarchy.designerLayers, designerSlots: hierarchy.designerSlots } : {}) };
   } catch {
     return { agent, packageName, state: "error", cells: [], message: "Agent cells could not be read; check the agent package and cell format" };
   }

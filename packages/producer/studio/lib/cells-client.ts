@@ -2,7 +2,9 @@ import { isAgent, type Agent } from './agents';
 
 export interface CellSummary { id: string; title: string; parent?: string; version?: number; status?: 'draft' | 'active' | 'retired'; path?: string; fields?: Record<string, unknown> }
 export type CellContentScope = { kind: 'cell'; cellId: string } | { kind: 'version'; cellId: string; version: number };
-export interface AgentCells { contentScope?: CellContentScope; agent: Agent; cells: CellSummary[]; tree?: Record<string, unknown>; state: 'ready' | 'missing' | 'error'; error?: string }
+export interface DesignerLayerSummary { id: string; label: string; groups: string[] }
+export interface DesignerSlotSummary { id: string; layer: string; kind: string; valueKind?: string }
+export interface AgentCells { designerLayers?: DesignerLayerSummary[]; designerSlots?: DesignerSlotSummary[]; contentScope?: CellContentScope; agent: Agent; cells: CellSummary[]; tree?: Record<string, unknown>; state: 'ready' | 'missing' | 'error'; error?: string }
 export interface CellDetail extends CellSummary { agent: Agent; content: string }
 
 function object(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
@@ -21,7 +23,27 @@ export function parseCellsResponse(value: unknown): AgentCells[] {
     const cells = entry.cells.map(summary);
     if (new Set(cells.map(cell => cell.id)).size !== cells.length) throw new Error('The cell index contains duplicate IDs.');
     const error = entry.state === 'error' ? typeof entry.message === 'string' ? entry.message : 'Producer could not read this agent’s cells.' : undefined;
-    return { agent: entry.agent, cells, tree: entry.tree as Record<string, unknown> | undefined, state: entry.state as AgentCells['state'], ...(error ? { error } : {}) };
+    const layers = entry.designerLayers;
+    const slots = entry.designerSlots;
+    if (layers !== undefined || slots !== undefined) {
+      if (entry.agent !== 'designer' || !Array.isArray(layers) || !Array.isArray(slots)) throw new Error('The native Designer hierarchy is invalid.');
+      const layerIds = new Set<string>();
+      const groupIds = new Set<string>();
+      for (const layer of layers) {
+        if (!object(layer) || typeof layer.id !== 'string' || !layer.id || typeof layer.label !== 'string' || !layer.label || !Array.isArray(layer.groups) || layerIds.has(layer.id)) throw new Error('The native Designer layer is invalid.');
+        layerIds.add(layer.id);
+        for (const id of layer.groups) { if (typeof id !== 'string' || groupIds.has(id)) throw new Error('The native Designer group is invalid.'); groupIds.add(id); }
+      }
+      const slotIds = new Set<string>();
+      for (const slot of slots) {
+        if (!object(slot) || typeof slot.id !== 'string' || slotIds.has(slot.id) || !cells.some(cell => cell.id === slot.id) || typeof slot.layer !== 'string' || !layerIds.has(slot.layer) || !['token', 'asset', 'component', 'section', 'frame'].includes(String(slot.kind)) || slot.valueKind !== undefined && typeof slot.valueKind !== 'string') throw new Error('The native Designer slot is invalid.');
+        slotIds.add(slot.id);
+      }
+      if (slotIds.size !== cells.length) throw new Error('The native Designer slots do not cover every cell.');
+      const treeGroups = object(entry.tree) && Array.isArray(entry.tree.tree) ? entry.tree.tree : [];
+      if (treeGroups.length !== groupIds.size || treeGroups.some(group => !object(group) || typeof group.id !== 'string' || !groupIds.has(group.id))) throw new Error('The native Designer layers do not cover every group.');
+    }
+    return { agent: entry.agent, cells, tree: entry.tree as Record<string, unknown> | undefined, state: entry.state as AgentCells['state'], ...(layers ? { designerLayers: layers as DesignerLayerSummary[], designerSlots: slots as DesignerSlotSummary[] } : {}), ...(error ? { error } : {}) };
   });
 }
 

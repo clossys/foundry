@@ -45,6 +45,7 @@ export function StudioAgentIA({ index, indexes, selectedId, onSelect, onCoverage
   return <>
     <Header id={studioIAAnchor(ia.id)} data-studio-ia-node={ia.id} title={ia.label} level={2} />
     {ia.groups.length ? ia.groups.map(group => <Fragment key={group.id}>
+      {index.designerLayers?.filter(layer => layer.groups[0] === group.id).map(layer => <Header key={layer.id} id={studioIAAnchor(`designer-layer:${layer.id}`)} data-studio-ia-node={`designer-layer:${layer.id}`} title={layer.label} level={2} />)}
       <Subheader id={studioIAAnchor(group.id)} data-studio-ia-node={group.id} title={group.label} level={3} />
       {group.collections.length ? group.collections.map(collection => <Fragment key={collection.id}>
         <EmptyState title={collection.label} description={Cards ? BODY_NEED : `NEED: selected ${body.bands!.L2}`} />

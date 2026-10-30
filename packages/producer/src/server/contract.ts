@@ -14,6 +14,8 @@ export interface AgentCells {
   state: "ready" | "missing" | "error";
   cells: CellSummary[];
   tree?: Record<string, unknown>;
+  designerLayers?: { id: string; label: string; groups: string[] }[];
+  designerSlots?: { id: string; layer: string; kind: string; valueKind?: string }[];
   message?: string;
 }
 export interface CellsResponse { agents: AgentCells[] }
