@@ -95,7 +95,7 @@ export function UsagePanel({ id, copy, onNavigate, canNavigate, graph: supplied,
   const exceptionRows = (list: readonly WiringException[]) => list.length ? <ul className="flex flex-col gap-xs">{list.map(exception => <li key={`${exception.file}\u0000${exception.elementId}\u0000${exception.name}`} data-usage-exception={exception.name} className="flex flex-wrap items-baseline gap-sm">
     <StudioDataValue kind="identifier" value={exception.name} /><Badge variant="outline"><StudioDataValue kind="value" value={exception.reasonCode} /></Badge><span className={DETAIL}><StudioDataValue kind="identifier" value={exception.owner} /></span><span className={DETAIL}><StudioDataValue kind="value" value={exception.expiry} /></span><Badge><StudioDataValue kind="status" value={exception.status} /></Badge>
   </li>)}</ul> : undefined;
-  return <section data-studio-usage={id} aria-label={labels.title} className="flex flex-col gap-sm">
+  return <section data-studio-usage={id} aria-label={labels.title} className="style-nova flex flex-col gap-sm">
     <div className="flex flex-wrap items-center gap-sm">
       <h3 className={HEADING}>{labels.title}</h3>
       <Button variant="ghost" size="sm" isDisabled={!navigation.canGoBack} onPress={navigation.back}>{labels.back}</Button>

@@ -116,7 +116,7 @@ export function CatalogBrowser<C extends CatalogBrowserCatalog>(props: CatalogBr
       emptyState={placeholder} browseSize={props.browseSize} inspectorSize={props.inspectorSize} dir={dir} />
   </div>;
 
-  return <section role="region" aria-label={label} dir={dir} className={cx("flex h-full min-h-0 min-w-0 flex-col gap-md text-ink-primary", className)}>
+  return <section role="region" aria-label={label} dir={dir} className={cx("style-nova flex h-full min-h-0 min-w-0 flex-col gap-md text-ink-primary", className)}>
     {catalogs.length > 1 ? <Tabs selectedKey={active.kind} className="min-h-0 flex-1"
       onSelectionChange={kind => { fromTree.current = null; select({ catalog: String(kind), entryId: null }); }}>
       <Tabs.List aria-label={labels.catalogs}>
