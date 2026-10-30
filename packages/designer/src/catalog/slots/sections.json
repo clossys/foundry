@@ -4935,7 +4935,9 @@
       "allowedComposes": [
         "components.text-field",
         "components.button",
-        "components.icon"
+        "components.icon",
+        "components.form",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",

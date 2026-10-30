@@ -118,6 +118,11 @@
           "id": "toasts",
           "required": false,
           "accepts": "components.toast"
+        },
+        {
+          "id": "announcement",
+          "required": false,
+          "accepts": "components.banner"
         }
       ],
       "members": {
@@ -203,7 +208,9 @@
         "sections.pricing",
         "sections.section-header",
         "sections.status-list",
-        "sections.steps"
+        "sections.steps",
+        "components.banner",
+        "sections.newsletter"
       ],
       "skipTarget": "main-content"
     },
@@ -533,6 +540,11 @@
           "id": "actions",
           "required": false,
           "accepts": "components.button"
+        },
+        {
+          "id": "locale",
+          "required": false,
+          "accepts": "components.link"
         }
       ],
       "members": {
@@ -546,7 +558,8 @@
           "nav-placement.leading",
           "nav-placement.centered",
           "position.sticky",
-          "position.static"
+          "position.static",
+          "nav.mega"
         ]
       },
       "statePorts": [],
@@ -917,6 +930,16 @@
           "id": "social",
           "required": false,
           "accepts": "components.icon"
+        },
+        {
+          "id": "locale",
+          "required": false,
+          "accepts": "components.link"
+        },
+        {
+          "id": "newsletter",
+          "required": false,
+          "accepts": "sections.newsletter"
         }
       ],
       "members": {
@@ -978,6 +1001,7 @@
         "components.icon",
         "components.logo",
         "components.separator",
+        "sections.newsletter",
         "components.semantic-content"
       ]
     },

@@ -149,6 +149,8 @@
       "missingSlots": [
         "legal",
         "links",
+        "locale",
+        "newsletter",
         "social"
       ],
       "missingStatePorts": [],
@@ -166,16 +168,20 @@
       ]
     },
     {
-      "missing": [],
+      "missing": [
+        "nav.mega"
+      ],
       "missingRequiredSlots": [],
-      "missingSlots": [],
+      "missingSlots": [
+        "locale"
+      ],
       "missingStatePorts": [],
       "notes": [
         "NavDisclosure is a separate client island supplied through nav; the descriptor does not prove navigation limits or glass contrast.",
         "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
       ],
       "slot": "frames.site-header",
-      "status": "candidate",
+      "status": "subset",
       "supported": [
         "nav-placement.centered",
         "nav-placement.leading",
@@ -196,6 +202,7 @@
       ],
       "missingRequiredSlots": [],
       "missingSlots": [
+        "announcement",
         "consent",
         "progress"
       ],

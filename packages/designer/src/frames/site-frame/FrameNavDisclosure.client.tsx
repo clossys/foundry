@@ -15,6 +15,9 @@ import { SECTION_REVEAL_ATTRIBUTE, SectionRevealStyle } from "../../styles/secti
 export interface NavDisclosureProps {
   /** Navigation links, inline on desktop and inside the mobile Sheet. */
   children: ReactNode;
+  /** The same mapped content expanded into the narrow navigation sheet. */
+  mobileChildren?: ReactNode;
+  minimumBreakpoint?: "tablet" | "tablet-lg";
   /** The Writer-resolved navigation landmark name. */
   "aria-label": string;
   /** Writer-resolved toggle name; also visible with the label trigger. */
@@ -47,7 +50,7 @@ const useBeforePaint = typeof window === "undefined" ? useEffect : useLayoutEffe
  * Sheet owns focus containment, dismissal, restoration and background exclusion.
  * The inline tree remains available to server rendering and no-script layouts.
  */
-export function FrameNavDisclosure({ children, "aria-label": ariaLabel, triggerLabel, closeLabel, trigger = "label", tone, className }: NavDisclosureProps) {
+export function FrameNavDisclosure({ children, mobileChildren, minimumBreakpoint = "tablet", "aria-label": ariaLabel, triggerLabel, closeLabel, trigger = "label", tone, className }: NavDisclosureProps) {
   // Select a complete look before cx: tailwind-merge is an optional peer.
   const inverse = tone === "inverse";
   const look = inverse
@@ -66,7 +69,8 @@ export function FrameNavDisclosure({ children, "aria-label": ariaLabel, triggerL
   open.current = expanded;
   const close = () => setExpanded(false);
   useEffect(() => {
-    const media = window.matchMedia?.(`(min-width: ${TOKENS["--breakpoint-tablet"]!.value})`);
+    const minWidth = minimumBreakpoint === "tablet-lg" ? TOKENS["--breakpoint-tablet-lg"]!.value : TOKENS["--breakpoint-tablet"]!.value;
+    const media = window.matchMedia?.(`(min-width: ${minWidth})`);
     const header = nav.current?.closest<HTMLElement>("[data-header-root]");
     const frame = header?.parentElement;
     const priorClearance = frame?.style.getPropertyValue("--site-header-clearance");
@@ -161,7 +165,7 @@ export function FrameNavDisclosure({ children, "aria-label": ariaLabel, triggerL
       header?.removeAttribute("data-measuring");
       if (priorClearance) frame?.style.setProperty("--site-header-clearance", priorClearance); else frame?.style.removeProperty("--site-header-clearance");
     };
-  }, []);
+  }, [minimumBreakpoint]);
   // Keep the hidden desktop duplicate outside the mobile keyboard order.
   // Imperative inert supports React 18 and preserves the no-script SSR tree.
   useBeforePaint(() => {
@@ -249,7 +253,7 @@ export function FrameNavDisclosure({ children, "aria-label": ariaLabel, triggerL
           <FrameRegion aria-label={ariaLabel} onClickCapture={event => {
             if (event.target instanceof Element && event.target.closest("a[href]")) close();
           }}>
-            {children}
+            {mobileChildren ?? children}
           </FrameRegion>
         </SemanticContent>
       </Sheet>
