@@ -54,7 +54,7 @@ function setup(overrides: Partial<ComponentDefaultsInput> = {}, order?: readonly
 }
 /** Synthetic unresolved read: production Card is eligible, while fallback refusal remains exercised. */
 function ineligibleCard(overrides: Partial<ComponentDefaultsInput> = {}) {
-  const result = setup(overrides);
+  const result = setup({ picks: { "components.card": "shadcn@aria" }, ...overrides });
   const target = result.input.catalog.fills.find(doc => doc.$extensions["com.clossys.fill"].id === "shadcn@aria/components.card")!;
   const fill = componentOf(target);
   const unavailable = { ...target, components: { card: { ...fill, reads: { ...fill.reads, tokens: fill.reads.tokens.map(id => id === "tokens.line-height.heading" ? "tokens.line-height.snug" : id) } } } } as typeof target;
@@ -89,14 +89,38 @@ describe("component default fills", () => {
     const fill=bundles.componentFills.find(doc=>doc.$extensions['com.clossys.fill'].slot==='components.semantic-content')!;
     expect(fill.$extensions).toHaveProperty(['com.clossys.default'],{tier:'Custom',reason:'no shadcn@aria item'});
   });
-  it("defaults every eligible leaf by preference and owner pick, with a statically clean whole set", () => {
+  it("defaults every eligible leaf by preference, with a statically clean whole set", () => {
     const { input } = setup();
     const plan = planComponentDefaults(input);
     expect(plan.rows.map(row => row.slot)).toEqual(input.slots);
     expect(ledger(plan.rows)).toEqual({ ...EXPECTED_DEFAULTS, ...Object.fromEntries(NOT_CHOSEN.map(leaf => [leaf, "-"])) });
     expect(plan.findings).toEqual([]);
-    expect(plan.rows.find(row => row.slot === "components.button")).toMatchObject({ status: "default", basis: "owner-pick", source: "shadcn@aria", fill: "shadcn@aria/components.button" });
+    expect(plan.rows.find(row => row.slot === "components.button")).toMatchObject({ status: "default", basis: "preference", source: "shadcn@aria", fill: "shadcn@aria/components.button" });
     expect(plan.rows.find(row => row.slot === "components.avatar")).toMatchObject({ status: "default", basis: "preference" });
+  });
+  it("preserves the four former default fills through preference rather than exclusive picks (real catalog)", () => {
+    const { input } = setup();
+    const leaves = ["button", "table", "tooltip", "card"];
+    // Historical policy is a comparison fixture, never a production override.
+    const formerPicks = Object.fromEntries(leaves.map(leaf => [`components.${leaf}`, "shadcn@aria"]));
+    const before = planComponentDefaults({ ...input, picks: formerPicks });
+    const after = planComponentDefaults(input);
+    expect(DEFAULT_COMPONENT_PICKS).toEqual({});
+    expect(DEFAULT_COMPONENT_PREFERENCE).toEqual(["shadcn@aria", "foundry", "rac-starter"]);
+    for (const leaf of leaves) {
+      const slot = `components.${leaf}`;
+      const previous = before.rows.find(row => row.slot === slot)!;
+      const current = after.rows.find(row => row.slot === slot)!;
+      expect(previous, leaf).toMatchObject({ status: "default", basis: "owner-pick", source: "shadcn@aria", fill: `shadcn@aria/${slot}` });
+      expect(current, leaf).toMatchObject({ status: previous.status, basis: "preference", source: previous.source, fill: previous.fill, reasons: [] });
+    }
+    expect(after.findings).toEqual([]);
+  });
+  it("continues to the next eligible preferred fill when the first source is ineligible", () => {
+    const { input } = ineligibleCard({ picks: {} });
+    const plan = planComponentDefaults(input);
+    expect(plan.rows.find(row => row.slot === "components.card")).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: "foundry/components.card", reasons: [] });
+    expect(plan.findings).toEqual([]);
   });
   it("selects consumed button, table, card and menu with their faithful registered typography reads", () => {
     const { input } = setup();
@@ -120,8 +144,8 @@ describe("component default fills", () => {
       expect(row.source ?? row.rule, leaf).toBeUndefined();
       expect(row.reasons.length, leaf).toBeGreaterThan(0);
     }
-    // The consumed table follows the approved shadcn owner pick with its complete public API.
-    expect(plan.rows.find(row => row.slot === "components.table")).toMatchObject({ status: "default", basis: "owner-pick", source: "shadcn@aria", fill: "shadcn@aria/components.table", reasons: [] });
+    // The consumed table follows the preferred source with its complete public API.
+    expect(plan.rows.find(row => row.slot === "components.table")).toMatchObject({ status: "default", basis: "preference", source: "shadcn@aria", fill: "shadcn@aria/components.table", reasons: [] });
     // With K11 at 0 a mixed controls group is coherent, so the slider takes the preferred shadcn@aria fill.
     expect(plan.rows.find(row => row.slot === "components.slider")).toMatchObject({ status: "default", source: "shadcn@aria", fill: "shadcn@aria/components.slider" });
     expect(plan.rows.find(row => row.slot === "components.date-picker")).toMatchObject({ status: "default", basis: "rule", rule: "compose:date-picker@1", reasons: [] });
@@ -289,7 +313,7 @@ describe("component default fills", () => {
     expect(plan.findings).toEqual([]);
   });
   it("Choose overrides the owner pick and preference, exclusively", () => {
-    const { input } = setup({ choices: { "components.table": "foundry", "components.avatar": "foundry", "components.card": "foundry" } });
+    const { input } = setup({ picks: { "components.table": "shadcn@aria", "components.card": "shadcn@aria" }, choices: { "components.table": "foundry", "components.avatar": "foundry", "components.card": "foundry" } });
     const plan = planComponentDefaults(input);
     expect(plan.rows.find(row => row.slot === "components.card")).toMatchObject({ status: "chosen", basis: "choose", source: "foundry" });
     expect(plan.rows.find(row => row.slot === "components.table")).toMatchObject({ status: "chosen", basis: "choose", source: "foundry" });
@@ -316,7 +340,7 @@ describe("component default fills", () => {
     expect(unbundled.findings).toEqual([]);
   });
   it("eligibility follows the consumer's own values: an unresolved token read keeps the owner pick unchosen", () => {
-    const { input } = setup({}, ["foundry", "shadcn@aria"]);
+    const { input } = setup({ picks: { "components.tooltip": "shadcn@aria" } }, ["foundry", "shadcn@aria"]);
     const plan = planComponentDefaults(input);
     expect(plan.rows.find(row => row.slot === "components.tooltip")).toMatchObject({ status: "not-chosen" });
     expect(reasons(plan, "tooltip")).toMatch(/^shadcn@aria: .*K3 Token read tokens\.radius\.subtle does not resolve.* \|\| owner pick shadcn@aria is not eligible/);

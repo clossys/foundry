@@ -14,10 +14,8 @@ import { isSelectableComponentSource, NON_SELECTABLE_SOURCE_REASON } from "./com
 
 /** Canonical selection policy. Callers may supply their own explicit policy to the planner. */
 export const DEFAULT_COMPONENT_PREFERENCE: readonly string[] = ["shadcn@aria", "foundry", "rac-starter"];
-/** The approved shadcn default picks; choices remain exclusive overrides. */
-export const DEFAULT_COMPONENT_PICKS: Readonly<Record<string, string>> = {
-  "components.button": "shadcn@aria", "components.table": "shadcn@aria", "components.tooltip": "shadcn@aria", "components.card": "shadcn@aria",
-};
+/** No built-in exclusive picks: defaults follow preference; consumers may still supply picks or choices. */
+export const DEFAULT_COMPONENT_PICKS: Readonly<Record<string, string>> = {};
 /** Whole-component fallbacks stay subject to the normal eligibility checker. */
 export const DEFAULT_COMPONENT_FALLBACK = { source: "foundry", slots: ["checkbox", "dialog", "popover", "tabs", "toggle-button", "disclosure", "select", "chart-sparkline", "color-picker",
   "number-field", "tag-group", "tree", "calendar", "menu", "table", "card"].map(leaf => `components.${leaf}`) };
