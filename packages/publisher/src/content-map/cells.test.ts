@@ -228,3 +228,57 @@ it("rejects colliding kebab-case cell identities before writing migration files"
   await expect(routePackToCells(pack, path)).rejects.toThrow(/(?:collision|identity)/i);
   expect(await readdir(path)).toEqual([]);
 });
+
+
+function externalPublication(): ContentMap {
+  return {
+    version: 1, publicationId: "example.external", format: "web.page.responsive",
+    entries: [
+      { id: "home", order: 0, title: "Home", path: "/", kind: "page", source: { frameId: "frames.home", sectionIds: [] },
+        pageConfig: "home", indexing: { mode: "noindex", reason: "Draft: awaiting review, then publish" }, lastModified: "2026-10-28T14:30:00-07:00" },
+      { id: "docs", order: 1, title: "Documentation", path: "/docs", kind: "external", href: "https://example.com/docs?view=guide#start",
+        pin: { nav: true }, icon: "book", description: "External documentation", keywords: ["guide"],
+        indexing: { mode: "index" }, lastModified: "2026-10-29" },
+    ],
+    actions: [{ id: "help", label: "Help", group: "Support", intent: "open-help" }],
+    redirects: [{ from: "/old-home", to: "/", permanent: false }, { from: "/old-docs", to: "/docs", permanent: true }],
+  };
+}
+
+it("round-trips sourced and external cells losslessly with indexing, dates and redirects", async () => {
+  const path = await root(), map = externalPublication();
+  await contentMapToCells(map, path, { date: "2026-10-29" });
+  const compiled = await contentMapFromCells(path, map.publicationId);
+  expect(compiled).toEqual(map);
+  expect(checkContentMap(compiled)).toEqual([]);
+  expect(JSON.parse(await readFile(join(path, "content-map", `${map.publicationId}.json`), "utf8"))).toEqual(map);
+  await expect(compileContentMaps(path, { check: true })).resolves.toMatchObject({ maps: [map] });
+  const source = await readFile(join(path, "cells/page.docs/v1.md"), "utf8");
+  expect(source).toMatch(/^kind: external$/m);
+  expect(source).toMatch(/^href: https:\/\/example.com\/docs\?view=guide#start$/m);
+  expect(source).not.toMatch(/^(?:planItemId|frame|sections):/m);
+});
+
+it.each(["javascript:alert(1)", "//example.com/docs", "https://user:password@example.com/docs"])("refuses malformed external href %s before migration writes", async href => {
+  const path = await root(), map = externalPublication();
+  const invalid = { ...map, entries: map.entries.map(entry => entry.kind === "external" ? { ...entry, href } : entry) };
+  await expect(contentMapToCells(invalid, path)).rejects.toThrow(/refused/i);
+  expect(await readdir(path)).toEqual([]);
+});
+
+it.each([
+  ["unsafe href", (source: string) => source.replace(/^href:.*$/m, "href: javascript:alert(1)")],
+  ["forbidden source", (source: string) => source.replace(/^kind: external$/m, "kind: external\nplanItemId: docs")],
+  ["forbidden constructs", (source: string) => `${source}\n## Constructs\n\`\`\`json\n{}\n\`\`\`\n`],
+  ["invalid indexing", (source: string) => source.replace(/^indexing:.*$/m, "indexing: invalid")],
+  ["invalid date", (source: string) => source.replace(/^lastModified:.*$/m, "lastModified: 2026-02-30")],
+])("refuses an external cell with %s without changing any generated output", async (_label, mutate) => {
+  const path = await root(), map = externalPublication();
+  await contentMapToCells(map, path);
+  const outputs = ["compile.json", `content-map/${map.publicationId}.json`];
+  const before = await Promise.all(outputs.map(file => readFile(join(path, file), "utf8")));
+  const cell = join(path, "cells/page.docs/v1.md");
+  await writeFile(cell, mutate(await readFile(cell, "utf8")));
+  await expect(compileContentMaps(path)).rejects.toThrow();
+  expect(await Promise.all(outputs.map(file => readFile(join(path, file), "utf8")))).toEqual(before);
+});

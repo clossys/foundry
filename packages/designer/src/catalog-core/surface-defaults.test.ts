@@ -26,7 +26,7 @@ const reasons = (plan: ReturnType<typeof planSurfaceDefaults>, slot: string) => 
 const SECTION_DEFAULTS = ["access-matrix", "activity-feed", "article", "audit-log", "band", "call-to-action", "cards", "chat", "column-mapper", "comparison",
   "consent", "content", "data-grid", "data-table", "empty-state", "error-state", "explorer", "faq", "features", "filter-builder", "form", "gallery", "hero",
   "link-index", "logo-cloud", "media", "newsletter", "notices", "page-header", "pagination", "people", "pricing", "record-detail", "resource-list",
-  "account-summary", "boundary-message", "error-message", "legal-prose", "logo-hero", "logo-mark", "sign-in-form",
+  "account-summary", "boundary-message", "legal-prose", "logo-hero", "logo-mark", "sign-in-form",
   "section-header", "settings", "stats", "status-list", "steps", "table-of-contents", "task-list", "testimonials", "timeline", "usage", "wizard"].map(leaf => `sections.${leaf}`);
 /** Every Foundry candidate now maps its required content slots; none is ineligible. */
 const SECTION_INELIGIBLE: Readonly<Record<string, readonly string[]>> = {};
@@ -34,16 +34,49 @@ const SECTION_NO_CANDIDATE: string[] = [];
 const FRAME_DEFAULTS = ["app-header", "app-shell", "app-sidebar", "auth-shell", "document", "command", "inspector", "sheet", "site-footer", "site-header", "site-shell"].map(leaf => `frames.${leaf}`);
 const FRAME_NOT_CHOSEN: string[] = [];
 
+/** Exact contract declarations for independently measured package dependencies. */
+const MEASURED_MARKETING_DECLARATIONS = [
+  {
+    slot: "sections.content",
+    composes: ["components.link", "components.semantic-content"],
+  },
+  {
+    slot: "sections.logo-cloud",
+    tokens: ["tokens.spacing", "tokens.gutter", "tokens.content-size", "tokens.region-width", "tokens.breakpoint", "tokens.surface-color", "tokens.animation", "tokens.shift-distance", "tokens.accent-color", "tokens.border-color", "tokens.control-radius", "tokens.status-color", "tokens.text-color", "tokens.touch-target", "tokens.action-color", "tokens.body-size", "tokens.control-color", "tokens.duration", "tokens.easing", "tokens.focus-color", "tokens.focus-outline", "tokens.state-opacity", "tokens.typeface"],
+  },
+  {
+    slot: "sections.logo-mark",
+    composes: ["components.logo", "components.semantic-content"],
+  },
+  {
+    slot: "frames.site-footer",
+    tokens: ["tokens.surface-color", "tokens.text-color", "tokens.border-color", "tokens.border-width", "tokens.spacing", "tokens.gutter", "tokens.content-size", "tokens.caption-size", "tokens.typeface", "tokens.breakpoint", "tokens.body-size", "tokens.brandmark-size", "tokens.touch-target", "tokens.z-index", "tokens.accent-color", "tokens.action-color", "tokens.control-color", "tokens.control-radius", "tokens.duration", "tokens.easing", "tokens.focus-color", "tokens.focus-outline", "tokens.state-opacity", "tokens.status-color"],
+    composes: ["components.link", "components.icon", "components.logo", "components.separator", "components.semantic-content"],
+  },
+] as const;
+
+describe("measured marketing surface declarations", () => {
+  it.each(MEASURED_MARKETING_DECLARATIONS)("plans $slot with its exact declared dependencies", expected => {
+    const input = setup();
+    const plan = planSurfaceDefaults(input);
+    expect(plan.rows.find(row => row.slot === expected.slot)).toMatchObject({ status: "default", source: "foundry", reasons: [] });
+    const contract = input.catalog.slots.find(row => row.id === expected.slot)!.contract;
+    if ("tokens" in expected) expect(contract.allowedReads.tokens).toEqual(expected.tokens);
+    if ("composes" in expected) expect(contract.kind === "section" ? contract.allowedComposes : contract.composes).toEqual(expected.composes);
+    expect(plan.decisions).toHaveLength(62);
+  });
+});
+
 describe("surface default fills", () => {
   it("defaults every Section and Frame whose candidate passes the static contract rule, and only those", () => {
     const input = setup();
     const plan = planSurfaceDefaults(input);
     expect(plan.rows.map(row => row.slot)).toEqual(input.slots);
-    expect(input.slots.filter(slot => slot.startsWith("sections.")).length).toBe(52);
+    expect(input.slots.filter(slot => slot.startsWith("sections.")).length).toBe(51);
     expect(input.slots.filter(slot => slot.startsWith("frames.")).length).toBe(11);
     const expected = Object.fromEntries(input.slots.map(slot => [slot, [...SECTION_DEFAULTS, ...FRAME_DEFAULTS].includes(slot) ? "foundry" : "-"]));
     expect(ledger(plan)).toEqual(expected);
-    expect(Object.values(ledger(plan)).filter(value => value !== "-")).toHaveLength(63);
+    expect(Object.values(ledger(plan)).filter(value => value !== "-")).toHaveLength(62);
     expect(plan.findings).toEqual([]);
     expect(plan.rows.find(row => row.slot === "frames.site-header")).toEqual({ slot: "frames.site-header", status: "default", basis: "preference", source: "foundry", fill: "foundry/frames.site-header", reasons: [] });
   });

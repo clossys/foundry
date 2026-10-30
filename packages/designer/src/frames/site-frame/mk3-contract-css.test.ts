@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 const source = readFileSync(new URL("../../../styles/theme-keys.css", import.meta.url), "utf8");

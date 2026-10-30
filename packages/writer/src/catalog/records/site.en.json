@@ -751,30 +751,30 @@
     },
     {
       "id": "ps.000000002q",
-      "leaf": "passages.error-message",
+      "leaf": "passages.error-state",
       "context": "Generic draft site starter",
       "status": "draft",
       "origin": "authored",
-      "schema": "passages.error-message",
-      "schemaDigest": "1ca926cc90f6bc267a731c5f06683129c4a762ed9bc9a4cfeb2fa9d7394fc446",
+      "schema": "passages.error-state",
+      "schemaDigest": "5a1153ac50a43d8fb11e8a8baf922f5bff73d3c15769a28a1c0e067d38b29db3",
       "fields": {
-        "status": {
+        "code": {
           "ref": "string",
           "id": "st.wxwxj7g97v"
         },
-        "title": {
+        "header.heading": {
           "ref": "string",
           "id": "st.gdzc1rc0sk"
         },
-        "description": {
+        "header.description": {
           "ref": "string",
           "id": "st.0000000028"
         },
-        "actions[].label": {
+        "retry.label": {
           "ref": "string",
           "id": "st.000000001a"
         },
-        "reference": {
+        "report.label": {
           "ref": "string",
           "id": "st.000000002p"
         }

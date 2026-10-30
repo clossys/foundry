@@ -10,6 +10,7 @@ import { TOKENS } from "../../tokens/tokens.js";
 import { buttonLinkClassName } from "../../components/button-classes.js";
 import { cx } from "../../components/internal/cx.js";
 import { UI_LAYOUT_TAP_TARGET } from "../../shell/internal/shell-vars.js";
+import { SECTION_REVEAL_ATTRIBUTE, SectionRevealStyle } from "../../styles/section-reveal.js";
 
 export interface NavDisclosureProps {
   /** Navigation links, inline on desktop and inside the mobile Sheet. */
@@ -243,7 +244,8 @@ export function FrameNavDisclosure({ children, mobileChildren, minimumBreakpoint
         side="right"
         className="site-header-nav-sheet motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0"
       >
-        <SemanticContent as="div" className="site-header-nav-sheet-content">
+        <SemanticContent as="div" {...{ [SECTION_REVEAL_ATTRIBUTE]: "" }} className="site-header-nav-sheet-content">
+          <SectionRevealStyle />
           <SheetTitle className="sr-only">{ariaLabel}</SheetTitle>
           <SheetClose variant="ghost" size="icon" aria-label={closeLabel ?? triggerLabel} className="site-header-nav-sheet-close">
             <Icon glyph={X} decorative />
