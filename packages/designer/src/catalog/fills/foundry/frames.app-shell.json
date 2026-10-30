@@ -171,11 +171,11 @@
           },
           {
             "path": "packages/designer/src/frames/PageFrame.tsx",
-            "sha256": "0ced58a613cded0ca89d81ef2921dfe75483fa1e319ffb3b15679575a60e08ef"
+            "sha256": "2ca85ffe5518eb8b187824f4b2c8ecfd8a0c3b3894c608e937df2c5642eb5a82"
           },
           {
             "path": "packages/designer/src/frames/shadcn-aria/chrome.tsx",
-            "sha256": "696bbc4f6dc8b4f9563ece8adcdfc9d4b9ac72ec18aa1a2c7d76abb5297d292b"
+            "sha256": "cd4dbcae6261b8b129b532ab8a4328d5af008ec039d542f6410a73dc646d27f3"
           },
           {
             "path": "packages/designer/src/icons/ChevronDown.ts",
