@@ -7,6 +7,7 @@ import { AGENT_LABELS, type Agent } from '../lib/agents';
 import { loadCell, loadCells, type AgentCells, type CellDetail } from '../lib/cells-client';
 import { studioCellChange } from '../lib/studio-module-data';
 import { StudioFrame } from './StudioFrame';
+import { RoleToolsProvider } from './AgentSpecimenProvider';
 import { StudioCommonModules } from './StudioCommonModules';
 import { studioHome } from '../generated/studio-map';
 
@@ -50,7 +51,7 @@ export function CellsWorkspace({ agent }: { agent?: Agent }) {
     else if (!selectedIndex || selectedIndex.state !== 'ready') stage = <EmptyState title="Cells are unavailable" description={selectedIndex?.error} />;
     else stage = <EmptyState title="NEED: manifest-bound IA body" description="The native body/container projection and registered specimen, card-body and module-frame APIs require the integration composition." />;
   }
-  return <StudioCommonModules pageId={agent ?? studioHome.id} indexes={indexes} agent={agent} selectedId={selectedId} detail={selectedDetail} revision={revision}>
+  return <RoleToolsProvider index={selectedIndex} selectedId={selectedId}><StudioCommonModules pageId={agent ?? studioHome.id} indexes={indexes} agent={agent} selectedId={selectedId} detail={selectedDetail} revision={revision}>
     <StudioFrame page={{ title }}>{stage}</StudioFrame>
-  </StudioCommonModules>;
+  </StudioCommonModules></RoleToolsProvider>;
 }

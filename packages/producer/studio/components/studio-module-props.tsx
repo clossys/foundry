@@ -1,3 +1,4 @@
+import { cellContentTarget } from '../lib/cell-content';
 import { createElement, type ComponentType } from 'react';
 import type { StudioModuleAction } from '../lib/studio-module-host';
 import type { StudioModulePayload } from '../lib/studio-module-data';
@@ -17,7 +18,15 @@ export function studioModuleProps(action: StudioModuleAction, payload: StudioMod
     const cell = payload.cell && typeof payload.cell === 'object' ? payload.cell as Record<string, unknown> : undefined;
     const facts = cell ? Object.entries(cell).filter(([key]) => !['href', 'contentHref', 'contentTarget', 'contentRel', 'title'].includes(key)) : [];
     const roleFacts = payload.roleFacts && typeof payload.roleFacts === 'object' ? Object.entries(payload.roleFacts) : [];
-    return { title: cell?.title ?? action.label, fields: [...facts, ...roleFacts].map(([label, value]) => ({ label, value: valueText(value) })) };
+    const Link = components.Link, Icon = components.Icon;
+    let actions;
+    if (cell && Link && Icon) {
+      try {
+        const target = cellContentTarget(valueText(cell.agent), valueText(cell.id), typeof cell.version === 'number' ? { version: cell.version } : undefined);
+        actions = createElement(Link as ComponentType<Record<string, unknown>>, { ...target, buttonVariant: 'ghost', 'aria-label': `Open ${valueText(cell.title) || valueText(cell.id)} content` }, createElement(Icon as ComponentType<Record<string, unknown>>, { asset: 'assets.icon-external-link', decorative: true }));
+      } catch { /* An unresolved identity cannot become a navigation target. */ }
+    }
+    return { title: cell?.title ?? action.label, ...(actions ? { actions } : {}), fields: [...facts, ...roleFacts].map(([label, value]) => ({ label, value: valueText(value) })) };
   }
   if (action.module.section === 'sections.content') {
     const SemanticContent = components.SemanticContent;

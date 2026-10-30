@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useStudioSelection } from './StudioSelection';
+import { useRoleToolPayloads } from './AgentSpecimenProvider';
 import { StudioModulesProvider } from './StudioModuleHost';
 import { studioModulePayloads, type StudioChecks, type StudioModulePayloads } from '../lib/studio-module-data';
 import { loadStudioChecks } from '../lib/studio-module-client';
@@ -12,9 +13,11 @@ import type { AgentCells, CellDetail } from '../lib/cells-client';
 export function StudioCommonModules({ pageId, indexes, agent, selectedId, detail, revision, rolePayloads = {}, children }: {
   pageId: string; indexes: readonly AgentCells[]; agent?: Agent; selectedId?: string; detail?: CellDetail; revision: number; rolePayloads?: StudioModulePayloads; children: ReactNode;
 }) {
+  const providedRoles = useRoleToolPayloads();
   const { selection } = useStudioSelection();
   const [checks, setChecks] = useState<StudioChecks>({ state: 'loading', results: [] });
   useEffect(() => {
+    if (!agent) { setChecks({ state: 'ready', results: [] }); return; }
     const controller = new AbortController();
     setChecks({ state: 'loading', results: [] });
     loadStudioChecks(controller.signal, agent).then(setChecks, error => {
@@ -24,7 +27,7 @@ export function StudioCommonModules({ pageId, indexes, agent, selectedId, detail
   }, [agent, revision]);
   const common = studioModulePayloads({ indexes, agent, selectedId, detail, selection, checks });
   const payloads = { ...common };
-  for (const [key, role] of Object.entries(rolePayloads)) {
+  for (const [key, role] of Object.entries({ ...providedRoles, ...rolePayloads })) {
     const target = key === 'sections.record-detail' && agent ? `${agent}.inspector` : key;
     payloads[target] = { ...common[target], ...role };
   }

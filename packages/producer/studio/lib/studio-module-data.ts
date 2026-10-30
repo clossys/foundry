@@ -1,5 +1,6 @@
 import { projectStudioAgentIA, studioIAHref } from './studio-agent-ia';
 import { type AgentCells, type CellDetail, type CellSummary } from './cells-client';
+import { cellContentHref } from './cell-content';
 import { isAgent, type Agent } from './agents';
 import type { StudioSelection } from './selection-client';
 import { studioAgentHref } from '../generated/studio-map';
@@ -17,7 +18,7 @@ function cellRef(reference: string, agent: Agent) {
   return { agent: owner, id: match[2]!, version: Number(match[3]), reference };
 }
 function linkedCell(cell: CellSummary, agent: Agent) {
-  return { agent, id: cell.id, version: cell.version, status: cell.status, title: typeof cell.fields?.title === 'string' ? cell.fields.title : cell.id.split('.').at(-1), href: `${studioAgentHref(agent)}${studioIAHref(cell.id)}`, contentHref: studioCellContentHref(agent, cell.id), contentTarget: '_blank', contentRel: 'noopener noreferrer' };
+  return { agent, id: cell.id, version: cell.version, status: cell.status, title: typeof cell.fields?.title === 'string' ? cell.fields.title : cell.id.split('.').at(-1), href: `${studioAgentHref(agent)}${studioIAHref(cell.id)}`, contentHref: cellContentHref(agent, cell.id, { version: cell.version }), contentTarget: '_blank', contentRel: 'noopener noreferrer' };
 }
 
 /** Only stored facts and resolvable cell references become module data. */
@@ -50,10 +51,7 @@ export function studioModulePayloads(input: { indexes: readonly AgentCells[]; ag
 
 export function selectionNeedData(selection: StudioSelection): StudioModulePayload { return { gaps: selection.leaves.filter(leaf => leaf.source !== 'consumer') }; }
 
-export function studioCellContentHref(agent: Agent, id: string): string {
-  if (!isAgent(agent) || !/^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*){1,2}$/.test(id)) throw new Error('The cell content target is invalid.');
-  return `/content/${encodeURIComponent(agent)}/${encodeURIComponent(id)}`;
-}
+export { cellContentHref as studioCellContentHref } from './cell-content';
 export function studioCellChange(value: unknown): boolean {
   if (!value || typeof value !== 'object' || !('reload' in value) || value.reload !== true) return false;
   const row = value as Record<string, unknown>;

@@ -1,11 +1,9 @@
+import type { AgentSpecimenCoverage } from './agent-specimen-coverage';
 import type { AgentCells } from './cells-client';
 import { projectStudioAgentIA } from './studio-agent-ia';
 
 /** Evidence supplied by the same registered renderer model that paints the row. */
-export interface StudioCoverageEvidence {
-  cellId: string; ready: boolean; boundSectionId?: string; registered: boolean; itemCount: number;
-  expectedVariantIds: string[]; variants: { id: string; groupId?: string; renderable: boolean; reason?: string }[]; issues: string[];
-}
+export type StudioCoverageEvidence = AgentSpecimenCoverage;
 export interface StudioCoverageResult { state: 'pass' | 'fail' | 'empty'; cells: { covered: number; total: number }; variants: { covered: number; total: number; completeScope: boolean }; issues: { cellId?: string; code: string }[] }
 
 /** Strict evidence accounting: a fallback, unknown scope, unregistered binding or missing variant is never 100%. */

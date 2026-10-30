@@ -22,6 +22,13 @@ describe('existing closed module section APIs', () => {
     const props = studioModuleProps(action('sections.record-detail'), { cell: { title: 'Core', version: 2, status: 'draft', uses: ['writer:example.page@1'] }, roleFacts: { tone: 'Concise' } }, {});
     expect(props).toMatchObject({ title: 'Core', fields: [{ label: 'version', value: '2' }, { label: 'status', value: 'draft' }, { label: 'uses', value: 'writer:example.page@1' }, { label: 'tone', value: 'Concise' }] });
   });
+  it('uses the real Inspector action slot for guarded selected icon linkouts', () => {
+    const Link = () => null, Icon = () => null;
+    const props = studioModuleProps(action('sections.record-detail'), { cell: { agent: 'director', id: 'focus.segment.core', version: 2, title: 'Core' } }, { Link, Icon });
+    expect(props?.actions).toMatchObject({ type: Link, props: { href: '/content/director/focus.segment.core?version=2', target: '_blank', rel: 'noopener noreferrer', buttonVariant: 'ghost', children: { type: Icon, props: { asset: 'assets.icon-external-link', decorative: true } } } });
+    const invalid = studioModuleProps(action('sections.record-detail'), { cell: { agent: 'director', id: '../../outside', title: 'Invalid' } }, { Link, Icon });
+    expect(invalid?.actions).toBeUndefined();
+  });
   it('uses the actual five module entries and Home only Needs, initially closed', () => {
     for (const page of ['director', 'designer', 'writer', 'publisher']) {
       expect(studioPageActions[page]?.map(entry => entry.module?.section)).toEqual(['sections.explorer', 'sections.record-detail', 'sections.content', 'sections.status-list', 'sections.task-list']);

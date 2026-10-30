@@ -1,9 +1,10 @@
 import { cellHierarchy, type AgentCells, type CellNode, type CellSummary } from './cells-client';
+import { cellContentTarget } from './cell-content';
 import { AGENT_LABELS } from './agents';
 
 export interface StudioIACollection { id: string; label: string; cells: CellSummary[] }
 export interface StudioIAGroup { id: string; label: string; collections: StudioIACollection[] }
-export interface StudioIAOutline { id: string; label: string; href: string; children?: StudioIAOutline[] }
+export interface StudioIAOutline { id: string; label: string; href: string; children?: StudioIAOutline[]; contentTarget?: ReturnType<typeof cellContentTarget> }
 export interface StudioAgentIA { id: string; label: string; state: 'ready' | 'missing' | 'error'; groups: StudioIAGroup[]; tree: StudioIAOutline[]; error?: string }
 export const studioIAAnchor = (id: string) => `studio-ia-${id}`;
 export const studioIAHref = (id: string) => `#${encodeURIComponent(studioIAAnchor(id))}`;
@@ -21,7 +22,7 @@ export function projectStudioAgentIA(index: AgentCells): StudioAgentIA {
         return { id: section.id, label: section.title, cells: section.children };
       }) };
     });
-    const outline = (nodes: CellNode[]): StudioIAOutline[] => nodes.map(node => ({ id: node.id, label: node.title, href: studioIAHref(node.id), ...(node.group ? { children: outline(node.children) } : {}) }));
+    const outline = (nodes: CellNode[]): StudioIAOutline[] => nodes.map(node => ({ id: node.id, label: node.title, href: studioIAHref(node.id), ...(node.group ? { children: outline(node.children) } : { contentTarget: cellContentTarget(index.agent, node.id, { version: node.version }) }) }));
     return { ...root, state: 'ready', groups, tree: [{ ...root, href: studioIAHref(root.id), children: outline(nodes) }] };
   } catch (error) { return { ...root, state: 'error', groups: [], tree: [], error: error instanceof Error ? error.message : String(error) }; }
 }
