@@ -1,6 +1,6 @@
 /** sections.features: host-authored copy and registered media in the selected feature member. */
 import type { ReactNode } from "react";
-import type { Card } from "../../components/Card.js";
+import type { Card } from "../../components/preview-runtime/components/card/card.js";
 import { componentLeaf } from "../component-leaf.js";
 import { FeatureGrid } from "../../blocks/FeatureGrid.js";
 import { FeatureLayouts } from "../../blocks/features/FeatureLayouts.js";
@@ -12,6 +12,7 @@ import { list, memberValue, object, optionalText, readSectionContent, required, 
 
 export const featuresInputs: SectionRendererInputs = { slots: ["items", "header"], members: ["layout.grid", "layout.list", "layout.split", "layout.bento", "layout.tabs", "layout.alternating", "layout.scroll"] };
 const FeatureCard = componentLeaf<typeof Card>("components.card");
+const CardContent = componentLeaf<typeof import("../../components/preview-runtime/components/card/card.js").CardContent>("components.card", "CardContent");
 
 export function renderFeaturesSection(input: SectionRenderInput): ReactNode {
   const content = readSectionContent(input, "sections.features", featuresInputs);
@@ -33,7 +34,7 @@ export function renderFeaturesSection(input: SectionRenderInput): ReactNode {
   });
   const props = { items, eyebrow: header ? optionalText(content, header.eyebrow, "header.eyebrow") : undefined, heading: header ? optionalText(content, header.heading, "header.heading") : undefined, description: header ? optionalText(content, header.description, "header.description") : undefined };
   if (layout === "bento" || layout === "tabs" || layout === "alternating" || layout === "scroll") {
-    return <FeatureCard data-features-component="components.card"><FeatureLayouts {...dsAttrs("sections", "sections.features", "foundry/sections.features")} {...props} layout={layout} ground="base" /></FeatureCard>;
+    return <FeatureCard data-features-component="components.card"><CardContent><FeatureLayouts {...dsAttrs("sections", "sections.features", "foundry/sections.features")} {...props} layout={layout} ground="base" /></CardContent></FeatureCard>;
   }
-  return <FeatureCard data-features-component="components.card"><FeatureGrid {...props} {...(layout ? { layout } : {})} /></FeatureCard>;
+  return <FeatureCard data-features-component="components.card"><CardContent><FeatureGrid {...props} {...(layout ? { layout } : {})} /></CardContent></FeatureCard>;
 }

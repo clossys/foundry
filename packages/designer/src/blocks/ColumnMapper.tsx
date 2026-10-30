@@ -8,7 +8,8 @@ import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
 const Select = componentLeaf<typeof import("../components/Select.js").Select>("components.select");
-const Card = componentLeaf<typeof import("../components/Card.js").Card>("components.card");
+const Card = componentLeaf<typeof import("../components/preview-runtime/components/card/card.js").Card>("components.card");
+const CardContent = componentLeaf<typeof import("../components/preview-runtime/components/card/card.js").CardContent>("components.card", "CardContent");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -48,7 +49,7 @@ export function ColumnMapper(props: ColumnMapperProps) {
   const announced = useDebouncedSummary(labels.summary(mapped, targets.length, issues.length));
   const options = [{ id: "", label: labels.notMapped }, ...sourceColumns.map(source => ({ id: source.id, label: source.header }))];
   return <Card {...SECTION_STAMP} role="group" aria-labelledby={headingId} className={cx("m-0 flex min-w-0 flex-col gap-lg border-0 bg-surface-raised p-0 text-body text-ink-primary", className)}>
-    <SemanticContent as="h3" id={headingId} className="mb-md text-body-l font-medium">{labels.legend}</SemanticContent>
+    <CardContent><SemanticContent as="h3" id={headingId} className="mb-md text-body-l font-medium">{labels.legend}</SemanticContent>
     {targets.map(target => {
       const sourceId = mappedSource(mapping, target.id);
       const source = sourceColumns.find(column => column.id === sourceId);
@@ -65,5 +66,5 @@ export function ColumnMapper(props: ColumnMapperProps) {
       </SemanticContent>;
     })}
     <SemanticContent as="span" role="status" aria-live="polite" className="text-body-s text-ink-secondary">{announced}</SemanticContent>
-  </Card>;
+  </CardContent></Card>;
 }

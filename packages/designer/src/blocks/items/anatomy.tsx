@@ -4,7 +4,8 @@ import { CardLinkTitle, type CardLinkFrame } from "../stretched-link.js";
 import type { SectionGround } from "../section-ground.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
-const Card = componentLeaf<typeof import("../../components/Card.js").Card>("components.card");
+const Card = componentLeaf<typeof import("../../components/preview-runtime/components/card/card.js").Card>("components.card");
+const CardContent = componentLeaf<typeof import("../../components/preview-runtime/components/card/card.js").CardContent>("components.card", "CardContent");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /** Shared title and single-anchor anatomy. Each private policy owns its exact historical tags/classes. */
@@ -27,7 +28,7 @@ export function ItemDescription({ as: Tag = "p", children, className, ...attribu
     ? <SemanticContent as="span" {...attributes} className={className}>{children}</SemanticContent>
     : <SemanticContent as="p" {...attributes} className={className}>{children}</SemanticContent>;
 }
-/** A plate's surface policy and slot ownership are shared; collection shells remain private. */
-export function ItemPlate({ ground, children, className, style, ...attributes }: { ground: SectionGround; children: ReactNode; className: string; style?: CSSProperties; [key: `data-${string}`]: string | boolean | undefined }) {
-  return <Card variant="plate" ground={ground} className={className} style={style} {...attributes}>{children}</Card>;
+/** The selected native Card owns its content surface; collection shells remain private. */
+export function ItemPlate({ ground: _ground, children, className, style, ...attributes }: { ground: SectionGround; children: ReactNode; className: string; style?: CSSProperties; [key: `data-${string}`]: string | boolean | undefined }) {
+  return <Card className={className} style={style} {...attributes}><CardContent>{children}</CardContent></Card>;
 }

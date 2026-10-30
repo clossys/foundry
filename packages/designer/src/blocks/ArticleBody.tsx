@@ -3,7 +3,8 @@ import { ArticleReadingProgress } from "./ArticleReading.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 const Link = componentLeaf<typeof import("../components/Link.js").Link>("components.link");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
-const Card = componentLeaf<typeof import("../components/Card.js").Card>("components.card");
+const Card = componentLeaf<typeof import("../components/preview-runtime/components/card/card.js").Card>("components.card");
+const CardContent = componentLeaf<typeof import("../components/preview-runtime/components/card/card.js").CardContent>("components.card", "CardContent");
 import { cx } from "../components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -86,7 +87,7 @@ function ArticleBodyRoot({ children, toc, dropCap = false, className, style, ...
 
 /** Editorial parts keep copy in caller-owned nodes and never parse a document. */
 function ArticlePullQuote({ children, attribution }: { children: ReactNode; attribution?: ReactNode }) {
-  return <Card><SemanticContent as="blockquote" data-article-pull-quote="" className="border-s border-line-base ps-lg text-blockquote font-display text-ink-secondary">{children}{attribution ? <SemanticContent as="footer" className="mt-sm text-body-s font-body text-ink-muted">{attribution}</SemanticContent> : null}</SemanticContent></Card>;
+  return <Card><CardContent><SemanticContent as="blockquote" data-article-pull-quote="" className="border-s border-line-base ps-lg text-blockquote font-display text-ink-secondary">{children}{attribution ? <SemanticContent as="footer" className="mt-sm text-body-s font-body text-ink-muted">{attribution}</SemanticContent> : null}</SemanticContent></CardContent></Card>;
 }
 function ArticleFigureCaption({ children }: { children: ReactNode }) {
   return <SemanticContent as="figcaption" data-article-figure-caption="" className="mt-sm text-caption text-ink-muted">{children}</SemanticContent>;

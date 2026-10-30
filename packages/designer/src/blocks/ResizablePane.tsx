@@ -1,6 +1,7 @@
 import { useId, useState, type ReactNode } from "react";
 import type { ResizeHandleProps } from "../components/ResizeHandle.js";
 import { Panel, type PanelProps } from "./Panel.js";
+import type { SectionGround } from "./section-ground.js";
 
 import { componentLeaf } from "../runtime/component-leaf.js";
 
@@ -8,6 +9,8 @@ const SemanticContent = componentLeaf<typeof import("../components/SemanticConte
 const ResizeHandle = componentLeaf<typeof import("../components/ResizeHandle.js").ResizeHandle>("components.resize-handle");
 
 export interface ResizablePaneProps extends Omit<PanelProps, "onChange" | "defaultValue" | "children" | "role" | "aria-label" | "aria-labelledby"> {
+  /** Surrounding ground for the resize handle's existing focus treatment. */
+  ground?: SectionGround;
   min: number;
   max: number;
   defaultValue: number;
@@ -27,7 +30,7 @@ export interface ResizablePaneProps extends Omit<PanelProps, "onChange" | "defau
 /** Panel and ResizeHandle composition with supplied bounds; it never persists layout. */
 export function ResizablePane({
   min, max, defaultValue, value, step, orientation = "vertical", handleEdge = "end",
-  label, handleLabel, onChange, children, style, ...rest
+  label, handleLabel, onChange, children, style, ground = "base", ...rest
 }: ResizablePaneProps) {
   const generatedId = useId();
   const [uncontrolled, setUncontrolled] = useState(defaultValue);
@@ -42,7 +45,7 @@ export function ResizablePane({
   const handle = <ResizeHandle
     key="handle" value={bounded} min={min} max={max} resetValue={defaultValue} step={step}
     orientation={orientation} edge={handleEdge} label={handleLabel}
-    className={rest.ground === "inverse" ? "focus-visible:outline-accent-on-inverse" : undefined}
+    className={ground === "inverse" ? "focus-visible:outline-accent-on-inverse" : undefined}
     aria-controls={rest.id ?? generatedId} onChange={change}
   />;
   return (

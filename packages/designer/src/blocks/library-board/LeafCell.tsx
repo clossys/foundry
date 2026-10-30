@@ -1,11 +1,11 @@
 'use client';
 import type { HTMLAttributes, ReactNode } from 'react';
-import type { CardGround } from "../../components/Card.js";
 import { SectionHeader } from '../SectionHeader.js';
 import { CANVAS_COUNTER_SCALED_TITLE } from '../canvas/CanvasLod.js';
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
-const Card = componentLeaf<typeof import("../../components/Card.js").Card>("components.card");
+const Card = componentLeaf<typeof import("../../components/preview-runtime/components/card/card.js").Card>("components.card");
+const CardContent = componentLeaf<typeof import("../../components/preview-runtime/components/card/card.js").CardContent>("components.card", "CardContent");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /**
@@ -14,11 +14,6 @@ const SemanticContent = componentLeaf<typeof import("../../components/SemanticCo
  * render, or an unchosen leaf. Rendered as `data-preview-state` so a capture harness never reads copy.
  */
 export type LeafPreviewState = 'live' | 'planned' | 'unavailable' | 'not-chosen';
-
-/** The ground the cell plate sits on; a plate fills with the other ground (see Card). */
-const LEAF_CELL_GROUND: CardGround = 'base';
-/** The ground a plate fills with, by the ground it sits on: the surface a leaf specimen is drawn on. */
-const PLATE_FILL_GROUND: Readonly<Record<CardGround, string>> = { base: 'sunken', sunken: 'raised', inverse: 'inverse-raised' };
 
 export interface LeafCellProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   /** What this cell shows; rendered as `data-preview-state`. */
@@ -38,11 +33,11 @@ export interface LeafCellProps extends Omit<HTMLAttributes<HTMLDivElement>, 'chi
  * The slots share one centre line, so a status reads level with its action buttons.
  */
 export function LeafCell({ preview, status, actions, previewState, className, ...rest }: LeafCellProps) {
-  return <Card {...rest} variant="plate" ground={LEAF_CELL_GROUND} data-candidate-cell="" data-preview-state={previewState} data-ground={PLATE_FILL_GROUND[LEAF_CELL_GROUND]} className={['flex w-max items-center gap-md p-sm', className].filter(Boolean).join(' ')}>
+  return <Card {...rest} data-candidate-cell="" data-preview-state={previewState}><CardContent className={['flex w-max items-center gap-md p-sm', className].filter(Boolean).join(' ')}>
     {preview}
     <SemanticContent as="div" data-cell-status="" hidden={status == null} className={status == null ? undefined : 'text-ink-muted'}>{status}</SemanticContent>
     <SemanticContent as="div" data-cell-actions="" hidden={actions == null} className={actions == null ? undefined : 'flex items-center gap-sm'}>{actions}</SemanticContent>
-  </Card>;
+  </CardContent></Card>;
 }
 
 export interface BoardHeaderProps {

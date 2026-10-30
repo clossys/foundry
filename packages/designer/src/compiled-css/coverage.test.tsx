@@ -36,7 +36,7 @@ import { Badge } from "../components/preview-runtime/components/badge/badge.js";
 import { Banner } from "../components/Banner.js";
 import { Breadcrumb } from "../components/Breadcrumb.js";
 import { Button } from "../components/Button.js";
-import { Card } from "../components/Card.js";
+import { Card, CardHeader, CardTitle, CardDescription, CardAction, CardContent, CardFooter } from "../components/preview-runtime/components/card/card.js";
 import { Checkbox } from "../components/Checkbox.js";
 import { Chip } from "../components/Chip.js";
 import { Link } from "../components/Link.js";
@@ -297,8 +297,8 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     const component = render(<ResizeHandle value={100} min={50} max={200} resetValue={100} label="Resize tools" onChange={() => {}} />);
     collect(component.container);
     component.unmount();
-    for (const ground of ["base", "sunken", "inverse"] as const) {
-      const view = render(<Panel ground={ground} header="Header" footer="Footer">Content</Panel>);
+    for (const size of ["default", "sm"] as const) {
+      const view = render(<Panel size={size} header="Header" footer="Footer">Content</Panel>);
       collect(view.container);
       view.unmount();
     }
@@ -424,10 +424,8 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     trees.push(["Badge destructive", render(<Badge variant="destructive">Active</Badge>)]);
     trees.push(["Badge secondary", render(<Badge variant="secondary">Active</Badge>)]);
     trees.push(["Badge link", render(<Badge variant="link">Active</Badge>)]);
-    trees.push(["Card", render(<Card>Content</Card>)]);
-    for (const ground of ["base", "sunken", "inverse"] as const) {
-      trees.push([`Card plate ${ground}`, render(<Card variant="plate" ground={ground}>Content</Card>)]);
-      trees.push([`Card outline ${ground}`, render(<Card variant="outline" ground={ground}>Content</Card>)]);
+    for (const size of ["default", "sm"] as const) {
+      trees.push([`Card ${size}`, render(<Card size={size}><CardHeader><CardTitle>Title</CardTitle><CardDescription>Description</CardDescription><CardAction>Action</CardAction></CardHeader><CardContent>Content</CardContent><CardFooter>Footer</CardFooter></Card>)]);
     }
     for (const tone of ["success", "warning", "danger", "info", "neutral"] as const) {
       trees.push([`StatusMark ${tone}`, render(<StatusMark tone={tone}>State</StatusMark>)]);

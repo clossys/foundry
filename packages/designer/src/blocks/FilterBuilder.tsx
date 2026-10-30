@@ -4,7 +4,8 @@ import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
 const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
-const Card = componentLeaf<typeof import("../components/Card.js").Card>("components.card");
+const Card = componentLeaf<typeof import("../components/preview-runtime/components/card/card.js").Card>("components.card");
+const CardContent = componentLeaf<typeof import("../components/preview-runtime/components/card/card.js").CardContent>("components.card", "CardContent");
 const Select = componentLeaf<typeof import("../components/Select.js").Select>("components.select");
 const TextField = componentLeaf<typeof import("../components/TextField.js").TextField>("components.text-field");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
@@ -68,7 +69,7 @@ export function FilterBuilder({ fields, operators, groups, onGroupsChange, label
   const fieldOptions = fields.map(field => ({ id: field.id, label: field.label }));
   const operatorOptions = operators.map(operator => ({ id: operator.id, label: operator.label }));
   return <Card {...SECTION_STAMP} role="group" aria-labelledby={headingId} className={cx("m-0 flex min-w-0 flex-col gap-lg border-0 p-0 text-body text-ink-primary", className)}>
-    <SemanticContent as="h3" id={headingId} className="mb-md text-body-l font-medium">{labels.legend}</SemanticContent>
+    <CardContent><SemanticContent as="h3" id={headingId} className="mb-md text-body-l font-medium">{labels.legend}</SemanticContent>
     {groups.map((group, groupIndex) => <SemanticContent as="div" key={group.id} role="group" aria-label={labels.group(groupIndex + 1)} className="flex min-w-0 flex-col gap-md rounded-surface border border-line-base bg-surface-raised p-md">
       <Select label={labels.match} size="sm" className="filter-match-width" selectedKey={group.match}
         options={[{ id: "all", label: labels.matchAll }, { id: "any", label: labels.matchAny }]}
@@ -94,5 +95,5 @@ export function FilterBuilder({ fields, operators, groups, onGroupsChange, label
       const id = nextId("group", allIds);
       onGroupsChange([...groups, { id, match: "all", conditions: [blank(id, allIds)] }]);
     }}>{labels.addGroup}</Button></SemanticContent>
-  </Card>;
+  </CardContent></Card>;
 }

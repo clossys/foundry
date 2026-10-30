@@ -7,7 +7,7 @@ import { componentLeaf } from "../runtime/component-leaf.js";
 
 const Badge = componentLeaf<typeof import("../components/preview-runtime/components/badge/badge.js").Badge>("components.badge");
 type Part = ComponentType<HTMLAttributes<HTMLElement>>;
-const Card = componentLeaf<typeof import("../components/Card.js").Card>("components.card");
+const Card = componentLeaf<typeof import("../components/preview-runtime/components/card/card.js").Card>("components.card");
 const CardHeader = componentLeaf<Part>("components.card", "CardHeader");
 const CardContent = componentLeaf<Part>("components.card", "CardContent");
 const CardFooter = componentLeaf<Part>("components.card", "CardFooter");
