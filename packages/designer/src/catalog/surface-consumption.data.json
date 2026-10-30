@@ -1688,7 +1688,7 @@
         },
         {
           "path": "packages/designer/src/blocks/RecordCards.tsx",
-          "sha256": "c69e7e3f4a47e5d5d54fea72711e9f2e50423886c6bbdc9619e1863b060838c0"
+          "sha256": "0efe8a35b9e9ff1e748bcbe61707155bb6da51cf6e329b27648ab623036144c7"
         },
         {
           "path": "packages/designer/src/catalog-assets/media.ts",

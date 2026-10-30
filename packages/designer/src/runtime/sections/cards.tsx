@@ -22,6 +22,8 @@ export const renderCards: SectionRenderer = input => {
     const description = stringField(row, "description"), href = stringField(row, "href"), meta = stringField(row, "meta");
     const badge = isObject(row.badge) ? row.badge : undefined, badgeLabel = stringField(badge, "label"), variant = stringField(badge, "variant");
     if (variant !== undefined && !(BADGES as readonly string[]).includes(variant)) throw new TypeError(`${LEAF}: record ${id} badge variant ${variant} is not a Badge variant`);
+    const chosenBadge = input.profile.components?.components["components.badge"];
+    if (badgeLabel && variant && variant !== "neutral" && variant !== "danger" && chosenBadge && !chosenBadge.descriptor.props.includes("variant")) throw new TypeError(`${LEAF}: selected Badge cannot render status variant ${variant}`);
     const image = row.image;
     if (image !== undefined && (!isObject(image) || image.slot !== "assets.image" || !isImageResource(image))) throw new TypeError(`${LEAF}: record ${id} requires an assets.image resource`);
     return {

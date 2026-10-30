@@ -22,6 +22,8 @@ import { specimenDataset } from "../../studio/specimen-dataset.js";
 const source = { id: "editorial-fixture", kind: "consumer", author: "consumer", license: "MIT" } as const;
 let selection: ConsumerComponentSelection;
 let profile: CompositeResolved;
+let foundrySelection: ConsumerComponentSelection;
+let foundryProfile: CompositeResolved;
 function sourceModule(files: readonly { path: string; content: string }[], entry: string, dependency: (leaf: string) => unknown) {
   const code = execFileSync(process.execPath, ["--input-type=module", "-e", `
     import {readFileSync} from 'node:fs'; import {posix} from 'node:path'; import {build} from 'esbuild';
@@ -65,6 +67,9 @@ beforeAll(() => {
   for (const slot of adopted) dependency(slot.slice(11));
   selection = { profile, selectionHash: profile.components.selectionHash, modules,
     descriptors: Object.fromEntries(Object.entries(profile.components.components).map(([id, item]) => [id, componentDescriptorHash(item.descriptor)])) };
+  const foundryBadge = applyComponentLibraryChange(catalog, library, { baseHash: componentLibraryHash(library), changes: [{ op: "adopt", slot: "components.badge", source: "foundry" }] }, bundles.sourceBundles);
+  foundryProfile = resolve({ catalog: { values, components: catalog }, library: { source, adoptedAt: "2026-10-30", values: owned, components: foundryBadge } });
+  foundrySelection = { profile: foundryProfile, selectionHash: foundryProfile.components.selectionHash, modules, descriptors: Object.fromEntries(Object.entries(foundryProfile.components.components).map(([id, item]) => [id, componentDescriptorHash(item.descriptor)])) };
 }, 120_000);
 afterEach(cleanup);
 
@@ -97,6 +102,13 @@ describe("registered editorial Cards specimen", () => {
     expect(() => renderCards(input(records, "invented"))).toThrow(/unsupported editorial/);
     expect(() => renderCards(input([{ id: "bad" }]))).toThrow(/id and a title/);
     expect(() => renderCards(input([{ id: "bad", title: "Bad", image: { kind: "photo", src: "/a.jpg", width: 10, height: 10 } }]))).toThrow(/assets.image/);
+  });
+  it("preserves actual Foundry status badges and refuses an unsupported selected Source badge", async () => {
+    const status = [{ id: "status", title: "Status", badge: { label: "Active", variant: "success" } }];
+    expect(() => renderCards(input(status))).toThrow(/selected Badge cannot render status variant success/);
+    const native = { ...input(status), profile: foundryProfile };
+    render(<ConsumerComponentProvider value={foundrySelection}>{renderCards(native)}</ConsumerComponentProvider>);
+    expect(await screen.findByText("Active")).toBeVisible();
   });
   it("keeps ISO dates locale-bound and rejects impossible days", () => {
     expect(editorialDate("2026-10-29", "en-GB")).toBe("29 October 2026");

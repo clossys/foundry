@@ -1369,7 +1369,8 @@
           "tokens.shift-distance",
           "tokens.body-size",
           "tokens.caption-size",
-          "tokens.text-color"
+          "tokens.text-color",
+          "tokens.heading-size"
         ],
         "assets": [
           "assets.image"

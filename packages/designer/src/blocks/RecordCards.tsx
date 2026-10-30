@@ -13,7 +13,7 @@ const Card = componentLeaf<ComponentType<HTMLAttributes<HTMLDivElement>>>("compo
 const CardHeader = componentLeaf<ComponentType<HTMLAttributes<HTMLDivElement>>>("components.card", "CardHeader");
 const CardTitle = componentLeaf<ComponentType<HTMLAttributes<HTMLDivElement>>>("components.card", "CardTitle");
 const CardContent = componentLeaf<ComponentType<HTMLAttributes<HTMLDivElement>>>("components.card", "CardContent");
-const Badge = componentLeaf<ComponentType<{ children?: ReactNode; tone?: BadgeVariant }>>("components.badge");
+const Badge = componentLeaf<ComponentType<{ children?: ReactNode; tone?: BadgeVariant; variant?: BadgeVariant }>>("components.badge");
 const Link = componentLeaf<typeof LinkType>("components.link");
 const SECTION_STAMP = dsAttrs("sections", "sections.cards", "foundry/sections.cards");
 
@@ -59,7 +59,9 @@ export function RecordCards({ records, config, locale, layout = "grid", headingL
           <CardTitle><SemanticContent as={heading} className="m-0 text-body-l font-medium text-ink-primary">
             {record.href ? <Link href={record.href} variant="standalone">{record.title}</Link> : record.title}
           </SemanticContent></CardTitle>
-          {record.badge ? <Badge tone={record.badge.variant ?? "neutral"}>{record.badge.label}</Badge> : null}
+          {record.badge ? record.badge.variant && record.badge.variant !== "neutral" && record.badge.variant !== "danger"
+            ? <Badge variant={record.badge.variant}>{record.badge.label}</Badge>
+            : <Badge tone={record.badge.variant ?? "neutral"}>{record.badge.label}</Badge> : null}
         </CardHeader>
         <CardContent className="flex flex-col gap-sm">
           {record.description ? <SemanticContent as="p" dir="auto" className="m-0 text-body-s text-ink-secondary">{record.description}</SemanticContent> : null}
