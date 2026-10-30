@@ -1,3 +1,4 @@
+import { studioChecks } from './studio-checks.js';
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { once } from "node:events";
 import { createServer, request as httpRequest, type IncomingMessage, type ServerResponse } from "node:http";
@@ -109,6 +110,11 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
       if (pathname === "/api/cells") { json(response, 200, { agents: await Promise.all(AGENT_KINDS.map(agent => inventory(options.root, agent))) }); return; }
       if (pathname === "/api/publication") { json(response, 200, await publication(options.root, new URL(raw, origin).searchParams.get("publication") ?? undefined)); return; }
       if (pathname === "/api/apps") { json(response, 200, await consumerApps(options.root)); return; }
+      if (pathname === "/api/checks") {
+        const requested = new URL(raw, origin).searchParams.get("agent");
+        if (requested !== null && !AGENT_KINDS.includes(requested as AgentKind)) { json(response, 400, { error: "Unknown check agent" }); return; }
+        json(response, 200, await studioChecks(options.root, requested === null ? undefined : requested as AgentKind)); return;
+      }
       if (pathname === "/api/events") {
         response.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-store", Connection: "keep-alive", "X-Accel-Buffering": "no" });
         streams.add(response); response.write(`event: ready\ndata: ${JSON.stringify({ reload: true })}\n\n`);
