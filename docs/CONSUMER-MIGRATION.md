@@ -57,7 +57,10 @@ export function PageBody({ document, resolveCopy }: {
 
 This example is a body inside an existing `SiteFrame`, which owns the main
 landmark. A standalone `SectionedView` uses its default main landmark. Keep the
-resolved document's `resolutions` for publication provenance. See the
+resolved document's `resolutions` for publication provenance. Writer preview
+resolution can return a draft with `status: "draft"`. A site that requires
+approved copy must retain that host boundary while preserving native stale
+and production-approval checks. See the
 [document examples](../packages/publisher/README.md#prose-recipe-example) and
 [retired-renderer contract](../packages/publisher/README.md#retired-landingview-value).
 The retired renderer's props are not an adapter for document data.
@@ -83,7 +86,8 @@ separate `flow`/`overlay` footer setting; keep it when migrating header fields.
 ## Footer data and behavior
 
 The [footer contract](../packages/designer/src/frames/site-frame/site-frame-contract.ts)
-counts `footer.links` and `footer.legal.links` together: at most five flat links.
+counts `footer.links`, `footer.legal.links` and the explicit privacy control
+together: at most five flat links.
 Move further destinations into labelled `footer.columns`. The frame throws
 `SiteFooterContractError` for invalid inputs instead of truncating them.
 
@@ -106,9 +110,13 @@ const footer = {
 ```
 
 Supply those copy records through the existing resolver. Validate the complete
-shell: the footer excludes home, header-navigation duplicates and the
-`#privacy-choices` control. Social links have four icon slots; the brand mark
-occupies the fifth. Preserve required destinations and consent behavior when
+shell: generic footer links exclude home, header-navigation duplicates and
+the reserved `#privacy-choices` control. When the installed frame exposes
+`footer.privacyChoices`, bind its `label` CopyRef there. That label-only port
+resolves host copy through the supplied resolver and renders the fixed hash target;
+the host retains consent state and dialog behavior. It counts toward the flat
+link limit. Social links have four icon slots; the brand mark occupies the
+fifth. Preserve required destinations and consent behavior when
 regrouping. A required behavior that the current frame cannot express remains
 an interface gap to resolve before adoption.
 
