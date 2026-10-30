@@ -25,6 +25,13 @@ const pending = new Map<string, Promise<StudioSelection>>();
 const preparedSelections = new Map<string, Promise<StudioSelection>>();
 const SINGLETON = /^(?:react(?:\/(?:jsx-runtime|jsx-dev-runtime))?|react-dom(?:\/(?:client|server))?)$/;
 interface ComponentModule { leaf: string; primary: string; secondary: Map<string, Record<string, string>> }
+export interface StudioSelectionProjection {
+  input: CompositeEngineInput;
+  profile: CompositeResolved;
+  files: ReadonlyMap<string, string>;
+  runtime: string;
+  css: string;
+}
 
 async function inspectedSourceExports(source: string, module: string): Promise<string[]> {
   const parsed = (await transform(source, { loader: module.endsWith(".tsx") ? "tsx" : "ts", jsx: "automatic", legalComments: "none" })).code;
@@ -114,7 +121,7 @@ function projectionPlugin(files: ReadonlyMap<string, string>, root: string, comp
 }
 
 /** Compile checked, emitted adapters, preserving the selected library's owned source. */
-export async function compileSelection(root: string, input: CompositeEngineInput, leaves: StudioSelectionLeaf[], hash: string): Promise<StudioSelection> {
+export async function compileSelection(root: string, input: CompositeEngineInput, leaves: StudioSelectionLeaf[], hash: string, emit?: (projection: StudioSelectionProjection) => Promise<void>): Promise<StudioSelection> {
   const packageExports: Record<string, readonly string[]> = { ...input.componentOptions?.packageExports };
   const modules = new Set<string>();
   for (const fill of input.library.components.fills) {
@@ -232,6 +239,7 @@ export async function compileSelection(root: string, input: CompositeEngineInput
   const bundled = await build({ entryPoints: ["studio-entry.ts"], bundle: true, write: false, format: "esm", platform: "browser", target: "es2022", jsx: "automatic", minify: true, define: { "process.env.NODE_ENV": '"production"' }, sourcemap: false, legalComments: "none", logLevel: "silent", plugins: [projectionPlugin(files, root, componentModules, iconAssets)] });
   const code = bundled.outputFiles?.[0]?.text;
   if (!code) throw new Error("Selected runtime was not emitted");
+  await emit?.({ input, profile, files, runtime: code, css });
   const runtimeHash = themeHash(code);
   runtimes.set(runtimeHash, code);
   profiles.set(hash, JSON.parse(JSON.stringify(profile)) as CompositeResolved);
