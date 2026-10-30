@@ -4,11 +4,14 @@ import { safePreviewUrl, selectedPublishedPage, type PublicationResponse } from 
 import { writerProjection } from './writer-specimen';
 
 /** Source inventory only. A registered Designer section decides whether each item renders. */
+export interface AgentSpecimenAxis { id: string; label: string; values: { id: string; label: string }[] }
+
 export interface AgentSpecimenPlan {
   cellId: string;
   items: Record<string, unknown>[];
   expectedVariantIds: string[];
   issues: string[];
+  axes?: AgentSpecimenAxis[];
 }
 
 /** Preserve every source variant before the selected-section binding checks readiness. */
@@ -49,10 +52,18 @@ export function agentSpecimenPlan(index: AgentCells, cell: CellDetail, publicati
       const id = `${cell.id}:${copy.locale}:${copy.id}:${position + 1}`;
       if (copy.role === 'unknown') plan.issues.push(`Writer context has no supported specimen role: ${copy.context}`);
       if (typeof copy.text !== 'string' || !copy.text.trim()) plan.issues.push(`Writer context has no produced copy: ${copy.context}`);
-      return { id, kind: 'writer', role: copy.role, context: copy.context, locale: copy.locale, ...(copy.text === undefined ? {} : { value: copy.text }), record: copy.record };
+      return { id, kind: 'writer', role: copy.role, context: copy.context, locale: copy.locale, coordinates: { string: id, context: copy.context }, ...(copy.text === undefined ? {} : { value: copy.text }), record: copy.record };
     });
     plan.expectedVariantIds = plan.items.map(item => String(item.id));
     if (!records.length) plan.issues.push('No English Writer records are available.');
+    if (records.length > 1) {
+      const contexts = [...new Set(records.map(record => record.context))];
+      if (contexts.some(context => !context.trim())) plan.issues.push('A Writer matrix record has no source context.');
+      else plan.axes = [
+        { id: 'string', label: 'String', values: plan.items.map((item, position) => ({ id: String(item.id), label: records[position]!.id })) },
+        { id: 'context', label: 'Context', values: contexts.map(context => ({ id: context, label: context })) },
+      ];
+    }
     return plan;
   }
   if (cell.agent === 'publisher') {

@@ -6,6 +6,7 @@ export interface ResolvedSpecimenEvidence {
   sectionId: string;
   registered: boolean;
   span?: SpecimenCardSpan;
+  issues?: readonly string[];
   items: readonly unknown[];
   variantIds: readonly string[];
 }
@@ -18,7 +19,7 @@ export interface AgentSpecimenCoverage {
 }
 /** Expected identities come from the source plan, independently of the leaf adapter. */
 export function agentSpecimenCoverage(plan: AgentSpecimenPlan, binding?: ResolvedSpecimenEvidence): AgentSpecimenCoverage {
-  const issues = [...plan.issues];
+  const issues = [...plan.issues, ...(binding?.issues ?? [])];
   const registered = !!binding?.registered && /^sections\.specimen-[a-z][a-z0-9-]*$/.test(binding.sectionId);
   if (!registered) issues.push('A registered bound specimen leaf is unavailable.');
   const span = binding && ['full', 'half', 'third'].includes(binding.span ?? '') ? binding.span : undefined;

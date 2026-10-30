@@ -26,7 +26,7 @@ export function writerProjection(cell: CellDetail): WriterProjection {
     if (object(record.rules)) projection.tone.push(...strings(record.rules.tone));
     if (Array.isArray(record.glossary)) projection.banned.push(...record.glossary.filter(object).filter(term => term.status === 'forbidden').map(term => String(term.term ?? '')).filter(Boolean));
     projection.tone.push(...strings(record.tone)); projection.banned.push(...strings(record.bannedWords));
-    if (typeof record.id !== 'string' || typeof record.context !== 'string') return;
+    if (typeof record.id !== 'string' || !record.id.trim() || typeof record.context !== 'string' || !record.context.trim()) { projection.gaps.push('Writer record identity or context unavailable.'); return; }
     if (!projection.locales.includes(locale)) projection.locales.push(locale);
     projection.records.push({ id: record.id, context: record.context, locale, role: copyRole(record), ...(typeof record.text === 'string' ? { text: record.text } : {}), record });
   };

@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { getThemeInitScript } from '@clossys/designer/theme/server';
 import { StudioBrand } from '../components/StudioBrand';
 import { StudioSelectionProvider } from '../components/StudioSelection';
-import { StudioAppsProvider } from '../components/StudioApps';
+import { StudioSpecimenRuntimeProvider } from '../components/StudioSpecimenRuntime';
 import { parseThemeResponse, type StudioTheme } from '../lib/config-client';
 
 export const metadata: Metadata = { title: 'Studio', description: 'Browse your agent cells.' };
@@ -29,6 +29,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <style id="studio-brand-theme" dangerouslySetInnerHTML={{ __html: theme?.css ?? '' }} />
       <style id="studio-selection-style" />
     </head>
-    <body className="m-0 font-body"><StudioBrand initialTheme={theme}><StudioSelectionProvider><StudioAppsProvider>{children}</StudioAppsProvider></StudioSelectionProvider></StudioBrand></body>
+    <body className="m-0 font-body"><StudioBrand initialTheme={theme}><StudioSelectionProvider><StudioSpecimenRuntimeProvider>{children}</StudioSpecimenRuntimeProvider></StudioSelectionProvider></StudioBrand></body>
   </html>;
 }
