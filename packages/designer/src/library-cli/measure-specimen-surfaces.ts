@@ -9,7 +9,7 @@ import { bindSurfaceSource } from "../catalog-core/surface-bindings.js";
 import { surfaceRuntimeIdentity } from "../catalog-core/surface-check.js";
 import { runtimeHash } from "../catalog-core/runtime-ports.js";
 import { sha256 } from "../catalog-core/digest.js";
-import { SPECIMEN_SECTION_EXPORTS } from "../importers/specimen-sections.js";
+import { SPECIMEN_SECTION_EXPORTS, specimenSectionSourceCatalog } from "../importers/specimen-sections.js";
 import type { CompositeEngineInput } from "../catalog-core/types.js";
 import type { SurfaceCommandReceipt, SurfaceDependency, SurfaceMeasurement, SurfacePackageEvidence } from "../catalog-core/surface-types.js";
 
@@ -45,7 +45,7 @@ export async function specimenSurfaceEnvironment(input: CompositeEngineInput) {
     }
   }
   const imports = new RegExp("\\b(?:import|export)\\s[^;]*?\\bfrom\\s*[\"']([^\"']+)[\"']", "g");
-  for (const file of input.library.components.files) for (const edge of file.content.matchAll(imports)) if (!edge[1]!.startsWith(".")) modules.add(edge[1]!);
+  for (const file of [...input.library.components.files, ...specimenSectionSourceCatalog().upstream]) for (const edge of file.content.matchAll(imports)) if (!edge[1]!.startsWith(".")) modules.add(edge[1]!);
   const { result } = await compile<{ packages: SurfacePackageEvidence[]; dependencies: SurfaceDependency[] }>({ modules: [...modules].sort() });
   const packageExports = { ...input.componentOptions?.packageExports, ...Object.fromEntries(result.packages.map(row => [row.module, row.values])) };
   return { dependencies: result.dependencies, input: { ...input, componentOptions: { ...input.componentOptions, packageExports }, surfaceOptions: { packages: [...(input.surfaceOptions?.packages ?? []).filter(row => !modules.has(row.module)), ...result.packages], measurements: input.surfaceOptions?.measurements ?? [] } } };

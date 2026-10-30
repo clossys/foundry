@@ -1,16 +1,13 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type KeyboardEvent, type ReactNode } from "react";
 import type { DesignerSpecimenContext, DesignerSpecimenNeed } from "./DesignerSpecimen.js";
 import type { SpecimenPublishedPage } from "./specimen-content-ports.js";
 import type { SpecimenTokenHostParts } from "./specimen-token-host-part-types.js";
 import { componentSpecimenPreview, type ComponentSpecimenBinding, type ComponentSpecimenComponent } from "./component-specimens.js";
-import { componentLeaf, type GridListLeaf } from "../runtime/component-leaf.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
 
 const Content = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
-const List = componentLeaf<GridListLeaf>("components.grid-list");
-const ListItem = componentLeaf<typeof import("../components/GridList.js").GridList.Item>("components.grid-list", "Item");
-const GridListItem = componentLeaf<ComponentSpecimenComponent>("components.grid-list", "GridListItem");
 const Table = componentLeaf<typeof import("../components/Table.js").Table>("components.table");
 const NativeTableHeader = componentLeaf<typeof import("../components/Table.js").Table.Header>("components.table", "Header");
 const NativeTableColumn = componentLeaf<typeof import("../components/Table.js").Table.Column>("components.table", "Column");
@@ -136,9 +133,6 @@ export function specimenLayoutNeeds({ id, layout, items, axes = [], context, exp
   if ("reason" in semantic) needs.push(semantic);
   if (items.length <= 1) return needs;
   if (layout === "single") add("A single-layout specimen cannot accept multiple items.");
-  const list = specimenComponent(context, "components.grid-list");
-  if ("reason" in list) needs.push(list);
-  else if (!specimenPart(list, "Item", "GridListItem")) add("The selected grid-list has no native item part.");
   let disclosureRequired = items.length > 12;
   if (layout === "matrix") {
     if (axes.length < 2 || axes.some(axis => !axis.values.length || new Set(axis.values.map(value => value.id)).size !== axis.values.length)) add("A matrix needs two nonempty, uniquely labelled axes.");
@@ -192,15 +186,31 @@ export function SpecimenLayoutSection(props: LayoutProps): ReactNode {
   // A singleton is the specimen itself: no collection, headings or disclosure.
   if (items.length === 1) return region(itemNode(items[0]!));
   if (layout === "single") return fail("A single-layout specimen cannot accept multiple items.");
-  const list = specimenComponent(context, "components.grid-list");
-  if ("reason" in list) return fail(list.reason);
-  if (!specimenPart(list, "Item", "GridListItem")) return fail("The selected grid-list has no native item part.");
-  const listItem = (item: Pick<SpecimenItem, "id" | "label">, children: ReactNode) => list.source === "shadcn@aria"
-    ? <GridListItem key={item.id} id={item.id} textValue={item.label} className="min-w-0 flex-col items-start">{children}</GridListItem>
-    : <ListItem key={item.id} id={item.id} textValue={item.label} className="min-w-0 flex-col items-start">{children}</ListItem>;
-  const listOf = (entries: readonly SpecimenItem[], grid = false) => <List data-ds-leaf="components.grid-list" aria-label={label} layout={grid ? "grid" : "list"} selectionMode="none">
-    {entries.map(item => listItem(item, <><Content as="h4">{item.label}</Content>{itemNode(item)}</>))}
-  </List>;
+  // These specimens are read-only collections: selection remains unavailable. Neutral
+  // content owns their rows; a GridList.Item runtime property is not a selected API.
+  const navigate = (event: KeyboardEvent<HTMLElement>, grid: boolean) => {
+    const row = event.currentTarget.closest<HTMLElement>('[data-specimen-row]');
+    const root = row?.parentElement;
+    if (!row || !root || event.target !== row) return;
+    const rows = [...root.querySelectorAll<HTMLElement>(':scope > [data-specimen-row]')];
+    const index = rows.indexOf(row), columns = grid ? 2 : 1;
+    const next = event.key === "Home" ? 0 : event.key === "End" ? rows.length - 1
+      : event.key === "ArrowDown" ? index + columns : event.key === "ArrowUp" ? index - columns
+      : grid && event.key === "ArrowRight" ? index + 1 : grid && event.key === "ArrowLeft" ? index - 1 : index;
+    if (next === index || next < 0 || next >= rows.length) return;
+    event.preventDefault();
+    for (const item of rows) item.tabIndex = -1;
+    rows[next]!.tabIndex = 0;
+    rows[next]!.focus();
+  };
+  const listItem = (item: Pick<SpecimenItem, "id" | "label">, children: ReactNode, index: number, grid = false) => <Content as="li" key={item.id} role="row" data-specimen-row={item.id} aria-label={item.label} tabIndex={index === 0 ? 0 : -1} onKeyDown={event => navigate(event, grid)} onFocus={event => {
+    if (event.target !== event.currentTarget) return;
+    const rows = event.currentTarget.parentElement?.querySelectorAll<HTMLElement>(':scope > [data-specimen-row]');
+    rows?.forEach(row => { row.tabIndex = row === event.currentTarget ? 0 : -1; });
+  }} className="min-w-0 flex-col items-start"><Content as="div" role="gridcell">{children}</Content></Content>;
+  const listOf = (entries: readonly SpecimenItem[], grid = false) => <Content as="ul" role="grid" aria-label={label} className={grid ? "grid grid-cols-2 gap-sm" : "flex flex-col"}>
+    {entries.map((item, index) => listItem(item, <><Content as="h4">{item.label}</Content>{itemNode(item)}</>, index, grid))}
+  </Content>;
   const axes = props.axes ?? [];
   let first: readonly SpecimenItem[] = items.slice(0, 12), rest: readonly SpecimenItem[] = items.slice(12);
   let draw: (entries: readonly SpecimenItem[]) => ReactNode = entries => listOf(entries, layout === "grid");
@@ -222,9 +232,9 @@ export function SpecimenLayoutSection(props: LayoutProps): ReactNode {
         const rows = row.values.filter(value => grouped.some(item => item.coordinates![row.id] === value.id));
         const groupLabel = stack.map(axis => `${axis.label}: ${axis.values.find(value => value.id === grouped[0]!.coordinates![axis.id])!.label}`).join(" · ");
         const lookup = (rowId: string, colId: string) => grouped.find(item => item.coordinates![row.id] === rowId && item.coordinates![column.id] === colId);
-        const body = mobile ? <List data-ds-leaf="components.grid-list" aria-label={groupLabel || label} layout="list" selectionMode="none">{rows.map(value => listItem(value, <>
+        const body = mobile ? <Content as="ul" role="grid" aria-label={groupLabel || label} className="flex flex-col">{rows.map((value, index) => listItem(value, <>
           <Content as="h4">{row.label}: {value.label}</Content>{column.values.map(col => { const item = lookup(value.id, col.id); return item ? <Content as="section" key={col.id} className="flex min-w-0 flex-col gap-sm"><Content as="h5">{column.label}: {col.label}</Content>{itemNode(item)}</Content> : null; })}
-        </>))}</List> : table.source === "shadcn@aria" ? <Table data-ds-leaf="components.table" aria-label={groupLabel || label}>
+        </>, index))}</Content> : table.source === "shadcn@aria" ? <Table data-ds-leaf="components.table" aria-label={groupLabel || label}>
           <TableHeader><TableRow><TableHead scope="col">{row.label}</TableHead>{column.values.map(col => <TableHead key={col.id} scope="col">{col.label}</TableHead>)}</TableRow></TableHeader>
           <TableBody>{rows.map(value => <TableRow key={value.id}><TableHead scope="row">{value.label}</TableHead>{column.values.map(col => { const item = lookup(value.id, col.id); return <TableCell key={col.id}>{item ? itemNode(item) : null}</TableCell>; })}</TableRow>)}</TableBody>
         </Table> : <Table data-ds-leaf="components.table" aria-label={groupLabel || label}>

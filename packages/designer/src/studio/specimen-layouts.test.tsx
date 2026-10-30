@@ -104,7 +104,7 @@ it("turns a mobile matrix into labelled native stacked groups with no horizontal
   expect(screen.getAllByText("State: Live")).toHaveLength(4);
   expect(view.container.querySelector('[class*="overflow-auto"],[class*="overflow-x"]')).toBeNull();
 });
-it("rejects empty inputs and real missing native parts before counting any proper specimen", async () => {
+it("rejects empty inputs and renders passive collections with a root-only GridList selection", async () => {
   const props = { id: "sections.specimen-type-ladder" as const, layout: "ladder" as const, items: [], context: context(), need, labels };
   expect(specimenLayoutNeeds(props).length).toBeGreaterThan(0);
   await renderSelected(<SpecimenLayoutSection {...props} label="Scale" renderItem={draw} />, props.context);
@@ -112,7 +112,10 @@ it("rejects empty inputs and real missing native parts before counting any prope
   cleanup();
   const selected = context();
   const broken = { ...selected, modules: { ...selected.modules, "@clossys/designer/components": { ...components, GridList: () => null } } };
-  expect(specimenLayoutNeeds({ ...props, items: items(2), context: broken })).toContainEqual(expect.objectContaining({ reason: expect.stringContaining("item part") }));
+  expect(specimenLayoutNeeds({ ...props, items: items(2), context: broken })).toEqual([]);
+  const passive = await renderSelected(<SpecimenLayoutSection {...props} items={items(2)} context={broken} label="Scale" renderItem={draw} />, broken);
+  expect(passive.container.querySelectorAll("[data-specimen-row]")).toHaveLength(2);
+  expect(passive.container.querySelector("[aria-selected]")).toBeNull();
 });
 it("enumerates the native descriptor's full variant×state×size universe and honors selected overrides", async () => {
   const selected = context(), cases = componentSpecimenItems(selected, "components.button");
