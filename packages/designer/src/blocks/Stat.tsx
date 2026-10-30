@@ -1,6 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { TREND_TEXT_CLASSES } from "./internal/trend.js";
+import { SemanticContent } from "../components/SemanticContent.js";
 
 export type StatTrend = "up" | "down" | "neutral";
 
@@ -74,24 +75,24 @@ export function Stat({
   ...rest
 }: StatProps) {
   return (
-    <div {...rest} className={cx("flex flex-col gap-xs", className)} style={style}>
-      <span className="text-body-s text-ink-secondary">{label}</span>
-      <span className="text-h1 font-display text-ink-primary">{value}</span>
+    <SemanticContent as="div" {...rest} className={cx("flex flex-col gap-xs", className)} style={style}>
+      <SemanticContent as="span" className="text-body-s text-ink-secondary">{label}</SemanticContent>
+      <SemanticContent as="span" className="text-h1 font-display text-ink-primary">{value}</SemanticContent>
       {delta !== undefined ? (
-        <span
+        <SemanticContent as="span"
           className={cx(
             "inline-flex items-center gap-xs text-body-s font-body",
             TREND_TEXT_CLASSES[trend],
           )}
         >
-          <span aria-hidden="true">{TREND_GLYPH[trend]}</span>
-          <span className="sr-only">{trendLabels[trend]}, </span>
+          <SemanticContent as="span" aria-hidden="true">{TREND_GLYPH[trend]}</SemanticContent>
+          <SemanticContent as="span" className="sr-only">{trendLabels[trend]}, </SemanticContent>
           {delta}
-        </span>
+        </SemanticContent>
       ) : null}
       {description !== undefined ? (
-        <span className="text-caption text-ink-muted">{description}</span>
+        <SemanticContent as="span" className="text-caption text-ink-muted">{description}</SemanticContent>
       ) : null}
-    </div>
+    </SemanticContent>
   );
 }

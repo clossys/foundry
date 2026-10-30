@@ -450,6 +450,7 @@ const sections = {
   },
   gallery: {
     label: "Workspace screens",
+    labels: { close: "Close image", enlarge: "Enlarge image" },
     images: [
       { id: "overview", label: "Workspace overview", caption: "Overview" },
       { id: "editor", label: "Page editor", caption: "Editor" },

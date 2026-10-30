@@ -42,7 +42,7 @@ export const SECTION_BLOCK_SAMPLES: Readonly<Record<string, () => ReactNode>> = 
     { id: "total", header: "Total", cell: row => row.total },
   ]} />,
   ErrorState: () => <ErrorState kind="failure" code="Error 503" title="This page did not load" description="The service is busy. Your work is saved; try again in a moment." retry={<Button variant="primary" size="md" onPress={noop}>Try again</Button>} report={<Link href="#status">Check service status</Link>} />,
-  Gallery: () => <Gallery label="Workspace screens" images={[
+  Gallery: () => <Gallery label="Workspace screens" labels={{ close: "Close image", enlarge: "Enlarge image" }} images={[
     { id: "overview", label: "Workspace overview", media: frame("Workspace overview"), caption: "Overview" },
     { id: "editor", label: "Page editor", media: frame("Page editor"), caption: "Editor" },
     { id: "library", label: "Component library", media: frame("Component library"), caption: "Library" },
