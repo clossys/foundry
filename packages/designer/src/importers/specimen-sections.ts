@@ -162,7 +162,8 @@ export function specimenSectionSourceCatalog(packages: readonly SurfacePackageEv
     const entry = registration.id.replace(".", "/") + "/" + registration.name + ".tsx";
     const components = [...new Set([...registration.components, "components.grid-list", "components.disclosure"])] as `components.${string}`[];
     const ports = components.map(id => ({ id, name: publicName(id) }));
-    const parts = Object.hasOwn(SPECIMEN_RENDER_PARTS, registration.id) ? [...SPECIMEN_RENDER_PARTS[registration.id as keyof typeof SPECIMEN_RENDER_PARTS]] : [];
+    const parts: string[] = Object.hasOwn(SPECIMEN_RENDER_PARTS, registration.id) ? [...SPECIMEN_RENDER_PARTS[registration.id as keyof typeof SPECIMEN_RENDER_PARTS]] : [];
+    if (registration.id === "sections.specimen-swatch" || registration.id === "sections.specimen-color-ramp") parts.push("studio.specimen-swatch", "studio.specimen-contrast");
     const code = [
       '"use client";',
       `import { ${registration.name} as RenderSpecimen, bindNativeSpecimenContext, studioSpecimenLeaves, type SpecimenLeafProps } from "@clossys/designer/studio";`,
@@ -170,7 +171,7 @@ export function specimenSectionSourceCatalog(packages: readonly SurfacePackageEv
       `export function ${registration.name}(props: SpecimenLeafProps) {`,
       `  const context = bindNativeSpecimenContext(props.context, { ${ports.map(port => port.name).join(", ")} });`,
       '  if ("reason" in context) return props.need(context);',
-      '  return <RenderSpecimen items={props.items} axes={props.axes} context={context} need={props.need} expanded={props.expanded} labels={props.labels} />;',
+      '  return <RenderSpecimen items={props.items} axes={props.axes} context={context} need={props.need} expanded={props.expanded} labels={props.labels} renderParts={props.renderParts} />;',
       '}',
       'export function SpecimenLeaf() {',
       `  const definition = studioSpecimenLeaves.find(leaf => leaf.id === ${JSON.stringify(registration.id)});`,

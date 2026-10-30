@@ -13,11 +13,11 @@ import * as JSXDevRuntime from 'react/jsx-dev-runtime';
 import { renderToReadableStream, renderToStaticMarkup } from 'react-dom/server';
 import * as components from '@clossys/designer/components';
 import { applyLibraryChange, importFoundryComponents, libraryHash, loadCatalog, loadComponentRegistry, resolve, type CompositeCatalogData, type CompositeEngineInput, type CompositeLibraryData } from '@clossys/designer/catalog';
-import { beforeAll, expect, it } from 'vitest';
+import { beforeAll, expect, it, vi } from 'vitest';
 import { agentModule, agentRoot } from './cells.js';
 import { studioComponentProviderSource } from './selection-component-provider.js';
 import { compileSelection, selectionRuntime } from './selection.js';
-import { emittedDesignerSpecimenContext, renderSpecimenSwatchHostPart, renderSpecimenContrastHostPart, STUDIO_SPECIMEN_HOST_PARTS, type EmittedDesignerSpecimenRuntime } from '@clossys/designer/studio';
+import { componentSpecimenPreview, emittedDesignerSpecimenContext, renderSpecimenSwatchHostPart, renderSpecimenContrastHostPart, STUDIO_SPECIMEN_HOST_PARTS, type EmittedDesignerSpecimenRuntime } from '@clossys/designer/studio';
 
 let input: CompositeEngineInput;
 let executable: { ComponentProvider: any; Content: any };
@@ -98,6 +98,22 @@ it('registered token host parts render current member references through the act
   const changed = structuredClone(profile);
   changed.values.members['tokens.surface-color.base']!.emit = '--unregistered';
   expect(() => renderSpecimenSwatchHostPart({ ...context, profile: changed }, { memberId: 'tokens.surface-color.base', mode: 'light' })).toThrow(/no matching registered color reference/);
+});
+
+it('preserves actual static unkeyed iframe siblings without manufacturing React key warnings', async () => {
+  const profile = resolve(input), context = emittedDesignerSpecimenContext(profile, production);
+  const selected = componentSpecimenPreview({ modules: context.modules }).bind('components.semantic-content', profile);
+  if ('refusal' in selected) throw new Error(selected.refusal.detail);
+  const errors = vi.spyOn(console, 'error');
+  try {
+    const children = createElement(selected.binding.Component, { as: 'div' },
+      createElement('iframe', { title: 'studio.specimen-swatch', srcDoc: '<!doctype html><html><head></head><body></body></html>' }),
+      createElement('iframe', { title: 'studio.specimen-contrast', srcDoc: '<!doctype html><html><head></head><body></body></html>' }));
+    const stream = await renderToReadableStream(createElement(production.ComponentProvider, { profile }, children));
+    await stream.allReady;
+    expect((await new Response(stream).text()).match(/<iframe /g)).toHaveLength(2);
+    expect(errors.mock.calls.filter(call => /key/i.test(String(call[0])))).toEqual([]);
+  } finally { errors.mockRestore(); }
 });
 
 it('the actual provider rejects a different index revision and a changed selected descriptor', () => {

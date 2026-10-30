@@ -46,7 +46,10 @@ export function emittedDesignerSpecimenContext(profile: CompositeResolved, runti
   const canonical = new Map(importFoundryComponents().fills.map(doc => [doc.$extensions["com.clossys.fill"].slot, componentOf(doc)]));
   const packageElements = new Set(originalNamespaces.flatMap(namespace => Object.values(namespace).filter(renderable)));
   const remap = (node: ReactNode): ReactNode => {
-    if (Array.isArray(node)) return node.map(remap);
+    if (Array.isArray(node)) {
+      const mapped = node.map(remap);
+      return mapped.some((child, index) => child !== node[index]) ? mapped : node;
+    }
     if (!isValidElement<Record<string, unknown>>(node)) return node;
     const props = Object.fromEntries(Object.entries(node.props).map(([key, value]) => [key, isValidElement(value) || Array.isArray(value) ? remap(value as ReactNode) : key === "children" && typeof value === "function" ? (...args: unknown[]) => remap(value(...args)) : value]));
     const selected = replacements.get(node.type);
@@ -58,7 +61,10 @@ export function emittedDesignerSpecimenContext(profile: CompositeResolved, runti
       if (renderable(EmptyState)) return createElement(EmptyState, { role: "status", title: `NEED: ${name}`, description: "This fixture component is absent from the emitted consumer selection." });
       throw new Error(`NEED: fixture component ${name} is absent from the emitted consumer selection`);
     }
-    return createElement(selected ?? node.type, { ...props, key: node.key });
+    // Retain React's original unkeyed-child semantics and element identity when
+    // the subtree contains no package component that needs selection remapping.
+    if (!selected && Object.entries(props).every(([key, value]) => value === node.props[key])) return node;
+    return createElement(selected ?? node.type, { ...props, ...(node.key === null ? {} : { key: node.key }) });
   };
   const bridge = (component: ResolvedComponent, forcedMember?: string): ComponentSpecimenComponent | undefined => {
     const Selected = runtime.components[primary(component.slot)];
