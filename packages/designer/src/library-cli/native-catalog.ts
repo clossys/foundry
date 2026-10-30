@@ -6,6 +6,21 @@ import { foundrySurfaceCatalog } from "./surface-catalog.js";
 /** Explicit source decisions take precedence over roster availability. */
 const sourceDecisions: Readonly<Record<string, string | undefined>> = {
   "components.semantic-content": "foundry",
+  // H3-A01..A12: asset policy is independent of candidate availability.
+  "assets.backdrop-graphic": "foundry",
+  "assets.icon-check": "lucide",
+  "assets.icon-chevron-down": "lucide",
+  "assets.icon-chevron-left": "lucide",
+  "assets.icon-chevron-right": "lucide",
+  "assets.icon-chevron-up": "lucide",
+  "assets.icon-close": "lucide",
+  "assets.icon-date": "lucide",
+  "assets.icon-search": "lucide",
+  // Constructor engines, not permission to adopt identity rule templates as seeds.
+  "assets.lockup": "foundry",
+  "assets.mark": "foundry",
+  // Required policy does not waive Video A1's native construction evidence.
+  "assets.video": "foundry",
 };
 
 /** The native candidate inventory shared by the CLI, cell compiler and catalog checks. */
