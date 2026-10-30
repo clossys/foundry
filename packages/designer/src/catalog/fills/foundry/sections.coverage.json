@@ -67,7 +67,9 @@
       ],
       "slot": "sections.article",
       "status": "candidate",
-      "supportedMembers": [],
+      "supportedMembers": [
+        "typography.drop-cap"
+      ],
       "supportedSlots": [
         "body",
         "toc"
@@ -983,7 +985,9 @@
       ],
       "slot": "sections.table-of-contents",
       "status": "candidate",
-      "supportedMembers": [],
+      "supportedMembers": [
+        "tracking.css"
+      ],
       "supportedSlots": [
         "active-id",
         "headings",

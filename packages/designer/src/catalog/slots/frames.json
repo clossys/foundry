@@ -123,6 +123,11 @@
           "id": "announcement",
           "required": false,
           "accepts": "components.banner"
+        },
+        {
+          "id": "toc",
+          "required": false,
+          "accepts": "sections.table-of-contents"
         }
       ],
       "members": {
@@ -132,7 +137,8 @@
           "chrome.minimal",
           "footer-placement.flow",
           "footer-placement.overlay",
-          "header-placement.overlay"
+          "header-placement.overlay",
+          "layout.article"
         ]
       },
       "statePorts": [],
@@ -210,7 +216,9 @@
         "sections.status-list",
         "sections.steps",
         "components.banner",
-        "sections.newsletter"
+        "sections.newsletter",
+        "sections.article",
+        "sections.table-of-contents"
       ],
       "skipTarget": "main-content"
     },

@@ -62,7 +62,10 @@ function copyTable() {
 export function siteShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "content" | "selection" | "slots" | "host" | "locale">): SiteFrameProps {
   for (const key of Object.keys(input.content)) if (!(CONTENT as readonly string[]).includes(key)) fail(`${key} content has no mapped prop`);
   let presentation: SiteFramePresentationConfig = {};
-  for (const member of input.selection.members) presentation = { ...presentation, ...(MEMBERS[member] ?? fail(`${member} member has no mapped prop`)) };
+  const mainLayout = input.selection.members.includes("layout.article") ? "article" as const : "default" as const;
+  for (const member of input.selection.members) {
+    if (member !== "layout.article") presentation = { ...presentation, ...(MEMBERS[member] ?? fail(`${member} member has no mapped prop`)) };
+  }
   const value = (slot: string): RuntimeJson | undefined => Object.hasOwn(input.content, slot) ? input.content[slot]!.value : undefined;
   const { ref, resolveCopy } = copyTable();
 
@@ -193,8 +196,11 @@ export function siteShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conte
   const dismissAction = announcement?.dismissAction === undefined ? undefined : required(announcement.dismissAction, "announcement.dismissAction");
   if (dismissAction && (!input.host?.onCommand || !shell.announcement?.dismissLabel)) fail("announcement dismissal requires host onCommand and dismissLabel");
   const main = input.slots.main ?? [];
+  const node = (name: string) => { const nodes = input.slots[name] ?? []; return nodes.length === 1 ? nodes[0] : nodes.length ? nodes : undefined; };
+  if (mainLayout !== "article" && (node("toc") !== undefined || node("progress") !== undefined)) fail("reading slots require layout.article");
+  const reading = mainLayout === "article" ? { mainLayout, toc: node("toc"), progress: node("progress") } : {};
   // Preserve a single registered Hero element so SiteFrame can validate its overlay scene identity.
-  return { ...(input.locale === undefined ? {} : { locale: input.locale }), shell, presentation, resolveCopy, resolveAsset, children: main.length === 1 ? main[0] : main, ...(input.host?.toasts === undefined ? {} : { toasts: input.host.toasts }), ...(dismissAction ? { onAnnouncementDismiss: () => input.host!.onCommand!(dismissAction) } : {}) };
+  return { ...(input.locale === undefined ? {} : { locale: input.locale }), shell, presentation, ...reading, resolveCopy, resolveAsset, children: main.length === 1 ? main[0] : main, ...(input.host?.toasts === undefined ? {} : { toasts: input.host.toasts }), ...(dismissAction ? { onAnnouncementDismiss: () => input.host!.onCommand!(dismissAction) } : {}) };
 }
 
 export function renderSiteShell(input: RuntimeRenderInput<ReactNode>): ReactNode {
