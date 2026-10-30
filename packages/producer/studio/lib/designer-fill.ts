@@ -11,7 +11,7 @@ const COLOR = /^(?:#[0-9a-f]{3,8}|(?:rgb|rgba|hsl|hsla|oklch|oklab|color-mix)\(.
 function display(value: unknown): string {
   if (typeof value === 'string' || typeof value === 'number') return String(value);
   if (object(value) && (typeof value.value === 'number' || typeof value.value === 'string')) return `${value.value}${typeof value.unit === 'string' ? value.unit : ''}`;
-  return JSON.stringify(value);
+  return JSON.stringify(value) ?? '';
 }
 
 /** Read the JSON block under `## Fill` in a Designer cell. Malformed fills return undefined. */
@@ -39,8 +39,15 @@ export function designerFill(source: string, layer: string): DesignerFill | unde
   if (object(value.tokens)) {
     for (const [token, steps] of Object.entries(value.tokens)) {
       if (!object(steps)) continue;
-      for (const [step, entry] of Object.entries(steps)) {
-        if (!object(entry)) continue;
+      // Steps may nest (for example a ramp's `neutral.50`); flatten groups until an entry carries `$value`.
+      const flat: [string, Record<string, unknown>][] = [];
+      const walk = (path: string, node: Record<string, unknown>, depth: number) => {
+        if ('$value' in node) { flat.push([path, node]); return; }
+        if (depth > 4) return;
+        for (const [key, child] of Object.entries(node)) if (!key.startsWith('$') && object(child)) walk(path ? `${path}.${key}` : key, child, depth + 1);
+      };
+      for (const [step, entry] of Object.entries(steps)) if (!step.startsWith('$') && object(entry)) walk(step, entry, 0);
+      for (const [step, entry] of flat) {
         const extensions = object(entry.$extensions) ? entry.$extensions : {};
         const css = object(extensions['com.clossys.css']) && typeof extensions['com.clossys.css'].raw === 'string' ? extensions['com.clossys.css'].raw : undefined;
         const modes = object(extensions['com.clossys.modes']) ? extensions['com.clossys.modes'] : {};
