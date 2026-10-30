@@ -8,6 +8,7 @@ import { applyLibraryChange, libraryHash } from "../../../designer/src/catalog-c
 import { loadComponentRegistry, loadComponentCompositionRules } from "../../../designer/src/catalog-core/index.js";
 import { loadCatalogBundles } from "../../../designer/src/catalog-bundles.js";
 import { componentOf } from "../../../designer/src/catalog-core/resolve-components.js";
+import { readActiveSourceLibrary } from "../../../designer/src/components/source-closure.js";
 import { syntheticSource } from "../../../designer/src/catalog-core/__fixtures__/component-engine/synthetic.js";
 import { componentIntegration } from "../../../designer/src/catalog-core/__fixtures__/component-integration.js";
 import { libraryFiles } from "../../../designer/src/library-cli/fs-library.js";
@@ -19,6 +20,7 @@ import type { ContentMap } from "../content-map/contract.js";
 import { contentRouteFixture, withApprovedRouteCopy } from "../web/__fixtures__/content-route.js";
 import { createContentRouteManifest } from "../web/content-route-manifest.js";
 import { emitAppLocal, parseAppLocalJson, parseGeneratedText, verifyAppLocal, writeAppLocal, generatedText } from "./index.js";
+import { analyzeAppLocalSource, appLocalSourceResolver } from "./source.js";
 
 const roots: string[] = [];
 afterEach(async () => { await Promise.all(roots.splice(0).map(root => rm(root, { recursive: true, force: true }))); });
@@ -45,9 +47,34 @@ async function selectedRuntime() {
     ordered.push(...remaining.splice(index, 1));
   }
   const prior = surfaces.library;
-  const library = applyLibraryChange(catalog, prior, { baseHash: libraryHash(prior), changes: ordered.map(fill => ({ portion: "components" as const, change: { op: "adopt" as const, slot: fill.slot, source: fill.source } })) }, { surfaceOptions: surfaces.options });
+  const packages = applyLibraryChange(catalog, prior, { baseHash: libraryHash(prior), changes: ordered.map(fill => ({ portion: "components" as const, change: { op: "adopt" as const, slot: fill.slot, source: fill.source } })) }, { surfaceOptions: surfaces.options });
+  // SiteFrame's mobile navigation and the shadcn sidebar use the real Sheet source.
+  // Adopt its authenticated bundle explicitly; package-only selection omits it.
+  const sheet = bundles.componentFills.map(componentOf).find(fill => fill.slot === "components.sheet" && fill.source === "shadcn@aria")!;
+  const library = applyLibraryChange(catalog, packages, { baseHash: libraryHash(packages), changes: [{ portion: "components", change: { op: "adopt", slot: sheet.slot, source: sheet.source } }], bundles: bundles.sourceBundles.filter(bundle => bundle.slot === sheet.slot) }, { surfaceOptions: surfaces.options });
   return { catalog, library, componentOptions: undefined, surfaceOptions: surfaces.options };
 }
+it("receipts the mobile Sheet dependency in active selection and keeps unrelated source outside the library", async () => {
+  const root = await mkdtemp(join(tmpdir(), "publisher-sheet-selection-")); roots.push(root);
+  const input = await selectedRuntime(), library = join(root, "library"), cells = join(root, "cells");
+  for (const [path, source] of libraryFiles(input.catalog, input.library, [], input.componentOptions, input.surfaceOptions)) await put(library, path, source);
+  await libraryToCells(library, cells, { catalog: input.catalog, surfaceOptions: input.surfaceOptions, date: "2026-10-29" });
+  const active = await readActiveSourceLibrary(cells, input.catalog, { surfaceOptions: input.surfaceOptions });
+  const sheet = active.components.fills.map(componentOf).find(fill => fill.slot === "components.sheet")!;
+  expect(sheet).toMatchObject({ impl: { kind: "source", export: "Sheet" }, origin: { kind: "adopted", source: "shadcn@aria" } });
+  const resolve = appLocalSourceResolver(active, root, {});
+  expect(active.components.files).toContainEqual(expect.objectContaining({ path: "components/sheet/sheet.tsx" }));
+  const request = { specifier: "@clossys/designer/components", importer: undefined, names: ["Sheet", "SheetClose", "SheetTitle"], files: new Map<string, string>() };
+  const facade = resolve(request);
+  expect(facade).toMatchObject({ kind: "source" });
+  if (facade.kind !== "source") throw new Error("Expected actual selected Sheet source");
+  const forwarded = analyzeAppLocalSource(facade.module).find(imported => imported.specifier.includes("sheet/index"))!;
+  expect(resolve({ ...forwarded, importer: facade.module, names: forwarded.names ?? [], files: request.files })).toMatchObject({ kind: "source", module: { ownerSlot: "components.sheet", origin: "installed" } });
+  const unrelated = resolve({ ...request, names: ["Sidebar"] });
+  if (unrelated.kind !== "source") throw new Error("Expected actual Sidebar forwarding source");
+  const sidebar = analyzeAppLocalSource(unrelated.module).find(imported => imported.specifier.includes("sidebar/index"))!;
+  expect(() => resolve({ ...sidebar, importer: unrelated.module, names: sidebar.names ?? [], files: request.files })).toThrow(/components\.sidebar.*outside selected library/);
+}, 120_000);
 let runtimeSelection: ReturnType<typeof selectedRuntime> | undefined;
 async function fixture(serving = true) {
   const root = await mkdtemp(join(tmpdir(), "publisher-app-local-")); roots.push(root);
