@@ -441,9 +441,9 @@ const comparisonGolden: Record<string, {
     retainedCells: 4,
   },
   "inform.badge": {
-    columns: {"option": "variant", "values": ["neutral", "success", "warning", "danger", "info"]},
-    maxCells: 5,
-    retainedCells: 5,
+    columns: {"option": "variant", "values": ["default", "secondary", "destructive", "outline", "ghost", "link"]},
+    maxCells: 6,
+    retainedCells: 6,
   },
   "inform.banner": {
     columns: {"option": "variant", "values": ["info", "success", "warning", "danger"]},

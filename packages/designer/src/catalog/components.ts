@@ -427,7 +427,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
   }),
 
   // Content / Data display
-  onMain("Badge", ["src/components/Badge.tsx"], {
+  onMain("Badge", ["src/components/preview-runtime/components/badge/badge.tsx"], {
     id: "inform.badge",
     label: "Badge",
     racBase: none("presentational"),

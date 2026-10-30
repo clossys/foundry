@@ -1204,24 +1204,28 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
       "purpose": "Label tone selects the existing Badge variant behavior.",
       "values": [
         {
-          "value": "neutral",
+          "value": "default",
+          "purpose": "Label tone selects the existing Badge variant behavior."
+        },
+        {
+          "value": "secondary",
           "purpose": "Neutral category."
         },
         {
-          "value": "success",
-          "purpose": "Success label."
-        },
-        {
-          "value": "warning",
-          "purpose": "Warning label."
-        },
-        {
-          "value": "danger",
+          "value": "destructive",
           "purpose": "Danger label."
         },
         {
-          "value": "info",
-          "purpose": "Information label."
+          "value": "outline",
+          "purpose": "Label tone selects the existing Badge variant behavior."
+        },
+        {
+          "value": "ghost",
+          "purpose": "Label tone selects the existing Badge variant behavior."
+        },
+        {
+          "value": "link",
+          "purpose": "Label tone selects the existing Badge variant behavior."
         }
       ],
       "applicability": "Effective for this component when supplied.",
@@ -1232,7 +1236,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     }
   ],
   "constraints": []
-}, "src/components/Badge.tsx"),
+}, "src/components/preview-runtime/components/badge/badge.tsx"),
   "inform.banner": entry(
 {
   "purpose": "Deliver a persistent inline message with a meaningful severity.",
@@ -3601,26 +3605,27 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "inform.badge": {
     "exportName": "Badge",
-    "source": "src/components/Badge.tsx",
+    "source": "src/components/Badge.types.ts",
     "options": [
       {
         "prop": "variant",
         "values": [
-          "neutral",
-          "success",
-          "warning",
-          "danger",
-          "info"
+          "default",
+          "secondary",
+          "destructive",
+          "outline",
+          "ghost",
+          "link"
         ],
         "default": {
           "kind": "value",
-          "value": "neutral",
-          "source": "src/components/Badge.tsx",
-          "evidence": "variant = \"neutral\""
+          "value": "default",
+          "source": "src/components/preview-runtime/components/badge/badge.tsx",
+          "evidence": "variant = \"default\""
         },
         "forwarding": {
-          "source": "src/components/Badge.tsx",
-          "evidence": "VARIANT_CLASSES[variant]"
+          "source": "src/components/preview-runtime/components/badge/badge.tsx",
+          "evidence": "badgeVariants({ variant })"
         }
       }
     ],
@@ -3629,14 +3634,14 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--color-surface-sunken",
+          "property": "--color-action",
           "kind": "transitive",
-          "source": "styles/theme-keys.css",
-          "evidence": "--color-surface-sunken:",
+          "source": "styles/shadcn-native.css",
+          "evidence": "--primary: var(--color-action)",
           "via": [
             {
-              "source": "src/components/Badge.tsx",
-              "evidence": "bg-surface-sunken"
+              "source": "src/components/preview-runtime/components/badge/badge.tsx",
+              "evidence": "default: \"cn-badge-variant-default\""
             }
           ]
         }
