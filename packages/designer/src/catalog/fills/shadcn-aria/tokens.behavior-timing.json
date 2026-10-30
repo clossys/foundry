@@ -1,0 +1,179 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "shadcn@aria/tokens.behavior-timing",
+      "license": "MIT",
+      "mode": "derived",
+      "relation": "derived",
+      "slot": "tokens.behavior-timing",
+      "source": "shadcn@aria",
+      "sourceAddress": "packages/designer/src/library-cli/default-candidates.questions.json",
+      "status": "draft",
+      "trust": "foundry",
+      "pin": {
+        "file": "packages/designer/src/library-cli/default-candidates.questions.json",
+        "sha256": "9a52a3ed145eb6882f6805a2e3bdd4cc76880e2e8747c5ead94c5c44f3860085"
+      },
+      "derivation": {
+        "from": "dtcg#alias",
+        "rule": "Approved native default adaptation; exact scalar sources and Foundry-authored role mappings are recorded per member."
+      }
+    }
+  },
+  "tokens": {
+    "behavior-timing": {
+      "confirm-hold": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "2000ms"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "packages/designer/src/catalog/fills/foundry/tokens.behavior-timing.json",
+            "pin": {
+              "commit": "44ea0ce6c7482e68a791e1d913650b1bfa6f55a2",
+              "file": "packages/designer/src/catalog/fills/foundry/tokens.behavior-timing.json",
+              "sha256": "6dbd75d9d792347bf3175dd767c21d0a26154f67420d92f47b5ba80924bec65b"
+            },
+            "mappingLabel": "Foundry-authored",
+            "note": "Approved G2 mapping. Retain native semantic member; upstream role not established."
+          }
+        },
+        "$type": "duration",
+        "$value": {
+          "unit": "ms",
+          "value": 2000
+        }
+      },
+      "loading-delay": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "150ms"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "packages/designer/src/catalog/fills/foundry/tokens.behavior-timing.json",
+            "pin": {
+              "commit": "44ea0ce6c7482e68a791e1d913650b1bfa6f55a2",
+              "file": "packages/designer/src/catalog/fills/foundry/tokens.behavior-timing.json",
+              "sha256": "6dbd75d9d792347bf3175dd767c21d0a26154f67420d92f47b5ba80924bec65b"
+            },
+            "mappingLabel": "Foundry-authored",
+            "note": "Approved G2 mapping. Retain native semantic member; upstream role not established."
+          }
+        },
+        "$type": "duration",
+        "$value": {
+          "unit": "ms",
+          "value": 150
+        }
+      },
+      "loading-long": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "10000ms"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "packages/designer/src/catalog/fills/foundry/tokens.behavior-timing.json",
+            "pin": {
+              "commit": "44ea0ce6c7482e68a791e1d913650b1bfa6f55a2",
+              "file": "packages/designer/src/catalog/fills/foundry/tokens.behavior-timing.json",
+              "sha256": "6dbd75d9d792347bf3175dd767c21d0a26154f67420d92f47b5ba80924bec65b"
+            },
+            "mappingLabel": "Foundry-authored",
+            "note": "Approved G2 mapping. Retain native semantic member; upstream role not established."
+          }
+        },
+        "$type": "duration",
+        "$value": {
+          "unit": "ms",
+          "value": 10000
+        }
+      },
+      "loading-min": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "400ms"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "packages/designer/src/catalog/fills/foundry/tokens.behavior-timing.json",
+            "pin": {
+              "commit": "44ea0ce6c7482e68a791e1d913650b1bfa6f55a2",
+              "file": "packages/designer/src/catalog/fills/foundry/tokens.behavior-timing.json",
+              "sha256": "6dbd75d9d792347bf3175dd767c21d0a26154f67420d92f47b5ba80924bec65b"
+            },
+            "mappingLabel": "Foundry-authored",
+            "note": "Approved G2 mapping. Retain native semantic member; upstream role not established."
+          }
+        },
+        "$type": "duration",
+        "$value": {
+          "unit": "ms",
+          "value": 400
+        }
+      },
+      "tooltip-close": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "300ms"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "packages/designer/src/catalog/fills/foundry/tokens.behavior-timing.json",
+            "pin": {
+              "commit": "44ea0ce6c7482e68a791e1d913650b1bfa6f55a2",
+              "file": "packages/designer/src/catalog/fills/foundry/tokens.behavior-timing.json",
+              "sha256": "6dbd75d9d792347bf3175dd767c21d0a26154f67420d92f47b5ba80924bec65b"
+            },
+            "mappingLabel": "Foundry-authored",
+            "note": "Approved G2 mapping. Retain native semantic member; upstream role not established."
+          }
+        },
+        "$type": "duration",
+        "$value": {
+          "unit": "ms",
+          "value": 300
+        }
+      },
+      "tooltip-delay": {
+        "$type": "duration",
+        "$value": {
+          "unit": "ms",
+          "value": 0
+        },
+        "$extensions": {
+          "com.clossys.provenance": {
+            "sourceLabel": "shadcn",
+            "sourceAddress": "apps/v4/registry/bases/aria/ui/tooltip.tsx",
+            "sourceVariable": "Tooltip delay = 0",
+            "pin": {
+              "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+              "file": "apps/v4/registry/bases/aria/ui/tooltip.tsx",
+              "sha256": "4cc80f882fec4abad1512f0d35d330603d653169ac210b27c12de10a09458d64"
+            },
+            "mappingLabel": "Foundry-authored",
+            "note": "Approved G1 mapping. Explicit owner assignment of published primitive/component default to native semantic member."
+          }
+        }
+      }
+    }
+  }
+}

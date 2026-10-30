@@ -1,3 +1,31 @@
+import followon0 from "../catalog/fills/shadcn-aria/tokens.action-color.json" with { type: "json" };
+import followon1 from "../catalog/fills/shadcn-aria/tokens.behavior-timing.json" with { type: "json" };
+import followon2 from "../catalog/fills/shadcn-aria/tokens.brandmark-size.json" with { type: "json" };
+import followon3 from "../catalog/fills/shadcn-aria/tokens.chart-color.json" with { type: "json" };
+import followon4 from "../catalog/fills/shadcn-aria/tokens.code-size.json" with { type: "json" };
+import followon5 from "../catalog/fills/shadcn-aria/tokens.color-ramp.json" with { type: "json" };
+import followon6 from "../catalog/fills/shadcn-aria/tokens.control-size.json" with { type: "json" };
+import followon7 from "../catalog/fills/shadcn-aria/tokens.density.json" with { type: "json" };
+import followon8 from "../catalog/fills/shadcn-aria/tokens.display-size.json" with { type: "json" };
+import followon9 from "../catalog/fills/shadcn-aria/tokens.diverging-color.json" with { type: "json" };
+import followon10 from "../catalog/fills/shadcn-aria/tokens.duration.json" with { type: "json" };
+import followon11 from "../catalog/fills/shadcn-aria/tokens.easing.json" with { type: "json" };
+import followon12 from "../catalog/fills/shadcn-aria/tokens.elevation.json" with { type: "json" };
+import followon13 from "../catalog/fills/shadcn-aria/tokens.focus-outline.json" with { type: "json" };
+import followon14 from "../catalog/fills/shadcn-aria/tokens.focus-shadow.json" with { type: "json" };
+import followon15 from "../catalog/fills/shadcn-aria/tokens.font-size.json" with { type: "json" };
+import followon16 from "../catalog/fills/shadcn-aria/tokens.font-weight.json" with { type: "json" };
+import followon17 from "../catalog/fills/shadcn-aria/tokens.gutter.json" with { type: "json" };
+import followon18 from "../catalog/fills/shadcn-aria/tokens.heading-size.json" with { type: "json" };
+import followon19 from "../catalog/fills/shadcn-aria/tokens.icon-size.json" with { type: "json" };
+import followon20 from "../catalog/fills/shadcn-aria/tokens.icon-stroke.json" with { type: "json" };
+import followon21 from "../catalog/fills/shadcn-aria/tokens.region-width.json" with { type: "json" };
+import followon22 from "../catalog/fills/shadcn-aria/tokens.scrim-color.json" with { type: "json" };
+import followon23 from "../catalog/fills/shadcn-aria/tokens.sequential-color.json" with { type: "json" };
+import followon24 from "../catalog/fills/shadcn-aria/tokens.shift-distance.json" with { type: "json" };
+import followon25 from "../catalog/fills/shadcn-aria/tokens.state-opacity.json" with { type: "json" };
+import followon26 from "../catalog/fills/shadcn-aria/tokens.surface-radius.json" with { type: "json" };
+import followon27 from "../catalog/fills/shadcn-aria/tokens.transition-easing.json" with { type: "json" };
 import blur from "../catalog/fills/shadcn-aria/tokens.blur.json" with { type: "json" };
 import bodySize from "../catalog/fills/shadcn-aria/tokens.body-size.json" with { type: "json" };
 import borderWidth from "../catalog/fills/shadcn-aria/tokens.border-width.json" with { type: "json" };
@@ -13,4 +41,4 @@ import typeface from "../catalog/fills/shadcn-aria/tokens.typeface.json" with { 
 import zIndex from "../catalog/fills/shadcn-aria/tokens.z-index.json" with { type: "json" };
 
 /** Adapted defaults retain their actual upstream or authored attribution per member. */
-export const defaultTokenCandidates = [blur, bodySize, borderWidth, breakpoint, captionSize, contentSize, controlRadius, letterSpacing, lineHeight, spacing, touchTarget, typeface, zIndex];
+export const defaultTokenCandidates = [blur, bodySize, borderWidth, breakpoint, captionSize, contentSize, controlRadius, letterSpacing, lineHeight, spacing, touchTarget, typeface, zIndex, followon0, followon1, followon2, followon3, followon4, followon5, followon6, followon7, followon8, followon9, followon10, followon11, followon12, followon13, followon14, followon15, followon16, followon17, followon18, followon19, followon20, followon21, followon22, followon23, followon24, followon25, followon26, followon27];
