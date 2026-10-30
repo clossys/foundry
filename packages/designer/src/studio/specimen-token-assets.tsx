@@ -56,7 +56,7 @@ function typeStyle(member: ResolvedMember): CSSProperties | undefined {
   if (member.$type === "fontWeight") return { fontWeight: css };
   if (member.slot === "tokens.line-height") return { lineHeight: css };
   if (member.slot === "tokens.letter-spacing") return { letterSpacing: css };
-  if (member.$type === "dimension" && /(?:font|body|heading|display|caption)-size$/.test(member.slot)) return { fontSize: css };
+  if (member.$type === "dimension" && (member.slot.endsWith("font-size") || member.slot.endsWith("body-size") || member.slot.endsWith("heading-size") || member.slot.endsWith("display-size") || member.slot.endsWith("caption-size"))) return { fontSize: css };
   return undefined;
 }
 const entries = (context: DesignerSpecimenContext, leaf: string) => Object.entries(context.profile.values.members).filter(([, member]) => member.slot === leaf);
