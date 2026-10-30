@@ -20,7 +20,8 @@ import type { SpecimenAxis, SpecimenItem, SpecimenLeafProps } from "./specimen-l
 
 let context: DesignerSpecimenContext;
 const labels = { showAllVariants: (count: number) => `All ${count}` };
-const need: SpecimenLeafProps["need"] = value => <components.SemanticContent role="status">{value.leaf}: {value.reason}</components.SemanticContent>;
+const need: SpecimenLeafProps["need"] = value => <components.SemanticContent as="p" role="status">{value.leaf}: {value.reason}</components.SemanticContent>;
+const visible = (root: Element, selector: string) => [...root.querySelectorAll(selector)].filter(node => !node.closest("[hidden]"));
 const base = (items: readonly SpecimenItem[], axes?: readonly SpecimenAxis[], selected = context): SpecimenLeafProps => ({ items, axes, context: selected, labels, need });
 beforeAll(() => {
   const valuesCatalog = loadCatalog(), candidates = importFoundryComponents().fills;
@@ -49,15 +50,16 @@ beforeAll(() => {
   const library = applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes: ordered.map(id => ({ portion: "components", change: { op: "adopt", slot: id, source: available.get(id)!.$extensions["com.clossys.fill"].source } })) }, { componentOptions });
   const selected = applyLibraryChange(catalog, library, { baseHash: libraryHash(library), changes: imported.map(doc => ({ portion: "surfaces", change: { op: "adopt", slot: doc.$extensions["com.clossys.fill"].slot, source: "foundry" } })) }, { componentOptions });
   const profile = resolveComposite({ catalog, library: selected, componentOptions });
-  context = emittedDesignerSpecimenContext(profile, { components, surfaces: blocks });
+  const emitted = emittedDesignerSpecimenContext(profile, { components, surfaces: blocks });
+  context = { ...emitted, modules: { "@clossys/designer/components": components } };
 }, 60_000);
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 const passages = (count: number) => richPassageItems(Array.from({ length: count }, (_, index) => ({ id: `passage-${index}`, label: `Passage ${index}`, value: { passage: `## Complete passage ${index}\n\nOpening **emphasis**.\n\nFinal paragraph ${index}.` } })));
 it.each([1, 3, 15])("renders %i complete passages in the intrinsic ladder and expands all in a full tab", count => {
   const props = base(passages(count)), view = render(<SpecimenRichPassage {...props} />);
-  expect(view.container.querySelectorAll("[data-ds-specimen-item]")).toHaveLength(Math.min(count, 12));
-  expect(view.container.querySelectorAll("[data-readonly='true']")).toHaveLength(Math.min(count, 12));
+  expect(visible(view.container, "[data-ds-specimen-item]")).toHaveLength(Math.min(count, 12));
+  expect(visible(view.container, "[data-readonly='true']")).toHaveLength(Math.min(count, 12));
   expect(view.container.textContent).toContain("Final paragraph 0.");
   expect(view.container.querySelector("textarea,[contenteditable='true']")).toBeNull();
   if (count === 1) expect(view.container.querySelector("[role='grid'],table,button")).toBeNull();
@@ -112,7 +114,7 @@ it.each([1, 3, 15])("renders %i Writer strings in their actual native role compo
   if (count === 1) expect(view.container.querySelector("table,[role='grid'],button")).toBeNull();
   view.rerender(<SpecimenCopyInContext {...props} />);
   if (count > 1) {
-    expect(view.container.querySelectorAll("[data-copy-role]")).toHaveLength(1);
+    expect(visible(view.container, "[data-copy-role]")).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: `All ${count}` }));
     expect(view.container.querySelectorAll("[data-copy-role]")).toHaveLength(count);
   }
@@ -131,7 +133,7 @@ it("passes caller copy through the descriptor-matched selected surface port and 
 
 const viewportCases = (count: number) => pageViewportCases({ id: "page", label: "Emitted page" }, Array.from({ length: count }, (_, index) => ({ id: `width-${index}`, label: index === 0 ? "Desktop" : index === 1 ? "Mobile" : `Width ${index}`, width: index === 0 ? 1440 : 390 + index, height: 900 })), { page: "Page", viewport: "Viewport" });
 it.each([1, 2, 15])("dispatches %i page viewport cases to the actual host engine port", count => {
-  const renderViewport = vi.fn(({ page, viewport, interactive, fullSize }) => <components.SemanticContent data-ds-leaf="components.semantic-content" data-engine-interactive={String(interactive)} data-engine-full-size={String(fullSize)}><iframe title={viewport.label} src={page.previewUrl} sandbox="" tabIndex={-1} width={viewport.width} height={viewport.height} style={{ pointerEvents: "none" }} /></components.SemanticContent>);
+  const renderViewport = vi.fn(({ page, viewport, interactive, fullSize }) => <components.SemanticContent as="div" data-ds-leaf="components.semantic-content" data-engine-interactive={String(interactive)} data-engine-full-size={String(fullSize)}><iframe title={viewport.label} src={page.previewUrl} sandbox="" tabIndex={-1} width={viewport.width} height={viewport.height} style={{ pointerEvents: "none" }} /></components.SemanticContent>);
   const selected: DesignerSpecimenContext = { ...context, pagePreview: { engine: "producer-emitted-page@1", origin: "http://127.0.0.1:4300", pages: [{ id: "page", route: "/actual-route", previewUrl: "/preview/publication/pages/page.html", emitted: true, stage: "preview" }], renderViewport } };
   const cases = viewportCases(count), props = base(cases.items, cases.axes, selected), view = render(<SpecimenPageViewports {...props} />);
   expect(view.container.querySelectorAll("iframe")).toHaveLength(count);
@@ -147,10 +149,15 @@ it("fails missing emit, missing native engine, unsafe origin and URL-card-shaped
   expect(view.container.querySelector("iframe")).toBeNull();
   expect(view.container.querySelector("[data-ds-specimen-need='true']")).toBeTruthy();
   expect(contentSpecimenNeeds("sections.specimen-page-viewports", props)).not.toEqual([]);
-  for (const origin of ["http://localhost:4300", "https://example.invalid", "http://127.0.0.1:4300/path"]) {
+  for (const origin of ["http://localhost:4300", "https://example.invalid", "http://127.0.0.1:4300/path", "http://127.0.0.1:999999"]) {
     const selected: DesignerSpecimenContext = { ...context, pagePreview: { engine: "producer-emitted-page@1", origin, pages: [{ id: "page", route: "/", previewUrl: "/preview/publication/pages/page.html", emitted: true, stage: "preview" }], renderViewport: () => null } };
     expect(contentSpecimenNeeds("sections.specimen-page-viewports", base(cases.items, cases.axes, selected))).not.toEqual([]);
   }
+  const renderViewport = vi.fn(() => null);
+  const notEmitted: DesignerSpecimenContext = { ...context, pagePreview: { engine: "producer-emitted-page@1", origin: "http://127.0.0.1:4300", pages: [{ id: "page", route: "/", previewUrl: "/preview/publication/pages/page.html", emitted: false, stage: "preview" }], renderViewport } };
+  view.rerender(<SpecimenPageViewports {...base(cases.items, cases.axes, notEmitted)} />);
+  expect(renderViewport).not.toHaveBeenCalled();
+  expect(view.container.querySelector("[data-ds-specimen-need='true']")).toBeTruthy();
   view.rerender(<SpecimenPageViewports {...base([{ id: "url", label: "URL card", value: { url: "/preview/publication/pages/page.html" } }])} />);
   expect(view.container.querySelector("[data-ds-specimen-need='true']")).toBeTruthy();
 });
