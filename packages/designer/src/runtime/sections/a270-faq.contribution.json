@@ -1,0 +1,21 @@
+{
+  "leaf": "sections.faq",
+  "renderer": "renderFaqSection",
+  "rendererModule": "runtime/sections/faq.js",
+  "existingRegistration": "GROUP_A_SECTION_RENDERERS[sections.faq]",
+  "existingSpecimen": "GROUP_A_CONTENT.faq from specimenDataset.sections.faq.items",
+  "dependencies": {
+    "componentLeafCommit": "ebd6753ac39f9f7db47f8f4f76a3dc837c60481e",
+    "descriptorFile": "src/catalog/fills/shadcn@aria/components.disclosure.json",
+    "descriptorSecondaryExports": [
+      { "name": "AccordionItem", "export": "AccordionItem" },
+      { "name": "AccordionTrigger", "export": "AccordionTrigger" },
+      { "name": "AccordionContent", "export": "AccordionContent" }
+    ],
+    "sourceEntry": "components/disclosure/accordion.tsx",
+    "sourceSha256": "3bcee4d26ed735c6a3c79ff95e550d96b9a3b9efe3fb37764c543efedb37f8a6",
+    "sourceFunctions": ["Accordion", "AccordionItem", "AccordionTrigger", "AccordionContent"],
+    "integrationAction": "Expose these inspected source exports in the selected descriptor and authenticate its source function inventory. Rebuild consumer index; ConsumerComponentProvider wraps section specimens once."
+  },
+  "visualDependency": "Native selected-source utility compilation and token mapping owned by consumer CSS assembly. No CSS authored here."
+}

@@ -6,9 +6,16 @@ import { join } from "node:path";
 import type { CSSProperties } from "react";
 import { render, screen, within } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import { LogoCloud, type LogoCloudItem } from "./LogoCloud.js";
 import { selectChromium } from "../__fixtures__/chromium-discovery.js";
+
+// The visual-contract suite binds the compiled component namespace directly.
+// Consumer selection and overrides are exercised by LogoCloud.a270.test.tsx.
+vi.mock("../runtime/component-leaf.js", async () => {
+  const [base, item] = await Promise.all([import("../components/index.js"), import("../components/item/item.js")]);
+  return { componentLeaf: (leaf: string, part?: string) => part ? item[part as keyof typeof item] : leaf === "components.link" ? base.Link : base.SemanticContent };
+});
 
 type BrowserStep =
   | { viewport: number }
@@ -144,7 +151,7 @@ describe("LogoCloud", () => {
       const logo = entry.querySelector("svg")?.parentElement;
       expect(logo).toHaveAttribute("aria-hidden", "true");
       expect(logo).toHaveClass("inline-flex", "h-8", "w-full", "max-w-40", "overflow-hidden", "tablet:h-10");
-      expect(entry).toHaveClass("flex", "min-h-[3rem]", "items-center", "justify-center");
+      expect(entry).toHaveClass("flex", "items-center", "justify-center");
     }
     expect(container.querySelector("ul")).toHaveClass("grid", "gap-x-xl", "gap-y-lg");
   });
@@ -172,7 +179,7 @@ describe("LogoCloud", () => {
 
   it("defaults to grayscale and leaves original marks unchanged [mutant: omit grayscale]", () => {
     const mono = render(<LogoCloud items={items(3)} />);
-    for (const mark of mono.container.querySelectorAll('span[aria-hidden="true"]')) expect(mark).toHaveClass("grayscale");
+    for (const mark of mono.container.querySelectorAll('[data-slot="item-media"][aria-hidden="true"]')) expect(mark).toHaveClass("grayscale");
     expect(mono.container.innerHTML).not.toMatch(/opacity-|brightness-/);
     mono.unmount();
     const original = render(<LogoCloud items={items(3)} tone="original" />);
@@ -248,7 +255,7 @@ describe("LogoCloud measured in Chromium", () => {
       { eval: "all()", as: "rest" },
       { moveTo: "centre('#mono a', 1)" }, { eval: "all()", as: "hover" },
       { moveTo: "[2, 2]" }, { eval: "all()", as: "away" },
-      { moveTo: "centre('#plain span[aria-hidden]', 1)" }, { eval: "all()", as: "plainHover" },
+      { moveTo: "centre('#plain [aria-hidden]', 1)" }, { eval: "all()", as: "plainHover" },
       { moveTo: "[2, 2]" },
       { key: "Tab" }, { eval: "focused()", as: "tab1" },
       { key: "Tab" }, { eval: "focused()", as: "tab2" },

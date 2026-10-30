@@ -11,6 +11,8 @@ import type { SectionSlot } from "../../catalog-core/sections-contract.js";
 import type { CompositeResolved } from "../../catalog-core/types.js";
 import { runtimeHash, type RuntimeContent, type RuntimeContentRef, type RuntimeFillDescriptor, type RuntimeJson, type RuntimeRenderInput, type RuntimeSourceClosure } from "../../catalog-core/runtime-ports.js";
 import { specimenDataset as data } from "../../studio/specimen-dataset.js";
+import { heroCopyFromDataset, HERO_SPECIMEN_BACKDROP, HERO_PREVIEW_MEMBERS } from "../../studio/hero-specimen.js";
+import { featuresSpecimenContent } from "../../studio/features-specimens.js";
 import { plainJson } from "./dataset-json.js";
 
 export const GROUP_A_LEAVES = ["article", "band", "call-to-action", "comparison", "content", "faq", "features", "gallery", "hero", "logo-cloud", "media", "newsletter", "people", "pricing", "testimonials"] as const;
@@ -47,9 +49,10 @@ export const GROUP_A_CONTENT: Readonly<Record<GroupALeaf, Readonly<Record<string
     footnote: data.popover.content,
   },
   faq: { items: plainJson(S.faq.items) },
-  features: { items: plainJson(S.featureGrid.items) },
+  features: featuresSpecimenContent,
   gallery: { images: { label: S.gallery.label, items: S.gallery.images.map(image => ({ id: image.id, label: image.label, media: markMedia(image.label), caption: image.caption })) } },
   hero: {
+    backdrop: plainJson(HERO_SPECIMEN_BACKDROP),
     header: { eyebrow: S.hero.eyebrow, heading: S.hero.heading, description: S.hero.description },
     media: barMedia,
     actions: { primary: { label: S.hero.primary, href: S.callToAction.primary.href }, secondary: { label: S.hero.secondary, href: S.callToAction.secondary.href } },
@@ -72,7 +75,7 @@ export const GROUP_A_CONTENT: Readonly<Record<GroupALeaf, Readonly<Record<string
 /** Members the preview selects per leaf; every one is in the leaf's fill propMap. */
 export const GROUP_A_MEMBERS: Readonly<Record<GroupALeaf, readonly string[]>> = {
   article: [], band: ["ground.sunken", "measure.content"], "call-to-action": [], comparison: [], content: ["layout.split-end"],
-  faq: ["layout.list"], features: ["layout.grid"], gallery: ["lightbox.enabled"], hero: ["layout.split", "size.display"],
+  faq: ["layout.list"], features: ["layout.bento"], gallery: ["lightbox.enabled"], hero: HERO_PREVIEW_MEMBERS,
   "logo-cloud": ["count.3", "monochrome.false"], media: [], newsletter: [], people: [], pricing: [], testimonials: ["layout.grid"],
 };
 
@@ -115,5 +118,6 @@ export function groupASectionInput(leaf: GroupALeaf, doc: GroupAFillDocument, op
     path: `sections.main.0`, fill, cell: { theme: "light", state: "default", width: 1280 }, content, slots: options.slots ?? {},
     selection: { leaf: fill.leaf, fill: fill.fill, config: null, members: options.members ?? GROUP_A_MEMBERS[leaf], content: Object.fromEntries(Object.entries(content).map(([slot, row]) => [slot, row.reference])) },
     profile: {} as CompositeResolved,
+    ...(leaf === "hero" ? { sectionHost: { heroCopy: heroCopyFromDataset(data) } } : {}),
   };
 }

@@ -1,6 +1,6 @@
-import { Children, Fragment, cloneElement, isValidElement, type AnchorHTMLAttributes, type HTMLAttributes, type ReactElement, type ReactNode } from "react";
+import { Children, Fragment, cloneElement, isValidElement, type AnchorHTMLAttributes, type ComponentType, type HTMLAttributes, type ReactElement, type ReactNode } from "react";
 import { Brandmark, type BrandmarkProps } from "./Brandmark.js";
-import { buttonLinkClassName } from "../components/button-classes.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
 import { Icon, type IconNode } from "../components/Icon.js";
 import { cx } from "../components/internal/cx.js";
 import { SHELL_GROUND_CLASSES } from "./internal/shell-ground.js";
@@ -10,6 +10,11 @@ import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 
 /** DOM provenance (WIRE-3 D1): this frame root stamps its leaf and fill. */
 const FRAME_STAMP = dsAttrs("frames", "frames.site-header", "foundry/frames.site-header");
+
+/** Real LinkButton secondary export from the consumer's selected button source. */
+const SelectedLinkButton = componentLeaf<ComponentType<Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "children"> & {
+  children: ReactNode; variant: "default" | "secondary" | "ghost"; size: "sm";
+}>>("components.button", "LinkButton");
 
 /** One header surface: an in-flow solid plate, an always-transparent row, or fixed scroll glass. */
 export type SiteHeaderSurface = "solid" | "transparent" | "glass";
@@ -170,14 +175,15 @@ function SiteHeaderActionLink({
   style,
   ...rest
 }: SiteHeaderActionLinkProps) {
-  const look = buttonLinkClassName(variant, "sm");
   return (
-    <a
+    <SelectedLinkButton
       {...rest}
       href={href}
+      variant={variant === "primary" ? "default" : variant}
+      size="sm"
       aria-current={isCurrent ? "page" : undefined}
       data-header-action-ghost={variant === "ghost" ? "" : undefined}
-      className={cx(look, className)}
+      className={className}
       style={{
         minHeight: UI_LAYOUT_TAP_TARGET,
         minWidth: UI_LAYOUT_TAP_TARGET,
@@ -186,7 +192,7 @@ function SiteHeaderActionLink({
       }}
     >
       {icon ? <><Icon glyph={icon} decorative size="sm" /><span className="sr-only tablet:not-sr-only">{label}</span></> : label}
-    </a>
+    </SelectedLinkButton>
   );
 }
 

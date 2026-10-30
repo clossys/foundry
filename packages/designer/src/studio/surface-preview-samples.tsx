@@ -20,6 +20,7 @@ import { Hero } from "../blocks/Hero.js";
 import { Matrix } from "../blocks/Matrix.js";
 import { NewsletterBand } from "../blocks/NewsletterBand.js";
 import { PricingTable } from "../blocks/PricingTable.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
 import { ResourceList } from "../blocks/ResourceList.js";
 import { StatusList } from "../blocks/StatusList.js";
 import { TaskList } from "../blocks/TaskList.js";
@@ -41,6 +42,8 @@ function CommandMenuPreview() {
   </>;
 }
 
+const PricingAction = componentLeaf<typeof Button>("components.button");
+
 /** Samples keyed by the export name inside `@clossys/designer/blocks`. */
 export const STRUCTURED_BLOCK_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
   Matrix: () => <Matrix {...comparisonSample} />,
@@ -49,7 +52,7 @@ export const STRUCTURED_BLOCK_SAMPLES: Readonly<Record<string, () => ReactNode>>
   Form: () => <Form heading={formSample.heading} onSubmit={event => event.preventDefault()} actions={<Button type="submit">{formSample.submit}</Button>}>
     {formSample.fields.map(field => <TextField key={field.id} label={field.label} type={field.type} />)}
   </Form>,
-  PricingTable: () => <PricingTable heading={pricingSample.heading} tiers={pricingSample.tiers.map(({ cta, featured, ...tier }) => ({ ...tier, isHighlighted: featured, cta: <Button variant={featured ? "primary" : "secondary"}>{cta}</Button> }))} />,
+  PricingTable: () => <PricingTable heading={pricingSample.heading} tiers={pricingSample.tiers.map(({ cta, featured, ...tier }) => ({ ...tier, isHighlighted: featured, cta: <PricingAction variant={featured ? "primary" : "secondary"}>{cta}</PricingAction> }))} />,
   ResourceList: () => <ResourceList {...resourceListSample} onAction={noop} />,
   StatusList: () => <StatusList {...statusListSample} />,
   TaskList: () => <TaskList {...taskListSample} />,

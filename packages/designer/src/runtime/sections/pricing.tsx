@@ -4,7 +4,10 @@
  */
 import type { ReactNode } from "react";
 import { PricingTable, type PricingTier } from "../../blocks/PricingTable.js";
-import { actionNode, list, object, optionalText, readSectionContent, required, SectionContentError, text, texts, type SectionRenderInput, type SectionRendererInputs } from "./group-a-content.js";
+import { list, object, optionalText, readSectionContent, required, SectionContentError, text, texts, type SectionRenderInput, type SectionRendererInputs } from "./group-a-content.js";
+
+import { componentLeaf } from "../component-leaf.js";
+const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
 
 export const pricingInputs: SectionRendererInputs = { slots: ["highlight", "interval", "plans"], members: [] };
 
@@ -19,11 +22,18 @@ export function renderPricingSection(input: SectionRenderInput): ReactNode {
       name: text(content, plan.name, `${at}.name`),
       description: optionalText(content, plan.description, `${at}.description`),
       features: texts(content, plan.features, `${at}.features`),
-      cta: actionNode(content, plan.cta, `${at}.cta`, isHighlighted ? "primary" : "outline"),
+      cta: (() => {
+        const action = object(content, plan.cta, `${at}.cta`);
+        const requested = optionalText(content, action.variant, `${at}.cta.variant`) ?? (isHighlighted ? "primary" : "outline");
+        const variant = (["primary", "secondary", "outline", "ghost", "tonal", "quiet"] as const).find(value => value === requested);
+        if (!variant) throw new SectionContentError(content.leaf, `${at}.cta.variant is not a link button variant`);
+        return <Link href={text(content, action.href, `${at}.cta.href`)} buttonVariant={variant}>{text(content, action.label, `${at}.cta.label`)}</Link>;
+      })(),
       isHighlighted,
       badge: optionalText(content, plan.badge, `${at}.badge`),
     };
-    if (plan.price !== undefined) return { ...base, price: text(content, plan.price, `${at}.price`) };
+    if (plan.price !== undefined && plan.price !== null) return { ...base, price: text(content, plan.price, `${at}.price`) };
+    if (plan.priceByInterval === undefined) return { ...base, price: null };
     const prices = object(content, plan.priceByInterval, `${at}.priceByInterval`);
     return { ...base, priceByInterval: Object.fromEntries(Object.entries(prices).map(([interval, value]) => {
       const price = object(content, value, `${at}.priceByInterval.${interval}`);

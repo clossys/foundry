@@ -1,9 +1,12 @@
-import { SemanticContent } from "../components/SemanticContent.js";
-import { useId, type HTMLAttributes, type ReactNode } from "react";
+import { componentLeaf } from "../runtime/component-leaf.js";
+import { useId, type ComponentType, type HTMLAttributes, type ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
-import { SectionHeader, type SectionHeaderLevel } from "./SectionHeader.js";
+import type { SectionHeaderLevel } from "./SectionHeader.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+const Card = componentLeaf<ComponentType<HTMLAttributes<HTMLDivElement>>>("components.card");
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.call-to-action", "foundry/sections.call-to-action");
 
@@ -24,35 +27,29 @@ export interface CallToActionProps extends Omit<HTMLAttributes<HTMLElement>, "ti
   headingLevel?: SectionHeaderLevel;
 }
 
-/**
- * A closing band that asks the reader to do one thing: a centred
- * `SectionHeader` (eyebrow, title, description) and an actions row of one
- * primary and at most one secondary action. A labelled `<section>` on a
- * section ground; the host supplies the actions, so no destination or
- * analytics is assumed.
- */
+/** A closing band with caller-owned copy and actions, composed from the consumer's selected component leaves. */
 export function CallToAction({ title, eyebrow, description, primaryAction, secondaryAction, ground = "sunken", headingLevel = 2, className, ...rest }: CallToActionProps) {
-  const titleId = useId();
+  const titleId = useId(), descriptionId = useId();
+  const heading: `h${SectionHeaderLevel}` = `h${headingLevel}`;
   return (
     <SemanticContent as="section"
       {...SECTION_STAMP} {...rest}
       aria-labelledby={titleId}
+      aria-describedby={description ? descriptionId : undefined}
       data-ground={ground}
-      className={cx("flex flex-col items-center gap-lg rounded-panel px-lg py-3xl text-center", SECTION_GROUND_CLASSES[ground].surface, className)}
+      className={cx("min-w-0 w-full", SECTION_GROUND_CLASSES[ground].surface, className)}
     >
-      <SectionHeader
-        density="standard"
-        align="center"
-        ground={ground}
-        level={headingLevel}
-        eyebrow={eyebrow}
-        title={<SemanticContent as="span" id={titleId}>{title}</SemanticContent>}
-        description={description}
-      />
-      <SemanticContent as="div" className="flex flex-wrap items-center justify-center gap-sm">
-        {primaryAction}
-        {secondaryAction}
-      </SemanticContent>
+      <Card className="items-center gap-lg px-lg py-3xl text-center">
+        <SemanticContent as="div" className="flex min-w-0 w-full max-w-prose flex-col items-center gap-sm">
+          {eyebrow ? <SemanticContent as="p" className="text-caption uppercase tracking-label text-muted-foreground">{eyebrow}</SemanticContent> : null}
+          <SemanticContent as={heading} id={titleId} className="text-h2 font-display text-balance">{title}</SemanticContent>
+          {description ? <SemanticContent as="p" id={descriptionId} className="text-body text-pretty text-muted-foreground">{description}</SemanticContent> : null}
+        </SemanticContent>
+        <SemanticContent as="div" className="flex w-full min-w-0 flex-col items-stretch justify-center gap-sm tablet:w-auto tablet:flex-row tablet:flex-wrap tablet:items-center">
+          {primaryAction}
+          {secondaryAction}
+        </SemanticContent>
+      </Card>
     </SemanticContent>
   );
 }
