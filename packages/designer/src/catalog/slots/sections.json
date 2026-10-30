@@ -2306,11 +2306,16 @@
           "tokens.surface-color",
           "tokens.animation",
           "tokens.shift-distance",
+          "tokens.body-size",
           "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.heading-size",
+          "tokens.letter-spacing",
           "tokens.radius",
           "tokens.status-color",
           "tokens.surface-radius",
-          "tokens.text-color"
+          "tokens.text-color",
+          "tokens.typeface"
         ],
         "assets": []
       },
@@ -4576,6 +4581,7 @@
         ]
       },
       "allowedComposes": [
+        "components.badge",
         "components.card",
         "components.icon",
         "components.link",
@@ -4601,11 +4607,18 @@
           "tokens.accent-color",
           "tokens.body-size",
           "tokens.border-color",
+          "tokens.border-width",
+          "tokens.caption-size",
           "tokens.control-radius",
+          "tokens.heading-size",
+          "tokens.icon-size",
+          "tokens.letter-spacing",
+          "tokens.line-height",
           "tokens.radius",
           "tokens.status-color",
           "tokens.surface-radius",
           "tokens.text-color",
+          "tokens.touch-target",
           "tokens.typeface"
         ],
         "assets": [
