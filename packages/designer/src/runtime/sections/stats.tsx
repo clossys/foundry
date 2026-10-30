@@ -1,11 +1,8 @@
-import { StatGroup, type StatGroupItem } from "../../blocks/StatGroup.js";
+import type { StatGroupItem } from "../../blocks/StatGroup.js";
+import { StatGroupSurface } from "../../blocks/Stats/surface.js";
 import type { StatTrendLabels } from "../../blocks/Stat.js";
 import { stateOf, type GroupBSection, type SectionRenderInput } from "./group-b-support.js";
 import { isObject, recordsOf, slotValue } from "./group-c-content.js";
-import { componentLeaf } from "../component-leaf.js";
-import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
-
-const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 export interface StatsCopy {
   readonly label: string;
   readonly trendLabels: StatTrendLabels;
@@ -42,10 +39,7 @@ export function renderStats(input: SectionRenderInput) {
     const label = copyText(Reflect.get(message, "label"), `statsCopy.states.${state}.label`);
     const description = Reflect.get(message, "description");
     if (description !== undefined) copyText(description, `statsCopy.states.${state}.description`);
-    return <SemanticContent as="section" {...dsAttrs("sections", "sections.stats", "foundry/sections.stats")} aria-label={host.label} aria-busy={state === "loading" || undefined}>
-      <SemanticContent as="p" role={state === "error" ? "alert" : "status"} className="text-body text-ink-primary">{label}</SemanticContent>
-      {description === undefined ? null : <SemanticContent as="p" className="text-body-s text-ink-secondary">{String(description)}</SemanticContent>}
-    </SemanticContent>;
+    return <StatGroupSurface mode="state" label={host.label} state={state} stateLabel={label} description={description as string | undefined} />;
   }
   if (!Object.hasOwn(input.content, "stats")) return needed("stats records");
   const items: StatGroupItem[] = recordsOf("sections.stats", "stats", slotValue(input, "stats")).map((row, index) => {
@@ -61,7 +55,7 @@ export function renderStats(input: SectionRenderInput) {
       ...(row.description === undefined ? {} : { description: copyText(row.description, `${path}.description`) }),
       ...(trend === undefined ? {} : { trend }), ...(typeof row.countTo === "number" ? { countTo: row.countTo } : {}), trendLabels: host.trendLabels };
   });
-  return <StatGroup aria-label={host.label} layout={members.includes("layout.row") ? "row" : "grid"} motion={host.motion} items={items} />;
+  return <StatGroupSurface mode="measurements" props={{ "aria-label": host.label, layout: members.includes("layout.row") ? "row" : "grid", motion: host.motion, items }} />;
 }
 
 export const statsSection: GroupBSection = { leaf: "sections.stats", slots: ["stats"], render: renderStats };
