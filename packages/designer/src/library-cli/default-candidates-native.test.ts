@@ -71,6 +71,25 @@ describe("native default candidate input integration", () => {
     input.defaultSources = { ...input.defaultSources, "tokens.spacing": undefined };
     expect(checkDefaultCandidates(input)).toMatchObject({ exitCode: 2, report: { invalid: expect.arrayContaining(["MISSING_POLICY tokens.spacing: default source definition is missing"]) } });
   });
+  it("retains the explicit rich-text policy when its existing native candidate is removed", () => {
+    const input = nativeInput(), original = input.catalog.components.fills, baseline = checkDefaultCandidates(input), slot = "components.rich-text";
+    expect(input.defaultSources[slot]).toBe("shadcn@aria");
+    expect(baseline.report.missing.some(row => row.slot === slot)).toBe(false);
+    const defaults = original.filter(doc => doc.$extensions["com.clossys.fill"].slot === slot && doc.$extensions["com.clossys.fill"].source === input.defaultSources[slot]);
+    expect(defaults).toHaveLength(1);
+    expect(Object.values(defaults[0]!.components)[0]!.impl).toEqual({ kind: "package", module: "@clossys/designer/components", export: "RichText" });
+    const otherSources = original.filter(doc => doc.$extensions["com.clossys.fill"].source !== "shadcn@aria");
+    expect(otherSources.length).toBeGreaterThan(0);
+    input.catalog.components.fills = original.filter(doc => !defaults.includes(doc));
+    expect(input.catalog.components.fills.filter(doc => doc.$extensions["com.clossys.fill"].source !== "shadcn@aria")).toEqual(otherSources);
+    expect(input.defaultSources[slot]).toBe("shadcn@aria");
+    const deleted = checkDefaultCandidates(input);
+    expect(deleted.exitCode).not.toBe(0);
+    expect(deleted.report.missing.find(row => row.slot === slot)).toMatchObject({ source: "shadcn@aria", reasons: ["no implementation candidate in the default source"] });
+    expect(deleted.report.missing).toHaveLength(baseline.report.missing.length + 1);
+    input.catalog.components.fills = original;
+    expect(checkDefaultCandidates(input)).toEqual(baseline);
+  });
   it("returns the documented CLI usage error as JSON with exit 2", () => {
     const child = spawnSync(process.execPath, [resolve(root, "packages/designer/scripts/check-default-candidates.mjs"), "--unknown"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
     expect(child.status).toBe(2);
