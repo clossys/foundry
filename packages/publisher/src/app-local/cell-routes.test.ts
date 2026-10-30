@@ -11,12 +11,12 @@ import { readServingPublication } from "./cell-routes.js";
 
 const roots: string[] = [];
 afterEach(async () => { await Promise.all(roots.splice(0).map(path => rm(path, { recursive: true, force: true }))); });
-async function fixture(metadata = true) {
+async function fixture(metadata = true, external = false) {
   const root = await mkdtemp(join(tmpdir(), "app-local-serving-")); roots.push(root);
   const input = contentRouteFixture();
   input.registry.slots[0] = { ...input.registry.slots[0]!, route: "/" };
   const manifest = createContentRouteManifest({ registry: input.registry, locale: "en", loader: { file: "src/content-loader.ts", export: "loadContentRoute" } });
-  const map: ContentMap = { version: 1, publicationId: "example", format: "web.page.responsive", entries: [{ id: "home", order: 0, title: "Home", path: "/", kind: "page", source: { frameId: "frames.auth-shell", sectionIds: ["sections.empty-state"] } }] };
+  const map: ContentMap = { version: 1, publicationId: "example", format: "web.page.responsive", entries: [{ id: "home", order: 0, title: "Home", path: "/", kind: "page", source: { frameId: "frames.auth-shell", sectionIds: ["sections.empty-state"] } }, ...(external ? [{ id: "docs", order: 1, title: "Documentation", path: "/docs", kind: "external" as const, href: "https://example.test/docs", indexing: { mode: "noindex" as const, reason: "External documentation" }, lastModified: "2026-10-29" }] : [])] };
   await contentMapToCells(map, root, { date: "2026-10-29", ...(metadata ? { routePack: { ...manifest, packId: "example", routes: manifest.routes.map(route => ({ ...route, instanceId: "home", label: "Home" })) } } : {}) });
   return { root, manifest, map };
 }
@@ -51,5 +51,16 @@ it("rejects wrong consumers, incomplete Route metadata, path drift and missing p
   await writeFile(cell, source.replace("frame: frames.auth-shell", "frame: frames.site-shell"));
   await expect(readServingPublication(root, "example", "example")).rejects.toThrow(/composition/i);
   await writeFile(cell, source.slice(0, source.indexOf("## Route")));
+  await expect(readServingPublication(root, "example", "example")).rejects.toThrow(/Route metadata/i);
+});
+it("preserves external navigation metadata without requiring executable Route authority for that node", async () => {
+  const { root, map, manifest } = await fixture(true, true);
+  const result = await readServingPublication(root, "example", "example");
+  expect(result.map).toEqual(map);
+  expect(result.map.entries[1]).toEqual(map.entries[1]);
+  expect(result.manifest).toEqual(manifest);
+  expect(result.manifest.routes).toHaveLength(1);
+  const source = await readFile(join(root, "cells/page.home/v1.md"), "utf8");
+  await writeFile(join(root, "cells/page.home/v1.md"), source.slice(0, source.indexOf("## Route")));
   await expect(readServingPublication(root, "example", "example")).rejects.toThrow(/Route metadata/i);
 });

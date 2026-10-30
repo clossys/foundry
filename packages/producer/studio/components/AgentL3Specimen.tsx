@@ -11,6 +11,7 @@ import { RoleToolsProvider, latestSpecimenCell, useRoleSpecimenResource } from '
 
 export interface BoundSpecimenLeaf {
   sourcePlan?: AgentSpecimenPlan;
+  presentationReady?: boolean;
   evidence: ResolvedSpecimenEvidence;
   Component?: ComponentType<Record<string, unknown>>;
   props: Record<string, unknown> & { items: unknown[] };
@@ -30,11 +31,15 @@ function useBoundSpecimen(index: AgentCells, selectedId: string | undefined, exp
   const publicationId = selectedPublicationId(index, selectedId);
   const publicationResource = publicationId ? resource?.publications?.[publicationId] : resource?.publication;
   const publication = publicationResource?.state === 'ready' ? publicationResource.value : undefined;
-  const plan = cell ? index.agent === 'director' && resource?.cells.state === 'ready' ? directorNativePlan(index, resource.cells.cells, cell.id) : { ...agentSpecimenPlan(index, cell, publication), ...(index.contentScope ? { scope: index.contentScope } : {}) } : { cellId: selectedId ?? '', items: [], expectedVariantIds: [], issues: [resource?.cells.state === 'error' ? resource.cells.message : 'The specimen source has not loaded.'] };
+  const plan: AgentSpecimenPlan = cell ? index.agent === 'director' && resource?.cells.state === 'ready' ? directorNativePlan(index, resource.cells.cells, cell.id) : { ...agentSpecimenPlan(index, cell, publication), ...(index.contentScope ? { scope: index.contentScope } : {}) } : { cellId: selectedId ?? '', items: [], expectedVariantIds: [], issues: [resource?.cells.state === 'error' ? resource.cells.message : 'The specimen source has not loaded.'] };
   const binding = cell ? resolve?.({ index, cell, plan, publication, expanded }) : undefined;
   // Cardinality evidence is measured from the props actually passed to the bound leaf.
   const evidence = binding ? { ...binding.evidence, registered: binding.evidence.registered && !!binding.Component, items: binding.props.items } : undefined;
-  return { binding, coverage: agentSpecimenCoverage(binding?.sourcePlan ?? plan, evidence) };
+  const sourcePlan = binding?.sourcePlan ?? plan;
+  // A registered native empty presentation is valid UI, never emitted-page evidence.
+  const presentationReady = index.agent === 'publisher' && sourcePlan.publicationState === 'unpublished' && sourcePlan.issues.length === 0 &&
+    binding?.presentationReady === true && evidence?.registered === true && evidence.sectionId === 'sections.specimen-page-viewports' && evidence.items.length > 0 && !evidence.issues?.length;
+  return { binding, presentationReady, coverage: agentSpecimenCoverage(sourcePlan, evidence) };
 }
 
 export function useAgentSpecimenCoverage(index: AgentCells, cell: CellSummary): AgentSpecimenCoverage {
@@ -42,8 +47,8 @@ export function useAgentSpecimenCoverage(index: AgentCells, cell: CellSummary): 
 }
 function BoundAgentSpecimen({ index, selectedId, expanded = false }: { index: AgentCells; selectedId?: string; expanded?: boolean }) {
   const { EmptyState } = useStudioUI();
-  const { binding, coverage } = useBoundSpecimen(index, selectedId, expanded);
-  if (!binding?.Component || !coverage.ready) return <EmptyState role="status" title="NEED: registered specimen" description={coverage.issues.join(' ')} />;
+  const { binding, presentationReady, coverage } = useBoundSpecimen(index, selectedId, expanded);
+  if (!binding?.Component || !coverage.ready && !presentationReady) return <EmptyState role="status" title="NEED: registered specimen" description={coverage.issues.join(' ')} />;
   const Leaf = binding.Component;
   return <Leaf {...binding.props} />;
 }

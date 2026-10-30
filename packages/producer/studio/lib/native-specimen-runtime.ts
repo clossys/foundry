@@ -17,7 +17,7 @@ export interface NativeSpecimenSDK {
   emittedDesignerSpecimenContext(profile: CompositeResolved, runtime: StudioRuntimeModule): NativeSpecimenContext;
   bindNativeSpecimenContext(context: NativeSpecimenContext, ports: Record<string, unknown>): NativeSpecimenContext | { leaf: string; reason: string };
   projectAgentSpecimenPlan(input: Record<string, unknown>): unknown;
-  bindAgentSpecimenPlan(input: Record<string, unknown>): { sectionId?: string; registered: boolean; items: unknown[]; variantIds: string[]; cell?: { axes?: unknown[] }; issues: string[] };
+  bindAgentSpecimenPlan(input: Record<string, unknown>): { sectionId?: string; registered: boolean; presentationReady?: boolean; items: unknown[]; variantIds: string[]; cell?: { axes?: unknown[] }; issues: string[] };
   studioSpecimenLeaves: readonly NativeSpecimenDefinition[];
   SPECIMEN_KIND_MAP?: readonly { kind: string; layer?: string; specimen: string }[];
   resolveSpecimenLeafBinding?(cell: Record<string, unknown>, registry: readonly NativeSpecimenDefinition[]): { leaf: NativeSpecimenDefinition } | { error: string };
@@ -48,7 +48,7 @@ export function nativeSpecimenContext(sdk: NativeSpecimenSDK | undefined, profil
 export interface NativeLeafResolution {
   sourcePlan?: AgentSpecimenPlan;
   Component?: ComponentType<Record<string, unknown>>;
-  sectionId?: string; registered: boolean; span?: SpecimenCardSpan;
+  sectionId?: string; registered: boolean; presentationReady?: boolean; span?: SpecimenCardSpan;
   items: unknown[]; variantIds: string[]; props: Record<string, unknown> & { items: unknown[] }; issues: string[];
 }
 export function bindNativeAgentSpecimen(input: {
@@ -68,7 +68,8 @@ export function bindNativeAgentSpecimen(input: {
     if (!native?.renderContent) issues.push('The bound leaf has no descriptor-matched selected native content renderer.');
     const definitions = id ? sdk.studioSpecimenLeaves.filter(leaf => leaf.id === id) : [];
     const span = definitions.length === 1 ? definitions[0]?.span : undefined;
-    return { ...(native?.renderContent ? { Component: native.renderContent as ComponentType<Record<string, unknown>> } : {}), sectionId: id, registered: bound.registered && !!native?.renderContent && issues.length === 0, ...(span ? { span } : {}), items: bound.items, variantIds: bound.variantIds, props: { ...props, items: bound.items, ...(bound.cell?.axes ? { axes: bound.cell.axes } : {}) }, issues };
+    const registered = bound.registered && !!native?.renderContent && issues.length === 0;
+    return { ...(native?.renderContent ? { Component: native.renderContent as ComponentType<Record<string, unknown>> } : {}), sectionId: id, registered, presentationReady: registered && bound.presentationReady === true, ...(span ? { span } : {}), items: bound.items, variantIds: bound.variantIds, props: { ...props, items: bound.items, ...(bound.cell?.axes ? { axes: bound.cell.axes } : {}) }, issues };
   } catch (error) { return unavailable([error instanceof Error ? error.message : 'The native specimen plan could not be bound.']); }
 }
 

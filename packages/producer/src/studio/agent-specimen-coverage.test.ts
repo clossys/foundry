@@ -33,6 +33,12 @@ describe('bound specimen consumer contract', () => {
     expect(agentSpecimenCoverage(plan, { ...binding, items: [] })).toMatchObject({ ready: false, itemCount: 0 });
     expect(agentSpecimenCoverage(plan, { ...binding, items: undefined as unknown as [] }).ready).toBe(false);
   });
+  it('does not count a valid unpublished presentation as rendered page coverage, even if an adapter overclaims variants', () => {
+    const result = agentSpecimenCoverage({ ...plan, publicationState: 'unpublished' }, binding);
+    expect(result).toMatchObject({ ready: false, inventoryComplete: false, registered: true, itemCount: 2 });
+    expect(result.variants.every(variant => !variant.renderable)).toBe(true);
+    expect(result.issues).toContain('The publication has not been emitted.');
+  });
   it('detects a hidden missing variant without shrinking the expected source inventory', () => {
     const result = agentSpecimenCoverage(plan, { ...binding, variantIds: ['one'] });
     expect(result.ready).toBe(false); expect(result.expectedVariantIds).toEqual(['one', 'two']);

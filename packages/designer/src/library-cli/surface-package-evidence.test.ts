@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
 import { importFoundryFrames } from "../importers/foundry-frames.js";
 import { importFoundrySections } from "../importers/foundry-sections.js";
+import { specimenSectionSourceCatalog } from "../importers/specimen-sections.js";
 import { sha256 } from "../catalog-core/digest.js";
 import type { SurfaceCandidateDocument } from "../catalog-core/surface-types.js";
 import { packageBarrelExports, readSurfacePackageEvidence } from "./surface-package-evidence.js";
@@ -29,7 +30,7 @@ describe("packageBarrelExports", () => {
 describe("readSurfacePackageEvidence", () => {
   it("reads every package the Foundry Section/Frame candidates point at from the installed barrels", async () => {
     const evidence = await readSurfacePackageEvidence(fills);
-    expect(evidence.map(row => `${row.module}@${row.version}`)).toEqual(["@clossys/designer/blocks@0.12.0", "@clossys/designer/frames@0.12.0", "@clossys/designer/shell/server@0.12.0", "@clossys/publisher/web@0.13.0"]);
+    expect(evidence.map(row => `${row.module}@${row.version}`)).toEqual(["@clossys/designer/blocks@0.12.0", "@clossys/designer/frames@0.12.0", "@clossys/designer/shell/server@0.12.0"]);
     // Every pointed-at export is present in the inventory read from its own barrel.
     for (const doc of fills) {
       const entry = Object.values((doc as unknown as { sections?: Record<string, { impl: { module: string; export: string } }> }).sections ?? (doc as unknown as { frames: Record<string, { impl: { module: string; export: string } }> }).frames)[0]!;
@@ -70,5 +71,35 @@ describe("readSurfacePackageEvidence", () => {
     await fs.writeFile(join(root, "dist", "blocks", "index.js"), built);
     const faq = fills.filter(doc => doc.$extensions["com.clossys.fill"].slot === "sections.faq");
     expect(await readSurfacePackageEvidence(faq, { from: join(root, "src", "library-cli") })).toEqual([{ module: "@clossys/designer/blocks", version: "0.10.0", artifactSha256: sha256(built), values: ["Faq"], types: [] }]);
+  });
+  it("reads value and declaration exports of a retained specimen SOURCE dependency from the installed package", async () => {
+    const sources = specimenSectionSourceCatalog().fills;
+    const evidence = await readSurfacePackageEvidence(sources);
+    const studio = evidence.find(row => row.module === "@clossys/designer/studio")!;
+    expect(studio.values).toEqual(expect.arrayContaining(["SpecimenPageViewports", "bindNativeSpecimenContext", "studioSpecimenLeaves"]));
+    expect(studio.types).toContain("SpecimenLeafProps");
+    expect(studio.version).toBe(JSON.parse(readFileSync(resolve(here, "../../package.json"), "utf8")).version);
+    expect(studio.artifactSha256).toBe(sha256(JSON.stringify({ javascript: { path: './dist/studio/index.js', sha256: sha256(readFileSync(resolve(here, "../../dist/studio/index.js"), "utf8")) }, types: { path: './dist/studio/index.d.ts', sha256: sha256(readFileSync(resolve(here, "../../dist/studio/index.d.ts"), "utf8")) } })));
+    const absent = await fs.realpath(await fs.mkdtemp(join(tmpdir(), "surface-source-evidence-")));
+    temporary.push(absent);
+    expect(await readSurfacePackageEvidence(sources, { from: absent })).toEqual([]);
+  });
+  it("invalidates SOURCE dependency identity on declaration-only changes with unchanged export names", async () => {
+    const root = await fs.realpath(await fs.mkdtemp(join(tmpdir(), 'surface-declaration-evidence-')));
+    temporary.push(root);
+    const pkg = join(root, 'node_modules', '@clossys', 'designer');
+    await fs.mkdir(join(pkg, 'dist', 'studio'), { recursive: true });
+    await fs.writeFile(join(pkg, 'package.json'), JSON.stringify({ name: '@clossys/designer', version: '0.12.0', exports: { './studio': { import: './dist/studio/index.js', types: './dist/studio/index.d.ts' } } }));
+    await fs.writeFile(join(pkg, 'dist', 'studio', 'index.js'), 'export const SpecimenPageViewports = () => null;\n');
+    const declaration = join(pkg, 'dist', 'studio', 'index.d.ts');
+    await fs.writeFile(declaration, 'export declare const SpecimenPageViewports: () => null;\nexport interface SpecimenLeafProps { items: readonly unknown[] }\n');
+    const sources = specimenSectionSourceCatalog().fills;
+    const before = (await readSurfacePackageEvidence(sources, { from: root }))[0]!;
+    await fs.writeFile(declaration, 'export declare const SpecimenPageViewports: () => null;\nexport interface SpecimenLeafProps { items: readonly unknown[]; required: boolean }\n');
+    const after = (await readSurfacePackageEvidence(sources, { from: root }))[0]!;
+    expect(after.values).toEqual(before.values);
+    expect(after.types).toEqual(before.types);
+    expect(after.version).toBe(before.version);
+    expect(after.artifactSha256).not.toBe(before.artifactSha256);
   });
 });

@@ -54,6 +54,14 @@ describe('published native specimen runtime boundary', () => {
     const refused = bindNativeAgentSpecimen({ ...props, sdk: { ...sdk, bindAgentSpecimenPlan: () => ({ registered: false, items: [], variantIds: [], issues: ['Native source failure.'] }) } });
     expect(refused.registered).toBe(false); expect(refused.issues).toContain('Native source failure.');
   });
+  it('accepts a native unpublished presentation independently of variants but never without the selected executable registration', () => {
+    const { props, sdk, items, context } = fixture();
+    const unpublished = { ...sdk, bindAgentSpecimenPlan: () => ({ sectionId: leaf, registered: true, presentationReady: true, items, variantIds: [], issues: [] }) };
+    const result = bindNativeAgentSpecimen({ ...props, sdk: unpublished });
+    expect(result).toMatchObject({ registered: true, presentationReady: true, variantIds: [] });
+    expect(bindNativeAgentSpecimen({ ...props, sdk: unpublished, context: { ...context, surfaces: {} } })).toMatchObject({ registered: false, presentationReady: false });
+    expect(bindNativeAgentSpecimen({ ...props, sdk: { ...unpublished, bindAgentSpecimenPlan: () => ({ sectionId: leaf, registered: false, presentationReady: true, items, variantIds: [], issues: ['Native validation failed'] }) } })).toMatchObject({ registered: false, presentationReady: false });
+  });
   it('enumerates full Designer source cases through the official registry', () => {
     const { props, context, sdk } = fixture();
     (context.profile.components.components as Record<string, unknown>)['components.button'] = {};

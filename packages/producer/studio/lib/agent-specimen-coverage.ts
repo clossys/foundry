@@ -22,7 +22,9 @@ export interface AgentSpecimenCoverage {
 /** Expected identities come from the source plan, independently of the leaf adapter. */
 export function agentSpecimenCoverage(plan: AgentSpecimenPlan, binding?: ResolvedSpecimenEvidence): AgentSpecimenCoverage {
   const issues = [...plan.issues, ...(binding?.issues ?? [])];
-  const inventoryComplete = plan.issues.length === 0 && plan.expectedVariantIds.length > 0 && new Set(plan.expectedVariantIds).size === plan.expectedVariantIds.length;
+  const unpublished = plan.publicationState === 'unpublished';
+  const inventoryComplete = !unpublished && plan.issues.length === 0 && plan.expectedVariantIds.length > 0 && new Set(plan.expectedVariantIds).size === plan.expectedVariantIds.length;
+  if (unpublished) issues.push('The publication has not been emitted.');
   const registered = !!binding?.registered && /^sections\.specimen-[a-z][a-z0-9-]*$/.test(binding.sectionId);
   if (!registered) issues.push('A registered bound specimen leaf is unavailable.');
   const span = binding && ['full', 'half', 'third'].includes(binding.span ?? '') ? binding.span : undefined;
@@ -35,7 +37,7 @@ export function agentSpecimenCoverage(plan: AgentSpecimenPlan, binding?: Resolve
   if (new Set(declarations).size !== declarations.length) issues.push('The leaf adapter repeats a variant identity.');
   for (const id of declarations) if (!plan.expectedVariantIds.includes(id)) issues.push(`The leaf adapter declares an unknown variant: ${id}.`);
   const variants = plan.expectedVariantIds.map(id => {
-    const renderable = registered && !!span && itemCount > 0 && declarations.filter(value => value === id).length === 1;
+    const renderable = !unpublished && registered && !!span && itemCount > 0 && declarations.filter(value => value === id).length === 1;
     return { id, renderable, ...(!renderable ? { reason: 'The actual source variant has no registered leaf item.' } : {}) };
   });
   if (variants.some(variant => !variant.renderable)) issues.push('One or more source variants are unrendered.');

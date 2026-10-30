@@ -236,7 +236,7 @@ export type { ErrorStateProps, ErrorStateKind } from "./ErrorState.js";
 export { StatGroup } from "./StatGroup.js";
 export type { StatGroupProps, StatGroupItem, StatGroupLayout } from "./StatGroup.js";
 export { RecordCards } from "./RecordCards.js";
-export type { RecordCardsProps, RecordCardsRecord, RecordCardsLayout, RecordCardsHeadingLevel } from "./RecordCards.js";
+export type { RecordCardsProps, RecordCardsRecord, RecordCardsLayout, RecordCardsHeadingLevel, RecordCardsSpan } from "./RecordCards.js";
 export { CallToAction } from "./CallToAction.js";
 export type { CallToActionProps } from "./CallToAction.js";
 export { NoticeList } from "./NoticeList.js";

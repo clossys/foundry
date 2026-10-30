@@ -1,6 +1,6 @@
 "use client";
 
-import { createElement, forwardRef, isValidElement, type ReactNode } from "react";
+import { Children, createElement, forwardRef, isValidElement, type ReactNode } from "react";
 import type { CompositeResolved } from "../catalog-core/types.js";
 import type { ResolvedComponent } from "../catalog-core/resolve-components.js";
 import { componentMemberBinding } from "../catalog-core/emit-components.js";
@@ -38,9 +38,9 @@ export function emittedDesignerSpecimenContext(profile: CompositeResolved, runti
   const canonical = new Map(importFoundryComponents().fills.map(doc => [doc.$extensions["com.clossys.fill"].slot, componentOf(doc)]));
   const packageElements = new Set(originalNamespaces.flatMap(namespace => Object.values(namespace).filter(renderable)));
   const remap = (node: ReactNode): ReactNode => {
-    if (Array.isArray(node)) return node.map(remap);
+    if (Array.isArray(node)) return Children.map(node, remap);
     if (!isValidElement<Record<string, unknown>>(node)) return node;
-    const props = Object.fromEntries(Object.entries(node.props).map(([key, value]) => [key, isValidElement(value) || Array.isArray(value) ? remap(value as ReactNode) : key === "children" && typeof value === "function" ? (...args: unknown[]) => remap(value(...args)) : value]));
+    const props = remapProps(node.props);
     const selected = replacements.get(node.type);
     if (!selected && packageElements.has(node.type as ComponentSpecimenComponent)) {
       const name = originalNamespaces.flatMap(namespace => Object.entries(namespace).filter(([, value]) => value === node.type).map(([name]) => name)).join("/");
@@ -50,8 +50,21 @@ export function emittedDesignerSpecimenContext(profile: CompositeResolved, runti
       if (renderable(EmptyState)) return createElement(EmptyState, { role: "status", title: `NEED: ${name}`, description: "This fixture component is absent from the emitted consumer selection." });
       throw new Error(`NEED: fixture component ${name} is absent from the emitted consumer selection`);
     }
-    return createElement(selected ?? node.type, { ...props, key: node.key });
+    return createElement(selected ?? node.type, node.key === null ? props : { ...props, key: node.key });
   };
+  // Arrays outside `children` may be authored data (items, axes, coordinates).
+  // Inspect embedded elements without treating data objects as React children.
+  const remapValue = (value: unknown): unknown => {
+    if (isValidElement(value)) return remap(value);
+    if (!Array.isArray(value)) return value;
+    const mapped = value.map(remapValue);
+    return mapped.some((entry, index) => entry !== value[index]) ? mapped : value;
+  };
+  const remapProps = (props: Record<string, unknown>): Record<string, unknown> => Object.fromEntries(Object.entries(props).map(([key, value]) => [key,
+    key === "children"
+      ? typeof value === "function" ? (...args: unknown[]) => remap(value(...args)) : remap(value as ReactNode)
+      : remapValue(value),
+  ]));
   const bridge = (component: ResolvedComponent, forcedMember?: string): ComponentSpecimenComponent | undefined => {
     const Selected = runtime.components[primary(component.slot)];
     if (!renderable(Selected)) return undefined;
@@ -77,8 +90,7 @@ export function emittedDesignerSpecimenContext(profile: CompositeResolved, runti
         delete next.glyph;
         next.asset = asset.slot;
       }
-      for (const [key, value] of Object.entries(next)) if (isValidElement(value) || Array.isArray(value)) next[key] = remap(value as ReactNode);
-      return createElement(Selected, { ...next, ref });
+      return createElement(Selected, { ...remapProps(next), ref });
     });
     // Preserve native compound parts; never borrow them from a package module.
     for (const key of Object.keys(Selected)) if (!Object.hasOwn(Adapter, key)) Object.defineProperty(Adapter, key, { value: (Selected as unknown as Record<string, unknown>)[key], configurable: true });
@@ -122,7 +134,7 @@ export function emittedDesignerSpecimenContext(profile: CompositeResolved, runti
       if ("reason" in sample) throw new Error(`NEED: ${leaf}: ${sample.reason}`);
       const root = sample.render();
       if (!isValidElement<Record<string, unknown>>(root)) throw new Error(`NEED: ${leaf} has no root fixture props`);
-      const props = Object.fromEntries(Object.entries(root.props).map(([key, value]) => [key, isValidElement(value) || Array.isArray(value) ? remap(value as ReactNode) : value]));
+      const props = remapProps(root.props);
       // Use the selected runtime surface itself; the registry supplies fixture props only.
       return createElement(Selected, props);
     } };

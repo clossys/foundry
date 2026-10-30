@@ -22,7 +22,7 @@
           {
             "id": "needs",
             "label": "Needs",
-            "icon": "assets.icon-needs",
+            "icon": "assets.icon-warning",
             "defaultOpen": false,
             "module": {
               "section": "sections.task-list",
@@ -63,7 +63,7 @@
           {
             "id": "explorer",
             "label": "Explorer",
-            "icon": "assets.icon-explorer",
+            "icon": "assets.icon-folder",
             "defaultOpen": true,
             "module": {
               "section": "sections.explorer"
@@ -72,7 +72,7 @@
           {
             "id": "inspector",
             "label": "Inspector",
-            "icon": "assets.icon-inspector",
+            "icon": "assets.icon-info",
             "defaultOpen": false,
             "module": {
               "section": "sections.record-detail",
@@ -82,7 +82,7 @@
           {
             "id": "source",
             "label": "Source",
-            "icon": "assets.icon-source",
+            "icon": "assets.icon-document",
             "defaultOpen": false,
             "module": {
               "section": "sections.content"
@@ -91,7 +91,7 @@
           {
             "id": "checks",
             "label": "Checks",
-            "icon": "assets.icon-checks",
+            "icon": "assets.icon-check",
             "defaultOpen": false,
             "module": {
               "section": "sections.status-list"
@@ -100,14 +100,32 @@
           {
             "id": "needs",
             "label": "Needs",
-            "icon": "assets.icon-needs",
+            "icon": "assets.icon-warning",
             "defaultOpen": false,
             "module": {
               "section": "sections.task-list",
               "source": "director.open-requests"
             }
           }
-        ]
+        ],
+        "body": {
+          "template": "ia-scroll",
+          "bands": {
+            "L0": "sections.section-header",
+            "L1": "sections.section-header",
+            "L2": "sections.cards"
+          },
+          "row": {
+            "columns": [
+              "title",
+              "specimen",
+              "status",
+              "version",
+              "usedBy",
+              "linkOut"
+            ]
+          }
+        }
       },
       {
         "id": "designer",
@@ -127,7 +145,7 @@
           {
             "id": "explorer",
             "label": "Explorer",
-            "icon": "assets.icon-explorer",
+            "icon": "assets.icon-folder",
             "defaultOpen": true,
             "module": {
               "section": "sections.explorer"
@@ -136,7 +154,7 @@
           {
             "id": "inspector",
             "label": "Inspector",
-            "icon": "assets.icon-inspector",
+            "icon": "assets.icon-info",
             "defaultOpen": false,
             "module": {
               "section": "sections.record-detail",
@@ -146,7 +164,7 @@
           {
             "id": "source",
             "label": "Source",
-            "icon": "assets.icon-source",
+            "icon": "assets.icon-document",
             "defaultOpen": false,
             "module": {
               "section": "sections.content"
@@ -155,7 +173,7 @@
           {
             "id": "checks",
             "label": "Checks",
-            "icon": "assets.icon-checks",
+            "icon": "assets.icon-check",
             "defaultOpen": false,
             "module": {
               "section": "sections.status-list"
@@ -164,14 +182,32 @@
           {
             "id": "needs",
             "label": "Needs",
-            "icon": "assets.icon-needs",
+            "icon": "assets.icon-warning",
             "defaultOpen": false,
             "module": {
               "section": "sections.task-list",
               "source": "designer.open-requests"
             }
           }
-        ]
+        ],
+        "body": {
+          "template": "ia-scroll",
+          "bands": {
+            "L0": "sections.section-header",
+            "L1": "sections.section-header",
+            "L2": "sections.cards"
+          },
+          "row": {
+            "columns": [
+              "title",
+              "specimen",
+              "status",
+              "version",
+              "usedBy",
+              "linkOut"
+            ]
+          }
+        }
       },
       {
         "id": "writer",
@@ -191,7 +227,7 @@
           {
             "id": "explorer",
             "label": "Explorer",
-            "icon": "assets.icon-explorer",
+            "icon": "assets.icon-folder",
             "defaultOpen": true,
             "module": {
               "section": "sections.explorer"
@@ -200,7 +236,7 @@
           {
             "id": "inspector",
             "label": "Inspector",
-            "icon": "assets.icon-inspector",
+            "icon": "assets.icon-info",
             "defaultOpen": false,
             "module": {
               "section": "sections.record-detail",
@@ -210,7 +246,7 @@
           {
             "id": "source",
             "label": "Source",
-            "icon": "assets.icon-source",
+            "icon": "assets.icon-document",
             "defaultOpen": false,
             "module": {
               "section": "sections.content"
@@ -219,7 +255,7 @@
           {
             "id": "checks",
             "label": "Checks",
-            "icon": "assets.icon-checks",
+            "icon": "assets.icon-check",
             "defaultOpen": false,
             "module": {
               "section": "sections.status-list"
@@ -228,14 +264,32 @@
           {
             "id": "needs",
             "label": "Needs",
-            "icon": "assets.icon-needs",
+            "icon": "assets.icon-warning",
             "defaultOpen": false,
             "module": {
               "section": "sections.task-list",
               "source": "writer.open-requests"
             }
           }
-        ]
+        ],
+        "body": {
+          "template": "ia-scroll",
+          "bands": {
+            "L0": "sections.section-header",
+            "L1": "sections.section-header",
+            "L2": "sections.cards"
+          },
+          "row": {
+            "columns": [
+              "title",
+              "specimen",
+              "status",
+              "version",
+              "usedBy",
+              "linkOut"
+            ]
+          }
+        }
       },
       {
         "id": "publisher",
@@ -255,7 +309,7 @@
           {
             "id": "explorer",
             "label": "Explorer",
-            "icon": "assets.icon-explorer",
+            "icon": "assets.icon-folder",
             "defaultOpen": true,
             "module": {
               "section": "sections.explorer"
@@ -264,7 +318,7 @@
           {
             "id": "inspector",
             "label": "Inspector",
-            "icon": "assets.icon-inspector",
+            "icon": "assets.icon-info",
             "defaultOpen": false,
             "module": {
               "section": "sections.record-detail",
@@ -274,7 +328,7 @@
           {
             "id": "source",
             "label": "Source",
-            "icon": "assets.icon-source",
+            "icon": "assets.icon-document",
             "defaultOpen": false,
             "module": {
               "section": "sections.content"
@@ -283,7 +337,7 @@
           {
             "id": "checks",
             "label": "Checks",
-            "icon": "assets.icon-checks",
+            "icon": "assets.icon-check",
             "defaultOpen": false,
             "module": {
               "section": "sections.status-list"
@@ -292,14 +346,32 @@
           {
             "id": "needs",
             "label": "Needs",
-            "icon": "assets.icon-needs",
+            "icon": "assets.icon-warning",
             "defaultOpen": false,
             "module": {
               "section": "sections.task-list",
               "source": "publisher.open-requests"
             }
           }
-        ]
+        ],
+        "body": {
+          "template": "ia-scroll",
+          "bands": {
+            "L0": "sections.section-header",
+            "L1": "sections.section-header",
+            "L2": "sections.cards"
+          },
+          "row": {
+            "columns": [
+              "title",
+              "specimen",
+              "status",
+              "version",
+              "usedBy",
+              "linkOut"
+            ]
+          }
+        }
       }
     ]
   },
@@ -587,7 +659,7 @@
       {
         "id": "needs",
         "label": "Needs",
-        "icon": "assets.icon-needs",
+        "icon": "assets.icon-warning",
         "defaultOpen": false,
         "module": {
           "section": "sections.task-list",
@@ -599,7 +671,7 @@
       {
         "id": "explorer",
         "label": "Explorer",
-        "icon": "assets.icon-explorer",
+        "icon": "assets.icon-folder",
         "defaultOpen": true,
         "module": {
           "section": "sections.explorer"
@@ -608,7 +680,7 @@
       {
         "id": "inspector",
         "label": "Inspector",
-        "icon": "assets.icon-inspector",
+        "icon": "assets.icon-info",
         "defaultOpen": false,
         "module": {
           "section": "sections.record-detail",
@@ -618,7 +690,7 @@
       {
         "id": "source",
         "label": "Source",
-        "icon": "assets.icon-source",
+        "icon": "assets.icon-document",
         "defaultOpen": false,
         "module": {
           "section": "sections.content"
@@ -627,7 +699,7 @@
       {
         "id": "checks",
         "label": "Checks",
-        "icon": "assets.icon-checks",
+        "icon": "assets.icon-check",
         "defaultOpen": false,
         "module": {
           "section": "sections.status-list"
@@ -636,7 +708,7 @@
       {
         "id": "needs",
         "label": "Needs",
-        "icon": "assets.icon-needs",
+        "icon": "assets.icon-warning",
         "defaultOpen": false,
         "module": {
           "section": "sections.task-list",
@@ -648,7 +720,7 @@
       {
         "id": "explorer",
         "label": "Explorer",
-        "icon": "assets.icon-explorer",
+        "icon": "assets.icon-folder",
         "defaultOpen": true,
         "module": {
           "section": "sections.explorer"
@@ -657,7 +729,7 @@
       {
         "id": "inspector",
         "label": "Inspector",
-        "icon": "assets.icon-inspector",
+        "icon": "assets.icon-info",
         "defaultOpen": false,
         "module": {
           "section": "sections.record-detail",
@@ -667,7 +739,7 @@
       {
         "id": "source",
         "label": "Source",
-        "icon": "assets.icon-source",
+        "icon": "assets.icon-document",
         "defaultOpen": false,
         "module": {
           "section": "sections.content"
@@ -676,7 +748,7 @@
       {
         "id": "checks",
         "label": "Checks",
-        "icon": "assets.icon-checks",
+        "icon": "assets.icon-check",
         "defaultOpen": false,
         "module": {
           "section": "sections.status-list"
@@ -685,7 +757,7 @@
       {
         "id": "needs",
         "label": "Needs",
-        "icon": "assets.icon-needs",
+        "icon": "assets.icon-warning",
         "defaultOpen": false,
         "module": {
           "section": "sections.task-list",
@@ -697,7 +769,7 @@
       {
         "id": "explorer",
         "label": "Explorer",
-        "icon": "assets.icon-explorer",
+        "icon": "assets.icon-folder",
         "defaultOpen": true,
         "module": {
           "section": "sections.explorer"
@@ -706,7 +778,7 @@
       {
         "id": "inspector",
         "label": "Inspector",
-        "icon": "assets.icon-inspector",
+        "icon": "assets.icon-info",
         "defaultOpen": false,
         "module": {
           "section": "sections.record-detail",
@@ -716,7 +788,7 @@
       {
         "id": "source",
         "label": "Source",
-        "icon": "assets.icon-source",
+        "icon": "assets.icon-document",
         "defaultOpen": false,
         "module": {
           "section": "sections.content"
@@ -725,7 +797,7 @@
       {
         "id": "checks",
         "label": "Checks",
-        "icon": "assets.icon-checks",
+        "icon": "assets.icon-check",
         "defaultOpen": false,
         "module": {
           "section": "sections.status-list"
@@ -734,7 +806,7 @@
       {
         "id": "needs",
         "label": "Needs",
-        "icon": "assets.icon-needs",
+        "icon": "assets.icon-warning",
         "defaultOpen": false,
         "module": {
           "section": "sections.task-list",
@@ -746,7 +818,7 @@
       {
         "id": "explorer",
         "label": "Explorer",
-        "icon": "assets.icon-explorer",
+        "icon": "assets.icon-folder",
         "defaultOpen": true,
         "module": {
           "section": "sections.explorer"
@@ -755,7 +827,7 @@
       {
         "id": "inspector",
         "label": "Inspector",
-        "icon": "assets.icon-inspector",
+        "icon": "assets.icon-info",
         "defaultOpen": false,
         "module": {
           "section": "sections.record-detail",
@@ -765,7 +837,7 @@
       {
         "id": "source",
         "label": "Source",
-        "icon": "assets.icon-source",
+        "icon": "assets.icon-document",
         "defaultOpen": false,
         "module": {
           "section": "sections.content"
@@ -774,7 +846,7 @@
       {
         "id": "checks",
         "label": "Checks",
-        "icon": "assets.icon-checks",
+        "icon": "assets.icon-check",
         "defaultOpen": false,
         "module": {
           "section": "sections.status-list"
@@ -783,7 +855,7 @@
       {
         "id": "needs",
         "label": "Needs",
-        "icon": "assets.icon-needs",
+        "icon": "assets.icon-warning",
         "defaultOpen": false,
         "module": {
           "section": "sections.task-list",
@@ -791,6 +863,80 @@
         }
       }
     ]
+  },
+  "pageBodies": {
+    "director": {
+      "template": "ia-scroll",
+      "bands": {
+        "L0": "sections.section-header",
+        "L1": "sections.section-header",
+        "L2": "sections.cards"
+      },
+      "row": {
+        "columns": [
+          "title",
+          "specimen",
+          "status",
+          "version",
+          "usedBy",
+          "linkOut"
+        ]
+      }
+    },
+    "designer": {
+      "template": "ia-scroll",
+      "bands": {
+        "L0": "sections.section-header",
+        "L1": "sections.section-header",
+        "L2": "sections.cards"
+      },
+      "row": {
+        "columns": [
+          "title",
+          "specimen",
+          "status",
+          "version",
+          "usedBy",
+          "linkOut"
+        ]
+      }
+    },
+    "writer": {
+      "template": "ia-scroll",
+      "bands": {
+        "L0": "sections.section-header",
+        "L1": "sections.section-header",
+        "L2": "sections.cards"
+      },
+      "row": {
+        "columns": [
+          "title",
+          "specimen",
+          "status",
+          "version",
+          "usedBy",
+          "linkOut"
+        ]
+      }
+    },
+    "publisher": {
+      "template": "ia-scroll",
+      "bands": {
+        "L0": "sections.section-header",
+        "L1": "sections.section-header",
+        "L2": "sections.cards"
+      },
+      "row": {
+        "columns": [
+          "title",
+          "specimen",
+          "status",
+          "version",
+          "usedBy",
+          "linkOut"
+        ]
+      }
+    }
   },
   "breadcrumbs": {
     "home": [

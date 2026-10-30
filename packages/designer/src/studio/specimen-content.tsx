@@ -1,12 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { SpecimenUnpublishedPage } from "./specimen-content-ports.js";
 import type { RichTextValue } from "../components/RichText.js";
 import { richTextDocument } from "../components/rich-text/schema.js";
 import type { DesignerSpecimenNeed } from "./DesignerSpecimen.js";
 import type { ComponentSpecimenBinding, ComponentSpecimenComponent } from "./component-specimens.js";
-import { SpecimenLayoutSection, specimenComponent, specimenPart, specimenLayoutNeeds, type SpecimenAxis, type SpecimenItem, type SpecimenLeafDefinition, type SpecimenLeafProps } from "./specimen-layouts.js";
+import { SpecimenLayoutSection, specimenComponent, specimenPart, specimenLayoutNeeds, type SpecimenItem, type SpecimenLeafDefinition, type SpecimenLeafProps } from "./specimen-layouts.js";
+import { pageViewportSpecimenLeaf, pageViewportSpecimenNeeds } from "./specimen-page-viewports.js";
+export { SpecimenPageViewports, pageViewportItems, pageViewportCases, unpublishedPageViewportCases, isPageViewportValue, isUnpublishedPageViewportValue, isSpecimenUnpublishedPage, pageViewportSpecimenNeeds } from "./specimen-page-viewports.js";
+export type { PageViewportValue, UnpublishedPageViewportValue, SpecimenPageViewportValue } from "./specimen-page-viewports.js";
 
 export interface RichPassageValue {
   readonly passage: RichTextValue;
@@ -26,23 +28,9 @@ export type CopyInContextValue = {
   readonly locale: string;
   readonly dir: "ltr" | "rtl" | "auto";
 };
-export interface PageViewportValue {
-  readonly publication?: "published";
-  readonly pageId: string;
-  readonly viewport: { readonly id: string; readonly label: string; readonly width: number; readonly height: number };
-}
-/** Explicit item state; an emitted:false legacy page is never sufficient. */
-export interface UnpublishedPageViewportValue extends Omit<PageViewportValue, "publication"> {
-  readonly publication: "unpublished";
-}
-export type SpecimenPageViewportValue = PageViewportValue | UnpublishedPageViewportValue;
 const object = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 const text = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0;
 const renderable = (value: unknown): value is ComponentSpecimenComponent => typeof value === "function" || typeof value === "object" && value !== null && "$$typeof" in value;
-function loopbackOrigin(value: string): boolean {
-  if (!/^http:\/\/127\.0\.0\.1:[1-9][0-9]*$/.test(value)) return false;
-  try { return new URL(value).origin === value; } catch { return false; }
-}
 /** Navigation exposes real named exports, rather than the GridList compound API. */
 function navigationParts(binding: ComponentSpecimenBinding) {
   const item = binding.exports[binding.source === "shadcn@aria" ? "TreeItem" : "NavigationTreeItem"];
@@ -55,29 +43,9 @@ const passage = (value: unknown): value is RichTextValue => {
 };
 export const isRichPassageValue = (value: unknown): value is RichPassageValue => object(value) && passage(value.passage) && (value.clamp === undefined || object(value.clamp) && value.clamp.lines === 12 && text(value.clamp.showMore));
 export const isCopyInContextValue = (value: unknown): value is CopyInContextValue => object(value) && text(value.context) && text(value.locale) && ["ltr", "rtl", "auto"].includes(String(value.dir)) && (value.role === "body" ? passage(value.passage) : ["headline", "cta", "nav", "error", "empty"].includes(String(value.role)) && text(value.text));
-export const isPageViewportValue = (value: unknown): value is SpecimenPageViewportValue => object(value) && (value.publication === undefined || value.publication === "published" || value.publication === "unpublished") && text(value.pageId) && object(value.viewport) && text(value.viewport.id) && text(value.viewport.label) && typeof value.viewport.width === "number" && Number.isInteger(value.viewport.width) && value.viewport.width > 0 && typeof value.viewport.height === "number" && Number.isInteger(value.viewport.height) && value.viewport.height > 0;
-
-export const isUnpublishedPageViewportValue = (value: unknown): value is UnpublishedPageViewportValue => isPageViewportValue(value) && "publication" in value && value.publication === "unpublished";
-export const isSpecimenUnpublishedPage = (value: unknown): value is SpecimenUnpublishedPage => object(value) && value.publication === "unpublished" && value.emitted === false && text(value.id) && text(value.route) && /^\/(?!\/)/.test(value.route) && object(value.emptyState) && [value.emptyState.title, value.emptyState.description, value.emptyState.command, value.emptyState.context].every(text);
-
 /** Builders preserve caller-owned identities, full content, labels and coordinates. */
 export const richPassageItems = (items: readonly SpecimenItem<RichPassageValue>[]): readonly SpecimenItem<RichPassageValue>[] => items;
 export const copyInContextItems = (items: readonly SpecimenItem<CopyInContextValue>[]): readonly SpecimenItem<CopyInContextValue>[] => items;
-export const pageViewportItems = (items: readonly SpecimenItem<SpecimenPageViewportValue>[]): readonly SpecimenItem<SpecimenPageViewportValue>[] => items;
-/** One emitted page becomes the caller's viewport cases, with no Studio layout work. */
-export function pageViewportCases(page: { readonly id: string; readonly label: string }, viewports: readonly PageViewportValue["viewport"][], labels: { readonly page: string; readonly viewport: string }): { readonly items: readonly SpecimenItem<PageViewportValue>[]; readonly axes: readonly SpecimenAxis[] } {
-  return {
-    axes: [{ id: "page", label: labels.page, values: [{ id: page.id, label: page.label }] }, { id: "viewport", label: labels.viewport, values: viewports.map(viewport => ({ id: viewport.id, label: viewport.label })) }],
-    items: viewports.map(viewport => ({ id: `${page.id}/${viewport.id}`, label: viewport.label, value: { pageId: page.id, viewport }, coordinates: { page: page.id, viewport: viewport.id } })),
-  };
-}
-
-/** Transport confirmed unpublished pages through the same intrinsic viewport layout. */
-export function unpublishedPageViewportCases(page: { readonly id: string; readonly label: string }, viewports: readonly PageViewportValue["viewport"][], labels: { readonly page: string; readonly viewport: string }): { readonly items: readonly SpecimenItem<UnpublishedPageViewportValue>[]; readonly axes: readonly SpecimenAxis[] } {
-  const cases = pageViewportCases(page, viewports, labels);
-  return { axes: cases.axes, items: cases.items.map(item => ({ ...item, value: { ...item.value, publication: "unpublished" } })) };
-}
-
 function failure(props: SpecimenLeafProps, id: string, reason: string): ReactNode {
   const semantic = specimenComponent(props.context, "components.semantic-content");
   if ("reason" in semantic) return props.need(semantic);
@@ -92,6 +60,7 @@ function surfaceNeed(props: SpecimenLeafProps, leaf: "sections.section-header" |
   return selected && bound?.descriptorHash === selected.descriptorHash && bound.renderContent ? [] : [{ leaf, reason: "The selected surface has no descriptor-matched native content renderer." }];
 }
 export function contentSpecimenNeeds(id: string, props: SpecimenLeafProps): readonly DesignerSpecimenNeed[] {
+  if (id === "sections.specimen-page-viewports") return pageViewportSpecimenNeeds(props);
   const needs = componentNeeds(props, ["components.semantic-content"]);
   const definition = contentSpecimenLeaves.find(leaf => leaf.id === id);
   if (definition) needs.push(...specimenLayoutNeeds({ ...props, id: definition.id, layout: definition.layout }));
@@ -119,18 +88,8 @@ export function contentSpecimenNeeds(id: string, props: SpecimenLeafProps): read
         if ("reason" in nav) needs.push(nav);
         else if (!navigationParts(nav)) needs.push({ leaf: id, reason: "The selected navigation tree has no native item and content parts." });
       }
-    } else if (id === "sections.specimen-page-viewports") {
-      needs.push(...componentNeeds(props, ["components.badge"]));
-      const value = item.value;
-      if (!isPageViewportValue(value)) { needs.push({ leaf: id, reason: `Page viewport data is unavailable: ${item.id}` }); continue; }
-      const port = props.context.pagePreview, page = port?.pages.find(page => page.id === value.pageId);
-      if (isUnpublishedPageViewportValue(value)) {
-        if (!port || port.engine !== "producer-emitted-page@1" || !loopbackOrigin(port.origin) || !isSpecimenUnpublishedPage(page)) needs.push({ leaf: id, reason: `No confirmed native unpublished page is available: ${value.pageId}` });
-        needs.push(...surfaceNeed(props, "sections.empty-state"));
-      } else if (!port || port.engine !== "producer-emitted-page@1" || !loopbackOrigin(port.origin) || !page || "publication" in page || !page.emitted || !text(page.stage) || !/^\/(?!\/)/.test(page.route) || !/^\/preview\/[a-z][a-z0-9.-]*\/pages\/[a-z][a-z0-9.-]*\.html$/.test(page.previewUrl) || page.previewUrl.includes("..")) needs.push({ leaf: id, reason: `No live native emitted-page renderer is available: ${value.pageId}` });
     }
   }
-  if (id === "sections.specimen-page-viewports" && new Set(props.items.flatMap(item => isPageViewportValue(item.value) ? [item.value.pageId] : [])).size > 1) needs.push({ leaf: id, reason: "A Publisher row must describe one page at its viewport cases." });
   return needs;
 }
 function richNode(props: SpecimenLeafProps, value: RichPassageValue, label: string): ReactNode {
@@ -183,26 +142,8 @@ export function SpecimenCopyInContext(props: SpecimenLeafProps): ReactNode {
   if (needs.length) return failure(props, id, needs.map(row => `${row.leaf}: ${row.reason}`).join("; "));
   return <SpecimenLayoutSection {...props} id={id} label={props.items[0]!.label} layout="matrix" renderItem={item => isCopyInContextValue(item.value) ? copyNode(props, item, item.value) : null} />;
 }
-export function SpecimenPageViewports(props: SpecimenLeafProps): ReactNode {
-  const id = "sections.specimen-page-viewports", needs = contentSpecimenNeeds(id, props);
-  if (needs.length) return failure(props, id, needs.map(row => `${row.leaf}: ${row.reason}`).join("; "));
-  return <SpecimenLayoutSection {...props} id={id} label={props.items[0]!.label} layout="matrix" renderItem={item => {
-    if (!isPageViewportValue(item.value)) return null;
-    const value = item.value, port = props.context.pagePreview!, page = port.pages.find(page => page.id === value.pageId)!;
-    const semantic = specimenComponent(props.context, "components.semantic-content"), badge = specimenComponent(props.context, "components.badge");
-    if ("reason" in semantic) return props.need(semantic);
-    if ("reason" in badge) return props.need(badge);
-    const Content = semantic.Component, Badge = badge.Component;
-    if (isUnpublishedPageViewportValue(value) && isSpecimenUnpublishedPage(page)) {
-      const empty = page.emptyState;
-      return <Content as="section" data-publication-route={page.route} data-publication-state="unpublished" data-publication-rendered="false" data-publication-context={empty.context}><Content as="p">{page.route}</Content>{props.context.surfaces!["sections.empty-state"]!.renderContent!({ title: empty.title, description: empty.description })}<Content as="p"><Content as="code">{empty.command}</Content></Content></Content>;
-    }
-    if ("publication" in page) return null;
-    return <Content as="section" data-publication-route={page.route} data-publication-stage={page.stage}><Content as="p">{page.route}</Content><Badge>{page.stage}</Badge>{port.renderViewport({ page, viewport: value.viewport, interactive: false, fullSize: props.expanded === true })}</Content>;
-  }} />;
-}
 export const contentSpecimenLeaves: readonly SpecimenLeafDefinition[] = [
   { id: "sections.specimen-rich-passage", layout: "ladder", span: "full", compatible: [{ kind: "passage" }], requirements: ["components.rich-text"], validate: props => contentSpecimenNeeds("sections.specimen-rich-passage", props), render: SpecimenRichPassage },
   { id: "sections.specimen-copy-in-context", layout: "matrix", span: "full", compatible: [{ kind: "copy" }], requirements: ["components.rich-text", "components.button", "components.navigation-tree", "sections.section-header", "sections.empty-state"], validate: props => contentSpecimenNeeds("sections.specimen-copy-in-context", props), render: SpecimenCopyInContext },
-  { id: "sections.specimen-page-viewports", layout: "matrix", span: "full", compatible: [{ kind: "page" }], requirements: ["components.badge", "producer-emitted-page@1"], validate: props => contentSpecimenNeeds("sections.specimen-page-viewports", props), render: SpecimenPageViewports },
+  pageViewportSpecimenLeaf,
 ];

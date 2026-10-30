@@ -11,11 +11,14 @@ vi.mock('../../studio/components/StudioSelection', async () => {
     useStudioUI: () => ({ EmptyState: blocks.EmptyState, Link: components.Link, Icon: () => null }),
   };
 });
-vi.mock('../../studio/components/AgentL3Specimen', () => ({ useAgentSpecimenCoverage: (_index: unknown, cell: { id: string }) => ({ cellId: cell.id, ready: false, registered: false, itemCount: 0, expectedVariantIds: [`${cell.id}:desktop`, `${cell.id}:mobile`], variants: [], issues: ['No selected specimen resolver'] }) }));
+vi.mock('../../studio/components/AgentL3Specimen', () => ({
+  AgentL3Specimen: ({ selectedId }: { selectedId: string }) => createElement('section', { 'data-ds-leaf': 'sections.specimen-page-viewports' }, `Bound specimen ${selectedId}`),
+  useAgentSpecimenCoverage: (_index: unknown, cell: { id: string }) => ({ cellId: cell.id, ready: false, registered: false, itemCount: 0, expectedVariantIds: [`${cell.id}:desktop`, `${cell.id}:mobile`], variants: [], issues: ['No selected specimen resolver'] }),
+}));
 import { StudioAgentIA } from '../../studio/components/StudioAgentIA';
 
-describe('selected native IA partial render', () => {
-  it('renders every authored L3 in official Cards grid with plain NEED text, safe linkouts and no raw source', () => {
+describe('selected native IA specimen body', () => {
+  it('mounts every authored L3 bound specimen in official Cards with safe linkouts and no raw source', () => {
     const index: AgentCells = { agent: 'publisher', state: 'ready', cells: ['one', 'two'].map(name => ({ id: `sample.${name}`, title: name, version: 1, status: 'draft' })), tree: { tree: [{ id: 'sample', name: 'Sample', children: [{ id: 'sample.pages', name: 'Pages', cells: ['sample.two', 'sample.one'] }] }] } };
     const html = renderToStaticMarkup(createElement(StudioAgentIA, { index, indexes: [index], selectedId: 'sample.two', onSelect: () => undefined }));
     expect(html).toContain('data-ds-leaf="sections.cards"');
@@ -24,7 +27,11 @@ describe('selected native IA partial render', () => {
     expect(html.match(/href="\/content\/publisher\/sample\.(?:one|two)"/g)).toHaveLength(2);
     expect(html.match(/rel="noopener noreferrer"/g)).toHaveLength(2);
     expect(html).toContain('inventory incomplete');
-    expect(html).toContain('NEED: sections.cards full specimen-body');
+    expect(html).toContain('Bound specimen sample.two');
+    expect(html).toContain('Bound specimen sample.one');
+    expect(html.match(/data-ds-leaf="sections.specimen-page-viewports"/g)).toHaveLength(2);
+    expect(html).toContain('data-record-id="sample.two" data-selected="true"');
+    expect(html).not.toContain('NEED: sections.cards full specimen-body');
     expect(html).not.toMatch(/contenteditable|data-studio-source|---\ntitle:/i);
   });
 });

@@ -31,10 +31,10 @@ export function projectAgentSpecimenPlan(input: {
     } else if (agent === "writer" && item.kind === "writer" && text(item.role) && ["headline", "body", "cta", "nav", "error", "empty"].includes(item.role) && text(item.context) && text(item.locale) && text(item.value)) {
       const value = { role: item.role, context: item.context, locale: item.locale, dir: /^(?:ar|fa|he|ur|ps|dv|yi)(?:-|$)/i.test(item.locale) ? "rtl" : "ltr", ...(item.role === "body" ? { passage: item.value } : { text: item.value }) };
       items.push({ id: item.id, label: item.context, value, ...(object(item.coordinates) ? { coordinates: item.coordinates as Record<string, string> } : {}) });
-    } else if (agent === "publisher" && item.kind === "publisher" && object(item.page) && text(item.page.id) && object(item.viewport) && text(item.viewport.id) && typeof item.viewport.width === "number" && typeof item.viewport.height === "number" && Number.isFinite(item.viewport.width) && Number.isFinite(item.viewport.height)) {
-      const page = item.page.id, viewport = item.viewport.id;
-      pageAxes.set(page, text(item.page.title) ? item.page.title : page); viewportAxes.set(viewport, viewport);
-      items.push({ id: item.id, label: viewport, value: { pageId: page, viewport: { id: viewport, width: item.viewport.width, height: item.viewport.height, label: viewport } }, coordinates: { page, viewport } });
+    } else if (agent === "publisher" && item.kind === "publisher" && (object(item.page) && text(item.page.id) || item.publication === "unpublished" && text(plan.cellId)) && object(item.viewport) && text(item.viewport.id) && typeof item.viewport.width === "number" && typeof item.viewport.height === "number" && Number.isFinite(item.viewport.width) && Number.isFinite(item.viewport.height)) {
+      const page = object(item.page) && text(item.page.id) ? item.page.id : plan.cellId, viewport = item.viewport.id;
+      pageAxes.set(page, object(item.page) && text(item.page.title) ? item.page.title : page); viewportAxes.set(viewport, viewport);
+      items.push({ id: item.id, label: viewport, value: { pageId: page, ...(item.publication === "unpublished" ? { publication: "unpublished" } : {}), viewport: { id: viewport, width: item.viewport.width, height: item.viewport.height, label: text(item.viewport.label) ? item.viewport.label : viewport } }, coordinates: { page, viewport } });
     } else issues.push(`Native ${agent} specimen item is unavailable or unsupported: ${item.id}`);
   }
   if (agent === "designer") issues.push("Designer specimens require the native Designer item enumeration.");
@@ -55,6 +55,8 @@ export function bindAgentSpecimenPlan(input: Parameters<typeof projectAgentSpeci
 }): {
   readonly sectionId?: string;
   readonly registered: boolean;
+  /** Valid native presentation; an unpublished state never proves a rendered publication. */
+  readonly presentationReady: boolean;
   readonly items: readonly SpecimenItem[];
   readonly variantIds: readonly string[];
   readonly cell: SpecimenCoverageCell;
@@ -62,10 +64,11 @@ export function bindAgentSpecimenPlan(input: Parameters<typeof projectAgentSpeci
 } {
   const projection = projectAgentSpecimenPlan(input), issues = [...projection.issues];
   const binding = resolveSpecimenLeafBinding(projection.cell, studioSpecimenLeaves);
-  if ("error" in binding) return { ...projection, registered: false, items: projection.cell.items, variantIds: [], issues: [...issues, binding.error] };
+  if ("error" in binding) return { ...projection, registered: false, presentationReady: false, items: projection.cell.items, variantIds: [], issues: [...issues, binding.error] };
   const leaf = binding.leaf;
   if (typeof input.nativeRegistered !== "function" || !input.nativeRegistered(leaf.id)) issues.push("The bound leaf has no selected native registration.");
   const props = { ...input.props, items: projection.cell.items, axes: projection.cell.axes };
   for (const need of leaf.validate?.(props) ?? []) issues.push(`${need.leaf}: ${need.reason}`);
-  return { sectionId: leaf.id, registered: issues.length === 0, items: projection.cell.items, variantIds: issues.length ? [] : projection.cell.items.map(item => item.id), cell: projection.cell, issues };
+  const unpublished = input.agent === "publisher" && projection.cell.items.some(item => object(item.value) && item.value.publication === "unpublished");
+  return { sectionId: leaf.id, registered: issues.length === 0, presentationReady: issues.length === 0, items: projection.cell.items, variantIds: issues.length || unpublished ? [] : projection.cell.items.map(item => item.id), cell: projection.cell, issues };
 }

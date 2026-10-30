@@ -1,0 +1,255 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.specimen-asset-grid",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./studio#SpecimenAssetGrid",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.specimen-asset-grid",
+      "source": "foundry",
+      "sourceAddress": "./studio#SpecimenAssetGrid",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "specimen-asset-grid": {
+      "composes": [
+        "components.button",
+        "components.disclosure",
+        "components.grid-list",
+        "components.logo",
+        "components.semantic-content",
+        "components.switch",
+        "components.text-field"
+      ],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.button",
+          "components.switch",
+          "components.text-field"
+        ],
+        "scannedReads": {
+          "assets": [
+            "assets.favicon",
+            "assets.icon-file-text",
+            "assets.mark"
+          ],
+          "components": [
+            "components.button",
+            "components.switch",
+            "components.text-field"
+          ],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.body-size",
+            "tokens.border-color",
+            "tokens.color-ramp",
+            "tokens.spacing",
+            "tokens.surface-color",
+            "tokens.text-color"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/access-matrix/sample.ts",
+            "sha256": "5191dc10a0d40fdc10f72806768398ce86a0cbc4e5196353d8784876fbb5321d"
+          },
+          {
+            "path": "packages/designer/src/blocks/activity-feed/sample.ts",
+            "sha256": "2edbf53088573307536cd3adb49ea5d2c0945928552f9e9316fcf6380ba1dac8"
+          },
+          {
+            "path": "packages/designer/src/blocks/audit-log/sample.ts",
+            "sha256": "6199c506dde15fdc2566ba8bfa13d64b3151032de1831ffe965849c133000e5a"
+          },
+          {
+            "path": "packages/designer/src/blocks/column-mapper/sample.ts",
+            "sha256": "b2dd735b8f0121079789f1d7c7078ae69f62b11964710aa18da48842e1781c0d"
+          },
+          {
+            "path": "packages/designer/src/blocks/filter-builder/sample.ts",
+            "sha256": "9f2cf69d1cc6e0df81a6df6a8f4e12be7009c6f6743c702e48bea9efedf00abb"
+          },
+          {
+            "path": "packages/designer/src/blocks/form-wizard/sample.tsx",
+            "sha256": "ae3317db27b479bb93118e6a07a711f30845e2c11b9352a988e5e2eb7516255c"
+          },
+          {
+            "path": "packages/designer/src/blocks/settings-section/sample.tsx",
+            "sha256": "72119d2d3c73bcaf09a65c51c808354eeb771fadcaa99498873476247bf43d2c"
+          },
+          {
+            "path": "packages/designer/src/blocks/timeline/sample.ts",
+            "sha256": "fef41da0de3f11fb28eef492fe1f618cbc40f9aaad9357f8be356593b9c615ad"
+          },
+          {
+            "path": "packages/designer/src/blocks/usage-summary/sample.ts",
+            "sha256": "b32cde5cadede81c571c4380e151ebc2a7e43456a0fcac9cb66ce6ab8c2fd68a"
+          },
+          {
+            "path": "packages/designer/src/catalog-assets/media.ts",
+            "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
+          },
+          {
+            "path": "packages/designer/src/catalog-assets/svg.ts",
+            "sha256": "ea4ff98255a13b559f6190763f1f7257ccd730aa7087c48dceb802477c442776"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/api.ts",
+            "sha256": "091d83f11c2bb533dbf9cc7e153fd3b4b6d4cee32911bfb7f7360158cb3f574d"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/emit-components.ts",
+            "sha256": "60516d678d79333c1094280145ef5d4f424b8175cb1113b0db439c28452f38f2"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/model.ts",
+            "sha256": "8f4846f8ba03a557e04e3300f612b23f3be3e8e2faf9c8ce75d99429b3ba4f32"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/resolve-components.ts",
+            "sha256": "5ff7084fdd23b7f1b0504a09b1ca460f938d0f7a3ffcbf815162a2fe513d8348"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/stable.ts",
+            "sha256": "a72ca016a4a1ca81063533c4ffc84be01f2d1009edd9e3a6b14da16318944f5f"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/token-contract.ts",
+            "sha256": "b1683baaf24947575bda8414d0c9c8bbb6f91b1bb599cc86b91296540fa9c062"
+          },
+          {
+            "path": "packages/designer/src/icons/FileText.ts",
+            "sha256": "64a84d19799a4300dafca2175cc2ef9da054708f92a2fa18e7c95a40b39ab59f"
+          },
+          {
+            "path": "packages/designer/src/shell/internal/toast-queue.ts",
+            "sha256": "dafc3dec0d54c85a24fd9c6bf34da251ec927a46c640bc0e59c4ee844f22a5a9"
+          },
+          {
+            "path": "packages/designer/src/studio/component-specimen-binding.ts",
+            "sha256": "c2f4331f995a6ccb2c5403fc3f8bec45571905a8839230fd4be7fafea058a566"
+          },
+          {
+            "path": "packages/designer/src/studio/component-specimen-contained.tsx",
+            "sha256": "c51614a0e11097df9422f26338f264d66319d8e1c46ed8851fac6c16e1be65dc"
+          },
+          {
+            "path": "packages/designer/src/studio/component-specimen-sample-content.ts",
+            "sha256": "030bf2d084474c71e08bfd1fac1233f37913f1617bad9008056c372b715a58cb"
+          },
+          {
+            "path": "packages/designer/src/studio/component-specimen-samples.tsx",
+            "sha256": "252ffd009e4e6ff20b8c2a47eeabc2bcd24849f605e7c89ca338476961f051cb"
+          },
+          {
+            "path": "packages/designer/src/studio/component-specimens.tsx",
+            "sha256": "651117f4b74d75dbacd28d8519cb0a35c672451a2ce99562098c2b2c85175ec4"
+          },
+          {
+            "path": "packages/designer/src/studio/preview-outcome.ts",
+            "sha256": "c7398eec59b10de3ae0d0df95158c3ae32a2df76b6fcd49cddef3977f7d6eae8"
+          },
+          {
+            "path": "packages/designer/src/studio/specimen-dataset.ts",
+            "sha256": "4e19cd31ada73d3ee3367f91a58781036075d5474adcd9d7ff81a3ec09041275"
+          },
+          {
+            "path": "packages/designer/src/studio/specimen-layouts.tsx",
+            "sha256": "e7a2180472e11702b1b6c66153d766dc9a300c209e12d4496fabf374fb6ca078"
+          },
+          {
+            "path": "packages/designer/src/studio/specimen-token-assets.tsx",
+            "sha256": "66e556a03dd383cf996c59adcc4da9d2246a2389bc9537b249e386136acdf9d5"
+          },
+          {
+            "path": "packages/designer/src/tokens/color.ts",
+            "sha256": "a749fc92783397477cb934cdeb87f12fd4710ebda014db6066fc0bf2e59db1c2"
+          },
+          {
+            "path": "packages/designer/src/tokens/expressive.ts",
+            "sha256": "c08ba568682b6ac67979d2a79c5e59d8ed5de6fe247a007da0ca2259d2dcc2a5"
+          },
+          {
+            "path": "packages/designer/src/tokens/identity-kit.ts",
+            "sha256": "c06d3924fdd5aa5f65cdb8a4b1af097e867be5abd0fe69e62b878ec5c5efe3ca"
+          },
+          {
+            "path": "packages/designer/src/tokens/preview/checked-css.ts",
+            "sha256": "e173f8d3e571004354ff0e2135ea6c3f0fb5113e659ee11cd289a92f5540db98"
+          },
+          {
+            "path": "packages/designer/src/tokens/preview/member-order.ts",
+            "sha256": "b55fc1b4aa9614d1f288d57b1f53d8b245e60a30a0b7d0c56b19660fc88b20a0"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/FileText.js#FileText",
+            "file": "packages/designer/src/studio/specimen-dataset.ts",
+            "line": 13
+          }
+        ]
+      },
+      "impl": {
+        "export": "SpecimenAssetGrid",
+        "kind": "package",
+        "module": "@clossys/designer/studio"
+      },
+      "license": "MIT",
+      "notes": [
+        "The public SDK function owns the intrinsic specimen layout and consumes the descriptor-matched emitted selection context.",
+        "Selected components and surfaces come from the caller's emitted native context; package defaults are not rendering ports.",
+        "Source-consumption observations are lower bounds and retain unresolved observations. Package build and consumer runtime proof are separate."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./studio#SpecimenAssetGrid",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "reads": {
+        "assets": [
+          "assets.favicon",
+          "assets.icon-file-text",
+          "assets.mark"
+        ],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.breakpoint",
+          "tokens.color-ramp",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color"
+        ]
+      },
+      "slot": "sections.specimen-asset-grid",
+      "slotMap": {
+        "axes": "./studio#SpecimenAssetGrid.axes",
+        "context": "./studio#SpecimenAssetGrid.context",
+        "items": "./studio#SpecimenAssetGrid.items",
+        "labels": "./studio#SpecimenAssetGrid.labels"
+      },
+      "source": "foundry"
+    }
+  }
+}

@@ -9,13 +9,14 @@ import { importFoundryFrames, importFoundrySections, loadBuildCatalog, loadSecti
 import type { SurfaceCandidateDocument, SurfaceCatalog } from "../catalog-core/surface-types.js";
 import type { FrameSlot } from "../catalog-core/types.js";
 import { specimenSectionSourceCatalog } from "../importers/specimen-sections.js";
+import { specimenSectionPackageCatalog } from "../importers/specimen-sections.package.js";
 
 let cached: SurfaceCatalog | undefined;
 export function foundrySurfaceCatalog(): SurfaceCatalog {
   const specimens = specimenSectionSourceCatalog();
   cached ??= Object.freeze({
     slots: [...loadSectionRegistry().slots, ...loadBuildCatalog().slots.filter((slot): slot is FrameSlot => slot.layer === "frames")],
-    fills: [...importFoundrySections().fills, ...importFoundryFrames().fills, ...specimens.fills] as unknown as SurfaceCandidateDocument[],
+    fills: [...importFoundrySections().fills, ...importFoundryFrames().fills, ...specimenSectionPackageCatalog()] as unknown as SurfaceCandidateDocument[],
     transforms: specimens.transforms, rules: [], materializations: [],
     packageHistory: loadFoundrySurfaceHistory(),
   });

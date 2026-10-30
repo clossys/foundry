@@ -959,7 +959,9 @@
         "components.semantic-content",
         "components.grid-list",
         "components.table",
-        "components.disclosure"
+        "components.disclosure",
+        "components.badge",
+        "components.button"
       ],
       "parts": [],
       "allowedReads": {
@@ -2359,7 +2361,8 @@
           "tokens.shift-distance",
           "tokens.body-size",
           "tokens.caption-size",
-          "tokens.text-color"
+          "tokens.text-color",
+          "tokens.accent-color"
         ],
         "assets": []
       },

@@ -82,12 +82,15 @@ async function barrelFile(root: string, built: string): Promise<string | undefin
   return undefined;
 }
 
-/** Package modules (`<package>/<subpath>`) the given candidate or installed surface documents point at. */
+/** Package modules pointed to by a surface or declared by its retained source. */
 export function surfacePackageModules(docs: readonly SurfaceAnyDocument[]): string[] {
   const modules: string[] = [];
   for (const doc of docs) {
-    const entries = Object.values({ ...(doc as { sections?: object }).sections, ...(doc as { frames?: object }).frames }) as { impl?: { kind?: unknown; module?: unknown } }[];
-    for (const entry of entries) if (entry?.impl?.kind === "package" && typeof entry.impl.module === "string") modules.push(entry.impl.module);
+    const entries = Object.values({ ...(doc as { sections?: object }).sections, ...(doc as { frames?: object }).frames }) as { impl?: { kind?: unknown; module?: unknown }; dependencies?: readonly { module?: unknown }[] }[];
+    for (const entry of entries) {
+      if (entry?.impl?.kind === "package" && typeof entry.impl.module === "string") modules.push(entry.impl.module);
+      if (entry?.impl?.kind === "source") for (const dependency of entry.dependencies ?? []) if (typeof dependency.module === "string") modules.push(dependency.module);
+    }
   }
   return sorted(modules);
 }
@@ -100,6 +103,8 @@ export function surfacePackageModules(docs: readonly SurfaceAnyDocument[]): stri
 export async function readSurfacePackageEvidence(docs: readonly SurfaceAnyDocument[], options: { from?: string } = {}): Promise<SurfacePackageEvidence[]> {
   const from = options.from ?? dirname(fileURLToPath(import.meta.url));
   const rows: SurfacePackageEvidence[] = [];
+  const sourceDependencies = new Set(docs.flatMap(doc => Object.values({ ...(doc as { sections?: object }).sections, ...(doc as { frames?: object }).frames }) as { impl?: { kind?: unknown }; dependencies?: readonly { module?: unknown }[] }[]).flatMap(entry => entry.impl?.kind === 'source' ? (entry.dependencies ?? []).flatMap(dependency => typeof dependency.module === 'string' ? [dependency.module] : []) : []));
+  const packagePointers = new Set(docs.flatMap(doc => Object.values({ ...(doc as { sections?: object }).sections, ...(doc as { frames?: object }).frames }) as { impl?: { kind?: unknown; module?: unknown } }[]).flatMap(entry => entry.impl?.kind === 'package' && typeof entry.impl.module === 'string' ? [entry.impl.module] : []));
   for (const module of surfacePackageModules(docs)) {
     const parts = module.split("/"), scoped = module.startsWith("@");
     const name = parts.slice(0, scoped ? 2 : 1).join("/"), subpath = "./" + parts.slice(scoped ? 2 : 1).join("/");
@@ -112,13 +117,18 @@ export async function readSurfacePackageEvidence(docs: readonly SurfaceAnyDocume
     const text = await fs.readFile(file, "utf8");
     const inventory = packageBarrelExports(text);
     let types = inventory.types;
+    let declarationText: string | undefined;
     // A built JS barrel carries no types; its declaration barrel does.
     const declared = target(entry, "types");
     if (/\.[cm]?js$/.test(file) && declared && await exists(resolve(located.root, declared))) {
-      const declaration = packageBarrelExports(await fs.readFile(resolve(located.root, declared), "utf8"));
+      declarationText = await fs.readFile(resolve(located.root, declared), "utf8");
+      const declaration = packageBarrelExports(declarationText);
       types = sorted([...declaration.types, ...declaration.values].filter(name => !inventory.values.includes(name)));
     }
-    rows.push({ module, version: located.manifest.version, artifactSha256: sha256(text), values: inventory.values, types });
+    // SOURCE qualification must also expire when the actual declaration bytes change.
+    // Package-pointer evidence retains its existing executable-barrel identity.
+    const artifactSha256 = sourceDependencies.has(module) && !packagePointers.has(module) ? sha256(JSON.stringify({ javascript: { path: built, sha256: sha256(text) }, types: declarationText === undefined ? null : { path: declared, sha256: sha256(declarationText) } })) : sha256(text);
+    rows.push({ module, version: located.manifest.version, artifactSha256, values: inventory.values, types });
   }
   return rows;
 }

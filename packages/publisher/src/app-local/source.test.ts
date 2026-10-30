@@ -10,6 +10,7 @@ import { componentLibraryHash } from "../../../designer/src/catalog-core/resolve
 import type { CompositeLibraryData } from "../../../designer/src/catalog-core/types.js";
 import { analyzeAppLocalSource, appLocalSourceResolver, printAppLocalSource } from "./source.js";
 import { generatedText } from "./format.js";
+import { loadCatalogBundles } from "../../../designer/src/catalog-bundles.js";
 const empty = (): CompositeLibraryData => ({ source: { id: "example", kind: "consumer", author: "consumer", license: "MIT" }, values: { fills: [] }, components: { fills: [], files: [] } });
 const closure = (library: CompositeLibraryData, content: string) => collectSourceClosure({ library, additionalEntries: [{ path: "entry.ts", content }], analyze: analyzeAppLocalSource, resolve: appLocalSourceResolver(library, process.cwd(), { react: ">=18" }), transformSource: (content, source) => { const output = printAppLocalSource(content, source); if (output.includes("@clossys")) throw new Error(`Unrelocated identity in ${source.path}: ${output.split("\n").find(line => line.includes("@clossys"))}`); return output; } });
 it("copies actual installed transitive first-party sources and converts runtime JSON into loadable TS", async () => {
@@ -43,4 +44,20 @@ it("uses the actual selected Button and Icon closure without importing unrelated
 it("refuses dynamic module discovery and undeclared source dependencies", () => {
   expect(() => analyzeAppLocalSource({ path: "entry.ts", content: "export async function load(name:string){return import(name)}" })).toThrow(/Nonliteral/i);
   expect(() => closure(empty(), 'import "unknown-runtime-package";')).toThrow(/Undeclared/);
+});
+it("closes a receipted Sheet's logical Icon index through the actual selected package source", () => {
+  const library = empty(), bundles = loadCatalogBundles();
+  const components = { source: library.source, adoptedAt: "2026-10-29", ...library.components };
+  library.components = applyComponentLibraryChange({ slots: loadComponentRegistry().slots, fills: bundles.componentFills }, components, {
+    baseHash: componentLibraryHash(components),
+    changes: [{ op: "adopt", slot: "components.icon", source: "foundry" }, { op: "adopt", slot: "components.sheet", source: "shadcn@aria" }],
+  }, bundles.sourceBundles);
+  const before = structuredClone(library);
+  const result = collectSourceClosure({ library, analyze: analyzeAppLocalSource, resolve: appLocalSourceResolver(library, process.cwd(), { react: "19.3.0", "react-aria-components": "1.21.1", "tailwind-merge": "3.7.0" }), transformSource: printAppLocalSource });
+  expect(result.entries.map(entry => entry.slot)).toEqual(expect.arrayContaining(["components.sheet", "components.icon"]));
+  expect(result.files.some(file => file.path === "components/sheet/sheet.tsx")).toBe(true);
+  expect(result.files.some(file => /\/Icon(?:-[a-f0-9]+)?\.tsx$/.test(file.path))).toBe(true);
+  expect(result.files.some(file => file.path === "components/icon/index.ts")).toBe(false);
+  for (const file of result.files) expect(file.content).not.toContain("@clossys");
+  expect(library).toEqual(before);
 });

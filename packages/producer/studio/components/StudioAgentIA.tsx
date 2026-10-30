@@ -8,19 +8,19 @@ import { projectStudioAgentIA, studioIAAnchor, studioIAHref } from '../lib/studi
 import { studioIABands, studioSelectedSurface, studioUsedByCount } from '../lib/studio-ia-body';
 import { checkStudioSpecimenCoverage, type StudioCoverageEvidence, type StudioCoverageResult } from '../lib/studio-specimen-coverage';
 import { cellContentTarget } from '../lib/cell-content';
-import { useAgentSpecimenCoverage } from './AgentL3Specimen';
+import { AgentL3Specimen, useAgentSpecimenCoverage } from './AgentL3Specimen';
 import { useStudioSelection, useStudioUI } from './StudioSelection';
 
 function usedByLabel(indexes: readonly AgentCells[], agent: string, cell: CellSummary) { const usage = studioUsedByCount(indexes, agent, cell); return usage.complete ? `used by ${usage.count}` : `used by at least ${usage.count} (inventory incomplete)`; }
-const BODY_NEED = 'NEED: sections.cards full specimen-body, selection and declared-span ports';
-function CellEvidence({ index, cell, report }: { index: AgentCells; cell: CellSummary; report: (evidence: StudioCoverageEvidence) => void }) {
+const UNMEASURED = 'Rendered specimen evidence has not been measured.';
+function CellSpecimen({ index, cell, report }: { index: AgentCells; cell: CellSummary; report: (evidence: StudioCoverageEvidence) => void }) {
   const evidence = useAgentSpecimenCoverage(index, cell);
   const signature = JSON.stringify(evidence);
   useEffect(() => {
-    // A registered specimen model alone cannot pass when this card cannot render its body.
-    report({ ...evidence, ready: false, variants: evidence.variants.map(variant => ({ ...variant, renderable: false, reason: BODY_NEED })), issues: [...evidence.issues, BODY_NEED] });
+    // A mounted model alone is not trusted DOM evidence, especially across an opaque page iframe.
+    report({ ...evidence, ready: false, variants: evidence.variants.map(variant => ({ ...variant, renderable: false, reason: UNMEASURED })), issues: [...evidence.issues, UNMEASURED] });
   }, [signature, report]);
-  return null;
+  return <AgentL3Specimen index={index} selectedId={cell.id} />;
 }
 
 /** One authored vertical IA. The selected Cards section owns every grid and placeholder card. */
@@ -47,18 +47,18 @@ export function StudioAgentIA({ index, indexes, selectedId, onSelect, onCoverage
     {ia.groups.length ? ia.groups.map(group => <Fragment key={group.id}>
       <Subheader id={studioIAAnchor(group.id)} data-studio-ia-node={group.id} title={group.label} level={3} />
       {group.collections.length ? group.collections.map(collection => <Fragment key={collection.id}>
-        <EmptyState title={collection.label} description={Cards ? BODY_NEED : `NEED: selected ${body.bands!.L2}`} />
-        {collection.cells.map(cell => <CellEvidence key={`${cell.id}@${cell.version}`} index={index} cell={cell} report={report} />)}
         {!collection.cells.length ? <EmptyState title={collection.label} description="This authored collection has no cells." /> : Cards ? <Cards
           id={studioIAAnchor(collection.id)} data-studio-ia-node={collection.id} aria-label={collection.label} layout="grid"
+          selectedId={selectedId}
           records={collection.cells.map(cell => ({
             id: cell.id,
             title: <><Link id={studioIAAnchor(cell.id)} data-studio-ia-node={cell.id} href={studioIAHref(cell.id)} buttonVariant={selectedId === cell.id ? 'secondary' : 'ghost'} onPress={() => onSelect(cell.id)} aria-current={selectedId === cell.id ? 'true' : undefined}>{cell.title}</Link><Link {...cellContentTarget(index.agent, cell.id)} buttonVariant="ghost" aria-label={`Open ${cell.title} content`}><Icon asset="assets.icon-external-link" decorative /></Link></>,
             ...(cell.status ? { badge: { label: cell.status, variant: cell.status === 'draft' ? 'warning' : cell.status === 'active' ? 'success' : 'neutral' } } : {}),
             meta: `${cell.version === undefined ? 'Version unavailable' : `v${cell.version}`} · ${usedByLabel(indexes, index.agent, cell)}`,
-            description: BODY_NEED,
+            ...(evidence.index === index && evidence.rows[cell.id]?.span ? { span: evidence.rows[cell.id]!.span } : {}),
+            body: <CellSpecimen index={index} cell={cell} report={report} />,
           }))}
-        /> : null}
+        /> : <EmptyState title={collection.label} description={`NEED: selected ${body.bands!.L2}`} />}
       </Fragment>) : <EmptyState title={group.label} description="This authored group has no collections." />}
     </Fragment>) : <EmptyState title={ia.label} description="The agent tree has no groups." />}
   </>;

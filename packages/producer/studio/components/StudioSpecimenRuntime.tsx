@@ -19,11 +19,11 @@ export function StudioSpecimenRuntimeProvider({ children }: { children: ReactNod
   const native = useMemo(() => nativeSpecimenContext(sdk, profile, runtime), [sdk, profile, runtime]);
   const need = useCallback(({ leaf, reason }: { leaf: string; reason: string }) => <EmptyState role="status" title={`NEED: ${leaf}`} description={reason} />, [EmptyState]);
   const resolve = useCallback<ResolveSpecimenLeaf>(({ index, cell, plan, publication, expanded }) => {
-    const pagePreview = publication && typeof window !== 'undefined' ? producerPagePreview(publication, window.location.origin) : undefined;
+    const pagePreview = publication && typeof window !== 'undefined' ? producerPagePreview(publication, window.location.origin, plan.unpublishedPage ? [plan.unpublishedPage] : []) : undefined;
     const context = native.context && pagePreview ? { ...native.context, pagePreview } : native.context;
     const common = { sdk, context, expanded, need, labels: { showAllVariants: (count: number) => `Show all ${count} variants` } };
     const result = index.agent === 'designer' ? bindNativeDesignerSpecimen({ ...common, cell }) : bindNativeAgentSpecimen({ ...common, agent: index.agent, plan, ...(typeof cell.fields?.specimen === 'string' ? { specimen: cell.fields.specimen } : {}) });
-    return { sourcePlan: result.sourcePlan, Component: result.Component, props: result.props, evidence: { sectionId: result.sectionId ?? '', registered: result.registered, span: result.span, items: result.items, variantIds: result.variantIds, issues: [...native.issues, ...result.issues] } };
+    return { sourcePlan: result.sourcePlan, presentationReady: result.presentationReady, Component: result.Component, props: result.props, evidence: { sectionId: result.sectionId ?? '', registered: result.registered, span: result.span, items: result.items, variantIds: result.variantIds, issues: [...native.issues, ...result.issues] } };
   }, [sdk, native, need]);
   return <NativeRuntimeContext.Provider value={native}><SpecimenLeafProvider resolve={resolve}>{children}</SpecimenLeafProvider></NativeRuntimeContext.Provider>;
 }

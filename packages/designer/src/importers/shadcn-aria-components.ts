@@ -28,12 +28,25 @@ export interface ShadcnRegistryItem {
 export interface ShadcnComponentInput {
   items: readonly ShadcnRegistryItem[]; styles: SourceFile; notice: SourceFile;
   slots?: readonly ComponentSlot[];
+  /** Explicit exact dependency targets; source pins and rewritten bytes stay independently authenticated. */
+  runtimeTargets?: Readonly<Record<string, ShadcnComponentRuntimeTarget>>;
 }
+export interface ShadcnComponentRuntimeTarget {
+  readonly react: string;
+  readonly "react-aria-components": string;
+  readonly "tailwind-merge": string;
+}
+/** The retained Breadcrumb source is also exercised against the current native Studio runtime. */
+export const SHADCN_ARIA_RUNTIME_TARGETS: Readonly<Record<string, ShadcnComponentRuntimeTarget>> = Object.freeze({
+  breadcrumb: Object.freeze({ react: "19.3.0", "react-aria-components": "1.21.1", "tailwind-merge": "3.7.0" }),
+});
 export interface ShadcnItemReceipt {
   item: string; slot: string;
   /** U-V means the pinned source imports the RAC root, not runtime conformance. */
   runtime: "U-V" | "X"; status: "candidate" | "rejected" | "alternate";
   reason: string; issues: readonly RewriteIssue[]; notes?: readonly RewriteNote[];
+  /** A target is an input declaration, not runtime-conformance evidence. */
+  runtimeTarget?: ShadcnComponentRuntimeTarget;
 }
 export interface ShadcnComponentFillDoc {
   $extensions: { "com.clossys.fill": FillMeta };
@@ -385,6 +398,11 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
     for (const file of item.files) verifyShadcnSource(file);
     items.set(item.name, item);
   }
+  const runtimeTargets = input.runtimeTargets ?? SHADCN_ARIA_RUNTIME_TARGETS;
+  const targetNames = ["react", "react-aria-components", "tailwind-merge"] as const;
+  for (const [item, target] of Object.entries(runtimeTargets)) {
+    if (!items.has(item) || Object.keys(target).length !== targetNames.length || targetNames.some(name => !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(target[name]))) throw new Error("shadcn-components: an exact runtime target is required");
+  }
   const slots = new Map((input.slots ?? componentSlots as unknown as ComponentSlot[]).map(slot => [slot.id, slot]));
   const fills: ShadcnComponentFillDoc[] = [], receipt: ShadcnItemReceipt[] = [];
   const rewrites: Record<string, RewriteResult> = {}, filled = new Set<string>();
@@ -450,7 +468,8 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
     }
     const rewritten: RewriteResult = { ...result, files: files.sort((a, b) => a.path.localeCompare(b.path)), outputSha256: files.map(file => ({ path: file.path, sha256: sha256(file.content) })).sort((a, b) => a.path.localeCompare(b.path)), issues: [...result.issues, ...closureIssues] };
     rewrites[name] = rewritten;
-    receipt.push({ item: name, slot: slot.id, runtime: "U-V", status: filled.has(slot.id) ? "alternate" : "candidate", reason: `${slot.contract.root.startsWith("rac:") ? "Pinned root import verified" : "Pinned source has no foreign headless engine"}; token, glyph, dependency and runtime checks remain required`, issues: rewritten.issues, ...(rewritten.notes ? { notes: rewritten.notes } : {}) });
+    const runtimeTarget = runtimeTargets[name];
+    receipt.push({ item: name, slot: slot.id, runtime: "U-V", status: filled.has(slot.id) ? "alternate" : "candidate", reason: `${slot.contract.root.startsWith("rac:") ? "Pinned root import verified" : "Pinned source has no foreign headless engine"}; token, glyph, dependency and runtime checks remain required`, issues: rewritten.issues, ...(rewritten.notes ? { notes: rewritten.notes } : {}), ...(runtimeTarget ? { runtimeTarget: { ...runtimeTarget } } : {}) });
     if (filled.has(slot.id)) continue;
     filled.add(slot.id);
     const impl = { kind: "source" as const, entry: `components/${leaf}/${name}.tsx`, export: exportNames[name] ?? name.split("-").map(word => word[0]!.toUpperCase() + word.slice(1)).join("") };
@@ -467,7 +486,10 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
       slot: slot.id, source: SOURCE, root: slot.contract.root, members, props: name === "calendar" ? ["id", "className", "style", "children", "aria-label", "aria-labelledby", "value", "defaultValue", "onChange", "isDisabled", "isReadOnly", "isInvalid", "minValue", "maxValue", "defaultFocusedValue", "focusedValue", "onFocusChange", "isDateUnavailable", "firstDayOfWeek", "numberOfMonths", "buttonVariant", "captionLayout", "showWeekNumber", "headerFormat", "renderCell"] : name === "tooltip" ? [...tooltipExecutableProps] : [], propMap, reads, composes,
       impl,
       license: "MIT", pin, notice: adapter.notice, transform: "shadcn-aria-rewrite@1", item: name,
-      deps: [...npmDeps.filter(dep => dep.name === "react" || dep.name === "react-aria-components" && imports(original.content).length > 0 || dep.name === "class-variance-authority" && [...closure.values()].some(file => file.content.includes('from "class-variance-authority"')) || ["clsx", "tailwind-merge"].includes(dep.name)),
+      deps: [...npmDeps.filter(dep => dep.name === "react" || dep.name === "react-aria-components" && imports(original.content).length > 0 || dep.name === "class-variance-authority" && [...closure.values()].some(file => file.content.includes('from "class-variance-authority"')) || ["clsx", "tailwind-merge"].includes(dep.name)).map(dep => {
+        const targetName = targetNames.find(name => name === dep.name);
+        return { ...dep, version: runtimeTarget && targetName ? runtimeTarget[targetName] : dep.version };
+      }),
         ...sorted([...closure.values()].flatMap(file => dependencies(file.content))).filter(dep => !result.contextualInputs?.includes(dep)).map(dep => ({ name: dep, version: SHADCN_ARIA_COMPONENT_PIN.commit, license: "MIT", registryItem: dep, ...(SHADCN_COMPONENT_ITEMS[dep] ? { slot: `components.${SHADCN_COMPONENT_ITEMS[dep]}` } : {}) }))],
       parts: result.parts.map(item => ({ item })), outputSha256: rewritten.outputSha256, blockers: rewritten.issues,
       ...(secondaryExportApprovals[name] ? { secondaryExports: secondaryExportApprovals[name]!.map(row => ({ ...row })) } : {}),

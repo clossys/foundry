@@ -139,7 +139,9 @@ export const SPECIMEN_SECTION_EXPORTS = [
       "components.semantic-content",
       "components.grid-list",
       "components.table",
-      "components.disclosure"
+      "components.disclosure",
+      "components.badge",
+      "components.button"
     ]
   }
 ] as const;

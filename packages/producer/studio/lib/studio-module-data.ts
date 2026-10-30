@@ -33,7 +33,7 @@ export function studioModulePayloads(input: { indexes: readonly AgentCells[]; ag
   });
   const usedBy = cell ? input.indexes.flatMap(index => index.cells.filter(candidate => strings(candidate.fields?.links).some(reference => {
     const ref = cellRef(reference, index.agent);
-    return ref?.agent === cell.agent && ref.id === cell.id && ref.version === cell.version;
+    return ref !== undefined && ref.agent === cell.agent && ref.id === cell.id && ref.version === cell.version;
   })).map(candidate => linkedCell(candidate, index.agent))) : [];
   const ia = index ? projectStudioAgentIA(index) : undefined;
   const inspector = { state: cell ? 'ready' : 'missing', ...(cell ? { cell: { ...linkedCell(cell, cell.agent), ...(typeof cell.fields?.updated === 'string' ? { updated: cell.fields.updated } : {}), ...(typeof cell.fields?.created === 'string' ? { created: cell.fields.created } : {}), sources: strings(cell.fields?.cites), feeds: strings(cell.fields?.feeds), uses, usedBy } } : {}) };

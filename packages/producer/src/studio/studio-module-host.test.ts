@@ -47,4 +47,11 @@ describe('manifest module host', () => {
     expect(studioCellChange({ reload: true, agent: 'writer', id: 'example.page' })).toBe(true);
     expect(studioCellChange({ reload: true, agent: 'unknown', id: 'example.page' })).toBe(false);
   });
+  it('ignores undefined and stale parsed references when resolving used-by cells', () => {
+    const cell: CellDetail = { agent: 'publisher', id: 'site.home', title: 'Home', version: 2, status: 'draft', content: '', fields: {} };
+    const index: AgentCells = { agent: 'publisher', state: 'ready', cells: [cell] };
+    const writer: AgentCells = { agent: 'writer', state: 'ready', cells: [{ id: 'copy.home', title: 'Home copy', version: 1, status: 'draft', fields: { links: ['not-a-cell-reference', 'publisher:site.home@1'] } }] };
+    const payloads = studioModulePayloads({ indexes: [index, writer], agent: 'publisher', selectedId: cell.id, detail: cell, selection: { hash: 'fixture', leaves: [] }, checks: { state: 'ready', results: [] } });
+    expect(payloads['publisher.inspector']).toMatchObject({ cell: { usedBy: [] } });
+  });
 });

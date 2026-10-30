@@ -1,0 +1,214 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.specimen-rich-passage",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./studio#SpecimenRichPassage",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.specimen-rich-passage",
+      "source": "foundry",
+      "sourceAddress": "./studio#SpecimenRichPassage",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "specimen-rich-passage": {
+      "composes": [
+        "components.badge",
+        "components.disclosure",
+        "components.grid-list",
+        "components.rich-text",
+        "components.semantic-content",
+        "components.table"
+      ],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.badge",
+          "components.semantic-content",
+          "components.table"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.badge",
+            "components.semantic-content",
+            "components.table"
+          ],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.action-color",
+            "tokens.body-size",
+            "tokens.border-color",
+            "tokens.border-width",
+            "tokens.code-size",
+            "tokens.control-color",
+            "tokens.control-radius",
+            "tokens.duration",
+            "tokens.easing",
+            "tokens.focus-color",
+            "tokens.focus-outline",
+            "tokens.heading-size",
+            "tokens.line-height",
+            "tokens.spacing",
+            "tokens.state-opacity",
+            "tokens.status-color",
+            "tokens.surface-color",
+            "tokens.text-color",
+            "tokens.typeface"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/catalog-core/api.ts",
+            "sha256": "091d83f11c2bb533dbf9cc7e153fd3b4b6d4cee32911bfb7f7360158cb3f574d"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/emit-components.ts",
+            "sha256": "60516d678d79333c1094280145ef5d4f424b8175cb1113b0db439c28452f38f2"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/resolve-components.ts",
+            "sha256": "5ff7084fdd23b7f1b0504a09b1ca460f938d0f7a3ffcbf815162a2fe513d8348"
+          },
+          {
+            "path": "packages/designer/src/components/button-classes.ts",
+            "sha256": "b8ebd6d815a52769cd0e02ca091f4c81d81e31f9558e1df767bfcf07dcc5f2a6"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/components/internal/ui-vars.ts",
+            "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+          },
+          {
+            "path": "packages/designer/src/components/Link.server.tsx",
+            "sha256": "716f8c4a4057c2d78fe87465080a8c874c83c7788e4d7da8fd26692146d0ad7b"
+          },
+          {
+            "path": "packages/designer/src/components/Link.styles.ts",
+            "sha256": "d8467b36dc0716227896837f1aecf9f3e44c0fdb42c63ba359f3420249f77328"
+          },
+          {
+            "path": "packages/designer/src/components/rich-text/document.tsx",
+            "sha256": "1abc71e948b94bf896da5046f08c6f9027fe293d40f821762dd059bfe62c33c3"
+          },
+          {
+            "path": "packages/designer/src/components/rich-text/editor-views.tsx",
+            "sha256": "858462e184e9aaf4be0361eb68d52d93551585ee460ee958af1a5984e90dd0c0"
+          },
+          {
+            "path": "packages/designer/src/components/rich-text/schema.ts",
+            "sha256": "26021910e86eb12e28d6afdb56f22ed182eb42a2ca0c088a554c1d04a5837e1f"
+          },
+          {
+            "path": "packages/designer/src/components/rich-text/styles.ts",
+            "sha256": "8b6be0232f2bd809a9adb684bb89c3f1d4495fa5b5519d2c5e3131ea47b8109c"
+          },
+          {
+            "path": "packages/designer/src/components/Table.document.tsx",
+            "sha256": "fa0b72280b3fb27ea349d7e3495487b0d86cfe8bf274271f4d370ad3c9e2db72"
+          },
+          {
+            "path": "packages/designer/src/studio/component-specimen-binding.ts",
+            "sha256": "c2f4331f995a6ccb2c5403fc3f8bec45571905a8839230fd4be7fafea058a566"
+          },
+          {
+            "path": "packages/designer/src/studio/specimen-content.tsx",
+            "sha256": "250ee7a1aaa0c3ab933133d11171462bdad8419337edd0fbf4c47cb558496ef1"
+          },
+          {
+            "path": "packages/designer/src/studio/specimen-layouts.tsx",
+            "sha256": "e7a2180472e11702b1b6c66153d766dc9a300c209e12d4496fabf374fb6ca078"
+          },
+          {
+            "path": "packages/designer/src/studio/specimen-page-viewports.tsx",
+            "sha256": "6350629630f1de1200afa9e26bd337fbf9abc8813032888ce9decabd2bb28b32"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
+      "impl": {
+        "export": "SpecimenRichPassage",
+        "kind": "package",
+        "module": "@clossys/designer/studio"
+      },
+      "license": "MIT",
+      "notes": [
+        "The public SDK function owns the intrinsic specimen layout and consumes the descriptor-matched emitted selection context.",
+        "Selected components and surfaces come from the caller's emitted native context; package defaults are not rendering ports.",
+        "Source-consumption observations are lower bounds and retain unresolved observations. Package build and consumer runtime proof are separate."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./studio#SpecimenRichPassage",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.breakpoint",
+          "tokens.code-size",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.heading-size",
+          "tokens.line-height",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
+      },
+      "slot": "sections.specimen-rich-passage",
+      "slotMap": {
+        "axes": "./studio#SpecimenRichPassage.axes",
+        "context": "./studio#SpecimenRichPassage.context",
+        "items": "./studio#SpecimenRichPassage.items",
+        "labels": "./studio#SpecimenRichPassage.labels"
+      },
+      "source": "foundry"
+    }
+  }
+}

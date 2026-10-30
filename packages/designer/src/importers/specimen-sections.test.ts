@@ -33,6 +33,15 @@ it("registers all14 real section contracts, IA placements, native source candida
     expect(candidate.api.exports).toContainEqual({ name: "SpecimenLeaf", export: "SpecimenLeaf" });
     expect(parsed.imports.filter(row => row.module.startsWith("../../components/"))).toHaveLength(candidate.bindings.length);
     expect(parsed.imports.some(row => row.module === "@clossys/designer/components")).toBe(false);
+    if (candidate.slot === "sections.specimen-page-viewports") {
+      expect(file.content).toContain("../../components/button/index.js");
+      expect(file.content).toContain("../../components/badge/index.js");
+      const contract = registry.slots.find(slot => slot.id === candidate.slot)!.contract;
+      expect(contract.allowedComposes).toContain("components.button");
+      expect(contract.allowedComposes).toContain("components.badge");
+      const allowed = new Set<string>(contract.allowedComposes);
+      expect(candidate.composes.every(id => allowed.has(id))).toBe(true);
+    }
     expect(candidate.blockers).toEqual([]);
     const actual = studioSpecimenLeaves.find(leaf => leaf.id === candidate.slot)!;
     const compiled = ts.transpileModule(file.content, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } });

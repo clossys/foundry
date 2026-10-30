@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import type { DesignerSpecimenContext, DesignerSpecimenNeed } from "./DesignerSpecimen.js";
-import { componentSpecimenPreview, type ComponentSpecimenBinding, type ComponentSpecimenComponent } from "./component-specimens.js";
+import { bindComponentSpecimen, type ComponentSpecimenBinding, type ComponentSpecimenComponent } from "./component-specimen-binding.js";
 
 /** Layout is an intrinsic property of a registered specimen leaf. */
 export type SpecimenLayout = "single" | "ladder" | "grid" | "matrix";
@@ -82,7 +82,7 @@ export function specimenLayoutNeeds({ id, layout, items, axes = [], context, exp
   return needs;
 }
 export function specimenComponent(context: DesignerSpecimenContext, leaf: string): ComponentSpecimenBinding | DesignerSpecimenNeed {
-  const bound = componentSpecimenPreview({ modules: context.modules }).bind(leaf, context.profile);
+  const bound = bindComponentSpecimen(context.modules, leaf, context.profile);
   return "binding" in bound ? bound.binding : { leaf, reason: `${bound.refusal.code}: ${bound.refusal.detail}` };
 }
 const component = (value: unknown): value is ComponentSpecimenComponent => typeof value === "function" || typeof value === "object" && value !== null && "$$typeof" in value;

@@ -34,12 +34,12 @@
         {
           "license": "MIT",
           "name": "react",
-          "version": "19.2.3"
+          "version": "19.3.0"
         },
         {
           "license": "Apache-2.0",
           "name": "react-aria-components",
-          "version": "1.20.0"
+          "version": "1.21.1"
         },
         {
           "license": "MIT",
@@ -49,7 +49,7 @@
         {
           "license": "MIT",
           "name": "tailwind-merge",
-          "version": "3.3.1"
+          "version": "3.7.0"
         }
       ],
       "impl": {
@@ -109,7 +109,7 @@
       "rac": {
         "instance": "react-aria-components",
         "peer": false,
-        "range": "^1.20.0"
+        "range": "^1.21.1"
       },
       "reads": {
         "assets": [

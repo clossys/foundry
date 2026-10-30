@@ -1,11 +1,12 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { producerPagePreview } from '../../studio/lib/producer-page-preview';
+import { producerPagePreview, type ProducerSpecimenUnpublishedPage } from '../../studio/lib/producer-page-preview';
 import type { PublicationResponse } from '../../studio/lib/publisher-preview';
 
 const origin = 'http://127.0.0.1:4300';
 const viewport = { id: 'desktop', label: 'Desktop', width: 1440, height: 900 };
 const publication = (): PublicationResponse => ({ state: 'ready', publication: 'example', publications: ['example'], manifest: { schemaVersion: 1, publication: 'example', sourceApp: 'web', format: 'web.page.responsive', routes: [{ id: 'home', path: '/', source: { file: 'pages/home.tsx', export: 'default' } }], contentMap: { version: 1, publicationId: 'example', entries: [{ id: 'home', title: 'Home', kind: 'page', path: '/' }] } }, pages: [{ id: 'home', route: '/', emitted: true, previewUrl: '/preview/example/pages/home.html' }] });
+const unpublishedPage = (): ProducerSpecimenUnpublishedPage => ({ publication: 'unpublished', emitted: false, id: 'home', route: '/', emptyState: { title: 'Not published yet', description: 'Publish this page to preview it.', command: 'clossys publish --target preview', context: 'Home' } });
 
 describe('native Producer emitted-page specimen port', () => {
   it('renders the actual guarded descriptor as one sandboxed noninteractive native-size iframe', () => {
@@ -30,6 +31,9 @@ describe('native Producer emitted-page specimen port', () => {
     const mobile = renderToStaticMarkup(port.renderViewport({ page: port.pages[0]!, viewport: { id: 'mobile', label: 'Mobile', width: 390, height: 844 }, interactive: false, fullSize: false }));
     expect(mobile).toContain('width="390" height="844"');
     expect(mobile).toContain('zoom:1');
+    const tablet = renderToStaticMarkup(port.renderViewport({ page: port.pages[0]!, viewport: { id: 'tablet', label: 'Tablet', width: 768, height: 1024 }, interactive: false, fullSize: false }));
+    expect(tablet).toContain('width="768" height="1024"');
+    expect(tablet).toContain('sandbox=""');
   });
   it.each(['https://127.0.0.1:4300', 'http://localhost:4300', 'http://example.invalid:4300', 'http://127.0.0.1:4300/', 'http://127.0.0.1:4300?token=value', 'http://127.0.0.1:65536', 'http://127.0.0.1:04300'])('rejects noncanonical or remote origin %s', badOrigin => {
     expect(producerPagePreview(publication(), badOrigin)).toBeUndefined();
@@ -59,5 +63,31 @@ describe('native Producer emitted-page specimen port', () => {
     const port = producerPagePreview(descriptor, origin)!;
     expect(port.pages[0]!.stage).toBe('not-emitted');
     expect(port.renderViewport({ page: port.pages[0]!, viewport, interactive: false, fullSize: false })).toBeNull();
+  });
+  it('carries confirmed unpublished content to the bound leaf once without inventing an iframe', () => {
+    const missing: PublicationResponse = { state: 'missing', message: 'Not published yet', command: 'clossys publish --target preview' };
+    const page = unpublishedPage();
+    const port = producerPagePreview(missing, origin, [page, page, page])!;
+    expect(port.pages).toEqual([page]);
+    expect(port.pages[0]).not.toHaveProperty('previewUrl');
+    expect(port.pages[0]).not.toHaveProperty('stage');
+    const published = producerPagePreview(publication(), origin)!;
+    expect(port.renderViewport({ page: published.pages[0]!, viewport, interactive: false, fullSize: false })).toBeNull();
+  });
+  it('permits confirmed absent or not-emitted inventory but refuses conflicting or failed publication evidence', () => {
+    const descriptor = publication();
+    if (descriptor.state !== 'ready') throw new Error('Invalid fixture');
+    descriptor.pages[0]!.emitted = false;
+    const page = unpublishedPage();
+    expect(producerPagePreview(descriptor, origin, [page])?.pages).toEqual([page]);
+    expect(producerPagePreview(publication(), origin, [page])).toBeUndefined();
+    const absent = { ...page, id: 'new-page', route: '/new-page' };
+    expect(producerPagePreview(descriptor, origin, [absent])?.pages.at(-1)).toEqual(absent);
+    expect(producerPagePreview(descriptor, origin, [{ ...page, route: '/other' }])).toBeUndefined();
+    expect(producerPagePreview({ state: 'error', message: 'Unreadable', command: 'clossys publish --target preview' }, origin, [page])).toBeUndefined();
+    const missing: PublicationResponse = { state: 'missing', message: 'Not published yet', command: 'clossys publish --target preview' };
+    expect(producerPagePreview(missing, origin, [page, { ...page, route: '/other' }])).toBeUndefined();
+    expect(producerPagePreview(missing, origin, [{ ...page, route: '//example.invalid' }])).toBeUndefined();
+    expect(producerPagePreview(missing, origin, [{ ...page, emptyState: { ...page.emptyState, command: 'other command' } }])).toBeUndefined();
   });
 });

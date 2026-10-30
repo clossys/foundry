@@ -34,3 +34,14 @@ it("preserves missing source and omitted variant failures without inventing Desi
   const partial = projectAgentSpecimenPlan({ agent: "director", plan: { ...plan([{ id: "first", kind: "director", title: "First", value: "Passage" }]), expectedVariantIds: ["first", "missing"] } });
   expect(partial.issues).toContain("One or more native source variants have no specimen item.");
 });
+it("projects the native unpublished page state without inventing an emitted page", () => {
+  const items = [
+    { id: "desktop", label: "Desktop", width: 1440, height: 900 },
+    { id: "tablet", label: "Tablet", width: 768, height: 1024 },
+    { id: "mobile", label: "Mobile", width: 390, height: 844 },
+  ].map(viewport => ({ id: `cell:${viewport.id}`, kind: "publisher", publication: "unpublished", viewport }));
+  const result = projectAgentSpecimenPlan({ agent: "publisher", plan: plan(items) });
+  expect(result.issues).toEqual([]);
+  expect(result.cell.items.map(item => item.value)).toEqual(items.map(item => ({ publication: "unpublished", pageId: "cell", viewport: item.viewport })));
+  expect(result.cell.items.map(item => item.coordinates)).toEqual(items.map(item => ({ page: "cell", viewport: item.viewport.id })));
+});

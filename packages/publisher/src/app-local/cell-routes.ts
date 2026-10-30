@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { readActive, tokenizeBody } from "@clossys/strategist/cell-format";
 import { contentMapFromCells } from "../content-map/cells.js";
-import type { ContentMap } from "../content-map/contract.js";
+import type { ContentMap, ContentMapEntry } from "../content-map/contract.js";
 import { assertContentRouteRegistration } from "../web/content-route-registration.js";
 import type { ContentRouteManifest, ContentRouteRegistration } from "../web/content-route-types.js";
 import { noAppLocalSymlink } from "./files.js";
@@ -24,7 +24,7 @@ export async function readServingPublication(root: string, publication: string, 
   if (Object.keys(pub.routePack).some(key => !["version", "consumer", "packId"].includes(key))) throw new Error("Serving requires a native route manifest header; legacy pack extras have no native serving authority");
   const map = await contentMapFromCells(root, publication), active = await readActive(root);
   if (!object(pub.entryIds)) throw new Error("Serving requires stable active page identities");
-  const pages = map.entries.filter(entry => entry.kind === "page");
+  const pages = map.entries.filter((entry): entry is ContentMapEntry & { readonly kind: "page" } => entry.kind === "page");
   if (!pages.length) throw new Error("At least one active serving Route page is required");
   const paths = new Set<string>(), routes: ContentRouteRegistration[] = [];
   for (const page of pages) {

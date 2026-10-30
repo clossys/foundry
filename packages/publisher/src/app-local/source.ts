@@ -115,7 +115,8 @@ export interface AppLocalResolutionOptions { readonly conditions?: readonly stri
 export function appLocalSourceResolver(library: CompositeLibraryData, appRoot: string, dependencies: Readonly<Record<string, string>>, options: AppLocalResolutionOptions = {}) {
   const origins = new Map<string, Origin>(), virtual = new Map<string, SourceModule>(), implementations = new Map<string, SourceModule>(), packages = new Map<string, { root: string; manifest: PackageManifest }>();
   const conditions = new Set(options.conditions ?? ["node", "import"]);
-  const knownOwners = new Map<string, string>(), knownSlots = new Set<string>(), selected = new Set(library.components.fills.flatMap(document => Object.values(document.components).map(fill => fill.slot)));
+  const selectedFills = new Map(library.components.fills.flatMap(document => Object.values(document.components).map(fill => [fill.slot, fill] as const)));
+  const knownOwners = new Map<string, string>(), knownSlots = new Set<string>(), selected = new Set(selectedFills.keys());
   for (const document of [...loadCatalogBundles().componentFills, ...library.components.fills]) for (const fill of Object.values(document.components)) {
     knownSlots.add(fill.slot);
     if (fill.impl.kind === "package") for (const name of [fill.impl.export, ...(fill.secondaryExports?.map(entry => entry.export) ?? [])]) knownOwners.set(`${fill.impl.module}#${name}`, fill.slot);
@@ -222,6 +223,27 @@ export function appLocalSourceResolver(library: CompositeLibraryData, appRoot: s
     const relativeSource = target.replace(/^\.\/dist\//, "src/");
     return packageModule(sourceFile(confined(origin.root, join(origin.root, relativeSource))), origin.root, origin.manifest, names);
   }
+  /** Generated leaf indexes address the selected descriptor, not an installed default. */
+  function selectedIndex(path: string, names: readonly string[], files: ReadonlyMap<string, string>): SourceModule | undefined {
+    const leaf = /^components\/([a-z][a-z0-9-]*)\/index(?:\.(?:js|ts|tsx))?$/.exec(path)?.[1];
+    if (!leaf) return undefined;
+    const slot = `components.${leaf}`, fill = selectedFills.get(slot);
+    if (!fill) throw new Error(`Source component ${slot} is outside selected library`);
+    if (fill.impl.kind === "composed") throw new Error("Selected component has no materialized source");
+    const exports = [fill.impl.export, ...(fill.secondaryExports?.map(entry => entry.export) ?? [])];
+    if (names.some(name => name !== "*" && !exports.includes(name))) throw new Error(`Requested export is absent from selected ${slot}`);
+    const requested = !names.length || names.includes("*") ? exports : names;
+    if (fill.impl.kind === "source") {
+      const content = files.get(fill.impl.entry);
+      if (content === undefined) throw new Error("Selected component source is not receipted");
+      const module = { path: fill.impl.entry, content, ownerSlot: slot };
+      assertExports(module, requested);
+      return module;
+    }
+    const resolution = resolveModule({ specifier: fill.impl.module, importer: undefined, names: requested, files });
+    if (resolution.kind !== "source") throw new Error("Selected component requires actual source");
+    return { ...resolution.module, ownerSlot: slot };
+  }
   function resolveModule(request: SourceRequest): SourceResolution {
     const { specifier, importer, names, files } = request;
     if (specifier.startsWith("node:") || builtinModules.includes(specifier)) return { kind: "builtin" };
@@ -249,6 +271,11 @@ export function appLocalSourceResolver(library: CompositeLibraryData, appRoot: s
         return { kind: "source", module: normalized.path === local ? { ...normalized } : { ...normalized, origin: "consumer", ownerSlot: /^components\/([a-z][a-z0-9-]*)\//.test(local) ? `components.${local.split("/")[1]}` : undefined } };
       }
       const origin = origins.get(importer.path);
+      const selectedPath = origin?.manifest.name === "@clossys/designer"
+        ? relative(origin.root, confined(origin.root, resolve(dirname(origin.absolute), specifier))).split(sep).join("/").replace(/^src\//, "")
+        : localPath;
+      const component = selectedIndex(selectedPath, names, files);
+      if (component) return { kind: "source", module: component };
       if (origin) return { kind: "source", module: origin.manifest.name === "consumer" ? consumerModule(sourceFile(confined(origin.root, resolve(dirname(origin.absolute), specifier))), names) : packageModule(sourceFile(confined(origin.root, resolve(dirname(origin.absolute), specifier))), origin.root, origin.manifest, names) };
       return { kind: "source", module: consumerModule(sourceFile(confined(appRoot, resolve(appRoot, localPath))), names) };
     }

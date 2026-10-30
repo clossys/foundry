@@ -1,6 +1,7 @@
 import type { AgentCells, CellDetail, CellContentScope } from './cells-client';
 import { directorSections } from './director-specimen';
-import { safePreviewUrl, selectedPublishedPage, type PublicationResponse } from './publisher-preview';
+import { PUBLISHER_DEVICES, PUBLISH_PREVIEW_COMMAND, safePreviewUrl, selectedPublishedPage, type PublicationResponse } from './publisher-preview';
+import type { ProducerSpecimenUnpublishedPage } from './producer-page-preview';
 import { writerProjection } from './writer-specimen';
 
 /** Source inventory only. A registered Designer section decides whether each item renders. */
@@ -13,6 +14,9 @@ export interface AgentSpecimenPlan {
   expectedVariantIds: string[];
   issues: string[];
   axes?: AgentSpecimenAxis[];
+  /** An intentional empty presentation never establishes emitted-page coverage. */
+  publicationState?: 'unpublished';
+  unpublishedPage?: ProducerSpecimenUnpublishedPage;
 }
 
 /** Preserve every source variant before the selected-section binding checks readiness. */
@@ -68,17 +72,32 @@ export function agentSpecimenPlan(index: AgentCells, cell: CellDetail, publicati
     return plan;
   }
   if (cell.agent === 'publisher') {
-    const viewports = [{ id: 'desktop', width: 1440, height: 900 }, { id: 'mobile', width: 390, height: 844 }];
+    const viewports = Object.entries(PUBLISHER_DEVICES).map(([id, { width, height }]) => ({ id, width, height }));
     plan.expectedVariantIds = viewports.map(viewport => `${cell.id}:${viewport.id}`);
-    if (!publication || publication.state !== 'ready') {
+    if (!publication || publication.state === 'error') {
       plan.issues.push(publication ? publication.message : 'The emitted publication is unavailable.');
       return plan;
     }
     // Cell detail can carry the route linkage absent from the generic index summary.
     const detailedIndex = { ...index, cells: index.cells.map(entry => entry.id === cell.id ? { ...entry, ...cell } : entry) };
-    const page = selectedPublishedPage(detailedIndex, cell.id, publication.pages);
-    if (!page?.emitted || !safePreviewUrl(page.previewUrl)) {
+    const page = publication.state === 'ready' ? selectedPublishedPage(detailedIndex, cell.id, publication.pages) : undefined;
+    if (page && !safePreviewUrl(page.previewUrl)) {
       plan.issues.push('No browser-renderable emitted page is available for this Publisher cell.');
+      return plan;
+    }
+    if (!page?.emitted) {
+      const route = page?.route ?? cell.fields?.path;
+      if (typeof route !== 'string' || !/^\/(?!\/)/.test(route) || /[\\\x00-\x1f?#]/.test(route)) {
+        plan.issues.push('The unpublished Publisher cell has no valid source page route.');
+        return plan;
+      }
+      const unpublishedPage: ProducerSpecimenUnpublishedPage = {
+        publication: 'unpublished', emitted: false, id: page?.id ?? cell.id, route,
+        emptyState: { title: 'Not published yet', description: publication.state === 'missing' ? publication.message : 'This page has not been published.', command: PUBLISH_PREVIEW_COMMAND, context: cell.title || cell.id },
+      };
+      plan.publicationState = 'unpublished';
+      plan.unpublishedPage = unpublishedPage;
+      plan.items = viewports.map(viewport => ({ id: `${cell.id}:${viewport.id}`, kind: 'publisher', publication: 'unpublished', page: unpublishedPage, viewport }));
       return plan;
     }
     plan.items = viewports.map(viewport => ({ id: `${cell.id}:${viewport.id}`, kind: 'publisher', page, viewport }));

@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
-import { basename, dirname, extname, posix, relative, sep } from "node:path";
+import { dirname, extname, posix, relative, sep } from "node:path";
 import { build, transform, type Plugin } from "esbuild";
+import { fileURLToPath } from "node:url";
 import { libraryHash, resolve } from "@clossys/designer/catalog";
 import type { CompositeEngineInput, CompositeResolved } from "@clossys/designer/catalog";
 import { resolveAgent } from "../agents.js";
@@ -55,8 +56,7 @@ function projectionPlugin(files: ReadonlyMap<string, string>, root: string, comp
           if (resolved.errors.length || resolved.external) return resolved;
           const inside = relative(designerRoot, resolved.path);
           if (!inside.startsWith(".." + sep) && !inside.startsWith("..") && !inside.startsWith("node_modules" + sep)) {
-            const name = basename(resolved.path).replace(/\.(?:client|server)\.[^.]+$/, "").replace(/\.[^.]+$/, "");
-            const component = componentModules.get(name);
+            const component = componentModules.get(resolved.path);
             if (component && component.leaf !== owner && files.has(`components/${component.leaf.slice(11)}/index.ts`)) return { path: JSON.stringify([component.leaf, resolved.path]), namespace: "studio-selected-component" };
             let context = sharedContext.get(resolved.path);
             if (context === undefined) { context = /\bcreateContext\s*\(/.test(await readFile(resolved.path, "utf8")); sharedContext.set(resolved.path, context); }
@@ -92,8 +92,7 @@ function projectionPlugin(files: ReadonlyMap<string, string>, root: string, comp
       });
       context.onLoad({ filter: /.*/, namespace: "studio-selected-component" }, args => {
         const [leaf, original] = JSON.parse(args.path) as [string, string];
-        const name = basename(original).replace(/\.(?:client|server)\.[^.]+$/, "").replace(/\.[^.]+$/, "");
-        const component = componentModules.get(name)!;
+        const component = componentModules.get(original)!;
         const selectedName = leaf.slice(11).split("-").map(part => part[0]!.toUpperCase() + part.slice(1)).join("");
         if (leaf === "components.dialog" && files.has("studio-compat/dialog.ts")) return { loader: "js", contents: 'export * from "studio-original";\nexport { Dialog } from "studio-dialog";' };
         if (leaf === "components.tooltip" && files.has("studio-compat/tooltip.ts")) return { loader: "js", contents: 'export * from "studio-original";\nexport { Tooltip } from "studio-tooltip";' };
@@ -136,16 +135,28 @@ export async function compileSelection(root: string, input: CompositeEngineInput
   input = { ...input, componentOptions: { ...input.componentOptions, packageExports } };
   const profile = resolve(input);
   const componentModules = new Map<string, ComponentModule>();
+  const implementationBarrels = new Map<string, string>();
   for (const document of input.catalog.components.fills) {
     const component = Object.values(document.components)[0]!;
-    if (component.impl.kind !== "package" || !component.impl.module.startsWith("@clossys/designer/") || componentModules.has(component.impl.export)) continue;
+    if (component.impl.kind !== "package" || !component.impl.module.startsWith("@clossys/designer/")) continue;
+    const implementationExport = component.impl.export;
+    const barrelUrl = import.meta.resolve(component.impl.module);
+    let barrel = implementationBarrels.get(barrelUrl);
+    if (barrel === undefined) { barrel = await readFile(fileURLToPath(barrelUrl), "utf8"); implementationBarrels.set(barrelUrl, barrel); }
+    // Authenticate the named implementation through its installed public barrel.
+    // Data files may have the same basename as a component (for example Calendar).
+    const declaration = [...barrel.matchAll(/\bexport\s*\{([^}]+)\}\s*from\s*["']([^"']+)["']/g)].find(match =>
+      match[1]!.split(",").some(specifier => specifier.trim().split(/\s+as\s+/).at(-1) === implementationExport));
+    if (!declaration || !declaration[2]!.startsWith(".")) continue;
+    const implementationPath = fileURLToPath(new URL(declaration[2]!, barrelUrl));
+    if (componentModules.has(implementationPath)) continue;
     const secondary = new Map<string, Record<string, string>>();
     for (const [member, pointer] of Object.entries(component.propMap)) {
       const parts = member.split(".");
       const target = /^(?:\.\/[^#]+#)?([A-Z][A-Za-z0-9]*)/.exec(pointer)?.[1];
       if (target && target !== component.impl.export && parts.length === 2) secondary.set(target, { [parts[0]!]: parts[1]! });
     }
-    componentModules.set(component.impl.export, { leaf: component.slot, primary: component.impl.export, secondary });
+    componentModules.set(implementationPath, { leaf: component.slot, primary: component.impl.export, secondary });
   }
   // These emitters check the selected executable portions. Unselected whole-library
   // assets are not prerequisites for rendering a Studio page.
