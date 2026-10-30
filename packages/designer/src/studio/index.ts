@@ -53,9 +53,9 @@ export type { ComponentSpecimenProbeState } from "./component-specimen-samples.j
 export { DesignerSpecimen } from "./DesignerSpecimen.js";
 export type { DesignerSpecimenContext, DesignerSpecimenProps, DesignerSpecimenNeed, DesignerSurfaceSpecimen } from "./DesignerSpecimen.js";
 export { emittedDesignerSpecimenContext } from "./emitted-specimens.js";
-export { contentSpecimenLeaves, SpecimenRichPassage, SpecimenCopyInContext, SpecimenPageViewports, contentSpecimenNeeds, richPassageItems, copyInContextItems, pageViewportItems, pageViewportCases } from "./specimen-content.js";
-export type { RichPassageValue, CopyInContextValue, PageViewportValue } from "./specimen-content.js";
-export type { SpecimenPagePreviewPort, SpecimenPublishedPage } from "./specimen-content-ports.js";
+export { contentSpecimenLeaves, SpecimenRichPassage, SpecimenCopyInContext, SpecimenPageViewports, contentSpecimenNeeds, richPassageItems, copyInContextItems, pageViewportItems, pageViewportCases, unpublishedPageViewportCases, isUnpublishedPageViewportValue, isSpecimenUnpublishedPage } from "./specimen-content.js";
+export type { RichPassageValue, CopyInContextValue, PageViewportValue, UnpublishedPageViewportValue, SpecimenPageViewportValue } from "./specimen-content.js";
+export type { SpecimenPagePreviewPort, SpecimenPublishedPage, SpecimenUnpublishedPage, SpecimenPreviewPage } from "./specimen-content-ports.js";
 export type { EmittedDesignerSpecimenRuntime } from "./emitted-specimens.js";
 export { bindNativeSpecimenContext } from "./emitted-specimens.js";
 export { SpecimenLayoutSection, specimenLayoutNeeds } from "./specimen-layouts.js";

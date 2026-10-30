@@ -15,7 +15,7 @@ import type { CompositeCatalogData, CompositeLibraryData } from "../catalog-core
 import type { SurfaceCandidateDocument } from "../catalog-core/surface-types.js";
 import { emittedDesignerSpecimenContext } from "./emitted-specimens.js";
 import type { DesignerSpecimenContext } from "./DesignerSpecimen.js";
-import { contentSpecimenLeaves, contentSpecimenNeeds, copyInContextItems, pageViewportCases, richPassageItems, SpecimenCopyInContext, SpecimenPageViewports, SpecimenRichPassage, type CopyInContextValue } from "./specimen-content.js";
+import { contentSpecimenLeaves, contentSpecimenNeeds, copyInContextItems, pageViewportCases, richPassageItems, SpecimenCopyInContext, SpecimenPageViewports, SpecimenRichPassage, unpublishedPageViewportCases, isSpecimenUnpublishedPage, type CopyInContextValue } from "./specimen-content.js";
 import type { SpecimenAxis, SpecimenItem, SpecimenLeafProps } from "./specimen-layouts.js";
 
 let context: DesignerSpecimenContext;
@@ -171,4 +171,59 @@ it("never falls back when the consumer's selected rich-text module is absent", (
   const view = render(<SpecimenRichPassage {...base(passages(1), undefined, { ...context, modules: {} })} />);
   expect(screen.getByRole("status")).toHaveTextContent("module-unavailable");
   expect(view.container.querySelector("[data-readonly]")).toBeNull();
+});
+
+const unpublishedPage = {
+  publication: "unpublished" as const, emitted: false as const, id: "page", route: "/example-co",
+  emptyState: { title: "Not published yet", description: "Publish ExampleCo to preview this route.", command: "clossys publish --target preview", context: "ExampleCo Publisher preview" },
+};
+const unpublishedContext = (): DesignerSpecimenContext => ({ ...context, pagePreview: { engine: "producer-emitted-page@1", origin: "http://127.0.0.1:4300", pages: [unpublishedPage], renderViewport: vi.fn(() => null) } });
+it.each([1, 3, 15])("renders %i confirmed unpublished viewport states through the selected empty state without publication coverage", count => {
+  const viewports = Array.from({ length: count }, (_, index) => ({ id: `viewport-${index}`, label: index === 0 ? "Desktop" : index === 1 ? "Tablet" : "Mobile", width: [1440, 768, 390][index % 3]!, height: 900 }));
+  const cases = unpublishedPageViewportCases({ id: "page", label: "ExampleCo page" }, viewports, { page: "Page", viewport: "Viewport" });
+  const selected = unpublishedContext(), bound = selected.surfaces!["sections.empty-state"]!, renderContent = vi.fn(bound.renderContent);
+  const props = base(cases.items, cases.axes, { ...selected, surfaces: { ...selected.surfaces, "sections.empty-state": { ...bound, renderContent } } });
+  const view = render(<SpecimenPageViewports {...props} />);
+  expect(contentSpecimenNeeds("sections.specimen-page-viewports", props)).toEqual([]);
+  expect(view.container.querySelectorAll("[data-publication-state='unpublished'][data-publication-rendered='false']")).toHaveLength(count);
+  expect(view.container.querySelectorAll("[data-ds-leaf='sections.empty-state']")).toHaveLength(count);
+  expect(renderContent).toHaveBeenCalledWith({ title: unpublishedPage.emptyState.title, description: unpublishedPage.emptyState.description });
+  expect(view.container.textContent).toContain("clossys publish --target preview");
+  expect(view.container.querySelector("[data-publication-route='/example-co'][data-publication-context='ExampleCo Publisher preview']")).toBeTruthy();
+  expect(view.container.querySelector("iframe,[data-ds-specimen-need='true']")).toBeNull();
+  expect(selected.pagePreview!.renderViewport).not.toHaveBeenCalled();
+  expect(cases.items.map(item => [item.id, item.label, item.coordinates, item.value.viewport])).toEqual(viewports.map(viewport => [`page/${viewport.id}`, viewport.label, { page: "page", viewport: viewport.id }, viewport]));
+  view.rerender(<SpecimenPageViewports {...props} expanded />);
+  expect(view.container.querySelectorAll("[data-publication-rendered='false']")).toHaveLength(count);
+});
+it("rejects unknown inventory, incomplete payload, mismatched state and missing selected empty-state renderer", () => {
+  const cases = unpublishedPageViewportCases({ id: "page", label: "ExampleCo page" }, [{ id: "mobile", label: "Mobile", width: 390, height: 900 }], { page: "Page", viewport: "Viewport" });
+  const selected = unpublishedContext();
+  const invalid: DesignerSpecimenContext[] = [
+    { ...selected, pagePreview: { ...selected.pagePreview!, pages: [] } },
+    { ...selected, pagePreview: { ...selected.pagePreview!, pages: [{ id: "page", route: "/example-co", emitted: false, stage: "preview", previewUrl: "/preview/site/pages/page.html" }] } },
+    { ...selected, pagePreview: { ...selected.pagePreview!, pages: [{ ...unpublishedPage, emptyState: { ...unpublishedPage.emptyState, command: "" } }] } },
+    { ...selected, surfaces: {} },
+    { ...selected, surfaces: { ...selected.surfaces, "sections.empty-state": { ...selected.surfaces!["sections.empty-state"]!, descriptorHash: "stale" } } },
+  ];
+  for (const candidate of invalid) expect(contentSpecimenNeeds("sections.specimen-page-viewports", base(cases.items, cases.axes, candidate))).not.toEqual([]);
+  expect(contentSpecimenNeeds("sections.specimen-page-viewports", base(viewportCases(1).items, viewportCases(1).axes, selected))).not.toEqual([]);
+  expect(isSpecimenUnpublishedPage(undefined)).toBe(false);
+  expect(isSpecimenUnpublishedPage({ ...unpublishedPage, emitted: true })).toBe(false);
+  expect(isSpecimenUnpublishedPage({ ...unpublishedPage, publication: "unknown" })).toBe(false);
+  expect(contentSpecimenNeeds("sections.specimen-page-viewports", base([{ id: "bad", label: "Unknown", value: { ...cases.items[0]!.value, publication: "unknown" } }], undefined, selected))).not.toEqual([]);
+});
+
+it("keeps published and unpublished rows distinct in one caller inventory", () => {
+  const selected = unpublishedContext(), renderViewport = vi.fn(() => <components.SemanticContent as="div" data-actual-published-engine="true" />);
+  const mixed: DesignerSpecimenContext = { ...selected, pagePreview: { ...selected.pagePreview!, pages: [...selected.pagePreview!.pages, { id: "published", route: "/published", previewUrl: "/preview/site/pages/published.html", emitted: true, stage: "preview" }], renderViewport } };
+  const viewports = [{ id: "desktop", label: "Desktop", width: 1440, height: 900 }, { id: "tablet", label: "Tablet", width: 768, height: 900 }, { id: "mobile", label: "Mobile", width: 390, height: 900 }];
+  const emitted = pageViewportCases({ id: "published", label: "Published ExampleCo page" }, viewports, { page: "Page", viewport: "Viewport" });
+  const absent = unpublishedPageViewportCases({ id: "page", label: "Unpublished ExampleCo page" }, viewports, { page: "Page", viewport: "Viewport" });
+  const view = render(<><SpecimenPageViewports {...base(emitted.items, emitted.axes, mixed)} /><SpecimenPageViewports {...base(absent.items, absent.axes, mixed)} /></>);
+  expect(renderViewport).toHaveBeenCalledTimes(3);
+  for (const [input] of renderViewport.mock.calls) expect(input).toEqual(expect.objectContaining({ page: expect.objectContaining({ id: "published", emitted: true }), interactive: false }));
+  expect(view.container.querySelectorAll("[data-publication-rendered='false']")).toHaveLength(3);
+  expect(view.container.querySelectorAll("[data-actual-published-engine='true']")).toHaveLength(3);
+  expect(view.container.querySelector("iframe,[data-ds-specimen-need='true']")).toBeNull();
 });
