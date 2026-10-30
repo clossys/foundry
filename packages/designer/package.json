@@ -370,6 +370,7 @@
     "check:compiled-css": "npm run build && node dist/compiled-css/cli.js --check",
     "check:designer-receipt": "npm run build && node dist/library-cli/cli.js receipt",
     "check:process": "node scripts/check-process-gates.mjs",
+    "check:default-candidates": "node scripts/check-default-candidates.mjs",
     "test:process": "node --test scripts/check-one-leaf-source.test.mjs scripts/check-fill-source-imports.test.mjs scripts/check-rendered-class-rules.test.mjs scripts/check-process-gates.test.mjs",
     "compose": "node scripts/compose-with-process-gates.mjs"
   },

@@ -33,6 +33,12 @@ function imports(file, content) {
 }
 const boundary = module => /^(?:react(?:-dom)?(?:\/|$)|next(?:\/|$)|react-aria-components(?:\/|$)|node:)/.test(module);
 function inside(root, file) { const part = relative(root, file); return part === "" || part !== ".." && !part.startsWith(`..${sep}`) && !isAbsolute(part); }
+function consumerOutput(root, output) {
+  const consumer = resolve(root);
+  const destination = resolve(consumer, output ?? ".clossys/check-inputs");
+  if (destination === consumer || !inside(consumer, destination)) throw new Error("Studio check output must be inside the consumer root");
+  return { consumer, output: destination };
+}
 function artifactPath(root, name) {
   if (!name || isAbsolute(name) || name.includes("\\") || name.split("/").some(part => !part || part === "." || part === "..") || !inside(root, resolve(root, name))) throw new Error("Invalid Studio artifact path");
   return resolve(root, name);
@@ -141,26 +147,26 @@ export async function studioSourcePacket(studioRoot = join(producerRoot, "studio
 
 /** A fresh output generation cannot inherit a stale successful selection. */
 export async function emitStudioCheckInputs({ root, output, sourceHead }) {
-  if (typeof output !== "string" || !output.trim()) throw new Error("Studio check emit requires a fresh --out sidecar directory");
   const receipt = await readPageCheckSource();
   if (receipt.sourceDirty || receipt.sourceHead !== sourceHead) throw new Error("Studio check emit requires its clean native build source head");
   requireSourceHead(sourceHead);
-  await generateStudioMap({ check: true });
-  output = resolve(output);
-  if (inside(join(producerRoot, "studio"), output)) throw new Error("Studio check output cannot replace its source tree");
-  const packet = await studioSourcePacket();
   const consumer = discoverRoot(resolve(root));
+  ({ output } = consumerOutput(consumer, output));
+  if (inside(join(producerRoot, "studio"), output)) throw new Error("Studio check output cannot replace its source tree");
+  await generateStudioMap({ check: true });
+  const packet = await studioSourcePacket();
   const stored = await readStudioDesignerLibrary(consumer);
   const prepared = await prepareStudioSelection(stored);
   let library;
   await compileSelection(consumer, prepared.input, prepared.leaves, libraryHash(prepared.input.library), async projection => { library = studioProjectionFiles(projection); });
   if (!library) throw new Error("Studio did not emit a checked selection");
   requireSourceHead(sourceHead);
-  return writeStudioCheckInputs({ output, sourceHead, selectionHash: libraryHash(prepared.input.library), packet, library });
+  return writeStudioCheckInputs({ root: consumer, output, sourceHead, selectionHash: libraryHash(prepared.input.library), packet, library });
 }
 
-export async function writeStudioCheckInputs({ output, sourceHead, selectionHash, packet, library }) {
-  output = resolve(output);
+export async function writeStudioCheckInputs({ root, output, sourceHead, selectionHash, packet, library }) {
+  const consumer = resolve(root);
+  ({ output } = consumerOutput(consumer, output));
   if (!/^[a-f0-9]{40}$/.test(sourceHead)) throw new Error("Studio check output requires an exact source head");
   const contract = parseConsumerDogfoodContract(packet.contract);
   for (const name of [...contract.pages, ...Object.values(contract.sources)]) {
@@ -174,7 +180,7 @@ export async function writeStudioCheckInputs({ output, sourceHead, selectionHash
   for (const [name, content] of library) files.set(`library/${name}`, content);
   for (const name of files.keys()) artifactPath(output, name);
   if (packet.files.get("consumer-dogfood.json") !== stableStringify(contract)) throw new Error("Studio check contract bytes differ from the generated contract");
-  const manifest = { schemaVersion: 1, sourceHead, selectionHash, site: "site", library: "library", contract: "site/consumer-dogfood.json", files: Object.fromEntries([...files].sort(([a], [b]) => a < b ? -1 : 1).map(([name, content]) => [name, hash(content)])) };
+  const manifest = { schemaVersion: 1, sourceHead, selectionHash, site: portable(relative(output, consumer)), sources: "site", library: "library", contract: "site/consumer-dogfood.json", files: Object.fromEntries([...files].sort(([a], [b]) => a < b ? -1 : 1).map(([name, content]) => [name, hash(content)])) };
   for (let cursor = output;; cursor = dirname(cursor)) {
     try { if ((await lstat(cursor)).isSymbolicLink()) throw new Error("Studio check output cannot follow symbolic links"); }
     catch (error) { if (error.code !== "ENOENT") throw error; }
@@ -186,7 +192,7 @@ export async function writeStudioCheckInputs({ output, sourceHead, selectionHash
     const target = artifactPath(output, name); await mkdir(dirname(target), { recursive: true }); await writeFile(target, content, { flag: "wx" });
   }
   await writeFile(join(output, "manifest.json"), stableStringify(manifest), { flag: "wx" });
-  return { ...manifest, output, site: join(output, manifest.site), library: join(output, manifest.library), contract: join(output, manifest.contract) };
+  return { ...manifest, output, site: consumer, sources: join(output, manifest.sources), library: join(output, manifest.library), contract: join(output, manifest.contract) };
 }
 
 export async function main(args = process.argv.slice(2)) {
@@ -194,10 +200,10 @@ export async function main(args = process.argv.slice(2)) {
   const flags = new Map([["--root", "root"], ["--out", "output"], ["--source-head", "sourceHead"]]);
   for (let index = 0; index < args.length; index++) {
     const key = flags.get(args[index]);
-    if (!key || !args[index + 1] || args[index + 1].startsWith("--") || options[key] !== undefined) throw new Error("Usage: emit-studio-check-inputs.mjs --root CONSUMER --source-head SHA --out FRESH_DIRECTORY");
+    if (!key || !args[index + 1] || args[index + 1].startsWith("--") || options[key] !== undefined) throw new Error("Usage: emit-studio-check-inputs.mjs --root CONSUMER --source-head SHA [--out FRESH_DIRECTORY_INSIDE_ROOT]");
     options[key] = args[++index];
   }
-  if (!options.root || !options.output || !/^[a-f0-9]{40}$/.test(options.sourceHead ?? "")) throw new Error("Studio check emit requires --root, --out and a full --source-head");
+  if (!options.root || !/^[a-f0-9]{40}$/.test(options.sourceHead ?? "")) throw new Error("Studio check emit requires --root and a full --source-head");
   return emitStudioCheckInputs(options);
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

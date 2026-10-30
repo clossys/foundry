@@ -138,6 +138,15 @@ export interface DtcgToken {
     "com.clossys.modes"?: { dark?: DtcgValue };
     "com.clossys.font"?: FontPayload;
     "com.clossys.source"?: { line: number };
+    /** Value-source attribution retained when a candidate is adopted by a consumer. */
+    "com.clossys.provenance"?: {
+      sourceLabel: string;
+      sourceAddress: string;
+      sourceVariable?: string;
+      mappingLabel?: "Foundry-authored";
+      pin?: Source["pin"];
+      note?: string;
+    };
     "com.clossys.origin"?: Origin;
     "com.clossys.materializedSha256"?: string;
     /** Explicit member-only A5 contrast exemption; all other asset rules still apply. */

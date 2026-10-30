@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2), separator = args.indexOf("--");
 if (args.includes("--help") && separator < 0) {
-  console.log("Usage: npm run compose -- [process gate options] -- <designer-library command and arguments>\nGate options: --source-head SHA --site ROOT --library DIR --contract JSON --html FILE --css FILE --render-manifest JSON --report-dir DIR. Studio compose targets the actual Studio site inputs. All three gates must verify before the library command runs. Use check:process -- --help for the gate contract.");
+  console.log("Usage: npm run compose -- [process gate options] -- <designer-library command and arguments>\nGate options: --source-head SHA --site ROOT --library DIR --contract JSON --html FILE --css FILE --render-manifest JSON --report-dir DIR. Studio compose targets the actual Studio site inputs. All process gates, including default candidate completeness, must verify before the library command runs. Use check:process -- --help for the gate contract.");
   process.exit(0);
 }
 const gateArgs = separator < 0 ? args : args.slice(0, separator), command = separator < 0 ? [] : args.slice(separator + 1);

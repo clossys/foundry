@@ -1,0 +1,254 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [
+        "foundry-baseline/tokens.z-index"
+      ],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "shadcn@aria/tokens.z-index",
+      "license": "MIT",
+      "mode": "derived",
+      "relation": "derived",
+      "slot": "tokens.z-index",
+      "source": "shadcn@aria",
+      "sourceAddress": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+      "status": "draft",
+      "trust": "foundry",
+      "pin": {
+        "file": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+        "sha256": "e5cd98fbcd7c33ddd6d644a08b85a29da8c2927cc6174597691eafd210a7f9c1"
+      },
+      "derivation": {
+        "from": "dtcg#alias",
+        "rule": "Foundry-authored role hierarchy: base=0; sticky=10; shell=20; aside=30; notice=40; modal=50; toast=60; palette=70; tooltip=80; progress=90; skip-link=100."
+      }
+    }
+  },
+  "tokens": {
+    "z-index": {
+      "aside": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "30"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+            "mappingLabel": "Foundry-authored",
+            "pin": {
+              "file": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+              "sha256": "e5cd98fbcd7c33ddd6d644a08b85a29da8c2927cc6174597691eafd210a7f9c1"
+            },
+            "note": "Foundry-authored role hierarchy: base=0; sticky=10; shell=20; aside=30; notice=40; modal=50; toast=60; palette=70; tooltip=80; progress=90; skip-link=100."
+          }
+        },
+        "$type": "number",
+        "$value": 30
+      },
+      "base": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+            "mappingLabel": "Foundry-authored",
+            "pin": {
+              "file": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+              "sha256": "e5cd98fbcd7c33ddd6d644a08b85a29da8c2927cc6174597691eafd210a7f9c1"
+            },
+            "note": "Foundry-authored role hierarchy: base=0; sticky=10; shell=20; aside=30; notice=40; modal=50; toast=60; palette=70; tooltip=80; progress=90; skip-link=100."
+          }
+        },
+        "$type": "number",
+        "$value": 0
+      },
+      "modal": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "50"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+            "mappingLabel": "Foundry-authored",
+            "pin": {
+              "file": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+              "sha256": "e5cd98fbcd7c33ddd6d644a08b85a29da8c2927cc6174597691eafd210a7f9c1"
+            },
+            "note": "Foundry-authored role hierarchy: base=0; sticky=10; shell=20; aside=30; notice=40; modal=50; toast=60; palette=70; tooltip=80; progress=90; skip-link=100."
+          }
+        },
+        "$type": "number",
+        "$value": 50
+      },
+      "notice": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "40"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+            "mappingLabel": "Foundry-authored",
+            "pin": {
+              "file": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+              "sha256": "e5cd98fbcd7c33ddd6d644a08b85a29da8c2927cc6174597691eafd210a7f9c1"
+            },
+            "note": "Foundry-authored role hierarchy: base=0; sticky=10; shell=20; aside=30; notice=40; modal=50; toast=60; palette=70; tooltip=80; progress=90; skip-link=100."
+          }
+        },
+        "$type": "number",
+        "$value": 40
+      },
+      "palette": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "70"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+            "mappingLabel": "Foundry-authored",
+            "pin": {
+              "file": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+              "sha256": "e5cd98fbcd7c33ddd6d644a08b85a29da8c2927cc6174597691eafd210a7f9c1"
+            },
+            "note": "Foundry-authored role hierarchy: base=0; sticky=10; shell=20; aside=30; notice=40; modal=50; toast=60; palette=70; tooltip=80; progress=90; skip-link=100."
+          }
+        },
+        "$type": "number",
+        "$value": 70
+      },
+      "progress": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "90"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+            "mappingLabel": "Foundry-authored",
+            "pin": {
+              "file": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+              "sha256": "e5cd98fbcd7c33ddd6d644a08b85a29da8c2927cc6174597691eafd210a7f9c1"
+            },
+            "note": "Foundry-authored role hierarchy: base=0; sticky=10; shell=20; aside=30; notice=40; modal=50; toast=60; palette=70; tooltip=80; progress=90; skip-link=100."
+          }
+        },
+        "$type": "number",
+        "$value": 90
+      },
+      "shell": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "20"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+            "mappingLabel": "Foundry-authored",
+            "pin": {
+              "file": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+              "sha256": "e5cd98fbcd7c33ddd6d644a08b85a29da8c2927cc6174597691eafd210a7f9c1"
+            },
+            "note": "Foundry-authored role hierarchy: base=0; sticky=10; shell=20; aside=30; notice=40; modal=50; toast=60; palette=70; tooltip=80; progress=90; skip-link=100."
+          }
+        },
+        "$type": "number",
+        "$value": 20
+      },
+      "skip-link": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "100"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+            "mappingLabel": "Foundry-authored",
+            "pin": {
+              "file": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+              "sha256": "e5cd98fbcd7c33ddd6d644a08b85a29da8c2927cc6174597691eafd210a7f9c1"
+            },
+            "note": "Foundry-authored role hierarchy: base=0; sticky=10; shell=20; aside=30; notice=40; modal=50; toast=60; palette=70; tooltip=80; progress=90; skip-link=100."
+          }
+        },
+        "$type": "number",
+        "$value": 100
+      },
+      "sticky": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "10"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+            "mappingLabel": "Foundry-authored",
+            "pin": {
+              "file": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+              "sha256": "e5cd98fbcd7c33ddd6d644a08b85a29da8c2927cc6174597691eafd210a7f9c1"
+            },
+            "note": "Foundry-authored role hierarchy: base=0; sticky=10; shell=20; aside=30; notice=40; modal=50; toast=60; palette=70; tooltip=80; progress=90; skip-link=100."
+          }
+        },
+        "$type": "number",
+        "$value": 10
+      },
+      "toast": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "60"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+            "mappingLabel": "Foundry-authored",
+            "pin": {
+              "file": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+              "sha256": "e5cd98fbcd7c33ddd6d644a08b85a29da8c2927cc6174597691eafd210a7f9c1"
+            },
+            "note": "Foundry-authored role hierarchy: base=0; sticky=10; shell=20; aside=30; notice=40; modal=50; toast=60; palette=70; tooltip=80; progress=90; skip-link=100."
+          }
+        },
+        "$type": "number",
+        "$value": 60
+      },
+      "tooltip": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "80"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+            "mappingLabel": "Foundry-authored",
+            "pin": {
+              "file": "src/catalog/fills/foundry-baseline/tokens.z-index.json",
+              "sha256": "e5cd98fbcd7c33ddd6d644a08b85a29da8c2927cc6174597691eafd210a7f9c1"
+            },
+            "note": "Foundry-authored role hierarchy: base=0; sticky=10; shell=20; aside=30; notice=40; modal=50; toast=60; palette=70; tooltip=80; progress=90; skip-link=100."
+          }
+        },
+        "$type": "number",
+        "$value": 80
+      }
+    }
+  }
+}

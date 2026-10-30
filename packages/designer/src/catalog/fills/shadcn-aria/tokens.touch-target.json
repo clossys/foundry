@@ -1,0 +1,67 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [
+        "foundry/tokens.touch-target"
+      ],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "shadcn@aria/tokens.touch-target",
+      "license": "MIT",
+      "mode": "derived",
+      "relation": "derived",
+      "slot": "tokens.touch-target",
+      "source": "shadcn@aria",
+      "sourceAddress": "src/catalog/fills/foundry/tokens.touch-target.json",
+      "status": "draft",
+      "trust": "foundry",
+      "pin": {
+        "file": "src/catalog/fills/foundry/tokens.touch-target.json",
+        "sha256": "479686e6a97dcb75f44214d34ecc220ee9bcd7963052e75b3a1a78991926f4f2"
+      },
+      "derivation": {
+        "from": "dtcg#alias",
+        "rule": "Foundry-authored default=44px accessibility extension; upstream has no universal named touch-target default."
+      }
+    }
+  },
+  "tokens": {
+    "touch-target": {
+      "default": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "44px"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "src/catalog/fills/foundry/tokens.touch-target.json",
+            "mappingLabel": "Foundry-authored",
+            "pin": {
+              "file": "src/catalog/fills/foundry/tokens.touch-target.json",
+              "sha256": "479686e6a97dcb75f44214d34ecc220ee9bcd7963052e75b3a1a78991926f4f2"
+            },
+            "note": "Foundry-authored default=44px accessibility extension; upstream has no universal named touch-target default."
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 44
+        }
+      }
+    }
+  }
+}
