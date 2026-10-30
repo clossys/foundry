@@ -1,15 +1,5 @@
 {
   "avatar": [],
-  "badge": [
-    "tokens.caption-size",
-    "tokens.letter-spacing",
-    "tokens.radius",
-    "tokens.spacing",
-    "tokens.status-color",
-    "tokens.surface-color",
-    "tokens.text-color",
-    "tokens.typeface"
-  ],
   "banner": [],
   "breadcrumbs": [
     "tokens.body-size",
