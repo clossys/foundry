@@ -38,7 +38,7 @@
       "link": {
         "$extensions": {
           "com.clossys.css": {
-            "raw": "oklch(0.36 0 0)"
+            "raw": "#6E3FC7"
           },
           "com.clossys.modes": {
             "dark": {
@@ -53,18 +53,19 @@
         },
         "$type": "color",
         "$value": {
-          "colorSpace": "oklch",
+          "colorSpace": "srgb",
           "components": [
-            0.36,
-            0,
-            0
-          ]
+            0.431373,
+            0.247059,
+            0.780392
+          ],
+          "hex": "#6E3FC7"
         }
       },
       "muted": {
         "$extensions": {
           "com.clossys.css": {
-            "raw": "oklch(0.54 0 0)"
+            "raw": "#595959"
           },
           "com.clossys.modes": {
             "dark": {
@@ -79,12 +80,13 @@
         },
         "$type": "color",
         "$value": {
-          "colorSpace": "oklch",
+          "colorSpace": "srgb",
           "components": [
-            0.54,
-            0,
-            0
-          ]
+            0.34902,
+            0.34902,
+            0.34902
+          ],
+          "hex": "#595959"
         }
       },
       "on-accent": {
@@ -98,7 +100,7 @@
       "on-inverse": {
         "$extensions": {
           "com.clossys.css": {
-            "raw": "oklch(0.9702 0 0)"
+            "raw": "#FAFAFA"
           },
           "com.clossys.modes": {
             "dark": {
@@ -113,18 +115,19 @@
         },
         "$type": "color",
         "$value": {
-          "colorSpace": "oklch",
+          "colorSpace": "srgb",
           "components": [
-            0.9702,
-            0,
-            0
-          ]
+            0.980392,
+            0.980392,
+            0.980392
+          ],
+          "hex": "#FAFAFA"
         }
       },
       "on-inverse-muted": {
         "$extensions": {
           "com.clossys.css": {
-            "raw": "oklch(0.7763 0 0)"
+            "raw": "#D4D4D4"
           },
           "com.clossys.modes": {
             "dark": {
@@ -139,18 +142,19 @@
         },
         "$type": "color",
         "$value": {
-          "colorSpace": "oklch",
+          "colorSpace": "srgb",
           "components": [
-            0.7763,
-            0,
-            0
-          ]
+            0.831373,
+            0.831373,
+            0.831373
+          ],
+          "hex": "#D4D4D4"
         }
       },
       "primary": {
         "$extensions": {
           "com.clossys.css": {
-            "raw": "oklch(0.2178 0 0)"
+            "raw": "#0A0A0A"
           },
           "com.clossys.modes": {
             "dark": {
@@ -165,18 +169,19 @@
         },
         "$type": "color",
         "$value": {
-          "colorSpace": "oklch",
+          "colorSpace": "srgb",
           "components": [
-            0.2178,
-            0,
-            0
-          ]
+            0.039216,
+            0.039216,
+            0.039216
+          ],
+          "hex": "#0A0A0A"
         }
       },
       "secondary": {
         "$extensions": {
           "com.clossys.css": {
-            "raw": "oklch(0.36 0 0)"
+            "raw": "#262626"
           },
           "com.clossys.modes": {
             "dark": {
@@ -191,12 +196,13 @@
         },
         "$type": "color",
         "$value": {
-          "colorSpace": "oklch",
+          "colorSpace": "srgb",
           "components": [
-            0.36,
-            0,
-            0
-          ]
+            0.14902,
+            0.14902,
+            0.14902
+          ],
+          "hex": "#262626"
         }
       }
     }
