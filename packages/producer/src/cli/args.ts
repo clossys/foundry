@@ -1,4 +1,4 @@
-export const VERBS = ["direct", "design", "write", "publish", "produce"] as const;
+export const VERBS = ["direct", "design", "write", "publish", "produce", "check"] as const;
 export type Verb = typeof VERBS[number];
 
 export interface CliArgs {
@@ -11,14 +11,17 @@ export interface CliArgs {
   port?: number;
   noOpen: boolean;
   target?: string;
+  pages?: string;
+  report?: string;
 }
 
 export class CliUsageError extends Error {
   readonly exitCode = 2;
 }
 
-export const USAGE = "Usage: clossys <direct|design|write|publish|produce> [--check] [--root <dir>] [--json]\n"
-  + "Options: --help; produce --once --port <0-65535> --no-open; publish --target <id>";
+export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check> [--check] [--root <dir>] [--json]\n"
+  + "Options: --help; produce --once --port <0-65535> --no-open; publish --target <id>\n"
+  + "Page check: clossys check --pages <generated-manifest.json> --report <report.json> [--json]";
 
 export function parseArgs(argv: readonly string[]): CliArgs {
   const args: CliArgs = { help: false, check: false, json: false, once: false, noOpen: false };
@@ -37,6 +40,8 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       case "--once": args.once = true; break;
       case "--no-open": args.noOpen = true; break;
       case "--target": args.target = value(); break;
+      case "--pages": args.pages = value(); break;
+      case "--report": args.report = value(); break;
       case "--port": {
         const port = value();
         if (!/^\d+$/.test(port) || Number(port) > 65535) throw new CliUsageError("--port must be an integer from 0 to 65535");
@@ -52,6 +57,12 @@ export function parseArgs(argv: readonly string[]): CliArgs {
     throw new CliUsageError("--once, --port and --no-open require produce");
   }
   if (args.target !== undefined && args.verb !== "publish") throw new CliUsageError("--target requires publish");
+  if ((args.pages !== undefined || args.report !== undefined) && args.verb !== "check") {
+    throw new CliUsageError("--pages and --report require check");
+  }
   if (!args.verb && !args.help) throw new CliUsageError("A verb is required");
+  if (args.verb === "check" && !args.help && (args.pages === undefined || args.report === undefined)) {
+    throw new CliUsageError("check requires --pages and --report");
+  }
   return args;
 }
