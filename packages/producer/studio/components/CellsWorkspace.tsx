@@ -8,6 +8,7 @@ import { ChevronDown, ChevronRight, FileText, Home } from '@clossys/designer/ico
 import { AGENT_LABELS, isAgent, type Agent } from '../lib/agents';
 import { cellHierarchy, loadCell, loadCells, type AgentCells, type CellDetail, type CellNode } from '../lib/cells-client';
 import { StudioFrame } from './StudioFrame';
+import { DesignerCellSpecimen } from './DesignerSpecimen';
 
 type Resource<T> = { state: 'loading' } | { state: 'error'; message: string } | { state: 'ready'; value: T };
 
@@ -105,7 +106,7 @@ export function CellsWorkspace({ agent }: { agent?: Agent }) {
             {detail.value.status ? <Badge variant={detail.value.status === 'active' ? 'success' : detail.value.status === 'draft' ? 'warning' : 'neutral'}>{detail.value.status}</Badge> : null}
             {detail.value.version !== undefined ? <Badge>v{detail.value.version}</Badge> : null}
           </>} />
-          <pre aria-label="Cell content">{detail.value.content || 'This cell has no content.'}</pre>
+          {detail.value.agent === 'designer' ? <DesignerCellSpecimen cell={detail.value} pending={<EmptyState role="status" title="Designer specimen needs a consumer selection" description="NEED: the consumer Designer runtime is not bound yet. Changes go through the Designer agent." />} /> : <pre aria-label="Cell content">{detail.value.content || 'This cell has no content.'}</pre>}
         </>}
       </ArticleBody>}
     </SectionFrame>
