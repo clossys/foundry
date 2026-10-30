@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ConsumerArtSlot } from "./ConsumerArtSlot.js";
 import type { ConsumerArtContract } from "@clossys/designer/tokens";
+import type { RuntimeBackdropResource, VideoBackdropResource } from "@clossys/designer/blocks";
 const art: ConsumerArtContract = {
   slot: "media", purpose: "meaningful", alt: "A tree beside a walking path",
   width: 1600, height: 900, aspect: "16:9", fit: "contain", loading: "lazy",
@@ -14,6 +15,22 @@ function root(contract: ConsumerArtContract) {
   return host.querySelector("[data-consumer-art-slot]")!;
 }
 describe("Publisher checked consumer art slot", () => {
+  const still = { ...art, slot: "backdrop", purpose: "decorative", alt: "", fit: "cover", loading: "lazy", bytes: 1000 } as const;
+  const runtime: RuntimeBackdropResource = { kind: "module", moduleRef: "./art/example.js", poster: still, still, moduleBytes: 2000, budgetBytes: 4000 };
+  it("delegates draft runtime artwork through the public checked BackdropHost and server-renders its still", () => {
+    const html = renderToStaticMarkup(<ConsumerArtSlot contract={runtime} />);
+    const host = document.createElement("div"); host.innerHTML = html;
+    expect(host.querySelector("[data-backdrop-host]")?.getAttribute("aria-hidden")).toBe("true");
+    expect(host.querySelector("img")?.getAttribute("src")).toBe("/art/photo.webp");
+    expect(host.querySelector("canvas,video,button")).toBeNull();
+    expect(() => renderToStaticMarkup(<ConsumerArtSlot contract={{ ...runtime, budgetBytes: 1 }} />)).toThrow(/Invalid runtime backdrop/);
+  });
+  it("delegates video to the public checked VideoBackdrop without loading motion during server rendering", () => {
+    const video: VideoBackdropResource = { kind: "video", video: { src: "/media/example.webm", width: 1600, height: 900, mediaType: "video/webm", reducedMotion: "poster" }, poster: still, still, bytes: 2000, budgetBytes: 4000, labels: { pause: "Pause", resume: "Resume" } };
+    const host = document.createElement("div"); host.innerHTML = renderToStaticMarkup(<ConsumerArtSlot contract={video} />);
+    expect(host.querySelector("[data-backdrop-host]")).not.toBeNull();
+    expect(host.querySelector("video,button")).toBeNull();
+  });
   it("renders media alt, intrinsic dimensions, asynchronous decoding and lazy loading", () => {
     const el = root(art);
     const image = el.querySelector("img")!;

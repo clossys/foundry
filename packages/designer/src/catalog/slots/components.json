@@ -1101,7 +1101,8 @@
           "assets.icon-legal",
           "assets.icon-package",
           "assets.icon-layers",
-          "assets.icon-integration"
+          "assets.icon-integration",
+          "assets.icon-set"
         ]
       }
     },
@@ -2615,6 +2616,63 @@
       },
       "composes": [
         "components.icon"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.media-player",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "controls.full",
+          "controls.minimal"
+        ]
+      },
+      "props": [
+        "video",
+        "poster",
+        "passage",
+        "captions",
+        "muted",
+        "autoplay",
+        "loop",
+        "controls",
+        "className"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.radius",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.spacing",
+          "tokens.focus-color",
+          "tokens.focus-outline"
+        ],
+        "assets": [
+          "assets.image",
+          "assets.video",
+          "assets.icon-chevron-right"
+        ],
+        "components": [
+          "components.button",
+          "components.toggle-button",
+          "components.slider",
+          "components.icon",
+          "components.semantic-content"
+        ]
+      },
+      "composes": [
+        "components.button",
+        "components.toggle-button",
+        "components.slider",
+        "components.icon",
+        "components.semantic-content"
       ]
     },
     "requires": [],

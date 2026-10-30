@@ -3107,11 +3107,13 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.button",
         "components.semantic-content"
       ],
       "scannedReads": {
         "assets": [],
         "components": [
+          "components.button",
           "components.semantic-content"
         ],
         "tokens": [
@@ -3134,6 +3136,10 @@
       },
       "sourceFiles": [
         {
+          "path": "packages/designer/src/backdrop/BackdropHost.tsx",
+          "sha256": "a7fb3fa81326aeee939fc8712faf2ec3d9688cccb1adcbff3d2a434d3a04f647"
+        },
+        {
           "path": "packages/designer/src/backdrop/consumer-art.ts",
           "sha256": "b1a1bc6df0176a3b3934065c3080ddf1371914c4dbe39905d0f8adf41c64ee9e"
         },
@@ -3142,8 +3148,16 @@
           "sha256": "5df9f040446b8136b33ecd52a46c4f92ba857420c15b279e8c71a0e3662f4af8"
         },
         {
+          "path": "packages/designer/src/backdrop/runtime-module.ts",
+          "sha256": "e81815ee82187dd887b5a323c2f3b9f796b8803d6d50afaffe467ca64dd5000b"
+        },
+        {
+          "path": "packages/designer/src/backdrop/VideoBackdrop.tsx",
+          "sha256": "e481860584a01206d71324a3ab90100638b5bfe301ab3cebc2c71598865083e1"
+        },
+        {
           "path": "packages/designer/src/blocks/Hero.tsx",
-          "sha256": "d00b4b1ef112af1d5c0173d652ea33fdffae29c5eebca91df67840ba562efa04"
+          "sha256": "841b2ae581c9c5fd131384d28e833ab7bcd0b5d1cacc62da67b48cc757136c78"
         },
         {
           "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
@@ -3160,6 +3174,10 @@
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
           "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/catalog-assets/media.ts",
+          "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -3551,11 +3569,13 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.media-player",
         "components.semantic-content"
       ],
       "scannedReads": {
         "assets": [],
         "components": [
+          "components.media-player",
           "components.semantic-content"
         ],
         "tokens": [
@@ -3596,7 +3616,7 @@
         },
         {
           "path": "packages/designer/src/blocks/MediaFigure.tsx",
-          "sha256": "584bd94f4c9a17a0685ffac72f9f5a614efe30bfcab04dd003f1f375001915eb"
+          "sha256": "cb2161ae1fdea68f61530bb460f548dfc45c389d6ef5ff4efcce01d807e4e9f5"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",

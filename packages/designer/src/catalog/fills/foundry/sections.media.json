@@ -27,17 +27,20 @@
   "sections": {
     "media": {
       "composes": [
+        "components.media-player",
         "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.media-player",
           "components.semantic-content"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
+            "components.media-player",
             "components.semantic-content"
           ],
           "tokens": [
@@ -78,7 +81,7 @@
           },
           {
             "path": "packages/designer/src/blocks/MediaFigure.tsx",
-            "sha256": "584bd94f4c9a17a0685ffac72f9f5a614efe30bfcab04dd003f1f375001915eb"
+            "sha256": "cb2161ae1fdea68f61530bb460f548dfc45c389d6ef5ff4efcce01d807e4e9f5"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -124,6 +127,7 @@
       "license": "MIT",
       "notes": [
         "The figure-to-children pointer is an adaptation point. The private sections.media runtime adapts figure.media={kind:image,resource:ImageResource} to the public image prop, optional figure.ratio to a canonical image-ratio member, figure.caption to caption and figure.chromeLabel to the browser-only chromeLabel. Existing registered chart and mark content remains supported as children.",
+        "kind.video binds assets.video plus an assets.image poster and resolved Writer playback/error passage to the real components.media-player. The existing required figure.media.title is the player title. Image-ratio overrides are refused for video; the player owns inline playback and its accessible controls.",
         "The closed chrome members select browser, device or bare; bare is the default. Chrome is token-drawn around the existing media renderer and does not change its intrinsic image ratio. Optional callouts maps to {label,items:[{id,body}]} with a nonempty host-authored list label and item bodies and unique nonempty item ids.",
         "The host supplies all visible and accessible copy through the Writer passage contract. This package descriptor does not bind shared anatomy or prove consumer runtime conformance.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
@@ -137,7 +141,8 @@
       "propMap": {
         "chrome.bare": "./blocks#MediaFigure.chrome=bare",
         "chrome.browser": "./blocks#MediaFigure.chrome=browser",
-        "chrome.device": "./blocks#MediaFigure.chrome=device"
+        "chrome.device": "./blocks#MediaFigure.chrome=device",
+        "kind.video": "./blocks#MediaFigure.kind=video"
       },
       "reads": {
         "assets": [],

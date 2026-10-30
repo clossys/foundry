@@ -40,10 +40,10 @@ describe("sections.media specimen runtime", () => {
   it("maps the optional callouts slot and every chrome member to the existing public MediaFigure", () => {
     const contract = sections.find(row => row.id === "sections.media")!.contract;
     expect(contract.slots).toContainEqual({ name: "callouts", type: "records", required: false });
-    expect(contract.members.names).toEqual(members);
-    expect(mediaInputs).toEqual({ slots: ["figure", "callouts"], members });
+    expect(contract.members.names).toEqual([...members, "kind.video"]);
+    expect(mediaInputs).toEqual({ slots: ["figure", "callouts"], members: [...members, "kind.video"] });
     expect(FOUNDRY_SECTION_MAP.media!.slotMap.callouts).toBe("./blocks#MediaFigure.callouts");
-    expect(FOUNDRY_SECTION_MAP.media!.propMap).toEqual(Object.fromEntries(members.map(name => [name, `./blocks#MediaFigure.chrome=${name.slice(7)}`])));
+    expect(FOUNDRY_SECTION_MAP.media!.propMap).toEqual({ ...Object.fromEntries(members.map(name => [name, `./blocks#MediaFigure.chrome=${name.slice(7)}`])), "kind.video": "./blocks#MediaFigure.kind=video" });
     expect(descriptor).toEqual(JSON.parse(generatedFoundrySectionFiles()["sections.media.json"]!).sections.media);
     expect(passages.find(row => row.id === "passages.media")!.contract.copy).toEqual(contract.copy);
     expect(contract.copy.fields.map(row => row.key)).toEqual(expect.arrayContaining(["figure.chromeLabel", "callouts.label", "callouts.items[].body"]));

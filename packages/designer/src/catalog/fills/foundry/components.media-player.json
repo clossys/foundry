@@ -1,0 +1,113 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [
+        "components.button",
+        "components.toggle-button",
+        "components.slider",
+        "components.icon",
+        "components.semantic-content"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.media-player",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#MediaPlayer",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.media-player",
+      "source": "foundry",
+      "sourceAddress": "./components#MediaPlayer",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "media-player": {
+      "composes": [
+        "components.button",
+        "components.toggle-button",
+        "components.slider",
+        "components.icon",
+        "components.semantic-content"
+      ],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "MediaPlayer",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "controls.full",
+        "controls.minimal"
+      ],
+      "pin": {
+        "export": "./components#MediaPlayer",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "controls.full": "./components#MediaPlayer.controls=full",
+        "controls.minimal": "./components#MediaPlayer.controls=minimal"
+      },
+      "props": [
+        "video",
+        "poster",
+        "passage",
+        "captions",
+        "muted",
+        "autoplay",
+        "loop",
+        "controls",
+        "className"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [
+          "assets.image",
+          "assets.video",
+          "assets.icon-chevron-right"
+        ],
+        "components": [
+          "components.button",
+          "components.toggle-button",
+          "components.slider",
+          "components.icon",
+          "components.semantic-content"
+        ],
+        "tokens": [
+          "tokens.radius",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.spacing",
+          "tokens.focus-color",
+          "tokens.focus-outline"
+        ]
+      },
+      "root": "presentational",
+      "slot": "components.media-player",
+      "source": "foundry"
+    }
+  }
+}

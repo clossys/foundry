@@ -273,7 +273,8 @@
     {
       "l2": "display-media",
       "leaves": [
-        "components.avatar"
+        "components.avatar",
+        "components.media-player"
       ],
       "offers": [
         {
@@ -281,6 +282,13 @@
           "leaves": [
             "components.avatar"
           ]
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.media-player"
+          ],
+          "reason": "no external covers"
         }
       ]
     },

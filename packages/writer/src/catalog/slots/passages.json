@@ -2756,6 +2756,24 @@
               "en": 160
             },
             "dir": "auto"
+          },
+          {
+            "key": "backdrop.labels.pause",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "backdrop.labels.resume",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
           }
         ]
       }
@@ -3098,6 +3116,69 @@
             "required": false,
             "maxLength": {
               "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.passage.play",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.passage.pause",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.passage.mute",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.passage.seek",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.passage.captions",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.passage.error.title",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.passage.error.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
             },
             "dir": "auto"
           }
