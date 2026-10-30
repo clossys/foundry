@@ -5,7 +5,7 @@ import { useStudioUI } from './StudioSelection';
 import { useStudioApps } from './StudioApps';
 import { StudioFrame } from './StudioFrame';
 import { SourceDisclosure } from './SourceDisclosure';
-import { studioHome, studioPublicationHref, studioRoutes } from '../generated/studio-map';
+import { studioPublicationHref, studioRoutes } from '../generated/studio-map';
 
 function publicationTreeItems(nodes: readonly ContentMapNavigationNode[], publicationId: string, ui: ReturnType<typeof useStudioUI>) {
   const { NavigationTreeItem, NavigationTreeItemContent, Link } = ui;
@@ -26,7 +26,7 @@ export function AppsWorkspace() {
   const entry = publication?.map.entries.find(item => item.id === entryId);
   const route = studioRoutes.find(item => item.instanceId === 'apps')!;
   const breadcrumbs = publication && entryId ? publication.breadcrumbs[entryId]?.map(crumb => ({ id: `publication:${publication.id}:${crumb.id}`, label: crumb.label, ...(crumb.href ? { href: studioPublicationHref(publication.id, crumb.id) } : {}) })) : undefined;
-  return <StudioFrame page={{ title: entry?.title ?? publication?.title ?? route.label, description: 'Read-only consumer app publications', ...(publication ? { breadcrumb: [{ id: 'apps', label: route.label, href: route.path }, { id: `publication:${publication.id}`, label: publication.title, href: studioPublicationHref(publication.id) }, ...(breadcrumbs ?? [])] } : {}), actions: [{ id: studioHome.id, label: `Open ${studioHome.label}`, href: studioHome.href }] }}>
+  return <StudioFrame pageActionCapabilities={{ appDevServerUrl: publication?.target?.devServerUrl }} page={{ title: entry?.title ?? publication?.title ?? route.label, description: 'Read-only consumer app publications', ...(publication ? { breadcrumb: [{ id: 'apps', label: route.label, href: route.path }, { id: `publication:${publication.id}`, label: publication.title, href: studioPublicationHref(publication.id) }, ...(breadcrumbs ?? [])] } : {}) }}>
     <SectionFrame measure="wide">
       {apps.state === 'loading' ? <EmptyState role="status" title="Loading app publications…" /> : apps.state === 'error' ? <EmptyState role="alert" title="App publications unavailable" description={apps.message} /> : !apps.publications.length ? <EmptyState title="No app publications" description={apps.message ?? 'This repository has no app content maps.'} /> : publicationId && !publication ? <EmptyState role="alert" title="App publication unavailable" description="The selected app publication is no longer in this repository." /> : !publication ? <ContentSection>
         {apps.publications.map(item => <ContentSection key={item.id}><SectionHeader title={item.title} description={item.id} /><Link href={studioPublicationHref(item.id)}>Open {item.title}</Link></ContentSection>)}

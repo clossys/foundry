@@ -127,3 +127,15 @@ it("refuses unavailable, escaping and aliased app mappings", async () => {
   await writeFile(treePath, JSON.stringify(tree));
   expect(await consumerApps(root)).toMatchObject({ state: "error", publications: [] });
 });
+
+it("exposes only an explicitly declared local app server URL", async () => {
+  await author({ devServerUrl: "http://127.0.0.1:4329" });
+  expect((await consumerApps(root)).publications[0]!.target?.devServerUrl).toBe("http://127.0.0.1:4329/");
+  const path = join(agentRoot(root, "publisher"), "tree.json");
+  const tree = JSON.parse(await readFile(path, "utf8"));
+  for (const devServerUrl of ["https://example.test", "javascript:alert(1)", "http://user@localhost:4329/"]) {
+    tree.meta.publications[0].routePack.devServerUrl = devServerUrl;
+    await writeFile(path, JSON.stringify(tree));
+    expect(await consumerApps(root)).toMatchObject({ state: "error", publications: [] });
+  }
+});

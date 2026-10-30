@@ -15,6 +15,14 @@ and an ISO `lastModified` date or zoned timestamp. Indexing defaults to inclusio
 when omitted. A noindex page still has a route and static params. This metadata
 does not enforce access control or generate a page's head tags.
 
+Pages may declare an ordered `actions` array. Each action supplies `id`, `label`,
+an `assets.*` icon, and `defaultOpen`, plus either a `module` with a `sections.*`
+`section` and optional nonempty `source` binding, or a host `intent` string.
+Intent actions require `defaultOpen: false`. Module references do not register
+Sections; the host reports unavailable modules as NEEDs. These page controls
+are separate from publication-wide command actions. CELL-P stores them in one
+`## Actions` fenced JSON block, after `Manifest` and before `Route` when present.
+
 | Function | Output |
 | --- | --- |
 | `projectRoutes(map, options)` | Registered local page metadata; external entries are excluded. |

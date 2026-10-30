@@ -5,9 +5,10 @@ import type { ReactNode } from 'react';
 import type { AppNavigationNode, CommandMenuGroup, PageBarPage } from '@clossys/designer/blocks';
 import type { ContentMapNavigationNode } from '@clossys/publisher/content-map';
 import { useStudioSelection, useStudioUI } from './StudioSelection';
-import { studioNavigation, studioCommands, studioBreadcrumbs, studioHome, studioPublicationHref, studioRouteForPath } from '../generated/studio-map';
+import { studioNavigation, studioCommands, studioBreadcrumbs, studioHome, studioPageActions, studioPublicationHref, studioRouteForPath } from '../generated/studio-map';
 import { useStudioApps } from './StudioApps';
 import { useStudioBrand } from './StudioBrand';
+import { studioPageActionItems, type StudioPageActionCapabilities } from '../lib/page-actions';
 
 /** Bind projected identities to the selected Designer icon renderer. */
 function useDestinations(nodes: readonly ContentMapNavigationNode[]): AppNavigationNode[] {
@@ -26,7 +27,7 @@ function useDestinations(nodes: readonly ContentMapNavigationNode[]): AppNavigat
   });
 }
 
-export function StudioFrame({ children, page }: { children: ReactNode; page: PageBarPage }) {
+export function StudioFrame({ children, page, pageActionCapabilities }: { children: ReactNode; page: PageBarPage; pageActionCapabilities?: StudioPageActionCapabilities }) {
   const pathname = usePathname();
   const router = useRouter();
   const theme = useStudioBrand();
@@ -35,7 +36,7 @@ export function StudioFrame({ children, page }: { children: ReactNode; page: Pag
   const route = studioRouteForPath(pathname);
   const activeId = route?.instanceId ?? studioHome.id;
   const publications = apps.state === 'ready' ? apps.publications : [];
-  const { AppFrame } = useStudioUI();
+  const { AppFrame, Icon } = useStudioUI();
   const { selection } = useStudioSelection();
   const projected = studioNavigation[activeId] ?? studioNavigation[studioHome.id];
   const destinations = useDestinations(projected.tree.map(node => node.id === 'apps' && publications.length ? { ...node, children: publications.map(publication => ({ id: `publication:${publication.id}`, label: publication.title, href: studioPublicationHref(publication.id) })) } : node));
@@ -55,7 +56,7 @@ export function StudioFrame({ children, page }: { children: ReactNode; page: Pag
     account={{ signedOutLabel: 'Local Studio', sections: [] }} showAccount={false} themeControl={null}
     commands={{ heading: 'Navigate Studio', triggerLabel: 'Find a page', searchLabel: 'Search pages', closeLabel: 'Close search', emptyMessage: 'No matching pages', resultCountMessage: count => `${count} pages`, groups: commands }}
     skipLabel="Skip to content" breadcrumbLabel="Breadcrumb" collapsedBreadcrumbLabel="More breadcrumb levels" pageInfoLabel="Page information" pageActionsLabel="More page actions"
-    page={{ ...page, breadcrumb: page.breadcrumb ?? breadcrumb }} root={{ label: 'Studio', href: studioHome.href }}
+    page={{ ...page, breadcrumb: page.breadcrumb ?? breadcrumb, actions: studioPageActionItems(activeId, studioPageActions[activeId] ?? [], asset => <Icon asset={asset} decorative />, pageActionCapabilities) }} root={{ label: 'Studio', href: studioHome.href }}
     fill="viewport" onNavigate={href => router.push(href)}
   >{children}</AppFrame>;
 }
