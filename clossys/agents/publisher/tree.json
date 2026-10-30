@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "tree": [
+    {
+      "id": "studio",
+      "name": "Studio",
+      "children": [
+        {
+          "id": "studio.pages",
+          "name": "Pages",
+          "cells": [
+            "page.home",
+            "page.apps"
+          ]
+        },
+        {
+          "id": "agents",
+          "name": "Agents",
+          "entry": {
+            "path": "/agents",
+            "kind": "group",
+            "source": {
+              "planItemId": "studio.agents"
+            },
+            "pin": {
+              "nav": true
+            },
+            "icon": "assets.icon-team"
+          },
+          "children": [],
+          "cells": [
+            "page.director",
+            "page.designer",
+            "page.writer",
+            "page.publisher"
+          ]
+        }
+      ]
+    }
+  ],
+  "active": {
+    "page.home": 1,
+    "page.director": 1,
+    "page.designer": 1,
+    "page.apps": 1,
+    "page.writer": 1,
+    "page.publisher": 1
+  },
+  "retired": [],
+  "meta": {
+    "publications": [
+      {
+        "id": "studio",
+        "format": "web.page.responsive",
+        "entryIds": {
+          "page.home": "home",
+          "page.director": "director",
+          "page.designer": "designer",
+          "page.apps": "apps",
+          "page.writer": "writer",
+          "page.publisher": "publisher"
+        },
+        "entryOrder": [
+          "home",
+          "agents",
+          "director",
+          "designer",
+          "writer",
+          "publisher",
+          "apps"
+        ],
+        "entryMeta": {
+          "page.home": {
+            "pin": {
+              "nav": true
+            }
+          },
+          "page.director": {
+            "pin": {
+              "nav": true,
+              "group": "agents"
+            }
+          },
+          "page.designer": {
+            "pin": {
+              "nav": true,
+              "group": "agents"
+            }
+          },
+          "page.apps": {
+            "pin": {
+              "nav": true
+            }
+          },
+          "page.writer": {
+            "pin": {
+              "nav": true,
+              "group": "agents"
+            }
+          },
+          "page.publisher": {
+            "pin": {
+              "nav": true,
+              "group": "agents"
+            }
+          }
+        },
+        "routePack": {
+          "packId": "studio",
+          "homeRouteId": "home"
+        }
+      }
+    ]
+  }
+}

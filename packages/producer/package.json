@@ -1,0 +1,76 @@
+{
+  "name": "@clossys/producer",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "clossys": "dist/cli/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "skill"
+  ],
+  "sideEffects": false,
+  "description": "Private executable tooling scaffold for agent resolution and clossys command dispatch.",
+  "keywords": [
+    "cli",
+    "agents",
+    "typescript"
+  ],
+  "author": "Clossys",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clossys/foundry.git",
+    "directory": "packages/producer"
+  },
+  "bugs": {
+    "url": "https://github.com/clossys/foundry/issues"
+  },
+  "homepage": "https://github.com/clossys/foundry/tree/main/packages/producer#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/generate-studio-map.mjs && tsc -p tsconfig.json",
+    "generate:studio-map": "node scripts/generate-studio-map.mjs",
+    "check:studio-map": "node studio/checks/check-studio-map.cjs",
+    "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@clossys/strategist": "0.6.0",
+    "@clossys/designer": "0.12.0",
+    "@clossys/writer": "0.6.0",
+    "@clossys/publisher": "0.13.0",
+    "esbuild": "0.28.2",
+    "next": "16.4.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-aria-components": "1.21.1",
+    "tailwind-merge": "3.7.0",
+    "tailwindcss": "4.3.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "typescript": "~6.0.0",
+    "vitest": "^5.0.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
+  }
+}

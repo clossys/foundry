@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "outputs": [
+    "content-map/studio.json",
+    "route-pack/studio.json"
+  ]
+}
