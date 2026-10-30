@@ -7,6 +7,9 @@ import type { SiteFramePresentationConfig } from "../site-frame-contract.js";
 import { FOOTER_ICON_LIMIT, FOOTER_LINK_LIMIT, HEADER_LINK_LIMIT, HEADER_ACTION_VARIANTS, SITE_FRAME_NAV_DEFAULTS, SiteFooterContractError, normalizeSiteFrameActions, normalizeSiteFrameConfig } from "../site-frame-contract.js";
 import { SITE_CHROME_GROUNDS } from "../types.js";
 import type { SiteChromeGround, SiteShellInput } from "../types.js";
+import type { SiteMegaGroup } from "../../../shell/SiteHeader.mega.client.js";
+import type { SiteLocaleLink } from "../../../shell/SiteHeader.extras.js";
+import type { NewsletterBandProps } from "../../../blocks/NewsletterBand.js";
 
 export interface ResolvedSiteLink {
   readonly href: string;
@@ -30,14 +33,17 @@ export interface ResolvedSiteShell {
     readonly wordmark?: string;
   };
   readonly skipLink: string;
-  readonly nav?: { readonly label: string; readonly triggerLabel: string; readonly closeLabel?: string; readonly links: readonly ResolvedSiteLink[] };
+  readonly nav?: { readonly label: string; readonly triggerLabel: string; readonly closeLabel?: string; readonly links: readonly ResolvedSiteLink[]; readonly mega?: readonly SiteMegaGroup[] };
+  readonly announcement?: { readonly message: string; readonly dismissLabel?: string; readonly dismissed?: boolean };
   readonly actions: readonly (ResolvedSiteLink & { readonly emphasis: "primary" | "secondary" | "ghost"; readonly icon?: IconNode })[];
   readonly headerActions: readonly (ResolvedSiteLink & { readonly emphasis: "primary" | "secondary" | "ghost"; readonly icon?: IconNode })[];
   readonly environments: readonly (ResolvedSiteLink & { readonly icon: IconNode; readonly isCurrent: boolean })[];
   readonly navPlacement: "leading" | "centered";
   readonly ground: SiteChromeGround;
-  readonly header: { readonly position?: "sticky" | "static"; readonly surface: "solid" | "transparent" | "glass"; readonly tone: "base" | "inverse" };
+  readonly header: { readonly position?: "sticky" | "static"; readonly surface: "solid" | "transparent" | "glass"; readonly tone: "base" | "inverse"; readonly locale?: { readonly label: string; readonly links: readonly SiteLocaleLink[] } };
   readonly footer?: {
+    readonly locale?: { readonly label: string; readonly links: readonly SiteLocaleLink[] };
+    readonly newsletter?: Pick<NewsletterBandProps, "emailLabel" | "submitLabel" | "pendingLabel" | "sentMessage" | "failedMessage" | "privacyNote" | "hint" | "action" | "name">;
     /** The brand's own mark, as resolved for `shell.brand`, linking home in the last icon slot. */
     readonly brandBand?: boolean;
     readonly home: { readonly label: string; readonly href: string; readonly markSrc: string };
@@ -62,17 +68,18 @@ const SHELL_KEYS = new Set([
   "header",
   "footer",
   "origin",
+  "announcement",
 ]);
-const HEADER_KEYS = new Set(["surface", "tone", "position"]);
+const HEADER_KEYS = new Set(["surface", "tone", "position", "locale"]);
 const BRAND_KEYS = new Set(["assetId", "label", "size", "plate", "variant", "wordmark", "tone", "markInk"]);
-const NAV_KEYS = new Set(["label", "triggerLabel", "closeLabel", "links"]);
+const NAV_KEYS = new Set(["label", "triggerLabel", "closeLabel", "links", "mega"]);
 const LINK_KEYS = new Set(["href", "label"]);
 const NAV_LINK_KEYS = new Set(["href", "label", "isCurrent"]);
 const ACTION_KEYS = new Set(["href", "label", "emphasis", "icon"]);
 const ENVIRONMENT_KEYS = new Set(["href", "label", "icon", "isCurrent"]);
 const ICON_LINK_KEYS = new Set(["href", "label", "icon", "assetId"]);
 const SOCIAL_KEYS = new Set(["label", "links"]);
-const FOOTER_KEYS = new Set(["brandBand", "placement", "ground", "columns", "links", "social", "legal", "rule"]);
+const FOOTER_KEYS = new Set(["brandBand", "placement", "ground", "columns", "links", "social", "legal", "rule", "locale", "newsletter"]);
 /** The consent reopen fragment; the footer never carries that control, only the policy link. */
 const PRIVACY_CHOICES_FRAGMENT = "privacy-choices";
 const COLUMN_KEYS = new Set(["heading", "links"]);
@@ -288,6 +295,24 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     return { href: href(fields.href, `${path}.href`, base), label: copy(fields.label, `${path}.label`, resolveCopy) };
   };
   const links = (value: unknown, path: string) => list(value, path).map((entry, index) => link(entry, `${path}[${index}]`));
+  const locale = (value: unknown, path: string) => {
+    const fields = record(value, path, new Set(["label", "links"]));
+    const label = copy(fields.label, `${path}.label`, resolveCopy);
+    const rows = list(fields.links, `${path}.links`).map((entry, index): SiteLocaleLink => {
+      const at = `${path}.links[${index}]`, row = record(entry, at, new Set(["href", "label", "locale", "isCurrent"]));
+      if (typeof row.locale !== "string" || !/^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$/.test(row.locale)) fail(`${at}.locale is invalid.`);
+      if (row.isCurrent !== undefined && typeof row.isCurrent !== "boolean") fail(`${at}.isCurrent must be a boolean.`);
+      if (typeof row.href !== "string" || !/^\/(?!\/)/.test(row.href)) fail(`${at}.href must be a local route.`);
+      return { href: href(row.href, `${at}.href`, undefined), label: copy(row.label, `${at}.label`, resolveCopy), locale: row.locale as string, ...(row.isCurrent === true ? { isCurrent: true } : {}) };
+    });
+    if (new Set(rows.map(row => row.locale.toLowerCase())).size !== rows.length || rows.length > 0 && rows.filter(row => row.isCurrent).length !== 1) fail(`${path} needs unique alternatives and one current locale.`);
+    return { label, links: rows };
+  };
+  const navLink = (value: unknown, path: string): ResolvedSiteLink => {
+    const fields = record(value, path, NAV_LINK_KEYS);
+    if (fields.isCurrent !== undefined && typeof fields.isCurrent !== "boolean") fail(`${path}.isCurrent must be a boolean.`);
+    return { href: href(fields.href, `${path}.href`, base), label: copy(fields.label, `${path}.label`, resolveCopy), ...(fields.isCurrent === true ? { isCurrent: true } : {}) };
+  };
 
   const iconLink = (value: unknown, path: string): ResolvedSiteIconLink => {
     const fields = record(value, path, ICON_LINK_KEYS);
@@ -336,10 +361,23 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
         if (fields.isCurrent !== undefined && typeof fields.isCurrent !== "boolean") fail(`${path}.isCurrent must be a boolean.`);
         return { href: href(fields.href, `${path}.href`, base), label: copy(fields.label, `${path}.label`, resolveCopy), ...(fields.isCurrent === true ? { isCurrent: true } : {}) };
       }),
+      ...(navFields.mega === undefined ? {} : { mega: list(navFields.mega, "shell.nav.mega").map((value, index): SiteMegaGroup => {
+        const at = `shell.nav.mega[${index}]`, fields = record(value, at, new Set(["id", "label", "columns", "featured"]));
+        if (typeof fields.id !== "string" || !fields.id.trim()) fail(`${at}.id is required.`);
+        const columns = list(fields.columns, `${at}.columns`).map((value, position) => {
+          const path = `${at}.columns[${position}]`, column = record(value, path, COLUMN_KEYS);
+          return { heading: copy(column.heading, `${path}.heading`, resolveCopy), links: list(column.links, `${path}.links`).map((value, i) => navLink(value, `${path}.links[${i}]`)) };
+        });
+        if (!columns.length || columns.some(column => !column.links.length)) fail(`${at}.columns needs link columns.`);
+        const featured = fields.featured === undefined ? undefined : record(fields.featured, `${at}.featured`, new Set(["href", "label", "description"]));
+        return { id: fields.id as string, label: copy(fields.label, `${at}.label`, resolveCopy), columns,
+          ...(featured ? { featured: { ...link({ href: featured.href, label: featured.label }, `${at}.featured`), ...(featured.description === undefined ? {} : { description: copy(featured.description, `${at}.featured.description`, resolveCopy) }) } } : {}) };
+      }) }),
     };
   }
 
-  if (nav && nav.links.length > HEADER_LINK_LIMIT) fail("shell.nav.links permits at most five links.");
+  if (nav && nav.links.length + (nav.mega?.length ?? 0) > HEADER_LINK_LIMIT) fail("shell.nav.links permits at most five links.");
+  if (nav?.mega && new Set(nav.mega.map(group => group.id)).size !== nav.mega.length) fail("shell.nav.mega identities must be unique.");
 
   const environments = shell.environments === undefined
     ? []
@@ -378,6 +416,19 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     const home = { label: brand.label, href: href("/", "shell.brand", base), markSrc: brand.markSrc };
     footer = {
       home,
+      ...(footerFields.locale === undefined ? {} : { locale: locale(footerFields.locale, "shell.footer.locale") }),
+      ...(footerFields.newsletter === undefined ? {} : { newsletter: (() => {
+        const path = "shell.footer.newsletter", fields = record(footerFields.newsletter, path, new Set(["emailLabel", "submitLabel", "pendingLabel", "sentMessage", "failedMessage", "privacyNote", "hint", "action", "name"]));
+        if (typeof fields.action !== "string" || !/^\/(?!\/)[^\s\\\u0000-\u001f\u007f]*$/.test(fields.action)) fail(`${path}.action must be a same-origin path.`);
+        if (fields.name !== undefined && (typeof fields.name !== "string" || !fields.name || /\s/.test(fields.name))) fail(`${path}.name must be a form-data key.`);
+        return { action: fields.action as string,
+          ...(fields.name === undefined ? {} : { name: fields.name as string }),
+          emailLabel: copy(fields.emailLabel, `${path}.emailLabel`, resolveCopy), submitLabel: copy(fields.submitLabel, `${path}.submitLabel`, resolveCopy),
+          pendingLabel: copy(fields.pendingLabel, `${path}.pendingLabel`, resolveCopy), sentMessage: copy(fields.sentMessage, `${path}.sentMessage`, resolveCopy),
+          failedMessage: copy(fields.failedMessage, `${path}.failedMessage`, resolveCopy),
+          ...(fields.privacyNote === undefined ? {} : { privacyNote: copy(fields.privacyNote, `${path}.privacyNote`, resolveCopy) }),
+          ...(fields.hint === undefined ? {} : { hint: copy(fields.hint, `${path}.hint`, resolveCopy) }) };
+      })() }),
       ...(footerFields.brandBand === undefined ? {} : { brandBand: footerFields.brandBand as boolean }),
       placement,
       ground: footerGround,
@@ -398,7 +449,7 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
         ...(legalFields.linksLabel === undefined ? {} : { linksLabel: copy(legalFields.linksLabel, "shell.footer.legal.linksLabel", resolveCopy) }),
       },
     };
-    assertFooterContract(footer, nav?.links ?? []);
+    assertFooterContract(footer, [...(nav?.links ?? []), ...(nav?.mega ?? []).flatMap(group => [...group.columns.flatMap(column => column.links), ...(group.featured ? [group.featured] : [])])]);
   }
 
   let header: ResolvedSiteShell["header"] = { surface: "solid", tone: "base" };
@@ -408,6 +459,7 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
       ...(fields.position === undefined ? {} : { position: oneOf(fields.position, "shell.header.position", ["sticky", "static"] as const) }),
       surface: fields.surface === undefined ? "solid" : oneOf(fields.surface, "shell.header.surface", ["solid", "transparent", "glass"] as const),
       tone: fields.tone === undefined ? "base" : oneOf(fields.tone, "shell.header.tone", ["base", "inverse"] as const),
+      ...(fields.locale === undefined ? {} : { locale: locale(fields.locale, "shell.header.locale") }),
     };
   }
 
@@ -447,7 +499,7 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     ...(footer ? { footerGround: footer.ground, footerPlacement: footer.placement, footerRule: footer.rule ?? "none" } : {}),
   });
   if (footer) footer = { ...footer, ground: normalized.footerGround, placement: normalized.footerPlacement, rule: normalized.footerRule };
-  header = { surface: normalized.headerSurface, tone: normalized.headerTone,
+  header = { ...header, surface: normalized.headerSurface, tone: normalized.headerTone,
     ...(normalized.headerPosition === undefined ? {} : { position: normalized.headerPosition }) };
 
   return {
@@ -460,6 +512,11 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     navPlacement: shell.navPlacement === undefined ? "centered" : oneOf(shell.navPlacement, "shell.navPlacement", ["leading", "centered"] as const),
     ground,
     header,
+    ...(shell.announcement === undefined ? {} : { announcement: (() => {
+      const fields = record(shell.announcement, "shell.announcement", new Set(["message", "dismissLabel", "dismissed"]));
+      if (fields.dismissed !== undefined && typeof fields.dismissed !== "boolean") fail("shell.announcement.dismissed must be a boolean.");
+      return { message: copy(fields.message, "shell.announcement.message", resolveCopy), ...(fields.dismissLabel === undefined ? {} : { dismissLabel: copy(fields.dismissLabel, "shell.announcement.dismissLabel", resolveCopy) }), ...(fields.dismissed === undefined ? {} : { dismissed: fields.dismissed as boolean }) };
+    })() }),
     ...(footer === undefined ? {} : { footer }),
   };
 }

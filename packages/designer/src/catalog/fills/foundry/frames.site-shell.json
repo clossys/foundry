@@ -23,19 +23,21 @@
         "chrome.full",
         "chrome.minimal",
         "header-placement.overlay",
-        "slot.consent",
-        "slot.progress"
+        "slot.announcement",
+        "slot.consent"
       ]
     }
   },
   "frames": {
     "site-shell": {
       "composes": [
+        "components.banner",
         "components.icon",
         "components.logo",
         "components.semantic-content",
         "frames.site-footer",
-        "frames.site-header"
+        "frames.site-header",
+        "sections.newsletter"
       ],
       "consumption": {
         "privateInternalReads": [
@@ -45,7 +47,7 @@
             "rawAssets": [
               "assets.js"
             ],
-            "sourceSha256": "3ede6936935916b747b8cf8e1271e11a1f36caa94360a57f98064c924bdcdd29",
+            "sourceSha256": "ee047cd4a7f365dc42cbd20dbb0b6f8f0120a23869d2a8d079999a6264c3f3d5",
             "specifier": "../landing/internal/assets.js",
             "target": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
             "targetSha256": "54cc0184672dfc74981225929705b024611926fd305a88374c1040605cffa3f8"
@@ -56,6 +58,7 @@
             "assets.js"
           ],
           "components": [
+            "components.banner",
             "components.icon",
             "components.logo",
             "components.semantic-content"
@@ -71,15 +74,18 @@
         },
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.banner",
           "components.icon",
           "components.logo",
           "components.semantic-content",
           "frames.site-footer",
-          "frames.site-header"
+          "frames.site-header",
+          "sections.newsletter"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
+            "components.banner",
             "components.icon",
             "components.logo",
             "components.semantic-content"
@@ -95,12 +101,20 @@
         },
         "sourceFiles": [
           {
+            "path": "packages/designer/src/blocks/ArticleReading.tsx",
+            "sha256": "c952d3ba3e5e53d394a70e07c802032fc1fb4e6093324efd2b5110935db2d11f"
+          },
+          {
             "path": "packages/designer/src/catalog-assets/media.ts",
             "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
           },
           {
+            "path": "packages/designer/src/frames/site-frame/FrameRegion.tsx",
+            "sha256": "b481f82663de9508b23a9795853746b77c38baa609a5a89415b59f90a81a59e6"
+          },
+          {
             "path": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",
-            "sha256": "3ede6936935916b747b8cf8e1271e11a1f36caa94360a57f98064c924bdcdd29"
+            "sha256": "ee047cd4a7f365dc42cbd20dbb0b6f8f0120a23869d2a8d079999a6264c3f3d5"
           },
           {
             "path": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
@@ -116,15 +130,19 @@
           },
           {
             "path": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
-            "sha256": "3d67ddfa17aa29c1fcdf01d11b4289448fe3483ba276235a9e9542ce62ff413a"
+            "sha256": "4d49cb29350582f8c33a9aac1fee934c384ddc610cb4e9f417d74a36aa76d70d"
           },
           {
             "path": "packages/designer/src/frames/site-frame/types.ts",
-            "sha256": "5082a75480ef118eda6c17d091d966bceb23e0b42555fe20930cd5c24437359b"
+            "sha256": "67c15f5ed1c20d43467560c2fd89e8e5dbb28dd658a65c3c283b341e4ceb5395"
           },
           {
             "path": "packages/designer/src/frames/site-frame/viewChromeGround.ts",
             "sha256": "d5c430d26e272474f954f3fd42ed0f7175e0e483afaeb8352c131d46e6f50aa2"
+          },
+          {
+            "path": "packages/designer/src/shell/SiteHeader.extras.tsx",
+            "sha256": "3dd9f99cecf4e12f994f99498d54dc60f2b1d21447366a35aec09ebf0efdf517"
           }
         ],
         "unresolved": [
@@ -138,13 +156,19 @@
             "code": "DF2",
             "evidence": "unresolved source export ./NavDisclosure.boundary.client.js#SiteNavDisclosure",
             "file": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
-            "line": 8
+            "line": 9
           },
           {
             "code": "DF2",
             "evidence": "unresolved source export ./SkipLink.boundary.client.js#SiteSkipLink",
             "file": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
-            "line": 9
+            "line": 10
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved source export ../components/Link.js#Link",
+            "file": "packages/designer/src/shell/SiteHeader.extras.tsx",
+            "line": 5
           }
         ]
       },
@@ -155,11 +179,13 @@
       },
       "members": [
         "footer-placement.flow",
-        "footer-placement.overlay"
+        "footer-placement.overlay",
+        "layout.article"
       ],
       "propMap": {
         "footer-placement.flow": "presentation.footerPlacement=flow",
-        "footer-placement.overlay": "presentation.footerPlacement=overlay"
+        "footer-placement.overlay": "presentation.footerPlacement=overlay",
+        "layout.article": "mainLayout=article"
       },
       "reads": {
         "assets": [],
@@ -177,8 +203,10 @@
         "footer": "shell.footer",
         "header": "shell",
         "main": "children",
+        "progress": "progress",
         "skip-link": "shell.skipLink",
-        "toasts": "toasts"
+        "toasts": "toasts",
+        "toc": "toc"
       },
       "statePorts": {}
     }

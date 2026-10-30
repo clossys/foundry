@@ -3,6 +3,7 @@ import { cloneElement, isValidElement, type ReactElement, type ReactNode } from 
 import { Link } from "../../components/Link.js";
 import { Icon, Logomark, SemanticContent } from "@clossys/designer/components/server";
 import { Brandmark, SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
+import { ArticleReadingProgress } from "../../blocks/ArticleReading.js";
 import { Hero, type HeroProps } from "../../blocks/Hero.js";
 import { RenderError } from "./landing/internal/errors.js";
 import { SiteNavDisclosure } from "./NavDisclosure.boundary.client.js";
@@ -10,6 +11,8 @@ import { SiteSkipLink } from "./SkipLink.boundary.client.js";
 import { resolveShell } from "./internal/resolveShell.js";
 import { SITE_MAIN_ID } from "./types.js";
 import type { SiteFrameProps } from "./types.js";
+import { SiteAnnouncement, SiteLocaleLinks } from "../../shell/SiteHeader.extras.js";
+import { NewsletterBand } from "../../blocks/NewsletterBand.js";
 
 /** The frames.site-shell provenance stamp: this export is the foundry fill's package pointer. */
 // The frames.site-shell provenance stamp (Designer dsAttrs shape), written literally: SiteFrame keeps its server-only import boundary.
@@ -47,9 +50,15 @@ function overlayHero(children: ReactNode, headerSurface: "solid" | "transparent"
  * Server-safe: no hooks. Skip-link focus, header-ground observation and
  * navigation disclosure use the existing client islands and resolved data.
  */
-export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, children, toasts, locale }: SiteFrameProps): ReactElement {
+export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, children, toasts, locale, mainLayout = "default", toc, progress, onAnnouncementDismiss }: SiteFrameProps): ReactElement {
   const resolved = resolveShell(shell, resolveCopy, resolveAsset, presentation);
+  if (onAnnouncementDismiss && resolved.announcement && !resolved.announcement.dismissLabel) throw new TypeError("SiteFrame announcement dismissal requires resolved dismiss copy.");
   const { brand, footer } = resolved;
+  if (mainLayout !== "default" && mainLayout !== "article") throw new TypeError("SiteFrame: unsupported main layout");
+  if (mainLayout === "article" && footer?.placement === "overlay") throw new TypeError("SiteFrame: article layout requires a flow footer");
+  const supplied = (node: ReactNode) => node !== undefined && node !== null && node !== false;
+  if (mainLayout !== "article" && (supplied(toc) || supplied(progress))) throw new TypeError("SiteFrame: reading slots require article layout");
+  const articleRail = mainLayout === "article" && toc !== undefined && toc !== null && toc !== false;
   const main = footer?.placement === "overlay" ? overlayHero(children, resolved.header.surface) : children;
 
   const brandmark =
@@ -73,6 +82,8 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
       brand={footer.brandBand ? cloneElement(brandmark, { tone: "inverse" }) : undefined}
       ground={footer.ground}
       rule={footer.rule}
+      locale={footer.locale ? <SiteLocaleLinks {...footer.locale} /> : undefined}
+      newsletter={footer.newsletter ? <NewsletterBand {...footer.newsletter} layout="inline" ground="inverse" /> : undefined}
       className={footer.placement === "overlay" ? "publisher-frame-footer-overlay pointer-events-auto w-full [margin-block-start:auto] min-w-0 [overflow-wrap:anywhere]" : undefined}
       columns={footer.columns.length || (footer.brandBand && footer.social?.links.length) ? <>
         {footer.columns.map((column, columnIndex) => (
@@ -99,6 +110,8 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
   return (
     <ShellI18nProvider locale={locale}><ShellLocaleRoot><SemanticContent as="div" data-frame-root="" className={`flex min-h-dvh flex-col${footer?.placement === "overlay" ? " relative" : ""}`} {...FRAME_STAMP}>
       <SiteSkipLink targetId={SITE_MAIN_ID} label={resolved.skipLink} followHeaderGround={resolved.header.surface === "glass"} />
+      {resolved.announcement ? <SiteAnnouncement dismissed={resolved.announcement.dismissed} dismissLabel={resolved.announcement.dismissLabel}
+        onDismiss={onAnnouncementDismiss}>{resolved.announcement.message}</SiteAnnouncement> : null}
       <SiteHeader
         surface={resolved.header.surface}
         position={resolved.header.position}
@@ -108,9 +121,11 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
         nav={nav}
         navPlacement={resolved.navPlacement}
         actions={actions}
+        locale={resolved.header.locale ? <SiteLocaleLinks {...resolved.header.locale} /> : undefined}
       />
-      <SemanticContent as="main" id={SITE_MAIN_ID} tabIndex={-1} className="flex w-full flex-1 flex-col">
-        {main}
+      {mainLayout === "article" && progress !== undefined && progress !== null && progress !== false ? <ArticleReadingProgress>{progress}</ArticleReadingProgress> : null}
+      <SemanticContent as="main" id={SITE_MAIN_ID} tabIndex={-1} data-site-main-layout={mainLayout === "article" ? "article" : undefined} data-article-reading={mainLayout === "article" ? "" : undefined} className={articleRail ? "grid w-full flex-1 grid-cols-1 gap-xl desktop:grid-cols-4" : "flex w-full flex-1 flex-col"}>
+        {articleRail ? <><SemanticContent as="aside" data-site-article-toc="" className="min-w-0 desktop:sticky desktop:top-lg desktop:self-start">{toc}</SemanticContent><SemanticContent as="div" data-site-article-body="" className="min-w-0 desktop:col-span-3">{main}</SemanticContent></> : main}
       </SemanticContent>
       {footer?.placement === "overlay" ? (
         // Intrinsic footer height is reserved within the same growing hero scene.
