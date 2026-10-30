@@ -19,7 +19,7 @@ describe('native Producer emitted-page specimen port', () => {
     expect(html).toContain('referrerPolicy="no-referrer"');
     expect(html).toContain('tabindex="-1"');
     expect(html).toContain('width="1440" height="900"');
-    expect(html).toContain('pointer-events:none');
+    expect(html).toContain('pointer-events:none'); expect(html).not.toContain('aria-hidden');
     expect(html).not.toMatch(/allow-scripts|allow-same-origin|token|<div|<section/);
   });
   it('retains actual viewport dimensions and removes scaling for standalone content', () => {

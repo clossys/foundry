@@ -44,7 +44,7 @@ export function producerPagePreview(publication: PublicationResponse, origin: st
       // CSS zoom preserves the page's native viewport while scaling its occupied size.
       // Designer owns the containing layout; this engine returns only the guarded iframe.
       const scale = fullSize ? 1 : Math.min(1, PUBLISHER_DEVICES.mobile.width / viewport.width);
-      return <iframe src={`${origin}${actual.previewUrl}`} title={viewport.label} sandbox="" referrerPolicy="no-referrer" tabIndex={-1} aria-hidden="true" width={viewport.width} height={viewport.height} style={{ border: 0, pointerEvents: 'none', zoom: scale }} />;
+      return <iframe src={`${origin}${actual.previewUrl}`} title={viewport.label} sandbox="" referrerPolicy="no-referrer" tabIndex={-1} width={viewport.width} height={viewport.height} style={{ border: 0, pointerEvents: 'none', zoom: scale }} />;
     },
   };
 }
