@@ -13,6 +13,9 @@ import { importFoundryComponents } from "./importers/foundry-components.js";
 import { importShadcnAriaComponents, materializeShadcnComponent, type ShadcnComponentInput } from "./importers/shadcn-aria-components.js";
 import { importRacStarter, type RacStarterInput } from "./importers/rac-starter.js";
 import { associateSourceOwnerRecords } from "./catalog-core/source-owner-closure.js";
+import { planSurfaceDefaults, type SurfaceDefaultsInput } from "./catalog-core/surface-defaults.js";
+import { prepareSpecimenSurfaceSources } from "./library-cli/specimen-surface-sources.js";
+import { SPECIMEN_SECTION_EXPORTS } from "./importers/specimen-sections.js";
 import type { CompositeEngineInput } from "./catalog-core/types.js";
 export type { SourceOwnerClosureResult, SourceOwnerRecord, SourceOwnerNeed } from "./catalog-core/source-owner-closure.js";
 
@@ -86,4 +89,16 @@ export function installedHeadlessLibrary(): ComponentCheckInput["installedRac"] 
 /** Complete current record association for board caches; never runtime qualification. */
 export function prepareSourceOwnerClosure(input: CompositeEngineInput) {
   return associateSourceOwnerRecords(input, loadCatalogBundles());
+}
+
+/** Prepare the real native sources selected by the surface planner, retaining its catalog receipts.
+ * Package candidates need no source bundle. This supplies bytes, never runtime qualification.
+ */
+export async function prepareCatalogSurfaceDefaults(input: CompositeEngineInput, options: Omit<SurfaceDefaultsInput, "catalog">) {
+  if (!input.catalog.surfaces) throw new Error("catalog-bundles: surface catalog required");
+  const plan = planSurfaceDefaults({ ...options, catalog: input.catalog.surfaces });
+  const native = new Set<string>(SPECIMEN_SECTION_EXPORTS.map(row => row.id));
+  const leaves = plan.decisions.filter(row => row.source === "foundry" && native.has(row.slot)).map(row => row.slot);
+  const prepared = leaves.length ? await prepareSpecimenSurfaceSources(input, leaves) : { input, bundles: [] };
+  return { input: prepared.input, surfaceBundles: prepared.bundles, plan };
 }

@@ -1,6 +1,6 @@
 import { studioModuleRequirements } from './studio-module-manifest.js';
-import { applyLibraryChange, emittedTokenProperties, libraryHash, loadCatalog, loadComponentCompositionRules, loadComponentRegistry, planComponentDefaults, planSurfaceDefaults, resolve, DEFAULT_COMPONENT_PREFERENCE, DEFAULT_COMPONENT_PICKS, DEFAULT_COMPONENT_FALLBACK, type CompositeCatalogData, type CompositeEngineInput, type CompositeLibraryData, type LibraryData } from "@clossys/designer/catalog";
-import { installedHeadlessLibrary, loadCatalogBundles } from "@clossys/designer/catalog-bundles";
+import { applyLibraryChange, emittedTokenProperties, libraryHash, loadCatalog, loadComponentCompositionRules, loadComponentRegistry, planComponentDefaults, planSurfaceDefaults, resolve, DEFAULT_COMPONENT_PREFERENCE, DEFAULT_COMPONENT_PICKS, DEFAULT_COMPONENT_FALLBACK, type CompositeCatalogData, type CompositeEngineInput, type CompositeLibraryData, type LibraryData, type SurfaceSourceBundle } from "@clossys/designer/catalog";
+import { installedHeadlessLibrary, loadCatalogBundles, prepareCatalogSurfaceDefaults } from "@clossys/designer/catalog-bundles";
 import { agentModule } from "./cells.js";
 import type { StudioDesignerLibrary } from "./theme.js";
 import type { StudioSelectionLeaf } from "./selection.js";
@@ -10,7 +10,7 @@ const REQUIRED = ["frames.app-shell", "sections.band", "sections.section-header"
 const meta = (fill: any) => fill.$extensions["com.clossys.fill"];
 
 /** Preserve authored selections; fill missing seats through Designer's default planners. */
-export async function prepareStudioSelection(stored?: StudioDesignerLibrary): Promise<{ input: CompositeEngineInput; leaves: StudioSelectionLeaf[] }> {
+export async function prepareStudioSelection(stored?: StudioDesignerLibrary): Promise<{ input: CompositeEngineInput; leaves: StudioSelectionLeaf[]; surfaceBundles: readonly SurfaceSourceBundle[] }> {
   const bundles = loadCatalogBundles();
   const surfaceApi = await agentModule("designer", "library-cli/surface-catalog.js");
   const evidenceApi = await agentModule("designer", "library-cli/surface-package-evidence.js");
@@ -61,8 +61,12 @@ export async function prepareStudioSelection(stored?: StudioDesignerLibrary): Pr
   const surfaceOptions = { packages: await evidenceApi.readSurfacePackageEvidence(surfaceCatalog.fills), measurements: [] };
   const componentDecisions = componentPlan.decisions.filter(row => needed.has(row.slot) && !own.has(row.slot));
   if (componentDecisions.length) library = applyLibraryChange(catalog, library, decisionsApi.decisionChangeSet(catalog, library, componentDecisions, bundles.sourceBundles), { surfaceOptions });
-  const surfaceChanges = surfacePlan.decisions.filter(row => needed.has(row.slot) && !own.has(row.slot)).map(row => ({ portion: "surfaces" as const, change: { op: "adopt" as const, slot: row.slot, source: row.source } }));
-  if (surfaceChanges.length) library = applyLibraryChange(catalog, library, { baseHash: libraryHash(library), changes: surfaceChanges }, { surfaceOptions });
+  const preparedSurfaces = await prepareCatalogSurfaceDefaults({ catalog, library, componentOptions: stored?.componentOptions, surfaceOptions }, {
+    slots: surfaceCatalog.slots.filter(slot => needed.has(slot.id) && !own.has(slot.id)).map(slot => slot.id), preference: DEFAULT_COMPONENT_PREFERENCE,
+  });
+  const preparedCatalog = preparedSurfaces.input.catalog;
+  const surfaceChanges = preparedSurfaces.plan.decisions.map(row => ({ portion: "surfaces" as const, change: { op: "adopt" as const, slot: row.slot, source: row.source } }));
+  if (surfaceChanges.length) library = applyLibraryChange(preparedCatalog, library, { baseHash: libraryHash(library), changes: surfaceChanges, surfaceBundles: preparedSurfaces.surfaceBundles }, { surfaceOptions });
   const effective = new Map<string, any>([...library.values.fills, ...library.components.fills, ...library.surfaces!.fills].map(fill => [meta(fill).slot, fill]));
   const leaves: StudioSelectionLeaf[] = [...needed].sort().map(leaf => {
     const fill = effective.get(leaf);
@@ -70,5 +74,5 @@ export async function prepareStudioSelection(stored?: StudioDesignerLibrary): Pr
     const selectedFill = descriptor?.origin?.fill ?? descriptor?.origin?.base?.fill ?? (fill ? meta(fill).id : undefined);
     return { leaf, source: own.has(leaf) ? "consumer" : fill ? "fallback" : "unavailable", ...(fill ? { fill: selectedFill } : {}), ...(!own.has(leaf) ? { message: fill ? "NEED: not selected by this consumer; using a planned default fill" : "NEED: no eligible default fill" } : {}) };
   });
-  return { input: { catalog, library, componentOptions: stored?.componentOptions, surfaceOptions }, leaves };
+  return { input: { catalog: preparedCatalog, library, componentOptions: stored?.componentOptions, surfaceOptions }, leaves, surfaceBundles: preparedSurfaces.surfaceBundles };
 }

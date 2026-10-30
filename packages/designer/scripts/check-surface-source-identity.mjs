@@ -13,9 +13,9 @@ for (let i = 0; i < args.length; i += 2) {
 const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
 const head = git("rev-parse", "HEAD"), tree = git("rev-parse", "HEAD^{tree}");
 let result;
-try { result = checkSurfaceSourceIdentity(root); }
+try { result = await checkSurfaceSourceIdentity(root); }
 catch (error) { result = { status: "FAIL", counts: {}, findings: [{ code: "unresolved-source", detail: error.message }] }; }
-const sourcePaths = ["package.json", "package-lock.json", "packages/designer/src", "packages/designer/scripts", "packages/designer/package.json", "packages/publisher/src", "packages/publisher/package.json"];
+const sourcePaths = ["package.json", "package-lock.json", "packages/designer/src", "packages/designer/scripts", "packages/designer/package.json", "packages/publisher/src", "packages/publisher/package.json", "packages/producer/src", "packages/producer/scripts", "packages/producer/studio", "packages/producer/package.json"];
 const changes = git("status", "--porcelain", "--untracked-files=all", "--", ...sourcePaths);
 if (options["--source"] && (!/^[a-f0-9]{40}$/.test(options["--source"]) || options["--source"] !== head)) result.findings.push({ code: "source-head-mismatch", detail: "Requested source does not match current HEAD" });
 if (options["--source"] && changes) result.findings.push({ code: "dirty-source", detail: "Requested commit has modified/untracked surface source inputs" });
