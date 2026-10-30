@@ -44,7 +44,9 @@ export async function prepareStudioSelection(stored?: StudioDesignerLibrary): Pr
   const surfacePlan = planSurfaceDefaults({ catalog: surfaceCatalog as any, slots: surfaceCatalog.slots.map(slot => slot.id), preference: DEFAULT_COMPONENT_PREFERENCE });
   const candidates = new Map<string, any>([...catalog.components.fills, ...surfaceCatalog.fills].map(fill => [meta(fill).id, fill]));
   const defaults = new Map<string, any>([...componentPlan.rows, ...surfacePlan.rows].flatMap(row => row.fill && candidates.has(row.fill) ? [[row.slot, candidates.get(row.fill)] as const] : []));
-  const needed = new Set([...REQUIRED, ...await studioModuleRequirements()]);
+  // Native surface slots are the source of eligible specimen seats, not a second leaf list.
+  const specimenIds = surfaceCatalog.slots.flatMap(slot => /^sections\.specimen-[a-z][a-z0-9-]*$/.test(slot.id) ? [slot.id] : []);
+  const needed = new Set([...REQUIRED, ...await studioModuleRequirements(), ...specimenIds]);
   const visit = (leaf: string) => {
     const fill = own.get(leaf) ?? defaults.get(leaf); if (!fill) return;
     const descriptor: any = Object.values(fill.components ?? fill.sections ?? fill.frames ?? {})[0];

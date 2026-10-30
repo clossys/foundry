@@ -35,6 +35,23 @@ describe('full semantic agent specimen source plans', () => {
     expect(plan.expectedVariantIds).toHaveLength(2);
     expect(plan.issues).toEqual([]);
   });
+  it('passes only actual native string and context identities as sparse Writer matrix coordinates', () => {
+    const detail = writer([
+      { locale: 'en', record: { id: 'copy.1', context: 'page.form.headline', text: 'Your profile' } },
+      { locale: 'en', record: { id: 'copy.2', context: 'page.form.description', text: 'Enter your display name.' } },
+      { locale: 'en', record: { id: 'copy.3', context: 'page.form.error', text: 'A name is required.' } },
+    ]);
+    const plan = agentSpecimenPlan(index(detail), detail);
+    expect(plan.issues).toEqual([]); expect(plan.items).toHaveLength(3);
+    expect(plan.axes?.map(axis => [axis.id, axis.values.length])).toEqual([['string', 3], ['context', 3]]);
+    expect(plan.items.map(item => item.coordinates)).toEqual(plan.items.map((item, i) => ({ string: item.id, context: ['page.form.headline', 'page.form.description', 'page.form.error'][i] })));
+    expect(plan.expectedVariantIds).toEqual(plan.items.map(item => item.id));
+    expect(agentSpecimenPlan(index(writer([{ locale: 'en', record: { id: 'copy.1', context: 'page.hero.cta', text: 'Continue' } }])), writer([{ locale: 'en', record: { id: 'copy.1', context: 'page.hero.cta', text: 'Continue' } }])).axes).toBeUndefined();
+  });
+  it('fails a missing source context instead of silently shrinking Writer coverage', () => {
+    const detail = cell('writer', '## Fill\n```json\n' + JSON.stringify({ locale: 'en', records: [{ id: 'copy.1', text: 'Missing context' }, { id: 'copy.2', context: 'page.hero.cta', text: 'Continue' }] }) + '\n```', { locales: ['en'] });
+    expect(agentSpecimenPlan(index(detail), detail).issues).toContain('Writer record identity or context unavailable.');
+  });
   it('counts every English record, including hidden-scale inventories and unsupported textless records', () => {
     const detail = writer(Array.from({ length: 15 }, (_, i) => ({ locale: 'en', record: { id: `copy.${i}`, context: i === 14 ? 'page.unrecognized' : 'page.hero.headline', ...(i === 14 ? { value: 'Unknown source shape' } : { text: `Complete headline ${i}` }) } })));
     const plan = agentSpecimenPlan(index(detail), detail);
