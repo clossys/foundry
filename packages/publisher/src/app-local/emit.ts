@@ -47,7 +47,8 @@ const literal = (value: unknown): string => JSON.stringify(value, null, 2).repla
 /** Read active cells and resolve real selected source entirely in memory. This never compiles into a consumer directory. */
 export async function emitAppLocal(options: EmitAppLocalOptions): Promise<AppLocalEmission> {
   const { target } = options, root = resolve(options.root);
-  if (target.format !== "web.page.responsive" || !/^apps\/[a-zA-Z0-9][a-zA-Z0-9._/-]*$/.test(target.app)) throw new Error("A web application target under apps/ is required");
+  const studio = target.app === "packages/producer/studio";
+  if (target.format !== "web.page.responsive" || (!/^apps\/[a-zA-Z0-9][a-zA-Z0-9._/-]*$/.test(target.app) && !studio)) throw new Error("A web application target under apps/ or the exact Producer Studio target is required");
   safeAppLocalPath(target.app);
   const appDir = containedAppLocalPath(root, target.app), defaultOut = join(appDir, "src/clossys");
   const outDir = options.outDir === undefined ? defaultOut : isAbsolute(options.outDir) ? resolve(options.outDir) : containedAppLocalPath(root, options.outDir);
