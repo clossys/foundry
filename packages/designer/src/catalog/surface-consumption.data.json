@@ -201,7 +201,7 @@
         },
         {
           "path": "packages/designer/src/frames/AppFrame.tsx",
-          "sha256": "e96ec4fb21566aaad06715b668271b7b8b95181aaddd344257f749b874a1b63f"
+          "sha256": "b936356d4416d13e2a948ef0b6ac0c6091e0b7a4072c9dcda0b4f233c5712c27"
         },
         {
           "path": "packages/designer/src/frames/AppFrameBrand.tsx",
@@ -1390,6 +1390,7 @@
         "tokens": [
           "tokens.body-size",
           "tokens.border-color",
+          "tokens.caption-size",
           "tokens.code-size",
           "tokens.control-radius",
           "tokens.heading-size",
@@ -1403,7 +1404,11 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/ArticleBody.tsx",
-          "sha256": "f530b071afec662a54c08723d2253902d75582e06d987e56c7024897f125e81a"
+          "sha256": "b27e93d058450fa9d4f27f9869dc844e535e70b1cb20a0e621fcf5a9adb27ae1"
+        },
+        {
+          "path": "packages/designer/src/blocks/ArticleReading.tsx",
+          "sha256": "a3790bfe3c086ea5158da1fafc73513ee017ae7a3da391669d0b0c2e080cb1e6"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -1412,6 +1417,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -1426,6 +1435,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },
@@ -4661,14 +4676,10 @@
   "sections.table-of-contents": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [
-        "components.disclosure"
-      ],
+      "scannedComposes": [],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.disclosure"
-        ],
+        "components": [],
         "tokens": [
           "tokens.accent-color",
           "tokens.body-size",
@@ -4686,16 +4697,24 @@
       },
       "sourceFiles": [
         {
+          "path": "packages/designer/src/blocks/ArticleReading.tsx",
+          "sha256": "a3790bfe3c086ea5158da1fafc73513ee017ae7a3da391669d0b0c2e080cb1e6"
+        },
+        {
           "path": "packages/designer/src/blocks/TableOfContents.scroll-spy.ts",
           "sha256": "3aa48106b768d662099c123984284a360dc7b0d723b64c0bfdc01025f41806b0"
         },
         {
           "path": "packages/designer/src/blocks/TableOfContents.server.tsx",
-          "sha256": "51a29ef9c85bb767f265cf93ffc643859490ff3e0313b06ec938cba0b8c414aa"
+          "sha256": "0b824794fc12cd18d9232801152392bd6d971e63f556ef66bf2f5de54b5e2c68"
         },
         {
           "path": "packages/designer/src/blocks/TableOfContents.tsx",
-          "sha256": "5cd58fba526b50fc117d5188a94ca9a0c65c9746f763cb63a15b7b39949cbfb6"
+          "sha256": "f1b65dd73a3126360775a90a101eedee80dd3479f13a8bce64ac44a37d31ff95"
+        },
+        {
+          "path": "packages/designer/src/blocks/TableOfContentsDisclosure.tsx",
+          "sha256": "eec8eb6443e9906634ef6a9545641b46c4da40003ebc9450f0118496c8748d04"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -4712,6 +4731,10 @@
         {
           "path": "packages/designer/src/internal/brandmark.ts",
           "sha256": "8373e807f383bdf12d9f325223df75316b99ea60fa3d2e020991b283eb24c16a"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
         }
       ],
       "unresolved": [
@@ -4726,6 +4749,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 2
         }
       ]
     },

@@ -116,7 +116,9 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "propMap": {},
+      "propMap": {
+        "tracking.css": "./blocks#TableOfContents.trackCurrent=css"
+      },
       "reads": {
         "assets": [],
         "tokens": [

@@ -2898,9 +2898,6 @@
   .items-order-cell {
     padding-inline-start: calc((1 - var(--items-wide, 0)) * (var(--spacing-2xl, 32px) + var(--spacing-lg, 16px) + var(--items-lane-narrow, 0px)));
   }
-  .ps-0 {
-    padding-inline-start: 0px;
-  }
   .ps-2xl {
     padding-inline-start: var(--spacing-2xl, 32px);
   }

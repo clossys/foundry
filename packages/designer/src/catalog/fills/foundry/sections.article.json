@@ -92,7 +92,9 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "propMap": {},
+      "propMap": {
+        "typography.drop-cap": "./blocks#ArticleBody.dropCap=true"
+      },
       "reads": {
         "assets": [],
         "tokens": [

@@ -1687,6 +1687,7 @@
         "names": [
           "as.article",
           "as.aside",
+          "as.blockquote",
           "as.code",
           "as.dd",
           "as.div",
@@ -1694,6 +1695,7 @@
           "as.dt",
           "as.figcaption",
           "as.figure",
+          "as.footer",
           "as.h1",
           "as.h2",
           "as.h3",
@@ -1703,6 +1705,8 @@
           "as.img",
           "as.li",
           "as.main",
+          "as.nav",
+          "as.ol",
           "as.p",
           "as.picture",
           "as.section",
@@ -1710,6 +1714,7 @@
           "as.source",
           "as.span",
           "as.strong",
+          "as.sup",
           "as.time",
           "as.ul"
         ]

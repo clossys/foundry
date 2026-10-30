@@ -27,7 +27,7 @@ const markMedia = (title: string) => ({ kind: "mark", src: data.assets.mark.src,
  * the shared asset and chart records.
  */
 export const GROUP_A_CONTENT: Readonly<Record<GroupALeaf, Readonly<Record<string, RuntimeJson>>>> = {
-  article: { body: [{ kind: "heading", text: S.articleBody.heading }, { kind: "paragraph", text: S.articleBody.body }] },
+  article: { body: [{ kind: "heading", id: "article-introduction", text: S.articleBody.heading }, { kind: "paragraph", text: S.articleBody.body }, { kind: "pull-quote", text: S.articleBody.body, items: [S.articleBody.heading] }, { kind: "heading", id: "article-notes", text: S.tableOfContents.label }, { kind: "footnote-reference", id: "article-reference-1", noteId: "article-note-1", text: "1" }, { kind: "footnotes", text: S.tableOfContents.label, items: [S.articleBody.body], references: [{ id: "article-note-1", referenceId: "article-reference-1" }] }], toc: { label: S.tableOfContents.label, items: [{ id: "article-introduction", label: S.articleBody.heading }, { id: "article-notes", label: S.tableOfContents.label }] } },
   band: {},
   "call-to-action": {
     header: { eyebrow: S.callToAction.eyebrow, title: S.callToAction.title, description: S.callToAction.description },
