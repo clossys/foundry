@@ -3,6 +3,10 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased
+
+- Prepare registered site content with Designer’s native SiteFrame, Writer shell copy and registered image resolution. Carry Writer context and current Designer publication evidence into local content releases.
+
 ## 0.13.0 - 2026-10-16
 
 - Use SectionedView for the Standard website home under Designer SiteFrame. Retire Landing executable callers and prop exports; native overlay scenes compose the registered Designer Hero.

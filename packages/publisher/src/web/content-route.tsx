@@ -7,7 +7,8 @@ import { Fragment, createElement } from "react";
 import { createCopyResolver } from "@clossys/writer";
 import type { ReactElement } from "react";
 import { canonicalLocale, directionFor } from "@clossys/writer/locale";
-import { AppFrame, AuthFrame, DocumentFrame } from "@clossys/designer/frames";
+import { AppFrame, AuthFrame, DocumentFrame, SiteFrame } from "@clossys/designer/frames";
+import type { SiteFrameProps } from "@clossys/designer/frames";
 import { EmptyState, LogoHero, SectionHeader } from "@clossys/designer/blocks/server";
 import { PAGE_META_KEY, resolveCopy, validateCopyFields } from "../content/composition.js";
 import type { CompositionSection, CopyFinding, CopyResolutionReport, ResolveCopyOptions } from "../content/composition.js";
@@ -169,7 +170,7 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
       const layout = error instanceof ContentCopyBindingError && error.rule === "designer-owned-layout";
       add(layout ? "config" : "copy", layout ? "designer" : "writer", error instanceof ContentCopyBindingError ? error.path : "appFrame", error instanceof Error ? error.message : "AppFrame copy bindings are required");
     }
-  } else if (frame.frameId !== "frames.auth-shell") add("frame", "designer", frame.frameId, `Designer frame export is unavailable: ${frame.frameId}`);
+  } else if (frame.frameId !== "frames.auth-shell" && frame.frameId !== "frames.site-shell") add("frame", "designer", frame.frameId, `Designer frame export is unavailable: ${frame.frameId}`);
   else if (frame.configId !== "default") add("config", "designer", frame.configId, `Frame config adapter is unavailable: ${frame.frameId}/${frame.configId}`);
 
   const frameFields = input.frameCopy ?? [];
@@ -250,9 +251,42 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
     else sectionNodes.push(createElement(EmptyState, { key: occurrence.key, title: fields.title, description: fields.description }));
   }
 
+  let siteFrame: ReactElement | undefined;
+  if (frame.frameId === "frames.site-shell") {
+    const binding = input.siteFrame;
+    if (!binding || !isContentJson(binding) || Object.keys(binding).some(key => !["shell", "presentation"].includes(key)) || !Object.hasOwn(binding, "shell")) {
+      add("config", "designer", "siteFrame", "Registered SiteFrame requires finite shell and optional presentation data");
+    } else try {
+      // Invoke the hook-free native export to validate its closed shell contract
+      // during preparation, before a ready node can escape.
+      siteFrame = SiteFrame({
+        ...binding as unknown as Pick<SiteFrameProps, "shell" | "presentation">,
+        locale, children: sectionNodes.length === 1 ? sectionNodes[0] : sectionNodes,
+        resolveCopy: reference => {
+          if (reference.locale !== undefined && reference.locale !== locale) throw new ContentCopyBindingError("siteFrame", "copy-binding-locale");
+          const report = resolveCopy({ composition: { ...composition, sections: [{ key: "$siteFrame", sectionId: frame.frameId,
+            configId: frame.configId, intent: "continues", fields: [{ key: "text", locale, source: "writer", ref: reference }] }] } }, locale, copyOptions);
+          const text = recordCopy(report, "siteFrame").$siteFrame?.text;
+          if (!text?.trim() || report.resolutions[0]?.servedLocale !== locale) throw new ContentCopyBindingError("siteFrame", "unresolved-native-copy");
+          return report.resolutions[0]!;
+        },
+        resolveAsset: assetId => {
+          if (!library?.assetIds.includes(assetId)) throw new ContentCopyBindingError("siteFrame", "asset-registration-required");
+          const asset = input.resolveAsset?.(assetId);
+          if (asset === undefined) throw new ContentCopyBindingError("siteFrame", "asset-resolution-required");
+          return asset;
+        },
+      });
+    } catch (error) {
+      const rule = error instanceof ContentCopyBindingError ? error.rule : "";
+      const copy = rule.startsWith("copy-") || rule === "unresolved-native-copy";
+      add(copy ? "copy" : rule.startsWith("asset-") ? "asset" : "config", copy ? "writer" : "designer", "siteFrame",
+        error instanceof Error ? error.message : "Registered SiteFrame bindings are required");
+    }
+  }
   if (needs.length) return { ...selection, status: "needs-input", metadata, needs, copyFindings };
   const provenance = createContentPreviewProvenance(selection, copyReports, writer?.manifest);
-  const node = appFrame ? createElement(AppFrame, { ...appFrame, children: sectionNodes }) : createElement(AuthFrame, { skipLabel: frameCopy.skipLabel!, children: sectionNodes });
+  const node = siteFrame ?? (appFrame ? createElement(AppFrame, { ...appFrame, children: sectionNodes }) : createElement(AuthFrame, { skipLabel: frameCopy.skipLabel!, children: sectionNodes }));
   return { ...selection, status: "ready", metadata, needs, copyFindings, provenance, node };
 }
 

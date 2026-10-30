@@ -36,6 +36,10 @@ export interface ContentRouteInput {
   readonly resolveCopy?: CopyResolver;
   /** AppFrame data: audience strings are CopyRefs, identifiers and callbacks retain their meaning. */
   readonly appFrame?: Readonly<Record<string, unknown>>;
+  /** Native SiteFrame data only: shell CopyRefs and optional Designer presentation. */
+  readonly siteFrame?: Readonly<Record<string, unknown>>;
+  /** Server-owned image port; SiteFrame may resolve only assets in the selected library. */
+  readonly resolveAsset?: (assetId: string) => unknown;
   readonly sectionBindings?: Readonly<Record<string, ContentSectionBinding>>;
   readonly raisedAt: string;
   readonly publishing?: ContentRoutePublishing;

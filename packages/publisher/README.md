@@ -153,6 +153,18 @@ mismatching digest is Failing. A missing destination system remains Waiting
 with its name. Package publication through npm or GitHub Releases is outside
 this content workflow.
 
+For an active registered `frames.site-shell` content route,
+`prepareContentRoute` accepts `siteFrame: { shell, presentation? }` using
+Designer’s native SiteFrame contract. Shell words remain Writer CopyRefs;
+`writer` supplies their registry context and `resolveAsset` supplies image data
+for an asset id registered in the selected library. Missing inputs produce
+Needs and prevent rendering.
+
+The local content CLI carries `--writer` through release checks and immutable
+artifact writes. A reserved publication snapshot is rechecked against the
+current Designer library and installed package evidence. Release files retain
+a pending handover; writing them does not deploy a route.
+
 ### Implementation status
 
 | Capability | Status in this documentation base |
