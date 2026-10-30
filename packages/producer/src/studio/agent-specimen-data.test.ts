@@ -21,7 +21,7 @@ describe('full semantic agent specimen source plans', () => {
   });
   it('reports empty declared Director content instead of quietly counting it rendered', () => {
     const detail = cell('director', '## Direction\n- Actual direction\n## Because\n\n## Watch\n- Actual risk\n');
-    expect(agentSpecimenPlan(index(detail), detail).issues).toContain('A declared Director passage has no supported semantic content.');
+    expect(agentSpecimenPlan(index(detail), detail).issues).toEqual(expect.arrayContaining([expect.stringContaining('A declared Director passage has no supported semantic content.')]));
   });
   it('keeps all native English strings with full multiline copy and actual context roles', () => {
     const full = 'First paragraph.\n\nSecond paragraph without a summary.';

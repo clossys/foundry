@@ -1,5 +1,5 @@
 import type { AgentCells, CellDetail, CellContentScope } from './cells-client';
-import { directorSections } from './director-specimen';
+import { directorProjection } from './director-specimen';
 import { safePreviewUrl, selectedPublishedPage, type PublicationResponse } from './publisher-preview';
 import { writerProjection } from './writer-specimen';
 
@@ -24,18 +24,10 @@ export function agentSpecimenPlan(index: AgentCells, cell: CellDetail, publicati
   }
   if (index.state !== 'ready') plan.issues.push(index.error ?? 'The agent cell index is unavailable.');
   if (cell.agent === 'director') {
-    const sections = directorSections(cell.content);
-    plan.items = sections.map((section, position) => ({ id: `${cell.id}:${section.title.toLowerCase()}:${position + 1}`, kind: 'director', title: section.title, value: section.value }));
+    const projection = directorProjection(cell.content);
+    plan.issues.push(...projection.issues);
+    plan.items = projection.sections.map((section, position) => ({ id: `${cell.id}:${section.title.toLowerCase()}:${position + 1}`, kind: 'director', title: section.title, value: section.value }));
     plan.expectedVariantIds = plan.items.map(item => String(item.id));
-    // An empty declared passage must not disappear into a passing nonempty inventory.
-    const body = cell.content.replace(/^\uFEFF/, '').replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, '');
-    let fenced = false;
-    let declared = 0;
-    for (const line of body.split(/\r?\n/)) {
-      if (/^\s*```/.test(line)) { fenced = !fenced; continue; }
-      if (!fenced && /^#{1,6}\s+(?:Direction|Because|Watch)\s*$/.test(line)) declared++;
-    }
-    if (declared > sections.length) plan.issues.push('A declared Director passage has no supported semantic content.');
     if (!plan.items.length) plan.issues.push('No Director semantic passages are available.');
     return plan;
   }

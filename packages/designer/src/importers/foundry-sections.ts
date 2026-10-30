@@ -7,6 +7,9 @@ import { stableStringify } from "../catalog-core/stable.js";
 /** Package API bindings, not observations of a consumer or SK conformance. */
 export interface FoundrySectionMapping {
   export: string;
+  subpath?: "blocks" | "studio";
+  /** Native selected-module ports required by a public section API. */
+  composes?: readonly string[];
   propFiles: readonly string[];
   slotMap: Readonly<Record<string, string>>;
   propMap: Readonly<Record<string, string>>;
@@ -21,7 +24,7 @@ export interface FoundrySectionDescriptor extends FoundrySurfaceConsumption {
   configs: Readonly<Record<string, string>>;
   /** Empty: package pointers do not bind the consumer's shared anatomy fills. */
   parts: readonly string[];
-  impl: { kind: "package"; module: "@clossys/designer/blocks"; export: string };
+  impl: { kind: "package"; module: "@clossys/designer/blocks" | "@clossys/designer/studio"; export: string };
   license: "MIT";
   pin: { package: "@clossys/designer"; version: "0.12.0"; export: string };
   notes: readonly string[];
@@ -47,6 +50,8 @@ export interface FoundrySectionImportInput {
   mappings?: Readonly<Record<string, FoundrySectionMapping>>;
   /** Independently read public blocks barrel exports. */
   exports?: readonly string[];
+  /** Independently read public Studio barrel exports. */
+  studioExports?: readonly string[];
 }
 export interface FoundrySectionImport {
   fills: readonly FoundrySectionFillDoc[];
@@ -126,7 +131,17 @@ const UNMEASURED = "Source-only import and token-read measurements are lower bou
 /** Pure generation; does not install a package, copy source or assert conformance. */
 export function importFoundrySections(input: FoundrySectionImportInput = {}): FoundrySectionImport {
   const slots = input.slots ?? sectionSlots as unknown as readonly SectionSlot[];
-  const mappings = input.mappings ?? FOUNDRY_SECTION_MAP;
+  const mappings = input.mappings ?? {
+    ...FOUNDRY_SECTION_MAP,
+    ...(slots.some(slot => slot.id === "sections.specimen-rich-passage") ? {
+      "specimen-rich-passage": {
+        export: "SpecimenRichPassage", subpath: "studio" as const, propFiles: ["studio/specimen-content.tsx"],
+        composes: ["components.semantic-content", "components.grid-list", "components.disclosure", "components.rich-text"],
+        slotMap: Object.fromEntries(["items", "axes", "context", "labels"].map(name => [name, `./studio#SpecimenRichPassage.${name}`])),
+        propMap: {}, notes: ["The registered native Studio leaf owns complete passage rendering, intrinsic layout and selected component binding. Host-authored items and labels pass through its public SpecimenLeafProps contract."],
+      },
+    } : {}),
+  };
   const fills: FoundrySectionFillDoc[] = [];
   const coverage: FoundrySectionCoverage[] = [];
   const seen = new Set<string>();
@@ -140,14 +155,16 @@ export function importFoundrySections(input: FoundrySectionImportInput = {}): Fo
     const unresolvedMemberAxes = sorted(slot.contract.unresolvedMemberAxes ?? []);
     const slotMap: Record<string, string> = {};
     const propMap: Record<string, string> = {};
+    const subpath = entry?.subpath ?? "blocks";
     if (entry) {
       if (!/^[A-Z][A-Za-z0-9]*$/.test(entry.export)) throw new Error(`foundry-sections: invalid export for ${slot.id}`);
-      if (input.exports && !input.exports.includes(entry.export)) throw new Error(`foundry-sections: unavailable package export ./blocks#${entry.export}`);
+      const exports = subpath === "studio" ? input.studioExports : input.exports;
+      if (exports && !exports.includes(entry.export)) throw new Error(`foundry-sections: unavailable package export ./${subpath}#${entry.export}`);
       for (const [bindings, target, allowed, category] of [[entry.slotMap, slotMap, names, "content slot"], [entry.propMap, propMap, members, "member"]] as const) {
         for (const name of Object.keys(bindings).sort(compare)) {
           const pointer = bindings[name];
           if (!allowed.includes(name) || !pointer?.trim()) throw new Error(`foundry-sections: unknown or empty ${category} ${slot.id}.${name}`);
-          if (!pointer.startsWith(`./blocks#${entry.export}.`) || !/^\.\/blocks#[A-Z][A-Za-z0-9]*\.[A-Za-z][A-Za-z0-9]*(?:[.=[\],a-zA-Z0-9-]*)$/.test(pointer)) throw new Error(`foundry-sections: invalid package pointer ${pointer}`);
+          if (!pointer.startsWith(`./${subpath}#${entry.export}.`) || !/^\.\/(?:blocks|studio)#[A-Z][A-Za-z0-9]*\.[A-Za-z][A-Za-z0-9]*(?:[.=[\],a-zA-Z0-9-]*)$/.test(pointer)) throw new Error(`foundry-sections: invalid package pointer ${pointer}`);
           target[name] = pointer;
         }
       }
@@ -161,14 +178,15 @@ export function importFoundrySections(input: FoundrySectionImportInput = {}): Fo
     const notes = entry ? [...entry.notes ?? [], UNMEASURED] : [GAPS[leaf] ?? "No package implementation is available.", UNMEASURED];
     coverage.push({ slot: slot.id, status: entry ? subset ? "subset" : "candidate" : "unavailable", supportedSlots, missingSlots, missingRequiredSlots, supportedMembers, missingMembers, unresolvedMemberAxes, notes });
     if (!entry) continue;
-    const pin = { package: PACKAGE, version: VERSION, export: `./blocks#${entry.export}` } as const;
+    const pin = { package: PACKAGE, version: VERSION, export: `./${subpath}#${entry.export}` } as const;
     const unmapped = [...missingSlots.map(name => `slot.${name}`), ...missingMembers, ...unresolvedMemberAxes.map(axis => `axis.${axis}`)];
     const descriptor: FoundrySectionDescriptor = {
       slot: slot.id, source: "foundry", slotMap, propMap,
       configs: Object.fromEntries(Object.entries(entry.configs ?? {}).sort(([a], [b]) => compare(a, b))),
-      parts: [], impl: { kind: "package", module: `${PACKAGE}/blocks`, export: entry.export }, license: "MIT", pin, notes,
+      parts: [], impl: { kind: "package", module: `${PACKAGE}/${subpath}`, export: entry.export }, license: "MIT", pin, notes,
       ...measuredSurfaceConsumption(slot.id, pin),
     };
+    descriptor.composes = sorted([...descriptor.composes, ...entry.composes ?? []]);
     fills.push({ $extensions: { "com.clossys.fill": {
       id: `foundry/${slot.id}`, slot: slot.id, source: "foundry", mode: "implementation", sourceAddress: pin.export,
       relation: subset ? "subset" : "same-contract", builtOn: [], conforms: [], evidence: [],

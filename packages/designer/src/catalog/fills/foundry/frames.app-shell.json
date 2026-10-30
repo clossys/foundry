@@ -139,7 +139,7 @@
           },
           {
             "path": "packages/designer/src/frames/AppFrame.tsx",
-            "sha256": "e96ec4fb21566aaad06715b668271b7b8b95181aaddd344257f749b874a1b63f"
+            "sha256": "b936356d4416d13e2a948ef0b6ac0c6091e0b7a4072c9dcda0b4f233c5712c27"
           },
           {
             "path": "packages/designer/src/frames/AppFrameBrand.tsx",

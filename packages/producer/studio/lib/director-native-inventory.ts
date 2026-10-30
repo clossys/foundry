@@ -8,9 +8,14 @@ const object = (value: unknown): value is Record<string, unknown> => value !== n
 export function directorNativePlan(index: AgentCells, cells: readonly CellDetail[], id: string): AgentSpecimenPlan {
   const scope = index.contentScope;
   const plan: AgentSpecimenPlan = { cellId: id, ...(scope ? { scope } : {}), items: [], expectedVariantIds: [], issues: [] };
+  if (index.state !== 'ready') plan.issues.push(index.error ?? 'The Director cell index is unavailable.');
   const summary = index.cells.find(cell => cell.id === id);
   if (index.agent !== 'director' || !summary || scope && scope.cellId !== id) {
     plan.issues.push('The selected Director cell is absent from this agent index.');
+    return plan;
+  }
+  if (scope?.kind === 'version' && (!version(scope.version) || summary.version !== scope.version)) {
+    plan.issues.push('The exact Director content-version scope does not match the indexed version.');
     return plan;
   }
   if (!version(summary.version)) plan.issues.push('The indexed Director cell has no valid version.');

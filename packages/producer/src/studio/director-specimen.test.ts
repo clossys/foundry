@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { directorDocument, directorPassages, directorVersionedPassages, directorSections, evidenceHref, specimenTitle } from '../../studio/lib/director-specimen';
+import { directorDocument, directorPassages, directorVersionedPassages, directorProjection, directorSections, evidenceHref, specimenTitle } from '../../studio/lib/director-specimen';
 import { loadCell, type CellDetail, type AgentCells } from '../../studio/lib/cells-client';
 import { specimenCellRequests } from '../../studio/lib/director-specimen-resource';
 afterEach(() => vi.unstubAllGlobals());
@@ -18,6 +18,28 @@ describe('Director specimen projection', () => {
     expect(sections.map(section => section.title)).toEqual(['Direction', 'Because', 'Watch']);
     expect(sections[0]!.value).toContain('independent ceramics studios');
     expect(sections.map(section => section.value).join('\n')).not.toMatch(/status: active|confirmed:|^---/m);
+  });
+  it('preserves complete body-projection Markdown including continuation lines and rich content', () => {
+    const value = '- Choice: **Keep the full decision.**  \n  A continuation with [evidence](https://example.invalid/study).\n\nA second paragraph with `literal code`.\n\n### Detail\n1. An ordered criterion.\n2. Another criterion.\n\n> A quoted qualification.\n\n| Signal | Threshold |\n| --- | --- |\n| Trial | 20% |\n\n````markdown\n## Watch\n```\nAn example heading stays inside Direction.\n````';
+    const projection = directorProjection(`## Direction\n${value}\n\n## Because\n- The stated reason.\n\n## Watch\n- The full tripwire.`);
+    expect(projection.issues).toEqual([]);
+    expect(projection.sections).toEqual([{ title: 'Direction', value }, { title: 'Because', value: '- The stated reason.' }, { title: 'Watch', value: '- The full tripwire.' }]);
+  });
+  it('does not interpret tilde-fenced examples outside a passage as native headings', () => {
+    expect(directorProjection('~~~markdown\n## Direction\n- Example only\n~~~\n## Direction\n- Actual decision')).toEqual({ sections: [{ title: 'Direction', value: '- Actual decision' }], issues: [] });
+  });
+  it('surfaces malformed native frontmatter without exposing it as a passage', () => {
+    const malformed = directorProjection('---\nid: sample.page\nid: another.page\n---\n## Direction\n- Real text');
+    expect(malformed.sections).toEqual([]);
+    expect(malformed.issues).toEqual(['Director frontmatter, line 3: Duplicate frontmatter key']);
+    expect(directorProjection('---\nid: sample.page\n## Direction\n- Real text').issues[0]).toContain('Expected closing ---');
+  });
+  it('reports empty passages and unfinished code while retaining every actual source line', () => {
+    const projection = directorProjection('## Direction\n\n## Because\n- Actual evidence\n\n## Watch\n```text\nUnfinished example');
+    expect(projection.sections).toEqual([{ title: 'Because', value: '- Actual evidence' }, { title: 'Watch', value: '```text\nUnfinished example' }]);
+    expect(projection.issues).toHaveLength(2);
+    expect(projection.issues.join(' ')).toContain('Expected closing code fence');
+    expect(projection.issues.join(' ')).toContain('A declared Director passage has no supported semantic content');
   });
   it('preserves TREE chapter, section and passage order, retains drafts and omits retired passages', () => {
     const chapters = directorDocument(index);

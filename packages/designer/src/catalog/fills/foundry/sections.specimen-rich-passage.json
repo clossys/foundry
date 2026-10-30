@@ -1,0 +1,111 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.specimen-rich-passage",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./studio#SpecimenRichPassage",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.specimen-rich-passage",
+      "source": "foundry",
+      "sourceAddress": "./studio#SpecimenRichPassage",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "specimen-rich-passage": {
+      "composes": [
+        "components.disclosure",
+        "components.grid-list",
+        "components.rich-text",
+        "components.semantic-content"
+      ],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "tokens": [
+            "tokens.spacing"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/catalog-core/api.ts",
+            "sha256": "091d83f11c2bb533dbf9cc7e153fd3b4b6d4cee32911bfb7f7360158cb3f574d"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/emit-components.ts",
+            "sha256": "60516d678d79333c1094280145ef5d4f424b8175cb1113b0db439c28452f38f2"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/resolve-components.ts",
+            "sha256": "5ff7084fdd23b7f1b0504a09b1ca460f938d0f7a3ffcbf815162a2fe513d8348"
+          },
+          {
+            "path": "packages/designer/src/components/rich-text/document-schema.ts",
+            "sha256": "5035cf4e673ea6a6e662ef3a6aa084c7a3566d6244631bfe8687df95118e0e23"
+          },
+          {
+            "path": "packages/designer/src/studio/component-specimens.tsx",
+            "sha256": "04f115c9dbe8c1c5290b3bb1e9cf4019773f3a845242e9544bf83f04132f8e3d"
+          },
+          {
+            "path": "packages/designer/src/studio/specimen-content.tsx",
+            "sha256": "9285448c2c3a60721d9670c573371678e2daeb4fbc27317ed2810fc5c0fc81be"
+          },
+          {
+            "path": "packages/designer/src/studio/specimen-layouts.tsx",
+            "sha256": "7b6d36eea8affe43aacb703d1dfbbab0aa8342c12bdd6fc746bf066c75cb8dcf"
+          }
+        ],
+        "unresolved": []
+      },
+      "impl": {
+        "export": "SpecimenRichPassage",
+        "kind": "package",
+        "module": "@clossys/designer/studio"
+      },
+      "license": "MIT",
+      "notes": [
+        "The registered native Studio leaf owns complete passage rendering, intrinsic layout and selected component binding. Host-authored items and labels pass through its public SpecimenLeafProps contract.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./studio#SpecimenRichPassage",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.spacing"
+        ]
+      },
+      "slot": "sections.specimen-rich-passage",
+      "slotMap": {
+        "axes": "./studio#SpecimenRichPassage.axes",
+        "context": "./studio#SpecimenRichPassage.context",
+        "items": "./studio#SpecimenRichPassage.items",
+        "labels": "./studio#SpecimenRichPassage.labels"
+      },
+      "source": "foundry"
+    }
+  }
+}

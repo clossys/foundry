@@ -6,7 +6,7 @@ import { activate, cellPath, isoDate, parseConfirmRef, parseDocument, parseLinkR
 import { generateSelection, loadCatalog, loadComponentRegistry, loadComponentCompositionRules, stableStringify, type CatalogData, type CompositeCatalogData, type CompositeEngineInput, type CompositeLibraryData, type LibraryData } from "../catalog-core/index.js";
 import { loadCatalogBundles } from "../catalog-bundles.js";
 import { componentOf, type ComponentDocument } from "../catalog-core/resolve-components.js";
-import { surfaceEntryOf, surfaceSelection } from "../catalog-core/surface-library.js";
+import { assertSurfaceResolutionOptions, surfaceEntryOf, surfaceSelection } from "../catalog-core/surface-library.js";
 import type { SurfaceDocument, SurfaceResolutionOptions } from "../catalog-core/surface-types.js";
 import { libraryFiles, readLibrary } from "./fs-library.js";
 import { foundrySurfaceCatalog } from "./surface-catalog.js";
@@ -117,7 +117,13 @@ export async function libraryToCells(libraryDir: string, cellRoot: string, optio
     catch (e) { if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e; }
   }
   if (componentOptions !== undefined) validateComponentOptions(componentOptions);
-  const meta = { source, metadata, ...(componentOptions === undefined ? {} : { componentOptions }), ...(ownedFiles.size ? { files: Object.fromEntries(ownedFiles) } : {}), ...("values" in library && library.surfaces ? { surfaceSelection: surfaceSelection(library) } : {}) };
+  let surfaceOptions = options.surfaceOptions;
+  if (surfaceOptions === undefined) {
+    try { surfaceOptions = await readJson(libraryDir, "surface-observations.json"); }
+    catch (e) { if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e; }
+  }
+  if (surfaceOptions !== undefined) assertSurfaceResolutionOptions(surfaceOptions);
+  const meta = { source, metadata, ...(componentOptions === undefined ? {} : { componentOptions }), ...(surfaceOptions === undefined ? {} : { surfaceOptions }), ...(ownedFiles.size ? { files: Object.fromEntries(ownedFiles) } : {}), ...("values" in library && library.surfaces ? { surfaceSelection: surfaceSelection(library) } : {}) };
   const destination = await safe(cellRoot); await fs.mkdir(dirname(destination), { recursive: true }); await fs.mkdir(destination);
   try {
     for (const [path, content] of documents) { await fs.mkdir(dirname(join(destination, path)), { recursive: true }); await fs.writeFile(join(destination, path), content, { flag: "wx" }); }
@@ -165,9 +171,12 @@ async function projection(root: string, options: Options): Promise<Map<string, s
   const storedOptions = tree.meta.componentOptions;
   if (storedOptions !== undefined) validateComponentOptions(storedOptions);
   const componentOptions = options.componentOptions ?? storedOptions;
-  const surfaceOptions = options.surfaceOptions ?? (library.surfaces ? { packages: await readSurfacePackageEvidence(catalog.surfaces?.fills ?? []), measurements: [] } : undefined);
+  const storedSurfaceOptions = tree.meta.surfaceOptions;
+  if (storedSurfaceOptions !== undefined) assertSurfaceResolutionOptions(storedSurfaceOptions);
+  const surfaceOptions = options.surfaceOptions ?? storedSurfaceOptions ?? (library.surfaces ? { packages: await readSurfacePackageEvidence(catalog.surfaces?.fills ?? []), measurements: [] } : undefined);
   const result = libraryFiles(catalog, library, [], componentOptions, surfaceOptions);
   if (tree.meta.componentOptions !== undefined) result.set("component-observations.json", json(tree.meta.componentOptions));
+  if (surfaceOptions !== undefined) result.set("surface-observations.json", json(surfaceOptions));
   return result;
 }
 
