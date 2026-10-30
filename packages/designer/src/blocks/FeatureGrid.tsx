@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { CompatFeatureGrid } from "./items/compat-features.js";
+import { FeatureSurface } from "./features/FeatureSurface.js";
 import type { SectionGround } from "./section-ground.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -53,4 +53,4 @@ export interface FeatureGridProps extends Omit<HTMLAttributes<HTMLDivElement>, "
 }
 
 /** Published feature copy keeps its original count, heading and presence policy. */
-export function FeatureGrid({ ground = "base", ...props }: FeatureGridProps) { return <CompatFeatureGrid {...SECTION_STAMP} {...props} ground={ground} />; }
+export function FeatureGrid({ ground = "base", ...props }: FeatureGridProps) { return FeatureSurface({ mode: "public", props: { ...SECTION_STAMP, ...props, ground } }); }
