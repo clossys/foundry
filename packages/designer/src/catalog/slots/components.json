@@ -2619,5 +2619,59 @@
     },
     "requires": [],
     "status": "draft"
+  },
+  {
+    "id": "components.rich-text",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "value.markdown",
+          "value.json",
+          "state.read-only",
+          "state.editable"
+        ]
+      },
+      "props": [
+        "value",
+        "readOnly",
+        "onChange",
+        "className",
+        "id",
+        "dir",
+        "aria-label",
+        "aria-labelledby"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.typeface",
+          "tokens.body-size",
+          "tokens.code-size",
+          "tokens.heading-size",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.line-height",
+          "tokens.spacing",
+          "tokens.radius",
+          "tokens.control-radius",
+          "tokens.border-width",
+          "tokens.border-color",
+          "tokens.surface-color",
+          "tokens.text-color"
+        ],
+        "assets": []
+      },
+      "composes": [
+        "components.badge",
+        "components.link",
+        "components.semantic-content",
+        "components.table"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
   }
 ]

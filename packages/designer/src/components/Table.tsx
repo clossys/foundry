@@ -22,6 +22,7 @@ import { Icon } from "./Icon.js";
 import { useGlyph } from "./glyph-context.js";
 import { cx } from "./internal/cx.js";
 import { UI_RING_FOCUS } from "./internal/ui-vars.js";
+import { TableDocument } from "./Table.document.js";
 
 export interface TableProps extends Omit<AriaTableProps, "className" | "style" | "children"> {
   /** A `Table.Header` followed by a `Table.Body`. */
@@ -392,6 +393,7 @@ function TableSelectionCheckbox({
 }
 
 export const Table = Object.assign(TableRoot, {
+  Document: TableDocument,
   Header: TableHeaderRoot,
   Column: TableColumn,
   ResizableContainer: TableResizableContainer,

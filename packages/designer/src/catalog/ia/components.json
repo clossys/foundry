@@ -173,6 +173,7 @@
           "label": "Content",
           "leaves": [
             "components.semantic-content",
+            "components.rich-text",
             "components.item"
           ]
         }
