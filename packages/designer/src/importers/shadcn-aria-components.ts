@@ -311,6 +311,8 @@ const exportNames: Record<string, string> = { toggle: "Toggle", "dropdown-menu":
  * Every target remains a concrete function of its own entry.
  */
 const secondaryExportApprovals: Readonly<Record<string, readonly { name: string; export: string }[]>> = {
+  button: [{ name: "LinkButton", export: "LinkButton" }],
+  tabs: ["TabsList", "TabsTrigger", "TabsContent"].map(name => ({ name, export: name })),
   select: ["SelectContent", "SelectGroup", "SelectItem", "SelectTrigger", "SelectValue"].map(name => ({ name, export: name })),
   "dropdown-menu": [{ name: "MenuGroup", export: "DropdownMenuGroup" }, { name: "MenuItem", export: "DropdownMenuItem" }, { name: "MenuLabel", export: "DropdownMenuLabel" }, { name: "MenuSeparator", export: "DropdownMenuSeparator" }, { name: "DropdownMenuTrigger", export: "DropdownMenuTrigger" }],
   dialog: ["DialogDescription", "DialogHeader", "DialogTitle", "DialogTrigger"].map(name => ({ name, export: name })),

@@ -140,6 +140,20 @@
         ]
       },
       "root": "rac:Tabs",
+      "secondaryExports": [
+        {
+          "export": "TabsList",
+          "name": "TabsList"
+        },
+        {
+          "export": "TabsTrigger",
+          "name": "TabsTrigger"
+        },
+        {
+          "export": "TabsContent",
+          "name": "TabsContent"
+        }
+      ],
       "slot": "components.tabs",
       "source": "shadcn@aria",
       "transform": "shadcn-aria-rewrite@1"

@@ -9,6 +9,7 @@ import { readStudioDesignerLibrary } from "./theme.js";
 import { themeHash } from "./theme-default.js";
 import { prepareStudioSelection } from "./selection-defaults.js";
 import { selectionCss } from "./selection-css.js";
+import { selectionShadcnTokens, type SelectionShadcnTokenContract } from "./selection-shadcn-tokens.js";
 
 export interface StudioSelectionLeaf {
   leaf: string;
@@ -225,7 +226,9 @@ export async function compileSelection(root: string, input: CompositeEngineInput
     table = `import * as tableParts from ${JSON.stringify(module)};\nimport { Table as SelectedTable } from "./components/table/index.ts";\nexport const table = {...tableParts, Table:SelectedTable};\n`;
   }
   files.set("studio-entry.ts", 'export * as components from "./component-index.ts";\n' + (files.has("surface-index.ts") ? 'export * as surfaces from "./surface-index.ts";\n' : "export const surfaces = {};\n") + tree + disclosure + table + (selectedDialog ? 'export * as dialog from "./studio-compat/dialog.ts";\n' : "export const dialog = {};\n") + (selectedTooltip ? 'export * as tooltip from "./studio-compat/tooltip.ts";\n' : "export const tooltip = {};\n"));
-  const css = await selectionCss(files);
+  const tokenContract: SelectionShadcnTokenContract = (await agentModule("designer", "catalog-core/token-contract.js")).tokenContract;
+  const shadcnTokens = selectionShadcnTokens(profile.values, tokenContract);
+  const css = await selectionCss(files, undefined, shadcnTokens);
   const bundled = await build({ entryPoints: ["studio-entry.ts"], bundle: true, write: false, format: "esm", platform: "browser", target: "es2022", jsx: "automatic", minify: true, define: { "process.env.NODE_ENV": '"production"' }, sourcemap: false, legalComments: "none", logLevel: "silent", plugins: [projectionPlugin(files, root, componentModules, iconAssets)] });
   const code = bundled.outputFiles?.[0]?.text;
   if (!code) throw new Error("Selected runtime was not emitted");

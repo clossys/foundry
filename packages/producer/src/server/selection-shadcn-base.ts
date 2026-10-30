@@ -1,0 +1,32 @@
+/**
+ * Native shadcn utility source, copied verbatim from the pinned upstream stylesheet.
+ * No component or application palette is imported.
+ *
+ * MIT License
+ *
+ * Copyright (c) 2023 shadcn
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+export const SHADCN_SELECTION_BASE_SOURCE = {
+  "url": "https://raw.githubusercontent.com/shadcn-ui/ui/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/app/globals.css",
+  "sha256": "c5e271374236f23bcfd559ce64aaf6b8641ee7276156c0f803dd9cb24277af12",
+  "utilitySha256": "d7113bff3b9a42398aaf3c24218f186370b1f7027e33c288e93ce598bc21dade"
+} as const;
+export const SHADCN_SELECTION_BASE_CSS = "@utility no-scrollbar {\n  -ms-overflow-style: none;\n  scrollbar-width: none;\n\n  &::-webkit-scrollbar {\n    display: none;\n  }\n}\n";
