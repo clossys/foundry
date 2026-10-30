@@ -683,7 +683,7 @@
         },
         {
           "path": "packages/designer/src/frames/site-frame/types.ts",
-          "sha256": "5082a75480ef118eda6c17d091d966bceb23e0b42555fe20930cd5c24437359b"
+          "sha256": "9922cfd90e34dd4214408994dc85476bed5f09880c12588d5b46b9895ed010ed"
         },
         {
           "path": "packages/designer/src/runtime/frames/document.tsx",
@@ -931,7 +931,7 @@
         },
         {
           "path": "packages/designer/src/shell/SiteFooter.tsx",
-          "sha256": "6a10abd3dd944517371ea878d0319f1adef150b1c5edee69e8d4a334a3ca1286"
+          "sha256": "09654e2cad668d140dca0ca6a90e2c887c2343fadf9b4e81abcac6d7270bd38b"
         }
       ],
       "unresolved": [
@@ -1013,7 +1013,7 @@
         },
         {
           "path": "packages/designer/src/shell/SiteHeader.tsx",
-          "sha256": "008e593324d160e9a41abd6623a3aa8104ca3fe219a1a3eae129dae3a8843c55"
+          "sha256": "811a3b020794ec8fbae8ff731a079df5eb9fa18211ed7d6e51c2e2ac43c907b1"
         }
       ],
       "unresolved": [
@@ -1046,7 +1046,7 @@
           "rawAssets": [
             "assets.js"
           ],
-          "sourceSha256": "3ede6936935916b747b8cf8e1271e11a1f36caa94360a57f98064c924bdcdd29",
+          "sourceSha256": "ee047cd4a7f365dc42cbd20dbb0b6f8f0120a23869d2a8d079999a6264c3f3d5",
           "specifier": "../landing/internal/assets.js",
           "target": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
           "targetSha256": "54cc0184672dfc74981225929705b024611926fd305a88374c1040605cffa3f8"
@@ -1057,6 +1057,7 @@
           "assets.js"
         ],
         "components": [
+          "components.banner",
           "components.icon",
           "components.logo",
           "components.semantic-content"
@@ -1072,15 +1073,18 @@
       },
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.banner",
         "components.icon",
         "components.logo",
         "components.semantic-content",
         "frames.site-footer",
-        "frames.site-header"
+        "frames.site-header",
+        "sections.newsletter"
       ],
       "scannedReads": {
         "assets": [],
         "components": [
+          "components.banner",
           "components.icon",
           "components.logo",
           "components.semantic-content"
@@ -1100,8 +1104,12 @@
           "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
         },
         {
+          "path": "packages/designer/src/frames/site-frame/FrameRegion.tsx",
+          "sha256": "b481f82663de9508b23a9795853746b77c38baa609a5a89415b59f90a81a59e6"
+        },
+        {
           "path": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",
-          "sha256": "3ede6936935916b747b8cf8e1271e11a1f36caa94360a57f98064c924bdcdd29"
+          "sha256": "ee047cd4a7f365dc42cbd20dbb0b6f8f0120a23869d2a8d079999a6264c3f3d5"
         },
         {
           "path": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
@@ -1117,15 +1125,19 @@
         },
         {
           "path": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
-          "sha256": "3d67ddfa17aa29c1fcdf01d11b4289448fe3483ba276235a9e9542ce62ff413a"
+          "sha256": "1b70a987f7ea38081394f33c8562ec89d776a02dd8a251bfd709aa00566844b2"
         },
         {
           "path": "packages/designer/src/frames/site-frame/types.ts",
-          "sha256": "5082a75480ef118eda6c17d091d966bceb23e0b42555fe20930cd5c24437359b"
+          "sha256": "9922cfd90e34dd4214408994dc85476bed5f09880c12588d5b46b9895ed010ed"
         },
         {
           "path": "packages/designer/src/frames/site-frame/viewChromeGround.ts",
           "sha256": "d5c430d26e272474f954f3fd42ed0f7175e0e483afaeb8352c131d46e6f50aa2"
+        },
+        {
+          "path": "packages/designer/src/shell/SiteHeader.extras.tsx",
+          "sha256": "3dd9f99cecf4e12f994f99498d54dc60f2b1d21447366a35aec09ebf0efdf517"
         }
       ],
       "unresolved": [
@@ -1146,6 +1158,12 @@
           "evidence": "unresolved source export ./SkipLink.boundary.client.js#SiteSkipLink",
           "file": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
           "line": 9
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved source export ../components/Link.js#Link",
+          "file": "packages/designer/src/shell/SiteHeader.extras.tsx",
+          "line": 5
         }
       ]
     },
@@ -3684,6 +3702,7 @@
       "scannedComposes": [
         "components.button",
         "components.icon",
+        "components.semantic-content",
         "components.text-field"
       ],
       "scannedReads": {
@@ -3691,6 +3710,7 @@
         "components": [
           "components.button",
           "components.icon",
+          "components.semantic-content",
           "components.text-field"
         ],
         "tokens": [
@@ -3709,7 +3729,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/NewsletterBand.tsx",
-          "sha256": "672c1b903e4a17916744eed14850dc525eb5132d96420073fd2f35763db571b3"
+          "sha256": "2a534f3a55f9e82dc2ad8376ded32303cd22b0391de5c266439a28b8e4ad4e0d"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
@@ -3734,10 +3754,16 @@
       ],
       "unresolved": [
         {
+          "code": "DF2",
+          "evidence": "unresolved source export ../components/Form.js#Form",
+          "file": "packages/designer/src/blocks/NewsletterBand.tsx",
+          "line": 5
+        },
+        {
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/XCircle.js#XCircle",
           "file": "packages/designer/src/blocks/NewsletterBand.tsx",
-          "line": 10
+          "line": 12
         },
         {
           "code": "DF2",

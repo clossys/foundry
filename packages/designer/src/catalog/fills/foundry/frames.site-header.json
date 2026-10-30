@@ -83,7 +83,7 @@
           },
           {
             "path": "packages/designer/src/shell/SiteHeader.tsx",
-            "sha256": "008e593324d160e9a41abd6623a3aa8104ca3fe219a1a3eae129dae3a8843c55"
+            "sha256": "811a3b020794ec8fbae8ff731a079df5eb9fa18211ed7d6e51c2e2ac43c907b1"
           }
         ],
         "unresolved": [
@@ -109,6 +109,7 @@
       "members": [
         "nav-placement.centered",
         "nav-placement.leading",
+        "nav.mega",
         "position.static",
         "position.sticky",
         "surface.glass",
@@ -120,6 +121,7 @@
       "propMap": {
         "nav-placement.centered": "navPlacement=centered",
         "nav-placement.leading": "navPlacement=leading",
+        "nav.mega": "navMode=mega",
         "position.static": "position=static",
         "position.sticky": "position=sticky",
         "surface.glass": "surface=glass",
@@ -154,6 +156,7 @@
       "slots": {
         "actions": "actions",
         "brand": "brand",
+        "locale": "locale",
         "nav": "nav"
       },
       "statePorts": {}

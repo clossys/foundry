@@ -9,14 +9,19 @@ import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { SiteFooter, type SiteFooterProps } from "../../shell/SiteFooter.js";
 import { runtimeMember, runtimeValue, type SurfaceRendererEntry } from "../contract.js";
 import { frameContent, type FrameInput, type FrameJson } from "./frame-content.js";
+import { runtimeLocale, runtimeNewsletter } from "../../frames/site-frame/runtime-extras.js";
+import { SiteLocaleLinks } from "../../shell/SiteHeader.extras.js";
+import { NewsletterBand } from "../../blocks/NewsletterBand.js";
 
 const read = frameContent("frames.site-footer");
 
 export function siteFooterProps(input: Pick<FrameInput, "content" | "selection">): SiteFooterProps {
-  read.only(input, ["columns"]);
+  read.only(input, ["columns", "locale", "newsletter"]);
   const columns = read.records(runtimeValue(input, "columns"));
   if (runtimeValue(input, "columns") !== undefined && !columns.length) read.fail("columns must list at least one column");
   return {
+    ...(runtimeValue(input, "locale") === undefined ? {} : { locale: <SiteLocaleLinks {...runtimeLocale(runtimeValue(input, "locale"))} /> }),
+    ...(runtimeValue(input, "newsletter") === undefined ? {} : { newsletter: <NewsletterBand {...runtimeNewsletter(runtimeValue(input, "newsletter"))} layout="inline" ground="inverse" /> }),
     ...(columns.length ? { columns: <>{columns.map((column, index) => {
       const at = `columns[${index}]`, links = read.records(column.links);
       if (!links.length) read.fail(`${at}.links must list at least one link`);

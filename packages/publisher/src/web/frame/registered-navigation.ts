@@ -55,6 +55,7 @@ export interface SiteShellNavigationOptions {
     readonly triggerLabel?: CopyRef;
     readonly closeLabel?: CopyRef;
     readonly entryIds: readonly string[];
+    readonly mega?: boolean;
   };
   readonly footerGroupIds: readonly string[];
   /** One projected group becomes the image profile column; bindings contain asset identities only. */
@@ -63,6 +64,8 @@ export interface SiteShellNavigationOptions {
   /** Actual host Writer references, keyed by map identity; never synthesized. */
   readonly entryCopyRefs: Readonly<Record<string, CopyRef>>;
   readonly actionCopyRefs?: Readonly<Record<string, CopyRef>>;
+  readonly descriptionCopyRefs?: Readonly<Record<string, CopyRef>>;
+  readonly locale?: { readonly label: CopyRef; readonly copyRefs: Readonly<Record<string, CopyRef>> };
   readonly resolveCopy: CopyResolver;
 }
 export interface SiteShellNavigationProjection {
@@ -70,6 +73,7 @@ export interface SiteShellNavigationProjection {
   readonly actions: NonNullable<SiteShellInput["actions"]>;
   readonly columns: NonNullable<SiteFooterInput["columns"]>;
   readonly social?: SiteFooterInput["social"];
+  readonly locale?: NonNullable<SiteShellInput["header"]>["locale"];
   /** Preserve the declared host command identity alongside its bound map destination. */
   readonly actionBindings: readonly { readonly actionId: string; readonly targetEntryId: string; readonly intent: string }[];
 }
@@ -109,7 +113,28 @@ export function projectSiteShellNavigation(map: ContentMap, options: SiteShellNa
     label: copy(options.header.label),
     ...(options.header.triggerLabel === undefined ? {} : { triggerLabel: copy(options.header.triggerLabel) }),
     ...(options.header.closeLabel === undefined ? {} : { closeLabel: copy(options.header.closeLabel) }),
-    links: options.header.entryIds.map(id => ({ ...link(node(id)), ...(id === projected.activeId ? { isCurrent: true } : {}) })),
+    links: options.header.mega ? [] : options.header.entryIds.map(id => ({ ...link(node(id)), ...(id === projected.activeId ? { isCurrent: true } : {}) })),
+    ...(options.header.mega ? { mega: options.header.entryIds.map(id => {
+      const group = node(id);
+      if (group.href || !group.children?.length) throw new TypeError("Mega navigation requires a projected group with destinations");
+      const leaves: ContentMapNavigationNode[] = [];
+      const visit = (rows: readonly ContentMapNavigationNode[]) => rows.forEach(row => { if (row.href) leaves.push(row); if (row.children) visit(row.children); });
+      visit(group.children);
+      const features = leaves.filter(row => row.featured);
+      if (features.length > 1) throw new TypeError("A mega navigation group accepts one featured destination");
+      const grouped = new Map<string, ContentMapNavigationNode[]>();
+      for (const row of leaves.filter(row => !row.featured)) {
+        const key = row.group ?? id;
+        grouped.set(key, [...(grouped.get(key) ?? []), row]);
+      }
+      if (!grouped.size) throw new TypeError("Mega navigation needs ordinary link columns");
+      const featured = features[0];
+      return { id, label: copy(options.entryCopyRefs[id], group.label), columns: [...grouped].map(([key, values]) => {
+        const heading = map.entries.find(entry => entry.id === key);
+        if (heading?.kind !== "group") throw new TypeError("Mega column heading must reference a mapped group");
+        return { heading: copy(options.entryCopyRefs[key], heading.title), links: values.map(value => ({ ...link(value), ...(value.id === projected.activeId ? { isCurrent: true } : {}) })) };
+      }), ...(featured ? { featured: { ...link(featured), ...(featured.description === undefined ? {} : { description: copy(options.descriptionCopyRefs?.[featured.id], featured.description) }) } } : {}) };
+    }) } : {}),
   };
   const columns = options.footerGroupIds.map(id => {
     const value = node(id), entry = map.entries.find(entry => entry.id === id);
@@ -154,5 +179,9 @@ export function projectSiteShellNavigation(map: ContentMap, options: SiteShellNa
     actionBindings.push({ actionId: action.id, targetEntryId: target.id, intent: action.intent });
     return { href: targetHref, label: copy(options.actionCopyRefs?.[action.id], action.label), ...(binding.emphasis === undefined ? {} : { emphasis: binding.emphasis }), ...(binding.icon === undefined ? {} : { icon: binding.icon }) };
   });
-  return { nav, actions, columns, ...(social === undefined ? {} : { social }), actionBindings };
+  const locale = options.locale && projected.alternates ? {
+    label: copy(options.locale.label),
+    links: projected.alternates.map(alternate => ({ href: alternate.href, locale: alternate.locale, isCurrent: alternate.isCurrent, label: copy(options.locale!.copyRefs[alternate.locale], alternate.label) })),
+  } : undefined;
+  return { nav, actions, columns, ...(social === undefined ? {} : { social }), ...(locale ? { locale } : {}), actionBindings };
 }

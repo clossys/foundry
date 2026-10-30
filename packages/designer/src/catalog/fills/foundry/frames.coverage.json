@@ -153,7 +153,7 @@
       ],
       "missingStatePorts": [],
       "notes": [
-        "links, legal and social can be composed in secondary; no dedicated slots or overlay configuration. rule=top applies only on transparent ground; no unconditional rule visibility is claimed.",
+        "Locale and newsletter have dedicated slots. Links, legal and social can be composed in secondary; no dedicated legacy slots or overlay configuration. rule=top applies only on transparent ground; no unconditional rule visibility is claimed.",
         "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
       ],
       "slot": "frames.site-footer",
@@ -171,7 +171,7 @@
       "missingSlots": [],
       "missingStatePorts": [],
       "notes": [
-        "NavDisclosure is a separate client island supplied through nav; the descriptor does not prove navigation limits or glass contrast.",
+        "Navigation is supplied through nav; navMode=mega selects the grouped disclosure runtime. Locale links come from mapped route alternatives. Rendered navigation and glass contrast remain unmeasured.",
         "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
       ],
       "slot": "frames.site-header",
@@ -179,6 +179,7 @@
       "supported": [
         "nav-placement.centered",
         "nav-placement.leading",
+        "nav.mega",
         "position.static",
         "position.sticky",
         "surface.glass",

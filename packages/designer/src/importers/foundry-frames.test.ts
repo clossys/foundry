@@ -116,7 +116,7 @@ describe("Foundry frame descriptors", () => {
   it("pins supported configurations to named public API members", () => {
     const rows = new Map(result().coverage.map(row => [row.slot, row]));
     expect(rows.get("frames.sheet")!.supported).toEqual(["placement.bottom", "placement.end", "placement.start", "wide.dismiss", "wide.sheet"]);
-    expect(rows.get("frames.site-header")!.supported).toEqual(["nav-placement.centered", "nav-placement.leading", "position.static", "position.sticky", "surface.glass", "surface.solid", "surface.transparent", "tone.base", "tone.inverse"]);
+    expect(rows.get("frames.site-header")!.supported).toEqual(["nav-placement.centered", "nav-placement.leading", "nav.mega", "position.static", "position.sticky", "surface.glass", "surface.solid", "surface.transparent", "tone.base", "tone.inverse"]);
     expect(FOUNDRY_FRAME_MAP["app-header"]!.slots).not.toHaveProperty("brand");
     expect(FOUNDRY_FRAME_MAP["app-header"]!.slots.trail).toBe("page.breadcrumb");
     expect(FOUNDRY_FRAME_MAP["site-shell"]!.slots["skip-link"]).toBe("shell.skipLink");
