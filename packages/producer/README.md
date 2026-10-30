@@ -18,7 +18,7 @@ clossys <verb> [--check] [--root <dir>] [--json]
 | `publish` | Publisher |
 | `produce` | The four agents in sequence |
 
-`direct`, `design`, `write`, and `publish` are dispatch stubs in this build.
+`direct`, `design`, and `write` are dispatch stubs in this build.
 They exit `2` with `not implemented in this build`. Help exits `0`.
 
 `clossys produce [--port 4300] [--no-open]` compiles Designer and Writer cells,
@@ -76,10 +76,13 @@ parsers for Director, Designer, and Writer. Designer/Writer compiler and parser
 modules are shipped under `dist` but lack exported package subpaths; Producer
 loads those files from the package roots selected by `resolveAgent`. Their
 layout is an integration dependency until those packages export dedicated APIs.
+`publish --target <id>` validates the selected target and delegates emission to
+Publisher's app-local API.
 
 `--root <dir>` starts discovery at a directory relative to the current working
 directory. Discovery selects the nearest ancestor containing
-`clossys/clossys.config.ts`. The scaffold locates that file without evaluating it.
+`clossys/clossys.config.ts`. Publish reads literal configuration data without
+executing configuration code.
 `--check` preserves files, hashes, and modification times. `--json` emits one
 result object (on shutdown for a serving command). `produce` accepts `--once`, `--port <0..65535>`, and
 `--no-open`; `publish` accepts `--target <id>`.
@@ -87,8 +90,37 @@ result object (on shutdown for a serving command). `produce` accepts `--once`, `
 | Exit | Contract |
 | --- | --- |
 | `0` | Successful result, including help |
-| `1` | Reserved for a verdict failure when verb behavior is implemented |
+| `1` | Publish verification reports drift or other findings |
 | `2` | Usage error, missing root, unresolved agent, or current stub refusal |
+
+## Publish targets
+
+Create the target app directory, then declare the repository-root configuration:
+
+```ts
+import { defineConfig } from "@clossys/producer/config";
+
+export default defineConfig({
+  id: "example",
+  archetype: "product",
+  locales: { default: "en", supported: ["en"] },
+  targets: {
+    site: { app: "apps/site", format: "web.page.responsive", publication: "site" },
+  },
+});
+```
+
+```sh
+clossys publish --target site
+clossys publish --target site --check --json
+```
+
+The generated destination is `apps/site/src/clossys/`. The command does not
+install dependencies, publish a package, deploy, or edit the app manifest.
+Check mode computes expected outputs in memory and does not call the writer.
+The installed Publisher must expose its app-local emitter; its absence is an
+explicit error, rather than a fallback emitter. Dynamic configuration expressions
+and imports other than the configuration helper are unsupported.
 
 ## Agent mapping API
 
