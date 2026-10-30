@@ -12,12 +12,12 @@ function section(props: Parameters<typeof ContentSection>[0]) {
 describe("Content section selected native composition", () => {
   it("renders authored summary pairs through selected shadcn CardContent with definition semantics", async () => {
     const { container } = section({ heading: "Overview", headingId: "overview", aside: [{ id: "scope", label: "Scope", value: "ExampleCo" }], children: "Caller body", footnote: "Caller footnote", source: "Caller source", takeaway: "Caller takeaway" });
-    expect(await screen.findByRole("heading", { name: "Overview", level: 2 })).toHaveAttribute("id", "overview");
-    expect(await screen.findByText("ExampleCo")).toBeInTheDocument();
+    expect((await screen.findByRole("heading", { name: "Overview", level: 2 })).getAttribute("id")).toBe("overview");
+    expect(await screen.findByText("ExampleCo")).toBeTruthy();
     expect(container.querySelector('aside [data-slot="card"] [data-slot="card-content"] dl dt')?.textContent).toBe("Scope");
     expect(container.querySelector("aside dl dd")?.textContent).toBe("ExampleCo");
     expect(container.querySelectorAll('[data-ds-leaf="sections.content"]')).toHaveLength(1);
-    for (const copy of ["Caller body", "Caller footnote", "Caller source", "Caller takeaway"]) expect(screen.getByText(copy)).toBeInTheDocument();
+    for (const copy of ["Caller body", "Caller footnote", "Caller source", "Caller takeaway"]) expect(screen.getByText(copy)).toBeTruthy();
   });
   it.each([undefined, []])("omits an absent or empty summary rail (%s)", async aside => {
     const { container } = section({ heading: "Plain section", aside, children: "Caller body" });
@@ -30,6 +30,6 @@ describe("Content section selected native composition", () => {
     await screen.findByText("Caller media");
     expect(container.querySelector(`[data-content-section][data-layout="${layout}"]`)).not.toBeNull();
     expect(container.querySelector("[data-content-section-media]")?.textContent).toBe("Caller media");
-    expect(screen.getByText("Caller note")).toBeInTheDocument();
+    expect(screen.getByText("Caller note")).toBeTruthy();
   });
 });

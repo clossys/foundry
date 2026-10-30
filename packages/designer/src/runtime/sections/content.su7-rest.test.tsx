@@ -22,10 +22,10 @@ describe("Content section runtime and Studio contribution", () => {
   it("routes authored header, body, summary and footnote through the real selected section", async () => {
     const { container } = mount(renderContentSection(input({ header: { heading: "Caller title" }, body, aside: [{ id: "scope", label: "Scope", value: "ExampleCo" }], footnote: "Caller note" }, ["layout.split-end"])));
     await screen.findByText("ExampleCo");
-    expect(screen.getByRole("heading", { name: "Caller title" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Caller title" })).toBeTruthy();
     expect(container.querySelector('aside [data-slot="card-content"] dd')?.textContent).toBe("ExampleCo");
-    expect(screen.getByText("Caller body")).toBeInTheDocument();
-    expect(screen.getByText("Caller note")).toBeInTheDocument();
+    expect(screen.getByText("Caller body")).toBeTruthy();
+    expect(screen.getByText("Caller note")).toBeTruthy();
     expect(container.querySelector("button,input,textarea")).toBeNull();
   });
   it("omits an empty rail and rejects malformed summary values with a path", async () => {
