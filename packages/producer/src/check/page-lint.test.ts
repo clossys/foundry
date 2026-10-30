@@ -20,7 +20,7 @@ interface Invocation {
   stderr: string;
 }
 
-describe.sequential("PROC-5 real browser through the built CLI", () => {
+describe("PROC-5 real browser through the built CLI", () => {
   let server: Server | undefined;
   let fixtureRoot: string;
   let origin: string;
