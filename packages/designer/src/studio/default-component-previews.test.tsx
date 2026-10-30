@@ -7,6 +7,11 @@ import { componentDescriptorHash } from "../catalog-core/resolve-components.js";
 import profileData from "./__fixtures__/default-component-preview-profile.json" with { type: "json" };
 
 const profile = () => ({ selectionHash: profileData.selectionHash, components: structuredClone(profileData), values: { members: Object.fromEntries(Object.entries(glyphs).map(([slot, value]) => [slot, { slot, value: { light: value } }])) } }) as unknown as CompositeResolved;
+it("requires a native host for the regenerated Switch closure without changing default admission", () => {
+  const selected = profile();
+  expect(selected.components.components["components.switch"]!.origin).toMatchObject({ kind: "adopted", source: "shadcn@aria" });
+  expect(defaultComponentPreviews.preview("components.switch", selected)).toBeUndefined();
+});
 it("renders all 59 selected default component leaves with zero unavailable previews", () => {
   const selected = profile();
   const leaves = Object.keys(selected.components.components);

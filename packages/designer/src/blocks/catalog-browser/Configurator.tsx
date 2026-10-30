@@ -1,6 +1,6 @@
 import { Button } from "../../components/Button.js";
 import { Select } from "../../components/Select.js";
-import { Switch } from "../../components/Switch.js";
+import { Switch } from "../../components/preview-runtime/components/switch/switch.js";
 import { TextField } from "../../components/TextField.js";
 import type { CatalogBrowserConfig, CatalogBrowserControl } from "./types.js";
 

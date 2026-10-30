@@ -790,17 +790,17 @@
       ]
     },
     {
-      "missing": [],
-      "notes": [
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
-      ],
-      "slot": "components.switch",
-      "status": "candidate",
-      "supported": [
+      "missing": [
         "state.disabled",
         "state.off",
         "state.on"
-      ]
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.switch",
+      "status": "unavailable",
+      "supported": []
     },
     {
       "missing": [],

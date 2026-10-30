@@ -243,7 +243,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     racBase: rac("CheckboxGroup"),
     disposition: "finish",
   }),
-  onMain("Switch", ["src/components/Switch.tsx"], {
+  onMain("Switch", ["src/components/preview-runtime/components/switch/switch.tsx"], {
     id: "enter.switch",
     label: "Switch",
     racBase: rac("Switch"),

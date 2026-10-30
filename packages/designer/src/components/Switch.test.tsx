@@ -1,17 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Switch } from "./Switch.js";
+import { Switch } from "./preview-runtime/components/switch/switch.js";
 
-it("moves the thumb from inline start in RTL while retaining switch interaction and reduced-motion styling", async () => {
+it("retains native selected-state hooks inside an RTL caller", async () => {
   const user = userEvent.setup();
   const view = render(<div dir="rtl"><Switch>Direction-aware switch</Switch></div>);
-  const thumb = view.container.querySelector<HTMLElement>('[data-part="switch-thumb"]')!;
+  const thumb = view.container.querySelector<HTMLElement>('[data-slot="switch-thumb"]')!;
   expect(thumb.closest('[dir="rtl"]')).not.toBeNull();
-  expect(thumb.style.insetInlineStart).toBe("0px"); expect(thumb.style.transform).toBe("");
+  expect(thumb).not.toHaveAttribute("data-selected");
   await user.click(screen.getByRole("switch"));
-  expect(thumb.style.insetInlineStart).toBe("calc(var(--ui-control-switch-w) - var(--ui-control-switch-thumb) - 6px)");
-  expect(thumb).toHaveClass("relative", "transition-[inset-inline-start]", "motion-reduce:transition-none");
+  expect(thumb).toHaveAttribute("data-selected");
+  expect(thumb).toHaveClass("cn-switch-thumb", "cn-switch-thumb-aria", "transition-transform");
   expect(screen.getByRole("switch")).toBeChecked();
 });
 
@@ -38,9 +38,6 @@ describe("Switch", () => {
     );
     const toggle = screen.getByRole("switch", { name: "Email notifications" });
     const label = toggle.closest("label") as HTMLLabelElement;
-    // The component's own disabled-state opacity would otherwise apply here
-    // (see UI_ALPHA_DISABLED in Switch.tsx) — the consumer's explicit value
-    // must win instead of being silently dropped.
     expect(label.style.opacity).toBe("0.42");
     // A non-conflicting property the component never sets must survive too.
     expect(label.style.marginTop).toBe("8px");
@@ -80,11 +77,11 @@ describe("Switch", () => {
     expect(screen.getByRole("switch", { name: "Email notifications" })).toBeChecked();
   });
 
-  it("C12: the on track binds action-color (ink), never the accent", () => {
+  it("exposes native selected state on the switch root and thumb", () => {
     const { container } = render(<Switch isSelected onChange={() => {}}>Email notifications</Switch>);
-    const track = container.querySelector('[data-part="switch-track"]')!;
-    expect(track.classList).toContain("border-action");
-    expect(track.classList).toContain("bg-action");
-    expect(track.className).not.toMatch(/\b(?:bg|border)-accent\b/);
+    const track = container.querySelector('[data-slot="switch"]')!;
+    expect(track).toHaveClass("cn-switch", "cn-switch-aria");
+    expect(track).toHaveAttribute("data-selected");
+    expect(container.querySelector('[data-slot="switch-thumb"]')).toHaveAttribute("data-selected");
   });
 });

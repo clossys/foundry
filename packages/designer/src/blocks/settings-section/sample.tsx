@@ -1,5 +1,5 @@
 import { Button } from "../../components/Button.js";
-import { Switch } from "../../components/Switch.js";
+import { Switch } from "../../components/preview-runtime/components/switch/switch.js";
 import { TextField } from "../../components/TextField.js";
 import type { SettingsSectionProps } from "../SettingsSection.js";
 

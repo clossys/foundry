@@ -2,7 +2,7 @@
 import { useId, useMemo, useState, type ReactNode } from "react";
 import { Badge } from "../../components/preview-runtime/components/badge/badge.js";
 import { Button } from "../../components/Button.js";
-import { Switch } from "../../components/Switch.js";
+import { Switch } from "../../components/preview-runtime/components/switch/switch.js";
 import type { CatalogBrowserReference } from "../../blocks/catalog-browser/types.js";
 import type { UsageEdgeKind, UsageEvidence, UsageGraph, UsageLayer } from "../../catalog-core/usage-graph.js";
 import type { WiringException } from "../../catalog-core/wiring.js";

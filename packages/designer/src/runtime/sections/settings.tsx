@@ -6,7 +6,7 @@ import { componentLeaf } from "../component-leaf.js";
 
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
 const Select = componentLeaf<typeof import("../../components/Select.js").Select>("components.select");
-const Switch = componentLeaf<typeof import("../../components/Switch.js").Switch>("components.switch");
+const Switch = componentLeaf<typeof import("../../components/preview-runtime/components/switch/switch.js").Switch>("components.switch");
 
 const LEAF = "sections.settings";
 

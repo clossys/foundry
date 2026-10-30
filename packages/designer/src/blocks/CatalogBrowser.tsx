@@ -3,7 +3,7 @@ import { Badge } from "../components/preview-runtime/components/badge/badge.js";
 import { SearchField } from "../components/SearchField.js";
 import { Select } from "../components/Select.js";
 import { Skeleton } from "../components/preview-runtime/components/skeleton/skeleton.js";
-import { Switch } from "../components/Switch.js";
+import { Switch } from "../components/preview-runtime/components/switch/switch.js";
 import { Tabs } from "../components/Tabs.js";
 import { cx } from "../components/internal/cx.js";
 import { CatalogWorkspace } from "./CatalogWorkspace.js";

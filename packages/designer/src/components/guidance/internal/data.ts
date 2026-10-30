@@ -984,7 +984,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     }
   ],
   "constraints": []
-}, "src/components/Switch.tsx"),
+}, "src/components/preview-runtime/components/switch/switch.tsx"),
   "enter.radio-group": entry(
 {
   "purpose": "Choose one value while keeping a small option set visible.",
@@ -3289,7 +3289,7 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "enter.switch": {
     "exportName": "Switch",
-    "source": "src/components/Switch.tsx",
+    "source": "src/components/preview-runtime/components/switch/switch.tsx",
     "options": [
       {
         "prop": "isDisabled",
@@ -3302,8 +3302,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/Switch.tsx",
-          "evidence": "AriaSwitch"
+          "source": "src/components/preview-runtime/components/switch/switch.tsx",
+          "evidence": "SwitchPrimitive"
         }
       },
       {
@@ -3317,8 +3317,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/Switch.tsx",
-          "evidence": "<AriaSwitch\n      {...rest}"
+          "source": "src/components/preview-runtime/components/switch/switch.tsx",
+          "evidence": "<SwitchPrimitive"
         }
       }
     ],
@@ -3327,14 +3327,14 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--ui-ring-focus",
+          "property": "--color-focus-ring",
           "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-ring-focus,",
+          "source": "styles/shadcn-native.css",
+          "evidence": "--ring: var(--color-focus-ring)",
           "via": [
             {
-              "source": "src/components/Switch.tsx",
-              "evidence": "boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined"
+              "source": "src/components/preview-runtime/components/switch/switch.tsx",
+              "evidence": "cn-switch cn-switch-aria"
             }
           ]
         }

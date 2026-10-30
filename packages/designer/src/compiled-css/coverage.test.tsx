@@ -54,7 +54,7 @@ import { FlowCanvas } from "../blocks/FlowCanvas.js";
 import { Skeleton } from "../components/preview-runtime/components/skeleton/skeleton.js";
 import { Spinner } from "../components/Spinner.js";
 import { StatusMark } from "../components/StatusMark.js";
-import { Switch } from "../components/Switch.js";
+import { Switch } from "../components/preview-runtime/components/switch/switch.js";
 import { TextField } from "../components/TextField.js";
 import { Textarea } from "../components/Textarea.js";
 import { Hero } from "../blocks/Hero.js";

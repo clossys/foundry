@@ -302,18 +302,6 @@
     "tokens.text-color",
     "tokens.typeface"
   ],
-  "switch": [
-    "tokens.action-color",
-    "tokens.body-size",
-    "tokens.border-color",
-    "tokens.control-size",
-    "tokens.focus-shadow",
-    "tokens.radius",
-    "tokens.spacing",
-    "tokens.state-opacity",
-    "tokens.surface-color",
-    "tokens.text-color"
-  ],
   "table": [
     "tokens.accent-color",
     "tokens.body-size",

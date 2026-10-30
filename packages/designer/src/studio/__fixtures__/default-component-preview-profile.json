@@ -1,6 +1,6 @@
 {
   "consumer": "defaults-consumer",
-  "selectionHash": "sha256:8705f4128ad5f9d6b38c8cac8eef5506c9aa5b77723de8ca6d535e570a5f96fa",
+  "selectionHash": "sha256:0aff5f746f84683a70b7cad239eefd159addebb2f0c90862cde60bc4524f7a26",
   "components": {
     "components.avatar": {
       "slot": "components.avatar",
@@ -9799,8 +9799,8 @@
           ]
         },
         "license": "MIT",
-        "sha256": "77fba61b0de96ccb1ac0fbb6df232ea05d0709ae0dccca827f7b562ab6ad256f",
-        "adoptedAt": "2026-10-26",
+        "sha256": "7297bfebddd024e9cd9873c8a73debb917ac8d3e354ee81d50be0e730b5b5348",
+        "adoptedAt": "2026-10-30",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
           {
@@ -9809,7 +9809,7 @@
           },
           {
             "path": "components/switch/switch.tsx",
-            "sha256": "3fd09f5b623aa1e03cb48f3e9d9dc0f0f024ff2cbb63e5f880182a449330dcb3"
+            "sha256": "32e1c7b86536dcfd5a88ff0bf485e3b8853d8ce56c5cf145015eba8038957ba5"
           },
           {
             "path": "notices/THIRD-PARTY.md",
@@ -9832,19 +9832,7 @@
         "tokens": {
           "tokens.action-color.default": "--color-action",
           "tokens.border-color.strong": "--color-line-strong",
-          "tokens.border-width.hairline": "--ui-border-hairline",
-          "tokens.border-width.rule": "--ui-border-rule",
-          "tokens.control-size.switch-thumb": "--ui-control-switch-thumb",
-          "tokens.duration.default": "--ui-duration-default",
-          "tokens.easing.default": "--ease-default",
           "tokens.focus-color.default": "--color-focus-ring",
-          "tokens.focus-outline.offset": "--ui-focus-offset",
-          "tokens.focus-outline.width": "--ui-border-focus",
-          "tokens.spacing.2xl": "--spacing-2xl",
-          "tokens.spacing.lg": "--spacing-lg",
-          "tokens.spacing.md": "--spacing-md",
-          "tokens.spacing.xl": "--spacing-xl",
-          "tokens.state-opacity.disabled": "--ui-alpha-disabled",
           "tokens.status-color.danger": "--color-status-danger",
           "tokens.surface-color.base": "--color-surface-base",
           "tokens.text-color.on-action": "--color-ink-on-action",
@@ -9872,19 +9860,7 @@
           "tokens": [
             "tokens.action-color.default",
             "tokens.border-color.strong",
-            "tokens.border-width.hairline",
-            "tokens.border-width.rule",
-            "tokens.control-size.switch-thumb",
-            "tokens.duration.default",
-            "tokens.easing.default",
             "tokens.focus-color.default",
-            "tokens.focus-outline.offset",
-            "tokens.focus-outline.width",
-            "tokens.spacing.2xl",
-            "tokens.spacing.lg",
-            "tokens.spacing.md",
-            "tokens.spacing.xl",
-            "tokens.state-opacity.disabled",
             "tokens.status-color.danger",
             "tokens.surface-color.base",
             "tokens.text-color.on-action",
@@ -9955,7 +9931,7 @@
           },
           {
             "path": "components/switch/switch.tsx",
-            "sha256": "3fd09f5b623aa1e03cb48f3e9d9dc0f0f024ff2cbb63e5f880182a449330dcb3"
+            "sha256": "32e1c7b86536dcfd5a88ff0bf485e3b8853d8ce56c5cf145015eba8038957ba5"
           },
           {
             "path": "notices/THIRD-PARTY.md",
@@ -9991,8 +9967,8 @@
             ]
           },
           "license": "MIT",
-          "sha256": "77fba61b0de96ccb1ac0fbb6df232ea05d0709ae0dccca827f7b562ab6ad256f",
-          "adoptedAt": "2026-10-26",
+          "sha256": "7297bfebddd024e9cd9873c8a73debb917ac8d3e354ee81d50be0e730b5b5348",
+          "adoptedAt": "2026-10-30",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
             {
@@ -10001,7 +9977,7 @@
             },
             {
               "path": "components/switch/switch.tsx",
-              "sha256": "3fd09f5b623aa1e03cb48f3e9d9dc0f0f024ff2cbb63e5f880182a449330dcb3"
+              "sha256": "32e1c7b86536dcfd5a88ff0bf485e3b8853d8ce56c5cf145015eba8038957ba5"
             },
             {
               "path": "notices/THIRD-PARTY.md",
@@ -12150,7 +12126,7 @@
     },
     {
       "path": "components/switch/switch.tsx",
-      "content": "\"use client\"\n\nimport { cn } from \"../_parts/utils/index\"\nimport {\n  composeRenderProps,\n  Switch as SwitchPrimitive,\n  type SwitchProps as SwitchPrimitiveProps,\n} from \"react-aria-components\"\n\nfunction Switch({\n  className,\n  size = \"default\",\n  children,\n  ...props\n}: SwitchPrimitiveProps & {\n  size?: \"sm\" | \"default\"\n}) {\n  return (\n    <SwitchPrimitive\n      data-slot=\"switch\"\n      data-size={size}\n      className={cn(\n        \"data-checked:bg-(--color-action) data-unchecked:bg-(--color-line-strong) focus-visible:border-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus,3px) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger) dark:aria-invalid:ring-(--color-status-danger)/40 aria-invalid:border-(--color-status-danger) dark:aria-invalid:border-(--color-status-danger)/50 dark:data-unchecked:bg-(--color-line-strong)/80 shrink-0 rounded-full border-(length:--ui-border-hairline,1px)  focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus,3px) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger)   data-[size=default]:h-(--ui-control-switch-thumb) data-[size=default]:w-(--spacing-2xl) data-[size=sm]:h-(--ui-control-switch-thumb) data-[size=sm]:w-(--spacing-xl) data-selected:bg-(--color-action) not-data-selected:bg-(--color-line-strong) data-focus-visible:border-(--color-focus-ring) data-focus-visible:outline-solid data-focus-visible:outline-(length:--ui-border-focus,3px) data-focus-visible:outline-offset-(--ui-focus-offset) data-focus-visible:outline-(--color-focus-ring) dark:not-data-selected:bg-(--color-line-strong)/80 data-focus-visible:outline-solid data-focus-visible:outline-(length:--ui-border-focus,3px) data-focus-visible:outline-offset-(--ui-focus-offset) data-focus-visible:outline-(--color-focus-ring) data-invalid:outline-solid data-invalid:outline-(length:--ui-border-focus,3px) data-invalid:outline-offset-(--ui-focus-offset) data-invalid:outline-(--color-status-danger) dark:data-invalid:ring-(--color-status-danger)/40 data-invalid:border-(--color-status-danger) dark:data-invalid:border-(--color-status-danger)/50 data-invalid:outline-solid data-invalid:outline-(length:--ui-border-focus,3px) data-invalid:outline-offset-(--ui-focus-offset) data-invalid:outline-(--color-status-danger) peer group/switch relative inline-flex items-center transition-all duration-(--ui-duration-default) ease-(--default-transition-timing-function) after:absolute after:-inset-x-3 after:-inset-y-2 data-disabled:cursor-not-allowed data-disabled:opacity-(--ui-alpha-disabled,50%)\",\n        className\n      )}\n      {...props}\n    >\n      {composeRenderProps(children, (children, { isSelected }) => (\n        <>\n          <span\n            data-slot=\"switch-thumb\"\n            data-selected={isSelected || undefined}\n            className=\"bg-(--color-surface-base) dark:data-unchecked:bg-(--color-ink-primary) dark:data-checked:bg-(--color-ink-on-action) rounded-full group-data-[size=default]/switch:size-(--spacing-lg,calc(var(--spacing)*4)) group-data-[size=sm]/switch:size-(--spacing-md) group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-var(--ui-border-rule))] group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-var(--ui-border-rule))] group-data-[size=default]/switch:data-unchecked:translate-x-0 group-data-[size=sm]/switch:data-unchecked:translate-x-0 dark:not-data-selected:bg-(--color-ink-primary) dark:data-selected:bg-(--color-ink-on-action) group-data-[size=default]/switch:data-selected:translate-x-[calc(100%-var(--ui-border-rule))] group-data-[size=sm]/switch:data-selected:translate-x-[calc(100%-var(--ui-border-rule))] group-data-[size=default]/switch:not-data-selected:translate-x-0 group-data-[size=sm]/switch:not-data-selected:translate-x-0 pointer-events-none block ring-0 transition-transform duration-(--ui-duration-default) ease-(--default-transition-timing-function)\"\n          />\n          {children}\n        </>\n      ))}\n    </SwitchPrimitive>\n  )\n}\n\nexport { Switch }\n"
+      "content": "\"use client\"\n\nimport { cn } from \"../_parts/utils/index.js\"\nimport {\n  composeRenderProps,\n  Switch as SwitchPrimitive,\n  type SwitchProps as SwitchPrimitiveProps,\n} from \"react-aria-components\"\n\nfunction Switch({\n  className,\n  size = \"default\",\n  children,\n  ...props\n}: SwitchPrimitiveProps & {\n  size?: \"sm\" | \"default\"\n}) {\n  return (\n    <SwitchPrimitive\n      data-slot=\"switch\"\n      data-size={size}\n      className={cn(\n        \"cn-switch cn-switch-aria peer group/switch relative inline-flex items-center transition-all outline-none after:absolute after:-inset-x-3 after:-inset-y-2 data-disabled:cursor-not-allowed data-disabled:opacity-50\",\n        className\n      )}\n      {...props}\n    >\n      {composeRenderProps(children, (children, { isSelected }) => (\n        <>\n          <span\n            data-slot=\"switch-thumb\"\n            data-selected={isSelected || undefined}\n            className=\"cn-switch-thumb cn-switch-thumb-aria pointer-events-none block ring-0 transition-transform\"\n          />\n          {children}\n        </>\n      ))}\n    </SwitchPrimitive>\n  )\n}\n\nexport { Switch }\n"
     },
     {
       "path": "components/tabs/tabs.tsx",

@@ -9,7 +9,7 @@ import { GlyphProvider } from "./glyph-context.js";
 import type { IconNode } from "../icons/types.js";
 import { Button } from "./Button.js";
 import { Checkbox } from "./Checkbox.js";
-import { Switch } from "./Switch.js";
+import { Switch } from "./preview-runtime/components/switch/switch.js";
 import { Select } from "./Select.js";
 import { ComboBox } from "./ComboBox.js";
 import { Disclosure } from "./Disclosure.js";
@@ -19,7 +19,7 @@ import { SearchField } from "./SearchField.js";
 import { StatusMark } from "./StatusMark.js";
 
 const consumers = ["Select", "ComboBox", "Disclosure", "Banner", "Chip", "SearchField", "Checkbox", "StatusMark", "Switch", "Button"];
-const source = (name: string) => readFileSync(join(dirname(fileURLToPath(import.meta.url)), `${name}.tsx`), "utf8");
+const source = (name: string) => readFileSync(join(dirname(fileURLToPath(import.meta.url)), name === "Switch" ? "preview-runtime/components/switch/switch.tsx" : `${name}.tsx`), "utf8");
 // Consumer files may render Icon, but glyph artwork belongs in data bindings.
 function inlineGlyphs(text: string) {
   return /<(?:svg|path|circle|rect|polygon)\b|[✓▾▸×]/.test(text);
@@ -69,21 +69,19 @@ describe("control glyph bindings", () => {
     expect(container.querySelectorAll('[data-test-glyph="explicit"]')).toHaveLength(1);
     expect(screen.getByRole("button", { name: "None" }).querySelector("svg")).toBeNull();
   });
-  it("binds mark and switch geometry to existing control tokens in both states", async () => {
+  it("keeps checkbox token geometry and native Switch state hooks", async () => {
     const user = userEvent.setup();
     const { container } = render(<><Checkbox>Check</Checkbox><Switch>Toggle</Switch></>);
     const box = container.querySelector('[data-part="control-mark"]') as HTMLElement;
     expect(box.style.width).toBe("var(--ui-control-mark)");
     expect(box.style.height).toBe("var(--ui-control-mark)");
-    const track = container.querySelector('[data-part="switch-track"]') as HTMLElement;
-    const thumb = container.querySelector('[data-part="switch-thumb"]') as HTMLElement;
-    expect(track.style.width).toBe("var(--ui-control-switch-w)");
-    expect(track.style.height).toBe("var(--ui-control-switch-h)");
-    expect(thumb.style.width).toBe("var(--ui-control-switch-thumb)");
-    expect(thumb.style.height).toBe("var(--ui-control-switch-thumb)");
-    expect(thumb.style.insetInlineStart).toBe("0px");
+    const track = container.querySelector('[data-slot="switch"]') as HTMLElement;
+    const thumb = container.querySelector('[data-slot="switch-thumb"]') as HTMLElement;
+    expect(track).toHaveAttribute("data-size", "default");
+    expect(thumb).toHaveClass("cn-switch-thumb-aria");
+    expect(thumb).not.toHaveAttribute("data-selected");
     await user.click(screen.getByRole("switch"));
-    expect(thumb.style.insetInlineStart).toBe("calc(var(--ui-control-switch-w) - var(--ui-control-switch-thumb) - 6px)");
+    expect(thumb).toHaveAttribute("data-selected");
     expect(screen.getByRole("switch")).toBeChecked();
     await user.click(screen.getByRole("checkbox"));
     expect(screen.getByRole("checkbox")).toBeChecked();

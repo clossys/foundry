@@ -91,8 +91,8 @@ export type { LinkProps, LinkVariant } from "./Link.client.js";
 export { Checkbox } from "./Checkbox.js";
 export type { CheckboxProps, CheckboxGroupProps } from "./Checkbox.js";
 
-export { Switch } from "./Switch.js";
-export type { SwitchProps } from "./Switch.js";
+export { Switch } from "./preview-runtime/components/switch/switch.js";
+export type { SwitchProps } from "./Switch.types.js";
 
 export { Slider } from "./Slider.js";
 export type { SliderProps, SliderValue } from "./Slider.js";

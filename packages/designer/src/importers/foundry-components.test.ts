@@ -28,7 +28,7 @@ const storedMappings = Object.fromEntries(Object.entries(FOUNDRY_COMPONENT_MAP).
 const changedMap = (leaf: string, change: Partial<FoundryComponentMapping>) => ({ ...FOUNDRY_COMPONENT_MAP, [leaf]: { ...FOUNDRY_COMPONENT_MAP[leaf]!, ...change } });
 
 describe("Foundry component package descriptors", () => {
-  it("regenerates 55 stored package descriptors and keeps no dynamic blocked candidates", () => {
+  it("regenerates 54 stored package descriptors and keeps no dynamic blocked candidates", () => {
     const files = generatedFoundryComponentFiles({ exports, mappings: storedMappings, slots: signedSlots });
     // Explicit local regeneration writes only this generator's enumerated component artifacts.
     if (process.env.UPDATE_FOUNDRY_COMPONENT_FILLS === "1") for (const [name, bytes] of Object.entries(files)) writeFileSync(resolve(fillsDirectory, name), bytes);
@@ -38,9 +38,9 @@ describe("Foundry component package descriptors", () => {
     expect(imported().coverage.map(row => row.slot)).toEqual(slots.map(slot => slot.id).sort());
     expect(imported().coverage).toHaveLength(66);
     expect(signedSlots).toHaveLength(57);
-    expect(importFoundryComponents({ exports, mappings: storedMappings, slots: signedSlots }).fills).toHaveLength(55);
-    expect(imported().fills).toHaveLength(57);
-    expect(imported().fills.filter(doc => !["components.semantic-content", "components.native-action"].includes(doc.$extensions["com.clossys.fill"].slot))).toHaveLength(55);
+    expect(importFoundryComponents({ exports, mappings: storedMappings, slots: signedSlots }).fills).toHaveLength(54);
+    expect(imported().fills).toHaveLength(56);
+    expect(imported().fills.filter(doc => !["components.semantic-content", "components.native-action"].includes(doc.$extensions["com.clossys.fill"].slot))).toHaveLength(54);
     const blocked = imported().fills.filter(doc => Object.values(doc.components)[0]!.blockers?.length);
     expect(blocked.map(doc => doc.$extensions["com.clossys.fill"].id)).toEqual(dynamicBlockedLeaves.map(leaf => `foundry/components.${leaf}`));
     for (const doc of blocked) {
@@ -58,6 +58,16 @@ describe("Foundry component package descriptors", () => {
       slot, status: "unavailable", supported: [], missing: [], notes: ["No package implementation is available."],
     }))].sort((a, b) => a.slot.localeCompare(b.slot)));
     expect(loadComponentCompositionRules().map(rule => rule.slot)).toEqual(["components.date-picker", "components.file-trigger"]);
+  });
+
+  it("does not offer retired Foundry implementations as native source counterparts", () => {
+    const nativeSourceCounterparts = ["badge", "radio-group", "separator", "skeleton", "switch"];
+    const result = imported();
+    for (const leaf of nativeSourceCounterparts) {
+      expect(FOUNDRY_COMPONENT_MAP[leaf], leaf).toBeUndefined();
+      expect(result.fills.some(doc => doc.components[leaf]), leaf).toBe(false);
+      expect(result.coverage.find(row => row.slot === `components.${leaf}`), leaf).toMatchObject({ status: "unavailable" });
+    }
   });
 
   it("pins real primary and member-dispatched package exports without copied source", () => {

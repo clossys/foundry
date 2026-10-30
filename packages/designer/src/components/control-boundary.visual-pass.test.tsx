@@ -10,7 +10,7 @@ import { NumberField } from "./NumberField.js";
 import { RadioGroup, RadioGroupItem } from "./preview-runtime/components/radio-group/radio-group.js";
 import { SearchField } from "./SearchField.js";
 import { Select } from "./Select.js";
-import { Switch } from "./Switch.js";
+import { Switch } from "./preview-runtime/components/switch/switch.js";
 import { Textarea } from "./Textarea.js";
 import { TextField } from "./TextField.js";
 import { ToggleButton } from "./ToggleButton.js";
@@ -81,13 +81,13 @@ describe("control boundary line (VF-8)", () => {
     expect(screen.getByRole("radiogroup", { name: "Speed" })).toHaveAttribute("aria-invalid", "true");
   });
 
-  it("Switch: off track rests on the control line; on keeps the action edge", () => {
+  it("Switch retains its native boundary and selected-state hooks", () => {
     const { rerender, container } = render(<Switch>Alerts</Switch>);
-    const track = () => container.querySelector('[data-part="switch-track"]');
-    expectControlLine(track());
+    const track = () => container.querySelector('[data-slot="switch"]');
+    expect(track()).toHaveClass("cn-switch", "cn-switch-aria");
+    expect(track()).not.toHaveAttribute("data-selected");
     rerender(<Switch isSelected>Alerts</Switch>);
-    expect(classes(track())).toContain("border-action");
-    expect(classes(track())).not.toContain("border-line-control");
+    expect(track()).toHaveAttribute("data-selected");
   });
 
   it("disabled controls keep the disabled alpha on top of the control line", () => {
