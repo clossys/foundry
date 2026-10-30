@@ -11,6 +11,7 @@ import { prepareStudioSelection } from "./selection-defaults.js";
 import { selectionCss } from "./selection-css.js";
 import { selectionShadcnTokens, type SelectionShadcnTokenContract } from "./selection-shadcn-tokens.js";
 import { studioComponentProviderSource } from './selection-component-provider.js';
+import { emitStudioSurfaces, resolveStudioRender, studioRenderHash, type StudioGateReport, type StudioReportSink } from './studio-render-policy.js';
 
 export interface StudioSelectionLeaf {
   leaf: string;
@@ -19,7 +20,7 @@ export interface StudioSelectionLeaf {
   hash?: string;
   message?: string;
 }
-export interface StudioSelection { hash: string; runtimeUrl?: string; profileUrl?: string; css?: string; cssHash?: string; leaves: StudioSelectionLeaf[]; message?: string }
+export interface StudioSelection { hash: string; runtimeUrl?: string; profileUrl?: string; css?: string; cssHash?: string; leaves: StudioSelectionLeaf[]; message?: string; gateReports?: StudioGateReport[] }
 const runtimes = new Map<string, string>();
 const profiles = new Map<string, CompositeResolved>();
 const pending = new Map<string, Promise<StudioSelection>>();
@@ -132,7 +133,7 @@ function projectionPlugin(files: ReadonlyMap<string, string>, root: string, comp
 }
 
 /** Compile checked, emitted adapters, preserving the selected library's owned source. */
-export async function compileSelection(root: string, input: CompositeEngineInput, leaves: StudioSelectionLeaf[], hash: string, emit?: (projection: StudioSelectionProjection) => Promise<void>): Promise<StudioSelection> {
+export async function compileSelection(root: string, input: CompositeEngineInput, leaves: StudioSelectionLeaf[], hash: string, emit?: (projection: StudioSelectionProjection) => Promise<void>, report?: StudioReportSink): Promise<StudioSelection> {
   const packageExports: Record<string, readonly string[]> = { ...input.componentOptions?.packageExports };
   const modules = new Set<string>();
   for (const fill of input.library.components.fills) {
@@ -153,7 +154,8 @@ export async function compileSelection(root: string, input: CompositeEngineInput
   }
   for (const module of modules) packageExports[module] = Object.keys(await import(module));
   input = { ...input, componentOptions: { ...input.componentOptions, packageExports } };
-  const profile = resolve(input);
+  const resolved = report ? await resolveStudioRender(input, report) : resolve(input);
+  const profile = report ? { ...resolved, selectionHash: hash, ...(resolved.surfaces ? { surfaces: { ...resolved.surfaces, selectionHash: hash } } : {}) } : resolved;
   const componentModules = new Map<string, ComponentModule>();
   for (const document of input.catalog.components.fills) {
     const component = Object.values(document.components)[0]!;
@@ -189,7 +191,7 @@ export async function compileSelection(root: string, input: CompositeEngineInput
     implementationImports.set(specifier, { leaf, module });
     return specifier;
   }));
-  if (profile.surfaces) for (const file of surfaces.emitSurfaces(profile.surfaces, ["surface-index"])) files.set(file.path, file.contents);
+  if (profile.surfaces) for (const file of report ? await emitStudioSurfaces(profile.surfaces, report) : surfaces.emitSurfaces(profile.surfaces, ["surface-index"])) files.set(file.path, file.contents);
   let tree = "export const tree = {};\n";
   if (files.has("components/navigation-tree/index.ts")) {
     const navigation = profile.components.components["components.navigation-tree"];
@@ -275,24 +277,26 @@ export function selectionProfile(hash: string): CompositeResolved | undefined { 
 export async function studioSelection(root: string): Promise<StudioSelection> {
   let leaves: StudioSelectionLeaf[] = [];
   let hash = themeHash("Designer selection unavailable");
+  const gateReports: StudioGateReport[] = [];
+  const report: StudioReportSink = finding => gateReports.push(finding);
   try {
-    const stored = await readStudioDesignerLibrary(root);
-    const key = `${root}\n${stored ? libraryHash(stored.library) + "\n" + JSON.stringify(stored.activeIds) : "missing"}`;
+    const stored = await readStudioDesignerLibrary(root, report);
+    const key = `${root}\n${stored ? studioRenderHash(stored.library) + "\n" + JSON.stringify(stored.activeIds) : "missing"}`;
     const existing = preparedSelections.get(key);
     if (existing) return await existing;
     const generation = (async (): Promise<StudioSelection> => {
-    const prepared = await prepareStudioSelection(stored);
+    const prepared = await prepareStudioSelection(stored, undefined, report);
     leaves = prepared.leaves;
-    hash = libraryHash(prepared.input.library);
+    hash = studioRenderHash(prepared.input.library);
     let compiled = pending.get(hash);
     if (!compiled) {
-      compiled = compileSelection(root, prepared.input, leaves, hash);
+      compiled = compileSelection(root, prepared.input, leaves, hash, undefined, report);
       pending.set(hash, compiled);
       while (pending.size > 32) pending.delete(pending.keys().next().value!);
       compiled.catch(() => { pending.delete(hash); });
     }
     // Adoption state may change while producing byte-identical adapters.
-    return { ...await compiled, leaves };
+    return { ...await compiled, leaves, gateReports };
     })();
     preparedSelections.set(key, generation);
     while (preparedSelections.size > 32) preparedSelections.delete(preparedSelections.keys().next().value!);
@@ -301,6 +305,6 @@ export async function studioSelection(root: string): Promise<StudioSelection> {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("Producer Designer selection failed:", message);
-    return { hash, leaves: leaves.map(leaf => ({ ...leaf, source: "unavailable", message })), message };
+    return { hash, leaves: leaves.map(leaf => ({ ...leaf, source: "unavailable", message })), message, gateReports };
   }
 }

@@ -12,6 +12,54 @@ const variants = Object.freeze([
   { name: 'desktop', viewport: { width: 1440, height: 1000 }, isMobile: false },
   { name: 'mobile', viewport: { width: 390, height: 844 }, isMobile: true },
 ]);
+const REPORT_EXIT_CODES = Object.freeze({ PASS: 0, FAIL: 1, ENV: 2 });
+function failureReport(error, extra = {}) {
+  return error?.report ?? { check: 'studio:check', status: 'FAIL', phase: 'setup', executed: false, checks: [], diagnostics: [{ rule: 'check-setup', message: error instanceof Error ? error.message : String(error) }], ...extra };
+}
+function reportError(report, cause) {
+  const error = new Error(report.diagnostics?.[0]?.message ?? 'studio:check failed', cause ? { cause } : undefined);
+  error.report = report;
+  error.exitCode = REPORT_EXIT_CODES[report.status] ?? 1;
+  return error;
+}
+/** Select one installed, Playwright-supported runtime. Never retry a failed launch. */
+function browserRuntime(options = {}) {
+  const playwright = options.playwright ?? require('playwright');
+  const name = options.browserName ?? process.env.STUDIO_BROWSER ?? 'chromium';
+  assert.ok(['chromium', 'firefox', 'webkit'].includes(name), 'STUDIO_BROWSER must be chromium, firefox, or webkit');
+  const type = playwright[name];
+  const launch = { headless: true, timeout: options.browserTimeout ?? 10000 };
+  const selectedPath = options.executablePath ?? process.env.STUDIO_BROWSER_PATH ?? (name === 'chromium' ? process.env.CHROMIUM_PATH : undefined);
+  if (selectedPath) launch.executablePath = selectedPath;
+  else if (!fs.existsSync(type.executablePath()) && name === 'chromium' && fs.existsSync('/usr/bin/chromium')) launch.executablePath = '/usr/bin/chromium';
+  if (name === 'chromium') launch.args = ['--no-sandbox'];
+  return { type, name, launch };
+}
+async function launchStudioBrowser(options = {}) {
+  let runtime;
+  try {
+    runtime = browserRuntime(options);
+    return await runtime.type.launch(runtime.launch);
+  } catch (cause) {
+    throw reportError({ check: 'studio:check', status: 'ENV', phase: 'browser-launch', executed: false, browser: runtime?.name ?? options.browserName ?? process.env.STUDIO_BROWSER ?? 'chromium', checks: [], diagnostics: [{ rule: 'browser-unavailable', message: cause instanceof Error ? cause.message : String(cause) }] }, cause);
+  }
+}
+/** One bounded launch/navigation probe; callers may reuse its browser for the entire suite. */
+async function probeBrowser(options = {}) {
+  const browser = await launchStudioBrowser(options);
+  try {
+    const context = await browser.newContext();
+    try {
+      const page = await context.newPage();
+      await page.goto('data:text/html,<title>Studio browser probe</title><h1>Ready</h1>', { timeout: options.browserTimeout ?? 10000 });
+      assert.equal(await page.title(), 'Studio browser probe');
+    } finally { await context.close(); }
+    return { browser, report: { check: 'studio:browser-probe', status: 'PASS', executed: true, browserVersion: browser.version() } };
+  } catch (cause) {
+    await browser.close();
+    throw reportError({ check: 'studio:browser-probe', status: 'ENV', phase: 'browser-probe', executed: false, checks: [], diagnostics: [{ rule: 'browser-unavailable', message: cause instanceof Error ? cause.message : String(cause) }] }, cause);
+  }
+}
 function readJson(file) { return JSON.parse(fs.readFileSync(file, 'utf8')); }
 function appPages(root) {
   const result = [];
@@ -120,17 +168,14 @@ async function settle(page, pending, timeout) {
   }
   throw new Error('Page resource requests did not settle before timeout');
 }
-async function checkStudio(options = {}) {
+async function runStudioCheck(options = {}) {
   const origin = new URL(options.origin ?? 'http://127.0.0.1:4300').origin;
   const plan = options.plan ?? discoverRoutePlan(options);
   const timeout = options.timeout ?? 15000;
   const screenshotRoot = path.resolve(options.screenshotRoot ?? path.join(repositoryRoot, 'visual-pass/p0'));
   fs.mkdirSync(screenshotRoot, { recursive: true });
-  const { chromium } = require('playwright');
-  const launch = { headless: true, args: ['--no-sandbox'] };
-  if (process.env.CHROMIUM_PATH) launch.executablePath = process.env.CHROMIUM_PATH;
-  else if (fs.existsSync('/usr/bin/chromium')) launch.executablePath = '/usr/bin/chromium';
-  const browser = await chromium.launch(launch);
+  const ownedBrowser = !options.browser;
+  const browser = options.browser ?? await launchStudioBrowser(options);
   const checks = [], failures = [];
   try {
     let inventory;
@@ -145,7 +190,9 @@ async function checkStudio(options = {}) {
     const coverage = expandContentRoutes(plan, inventory);
     const expectedPaths = new Set(coverage.routes.map(route => new URL(route, origin).pathname));
     for (const variant of variants) for (const theme of ['light', 'dark']) {
-      const context = await browser.newContext({ viewport: variant.viewport, isMobile: variant.isMobile, colorScheme: theme });
+      // Firefox supports the mobile viewport but has no Playwright isMobile emulation.
+      const emulation = browser.browserType().name() === 'firefox' ? {} : { isMobile: variant.isMobile };
+      const context = await browser.newContext({ viewport: variant.viewport, ...emulation, colorScheme: theme });
       try {
         for (const route of coverage.routes) {
           const page = await context.newPage(), errors = [], pending = new Set();
@@ -182,7 +229,7 @@ async function checkStudio(options = {}) {
         }
       } finally { await context.close(); }
     }
-    const report = { check: 'studio:check', status: failures.length ? 'FAIL' : 'PASS', origin, templates: plan.templates, routes: coverage.routes, dynamicContentRoutes: coverage.contentRoutes, versionCoverage: 'all current identities and their version exposed by /api/cells; historical versions are not enumerated by that API', checks };
+    const report = { check: 'studio:check', status: failures.length ? 'FAIL' : 'PASS', phase: 'render', executed: true, origin, templates: plan.templates, routes: coverage.routes, dynamicContentRoutes: coverage.contentRoutes, versionCoverage: 'all current identities and their version exposed by /api/cells; historical versions are not enumerated by that API', checks };
     fs.writeFileSync(path.join(screenshotRoot, 'report.json'), JSON.stringify(report, null, 2) + '\n');
     if (failures.length) {
       const error = new Error(`studio:check failed in ${failures.length}/${checks.length} route/theme/viewport checks: ${[...new Set(failures.flatMap(check => check.findings.map(finding => finding.rule)))].join(', ')}`);
@@ -190,7 +237,24 @@ async function checkStudio(options = {}) {
       throw error;
     }
     return report;
-  } finally { await browser.close(); }
+  } finally { if (ownedBrowser) await browser.close(); }
+}
+async function checkStudio(options = {}) {
+  try { return await runStudioCheck(options); }
+  catch (error) {
+    const report = failureReport(error);
+    // Persist setup/environment failures too: an absent browser is never a visual pass.
+    const output = path.resolve(options.screenshotRoot ?? path.join(repositoryRoot, 'visual-pass/p0'));
+    fs.mkdirSync(output, { recursive: true });
+    fs.writeFileSync(path.join(output, 'report.json'), JSON.stringify(report, null, 2) + '\n');
+    if (error?.report) throw error;
+    throw reportError(report, error);
+  }
+}
+/** The CLI and mutation runner use the same nonzero exit contract. */
+async function checkCommand(options = {}) {
+  try { return { exitCode: 0, report: await checkStudio(options) }; }
+  catch (error) { const report = failureReport(error); return { exitCode: REPORT_EXIT_CODES[report.status] ?? 1, report }; }
 }
 function parseArgs(args) {
   const options = {};
@@ -202,5 +266,5 @@ function parseArgs(args) {
   }
   return options;
 }
-module.exports = { discoverRoutePlan, expandContentRoutes, inspectPage, screenshotName, checkStudio, parseArgs };
-if (require.main === module) checkStudio(parseArgs(process.argv.slice(2))).then(report => console.log(JSON.stringify(report, null, 2))).catch(error => { console.error(JSON.stringify({ status: 'FAIL', message: error.message, ...(error.report ? { failures: error.report.checks.filter(check => check.findings.length) } : {}) }, null, 2)); process.exitCode = 1; });
+module.exports = { discoverRoutePlan, expandContentRoutes, inspectPage, screenshotName, checkStudio, checkCommand, parseArgs, failureReport, reportError, REPORT_EXIT_CODES, browserRuntime, launchStudioBrowser, probeBrowser };
+if (require.main === module) Promise.resolve().then(() => checkCommand(parseArgs(process.argv.slice(2)))).then(({ exitCode, report }) => { console.log(JSON.stringify(report, null, 2)); process.exitCode = exitCode; }).catch(error => { const report = failureReport(error); console.error(JSON.stringify(report, null, 2)); process.exitCode = REPORT_EXIT_CODES[report.status] ?? 1; });

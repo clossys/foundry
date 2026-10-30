@@ -106,3 +106,26 @@ test("default child with a stale source head fails closed", () => {
   assert.equal(child.status, 2);
   assert.equal(JSON.parse(child.stdout).gates[3].exitStatus, 2);
 });
+
+test('Studio reports retain all strict PROC and DF failures without blocking render composition', () => {
+  const { run } = fixture([1, 2, 1], 1), strict = run(), rendered = run(['--studio']);
+  assert.equal(strict.status, 2);
+  assert.equal(rendered.status, 0, rendered.stderr);
+  const report = JSON.parse(rendered.stdout);
+  assert.equal(report.mode, 'studio-report-only');
+  assert.equal(report.ok, false);
+  assert.equal(report.exitStatus, 2);
+  assert.deepEqual(report.gates.map(row => row.exitStatus), [1, 2, 1, 1]);
+  assert.ok(report.gates.every(row => row.blocking === false && row.report));
+  assert.equal(report.gates[3].report.missing[0].slot, 'tokens.spacing');
+});
+
+test('Studio preserves missing legacy check diagnostics without a fabricated pass', () => {
+  const { run } = fixture([null, 0, 0]), child = run(['--studio']);
+  assert.equal(child.status, 0);
+  const report = JSON.parse(child.stdout);
+  assert.equal(report.ok, false);
+  assert.equal(report.gates[0].exitStatus, 2);
+  assert.equal(report.gates[0].blocking, false);
+  assert.deepEqual(report.gates[0].unverified, ['Missing process gate script']);
+});

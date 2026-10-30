@@ -55,14 +55,14 @@ export function componentRegistryFindings(registry: ComponentRegistry): string[]
 }
 
 /** Fresh owned draft data. No component fill or implementation is claimed by this registry. */
-export function loadComponentRegistry(): ComponentRegistry {
+export function loadComponentRegistry(reportLeafFreeze?: Parameters<typeof assertFrozenLeafSets>[3]): ComponentRegistry {
   const registry: ComponentRegistry = structuredClone({
     status: "build-unfrozen",
     slots: componentSlots as unknown as readonly ComponentSlot[],
     placement: componentPlacement as Placement,
     aliases: componentAliases as readonly SlotAlias[],
   });
-  assertFrozenLeafSets([registry.placement], registry.slots, ["components"]);
+  assertFrozenLeafSets([registry.placement], registry.slots, ["components"], reportLeafFreeze);
   assertIAPlacements([registry.placement], registry.slots);
   const findings = componentRegistryFindings(registry);
   if (findings.length) throw new Error(`component registry: ${findings.join("; ")}`);

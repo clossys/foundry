@@ -2,12 +2,15 @@
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { mkdir, readFile, readdir, realpath, stat, writeFile } from 'node:fs/promises';
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = fileURLToPath(new URL('../../../../', import.meta.url));
 const excluded = new Set(['app', 'node_modules', 'dist', 'build', '.next', '.git', 'generated', '__fixtures__', '__golden__']);
-const primaryPattern = /(--primary\s*:\s*)([^;{}]+)(;)/g;
+function variablePattern(name) {
+  if (typeof name !== 'string' || !/^--[a-zA-Z_][a-zA-Z0-9_-]*$/.test(name)) throw new Error('cssVariable must be a CSS custom property name.');
+  return new RegExp(`(?<![a-zA-Z0-9_-])(${name}\\s*:\\s*)([^;{}]+)(;)`, 'g');
+}
 const radiusPattern = /\brounded-(?:none|sm|md|lg|xl|2xl|3xl|full)\b/;
 
 async function sourcePath(root, name) {
@@ -34,47 +37,51 @@ async function filesIn(path) {
 }
 
 /** A checked-in adapter is optional; ambiguous discovery deliberately fails. */
-export async function discoverAdapter(root = repoRoot, configFile) {
+export async function discoverAdapter(root = repoRoot, configFile, overrides = {}) {
   const config = configFile ? resolve(root, configFile) : join(root, 'packages/producer/studio/checks/p0-propagate.config.json');
-  try {
-    return await validateAdapter(root, JSON.parse(await readFile(config, 'utf8')));
-  } catch (error) {
-    if (error.code !== 'ENOENT' || configFile) throw error;
-  }
+  let configText;
+  try { configText = await readFile(config, 'utf8'); }
+  catch (error) { if (error.code !== 'ENOENT' || configFile) throw error; }
+  if (configText !== undefined) return validateAdapter(root, { ...JSON.parse(configText), ...overrides });
+  if (overrides.primarySource && overrides.buttonSource) return validateAdapter(root, overrides);
   const files = await filesIn(join(root, 'packages'));
+  const pattern = variablePattern(overrides.cssVariable ?? '--primary');
   const css = [], buttons = [];
   for (const file of files) {
     const text = await readFile(file, 'utf8');
-    if (file.endsWith('.css') && /--primary\s*:/.test(text)) css.push(relative(root, file));
+    if (file.endsWith('.css') && new RegExp(pattern.source).test(text)) css.push(relative(root, file));
     if (/button\.[jt]sx$/.test(file) && /\bbuttonVariants\b/.test(text) && /\bbg-primary\b/.test(text) && radiusPattern.test(text)) buttons.push(relative(root, file));
   }
   if (css.length !== 1 || buttons.length !== 1) {
-    throw new Error(`UI propagation source discovery is unresolved (${css.length} primary CSS sources, ${buttons.length} shadcn button sources). Supply p0-propagate.config.json with primarySource, buttonSource, buttonSelector, route and buildCommands; Studio app sources are never mutated.`);
+    throw new Error(`UI propagation source discovery is unresolved (${css.length} primary CSS sources, ${buttons.length} shadcn button sources). Supply p0-propagate.config.json with primarySource, buttonSource, cssVariable, route and buildCommands; Studio app sources are never mutated.`);
   }
   // Discovery identifies source; the build seam must be explicit rather than guessing
   // which UI package build and running Studio process consume those source files.
-  throw new Error(`Discovered UI sources ${css[0]} and ${buttons[0]}; supply p0-propagate.config.json with the actual buildCommands, route and buttonSelector.`);
+  throw new Error(`Discovered UI sources ${css[0]} and ${buttons[0]}; supply p0-propagate.config.json with the actual buildCommands and route (buttonSelector defaults to [data-slot="button"]).`);
 }
 
 export async function validateAdapter(root, adapter) {
   if (!adapter || typeof adapter !== 'object') throw new Error('Propagation adapter must be an object.');
+  const cssVariable = adapter.cssVariable ?? '--primary';
+  variablePattern(cssVariable);
   const primaryPath = await sourcePath(root, adapter.primarySource);
   const buttonPath = await sourcePath(root, adapter.buttonSource);
   if (primaryPath === buttonPath) throw new Error('Primary CSS and button source must be distinct files.');
-  if (typeof adapter.buttonSelector !== 'string' || !adapter.buttonSelector.trim()) throw new Error('Adapter requires the selector of a rendered primary shadcn button.');
+  const buttonSelector = adapter.buttonSelector ?? '[data-slot="button"]';
+  if (typeof buttonSelector !== 'string' || !buttonSelector.trim()) throw new Error('Adapter requires the selector of a rendered primary shadcn button.');
   if (typeof adapter.route !== 'string' || !adapter.route.startsWith('/') || adapter.route.startsWith('//')) throw new Error('Adapter route must be a local absolute route.');
   if (!Array.isArray(adapter.buildCommands) || !adapter.buildCommands.length || adapter.buildCommands.some(command => !Array.isArray(command) || !command.length || command.some(part => typeof part !== 'string' || !part))) throw new Error('Adapter buildCommands must contain executable/argument arrays.');
   const occurrence = adapter.primaryOccurrence ?? 0;
   if (!Number.isInteger(occurrence) || occurrence < 0) throw new Error('primaryOccurrence must be a nonnegative integer.');
-  return { ...adapter, primaryPath, buttonPath, primaryOccurrence: occurrence };
+  return { ...adapter, cssVariable, buttonSelector, primaryPath, buttonPath, primaryOccurrence: occurrence };
 }
 
-export function createMutations(primary, button, radius, occurrence = 0) {
-  const declarations = [...primary.matchAll(primaryPattern)];
+export function createMutations(primary, button, radius, occurrence = 0, cssVariable = '--primary') {
+  const declarations = [...primary.matchAll(variablePattern(cssVariable))];
   const declaration = declarations[occurrence];
-  if (!declaration) throw new Error('Selected UI CSS source has no matching --primary declaration.');
+  if (!declaration) throw new Error(`Selected UI CSS source has no matching ${cssVariable} declaration.`);
   const originalColor = declaration[2].trim();
-  if (!/^(?:oklch|oklab|hsl|hsla|rgb|rgba|color|color-mix)\(|^#[a-f\d]{3,8}$/i.test(originalColor)) throw new Error('Selected --primary must be a literal CSS color expression; legacy channel-only tokens need an explicit source adapter.');
+  if (!/^(?:oklch|oklab|hsl|hsla|rgb|rgba|color|color-mix)\(|^#[a-f\d]{3,8}$/i.test(originalColor)) throw new Error(`Selected ${cssVariable} must be a literal CSS color expression; legacy channel-only tokens need an explicit source adapter.`);
   if (!Number.isFinite(radius) || radius < 0) throw new Error('The rendered button radius must resolve to pixels.');
   if (!/\bbuttonVariants\b/.test(button) || !/\bbg-primary\b/.test(button)) throw new Error('Selected button source is not the primary shadcn button variant.');
   const token = button.match(radiusPattern)?.[0];
@@ -109,6 +116,12 @@ export function runCommand(command, root, signal, timeout = 180_000) {
     signal?.addEventListener('abort', cancel, { once: true });
     child.once('error', error => { failure = error; });
     child.once('close', (code, stopped) => {
+      // A shell may exit on TERM before a compiler grandchild does. Finish the
+      // process group before allowing callers to restore either source file.
+      if (failure && grouped && child.pid) {
+        try { process.kill(-child.pid, 'SIGKILL'); }
+        catch (error) { if (error.code !== 'ESRCH') failure = error; }
+      }
       clearTimeout(timer);
       clearTimeout(escalation);
       signal?.removeEventListener('abort', cancel);
@@ -122,9 +135,9 @@ export function runCommand(command, root, signal, timeout = 180_000) {
 async function browserDriver() {
   const require = createRequire(import.meta.url);
   const { chromium } = require('playwright');
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true, ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}) });
   return {
-    async sample(url, selector) {
+    async sample(url, selector, cssVariable = '--primary') {
       const context = await browser.newContext({ colorScheme: 'light' });
       const page = await context.newPage();
       try {
@@ -132,16 +145,16 @@ async function browserDriver() {
         if (!response?.ok()) throw new Error(`Propagation route returned ${response?.status() ?? 'no response'}: ${url}`);
         const button = page.locator(selector).first();
         await button.waitFor({ state: 'visible' });
-        return await button.evaluate(node => {
+        return await button.evaluate((node, variable) => {
           const style = getComputedStyle(node);
-          const primary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+          const primary = style.getPropertyValue(variable).trim();
           const probe = document.createElement('span');
-          probe.style.backgroundColor = 'var(--primary)';
+          probe.style.backgroundColor = `var(${variable})`;
           document.body.appendChild(probe);
           const resolvedPrimary = getComputedStyle(probe).backgroundColor;
           probe.remove();
           return { primary, resolvedPrimary, background: style.backgroundColor, radius: parseFloat(style.borderTopLeftRadius) };
-        });
+        }, cssVariable);
       } finally { await context.close(); }
     },
     close: () => browser.close(),
@@ -162,9 +175,9 @@ export async function runPropagation({ root = repoRoot, adapter, baseURL = 'http
   };
   try {
     if (signal?.aborted) throw new Error('Propagation was cancelled before source mutation.');
-    const before = await driver.sample(url.href, adapter.buttonSelector);
-    const mutation = createMutations(...originals, before.radius, adapter.primaryOccurrence);
-    const evidenceDir = artifactDir ?? join(root, 'ignoredtmp/p0b/propagation', `${Date.now()}-${process.pid}`);
+    const before = await driver.sample(url.href, adapter.buttonSelector, adapter.cssVariable);
+    const mutation = createMutations(...originals, before.radius, adapter.primaryOccurrence, adapter.cssVariable);
+    const evidenceDir = artifactDir ?? join(root, 'tmp/p0b-resume/propagation', `${Date.now()}-${process.pid}`);
     await mkdir(evidenceDir, { recursive: true });
     await writeFile(join(evidenceDir, 'primary.original.txt'), originals[0]);
     await writeFile(join(evidenceDir, 'button.original.txt'), originals[1]);
@@ -173,10 +186,10 @@ export async function runPropagation({ root = repoRoot, adapter, baseURL = 'http
     await writeFile(adapter.buttonPath, mutation.button);
     await build(false);
     if (signal?.aborted) throw new Error('Propagation was cancelled during source build.');
-    const after = await driver.sample(url.href, adapter.buttonSelector);
-    if (after.primary === before.primary || after.background === before.background || after.background !== after.resolvedPrimary) throw new Error('The mutated --primary did not reach the rendered primary button. Rebuild/restart the process serving port 4300 through the adapter buildCommands.');
+    const after = await driver.sample(url.href, adapter.buttonSelector, adapter.cssVariable);
+    if (after.primary === before.primary || after.background === before.background || after.background !== after.resolvedPrimary) throw new Error(`The mutated ${adapter.cssVariable} did not reach the rendered primary button. Rebuild/restart the process serving port 4300 through the adapter buildCommands.`);
     if (Math.abs(after.radius - mutation.nextRadius) > 0.1) throw new Error('The actual shadcn button class mutation did not reach the rendered button.');
-    outcome = { status: 'passed', url: url.href, primarySource: adapter.primarySource, buttonSource: adapter.buttonSource, originalClass: mutation.originalClass, before, after, sourceRestored: false };
+    outcome = { status: 'passed', url: url.href, primarySource: adapter.primarySource, buttonSource: adapter.buttonSource, cssVariable: adapter.cssVariable, buttonSelector: adapter.buttonSelector, originalClass: mutation.originalClass, before, after, sourceRestored: false };
   } catch (error) { failure = error; }
   finally {
     try {
@@ -198,18 +211,40 @@ export async function runPropagation({ root = repoRoot, adapter, baseURL = 'http
   return outcome;
 }
 
-async function main(args) {
-  let config, baseURL = 'http://127.0.0.1:4300';
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--config' && args[i + 1]) config = args[++i];
-    else if (args[i] === '--base-url' && args[i + 1]) baseURL = args[++i];
-    else throw new Error('Usage: studio:propagate [--config relative-adapter.json] [--base-url http://127.0.0.1:4300]');
+const usage = 'Usage: studio:propagate [--config relative-adapter.json] [--base-url URL] [--css-source FILE --component-source FILE --css-variable --primary --selector SELECTOR --route PATH --build-command JSON_ARRAY]';
+
+/** Build commands stay argument arrays; CLI values never become shell commands. */
+export function parseArgs(args) {
+  const parsed = { baseURL: 'http://127.0.0.1:4300', overrides: {} };
+  const seen = new Set();
+  const fields = { '--css-source': 'primarySource', '--component-source': 'buttonSource', '--css-variable': 'cssVariable', '--selector': 'buttonSelector', '--route': 'route' };
+  for (let index = 0; index < args.length; index++) {
+    const flag = args[index], value = args[++index];
+    const field = Object.hasOwn(fields, flag) ? fields[flag] : undefined;
+    if (!value || (!field && !['--config', '--base-url', '--build-command', '--primary-occurrence'].includes(flag))) throw new Error(usage);
+    if (flag !== '--build-command' && seen.has(flag)) throw new Error(usage);
+    seen.add(flag);
+    if (field) parsed.overrides[field] = value;
+    else if (flag === '--config') parsed.config = value;
+    else if (flag === '--base-url') parsed.baseURL = value;
+    else if (flag === '--primary-occurrence') parsed.overrides.primaryOccurrence = Number(value);
+    else {
+      let command;
+      try { command = JSON.parse(value); } catch { throw new Error('--build-command must be a JSON executable/argument array.'); }
+      if (!Array.isArray(command) || !command.length || command.some(part => typeof part !== 'string' || !part)) throw new Error('--build-command must be a JSON executable/argument array.');
+      (parsed.overrides.buildCommands ??= []).push(command);
+    }
   }
+  return parsed;
+}
+
+async function main(args) {
+  const { config, baseURL, overrides } = parseArgs(args);
   const controller = new AbortController();
   const cancel = () => controller.abort();
-  process.once('SIGINT', cancel);
-  process.once('SIGTERM', cancel);
-  try { console.log(JSON.stringify(await runPropagation({ adapter: await discoverAdapter(repoRoot, config), baseURL, signal: controller.signal }), null, 2)); }
+  process.on('SIGINT', cancel);
+  process.on('SIGTERM', cancel);
+  try { console.log(JSON.stringify(await runPropagation({ adapter: await discoverAdapter(repoRoot, config, overrides), baseURL, signal: controller.signal }), null, 2)); }
   finally { process.removeListener('SIGINT', cancel); process.removeListener('SIGTERM', cancel); }
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

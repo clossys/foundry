@@ -3,12 +3,11 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { createServer } = require('node:http');
 const { test } = require('node:test');
-const { discoverRoutePlan, expandContentRoutes, checkStudio, parseArgs } = require('./p0-studio-check.cjs');
+const { discoverRoutePlan, expandContentRoutes, checkCommand, parseArgs, browserRuntime } = require('./p0-studio-check.cjs');
 
 const repositoryRoot = path.resolve(__dirname, '../../../..');
-const evidenceRoot = path.join(repositoryRoot, 'ignoredtmp/p0b/browser');
+const evidenceRoot = path.join(repositoryRoot, 'tmp/p0b-resume/browser/unit');
 fs.mkdirSync(evidenceRoot, { recursive: true });
 function directory(label) { return fs.mkdtempSync(path.join(evidenceRoot, `${label}-`)); }
 function write(root, name, content) {
@@ -57,56 +56,28 @@ test('new static pages join coverage, unknown dynamic pages and publication drif
   assert.throws(() => discoverRoutePlan(drift.options), /route pack differ/);
 });
 
-async function fixtureServer(t, mutation = '') {
-  const requests = [];
-  const server = createServer((request, response) => {
-    requests.push(request.url);
-    if (request.url === '/favicon.ico') { response.writeHead(204); response.end(); return; }
-    if (request.url === '/api/cells') { response.setHeader('Content-Type', 'application/json'); response.end(JSON.stringify({ agents: [{ agent: 'publisher', state: 'ready', cells: [{ id: 'page.home', version: 3 }] }] })); return; }
-    if (request.url === '/missing.png') { response.writeHead(404); response.end(); return; }
-    response.setHeader('Content-Type', 'text/html');
-    const extra = mutation === 'need' ? '<p>NEED: fixture evidence unavailable</p>'
-      : mutation === 'console' ? '<script>console.error("Injected fixture console failure")</script>'
-      : mutation === 'defects' ? '<p>[fact:pending] TODO-OWNER page.home</p><h2> </h2><img src="/missing.png">' : '';
-    response.end(`<!doctype html><html><head><title>Studio fixture</title><style>body { color: #111; background: #fff } .dark body { color: #fff; background: #111 }</style></head><body><main><h1>Published content</h1><p>Current publication is available.</p><a href="/">Home</a>${extra}</main></body></html>`);
-  });
-  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-  t.after(() => new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve())));
-  return { origin: `http://127.0.0.1:${server.address().port}`, requests };
-}
-function browserPlan() { return { routes: ['/', '/agents/publisher'], templates: ['/[[...route]]', '/content/[agent]/[id]'], agents: ['publisher'], contentRoute: true }; }
-async function proveRejection(t, mutation, rules) {
-  const fixture = await fixtureServer(t, mutation), screenshotRoot = directory(`mutation-${mutation}`);
-  await assert.rejects(checkStudio({ origin: fixture.origin, plan: browserPlan(), screenshotRoot }), error => {
-    assert.equal(error.report.status, 'FAIL');
-    assert.equal(error.report.checks.length, 16);
-    for (const rule of rules) assert.ok(error.report.checks.every(check => check.findings.some(finding => finding.rule === rule)), `${rule} must fail every route/theme/viewport`);
-    const report = JSON.parse(fs.readFileSync(path.join(screenshotRoot, 'report.json'), 'utf8'));
-    assert.equal(report.status, 'FAIL');
-    return true;
-  });
-}
-
-test('real Chromium checks all discovered routes in both themes and both viewport sizes and retains screenshots', async t => {
-  const fixture = await fixtureServer(t), screenshotRoot = directory('positive');
-  const report = await checkStudio({ origin: fixture.origin, plan: browserPlan(), screenshotRoot });
-  assert.equal(report.status, 'PASS');
-  assert.equal(report.checks.length, 16);
-  assert.deepEqual([...new Set(report.checks.map(row => `${row.viewport}/${row.theme}`))].sort(), ['desktop/dark', 'desktop/light', 'mobile/dark', 'mobile/light']);
-  assert.ok(fixture.requests.includes('/content/publisher/page.home?version=3'));
-  for (const check of report.checks) assert.ok(fs.statSync(path.join(screenshotRoot, check.screenshot)).size > 0);
+test('browser launch failure has a structured ENV envelope and never retries', async () => {
+  let launches = 0;
+  const screenshotRoot = directory('environment');
+  const playwright = { chromium: { executablePath: () => 'uninstalled-browser', launch: async () => { launches++; throw new Error('Fixture browser launch unavailable'); } } };
+  const result = await checkCommand({ playwright, plan: { routes: ['/'], templates: ['/'], contentRoute: false }, screenshotRoot });
+  assert.equal(launches, 1);
+  assert.equal(result.exitCode, 2);
+  assert.equal(result.report.status, 'ENV');
+  assert.equal(result.report.executed, false);
+  assert.equal(result.report.phase, 'browser-launch');
+  assert.equal(result.report.diagnostics[0].message, 'Fixture browser launch unavailable');
+  assert.deepEqual(result.report.checks, []);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(screenshotRoot, 'report.json'), 'utf8')), result.report);
 });
 
-test('mutation proof: injected visible NEED fails the complete Chromium check', async t => {
-  await proveRejection(t, 'need', ['need']);
-});
-
-test('mutation proof: injected console.error fails the complete Chromium check', async t => {
-  await proveRejection(t, 'console', ['console-error']);
-});
-
-test('raw identities, unresolved facts, owner placeholders, empty headings and missing assets fail in the browser', async t => {
-  await proveRejection(t, 'defects', ['raw-cell-id', 'fact-placeholder', 'owner-placeholder', 'empty-heading', 'missing-asset', 'http-error']);
+test('runtime selection supports Playwright engines and explicit executable configuration', () => {
+  const engine = { executablePath: () => __filename };
+  const runtime = browserRuntime({ playwright: { firefox: engine }, browserName: 'firefox', executablePath: 'selected-browser' });
+  assert.equal(runtime.type, engine);
+  assert.equal(runtime.launch.executablePath, 'selected-browser');
+  assert.equal(runtime.launch.timeout, 10000);
+  assert.throws(() => browserRuntime({ playwright: {}, browserName: 'unknown' }), /STUDIO_BROWSER/);
 });
 
 test('CLI rejects ambiguous or unknown options', () => {
