@@ -17,7 +17,7 @@ it("adopts the authenticated native Skeleton through the production planner and 
     const offer = ["foundry", "tailwind-default"].flatMap(source => offers.filter(doc => doc.$extensions["com.clossys.fill"].source === source))[0] ?? offers[0];
     return offer ? [{ op: "adopt" as const, slot: slot.id, source: offer.$extensions["com.clossys.fill"].source }] : [];
   });
-  const source: LibraryData["source"] = { kind: "consumer", author: "consumer", id: "skeleton-consumer" };
+  const source: LibraryData["source"] = { kind: "consumer", author: "consumer", license: "MIT", id: "skeleton-consumer" };
   const emptyValues: LibraryData = { source, fills: [], adoptedAt: "2026-10-30" };
   const library = applyLibraryChange(values, emptyValues, { baseHash: libraryHash(emptyValues), changes });
   const profile = resolve({ catalog: values, library });

@@ -1379,28 +1379,6 @@
     {
       "issues": [],
       "item": "card",
-      "notes": [
-        {
-          "file": "apps/v4/registry/bases/aria/ui/card.tsx",
-          "message": "Removed marker-only class absent from the pinned stylesheet",
-          "value": "cn-card-action"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/card.tsx",
-          "message": "Removed marker-only class absent from the pinned stylesheet",
-          "value": "cn-font-heading"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/card.tsx",
-          "message": "Restyled source: Bind compact card heading typography to the existing consumer heading line-height token.",
-          "value": "leading-snug"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/card.tsx",
-          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
-          "value": "ring-1"
-        }
-      ],
       "reason": "Pinned source has no foreign headless engine; token, glyph, dependency and runtime checks remain required",
       "runtime": "U-V",
       "slot": "components.card",

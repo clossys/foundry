@@ -283,16 +283,18 @@ describe("pinned shadcn aria component import", () => {
     for (const name of ["DialogClose", "DialogOverlay", "DialogFooter", "DialogContent", "DialogPortal", "Dialog"]) expect(dialog.secondaryExports!.map(row => row.export)).not.toContain(name);
   });
 
-  it("proves the five admitted Card parts against the authenticated pinned source closure", () => {
+  it("proves all native Card parts against the authenticated pinned source closure", () => {
     const result = importShadcnAriaComponents(pinnedInput());
     const card = result.fills.map(doc => Object.values(doc.components)[0]!).find(fill => fill.slot === "components.card")!;
-    const parts = ["CardHeader", "CardTitle", "CardAction", "CardContent", "CardFooter"].map(name => ({ name, export: name }));
+    const parts = ["CardHeader", "CardTitle", "CardDescription", "CardAction", "CardContent", "CardFooter"].map(name => ({ name, export: name }));
     expect(card.secondaryExports).toEqual(parts);
     const files = materializeShadcnComponent(result, "card");
     const entry = "components/card/card.tsx";
     expect(componentSecondaryExports(card, files)).toEqual([...parts].sort((a, b) => a.name.localeCompare(b.name)));
     expect(card.impl).toEqual({ kind: "source", entry: "components/card/card.tsx", export: "Card" });
-    expect(card.secondaryExports!.map(row => row.name)).not.toContain("CardDescription");
+    const native = files.find(file => file.path === entry)!;
+    const original = pinnedInput().items.find(item => item.name === "card")!.files[0]!;
+    expect(native.content).toBe(original.content.replace('from "cn"', 'from "../_parts/utils/index.js"'));
     expect(card.outputSha256).toContainEqual({ path: entry, sha256: sha256(files.find(file => file.path === entry)!.content) });
     expect(() => componentSecondaryExports(card, files.filter(file => file.path !== entry))).toThrow(/unsupported secondary export/);
   });

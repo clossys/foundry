@@ -12,14 +12,20 @@ describe("native shadcn CSS", () => {
   it("retains the pinned standard contract and Nova rules verbatim", () => {
     const css = readFileSync(resolve(stylesDir, "shadcn-native.css"), "utf8");
     const contract = css.slice(css.indexOf("@custom-variant dark"), css.indexOf("\n.style-nova {"));
-    expect(hash(contract)).toBe("ec67185f468abdaa8c8c79f3d80a6a738342e5f5f0839732dd36e88cce6c132d");
+    expect(hash(contract)).toBe("0cc258353183624319b33829924d80165adc26d70eb85908a83b0c7744170674");
+    const common = readFileSync(resolve(stylesDir, "../scripts/__fixtures__/proc3-upstream/globals.css"), "utf8");
+    expect(common).toContain("  --font-heading: var(--font-heading);");
+    expect(common).toContain("  .cn-font-heading {\n    @apply font-heading;\n  }");
+    expect(css).toContain("  .cn-font-heading {\n    @apply font-heading;\n  }");
     const badge = css.slice(css.indexOf("  /* MARK: Badge */"), css.indexOf("  /* MARK: Separator */"));
     expect(hash(badge)).toBe("49832966326dc361eb2af6a33d8293e6db02ef2ae585cdf1621e56f99a1c1dc6");
     const upstream = readFileSync(resolve(stylesDir, "../src/importers/__fixtures__/shadcn-aria/style-nova.css"), "utf8");
     const separator = upstream.slice(upstream.indexOf("  /* MARK: Separator */"), upstream.indexOf("  /* MARK: Sheet */"));
     expect(css.slice(css.indexOf("  /* MARK: Separator */"), css.indexOf("  /* MARK: Skeleton */"))).toBe(separator);
     const skeleton = upstream.slice(upstream.indexOf("  /* MARK: Skeleton */"), upstream.indexOf("  /* MARK: Slider */"));
-    expect(css.slice(css.indexOf("  /* MARK: Skeleton */"), css.lastIndexOf("}\n"))).toBe(skeleton);
+    expect(css.slice(css.indexOf("  /* MARK: Skeleton */"), css.indexOf("  /* MARK: Card */"))).toBe(skeleton);
+    const card = upstream.slice(upstream.indexOf("  /* MARK: Card */"), upstream.indexOf("  /* MARK: Carousel */"));
+    expect(css.slice(css.indexOf("  /* MARK: Card */"), css.lastIndexOf("}\n"))).toBe(card);
   });
 
   it("compiles fixed source values and reads the existing primary token contract", async () => {
@@ -42,5 +48,8 @@ describe("native shadcn CSS", () => {
     expect(css).toMatch(/\.style-nova \.cn-skeleton \{\s*border-radius: calc\(var\(--radius\) \* 0\.8\);\s*background-color: var\(--muted\)/);
     expect(css).toContain(".animate-pulse");
     expect(css).toContain("@keyframes pulse");
+    expect(css).toMatch(/\.style-nova \.cn-card \{[\s\S]*?background-color: var\(--card\)/);
+    expect(css).toContain(".style-nova .cn-card-description");
+    expect(css).toContain("font-family: var(--font-heading)");
   });
 });
