@@ -35,11 +35,18 @@ describe("RichText document specimens", () => {
   });
 
   it("composes a named Designer table for Markdown tables", async () => {
-    render(<RichText value={'| Goal | State |\n| --- | --- |\n| Read | Ready |'} readOnly />);
-    expect(await screen.findByRole("grid", { name: "Document table" })).toBeInTheDocument();
+    const { rerender } = render(<RichText value={'| Goal | State |\n| --- | --- |\n| Read | Ready |'} readOnly />);
+    expect(await screen.findByRole("table", { name: "Document table" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Goal" })).toBeInTheDocument();
     expect(screen.getByText("Ready")).toBeInTheDocument();
     expect(screen.queryByRole("checkbox")).toBeNull();
+    rerender(<RichText readOnly value={{ type: "doc", content: [{ type: "table", content: [
+      { type: "tableRow", content: [{ type: "tableHeader", attrs: { colspan: 2 }, content: [{ type: "paragraph", content: [{ type: "text", text: "Merged heading" }] }] }] },
+      { type: "tableRow", content: [{ type: "tableCell", attrs: { rowspan: 2 }, content: [{ type: "paragraph", content: [{ type: "text", text: "Spanning value" }] }] }, { type: "tableCell", content: [{ type: "paragraph" }] }] },
+      { type: "tableRow", content: [{ type: "tableCell", content: [{ type: "paragraph" }] }] },
+    ] }] }} />);
+    expect(screen.getByRole("columnheader", { name: "Merged heading" })).toHaveAttribute("colspan", "2");
+    expect(screen.getByRole("cell", { name: "Spanning value" })).toHaveAttribute("rowspan", "2");
   });
 
   it("escapes content and refuses active URI schemes supplied through JSON", () => {
@@ -90,6 +97,34 @@ describe("RichText document specimens", () => {
       expect(editor.isEditable).toBe(false);
       expect(editor.view.dom).toHaveAttribute("contenteditable", "false");
     } finally { editor.destroy(); }
+  });
+
+  it("renders editable marks and nodes through Designer document parts", async () => {
+    const value = { type: "doc", content: [
+      { type: "paragraph", content: [
+        { type: "text", text: "Reference", marks: [{ type: "link", attrs: { href: "https://example.com" } }] },
+        { type: "text", text: "Snippet", marks: [{ type: "code" }] },
+        { type: "text", text: "Draft", marks: [{ type: "badge" }] },
+      ] },
+      { type: "codeBlock", content: [{ type: "text", text: "const ready = true" }] },
+      { type: "callout", content: [{ type: "paragraph", content: [{ type: "text", text: "Note" }] }] },
+      ...richTextDocument('| Goal | State |\n| --- | --- |\n| Read | Ready |').content!,
+    ] };
+    const onChange = vi.fn();
+    const { container } = render(<RichText value={value} readOnly={false} onChange={onChange} aria-label="Rich draft" />);
+    await screen.findByRole("textbox", { name: "Rich draft" });
+    await waitFor(() => expect(container.querySelector('[data-slot="rich-text-badge"]')).toHaveTextContent("Draft"));
+    expect(container.querySelector('[data-slot="rich-text-link"]')).toHaveAttribute("href", "https://example.com");
+    expect(container.querySelectorAll('[data-slot="rich-text-code"]')).toHaveLength(2);
+    expect(container.querySelector('[data-slot="rich-text-callout"]')).toHaveTextContent("Note");
+    const table = screen.getByRole("table", { name: "Document table" });
+    expect(table).toHaveAttribute("data-slot", "rich-text-table");
+    expect(table.querySelector("tbody > tr > th")).toHaveTextContent("Goal");
+    const paragraph = container.querySelector('[data-slot="rich-text-callout"] p')!;
+    paragraph.textContent = "Edited note";
+    fireEvent.input(paragraph);
+    await waitFor(() => expect(onChange).toHaveBeenCalled());
+    expect(JSON.stringify(onChange.mock.lastCall?.[0])).toContain("Edited note");
   });
 
   it("ships CSS for the prose classes actually rendered, with token-bound heading sizes", () => {

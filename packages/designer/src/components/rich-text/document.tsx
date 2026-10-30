@@ -7,16 +7,16 @@ import { Table } from "../Table.js";
 import { RICH_TEXT_HEADINGS, RICH_TEXT_PARAGRAPH, RICH_TEXT_BULLETS, RICH_TEXT_ORDERED, RICH_TEXT_ITEM, RICH_TEXT_QUOTE, RICH_TEXT_PRE, RICH_TEXT_CODE, RICH_TEXT_CALLOUT, RICH_TEXT_RULE, RICH_TEXT_QUOTE_STYLE, RICH_TEXT_RULE_STYLE } from "./styles.js";
 
 /** Document code and callout parts stay within the rich-text leaf. */
-function RichTextCode({ children, block = false }: { children: ReactNode; block?: boolean }) {
+export function RichTextCode({ children, block = false }: { children: ReactNode; block?: boolean }) {
   const code = <SemanticContent as="code" data-slot="rich-text-code" className={RICH_TEXT_CODE}>{children}</SemanticContent>;
   return block ? createElement("pre", { className: RICH_TEXT_PRE }, code) : code;
 }
-function RichTextCallout({ children }: { children: ReactNode }) {
+export function RichTextCallout({ children }: { children: ReactNode }) {
   return <SemanticContent as="aside" data-slot="rich-text-callout" className={RICH_TEXT_CALLOUT} style={RICH_TEXT_QUOTE_STYLE}>{children}</SemanticContent>;
 }
 
 /** URI attributes never enter markup unfiltered, including direct JSON input. */
-function safeHref(value: unknown): string | undefined {
+export function safeHref(value: unknown): string | undefined {
   if (typeof value !== "string" || /[\u0000-\u0020\u007f]/.test(value)) return undefined;
   return /^(?:https?:|mailto:|tel:|\/|#|\?|\.{1,2}\/)/i.test(value) || !/^[a-z][a-z\d+.-]*:/i.test(value) ? value : undefined;
 }
@@ -29,13 +29,14 @@ function RichTextTable({ node }: { node: JSONContent }) {
   const rows = node.content ?? [];
   const first = rows[0]?.content ?? [];
   const hasHeader = first.length > 0 && first.every(cell => cell.type === "tableHeader");
-  // React Aria collection keys share one namespace across headers and rows.
-  const columns = first.map((cell, index) => ({ id: `column-${index}`, index, cell }));
-  const heading = (cell: JSONContent) => cell.content?.map((block, index) => <Fragment key={index}>{index ? createElement("br") : null}{block.type === "paragraph" ? children(block) : renderRichTextNode(block)}</Fragment>);
-  return <Table aria-label="Document table" data-slot="rich-text-table">
-    <Table.Header columns={columns} className={hasHeader ? undefined : "sr-only"}>{({ id, index, cell }) => <Table.Column id={id} isRowHeader={index === 0}>{hasHeader ? heading(cell) : String(index + 1)}</Table.Column>}</Table.Header>
-    <Table.Body>{rows.slice(hasHeader ? 1 : 0).map((row, rowIndex) => <Table.Row key={rowIndex} id={`row-${rowIndex}`}>{(row.content ?? []).map((cell, index) => <Table.Cell key={index}>{children(cell)}</Table.Cell>)}</Table.Row>)}</Table.Body>
-  </Table>;
+  const row = (value: JSONContent, index: number, header: boolean) => <Table.Document.Row key={index}>{value.content?.map((cell, cellIndex) => {
+    const Cell = cell.type === "tableHeader" ? Table.Document.HeaderCell : Table.Document.Cell;
+    return <Cell key={cellIndex} scope={cell.type === "tableHeader" ? header ? "col" : "row" : undefined} colSpan={Number(cell.attrs?.colspan) || 1} rowSpan={Number(cell.attrs?.rowspan) || 1}>{children(cell)}</Cell>;
+  })}</Table.Document.Row>;
+  return <Table.Document aria-label="Document table" data-slot="rich-text-table">
+    {hasHeader ? <Table.Document.Head>{row(rows[0]!, 0, true)}</Table.Document.Head> : null}
+    <Table.Document.Body>{rows.slice(hasHeader ? 1 : 0).map((value, index) => row(value, index, false))}</Table.Document.Body>
+  </Table.Document>;
 }
 
 export function renderRichTextNode(node: JSONContent): ReactNode {
