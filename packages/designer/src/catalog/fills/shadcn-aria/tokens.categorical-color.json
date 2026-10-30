@@ -1,7 +1,7 @@
 {
   "$extensions": {
     "com.clossys.fill": {
-      "author": "third-party",
+      "author": "foundry",
       "builtOn": [],
       "conforms": [
         "dtcg#format",
@@ -24,19 +24,19 @@
       ],
       "id": "shadcn@aria/tokens.categorical-color",
       "license": "MIT",
-      "mode": "implementation",
+      "mode": "derived",
       "pin": {
         "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
         "file": "apps/v4/registry/themes.ts#neutral",
         "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
         "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
       },
-      "relation": "subset",
+      "relation": "derived",
       "slot": "tokens.categorical-color",
       "source": "shadcn@aria",
       "sourceAddress": "src/importers/vendor/shadcn-aria.css",
       "status": "draft",
-      "trust": "pinned-upstream",
+      "trust": "foundry",
       "unmapped": [
         "--accent-foreground",
         "--card-foreground",
@@ -50,89 +50,229 @@
         "--sidebar-primary",
         "--sidebar-primary-foreground",
         "--sidebar-ring"
-      ]
+      ],
+      "derivation": {
+        "from": "dtcg#alias",
+        "rule": "Approved native default adaptation; exact scalar sources and Foundry-authored role mappings are recorded per member."
+      }
     }
   },
   "tokens": {
     "categorical-color": {
       "1": {
+        "$type": "color",
+        "$value": "oklch(0.87 0 0)",
         "$extensions": {
           "com.clossys.css": {
             "raw": "oklch(0.87 0 0)"
+          },
+          "com.clossys.modes": {
+            "dark": "oklch(0.87 0 0)"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "shadcn",
+            "sourceAddress": "apps/v4/registry/themes.ts#neutral",
+            "sourceVariable": "--chart-1",
+            "pin": {
+              "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+              "file": "apps/v4/registry/themes.ts#neutral",
+              "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347"
+            },
+            "mappingLabel": "Foundry-authored",
+            "note": "Approved scalar and native semantic mapping."
           }
-        },
-        "$type": "color",
-        "$value": {
-          "colorSpace": "oklch",
-          "components": [
-            0.87,
-            0,
-            0
-          ]
         }
       },
       "2": {
+        "$type": "color",
+        "$value": "oklch(0.556 0 0)",
         "$extensions": {
           "com.clossys.css": {
             "raw": "oklch(0.556 0 0)"
+          },
+          "com.clossys.modes": {
+            "dark": "oklch(0.556 0 0)"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "shadcn",
+            "sourceAddress": "apps/v4/registry/themes.ts#neutral",
+            "sourceVariable": "--chart-2",
+            "pin": {
+              "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+              "file": "apps/v4/registry/themes.ts#neutral",
+              "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347"
+            },
+            "mappingLabel": "Foundry-authored",
+            "note": "Approved scalar and native semantic mapping."
           }
-        },
-        "$type": "color",
-        "$value": {
-          "colorSpace": "oklch",
-          "components": [
-            0.556,
-            0,
-            0
-          ]
         }
       },
       "3": {
+        "$type": "color",
+        "$value": "oklch(0.439 0 0)",
         "$extensions": {
           "com.clossys.css": {
             "raw": "oklch(0.439 0 0)"
+          },
+          "com.clossys.modes": {
+            "dark": "oklch(0.439 0 0)"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "shadcn",
+            "sourceAddress": "apps/v4/registry/themes.ts#neutral",
+            "sourceVariable": "--chart-3",
+            "pin": {
+              "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+              "file": "apps/v4/registry/themes.ts#neutral",
+              "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347"
+            },
+            "mappingLabel": "Foundry-authored",
+            "note": "Approved scalar and native semantic mapping."
           }
-        },
-        "$type": "color",
-        "$value": {
-          "colorSpace": "oklch",
-          "components": [
-            0.439,
-            0,
-            0
-          ]
         }
       },
       "4": {
+        "$type": "color",
+        "$value": "oklch(0.371 0 0)",
         "$extensions": {
           "com.clossys.css": {
             "raw": "oklch(0.371 0 0)"
+          },
+          "com.clossys.modes": {
+            "dark": "oklch(0.371 0 0)"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "shadcn",
+            "sourceAddress": "apps/v4/registry/themes.ts#neutral",
+            "sourceVariable": "--chart-4",
+            "pin": {
+              "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+              "file": "apps/v4/registry/themes.ts#neutral",
+              "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347"
+            },
+            "mappingLabel": "Foundry-authored",
+            "note": "Approved scalar and native semantic mapping."
           }
-        },
-        "$type": "color",
-        "$value": {
-          "colorSpace": "oklch",
-          "components": [
-            0.371,
-            0,
-            0
-          ]
         }
       },
       "5": {
+        "$type": "color",
+        "$value": "oklch(0.269 0 0)",
         "$extensions": {
           "com.clossys.css": {
             "raw": "oklch(0.269 0 0)"
+          },
+          "com.clossys.modes": {
+            "dark": "oklch(0.269 0 0)"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "shadcn",
+            "sourceAddress": "apps/v4/registry/themes.ts#neutral",
+            "sourceVariable": "--chart-5",
+            "pin": {
+              "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+              "file": "apps/v4/registry/themes.ts#neutral",
+              "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347"
+            },
+            "mappingLabel": "Foundry-authored",
+            "note": "Approved scalar and native semantic mapping."
+          }
+        }
+      },
+      "6": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#002d9c"
+          },
+          "com.clossys.modes": {
+            "dark": "#4589ff"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "packages/designer/src/catalog/fills/carbon-colors/tokens.categorical-color.json",
+            "sourceVariable": "--chart-6",
+            "pin": {
+              "file": "packages/designer/src/catalog/fills/carbon-colors/tokens.categorical-color.json",
+              "sha256": "0c350e132f5b0d8410220cea85d0c97ee23390482e086f9b76622c9b0d9be47c",
+              "commit": "44ea0ce6c7482e68a791e1d913650b1bfa6f55a2"
+            },
+            "mappingLabel": "Foundry-authored",
+            "note": "Retained native extension. The pinned evidence file preserves the original scalar provenance trail."
           }
         },
         "$type": "color",
         "$value": {
-          "colorSpace": "oklch",
+          "colorSpace": "srgb",
           "components": [
-            0.269,
             0,
+            0.176471,
+            0.611765
+          ],
+          "hex": "#002d9c"
+        }
+      },
+      "7": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#012749"
+          },
+          "com.clossys.modes": {
+            "dark": "#bae6ff"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "packages/designer/src/catalog/fills/carbon-colors/tokens.categorical-color.json",
+            "sourceVariable": "--chart-7",
+            "pin": {
+              "file": "packages/designer/src/catalog/fills/carbon-colors/tokens.categorical-color.json",
+              "sha256": "0c350e132f5b0d8410220cea85d0c97ee23390482e086f9b76622c9b0d9be47c",
+              "commit": "44ea0ce6c7482e68a791e1d913650b1bfa6f55a2"
+            },
+            "mappingLabel": "Foundry-authored",
+            "note": "Retained native extension. The pinned evidence file preserves the original scalar provenance trail."
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.003922,
+            0.152941,
+            0.286275
+          ],
+          "hex": "#012749"
+        }
+      },
+      "8": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#8a3800"
+          },
+          "com.clossys.modes": {
+            "dark": "#ba4e00"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "packages/designer/src/catalog/fills/carbon-colors/tokens.categorical-color.json",
+            "sourceVariable": "--chart-8",
+            "pin": {
+              "file": "packages/designer/src/catalog/fills/carbon-colors/tokens.categorical-color.json",
+              "sha256": "0c350e132f5b0d8410220cea85d0c97ee23390482e086f9b76622c9b0d9be47c",
+              "commit": "44ea0ce6c7482e68a791e1d913650b1bfa6f55a2"
+            },
+            "mappingLabel": "Foundry-authored",
+            "note": "Retained native extension. The pinned evidence file preserves the original scalar provenance trail."
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.541176,
+            0.219608,
             0
-          ]
+          ],
+          "hex": "#8a3800"
         }
       }
     }

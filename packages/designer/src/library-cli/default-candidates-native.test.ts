@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { importFoundryFrames, importFoundrySections, loadBuildCatalog } from "../catalog-core/index.js";
 import { loadCatalogBundles } from "../catalog-bundles.js";
 import { checkDefaultCandidates, type DefaultCandidatesInput } from "./default-candidates-gate.js";
-import { loadNativeCompositeCatalog } from "./native-catalog.js";
+import { loadNativeCompositeCatalog, loadNativeDefaultSources } from "./native-catalog.js";
 import { nativeDefaultSources } from "./default-candidates-cli.js";
 
 const root = fileURLToPath(new URL("../../../../", import.meta.url));
@@ -71,9 +71,83 @@ describe("native default candidate input integration", () => {
     input.defaultSources = { ...input.defaultSources, "tokens.spacing": undefined };
     expect(checkDefaultCandidates(input)).toMatchObject({ exitCode: 2, report: { invalid: expect.arrayContaining(["MISSING_POLICY tokens.spacing: default source definition is missing"]) } });
   });
+  it("retains the explicit rich-text policy when its existing native candidate is removed", () => {
+    const input = nativeInput(), original = input.catalog.components.fills, baseline = checkDefaultCandidates(input), slot = "components.rich-text";
+    expect(input.defaultSources[slot]).toBe("shadcn@aria");
+    expect(baseline.report.missing.some(row => row.slot === slot)).toBe(false);
+    const defaults = original.filter(doc => doc.$extensions["com.clossys.fill"].slot === slot && doc.$extensions["com.clossys.fill"].source === input.defaultSources[slot]);
+    expect(defaults).toHaveLength(1);
+    expect(Object.values(defaults[0]!.components)[0]!.impl).toEqual({ kind: "package", module: "@clossys/designer/components", export: "RichText" });
+    const otherSources = original.filter(doc => doc.$extensions["com.clossys.fill"].source !== "shadcn@aria");
+    expect(otherSources.length).toBeGreaterThan(0);
+    input.catalog.components.fills = original.filter(doc => !defaults.includes(doc));
+    expect(input.catalog.components.fills.filter(doc => doc.$extensions["com.clossys.fill"].source !== "shadcn@aria")).toEqual(otherSources);
+    expect(input.defaultSources[slot]).toBe("shadcn@aria");
+    const deleted = checkDefaultCandidates(input);
+    expect(deleted.exitCode).not.toBe(0);
+    expect(deleted.report.missing.find(row => row.slot === slot)).toMatchObject({ source: "shadcn@aria", reasons: ["no implementation candidate in the default source"] });
+    expect(deleted.report.missing).toHaveLength(baseline.report.missing.length + 1);
+    input.catalog.components.fills = original;
+    expect(checkDefaultCandidates(input)).toEqual(baseline);
+  });
   it("returns the documented CLI usage error as JSON with exit 2", () => {
     const child = spawnSync(process.execPath, [resolve(root, "packages/designer/scripts/check-default-candidates.mjs"), "--unknown"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
     expect(child.status).toBe(2);
     expect(JSON.parse(child.stdout)).toMatchObject({ status: "invalid-input", invalid: ["Usage: check-default-candidates.mjs (no arguments)"] });
   });
+});
+
+const assetPolicies = {
+  "assets.backdrop-graphic": "foundry",
+  "assets.icon-check": "lucide",
+  "assets.icon-chevron-down": "lucide",
+  "assets.icon-chevron-left": "lucide",
+  "assets.icon-chevron-right": "lucide",
+  "assets.icon-chevron-up": "lucide",
+  "assets.icon-close": "lucide",
+  "assets.icon-date": "lucide",
+  "assets.icon-search": "lucide",
+  "assets.lockup": "foundry",
+  "assets.mark": "foundry",
+  "assets.video": "foundry",
+} as const;
+
+it("applies all twelve H3 asset policies without adopting missing candidates or identity seeds", () => {
+  const input = nativeInput(), before = JSON.stringify(input.catalog.values.fills);
+  expect(input.defaultSources).toMatchObject(assetPolicies);
+  const result = checkDefaultCandidates(input);
+  for (const slot of Object.keys(assetPolicies)) {
+    expect(result.report.invalid.some(row => row.startsWith(`MISSING_POLICY ${slot}:`))).toBe(false);
+    expect(result.report.checkedReads.some(row => row.slot === slot)).toBe(true);
+  }
+  // These are constructor rules, not consumer-authored positive identity seeds.
+  for (const slot of ["assets.mark", "assets.lockup"]) {
+    const fill = input.catalog.values.fills.find(doc => doc.$extensions["com.clossys.fill"].id === `foundry/${slot}`)!;
+    expect(fill.$extensions["com.clossys.fill"].mode).toBe("derived");
+    expect(result.report.missing.find(row => row.slot === slot)?.source).toBe("foundry");
+  }
+  expect(result.report.missing.find(row => row.slot === "assets.video")).toBeUndefined();
+  expect(JSON.stringify(input.catalog.values.fills)).toBe(before);
+});
+
+it("keeps every decided source when all asset candidates are removed, and fails closed", () => {
+  const input = nativeInput();
+  input.catalog.values.fills = input.catalog.values.fills.filter(doc => !(doc.$extensions["com.clossys.fill"].slot in assetPolicies));
+  expect(loadNativeDefaultSources(input.buildCatalog)).toMatchObject(assetPolicies);
+  const result = checkDefaultCandidates(input);
+  expect(result.exitCode).not.toBe(0);
+  // Removing values can also remove their own reference reads. Only surviving
+  // native surface reads require candidates; no artificial read is introduced.
+  expect(result.report.missing.find(row => row.slot === "assets.icon-check")).toBeDefined();
+  for (const [slot, source] of Object.entries(assetPolicies)) {
+    if (!result.report.checkedReads.some(row => row.slot === slot)) continue;
+    expect(result.report.missing.find(row => row.slot === slot)).toMatchObject({ source, reasons: ["no implementation candidate in the default source"] });
+  }
+});
+
+it.each(Object.entries(assetPolicies))("rejects removal of the explicit %s policy without fallback", (slot, source) => {
+  const input = nativeInput();
+  expect(input.defaultSources[slot]).toBe(source);
+  input.defaultSources = { ...input.defaultSources, [slot]: undefined };
+  expect(checkDefaultCandidates(input).report.invalid).toContain(`MISSING_POLICY ${slot}: default source definition is missing`);
 });

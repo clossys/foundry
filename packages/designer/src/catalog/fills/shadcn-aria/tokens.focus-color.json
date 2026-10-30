@@ -1,7 +1,7 @@
 {
   "$extensions": {
     "com.clossys.fill": {
-      "author": "third-party",
+      "author": "foundry",
       "builtOn": [],
       "conforms": [
         "dtcg#format",
@@ -24,19 +24,19 @@
       ],
       "id": "shadcn@aria/tokens.focus-color",
       "license": "MIT",
-      "mode": "implementation",
+      "mode": "derived",
       "pin": {
         "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
         "file": "apps/v4/registry/themes.ts#neutral",
         "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
         "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
       },
-      "relation": "subset",
+      "relation": "derived",
       "slot": "tokens.focus-color",
       "source": "shadcn@aria",
       "sourceAddress": "src/importers/vendor/shadcn-aria.css",
       "status": "draft",
-      "trust": "pinned-upstream",
+      "trust": "foundry",
       "unmapped": [
         "--accent-foreground",
         "--card-foreground",
@@ -50,28 +50,62 @@
         "--sidebar-primary",
         "--sidebar-primary-foreground",
         "--sidebar-ring"
-      ]
+      ],
+      "derivation": {
+        "from": "dtcg#alias",
+        "rule": "Approved native default adaptation; exact scalar sources and Foundry-authored role mappings are recorded per member."
+      }
     }
   },
   "tokens": {
     "focus-color": {
       "default": {
+        "$type": "color",
+        "$value": "oklch(0.556 0 0)",
         "$extensions": {
           "com.clossys.css": {
-            "raw": "oklch(0.708 0 0)"
+            "raw": "oklch(0.556 0 0)"
           },
           "com.clossys.modes": {
             "dark": "oklch(0.556 0 0)"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Tailwind4.3.3",
+            "sourceAddress": "tailwindcss/theme.css",
+            "sourceVariable": "--color-neutral-500",
+            "pin": {
+              "package": "tailwindcss",
+              "version": "4.3.3",
+              "file": "theme.css",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167"
+            },
+            "mappingLabel": "Foundry-authored",
+            "note": "Nearest published neutral stop meeting 3:1 on every declared focus ground in light; the existing shadcn neutral dark ring already equals this stop and is retained. Equivalent OKLCH notation uses decimal lightness and hue 0 at zero chroma."
           }
-        },
+        }
+      },
+      "on-inverse": {
         "$type": "color",
-        "$value": {
-          "colorSpace": "oklch",
-          "components": [
-            0.708,
-            0,
-            0
-          ]
+        "$value": "{tokens.text-color.on-inverse}",
+        "$extensions": {
+          "com.clossys.modes": {
+            "dark": "{tokens.text-color.on-inverse}"
+          },
+          "com.clossys.provenance": {
+            "sourceLabel": "Foundry-authored",
+            "sourceAddress": "packages/designer/src/catalog/fills/foundry/tokens.focus-color.json",
+            "sourceVariable": "--inverse-ring",
+            "pin": {
+              "file": "packages/designer/src/catalog/fills/foundry/tokens.focus-color.json",
+              "sha256": "6de18308a4e6df1d65a9cf1bc7d38b6e772f967374e8775610742f70ecc6040c",
+              "commit": "44ea0ce6c7482e68a791e1d913650b1bfa6f55a2"
+            },
+            "mappingLabel": "Foundry-authored",
+            "note": "Retained inverse-text alias and both modeled colors. Explicit light CSS also supplies the native raw-color format when cross-owner reselect materializes the dark alias as a CSS string; no hue or scalar changes."
+          },
+          "com.clossys.css": {
+            "raw": "oklch(0.9702 0 0)"
+          }
         }
       }
     }

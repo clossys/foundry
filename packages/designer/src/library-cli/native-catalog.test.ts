@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { expect, it } from "vitest";
 import { applyLibraryChange, libraryHash, loadBuildCatalog, type LibraryData } from "../catalog-core/index.js";
+import type { CompositeLibraryData } from "../catalog-core/types.js";
 import { flatten } from "../catalog-core/model.js";
 import { applyAgentChange } from "./reselect.js";
 import { loadNativeCompositeCatalog, loadNativeDefaultSources } from "./native-catalog.js";
@@ -83,12 +84,31 @@ it("reselects an existing known source through the shared native catalog without
 it("reads explicit native source policy and leaves ambiguous or absent policy undefined", () => {
   const policy = loadNativeDefaultSources(loadBuildCatalog());
   expect(policy["components.button"]).toBe("shadcn@aria");
+  expect(policy["components.rich-text"]).toBe("shadcn@aria");
   expect(policy["components.semantic-content"]).toBe("foundry");
   expect(policy["components.native-action"]).toBe("foundry");
   expect(policy["tokens.spacing"]).toBe("shadcn@aria");
   expect(policy["tokens.content-size"]).toBe("shadcn@aria");
   expect(policy["assets.icon-home"]).toBeUndefined();
   expect(policy["tokens.unknown"]).toBeUndefined();
+});
+
+it("adopts and reselects the existing RichText package candidate with its source attribution", () => {
+  const catalog = loadNativeCompositeCatalog(), slot = "components.rich-text";
+  const initial: CompositeLibraryData = { ...empty(), values: { fills: [] }, components: { fills: [], files: [] } };
+  const adopt = (library: CompositeLibraryData) => applyLibraryChange(catalog, library, {
+    baseHash: libraryHash(library),
+    changes: [
+      ...["components.badge", "components.link", "components.semantic-content", "components.checkbox", "components.table"].map(dependency => ({ portion: "components" as const, change: { op: "adopt" as const, slot: dependency, source: "foundry" } })),
+      { portion: "components", change: { op: "adopt", slot, source: "shadcn@aria" } },
+    ],
+  });
+  const adopted = adopt(initial), selected = adopted.components.fills.find(doc => doc.$extensions["com.clossys.fill"].slot === slot)!.components["rich-text"]!;
+  expect(selected.origin).toMatchObject({ kind: "adopted", source: "shadcn@aria", fill: "shadcn@aria/components.rich-text", license: "MIT" });
+  expect(selected.impl).toEqual({ kind: "package", module: "@clossys/designer/components", export: "RichText" });
+  expect(adopted.components.files).toEqual([]);
+  expect(adopt(adopted)).toEqual(adopted);
+  expect(initial.components.fills).toEqual([]);
 });
 
 it("does not infer a source from an existing candidate when the native policy is unknown", () => {

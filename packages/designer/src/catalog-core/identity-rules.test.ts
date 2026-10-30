@@ -6,9 +6,10 @@ import { flatten, metaOf } from './model.js';
 
 const catalog = loadCatalog();
 const complete = completedCatalogLibrary(catalog,{id:'example-raw-identity',kind:'consumer',author:'consumer',license:'MIT'},'2026-10-23');
+const adoptionInputs=['tokens.text-color.primary','tokens.text-color.on-inverse','tokens.surface-color.base','tokens.surface-color.inverse','tokens.accent-color.default','tokens.text-color.on-accent','tokens.typeface.display'];
 const inputs = {
-  'identity-lockup@1':['assets.lockup.positive','tokens.text-color.on-inverse'],
-  'identity-mark@1':['assets.mark.positive','tokens.text-color.on-inverse'],
+  'identity-lockup@1':['assets.lockup.positive',...adoptionInputs],
+  'identity-mark@1':['assets.mark.positive',...adoptionInputs],
   'identity-favicon@1':['assets.mark.positive','tokens.text-color.primary','tokens.text-color.on-inverse'],
   'identity-app-icon@1':['assets.mark.positive','tokens.text-color.primary','tokens.text-color.on-inverse'],
 };
@@ -49,7 +50,7 @@ describe('builtin identity rules through ordinary library changes',()=>{
     const removed={...catalog,rules:catalog.rules?.filter(rule=>!rule.id.startsWith('identity-'))};
     expect(()=>raw(removed,seed)).toThrow(/unknown rule/);
     expect(errors(removed,complete).some(finding=>finding.code==='C10'&&finding.message.includes('unknown rule'))).toBe(true);
-    for(const bad of [{...op,rule:'identity-lockup@99'},{...op,inputs:[]},{...op,inputs:[...inputs['identity-lockup@1'],'tokens.text-color.primary']},{...op,slot:'assets.mark'}]) {
+    for(const bad of [{...op,rule:'identity-lockup@99'},{...op,inputs:[]},{...op,inputs:[...inputs['identity-lockup@1'],'tokens.spacing.xs']},{...op,slot:'assets.mark'}]) {
       expect(()=>applyLibraryChange(catalog,seed,{baseHash:libraryHash(seed),changes:[bad]})).toThrow(/rule|input/);
     }
     const altered={...catalog,rules:catalog.rules?.map(rule=>rule.id==='identity-lockup@1'?{...rule,inputs:[]}:rule)};

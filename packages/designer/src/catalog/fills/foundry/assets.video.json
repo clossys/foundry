@@ -17,6 +17,10 @@
       "reads": {
         "tokens": [],
         "assets": []
+      },
+      "pin": {
+        "file": "src/catalog-assets/video-default.webm",
+        "sha256": "eb8b3203371df6fcfa9a857b3622b29d183845a86fca943bd8ed9e8ed2a400a5"
       }
     },
     "com.clossys.default": {
