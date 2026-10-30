@@ -25,7 +25,9 @@ describe("native shadcn CSS", () => {
     const skeleton = upstream.slice(upstream.indexOf("  /* MARK: Skeleton */"), upstream.indexOf("  /* MARK: Slider */"));
     expect(css.slice(css.indexOf("  /* MARK: Skeleton */"), css.indexOf("  /* MARK: Card */"))).toBe(skeleton);
     const card = upstream.slice(upstream.indexOf("  /* MARK: Card */"), upstream.indexOf("  /* MARK: Carousel */"));
-    expect(css.slice(css.indexOf("  /* MARK: Card */"), css.lastIndexOf("}\n"))).toBe(card);
+    expect(css.slice(css.indexOf("  /* MARK: Card */"), css.indexOf("  /* MARK: Radio Group */"))).toBe(card);
+    const radio = upstream.slice(upstream.indexOf("  /* MARK: Radio Group */"), upstream.indexOf("  /* MARK: Resizable */"));
+    expect(css.slice(css.indexOf("  /* MARK: Radio Group */"), css.lastIndexOf("}\n"))).toBe(radio);
   });
 
   it("compiles fixed source values and reads the existing primary token contract", async () => {
@@ -51,5 +53,7 @@ describe("native shadcn CSS", () => {
     expect(css).toMatch(/\.style-nova \.cn-card \{[\s\S]*?background-color: var\(--card\)/);
     expect(css).toContain(".style-nova .cn-card-description");
     expect(css).toContain("font-family: var(--font-heading)");
+    expect(css).toContain(".style-nova .cn-radio-group-item-aria");
+    expect(css).toContain(".style-nova .cn-radio-group-indicator-icon");
   });
 });

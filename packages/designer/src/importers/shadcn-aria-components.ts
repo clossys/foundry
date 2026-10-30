@@ -319,6 +319,7 @@ const secondaryExportApprovals: Readonly<Record<string, readonly { name: string;
   accordion: ["AccordionContent", "AccordionItem", "AccordionTrigger"].map(name => ({ name, export: name })),
   collapsible: ["CollapsibleContent", "CollapsibleTrigger"].map(name => ({ name, export: name })),
   table: ["TableBody", "TableCaption", "TableCell", "TableFooter", "TableHead", "TableHeader", "TableRow"].map(name => ({ name, export: name })),
+  "radio-group": ["RadioGroupItem"].map(name => ({ name, export: name })),
   card: ["CardHeader", "CardTitle", "CardDescription", "CardAction", "CardContent", "CardFooter"].map(name => ({ name, export: name })),
 };
 const partExports: Readonly<Record<string, readonly string[]>> = { "input-group": ["InputGroup", "InputGroupAddon", "InputGroupButton", "InputGroupText", "InputGroupInput", "InputGroupTextarea"] };
@@ -382,9 +383,9 @@ export function bindSiblingLeafModules(content: string, leafByItem: Readonly<Rec
 }
 
 /** Native sources retain their API and classes; standard shadcn variables bind theme values. */
-function nativeShadcnSource(item: "badge" | "separator" | "skeleton" | "card", original: SourceFile): RewriteResult {
+function nativeShadcnSource(item: "badge" | "separator" | "skeleton" | "card" | "radio-group", original: SourceFile): RewriteResult {
   const file = { path: `components/${item}/${item}.tsx`, content: original.content.replace('from "cn"', 'from "../_parts/utils/index.js"') };
-  const properties = item === "card" ? ["foreground", "card", "card-foreground", "muted", "muted-foreground", "radius"] as const : item === "separator" ? ["border"] as const : item === "skeleton" ? ["muted", "radius"] as const : ["primary", "primary-foreground", "secondary", "secondary-foreground", "border", "foreground", "muted", "muted-foreground", "destructive", "ring", "radius"] as const;
+  const properties = item === "radio-group" ? ["input", "primary", "primary-foreground", "destructive", "ring"] as const : item === "card" ? ["foreground", "card", "card-foreground", "muted", "muted-foreground", "radius"] as const : item === "separator" ? ["border"] as const : item === "skeleton" ? ["muted", "radius"] as const : ["primary", "primary-foreground", "secondary", "secondary-foreground", "border", "foreground", "muted", "muted-foreground", "destructive", "ring", "radius"] as const;
   return {
     transform: "shadcn-aria-rewrite@1", files: [file],
     outputSha256: [{ path: file.path, sha256: sha256(file.content) }],
@@ -444,7 +445,7 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
     // pinned provenance, but its dialog/input-group imports never ship.
     if (command) verifyShadcnSource(command);
     const selected = name === "dialog" ? dialogExecutableSource(original) : name === "dropdown-menu" ? menuExecutableSource(original, command!) : name === "toggle" || name === "toggle-group" ? toggleExecutableSource(name, original) : original;
-    const aria = name === "badge" || name === "separator" || name === "skeleton" || name === "card" ? nativeShadcnSource(name, original)
+    const aria = name === "badge" || name === "separator" || name === "skeleton" || name === "card" || name === "radio-group" ? nativeShadcnSource(name, original)
       : rewriteShadcnAria({ item: name, leaf, files: [selected, ...privateFiles], styles: input.styles.content, leafByItem: SHADCN_COMPONENT_ITEMS, styleDefaults: true });
     // The selected tooltip profile binds its delay and close timing to these behavior-timing leaves.
     const result: RewriteResult = name === "tooltip" ? { ...aria, reads: { ...aria.reads, tokens: sorted([...aria.reads.tokens, ...tooltipExecutableReads]) } } : aria;

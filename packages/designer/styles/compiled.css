@@ -5441,6 +5441,9 @@
     container-type: inline-size;
     container-name: card-header;
   }
+  .relative {
+    position: relative;
+  }
   .col-start-2 {
     grid-column-start: 2;
   }
@@ -5462,8 +5465,14 @@
   .inline-flex {
     display: inline-flex;
   }
+  .aspect-square {
+    aspect-ratio: 1 / 1;
+  }
   .w-fit {
     width: fit-content;
+  }
+  .w-full {
+    width: 100%;
   }
   .shrink-0 {
     flex-shrink: 0;
@@ -5495,6 +5504,10 @@
   .overflow-hidden {
     overflow: hidden;
   }
+  .border {
+    border-style: var(--tw-border-style);
+    border-width: 1px;
+  }
   .border-0 {
     border-style: var(--tw-border-style);
     border-width: 0px;
@@ -5508,6 +5521,22 @@
   .outline {
     outline-style: var(--tw-outline-style);
     outline-width: 1px;
+  }
+  .outline-none {
+    --tw-outline-style: none;
+    outline-style: none;
+  }
+  .after\:absolute::after {
+    content: var(--tw-content);
+    position: absolute;
+  }
+  .after\:-inset-x-3::after {
+    content: var(--tw-content);
+    inset-inline: calc(var(--spacing) * -3);
+  }
+  .after\:-inset-y-2::after {
+    content: var(--tw-content);
+    inset-block: calc(var(--spacing) * -2);
   }
   .focus-visible\:border-ring:focus-visible {
     border-color: var(--ring);
@@ -5548,6 +5577,12 @@
   }
   .aria-\[orientation\=vertical\]\:self-stretch[aria-orientation="vertical"] {
     align-self: stretch;
+  }
+  .data-\[disabled\]\:cursor-not-allowed[data-disabled] {
+    cursor: not-allowed;
+  }
+  .data-\[disabled\]\:opacity-50[data-disabled] {
+    opacity: 50%;
   }
   .dark\:aria-invalid\:ring-destructive\/40:is(.dark *)[aria-invalid="true"] {
     --tw-ring-color: var(--destructive);
@@ -5823,6 +5858,156 @@
   }
   padding: var(--card-spacing);
 }
+.style-nova .cn-radio-group {
+  display: grid;
+  gap: calc(var(--spacing) * 2);
+}
+.style-nova .cn-radio-group-item {
+  display: flex;
+  width: calc(var(--spacing) * 4);
+  height: calc(var(--spacing) * 4);
+  border-radius: calc(infinity * 1px);
+  border-color: var(--input);
+  &:is(:where(.group\/field-label):has(*:is(:focus-visible)) *) {
+    --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(0px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+  &:is(:where(.group\/field-label):has(*:is(:focus-visible)) *) {
+    &:not(*[data-checked]) {
+      border-color: var(--input);
+    }
+  }
+  &:focus-visible {
+    border-color: var(--ring);
+  }
+  &:focus-visible {
+    --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+  &:focus-visible {
+    --tw-ring-color: var(--ring);
+    @supports (color: color-mix(in lab, red, red)) {
+      --tw-ring-color: color-mix(in oklab, var(--ring) 50%, transparent);
+    }
+  }
+  &[aria-invalid="true"] {
+    border-color: var(--destructive);
+  }
+  &[aria-invalid="true"] {
+    --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+  &[aria-invalid="true"] {
+    --tw-ring-color: var(--destructive);
+    @supports (color: color-mix(in lab, red, red)) {
+      --tw-ring-color: color-mix(in oklab, var(--destructive) 20%, transparent);
+    }
+  }
+  &[aria-invalid="true"] {
+    &[aria-checked="true"] {
+      border-color: var(--primary);
+    }
+  }
+  &[data-checked] {
+    border-color: var(--primary);
+  }
+  &[data-checked] {
+    background-color: var(--primary);
+  }
+  &[data-checked] {
+    color: var(--primary-foreground);
+  }
+  &:is(:where(.group\/field-label):has(*:is(:focus-visible)) *) {
+    &[data-checked] {
+      border-color: var(--primary);
+    }
+  }
+  &:is(.dark *) {
+    background-color: var(--input);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--input) 30%, transparent);
+    }
+  }
+  &:is(.dark *) {
+    &[aria-invalid="true"] {
+      border-color: var(--destructive);
+      @supports (color: color-mix(in lab, red, red)) {
+        border-color: color-mix(in oklab, var(--destructive) 50%, transparent);
+      }
+    }
+  }
+  &:is(.dark *) {
+    &[aria-invalid="true"] {
+      --tw-ring-color: var(--destructive);
+      @supports (color: color-mix(in lab, red, red)) {
+        --tw-ring-color: color-mix(in oklab, var(--destructive) 40%, transparent);
+      }
+    }
+  }
+  &:is(.dark *) {
+    &[data-checked] {
+      background-color: var(--primary);
+    }
+  }
+}
+.style-nova .cn-radio-group-item-aria[data-focus-visible] {
+  border-color: var(--ring);
+  --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  --tw-ring-color: var(--ring);
+  @supports (color: color-mix(in lab, red, red)) {
+    --tw-ring-color: color-mix(in oklab, var(--ring) 50%, transparent);
+  }
+}
+.style-nova .cn-radio-group-item-aria[data-invalid] {
+  border-color: var(--destructive);
+  --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  --tw-ring-color: var(--destructive);
+  @supports (color: color-mix(in lab, red, red)) {
+    --tw-ring-color: color-mix(in oklab, var(--destructive) 20%, transparent);
+  }
+}
+.style-nova .cn-radio-group-item-aria[data-selected] {
+  border-color: var(--primary);
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+.style-nova .cn-radio-group-item-aria[data-invalid][data-selected] {
+  border-color: var(--primary);
+}
+.style-nova .cn-radio-group-item-aria:is(.dark *)[data-invalid] {
+  border-color: var(--destructive);
+  @supports (color: color-mix(in lab, red, red)) {
+    border-color: color-mix(in oklab, var(--destructive) 50%, transparent);
+  }
+  --tw-ring-color: var(--destructive);
+  @supports (color: color-mix(in lab, red, red)) {
+    --tw-ring-color: color-mix(in oklab, var(--destructive) 40%, transparent);
+  }
+}
+.style-nova .cn-radio-group-item-aria:is(.dark *)[data-selected] {
+  background-color: var(--primary);
+}
+.style-nova .cn-radio-group-indicator {
+  display: flex;
+  width: calc(var(--spacing) * 4);
+  height: calc(var(--spacing) * 4);
+  align-items: center;
+  justify-content: center;
+}
+.style-nova .cn-radio-group-indicator-icon {
+  position: absolute;
+  top: calc(1 / 2 * 100%);
+  left: calc(1 / 2 * 100%);
+  width: calc(var(--spacing) * 2);
+  height: calc(var(--spacing) * 2);
+  --tw-translate-x: calc(calc(1 / 2 * 100%) * -1);
+  --tw-translate-y: calc(calc(1 / 2 * 100%) * -1);
+  translate: var(--tw-translate-x) var(--tw-translate-y);
+  border-radius: calc(infinity * 1px);
+  background-color: var(--primary-foreground);
+}
 @property --tw-border-style {
   syntax: "*";
   inherits: false;
@@ -5832,6 +6017,11 @@
   syntax: "*";
   inherits: false;
   initial-value: solid;
+}
+@property --tw-content {
+  syntax: "*";
+  initial-value: "";
+  inherits: false;
 }
 @property --tw-shadow {
   syntax: "*";
@@ -5906,6 +6096,21 @@
   syntax: "*";
   inherits: false;
 }
+@property --tw-translate-x {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-translate-y {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-translate-z {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
 @keyframes pulse {
   50% {
     opacity: 0.5;
@@ -5916,6 +6121,7 @@
     *, ::before, ::after, ::backdrop {
       --tw-border-style: solid;
       --tw-outline-style: solid;
+      --tw-content: "";
       --tw-shadow: 0 0 #0000;
       --tw-shadow-color: initial;
       --tw-shadow-alpha: 100%;
@@ -5932,6 +6138,9 @@
       --tw-ring-offset-shadow: 0 0 #0000;
       --tw-font-weight: initial;
       --tw-leading: initial;
+      --tw-translate-x: 0;
+      --tw-translate-y: 0;
+      --tw-translate-z: 0;
     }
   }
 }

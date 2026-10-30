@@ -19,6 +19,19 @@ export function pinnedInput(): ShadcnComponentInput {
 }
 
 describe("pinned shadcn aria component import", () => {
+  it("materializes native RadioGroup with its actual item export and unchanged pinned body", () => {
+    const input = pinnedInput(), imported = importShadcnAriaComponents(input);
+    const original = input.items.find(item => item.name === "radio-group")!.files[0]!;
+    const files = materializeShadcnComponent(imported, "radio-group");
+    const native = files.find(file => file.path === "components/radio-group/radio-group.tsx")!;
+    const fill = imported.fills.find(fill => fill.components["radio-group"])!.components["radio-group"]!;
+    expect(native.content).toBe(original.content.replace('from "cn"', 'from "../_parts/utils/index.js"'));
+    expect(componentSecondaryExports(fill, files)).toEqual([{ name: "RadioGroupItem", export: "RadioGroupItem" }]);
+    expect(fill.reads.components).toEqual([]);
+    native.content += " ";
+    expect(() => materializeShadcnComponent(imported, "radio-group")).toThrow(/output hash differs/);
+  });
+
   it("materializes native Skeleton and refuses changes to its authenticated output", () => {
     const input = pinnedInput(), imported = importShadcnAriaComponents(input);
     const original = input.items.find(item => item.name === "skeleton")!.files[0]!;
@@ -254,7 +267,7 @@ describe("pinned shadcn aria component import", () => {
     expect(componentSecondaryExports(select, materializeShadcnComponent(result, "select"))).toEqual(five);
     expect(select.impl).toEqual({ kind: "source", entry: "components/select/select.tsx", export: "Select" });
     for (const name of ["SelectList", "SelectInput", "SelectLabel", "SelectPopover", "SelectSeparator", "SelectEmpty", "Select"]) expect(select.secondaryExports!.map(row => row.name)).not.toContain(name);
-    expect(descriptors.filter(fill => fill.secondaryExports !== undefined).map(fill => fill.slot).sort()).toEqual(["components.button", "components.card", "components.dialog", "components.disclosure", "components.menu", "components.select", "components.table", "components.tabs"]);
+    expect(descriptors.filter(fill => fill.secondaryExports !== undefined).map(fill => fill.slot).sort()).toEqual(["components.button", "components.card", "components.dialog", "components.disclosure", "components.menu", "components.radio-group", "components.select", "components.table", "components.tabs"]);
     for (const [slot, names] of [["components.button", ["LinkButton"]], ["components.tabs", ["TabsList", "TabsTrigger", "TabsContent"]]] as const) {
       const descriptor = descriptors.find(fill => fill.slot === slot)!;
       const parts = names.map(name => ({ name, export: name }));

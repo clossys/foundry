@@ -432,18 +432,6 @@
     {
       "issues": [],
       "item": "radio-group",
-      "notes": [
-        {
-          "file": "apps/v4/registry/bases/aria/ui/radio-group.tsx",
-          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
-          "value": "group-has-[:focus-visible]/field-label:ring-0"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/radio-group.tsx",
-          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
-          "value": "outline-none"
-        }
-      ],
       "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
       "runtime": "U-V",
       "slot": "components.radio-group",

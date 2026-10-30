@@ -13,13 +13,15 @@
         "sha256": "662dd64be47229a6e3801d2f1b091abcd9529e323bb9653781b9d73d9f2da215",
         "url": "https://github.com/shadcn-ui/ui"
       },
-      "relation": "same-contract",
+      "relation": "subset",
       "slot": "components.radio-group",
       "source": "shadcn@aria",
       "sourceAddress": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/bases/aria/ui/radio-group.tsx",
       "status": "draft",
       "trust": "pinned-upstream",
-      "unmapped": []
+      "unmapped": [
+        "state.invalid"
+      ]
     }
   },
   "components": {
@@ -57,8 +59,7 @@
       "license": "MIT",
       "members": [
         "orientation.horizontal",
-        "orientation.vertical",
-        "state.invalid"
+        "orientation.vertical"
       ],
       "notice": "notices/THIRD-PARTY.md",
       "outputSha256": [
@@ -68,7 +69,7 @@
         },
         {
           "path": "components/radio-group/radio-group.tsx",
-          "sha256": "0257bffe68d9d83ba800d9094fe41da17f117720ec32a5e52158d2acb7206df7"
+          "sha256": "e8f56f3188b8a9821a7a698faec26307345cc9bf44bc3463c8c46a88f3b5db1d"
         },
         {
           "path": "notices/THIRD-PARTY.md",
@@ -100,8 +101,7 @@
       },
       "propMap": {
         "orientation.horizontal": "RadioGroup.orientation=horizontal",
-        "orientation.vertical": "RadioGroup.orientation=vertical",
-        "state.invalid": "RadioGroup.isInvalid"
+        "orientation.vertical": "RadioGroup.orientation=vertical"
       },
       "props": [],
       "rac": {
@@ -115,19 +115,18 @@
         "tokens": [
           "tokens.action-color.default",
           "tokens.border-color.strong",
-          "tokens.border-width.hairline",
-          "tokens.control-size.mark",
           "tokens.focus-color.default",
-          "tokens.focus-outline.offset",
-          "tokens.focus-outline.width",
-          "tokens.spacing.lg",
-          "tokens.spacing.sm",
-          "tokens.state-opacity.disabled",
           "tokens.status-color.danger",
           "tokens.text-color.on-action"
         ]
       },
       "root": "rac:RadioGroup",
+      "secondaryExports": [
+        {
+          "export": "RadioGroupItem",
+          "name": "RadioGroupItem"
+        }
+      ],
       "slot": "components.radio-group",
       "source": "shadcn@aria",
       "transform": "shadcn-aria-rewrite@1"
