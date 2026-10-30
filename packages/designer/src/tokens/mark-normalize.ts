@@ -238,7 +238,9 @@ function parse(svg: string, lockupText = false): Node {
       if (key === 'xmlns') {
         if (stack.length || roots.length || decodeAttribute(attr![2] ?? attr![3]!) !== 'http://www.w3.org/2000/svg') fail('attribute xmlns');
       } else if (!measuredAttributes.has(key) && !/^(?:data|aria)-[a-z0-9_.-]+$/.test(key)) fail(`attribute ${key}`);
-      attrs[attr![1]!] = decodeAttribute(attr![2] ?? attr![3]!);
+      const value = attr![2] ?? attr![3]!;
+      if (value.includes('<')) fail('XML attribute');
+      attrs[attr![1]!] = decodeAttribute(value);
       position = attribute.lastIndex;
     }
     const node: Node = { name, attrs, children: [], start, openEnd: end, end };
