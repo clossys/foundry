@@ -37,8 +37,12 @@ async function request(path: string, signal: AbortSignal): Promise<unknown> {
   return response.json();
 }
 export async function loadCells(signal: AbortSignal): Promise<AgentCells[]> { return parseCellsResponse(await request('/api/cells', signal)); }
-export async function loadCell(agent: Agent, id: string, signal: AbortSignal): Promise<CellDetail> {
-  return parseCellResponse(await request(`/api/cells/${encodeURIComponent(agent)}/${encodeURIComponent(id)}`, signal), agent, id);
+export async function loadCell(agent: Agent, id: string, signal: AbortSignal, version?: number): Promise<CellDetail> {
+  if (version !== undefined && (!Number.isSafeInteger(version) || version < 1)) throw new Error('The requested cell version is invalid.');
+  const query = version === undefined ? '' : `?version=${version}`;
+  const detail = parseCellResponse(await request(`/api/cells/${encodeURIComponent(agent)}/${encodeURIComponent(id)}${query}`, signal), agent, id);
+  if (version !== undefined && detail.version !== version) throw new Error('Producer returned a different cell version.');
+  return detail;
 }
 
 export interface CellNode extends CellSummary { group?: boolean; children: CellNode[] }

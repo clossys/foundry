@@ -46,3 +46,11 @@ export function evidenceHref(ref: string): string | undefined {
   const match = /^(?:(director|designer|writer|publisher):)?([a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*){1,2})@([1-9]\d*)$/.exec(ref);
   return match ? `?agent=${match[1] ?? 'director'}&cell=${encodeURIComponent(match[2]!)}&version=${match[3]}` : /^https?:\/\//.test(ref) ? ref : undefined;
 }
+
+/** A cell's active and latest draft remain separate passages in version order. */
+export function directorVersions(cells: readonly CellDetail[], id: string): CellDetail[] {
+  return cells.filter(cell => cell.id === id && (cell.status === 'active' || cell.status === 'draft')).sort((left, right) => (left.version ?? 0) - (right.version ?? 0));
+}
+export function directorVersionedPassages(index: AgentCells, cells: readonly CellDetail[]): CellDetail[] {
+  return directorPassages(directorDocument(index)).flatMap(cell => directorVersions(cells, cell.id));
+}

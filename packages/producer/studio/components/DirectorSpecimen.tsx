@@ -2,12 +2,12 @@
 
 import { useEffect } from 'react';
 import type { AgentCells, CellDetail } from '../lib/cells-client';
-import { directorDocument, directorSections, evidenceHref, evidenceReferences, type DirectorChapter } from '../lib/director-specimen';
+import { directorDocument, directorSections, directorVersions, evidenceHref, evidenceReferences, type DirectorChapter } from '../lib/director-specimen';
 import { useSpecimenCells } from '../lib/director-specimen-resource';
 import { Badge, ContentSection, DetailView, EmptyState, Link, SectionHeader, SpecimenSelectionNeeds } from './director-specimen-ds';
 import { RichTextSpecimen } from './RichTextSpecimen';
 
-export const directorPassageId = (id: string) => `director-passage-${id}`;
+export const directorPassageId = (id: string, version?: number) => `director-passage-${id}-v${version ?? 'latest'}`;
 
 function Passage({ cell, selected, level }: { cell: CellDetail; selected: boolean; level: 2 | 3 | 4 | 5 | 6 }) {
   const sections = directorSections(cell.content);
@@ -20,7 +20,7 @@ function Passage({ cell, selected, level }: { cell: CellDetail; selected: boolea
       {evidenceHref(ref) ? <Link href={evidenceHref(ref)}>{ref}</Link> : <Badge>{ref}</Badge>}
     </ContentSection>) }] : []),
   ];
-  return <ContentSection id={directorPassageId(cell.id)} aria-current={selected ? 'location' : undefined} data-specimen-cell={cell.id} data-specimen-status={cell.status}
+  return <ContentSection id={directorPassageId(cell.id, cell.version)} aria-current={selected ? 'location' : undefined} data-specimen-cell={cell.id} data-specimen-status={cell.status} data-specimen-version={cell.version}
     ground={cell.status === 'draft' ? 'sunken' : 'base'} className={[cell.status === 'draft' ? 'bg-surface-sunken' : '', selected ? 'outline outline-solid' : ''].filter(Boolean).join(' ')} style={selected ? { outlineColor: 'var(--color-focus-ring)', outlineOffset: 'var(--ui-focus-offset)' } : undefined}>
     <SectionHeader title={typeof cell.fields?.title === 'string' && cell.fields.title ? cell.fields.title : cell.id.split('.').at(-1)} level={level} description={cell.status === 'draft' ? 'Draft passage' : undefined} />
     <ContentSection layout="split-end" media={<DetailView aria-label="Passage metadata" fields={fields} />}>
@@ -32,11 +32,12 @@ function Passage({ cell, selected, level }: { cell: CellDetail; selected: boolea
   </ContentSection>;
 }
 
-function Chapter({ chapter, cells, selectedId }: { chapter: DirectorChapter; cells: Map<string, CellDetail>; selectedId?: string }) {
+function Chapter({ chapter, cells, selectedId }: { chapter: DirectorChapter; cells: CellDetail[]; selectedId?: string }) {
   const level = Math.min(chapter.depth + 2, 6) as 2 | 3 | 4 | 5 | 6;
-  const cell = cells.get(chapter.id);
+  const versions = directorVersions(cells, chapter.id);
+  const latest = versions.at(-1);
   return <ContentSection>
-    {chapter.cell ? cell ? <Passage cell={cell} selected={selectedId === cell.id} level={level} /> : <EmptyState title="Strategy passage unavailable" description={chapter.title} /> : <SectionHeader title={chapter.title} level={level} density={chapter.depth === 0 ? 'standard' : 'compact'} />}
+    {chapter.cell ? versions.length ? versions.map(cell => <Passage key={`${cell.id}@${cell.version}`} cell={cell} selected={selectedId === cell.id && cell.version === latest?.version} level={level} />) : <EmptyState title="Strategy passage unavailable" description={chapter.title} /> : <SectionHeader title={chapter.title} level={level} density={chapter.depth === 0 ? 'standard' : 'compact'} />}
     {chapter.children.map(child => <Chapter key={child.id} chapter={child} cells={cells} selectedId={selectedId} />)}
   </ContentSection>;
 }
@@ -44,7 +45,10 @@ function Chapter({ chapter, cells, selectedId }: { chapter: DirectorChapter; cel
 export function DirectorSpecimen({ index, selectedId }: { index: AgentCells; selectedId?: string }) {
   const resource = useSpecimenCells(index);
   useEffect(() => {
-    if (resource.state === 'ready' && selectedId) document.getElementById(directorPassageId(selectedId))?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    if (resource.state === 'ready' && selectedId) {
+      const latest = directorVersions(resource.cells, selectedId).at(-1);
+      if (latest) document.getElementById(directorPassageId(selectedId, latest.version))?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
   }, [selectedId, resource]);
   let chapters: DirectorChapter[];
   try { chapters = directorDocument(index); } catch { return <EmptyState role="alert" title="Strategy outline unavailable" description="The supplied tree cannot be projected into a strategy document." />; }
@@ -52,6 +56,6 @@ export function DirectorSpecimen({ index, selectedId }: { index: AgentCells; sel
   if (!chapters.length) return <EmptyState title="No strategy passages" description="Active or draft Director cells will appear here in outline order." />;
   if (resource.state === 'loading') return <EmptyState role="status" title="Loading strategy document…" />;
   if (resource.state === 'error') return <EmptyState role="alert" title="Strategy unavailable" description={resource.message} />;
-  const cells = new Map(resource.cells.map(cell => [cell.id, cell]));
+  const cells = resource.cells;
   return <ContentSection aria-label="Director strategy specimen"><SpecimenSelectionNeeds />{chapters.map(chapter => <Chapter key={chapter.id} chapter={chapter} cells={cells} selectedId={selectedId} />)}</ContentSection>;
 }
