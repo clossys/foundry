@@ -13,7 +13,7 @@ export function importShadcnFrames() {
   const upstream = data.upstream.map(({ path, content }) => ({ path, content }));
   const licence = data.upstream.find(file => file.path === "LICENSE.md")!.content;
   const notice = { path: `notices/surfaces/n-${sha256(licence)}.txt`, content: licence };
-  const files = [data.output, notice];
+  const files = [...data.outputs, notice];
   const binding = (path: readonly string[]) => ({ export: name, path });
   const field = (path: string) => binding(path.split("."));
   const slots = Object.fromEntries(Object.entries({ "skip-link": "skipLabel", sidebar: "navigation", header: "context", main: "children", inspector: "rightPanel", command: "commands", "page-module": "pageModule", progress: "progress", state: "stateViews", toasts: "toasts" }).map(([key, path]) => [key, field(path)]));
@@ -22,13 +22,13 @@ export function importShadcnFrames() {
   const frame: SurfaceFrameEntry = {
     kind: "frame", slot, source, impl: { kind: "source", entry: data.output.path, export: name }, rendering: "client", members: Object.keys(propMap), states: ["default"],
     slots, propMap, statePorts,
-    reads: { tokens: ["tokens.body-size", "tokens.border-color", "tokens.control-radius", "tokens.spacing", "tokens.surface-color", "tokens.text-color"], assets: [] },
-    composes: ["components.button", "components.logo", "components.menu", "components.semantic-content", "components.sheet", "components.sidebar", "frames.app-header", "frames.command", "frames.inspector"], parts: [],
+    reads: { tokens: ["tokens.animation", "tokens.breakpoint", "tokens.z-index", "tokens.body-size", "tokens.border-color", "tokens.control-radius", "tokens.spacing", "tokens.surface-color", "tokens.text-color"], assets: ["assets.icon-panel-left", "assets.icon-theme-light", "assets.icon-theme-dark", "assets.icon-layers"] },
+    composes: ["components.breadcrumbs", "components.disclosure", "components.icon", "components.tooltip", "components.button", "components.logo", "components.menu", "components.semantic-content", "components.sheet", "components.sidebar", "frames.app-header", "frames.command", "frames.inspector"], parts: [],
     api: { version: 1, exports: [{ name: "AppShell", export: name }] }, bindings: data.bindings as SurfaceFrameEntry["bindings"],
-    dependencies: [{ module: "react", version: "19.3.0", license: "MIT" }, { module: "react-aria-components", version: "1.21.1", license: "Apache-2.0" }, ...["blocks", "frames", "shell", "theme"].map(path => ({ module: `@clossys/designer/${path}`, version: "0.12.0", license: "MIT" }))],
+    dependencies: [{ module: "react", version: "19.3.0", license: "MIT" }, { module: "react-aria-components", version: "1.21.1", license: "Apache-2.0" }, ...["blocks", "components", "frames", "shell", "theme"].map(path => ({ module: `@clossys/designer/${path}`, version: "0.12.0", license: "MIT" }))],
     license: "MIT", pin: { kind: "git", url: adapter.pin.url, commit: data.commit, files: surfaceManifest(upstream) }, notice: notice.path, outputSha256: surfaceManifest(files), blockers: [],
   };
-  const recipe = [{ path: "rules/shadcn-aria-app-shell-v1.json", content: stableStringify({ port: data.port, output: data.output, operation: "official-sidebar-token-frame-port" }) }];
+  const recipe = [{ path: "rules/shadcn-aria-app-shell-v1.json", content: stableStringify({ ports: data.ports, outputs: data.outputs, operation: "official-sidebar-token-frame-port" }) }];
   const transform: SurfaceTransform = {
     identity: { id: "shadcn-aria-app-shell", version: "1", sha256: surfaceDigest(surfaceManifest(recipe)).slice(7) }, source: recipe,
     run: ({ candidate, upstream: actual }) => {

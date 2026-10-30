@@ -2,6 +2,7 @@ import type { ShellCopyResolver } from "../components/Banner.copy.js";
 import type { ReactNode } from "react";
 import type { FrameNavigate, PageBarDestination, PageBarCrumb, PageBarAction, PageBarPage, AccountMenuActor, AccountMenuProps, AccountMenuSection, AppNavigationProps, CommandMenuProps } from "../blocks/index.js";
 import type { ThemeProviderProps, ThemeToggleProps } from "../theme/index.js";
+import type { PageFrameManifest } from "./PageFrame.js";
 
 /** Host mark beside its visible name at the top of the navigation, above command search. */
 export interface AppFrameBrandNavigationMark {
@@ -68,6 +69,8 @@ type FrameAction = PageBarAction;
 type FramePage = PageBarPage;
 
 export interface AppFrameProps {
+  /** Host-projected page breadcrumb and module actions, resolved from the published manifest. */
+  pageManifest?: PageFrameManifest;
   /** Publication region updates preserve this Frame instance. */
   headerTrail?: readonly PageBarCrumb[];
   headerActions?: readonly PageBarAction[];

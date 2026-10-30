@@ -36,3 +36,8 @@ export { RenderError, type RenderErrorReason } from "./site-frame/landing/intern
 export { siteShellProps, renderSiteShell, siteShellRuntimeRenderer, siteShellRuntimeRenderers, siteShellRuntimePointers, siteShellRuntimeCallbacks, SITE_SHELL_RUNTIME_POINTER } from "../runtime/frames/site-shell.js";
 export { DocumentFrame, documentRenderer, renderDocument, FRAME_CRITICAL_STYLE_ATTRIBUTE } from "../runtime/frames/document.js";
 export type { DocumentFrameProps } from "../runtime/frames/document.js";
+
+export { PageFrame } from "./PageFrame.js";
+export type { PageFrameProps, PageFrameManifest, PageFrameAction, PageFrameBreadcrumb } from "./PageFrame.js";
+export { ModuleFrame } from "./ModuleFrame.js";
+export type { ModuleFrameProps } from "./ModuleFrame.js";

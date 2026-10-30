@@ -48,7 +48,7 @@ export function AccountMenu({ actor, sections, contextLabel, triggerLabel, colla
     {!collapsed && <>
       <span className="flex min-w-0 flex-1 flex-col text-start">
         <span className="break-words whitespace-normal">{actor.name}</span>
-        {contextLabel && <span className="break-words whitespace-normal text-caption text-ink-muted">{contextLabel}</span>}
+        {(contextLabel ?? actor.secondaryText) && <span className="break-words whitespace-normal text-caption text-ink-muted">{contextLabel ?? actor.secondaryText}</span>}
       </span>
       <Icon glyph={ChevronUp} decorative size="sm" className="shrink-0" />
     </>}
@@ -56,6 +56,7 @@ export function AccountMenu({ actor, sections, contextLabel, triggerLabel, colla
   const entriesFor = (section: AccountMenuSection, close?: () => void) => section.entries.map(entry => <Menu.Item key={keyFor(section.id, entry.id)} id={keyFor(section.id, entry.id)}
     textValue={entry.label} isDisabled={entry.isDisabled} isDestructive={entry.kind === "destructive"}
     href={entry.kind === "link" ? entry.href : undefined}
+    target={entry.kind === "link" ? entry.target : undefined} rel={entry.kind === "link" && entry.target === "_blank" ? "noopener noreferrer" : undefined}
     onAction={entry.kind === "preference" ? undefined : () => { if (entry.kind === "link") onRoute?.(entry); else entry.onAction(); close?.(); }}>
     {entry.label}
   </Menu.Item>);

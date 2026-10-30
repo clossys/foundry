@@ -2042,11 +2042,6 @@
   .justify-start {
     justify-content: flex-start;
   }
-  .frame-account-row {
-    gap: var(--spacing-sm, 8px);
-    padding-inline: var(--spacing-sm, 8px);
-    padding-block: var(--spacing-sm, 8px);
-  }
   .frame-header-row {
     gap: var(--spacing-xs, 4px);
     padding-inline: var(--spacing-sm, 8px);
@@ -2807,12 +2802,6 @@
   .object-cover {
     object-fit: cover;
   }
-  .frame-main-inset {
-    padding: var(--spacing-lg, 16px);
-    @media (width >= 1024px) {
-      padding: var(--spacing-xl, 24px);
-    }
-  }
   .frame-main-bleed:has([data-frame-bleed]) {
     padding: 0;
   }
@@ -3190,10 +3179,6 @@
   }
   .bg-blend-color {
     background-blend-mode: color;
-  }
-  .shadow-sm {
-    --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 1px 2px -1px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
-    box-shadow: var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000), var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow, 0 0 #0000);
   }
   .ring-0 {
     --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(0px + var(--tw-ring-offset-width, 0px)) var(--tw-ring-color, currentcolor);

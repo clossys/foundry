@@ -47,8 +47,8 @@ describe("shadcn Aria application frame candidate", () => {
     const code = files.find(file => file.path === frame.impl.entry)!.content;
     expect(code).not.toContain('from "@clossys/designer/components"');
     expect(code).not.toContain("useSidebar");
-    expect(new Set(frame.bindings.map(binding => binding.slot))).toEqual(new Set(["components.sidebar", "components.sheet", "components.semantic-content", "components.button", "components.logo", "components.menu"]));
-    for (const binding of frame.bindings) expect(code).toContain(JSON.stringify(binding.module));
+    expect(new Set(frame.bindings.map(binding => binding.slot))).toEqual(new Set(["components.sidebar", "components.sheet", "components.semantic-content", "components.button", "components.logo", "components.menu", "components.icon", "components.breadcrumbs", "components.tooltip", "components.disclosure"]));
+    for (const binding of frame.bindings) expect(files.find(file => file.path === binding.file)!.content).toContain(JSON.stringify(binding.module));
   });
 
   it("materializes the pinned frame through the real authenticated source boundary", async () => {
