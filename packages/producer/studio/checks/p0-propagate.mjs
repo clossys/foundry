@@ -141,7 +141,7 @@ async function browserDriver() {
       const context = await browser.newContext({ colorScheme: 'light' });
       const page = await context.newPage();
       try {
-        const response = await page.goto(url, { waitUntil: 'networkidle', timeout: 30_000 });
+        const response = await page.goto(url, { waitUntil: 'load', timeout: 30_000 });
         if (!response?.ok()) throw new Error(`Propagation route returned ${response?.status() ?? 'no response'}: ${url}`);
         const button = page.locator(selector).first();
         await button.waitFor({ state: 'visible' });

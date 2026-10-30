@@ -207,7 +207,7 @@ async function runStudioCheck(options = {}) {
           let audit = { findings: [] };
           try {
             // Native color-scheme consumers and common class/data consumers receive the same mode.
-            await page.addInitScript(theme => { try { localStorage.setItem('theme', theme); } catch {} document.documentElement.classList.toggle('dark', theme === 'dark'); document.documentElement.dataset.theme = theme; }, theme);
+            await page.addInitScript(theme => { try { localStorage.setItem('theme', theme); } catch {} const root = document.documentElement; if (root) { root.classList.toggle('dark', theme === 'dark'); root.dataset.theme = theme; } }, theme);
             const response = await page.goto(origin + route, { waitUntil: 'load', timeout });
             if (response?.status() !== 200) errors.push({ rule: 'route-status', status: response?.status() ?? null });
             if (page.url() !== origin + route) errors.push({ rule: 'unexpected-redirect', url: page.url() });

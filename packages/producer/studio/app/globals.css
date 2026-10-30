@@ -1,0 +1,8 @@
+/* Studio styling is the Foundry components layer: stock shadcn CSS variables carrying Clossys values. */
+@import "@clossys/designer-ui/styles.css";
+
+@source "../../../designer/ui/src";
+@source "../app";
+@source "../components";
+@source "../lib";
+@source "../views";

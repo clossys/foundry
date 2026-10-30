@@ -8,7 +8,7 @@ const config = {
   output: 'standalone',
   agentRules: false,
   outputFileTracingRoot: fileURLToPath(new URL('../../../', import.meta.url)),
-  transpilePackages: ['@clossys/designer'],
+  transpilePackages: ['@clossys/designer', '@clossys/designer-ui'],
 };
 
 export default config;
