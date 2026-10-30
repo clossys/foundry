@@ -9,11 +9,22 @@ const attribute: Record<SpecimenInteraction, string> = { hover: "data-hovered", 
 
 /** Reuse the selected stylesheet's declarations for a captured native state; no presentation is invented. */
 function capturedStateCss(document: Document, scope: string): string {
+  const scoped = (selector: string) => {
+    let depth = 0, start = 0; const groups: string[] = [];
+    for (let index = 0; index < selector.length; index++) {
+      if (selector[index] === "\\") { index++; continue; }
+      if (selector[index] === "(" || selector[index] === "[") depth++;
+      if (selector[index] === ")" || selector[index] === "]") depth--;
+      if (selector[index] === "," && depth === 0) { groups.push(selector.slice(start, index)); start = index + 1; }
+    }
+    groups.push(selector.slice(start));
+    return groups.map(value => `${scope} ${value.trim()}`).join(",");
+  };
   const visit = (rules: CSSRuleList): string => Array.from(rules).map(rule => {
     if ("selectorText" in rule && "style" in rule) {
       const styled = rule as CSSStyleRule;
       const selector = styled.selectorText.replace(/(?<!\\):hover\b/g, "[data-hovered]").replace(/(?<!\\):focus-visible\b/g, "[data-focus-visible]").replace(/(?<!\\):active\b/g, "[data-pressed]");
-      return selector === styled.selectorText ? "" : `${selector.split(",").map(value => `${scope} ${value}`).join(",")}{${styled.style.cssText}}`;
+      return selector === styled.selectorText ? "" : `${scoped(selector)}{${styled.style.cssText}}`;
     }
     if ("cssRules" in rule) {
       const nested = visit((rule as CSSGroupingRule).cssRules);

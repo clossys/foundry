@@ -65,7 +65,7 @@ function ComponentItem({ item, context, need }: { item: SpecimenItem; context: D
   const selectedMembers: ComponentSpecimenMember[] = [];
   for (const id of [...value.members, ...(value.state === "default" ? [] : [value.state])]) {
     const member = bound.members.find(member => member.member === id);
-    if (!member || !member.drawn && !member.interaction) return need({ leaf: value.leaf, reason: `No executable registered member binding: ${id}` });
+    if (!member || !member.interaction && !Object.keys(member.props).length) return need({ leaf: value.leaf, reason: `No executable registered member binding: ${id}` });
     selectedMembers.push(member);
   }
   const intrinsic = selectedMembers.find(member => member.interaction);
@@ -114,6 +114,7 @@ export function NativeSpecimenViewport({ context, leaf, width, expanded, need, c
     setBody(document.body);
   };
   return <Content as="div" data-specimen-viewport={width} className={leaf.startsWith("frames.") ? "max-w-full overflow-auto" : "max-w-full overflow-hidden"}>
+    {!body ? <Content as="div" data-ds-specimen-need="true">{need({ leaf, reason: "The selected viewport has not mounted its live fixture." })}</Content> : null}
     <Content as="div" style={{ inlineSize: width, zoom: expanded ? 1 : width > 375 ? 0.25 : 0.5 }}>
       <iframe title={`${leaf} ${width}px specimen`} width={width} height={720} sandbox="allow-same-origin" tabIndex={-1} srcDoc="<!doctype html><html><head></head><body></body></html>" onLoad={event => load(event.currentTarget)} style={{ border: 0, display: "block", pointerEvents: "none" }} />
       {body ? createPortal(<Content as="div" inert data-ds-leaf="components.semantic-content" data-designer-specimen-frame={leaf}>{children}</Content>, body) : null}
