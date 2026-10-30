@@ -8,6 +8,7 @@ import { cellHierarchy, loadCell, loadCells, type AgentCells, type CellDetail, t
 import { StudioFrame } from './StudioFrame';
 import { DirectorSpecimen } from './DirectorSpecimen';
 import { WriterSpecimen } from './WriterSpecimen';
+import { PublisherSpecimen } from './PublisherSpecimen';
 import { SourceDisclosure } from './SourceDisclosure';
 
 type Resource<T> = { state: 'loading' } | { state: 'error'; message: string } | { state: 'ready'; value: T };
@@ -120,6 +121,7 @@ export function CellsWorkspace({ agent }: { agent?: Agent }) {
             {detail.value.status ? <Badge variant={detail.value.status === 'active' ? 'success' : detail.value.status === 'draft' ? 'warning' : 'neutral'}>{detail.value.status}</Badge> : null}
             {detail.value.version !== undefined ? <Badge>v{detail.value.version}</Badge> : null}
           </>} />
+          {detail.value.agent === 'publisher' ? <PublisherSpecimen index={visible.find(item => item.agent === 'publisher')!} selectedId={selectedId} /> : null}
           <SourceDisclosure key={`${detail.value.agent}:${detail.value.id}`} source={detail.value.content} />
         </>}
         {selectedIndex && (selectedAgent === 'director' || selectedAgent === 'writer') && detail.state === 'ready' && detail.value.agent === selectedAgent && detail.value.id === selectedId ? <SourceDisclosure key={`${detail.value.agent}:${detail.value.id}`} source={detail.value.content} /> : null}

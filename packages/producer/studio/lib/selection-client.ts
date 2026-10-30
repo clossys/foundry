@@ -4,6 +4,7 @@ export const STUDIO_NEEDED_LEAVES = [
   'frames.app-shell', 'sections.band', 'sections.section-header', 'sections.content', 'sections.article', 'sections.empty-state',
   'components.badge', 'components.icon', 'components.link', 'components.navigation-tree', 'components.disclosure',
   'components.button', 'components.rich-text', 'sections.record-detail',
+  'components.card', 'components.table',
 ] as const;
 
 export interface StudioSelectionLeaf {

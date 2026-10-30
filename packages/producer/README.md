@@ -90,6 +90,29 @@ result object (on shutdown for a serving command). `produce` accepts `--once`, `
 | `1` | Reserved for a verdict failure when verb behavior is implemented |
 | `2` | Usage error, missing root, unresolved agent, or current stub refusal |
 
+## Publication previews
+
+Publisher's preview destination writes a native snapshot with
+`clossys publish --target preview`. Producer reads its digest-enveloped
+`preview.json` from `clossys/.producer/preview/<publication>/src/clossys`.
+The descriptor identifies actual emitted route modules and the content map.
+Producer bundles those generated modules and awaits the page's async export
+in a short-lived React rendering process. The resulting HTML is served at
+`/preview/<publication>/pages/<route-id>.html`; emitted styles and images are
+served beneath `/preview/<publication>/assets/`. The original source modules
+remain private to the renderer. `/api/publication` returns descriptor metadata,
+route availability and preview URLs; `?publication=<id>` selects a snapshot.
+
+The Publisher specimen uses the consumer's selected Designer components for
+device controls, cards, navigation and route status. It displays desktop,
+tablet and mobile viewports in a read-only sandbox with an opaque origin.
+The sandbox blocks scripts and access to Studio's document or run token.
+Missing snapshots show the publish command. Metadata absent from the emitted
+descriptor is shown as not provided, including indexing, sitemap membership,
+publication time and social images. Raw cell source stays in the closed Source
+disclosure. The preview emitter is supplied by Publisher's preview-destination
+integration; Producer never substitutes application source for its snapshot.
+
 ## Agent mapping API
 
 | Export | Purpose |

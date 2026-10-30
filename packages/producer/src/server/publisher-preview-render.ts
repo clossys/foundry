@@ -6,6 +6,7 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { promisify } from "node:util";
+import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { resolveAgent } from "../agents.js";
 
@@ -58,7 +59,12 @@ export async function renderNativePreview(page: NativePreviewPage): Promise<Buff
       nodePaths: producerRequire.resolve.paths("react") ?? [],
       banner: { js: `import { createRequire as __previewRequire } from "node:module"; const require = __previewRequire(${JSON.stringify(import.meta.url)});` },
       plugins: [{ name: "confined-native-preview", setup(context) {
-        context.onResolve({ filter: /^(?:react|react-dom)(?:\/.*)?$/ }, args => ({ path: producerRequire.resolve(args.path), external: true }));
+        // Preserve installed dependency module URLs: libraries can load their
+        // own JSON/assets with createRequire(import.meta.url).
+        context.onResolve({ filter: /^[^./]/ }, args => {
+          const entry = import.meta.resolve(args.path);
+          return { path: entry.startsWith("file:") ? fileURLToPath(entry) : entry, external: true };
+        });
         context.onLoad({ filter: /\.(?:tsx?|jsx?|mjs|css|json)$/ }, async args => {
           if (!inside(page.root, args.path)) return undefined; // Installed third-party runtime dependencies use normal Node resolution.
           const rel = relative(page.root, args.path).split(sep).join("/");

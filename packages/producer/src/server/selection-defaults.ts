@@ -4,7 +4,7 @@ import { agentModule } from "./cells.js";
 import type { StudioDesignerLibrary } from "./theme.js";
 import type { StudioSelectionLeaf } from "./selection.js";
 
-const REQUIRED = ["frames.app-shell", "sections.band", "sections.section-header", "sections.content", "sections.article", "sections.empty-state", "components.badge", "components.disclosure", "components.icon", "components.link", "components.navigation-tree", "components.button", "components.rich-text", "sections.record-detail"];
+const REQUIRED = ["frames.app-shell", "sections.band", "sections.section-header", "sections.content", "sections.article", "sections.empty-state", "components.badge", "components.disclosure", "components.icon", "components.link", "components.navigation-tree", "components.button", "components.rich-text", "sections.record-detail", "components.card", "components.table"];
 const meta = (fill: any) => fill.$extensions["com.clossys.fill"];
 
 /** Preserve authored selections; fill missing seats through Designer's default planners. */

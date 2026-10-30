@@ -218,7 +218,13 @@ export async function compileSelection(root: string, input: CompositeEngineInput
     }
     files.set("studio-compat/tooltip.ts", tooltip);
   }
-  files.set("studio-entry.ts", 'export * as components from "./component-index.ts";\n' + (files.has("surface-index.ts") ? 'export * as surfaces from "./surface-index.ts";\n' : "export const surfaces = {};\n") + tree + disclosure + (selectedDialog ? 'export * as dialog from "./studio-compat/dialog.ts";\n' : "export const dialog = {};\n") + (selectedTooltip ? 'export * as tooltip from "./studio-compat/tooltip.ts";\n' : "export const tooltip = {};\n"));
+  let table = "export const table = {};\n";
+  const selectedTable = profile.components.components["components.table"];
+  if (selectedTable) {
+    const module = selectedTable.impl.kind === "source" ? "./" + selectedTable.impl.entry : selectedTable.impl.module;
+    table = `import * as tableParts from ${JSON.stringify(module)};\nimport { Table as SelectedTable } from "./components/table/index.ts";\nexport const table = {...tableParts, Table:SelectedTable};\n`;
+  }
+  files.set("studio-entry.ts", 'export * as components from "./component-index.ts";\n' + (files.has("surface-index.ts") ? 'export * as surfaces from "./surface-index.ts";\n' : "export const surfaces = {};\n") + tree + disclosure + table + (selectedDialog ? 'export * as dialog from "./studio-compat/dialog.ts";\n' : "export const dialog = {};\n") + (selectedTooltip ? 'export * as tooltip from "./studio-compat/tooltip.ts";\n' : "export const tooltip = {};\n"));
   const css = await selectionCss(files);
   const bundled = await build({ entryPoints: ["studio-entry.ts"], bundle: true, write: false, format: "esm", platform: "browser", target: "es2022", jsx: "automatic", minify: true, define: { "process.env.NODE_ENV": '"production"' }, sourcemap: false, legalComments: "none", logLevel: "silent", plugins: [projectionPlugin(files, root, componentModules, iconAssets)] });
   const code = bundled.outputFiles?.[0]?.text;

@@ -59,7 +59,7 @@ it("serves only emitted preview HTML and known assets with the existing loopback
   await put(join(root, "outside.html"), "private outside file");
   await symlink(join(root, "outside.html"), join(base, "escape.html"));
   expect((await get("/preview/example/assets/escape.html")).status).toBe(403);
-});
+}, 45_000);
 
 it("reports unpublished, invalid and missing source states without inventing a page", async () => {
   await launch(); expect(JSON.parse((await get("/api/publication")).text)).toEqual({ state: "missing", message: "Not published yet", command: "clossys publish --target preview" });

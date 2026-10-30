@@ -19,6 +19,7 @@ export interface StudioRuntimeModule {
   surfaces: Record<string, unknown>;
   tree: Record<string, unknown>;
   disclosure: Record<string, unknown>;
+  table?: Record<string, unknown>;
 }
 export async function importStudioRuntime(url: string): Promise<StudioRuntimeModule> {
   bindStudioRuntimeDependencies();
