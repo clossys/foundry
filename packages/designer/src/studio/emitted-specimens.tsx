@@ -13,6 +13,9 @@ import * as packageShell from "../shell/index.js";
 import { packageSurfacePreview } from "./planned-surface-previews.js";
 import type { ComponentSpecimenComponent, ComponentSpecimenModule } from "./component-specimens.js";
 import type { DesignerSpecimenContext, DesignerSurfaceSpecimen } from "./DesignerSpecimen.js";
+import { componentSpecimenSample } from './component-specimen-samples.js';
+import { selectedComponentSourceIdentity, type SelectedComponentSourceIdentity } from './selected-component-source.js';
+import { stableStringify } from '../catalog-core/stable.js';
 
 /** Namespaces emitted from the same native selection as profile. No package/default imports are rendering ports. */
 export interface EmittedDesignerSpecimenRuntime {
@@ -20,6 +23,10 @@ export interface EmittedDesignerSpecimenRuntime {
   readonly surfaces: ComponentSpecimenModule;
   readonly tree?: ComponentSpecimenModule;
   readonly disclosure?: ComponentSpecimenModule;
+  readonly componentModules?: Readonly<Record<string, ComponentSpecimenModule>>;
+  readonly componentParts?: Readonly<Record<string, ComponentSpecimenModule>>;
+  readonly componentSourceIdentities?: Readonly<Record<string, SelectedComponentSourceIdentity>>;
+  readonly matchesComponentSource?: (leaf: string, namespace: ComponentSpecimenModule) => boolean;
 }
 
 const renderable = (value: unknown): value is ComponentSpecimenComponent => typeof value === "function" || typeof value === "object" && value !== null && "$$typeof" in value;
@@ -33,6 +40,7 @@ const primary = (leaf: string) => leaf.slice("components.".length).split("-").ma
  */
 export function emittedDesignerSpecimenContext(profile: CompositeResolved, runtime: EmittedDesignerSpecimenRuntime): DesignerSpecimenContext {
   const modules: Record<string, Record<string, unknown>> = {};
+  const sourceBindings = new Set<string>();
   const replacements = new Map<unknown, ComponentSpecimenComponent>();
   const originalNamespaces: readonly ComponentSpecimenModule[] = [packageComponents, packageCharts, packageShell];
   const canonical = new Map(importFoundryComponents().fills.map(doc => [doc.$extensions["com.clossys.fill"].slot, componentOf(doc)]));
@@ -89,6 +97,18 @@ export function emittedDesignerSpecimenContext(profile: CompositeResolved, runti
     if (!Adapter) continue;
     const address = component.impl.kind === "package" ? component.impl.module : component.impl.entry;
     const namespace = modules[address] ??= {};
+    if (component.impl.kind === 'source' && runtime.componentSourceIdentities?.[component.slot]) {
+      const actual = selectedComponentSourceIdentity(profile.components, component.slot);
+      const witnessed = runtime.componentSourceIdentities[component.slot];
+      const raw = runtime.componentModules?.[address], parts = runtime.componentParts?.[component.slot];
+      if (stableStringify(actual) !== stableStringify(witnessed) || !raw || !parts || runtime.matchesComponentSource?.(component.slot, raw) !== true || parts[primary(component.slot)] !== runtime.components[primary(component.slot)] || !renderable(raw[component.impl.export])) throw new Error(`NEED: ${component.slot}: the host source closure or selected namespace differs.`);
+      for (const part of component.descriptor.secondaryExports ?? []) {
+        if (!renderable(raw[part.export]) || raw[part.export] !== parts[part.name]) throw new Error(`NEED: ${component.slot}: the selected source part ${part.name} differs.`);
+      }
+      Object.assign(namespace, raw);
+      for (const part of component.descriptor.secondaryExports ?? []) namespace[part.name] = parts[part.name];
+      sourceBindings.add(component.slot);
+    }
     namespace[component.impl.export] = Adapter;
     for (const [member, pointer] of Object.entries(component.propMap)) {
       const mapped = componentMemberBinding(component, member, pointer);
@@ -127,7 +147,25 @@ export function emittedDesignerSpecimenContext(profile: CompositeResolved, runti
       return createElement(Selected, props);
     } };
   }
-  return { profile, modules, surfaces, surfaceBindingsOnly: true, selectedComponents: runtime.components };
+  const card = profile.components.components['components.card'];
+  let componentOptions: DesignerSpecimenContext['componentOptions'];
+  const componentPreviewNeeds: Record<string, string> = {};
+  if (card?.impl.kind === 'source') componentPreviewNeeds[card.slot] = 'The selected component source has no authenticated host preview binding.';
+  if (card?.impl.kind === 'source' && card.impl.entry === 'components/card/card.tsx' && card.impl.export === 'Card' && sourceBindings.has(card.slot)) {
+    const namespace = modules[card.impl.entry]!, Card = namespace.Card;
+    const parts = runtime.componentParts![card.slot]!;
+    const witnessed = runtime.componentSourceIdentities![card.slot]!;
+    const sample = renderable(Card) ? componentSpecimenSample(`${card.impl.entry}#${card.impl.export}`, Card, namespace) : undefined;
+    if (sample && renderable(Card)) {
+      componentOptions = { specimens: { 'components.card': binding => {
+      if (binding.Component !== Card || binding.exports !== namespace || stableStringify(selectedComponentSourceIdentity(profile.components, card.slot)) !== stableStringify(witnessed) || (card.descriptor.secondaryExports ?? []).some(part => namespace[part.name] !== parts[part.name])) throw new Error('NEED: components.card: the host preview no longer matches the selected source closure.');
+      const node = createElement(Card, { ...sample.props, children: sample.children });
+      return sample.host ? sample.host(node) : node;
+      } } };
+      delete componentPreviewNeeds[card.slot];
+    }
+  }
+  return { profile, modules, surfaces, surfaceBindingsOnly: true, selectedComponents: runtime.components, ...(componentOptions ? { componentOptions } : {}), ...(Object.keys(componentPreviewNeeds).length ? { componentPreviewNeeds } : {}) };
 }
 
 /** Source-kind specimen leaves verify their static component bindings against this exact emitted revision. */

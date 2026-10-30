@@ -119,6 +119,7 @@ export function renderNativeSpecimenViewport(input: SpecimenNativeViewportReques
 /** Actual selected component preview and native state capture live inside this Studio hook boundary. */
 export function NativeSpecimenComponentState({ Content, context, leaf, members, state, props, interactive, unavailable }: SpecimenComponentStateRequest): ReactNode {
   const [failed, report] = useState<PreviewFailureReason>();
+  if (context.componentPreviewNeeds?.[leaf]) return unavailable(context.componentPreviewNeeds[leaf]!);
   const preview = componentSpecimenPreview({ ...context.componentOptions, modules: context.modules });
   const selected = preview.bind(leaf, context.profile);
   if ('refusal' in selected) return unavailable(selected.refusal.detail);

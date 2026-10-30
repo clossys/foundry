@@ -181,6 +181,7 @@ export async function compileSelection(root: string, input: CompositeEngineInput
   for (const fill of input.catalog.values.fills) if (fill.$extensions["com.clossys.fill"].slot.startsWith("assets.icon-")) collectGlyphs((fill as any).assets, fill.$extensions["com.clossys.fill"].slot);
   const files = new Map<string, string>(components.emitComponents(profile.components, ["component-index"], { glyphModule: { path: "adapters/glyphs.ts", glyphs } }).map((file: { path: string; content: string }) => [file.path, file.content]));
   const implementationImports = new Map<string, { leaf: string; module: string }>();
+  const componentParts = Object.values(profile.components.components).filter(component => component.impl.kind === 'source');
   // This provider is compiled in the same graph as the selected surfaces. Its
   // context and implementation modules therefore cannot diverge from theirs.
   files.set("studio-component-provider.ts", await studioComponentProviderSource(profile, files, (leaf, module) => {
@@ -251,7 +252,7 @@ export async function compileSelection(root: string, input: CompositeEngineInput
     const module = selectedTable.impl.kind === "source" ? "./" + selectedTable.impl.entry : selectedTable.impl.module;
     table = `import * as tableParts from ${JSON.stringify(module)};\nimport { Table as SelectedTable } from "./components/table/index.ts";\nexport const table = {...tableParts, Table:SelectedTable};\n`;
   }
-  files.set("studio-entry.ts", 'export { ComponentProvider } from "./studio-component-provider.ts";\nexport * as components from "./component-index.ts";\n' + (files.has("surface-index.ts") ? 'export * as surfaces from "./surface-index.ts";\n' : "export const surfaces = {};\n") + tree + disclosure + table + (selectedDialog ? 'export * as dialog from "./studio-compat/dialog.ts";\n' : "export const dialog = {};\n") + (selectedTooltip ? 'export * as tooltip from "./studio-compat/tooltip.ts";\n' : "export const tooltip = {};\n"));
+  files.set("studio-entry.ts", componentParts.map((component, index) => `import * as SelectedParts${index} from ${JSON.stringify(`./components/${component.slot.slice(11)}/index.ts`)};`).join('\n') + `\nexport const componentParts = { ${componentParts.map((component, index) => `${JSON.stringify(component.slot)}: SelectedParts${index}`).join(', ')} };\n` + 'export { ComponentProvider, componentModules, componentSourceIdentities, matchesComponentSource } from "./studio-component-provider.ts";\nexport * as components from "./component-index.ts";\n' + (files.has("surface-index.ts") ? 'export * as surfaces from "./surface-index.ts";\n' : "export const surfaces = {};\n") + tree + disclosure + table + (selectedDialog ? 'export * as dialog from "./studio-compat/dialog.ts";\n' : "export const dialog = {};\n") + (selectedTooltip ? 'export * as tooltip from "./studio-compat/tooltip.ts";\n' : "export const tooltip = {};\n"));
   const tokenContract: SelectionShadcnTokenContract = (await agentModule("designer", "catalog-core/token-contract.js")).tokenContract;
   const shadcnTokens = selectionShadcnTokens(profile.values, tokenContract);
   const css = await selectionCss(files, undefined, shadcnTokens);
