@@ -1539,10 +1539,23 @@ this package still renders and validates; it does not compose.
 ```ts
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { createCopyResolver, type CopyRegistry } from "@clossys/writer";
 import type { SurfaceDocument } from "@clossys/publisher/core";
 import { resolveSurfaceDocument } from "@clossys/publisher/core";
 import { createWebRenderer, defineWebTemplate } from "@clossys/publisher/web";
-import { DashboardWidget } from "./DashboardWidget.js"; // a consumer's own component
+
+function DashboardWidget({ chartId }: { chartId: string }) {
+  return createElement("p", null, `Chart: ${chartId}`);
+}
+
+const registry = {
+  id: "dashboard-example", revision: "1", locale: "en",
+  source: { kind: "consumer", reference: "example" },
+  entries: [
+    { id: "acme.dashboard.heading", text: "Dashboard", context: "Page heading", status: "approved" },
+  ],
+} satisfies CopyRegistry;
+const myCopyResolver = createCopyResolver(registry);
 
 const DashboardView = defineWebTemplate({
   name: "DashboardView",
@@ -1551,7 +1564,10 @@ const DashboardView = defineWebTemplate({
   // same two sources AuthView/ErrorView's slots already accept. "widget"
   // opts INTO "node" explicitly, per slot — never a renderer-wide switch.
   slotKinds: { widget: ["node"] },
-  build: (content) => createElement("main", null, createElement("h1", null, content.heading), content.widget),
+  blocks: [
+    { kind: "page-header", title: "heading" },
+    { kind: "node-chapter", node: "widget" },
+  ],
 });
 
 // Every renderer instance is isolated — see "Instance-scoped, never a
@@ -1590,10 +1606,10 @@ const { element } = renderer.renderWebDocument(resolved.document, {
 renderToStaticMarkup(element);
 ```
 
-**What a consumer-defined template is still forced through.** A `build`
-function only ever receives already-validated, already-resolved `content` —
-it never sees or influences a raw `SurfaceDocument`, so it cannot become a
-path around validation:
+**What a consumer-defined template is still forced through.** A consumer
+declares a `blocks` sequence; the package renders those blocks after
+validating and resolving the document. Arbitrary consumer `build` functions
+are refused. The declared sequence uses the same validation path:
 
 - `validateSurfaceDocument`/`validateComposeDocument` run unchanged on
   every document, built-in template or not — a custom template does not
@@ -2314,16 +2330,41 @@ this package invents no second, parallel composition seam for document
 content specifically:
 
 ```ts
-import { createElement } from "react";
+import { createElement, Fragment } from "react";
+import { createCopyResolver, type CopyRegistry } from "@clossys/writer";
+import { renderStructuredDocument, type StructuredDocument } from "@clossys/publisher/document";
 import { defineWebTemplate, createWebRenderer } from "@clossys/publisher/web";
 import { resolveSurfaceDocument } from "@clossys/publisher/core";
 import type { SurfaceDocument } from "@clossys/publisher/core";
+
+const ref = (id: string) => ({ id });
+const registry = {
+  id: "help-example", revision: "1", locale: "en",
+  source: { kind: "consumer", reference: "example" },
+  entries: [
+    { id: "acme.page.title", text: "Getting started", context: "Page heading", status: "approved" },
+    { id: "acme.overview.heading", text: "Overview", context: "Section heading", status: "approved" },
+    { id: "acme.overview.body", text: "Open the dashboard to begin.", context: "Article paragraph", status: "approved" },
+  ],
+} satisfies CopyRegistry;
+const myCopyResolver = createCopyResolver(registry);
+const article: StructuredDocument = {
+  id: "acme.help.getting-started", title: ref("acme.page.title"),
+  sections: [{
+    kind: "section", id: "overview", level: 2, heading: ref("acme.overview.heading"),
+    blocks: [{ kind: "paragraph", content: [{ kind: "text", text: ref("acme.overview.body") }] }],
+  }],
+};
+const renderedArticle = renderStructuredDocument(article, { resolveCopyId: myCopyResolver });
 
 const HelpArticleView = defineWebTemplate({
   name: "HelpArticleView",
   flow: { slots: [{ key: "heading", required: true }, { key: "body", required: true }] },
   slotKinds: { body: ["node"] },
-  build: (content) => createElement("main", null, createElement("h1", null, content.heading), content.body),
+  blocks: [
+    { kind: "page-header", title: "heading" },
+    { kind: "node-chapter", node: "body" },
+  ],
 });
 
 const page: SurfaceDocument = {
@@ -2333,12 +2374,15 @@ const page: SurfaceDocument = {
   meta: { channel: "web", title: ref("acme.page.title"), description: ref("acme.page.title") },
   bindings: [
     { slot: "heading", copy: ref("acme.page.title") },
-    { slot: "body", node: element as object }, // renderStructuredDocument's own `element`, from above
+    { slot: "body", node: createElement(Fragment, null, renderedArticle.element) },
   ],
 };
 
-const resolved = resolveSurfaceDocument(page, myCopyResolver, { nodeSlots: ["body"] });
-const { element: pageElement } = createWebRenderer({ templates: [HelpArticleView] }).renderWebDocument(resolved.document, { nodes: resolved.nodes });
+const renderer = createWebRenderer({ templates: [HelpArticleView] });
+const resolved = resolveSurfaceDocument(page, myCopyResolver, {
+  knownTemplates: renderer.listWebTemplateNames(), nodeSlots: ["body"],
+});
+const { element: pageElement } = renderer.renderWebDocument(resolved.document, { nodes: resolved.nodes });
 ```
 
 **Non-goals** (see issue #176 for the fuller argument for each): no
@@ -6315,8 +6359,8 @@ cannot prove its paint values use tokens. Consumer asset preflight must inspect
 SVG and other authored styling with the existing Designer source-token checks;
 this fill report does not certify uninspected source colors or browser output.
 
-The existing LandingView `backdrop` and `afterSection` ReactNode seams remain
-separate compatibility paths. The hero decoration contract is Designer's
+`SectionedView` renders the resolved declaration through its document and
+asset resolver props. The hero decoration contract is Designer's
 `BackdropContract`, checked with `checkBackdropContract` for its declarations
 and `checkBackdropElement` for rendered inertness. Those checks do not read
 asset bytes either; a ReactNode alone is not evidence that either check ran.
@@ -6334,7 +6378,7 @@ import {
   checkContentAssetFill, resolveSectionedViewDocument,
   validateSectionedViewDocument, type SectionedViewDocument,
 } from "@clossys/publisher/core";
-import { LandingView } from "@clossys/publisher/web";
+import { SectionedView } from "@clossys/publisher/web";
 
 const registry = {
   id: "content-example", revision: "1", locale: "en",
@@ -6368,7 +6412,7 @@ if (findings.some(finding => finding.severity === "error") || !fillReport.ok) {
   throw new Error("Invalid content declaration or fill metadata");
 }
 export const resolved = resolveSectionedViewDocument(document, createCopyResolver(registry));
-export const element = createElement(LandingView, {
+export const element = createElement(SectionedView, {
   document: resolved,
   resolveAssetId: id => id === "example.image" ? fill : undefined,
 });
