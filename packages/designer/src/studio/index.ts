@@ -50,6 +50,21 @@ export { componentSpecimenPreview } from "./component-specimens.js";
 export type { ComponentSpecimenBinding, ComponentSpecimenComponent, ComponentSpecimenMember, ComponentSpecimenModule, ComponentSpecimenOptions, ComponentSpecimenPreview, ComponentSpecimenProbe, ComponentSpecimenRefusal, ComponentSpecimenRefusalCode, ComponentSpecimenRender } from "./component-specimens.js";
 export { COMPONENT_SPECIMEN_PROBE_STATES } from "./component-specimen-samples.js";
 export type { ComponentSpecimenProbeState } from "./component-specimen-samples.js";
+export { DesignerSpecimen } from "./DesignerSpecimen.js";
+export type { DesignerSpecimenContext, DesignerSpecimenProps, DesignerSpecimenNeed, DesignerSurfaceSpecimen } from "./DesignerSpecimen.js";
+export { emittedDesignerSpecimenContext } from "./emitted-specimens.js";
+export { contentSpecimenLeaves, SpecimenRichPassage, SpecimenCopyInContext, SpecimenPageViewports, contentSpecimenNeeds, richPassageItems, copyInContextItems, pageViewportItems, pageViewportCases, unpublishedPageViewportCases, isUnpublishedPageViewportValue, isSpecimenUnpublishedPage } from "./specimen-content.js";
+export type { RichPassageValue, CopyInContextValue, PageViewportValue, UnpublishedPageViewportValue, SpecimenPageViewportValue } from "./specimen-content.js";
+export type { SpecimenPagePreviewPort, SpecimenPublishedPage, SpecimenUnpublishedPage, SpecimenPreviewPage } from "./specimen-content-ports.js";
+export type { EmittedDesignerSpecimenRuntime } from "./emitted-specimens.js";
+export { bindNativeSpecimenContext } from "./emitted-specimens.js";
+export { SpecimenLayoutSection, specimenLayoutNeeds } from "./specimen-layouts.js";
+export type { SpecimenLayout, SpecimenSpan, SpecimenLeafId, SpecimenAxisValue, SpecimenAxis, SpecimenItem, SpecimenLabels, SpecimenLeafProps, SpecimenLeafDefinition, SpecimenSection } from "./specimen-layouts.js";
+export { SpecimenVariantMatrix, SpecimenSectionViewports, SpecimenFrameViewports, designerViewportSpecimenLeaves, componentSpecimenItems, surfaceSpecimenItems } from "./specimen-viewports.js";
+export type { ComponentVariantItem, SurfaceViewportItem, SpecimenItemSet } from "./specimen-viewports.js";
+export { designerSpecimenCellData } from "./specimen-cell-data.js";
+export type { DesignerSpecimenCellData, DesignerSpecimenCellCases } from "./specimen-cell-data.js";
+export { SpecimenSwatch, SpecimenColorRamp, SpecimenTypeLadder, SpecimenSpacingLadder, SpecimenRadiusLadder, SpecimenMotionPlayer, SpecimenAssetGrid, SpecimenIconGrid, tokenAssetSpecimenLeaves, tokenSpecimenItems, assetSpecimenItems, colorRampSpecimenItems } from "./specimen-token-assets.js";
 
 // The complete-page constructor is private; hosts compose Studio through their route.
 export type { DesignerPageProps } from "./system-canvas/DesignerPage.js";
@@ -60,3 +75,10 @@ export { StudioCopyNeedsError, readStudioCopy, readStudioMessage } from "./copy-
 export type { StudioCopyBinding, StudioCopyRef, StudioCopyResolver } from "./copy-binding.js";
 export { StudioCopyProvider } from "./copy-context.js";
 export { StudioDataValue } from "./data-value.js";
+export { SPECIMEN_KIND_MAP, resolveSpecimenLeafBinding } from "./specimen-kind-map.js";
+export type { SpecimenCellKind, SpecimenLeafBinding } from "./specimen-kind-map.js";
+export { validateSpecimenCoverage, collectSpecimenDomEvidence } from "./specimen-coverage.js";
+export type { SpecimenAgent, SpecimenCoverageCell, RegisteredSpecimenCases, SpecimenCoverageFinding, SpecimenDomCaseEvidence, SpecimenDomEvidence, SpecimenAgentCoverage, SpecimenCoverageReport } from "./specimen-coverage.js";
+export { studioSpecimenLeaves, enumerateRegisteredDesignerSpecimenCases } from "./specimen-registry.js";
+export { projectAgentSpecimenPlan, bindAgentSpecimenPlan } from "./specimen-plan.js";
+export type { NativeAgentSpecimenPlan } from "./specimen-plan.js";
