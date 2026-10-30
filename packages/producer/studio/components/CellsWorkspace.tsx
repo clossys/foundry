@@ -118,7 +118,7 @@ export function CellsWorkspace({ agent }: { agent?: Agent }) {
             {detail.value.status ? <Badge variant={detail.value.status === 'active' ? 'success' : detail.value.status === 'draft' ? 'warning' : 'neutral'}>{detail.value.status}</Badge> : null}
             {detail.value.version !== undefined ? <Badge>v{detail.value.version}</Badge> : null}
           </>} />
-          {detail.value.agent === 'designer' ? <DesignerCellSpecimen cell={detail.value} pending={<EmptyState role="status" title="NEED: Designer specimen runtime" />} /> : null}
+          {detail.value.agent === 'designer' ? <DesignerCellSpecimen cell={detail.value} /> : null}
           <SourceDisclosure key={`${detail.value.agent}:${detail.value.id}`} source={detail.value.content} />
         </>}
       </ArticleBody>}

@@ -25,6 +25,8 @@ export interface DesignerSpecimenContext {
   readonly modules: ComponentSpecimenOptions["modules"];
   readonly componentOptions?: Pick<ComponentSpecimenOptions, "specimens" | "provider">;
   readonly surfaces?: Readonly<Record<string, DesignerSurfaceSpecimen>>;
+  /** Emitted hosts must supply an executable selected port; package samples cannot become render fallbacks. */
+  readonly surfaceBindingsOnly?: boolean;
 }
 export interface DesignerSpecimenNeed { readonly leaf: string; readonly reason: string }
 export interface DesignerSpecimenProps {
@@ -85,6 +87,7 @@ export function DesignerSpecimen({ leaf, context, need }: DesignerSpecimenProps)
     if (!selected) return need({ leaf, reason: "not-chosen: no resolved consumer surface" });
     const bound = context.surfaces?.[leaf];
     if (bound && bound.descriptorHash !== selected.descriptorHash) return need({ leaf, reason: "The selected surface has no matching runtime specimen binding." });
+    if (!bound && context.surfaceBindingsOnly) return need({ leaf, reason: "The emitted selection has no executable fixture binding for this surface." });
     // This registry accepts only the precise selected package export and canonical mapping.
     // Source/custom surfaces need the host's exact descriptor-bound executable port.
     const registered = bound ? undefined : packageSurfacePreview(selected.document);

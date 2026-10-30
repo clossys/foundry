@@ -3,8 +3,9 @@ import { installedHeadlessLibrary, loadCatalogBundles } from "@clossys/designer/
 import { agentModule } from "./cells.js";
 import type { StudioDesignerLibrary } from "./theme.js";
 import type { StudioSelectionLeaf } from "./selection.js";
+import { DESIGNER_SPECIMEN_REQUIRED_LEAVES } from "./designer-specimen-requirements.js";
 
-const REQUIRED = ["frames.app-shell", "sections.band", "sections.section-header", "sections.content", "sections.article", "sections.empty-state", "components.badge", "components.disclosure", "components.icon", "components.link", "components.navigation-tree"];
+const REQUIRED = ["frames.app-shell", "sections.band", "sections.section-header", "sections.content", "sections.article", "sections.empty-state", "components.badge", "components.disclosure", "components.icon", "components.link", "components.navigation-tree", ...DESIGNER_SPECIMEN_REQUIRED_LEAVES];
 const meta = (fill: any) => fill.$extensions["com.clossys.fill"];
 
 /** Preserve authored selections; fill missing seats through Designer's default planners. */
