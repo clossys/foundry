@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { contentCellIndex } from '../lib/cell-content';
 import type { Agent } from '../lib/agents';
 import { loadCells, loadCell, type AgentCells } from '../lib/cells-client';
 import { loadPublication, safePreviewUrl, selectedPublicationId, selectedPublishedPage } from '../lib/publisher-preview';
@@ -29,6 +30,7 @@ export function StandaloneCellContent({ agent, id, version }: { agent: Agent; id
       const index = indexes.find(index => index.agent === agent);
       if (!index || index.state !== 'ready' || !index.cells.some(cell => cell.id === id)) throw new Error('The requested cell is unavailable.');
       const detail = await loadCell(agent, id, controller.signal, version);
+      if (version !== undefined && (agent === 'publisher' || agent === 'designer')) throw new Error(`NEED: ${agent} has no native historical cell-version provenance for this content target. Open the unversioned target for the current selected artifact.`);
       if (agent === 'publisher') {
         const publication = await loadPublication(controller.signal, selectedPublicationId(index, id));
         const page = publication.state === 'ready' ? selectedPublishedPage(index, id, publication.pages) : undefined;
@@ -36,7 +38,7 @@ export function StandaloneCellContent({ agent, id, version }: { agent: Agent; id
         if (!controller.signal.aborted) window.location.replace(page.previewUrl);
         return;
       }
-      if (!controller.signal.aborted) setResource({ state: 'ready', index: { ...index, cells: [{ ...detail }], tree: undefined } });
+      if (!controller.signal.aborted) setResource({ state: 'ready', index: contentCellIndex(index, detail, version) });
     })().catch(error => { if (!controller.signal.aborted) setResource({ state: 'error', message: error instanceof Error ? error.message : String(error) }); });
     return () => controller.abort();
   }, [agent, id, version]);

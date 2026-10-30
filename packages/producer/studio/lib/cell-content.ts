@@ -1,3 +1,4 @@
+import type { AgentCells, CellDetail } from './cells-client';
 import { isAgent, type Agent } from './agents';
 
 export interface CellContentOptions { version?: number }
@@ -15,4 +16,10 @@ export function contentVersion(value: string | string[] | undefined): number | u
   if (value === undefined) return undefined;
   if (typeof value !== 'string' || !/^[1-9]\d*$/.test(value) || !Number.isSafeInteger(Number(value))) throw new Error('Invalid cell content version.');
   return Number(value);
+}
+
+/** An unversioned content target expands the selected cell's whole native version inventory. */
+export function contentCellIndex(index: AgentCells, detail: CellDetail, exactVersion?: number): AgentCells {
+  if (detail.agent !== index.agent || !index.cells.some(cell => cell.id === detail.id) || exactVersion !== undefined && (!Number.isSafeInteger(exactVersion) || exactVersion < 1 || detail.version !== exactVersion)) throw new Error('Invalid standalone cell snapshot.');
+  return { ...index, cells: [{ ...detail }], contentScope: exactVersion === undefined ? { kind: 'cell', cellId: detail.id } : { kind: 'version', cellId: detail.id, version: exactVersion } };
 }

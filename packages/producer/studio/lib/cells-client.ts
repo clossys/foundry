@@ -1,7 +1,8 @@
 import { isAgent, type Agent } from './agents';
 
 export interface CellSummary { id: string; title: string; parent?: string; version?: number; status?: 'draft' | 'active' | 'retired'; path?: string; fields?: Record<string, unknown> }
-export interface AgentCells { agent: Agent; cells: CellSummary[]; tree?: Record<string, unknown>; state: 'ready' | 'missing' | 'error'; error?: string }
+export type CellContentScope = { kind: 'cell'; cellId: string } | { kind: 'version'; cellId: string; version: number };
+export interface AgentCells { contentScope?: CellContentScope; agent: Agent; cells: CellSummary[]; tree?: Record<string, unknown>; state: 'ready' | 'missing' | 'error'; error?: string }
 export interface CellDetail extends CellSummary { agent: Agent; content: string }
 
 function object(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }

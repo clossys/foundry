@@ -52,7 +52,7 @@ function LoadedRoles({ index, selectedId, children }: { index: AgentCells; selec
     const page = selectedPublishedPage(index, selectedId, publication.value.pages);
     if (page) roleFacts.publication = { ...page, publication: publication.value.publication };
   }
-  const payloads: Record<string, Record<string, unknown>> = selectedId && Object.keys(roleFacts).length ? { 'sections.record-detail': { roleFacts, contentTarget: cellContentTarget(index.agent, selectedId, { version: summary?.version }) } } : {};
+  const payloads: Record<string, Record<string, unknown>> = selectedId && Object.keys(roleFacts).length ? { 'sections.record-detail': { roleFacts, contentTarget: cellContentTarget(index.agent, selectedId) } } : {};
   return <RoleToolsContext.Provider value={{ resource: { index, cells, ...(index.agent === 'publisher' ? { publication, publications } : {}) }, payloads }}>{children}</RoleToolsContext.Provider>;
 }
 

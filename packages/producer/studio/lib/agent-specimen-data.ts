@@ -1,4 +1,4 @@
-import type { AgentCells, CellDetail } from './cells-client';
+import type { AgentCells, CellDetail, CellContentScope } from './cells-client';
 import { directorSections } from './director-specimen';
 import { safePreviewUrl, selectedPublishedPage, type PublicationResponse } from './publisher-preview';
 import { writerProjection } from './writer-specimen';
@@ -8,6 +8,7 @@ export interface AgentSpecimenAxis { id: string; label: string; values: { id: st
 
 export interface AgentSpecimenPlan {
   cellId: string;
+  scope?: CellContentScope;
   items: Record<string, unknown>[];
   expectedVariantIds: string[];
   issues: string[];
