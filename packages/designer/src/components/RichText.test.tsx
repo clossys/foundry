@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Editor } from "@tiptap/react";
 import { RichText } from "./RichText.js";
@@ -13,10 +15,10 @@ afterEach(cleanup);
 describe("RichText document specimens", () => {
   it("renders Markdown headings, marks, lists, code and navigation during SSR", () => {
     const html = renderToStaticMarkup(<RichText readOnly value={'# Strategy\n\nA **clear** [promise](https://example.com).\n\n- First\n- Second\n\n`inline`\n\n```ts\nconst ready = true\n```'} />);
-    expect(html).toContain("<h1>Strategy</h1>");
+    expect(html).toMatch(/<h1\b[^>]*>Strategy<\/h1>/);
     expect(html).toContain("<strong>clear</strong>");
     expect(html).toContain('href="https://example.com"');
-    expect(html).toContain("<ul>");
+    expect(html).toMatch(/<ul\b/);
     expect(html).toContain('data-slot="rich-text-code"');
     expect(html).toContain("const ready = true");
     expect(html).not.toMatch(/contenteditable|role="textbox"|<button|<textarea|<input/i);
@@ -59,16 +61,17 @@ describe("RichText document specimens", () => {
   it("renders its built Markdown/JSON component in Node without a browser DOM", () => {
     const script = `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import {RichText} from './dist/components/RichText.js'; console.log(renderToStaticMarkup(React.createElement(RichText,{readOnly:true,value:'# Server document'}))); console.log(renderToStaticMarkup(React.createElement(RichText,{readOnly:true,value:{type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'JSON passage'}]}]}})));`;
     const html = execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: process.cwd(), encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
-    expect(html).toContain("<h1>Server document</h1>");
+    expect(html).toMatch(/<h1\b[^>]*>Server document<\/h1>/);
     expect(html).toContain("JSON passage");
     expect(html).not.toMatch(/contenteditable|role="textbox"/);
   });
 
   it("uses the real editable engine and returns JSON while synchronizing external changes silently", async () => {
     const onChange = vi.fn();
-    const { rerender } = render(<RichText value="Before" readOnly={false} onChange={onChange} aria-label="Draft passage" />);
+    const { rerender } = render(<RichText value="# Before" readOnly={false} onChange={onChange} aria-label="Draft passage" />);
     const textbox = await screen.findByRole("textbox", { name: "Draft passage" });
     expect(textbox).toHaveAttribute("contenteditable", "true");
+    expect(screen.getByRole("heading", { level: 1, name: "Before" })).toHaveClass("text-h1");
     rerender(<RichText value="After" readOnly={false} onChange={onChange} aria-label="Draft passage" />);
     await waitFor(() => expect(textbox).toHaveTextContent("After"));
     expect(onChange).not.toHaveBeenCalled();
@@ -87,6 +90,17 @@ describe("RichText document specimens", () => {
       expect(editor.isEditable).toBe(false);
       expect(editor.view.dom).toHaveAttribute("contenteditable", "false");
     } finally { editor.destroy(); }
+  });
+
+  it("ships CSS for the prose classes actually rendered, with token-bound heading sizes", () => {
+    const { container } = render(<RichText value={'# Heading\n\nParagraph\n\n> Quote\n\n- Item\n\n1. Ordered\n\n```ts\nconst ready = true\n```\n\n---'} />);
+    const css = readFileSync(resolve(process.cwd(), "styles/compiled.css"), "utf8");
+    for (const element of container.querySelectorAll("*")) for (const name of element.classList) {
+      const selector = "." + name.replace(/[^a-zA-Z0-9_-]/g, character => "\\" + character);
+      expect(css, `rendered prose class ${name}`).toContain(selector);
+    }
+    expect(screen.getByRole("heading", { level: 1 })).toHaveClass("text-h1");
+    expect(css).toContain("var(--text-h1");
   });
 
   it("registers one selectable package candidate and records the per-component Aria gap", () => {

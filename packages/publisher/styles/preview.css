@@ -1396,8 +1396,14 @@
   .my-lg {
     margin-block: var(--spacing-lg, 16px);
   }
+  .my-md {
+    margin-block: var(--spacing-md, 12px);
+  }
   .my-sm {
     margin-block: var(--spacing-sm, 8px);
+  }
+  .my-xl {
+    margin-block: var(--spacing-xl, 24px);
   }
   .my-xs {
     margin-block: var(--spacing-xs, 4px);
@@ -3930,6 +3936,10 @@
   .font-\(weight\:--studio-specimen-value\) {
     --tw-font-weight: var(--studio-specimen-value);
     font-weight: var(--studio-specimen-value);
+  }
+  .font-bold {
+    --tw-font-weight: var(--font-weight-bold, 700);
+    font-weight: var(--font-weight-bold, 700);
   }
   .font-medium {
     --tw-font-weight: var(--font-weight-medium, 500);
@@ -7409,10 +7419,6 @@
       outline-style: solid;
     }
   }
-  .\[\&_\.ProseMirror\]\:outline-none .ProseMirror {
-    --tw-outline-style: none;
-    outline-style: none;
-  }
   .\[\&_a\]\:text-ink-link a {
     color: var(--color-ink-link, oklch(0.36 0 0));
   }
@@ -7427,9 +7433,6 @@
       color: var(--color-ink-primary);
     }
   }
-  .\[\&_blockquote\]\:my-lg blockquote {
-    margin-block: var(--spacing-lg, 16px);
-  }
   .\[\&_blockquote\]\:font-display blockquote {
     font-family: var(--font-display, system-ui, ui-sans-serif, -apple-system, "Segoe UI", sans-serif);
     font-style: var(--font-display-style, normal);
@@ -7441,10 +7444,6 @@
   .\[\&_blockquote\]\:border-s blockquote {
     border-inline-start-style: var(--tw-border-style, solid);
     border-inline-start-width: 1px;
-  }
-  .\[\&_blockquote\]\:border-s-\(length\:--ui-border-hairline\) blockquote {
-    border-inline-start-style: var(--tw-border-style, solid);
-    border-inline-start-width: var(--ui-border-hairline);
   }
   .\[\&_blockquote\]\:border-line-base blockquote {
     border-color: var(--color-line-base, oklch(0.8761 0 0));
@@ -7460,9 +7459,6 @@
   }
   .\[\&_blockquote\]\:text-ink-secondary blockquote {
     color: var(--color-ink-secondary, oklch(0.36 0 0));
-  }
-  .\[\&_blockquote\]\:italic blockquote {
-    font-style: italic;
   }
   .\[\&_code\]\:rounded-subtle code {
     border-radius: var(--radius-subtle, 2px);
@@ -7488,9 +7484,6 @@
   .\[\&_h1\]\:mt-xl h1 {
     margin-top: var(--spacing-xl, 24px);
   }
-  .\[\&_h1\]\:mb-md h1 {
-    margin-bottom: var(--spacing-md, 12px);
-  }
   .\[\&_h1\]\:font-display h1 {
     font-style: var(--font-display-style, normal);
     font-weight: var(--font-display-weight, 400);
@@ -7502,25 +7495,11 @@
   .\[\&_h1\]\:text-h1 h1 {
     font-size: var(--text-h1, 28px);
   }
-  .\[\&_h1\]\:leading-heading h1 {
-    --tw-leading: var(--leading-heading, 1.2);
-    line-height: var(--leading-heading, 1.2);
-  }
-  .\[\&_h1\]\:font-bold h1 {
-    --tw-font-weight: var(--font-weight-bold, 700);
-    font-weight: var(--font-weight-bold, 700);
-  }
   .\[\&_h1\]\:text-ink-primary h1 {
     color: var(--color-ink-primary, oklch(0.2178 0 0));
   }
   .\[\&_h2\]\:mt-lg h2 {
     margin-top: var(--spacing-lg, 16px);
-  }
-  .\[\&_h2\]\:mt-xl h2 {
-    margin-top: var(--spacing-xl, 24px);
-  }
-  .\[\&_h2\]\:mb-md h2 {
-    margin-bottom: var(--spacing-md, 12px);
   }
   .\[\&_h2\]\:font-display h2 {
     font-style: var(--font-display-style, normal);
@@ -7533,25 +7512,11 @@
   .\[\&_h2\]\:text-h2 h2 {
     font-size: var(--text-h2, 18px);
   }
-  .\[\&_h2\]\:leading-heading h2 {
-    --tw-leading: var(--leading-heading, 1.2);
-    line-height: var(--leading-heading, 1.2);
-  }
-  .\[\&_h2\]\:font-semibold h2 {
-    --tw-font-weight: var(--font-weight-semibold, 600);
-    font-weight: var(--font-weight-semibold, 600);
-  }
   .\[\&_h2\]\:text-ink-primary h2 {
     color: var(--color-ink-primary, oklch(0.2178 0 0));
   }
-  .\[\&_h3\]\:mt-lg h3 {
-    margin-top: var(--spacing-lg, 16px);
-  }
   .\[\&_h3\]\:mt-md h3 {
     margin-top: var(--spacing-md, 12px);
-  }
-  .\[\&_h3\]\:mb-sm h3 {
-    margin-bottom: var(--spacing-sm, 8px);
   }
   .\[\&_h3\]\:font-display h3 {
     font-style: var(--font-display-style, normal);
@@ -7564,15 +7529,8 @@
   .\[\&_h3\]\:text-h3 h3 {
     font-size: var(--text-h3, 14px);
   }
-  .\[\&_h3\]\:font-semibold h3 {
-    --tw-font-weight: var(--font-weight-semibold, 600);
-    font-weight: var(--font-weight-semibold, 600);
-  }
   .\[\&_h3\]\:text-ink-primary h3 {
     color: var(--color-ink-primary, oklch(0.2178 0 0));
-  }
-  .\[\&_h4\]\:mt-lg h4 {
-    margin-top: var(--spacing-lg, 16px);
   }
   .\[\&_h4\]\:mt-md h4 {
     margin-top: var(--spacing-md, 12px);
@@ -7587,10 +7545,6 @@
   }
   .\[\&_h4\]\:text-h3 h4 {
     font-size: var(--text-h3, 14px);
-  }
-  .\[\&_h4\]\:font-semibold h4 {
-    --tw-font-weight: var(--font-weight-semibold, 600);
-    font-weight: var(--font-weight-semibold, 600);
   }
   .\[\&_h4\]\:text-ink-primary h4 {
     color: var(--color-ink-primary, oklch(0.2178 0 0));
@@ -7609,10 +7563,6 @@
   .\[\&_h5\]\:text-h3 h5 {
     font-size: var(--text-h3, 14px);
   }
-  .\[\&_h5\]\:font-semibold h5 {
-    --tw-font-weight: var(--font-weight-semibold, 600);
-    font-weight: var(--font-weight-semibold, 600);
-  }
   .\[\&_h5\]\:text-ink-primary h5 {
     color: var(--color-ink-primary, oklch(0.2178 0 0));
   }
@@ -7630,15 +7580,8 @@
   .\[\&_h6\]\:text-h3 h6 {
     font-size: var(--text-h3, 14px);
   }
-  .\[\&_h6\]\:font-semibold h6 {
-    --tw-font-weight: var(--font-weight-semibold, 600);
-    font-weight: var(--font-weight-semibold, 600);
-  }
   .\[\&_h6\]\:text-ink-primary h6 {
     color: var(--color-ink-primary, oklch(0.2178 0 0));
-  }
-  .\[\&_hr\]\:my-xl hr {
-    margin-block: var(--spacing-xl, 24px);
   }
   .\[\&_hr\]\:border-line-base hr {
     border-color: var(--color-line-base, oklch(0.8761 0 0));
@@ -7659,17 +7602,11 @@
   .\[\&_img\]\:object-cover img {
     object-fit: cover;
   }
-  .\[\&_li\]\:my-xs li {
-    margin-block: var(--spacing-xs, 4px);
-  }
   .\[\&_li\]\:text-body li {
     font-size: var(--text-body, 15px);
   }
   .\[\&_li\]\:text-ink-primary li {
     color: var(--color-ink-primary, oklch(0.2178 0 0));
-  }
-  .\[\&_ol\]\:my-md ol {
-    margin-block: var(--spacing-md, 12px);
   }
   .\[\&_ol\]\:list-decimal ol {
     list-style-type: decimal;
@@ -7677,17 +7614,11 @@
   .\[\&_ol\]\:ps-lg ol {
     padding-inline-start: var(--spacing-lg, 16px);
   }
-  .\[\&_ol\]\:ps-xl ol {
-    padding-inline-start: var(--spacing-xl, 24px);
-  }
   .\[\&_ol\]\:text-body ol {
     font-size: var(--text-body, 15px);
   }
   .\[\&_ol\]\:text-ink-primary ol {
     color: var(--color-ink-primary, oklch(0.2178 0 0));
-  }
-  .\[\&_p\]\:my-md p {
-    margin-block: var(--spacing-md, 12px);
   }
   .\[\&_p\]\:text-body p {
     font-size: var(--text-body, 15px);
@@ -7697,9 +7628,6 @@
   }
   .\[\&_p\:not\(\:last-child\)\]\:mb-\(--spacing-lg\) p:not(:last-child) {
     margin-bottom: var(--spacing-lg);
-  }
-  .\[\&_pre\]\:my-lg pre {
-    margin-block: var(--spacing-lg, 16px);
   }
   .\[\&_pre\]\:overflow-x-auto pre {
     overflow-x: auto;
@@ -7749,17 +7677,11 @@
   .\[\&_svg\]\:shrink-0 svg {
     flex-shrink: 0;
   }
-  .\[\&_ul\]\:my-md ul {
-    margin-block: var(--spacing-md, 12px);
-  }
   .\[\&_ul\]\:list-disc ul {
     list-style-type: disc;
   }
   .\[\&_ul\]\:ps-lg ul {
     padding-inline-start: var(--spacing-lg, 16px);
-  }
-  .\[\&_ul\]\:ps-xl ul {
-    padding-inline-start: var(--spacing-xl, 24px);
   }
   .\[\&_ul\]\:text-body ul {
     font-size: var(--text-body, 15px);
