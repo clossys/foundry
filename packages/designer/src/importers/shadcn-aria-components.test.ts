@@ -19,6 +19,22 @@ export function pinnedInput(): ShadcnComponentInput {
 }
 
 describe("pinned shadcn aria component import", () => {
+  it("retains all native Accordion class values and binds only its real chevron assets", () => {
+    const input = pinnedInput(), imported = importShadcnAriaComponents(input);
+    const original = input.items.find(item => item.name === "accordion")!.files[0]!;
+    const files = materializeShadcnComponent(imported, "accordion");
+    const native = files.find(file => file.path === "components/disclosure/accordion.tsx")!;
+    const classes = (source: string) => [...source.matchAll(/className="([^"]*)"|"(cn-[^"\n]*)"/g)].map(match => match[1] ?? match[2]);
+    expect(classes(native.content)).toEqual(classes(original.content));
+    const fill = imported.fills.find(fill => fill.components.disclosure)!.components.disclosure!;
+    expect(componentSecondaryExports(fill, files)).toEqual(["AccordionContent", "AccordionItem", "AccordionTrigger"].map(name => ({ name, export: name })));
+    expect(fill.reads.assets).toEqual(["assets.icon-chevron-down", "assets.icon-chevron-up"]);
+    expect(fill.reads.components).toEqual(["components.icon"]);
+    expect(native.content).not.toContain("IconPlaceholder");
+    native.content += " ";
+    expect(() => materializeShadcnComponent(imported, "accordion")).toThrow(/output hash differs/);
+  });
+
   it("materializes native Switch without changing its source or adding secondary exports", () => {
     const input = pinnedInput(), imported = importShadcnAriaComponents(input);
     const original = input.items.find(item => item.name === "switch")!.files[0]!;

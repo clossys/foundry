@@ -383,6 +383,22 @@ export function bindSiblingLeafModules(content: string, leafByItem: Readonly<Rec
 }
 
 /** Native sources retain their API and classes; standard shadcn variables bind theme values. */
+function nativeAccordionSource(original: SourceFile): RewriteResult {
+  const glyphs = { ChevronDownIcon: adapter.glyphs.ChevronDownIcon, ChevronUpIcon: adapter.glyphs.ChevronUpIcon };
+  let content = original.content.replace('from "cn"', 'from "../_parts/utils/index.js"')
+    .replace('import { IconPlaceholder } from "@/app/(create)/components/icon-placeholder"', 'import { Icon as LibraryIcon } from "../icon/index.js"');
+  content = content.replace(/<IconPlaceholder\b([\s\S]*?)\/>/g, (_all, attributes: string) => {
+    const name = /\blucide="([A-Za-z0-9]+)"/.exec(attributes)?.[1] as keyof typeof glyphs;
+    const asset = glyphs[name];
+    if (!asset) throw new Error("native accordion: exact glyph binding missing");
+    const kept = attributes.replace(/\b(?:lucide|tabler|hugeicons|phosphor|remixicon)="[^"]*"\s*/g, "").trim();
+    return '<LibraryIcon asset="' + asset + '" decorative ' + kept + ' />';
+  });
+  const file = { path: "components/disclosure/accordion.tsx", content };
+  return { transform: "shadcn-aria-rewrite@1", files: [file], outputSha256: [{ path: file.path, sha256: sha256(content) }],
+    reads: { tokens: sorted(["foreground", "muted-foreground", "ring", "radius"].map(property => adapter.bindings[property as keyof typeof adapter.bindings].member)), assets: ["assets.icon-chevron-down", "assets.icon-chevron-up"], components: ["components.icon"] }, parts: ["utils"], issues: [] };
+}
+
 function nativeShadcnSource(item: "badge" | "separator" | "skeleton" | "card" | "radio-group" | "switch", original: SourceFile): RewriteResult {
   const file = { path: `components/${item}/${item}.tsx`, content: original.content.replace('from "cn"', 'from "../_parts/utils/index.js"') };
   const properties = item === "switch" ? ["primary", "primary-foreground", "input", "ring", "destructive", "background", "foreground"] as const : item === "radio-group" ? ["input", "primary", "primary-foreground", "destructive", "ring"] as const : item === "card" ? ["foreground", "card", "card-foreground", "muted", "muted-foreground", "radius"] as const : item === "separator" ? ["border"] as const : item === "skeleton" ? ["muted", "radius"] as const : ["primary", "primary-foreground", "secondary", "secondary-foreground", "border", "foreground", "muted", "muted-foreground", "destructive", "ring", "radius"] as const;
@@ -445,7 +461,7 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
     // pinned provenance, but its dialog/input-group imports never ship.
     if (command) verifyShadcnSource(command);
     const selected = name === "dialog" ? dialogExecutableSource(original) : name === "dropdown-menu" ? menuExecutableSource(original, command!) : name === "toggle" || name === "toggle-group" ? toggleExecutableSource(name, original) : original;
-    const aria = name === "badge" || name === "separator" || name === "skeleton" || name === "card" || name === "radio-group" || name === "switch" ? nativeShadcnSource(name, original)
+    const aria = name === "accordion" ? nativeAccordionSource(original) : name === "badge" || name === "separator" || name === "skeleton" || name === "card" || name === "radio-group" || name === "switch" ? nativeShadcnSource(name, original)
       : rewriteShadcnAria({ item: name, leaf, files: [selected, ...privateFiles], styles: input.styles.content, leafByItem: SHADCN_COMPONENT_ITEMS, styleDefaults: true });
     // The selected tooltip profile binds its delay and close timing to these behavior-timing leaves.
     const result: RewriteResult = name === "tooltip" ? { ...aria, reads: { ...aria.reads, tokens: sorted([...aria.reads.tokens, ...tooltipExecutableReads]) } } : aria;

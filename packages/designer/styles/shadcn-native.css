@@ -186,4 +186,21 @@
     @apply dark:not-data-selected:bg-foreground dark:data-selected:bg-primary-foreground group-data-[size=default]/switch:data-selected:translate-x-[calc(100%-2px)] group-data-[size=sm]/switch:data-selected:translate-x-[calc(100%-2px)] group-data-[size=default]/switch:not-data-selected:translate-x-0 group-data-[size=sm]/switch:not-data-selected:translate-x-0;
   }
 
+  /* MARK: Accordion */
+  .cn-accordion-item {
+    @apply not-last:border-b;
+  }
+
+  .cn-accordion-trigger {
+    @apply focus-visible:ring-ring/50 focus-visible:border-ring focus-visible:after:border-ring **:data-[slot=accordion-trigger-icon]:text-muted-foreground rounded-lg py-2.5 text-left text-sm font-medium hover:underline focus-visible:ring-3 **:data-[slot=accordion-trigger-icon]:ml-auto **:data-[slot=accordion-trigger-icon]:size-4;
+  }
+
+  .cn-accordion-content {
+    @apply data-open:animate-accordion-down data-closed:animate-accordion-up text-sm;
+  }
+
+  .cn-accordion-content-inner {
+    @apply pt-0 pb-2.5;
+  }
+
 }

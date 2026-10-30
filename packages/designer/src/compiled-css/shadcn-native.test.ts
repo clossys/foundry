@@ -29,7 +29,9 @@ describe("native shadcn CSS", () => {
     const radio = upstream.slice(upstream.indexOf("  /* MARK: Radio Group */"), upstream.indexOf("  /* MARK: Resizable */"));
     expect(css.slice(css.indexOf("  /* MARK: Radio Group */"), css.indexOf("  /* MARK: Switch */"))).toBe(radio);
     const nativeSwitch = upstream.slice(upstream.indexOf("  /* MARK: Switch */"), upstream.indexOf("  /* MARK: Table */"));
-    expect(css.slice(css.indexOf("  /* MARK: Switch */"), css.lastIndexOf("}\n"))).toBe(nativeSwitch);
+    expect(css.slice(css.indexOf("  /* MARK: Switch */"), css.indexOf("  /* MARK: Accordion */"))).toBe(nativeSwitch);
+    const accordion = upstream.slice(upstream.indexOf("  /* MARK: Accordion */"), upstream.indexOf("  /* MARK: Alert */"));
+    expect(css.slice(css.indexOf("  /* MARK: Accordion */"), css.lastIndexOf("}\n"))).toBe(accordion);
   });
 
   it("compiles fixed source values and reads the existing primary token contract", async () => {

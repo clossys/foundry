@@ -70,7 +70,7 @@
         },
         {
           "path": "components/disclosure/accordion.tsx",
-          "sha256": "3bcee4d26ed735c6a3c79ff95e550d96b9a3b9efe3fb37764c543efedb37f8a6"
+          "sha256": "4da3fc0fb616b500b27028abefa1bc326b58650aefa22129ba724acf4b48e71f"
         },
         {
           "path": "notices/THIRD-PARTY.md",
@@ -118,23 +118,10 @@
           "components.icon"
         ],
         "tokens": [
-          "tokens.border-width.hairline",
           "tokens.control-radius.default",
-          "tokens.duration.default",
-          "tokens.duration.fast",
-          "tokens.easing.default",
           "tokens.focus-color.default",
-          "tokens.focus-outline.offset",
-          "tokens.focus-outline.width",
-          "tokens.font-size.sm",
-          "tokens.font-weight.medium",
-          "tokens.spacing.lg",
-          "tokens.spacing.md",
-          "tokens.state-opacity.disabled",
           "tokens.text-color.muted",
-          "tokens.text-color.primary",
-          "tokens.transition-easing.enter",
-          "tokens.transition-easing.exit"
+          "tokens.text-color.primary"
         ]
       },
       "root": "rac:Disclosure",

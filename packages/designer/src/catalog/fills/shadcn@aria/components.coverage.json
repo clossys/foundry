@@ -1323,48 +1323,6 @@
     {
       "issues": [],
       "item": "accordion",
-      "notes": [
-        {
-          "file": "apps/v4/registry/bases/aria/ui/accordion.tsx",
-          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
-          "value": "border-transparent"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/accordion.tsx",
-          "message": "Removed marker-only class absent from the pinned stylesheet",
-          "value": "cn-accordion-trigger-icon"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/accordion.tsx",
-          "message": "Removed marker-only class absent from the pinned stylesheet",
-          "value": "cn-accordion"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/accordion.tsx",
-          "message": "Restyled selected disclosure height animation to the existing reduced-motion-aware fade; the peer retains open/close and intrinsic height ownership",
-          "value": "data-closed:animate-accordion-up"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/accordion.tsx",
-          "message": "Restyled selected disclosure height animation to the existing reduced-motion-aware fade; the peer retains open/close and intrinsic height ownership",
-          "value": "data-open:animate-accordion-down"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/accordion.tsx",
-          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
-          "value": "outline-none"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/accordion.tsx",
-          "message": "Restyled source: 10px to spacing.md 12px",
-          "value": "pb-2.5"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/accordion.tsx",
-          "message": "Restyled source: 10px to spacing.md 12px",
-          "value": "py-2.5"
-        }
-      ],
       "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
       "runtime": "U-V",
       "slot": "components.disclosure",

@@ -12,6 +12,7 @@ export async function generateNativeShadcnCss(stylesDir: string): Promise<string
     content: readFileSync(resolve(stylesDir, `../src/components/preview-runtime/components/${item}/${item}.tsx`), "utf8"),
     extension: "tsx",
   }));
+  sources.push({ content: readFileSync(resolve(stylesDir, "../src/components/preview-runtime/components/disclosure/accordion.tsx"), "utf8"), extension: "tsx" });
   const scanner = new Scanner({});
   const candidates = scanner.scanFiles(sources);
   const entry = '@import "tailwindcss/theme";\n'
