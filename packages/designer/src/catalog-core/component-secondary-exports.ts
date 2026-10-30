@@ -60,7 +60,7 @@ const selectedFunctionSources: Readonly<Record<string, { sha256: string; functio
   },
 };
 /**
- * Only directives, named imports, concrete named functions and local identity
+ * Only directives, named/namespace imports, concrete named functions and local identity
  * export lists are admitted. Templates, regexes, ambient/overloaded functions,
  * source aliases and other top-level declarations are deliberately unsupported.
  * Function bodies are balanced lexically, with JSX text kept out of JS tokens.
@@ -153,8 +153,10 @@ function sourceValues(source: string) {
     if (token.quoted || token.text === ";") continue;
     if (token.text === "import") {
       let binding = next(); if (binding?.text === "type") binding = next();
-      if (binding?.text !== "{") return refuse();
-      group("{", false); take("from"); if (!next()?.quoted) return refuse();
+      if (binding?.text === "{") group("{", false);
+      else if (binding?.text === "*") { take("as"); localName(); }
+      else return refuse();
+      take("from"); if (!next()?.quoted) return refuse();
     } else if (token.text === "function") concreteFunction(false);
     else if (token.text === "export") {
       let item = next();
