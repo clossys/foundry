@@ -5,6 +5,7 @@ import { CliUsageError, parseArgs, USAGE } from "./args.js";
 import type { Verb } from "./args.js";
 import { discoverRoot } from "./root.js";
 import { publishTarget } from "../publish.js";
+import { runProduce } from "./produce.js";
 
 const VERB_AGENTS: Record<Verb, readonly AgentKind[]> = {
   direct: ["director"],
@@ -32,6 +33,7 @@ export async function runCli(argv: readonly string[], cwd = process.cwd()): Prom
       if (!args.target) throw new CliUsageError("publish requires --target <id>");
       return { ...await publishTarget({ root, target: args.target, check: args.check }), verb, root, check: args.check };
     }
+    if (verb === "produce") return await runProduce(args, root);
     for (const kind of VERB_AGENTS[verb]) resolveAgent(kind);
     return { exitCode: 2, message: `${verb}: not implemented in this build`, verb, root, check: args.check };
   } catch (error) {

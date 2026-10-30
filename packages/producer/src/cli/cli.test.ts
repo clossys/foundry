@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 const entry = resolve(dirname(fileURLToPath(import.meta.url)), "../../dist/cli/index.js");
 const verbs = ["direct", "design", "write", "publish", "produce"] as const;
-const stubVerbs = verbs.filter(verb => verb !== "publish");
+const stubVerbs = verbs.filter(verb => verb !== "publish" && verb !== "produce");
 let fixture: string;
 beforeEach(() => {
   fixture = mkdtempSync(join(tmpdir(), "producer-cli-"));
@@ -80,7 +80,6 @@ describe("clossys bin", () => {
   });
 
   it.each([
-    ["produce", "--once", "--port", "0", "--no-open"],
     ["write", "--check", "--root", "."],
   ])("parses supported flags without implementing behavior: %j", (...args) => {
     const result = run(args);
@@ -135,7 +134,7 @@ describe("clossys bin", () => {
     for (const verb of stubVerbs) {
       const result = run([verb, "--check"]);
       expect(result.status).toBe(2);
-      expect(result.stderr).toContain("not implemented in this build");
+      expect(result.stderr).toContain(verb === "produce" ? "missing" : "not implemented in this build");
     }
     expect(snapshot(fixture)).toEqual(before);
   });
