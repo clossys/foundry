@@ -4,6 +4,7 @@ export { ShellCopyProvider } from "../components/Banner.copy-context.js";
 export type { ShellCopyRef, ShellCopyResolver } from "../components/Banner.copy.js";
 export { AppFrame } from "./AppFrame.js";
 export { ShadcnAppShell } from "./shadcn-aria/AppShell.js";
+export type { ShadcnAppShellProps } from "./shadcn-aria/AppShell.js";
 export { renderShadcnAppShell, shadcnAppShellRenderer } from "../runtime/frames/shadcn-app-shell.js";
 export { useShellCopy } from "../components/Banner.copy-context.js";
 export type { AppFrameProps, AppFrameBrand, AppFrameBrandNavigationMark, AppFrameAccount, AppFrameAccountAvatar, AppFrameFooterLayout, AppFrameRightPanel, AppFrameLayout, AppFrameStage, AppFrameNotice, AppFrameDock } from "./app-frame-types.js";

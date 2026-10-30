@@ -13,6 +13,16 @@ import { SHELL_COPY_REFS } from "../../components/Banner.copy.js";
 import { ShellI18nProvider } from "#designer-frame-i18n";
 import type { AppFrameProps } from "../app-frame-types.js";
 
+/** Source surfaces expose change callbacks directly; nested AppFrame inputs remain compatible. */
+export interface ShadcnAppShellProps extends AppFrameProps {
+  onSidebarCollapsedChange?: (collapsed: boolean) => void;
+  onInspectorCollapsedChange?: (collapsed: boolean) => void;
+  onInspectorWidthChange?: (width: number) => void;
+  onThemePreferenceChange?: NonNullable<AppFrameProps["theme"]>["onPreferenceChange"];
+  onNavigatingChange?: (navigating: boolean) => void;
+  onMainStateChange?: (state: NonNullable<AppFrameProps["state"]>["main"]) => void;
+}
+
 const FRAME = { "data-ds-leaf": "frames.app-shell", "data-ds-fill": "shadcn@aria/frames.app-shell", "data-ds-layer": "frames" } as const;
 const SIDEBAR = { "data-ds-leaf": "components.sidebar", "data-ds-fill": "shadcn@aria/components.sidebar", "data-ds-layer": "components" } as const;
 const MenuSection = Menu.Section, MenuItem = Menu.Item;
@@ -114,7 +124,13 @@ function Content(props: AppFrameProps) {
 }
 
 /** A distinct sidebar/inset assembly, rather than an alias of the Foundry AppFrame. */
-export function ShadcnAppShell(props: AppFrameProps) {
+export function ShadcnAppShell(input: ShadcnAppShellProps) {
+  const props: AppFrameProps = {
+    ...input,
+    navigation: { ...input.navigation, onCollapsedChange: input.onSidebarCollapsedChange ?? input.navigation.onCollapsedChange },
+    ...(input.rightPanel ? { rightPanel: { ...input.rightPanel, onCollapsedChange: input.onInspectorCollapsedChange ?? input.rightPanel.onCollapsedChange, onChange: input.onInspectorWidthChange ?? input.rightPanel.onChange } } : {}),
+    theme: { ...input.theme, onPreferenceChange: input.onThemePreferenceChange ?? input.theme?.onPreferenceChange },
+  };
   return <ShellCopyProvider resolver={props.copyResolver}><ShellI18nProvider locale={props.locale}>
     <ThemeProvider storageKey={props.theme?.storageKey} defaultPreference={props.theme?.defaultPreference} preference={props.theme?.preference} onPreferenceChange={props.theme?.onPreferenceChange}>
       <FrameSlotProvider initialHeader={framePageHeaderDeclaration(props.children)}><Content {...props} /></FrameSlotProvider>

@@ -202,7 +202,7 @@ export { importFoundryFrames } from "../importers/foundry-frames.js";
 export { loadFoundrySurfaceHistory } from "../importers/foundry-surface-history.js";
 export type { FoundryFrameInput, FoundryFrameCoverage, FoundryFrameFillDoc, FoundryFrameDescriptor } from "../importers/foundry-frames.js";
 export { planSurfaceDefaults, DEFAULT_SURFACE_PREFERENCE } from "./surface-defaults.js";
-export { importShadcnFrames } from "../importers/shadcn-frames.js";
+export { importShadcnFrames, shadcnFrameMaterializations } from "../importers/shadcn-frames.js";
 export { importShadcnSections, shadcnSectionMaterializations } from "../importers/shadcn-sections.js";
 export type { SurfaceDefaultsInput, SurfaceDefaultsPlan, SurfaceDefaultRow, SurfaceDefaultBasis, SurfaceDefaultDecision, SurfaceDefaultDescriptor, SurfaceDefaultCandidateDocument } from "./surface-defaults.js";
 

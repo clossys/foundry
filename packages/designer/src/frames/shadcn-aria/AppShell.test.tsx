@@ -76,3 +76,10 @@ it("opens the selected narrow sheet and closes it after a navigation action", ()
   fireEvent.click(screen.getByRole("button", { name: "Draft" }));
   expect(drawer).toHaveBeenLastCalledWith(false);
 });
+
+it("bridges the source surface's direct change port to the nested navigation control", () => {
+  const props = fixture(), change = vi.fn(); props.navigation.collapsed = false;
+  render(<ShadcnAppShell {...props} onSidebarCollapsedChange={change} />);
+  fireEvent.click(screen.getByRole("button", { name: "Close navigation" }));
+  expect(change).toHaveBeenCalledWith(true);
+});
