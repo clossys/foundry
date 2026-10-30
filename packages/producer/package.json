@@ -1,7 +1,7 @@
 {
   "name": "@clossys/producer",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
