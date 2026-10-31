@@ -89,6 +89,51 @@ change is `v<N+1>`.
    git commit -m "designer: pin <slot> <element> v<N>"
    ```
 
+## Section rules (every section and site frame)
+
+The slot contracts carry these as `limits` (`compose.band`, `compose.header`,
+`compose.measure`, `rule.*`); they hold for every consumer, not one page.
+
+- **One shell.** A section whose contract names `compose.band` lists the pinned
+  `sections.band` item, and the pinned `sections.section-header` item when it
+  names `compose.header`, in `registryDependencies` (`@<ns>/<element>`), and
+  renders through them. Site header and footer take their container from the band
+  (`compose.measure`). Fill `sections.band` and `sections.section-header` first;
+  a section whose shell is unpinned stays draft.
+- **Tokens, not numbers.** The band item emits every token its contract lists
+  in `emits.theme` through `cssVars.theme`: rhythm (`py-section`,
+  `py-section-compact`, `mt-stack`/`gap-stack`), gutter (`px-gutter`), measure
+  (`max-w-measure-prose|measure|measure-wide`) and the fluid type ramp
+  (`text-display|heading|title|lead|figure`). Sections never write numeric
+  spacing of 12 and up, a container width of `max-w-3xl` and up, `text-xl` and
+  up, an arbitrary length, `min-w-max` or a negative horizontal offset. Stock
+  shadcn component padding (Card, Button, Table) stays as shipped.
+- **No empty decoration.** Decorative UI renders only inside a bound `media`,
+  `backdrop` or records slot that has content. A reference block's empty
+  illustration card is dropped at adopt time, never kept as a box.
+- **No deleted UI for missing copy.** When a reference cell, label or header has
+  no Writer key, bind it to the contract copy field (for a comparison corner,
+  `labels.feature`) and open a Writer request; never delete the cell or move its
+  text somewhere else to hide the gap.
+- **Fit, do not scroll or clip.** Content fits the measure at 375, 768 and 1280:
+  no horizontal page overflow, no horizontal scroll region, no clipped bleed.
+  Change layout by width (stack, wrap, reorient) inside one rendering, not two.
+- **Fix at the layer that owns it.** A spacing, width or size defect seen on one
+  section is a band or ramp defect when the same value appears in another; change
+  the band item (new version) and let every section inherit it.
+
+Check from the consumer repository, with the installed package (both scripts ship
+in it):
+
+```sh
+node node_modules/@clossys/designer/scripts/check-section-tokens.mjs --root clossys
+node node_modules/@clossys/designer/scripts/check-page-overflow.mjs --url <served substrate> --pages <id,...>
+```
+
+The second runs on pages installed with `clossys publish --install` and served by
+the substrate; it checks 375, 768 and 1280 for page overflow, scroll regions,
+clipped content and empty decoration.
+
 Before choosing a leaf for a parent that composes other slots, read
 [Library needs](library-needs.md); a parent whose dependencies are unpinned
 stays draft. For the older consumer-library commands see
@@ -102,6 +147,8 @@ stays draft. For the older consumer-library commands see
 - The snapshot of the pinned version renders with its preview copy.
 - Every required copy input of the contract appears in `reads.copyKeys`, so
   Writer can fill it.
+- `check-section-tokens.mjs` reports nothing for the consumer, and every page
+  that mounts the slot passes `check-page-overflow.mjs` at 375, 768 and 1280.
 - The library version and selection are committed.
 
 Report in plain language: the slot, the pinned element and version, the path

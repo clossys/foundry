@@ -67,7 +67,11 @@
         "required": false
       }
     ],
-    "limits": {},
+    "limits": {
+      "compose.measure": "sections.band",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size"
+    },
     "references": [
       {
         "registry": "tailark-oss",
@@ -137,7 +141,11 @@
         "required": false
       }
     ],
-    "limits": {},
+    "limits": {
+      "compose.measure": "sections.band",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size"
+    },
     "references": [
       {
         "registry": "tailark-oss",
