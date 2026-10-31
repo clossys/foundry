@@ -6,6 +6,7 @@ import type { CatalogData, CompositeCatalogData, CompositeEngineInput, Composite
 import { loadCatalogBundles } from "@clossys/designer/catalog-bundles";
 import { agentModule, agentRoot, hasCellTree, readCells, readStudioCells } from "./cells.js";
 import { isSuspendedStudioError, reportStudioGate, type StudioReportSink } from './studio-render-policy.js';
+import { libraryTheme, libraryWorkspace } from "./library-selection.js";
 import { defaultStudioTheme, themeCss, themeHash, type StudioTheme } from "./theme-default.js";
 export { defaultStudioTheme, themeHash, type StudioTheme } from "./theme-default.js";
 
@@ -68,6 +69,8 @@ export async function readStudioDesignerLibrary(root: string, report?: StudioRep
 /** Read active cells through Designer's compiler without writing into the consumer. */
 export async function studioTheme(root: string): Promise<StudioTheme> {
   try {
+    const workspace = libraryWorkspace(root);
+    if (workspace) return libraryTheme(workspace) ?? defaultStudioTheme();
     const input = await readStudioDesignerLibrary(root);
     if (!input || !input.activeIds.some(id => id.startsWith("themes."))) return defaultStudioTheme();
     const { library } = input;

@@ -123,3 +123,6 @@ export * from "./foundry/tabs"
 export * from "./foundry/textarea"
 export * from "./foundry/tooltip"
 export * from "./foundry/use-mobile"
+
+// Foundry layout primitives (not a shadcn slot): card grids and fixed-ratio specimen frames.
+export * from "./foundry/layout"

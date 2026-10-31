@@ -1,4 +1,4 @@
-import { CardContent, CardDescription, CardTitle } from '@clossys/designer-ui';
+import { CardDescription, CardGrid, CardTitle } from '@clossys/designer-ui';
 import { LeafCard } from './LeafCard';
 import type { GalleryGroupData } from './types';
 
@@ -9,9 +9,9 @@ export function GroupSection({ group }: { group: GalleryGroupData }) {
     <CardTitle id={heading} role="heading" aria-level={group.level + 2}>{group.label}</CardTitle>
     {group.cards.length > 0 && <>
       <CardDescription>{group.cards.length === 1 ? '1 leaf' : `${group.cards.length} leaves`}</CardDescription>
-      <CardContent className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-4 px-0 pt-3">
+      <CardGrid>
         {group.cards.map(card => <LeafCard key={card.key} card={card} />)}
-      </CardContent>
+      </CardGrid>
     </>}
   </section>;
 }

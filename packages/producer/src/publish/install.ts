@@ -79,7 +79,7 @@ export function npmRunner(env: NodeJS.ProcessEnv = process.env): ShadcnRunner {
  * `?theme=dark` for the dark mode). Every installed item's npm dependencies are unioned into its
  * package.json and installed (see `ensureSubstrateDependencies`), so `npx vite` runs as is.
  */
-async function ensureSubstrate(dir: string): Promise<void> {
+export async function ensureSubstrate(dir: string): Promise<void> {
   await mkdir(dir, { recursive: true });
   if (existsSync(join(dir, "components.json"))) return;
   const write = (name: string, value: unknown) => writeFile(join(dir, name), typeof value === "string" ? value : `${JSON.stringify(value, null, 2)}\n`);
@@ -186,7 +186,7 @@ export function pageModule(page: BoundPage, substrate: string): string {
 }
 
 /** Writer copy by key: compiled records, aliases to them, and a record's context when no alias names it. */
-async function writerCopy(root: string): Promise<Record<string, string>> {
+export async function writerCopy(root: string): Promise<Record<string, string>> {
   const writer = await readWriter(root);
   const copy: Record<string, string> = {};
   for (const record of writer.records) copy[record.id] = record.text;
@@ -258,7 +258,7 @@ async function importedPackages(substrate: string): Promise<string[]> {
 }
 
 /** Union every item's npm dependencies, and every package an installed file imports, into the substrate package.json; run `npm install` when any declared package is missing. */
-async function ensureSubstrateDependencies(substrate: string, items: Record<string, string>, npm: ShadcnRunner): Promise<InstallFinding | undefined> {
+export async function ensureSubstrateDependencies(substrate: string, items: Record<string, string>, npm: ShadcnRunner): Promise<InstallFinding | undefined> {
   const file = join(substrate, "package.json");
   const manifest = JSON.parse(await readFile(file, "utf8"));
   let wanted = items;

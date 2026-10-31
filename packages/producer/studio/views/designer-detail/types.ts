@@ -22,3 +22,6 @@ export interface DetailContractData {
 export interface DetailLineageRow { version: number; mode: string; parent: string; source: string }
 
 export interface DetailVersionRow { version: number; createdAt: string; reason: string; hash: string; flags: readonly string[] }
+
+/** One viewport's specimen URLs; the frame renders the page at `viewport` CSS px and scales it to fit. */
+export interface DetailSpecimenData { viewport: 375 | 768 | 1280; light: string; dark: string }

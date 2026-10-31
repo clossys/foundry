@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { notFound } from 'next/navigation';
 import { StudioFrame } from '../components/StudioFrame';
-import { useThemeMode } from '../components/StudioProviders';
 import { DESIGNER_STATUS_LABEL, DESIGNER_STATUS_TONE, loadDesignerLeaf, specimenHref, type DesignerLeaf } from '../lib/designer-library';
 import { PROOF_PAGE_ID } from '../lib/proof-routes';
 import { DesignerDetail } from './designer-detail';
@@ -11,12 +10,12 @@ import { GalleryNotice } from './designer-gallery';
 
 type Load = { state: 'loading' } | { state: 'ready'; value: DesignerLeaf } | { state: 'missing' } | { state: 'error'; message: string };
 const NO_ACTIONS: never[] = [];
+const SPECIMEN_VIEWPORTS = [375, 768, 1280] as const;
 
 const versionFlags = (row: DesignerLeaf['versions'][number]) => [row.pinned && 'Pinned', row.released && 'Released', row.verified && 'Verified'].filter((flag): flag is string => Boolean(flag));
 
 /** `/designer/<leaf>`: one leaf's specimen, contract, lineage and versions. */
 export default function DesignerLeafView({ slug }: { slug: string }) {
-  const { resolved } = useThemeMode();
   const [load, setLoad] = useState<Load>({ state: 'loading' });
   useEffect(() => {
     const controller = new AbortController();
@@ -37,7 +36,7 @@ export default function DesignerLeafView({ slug }: { slug: string }) {
           statusLabel: DESIGNER_STATUS_LABEL[leaf.card.status], statusTone: DESIGNER_STATUS_TONE[leaf.card.status],
           statusDetail: leaf.statusDetail, trail: leaf.trail, galleryHref: '/designer',
         }}
-        {...(leaf.card.specimen ? { specimenSrc: specimenHref(leaf.card, resolved, 960)! } : {})}
+        specimens={leaf.card.specimen ? SPECIMEN_VIEWPORTS.map(viewport => ({ viewport, light: specimenHref(leaf.card, 'light', viewport)!, dark: specimenHref(leaf.card, 'dark', viewport)! })) : []}
         contract={{
           ...(leaf.contract.kind ? { kind: leaf.contract.kind } : {}), ...(leaf.contract.root ? { root: leaf.contract.root } : {}),
           inputs: leaf.contract.inputs,

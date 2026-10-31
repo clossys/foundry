@@ -49,6 +49,13 @@
 }
 
 :root {
+    /* Layout tokens for the Foundry layout primitives (foundry/layout.tsx); mode-independent. */
+    --card-grid-min: 18rem;
+    --card-grid-gap: 1rem;
+    --specimen-ratio-thumbnail: 16 / 10;
+    --specimen-ratio-mobile: 375 / 720;
+    --specimen-ratio-tablet: 768 / 960;
+    --specimen-ratio-desktop: 1280 / 800;
     /* Clossys brand tokens (light) written into shadcn's own variables. */
     --background: #F5F5F5;
     --foreground: #0A0A0A;

@@ -31,7 +31,7 @@ export const DESIGNER_STATUS_TONE: Record<DesignerStatus, 'secondary' | 'outline
   pinned: 'secondary', unreleased: 'outline', stale: 'outline', failing: 'destructive', missing: 'destructive',
 };
 
-/** The one specimen URL: Publisher's `/__specimen`, mounted by the Producer server. */
+/** The one specimen URL: Producer's `/__specimen`, which frames the installed item at `width` CSS px and scales it to fit. */
 export function specimenHref(card: Pick<DesignerCard, 'specimen' | 'version'>, theme: 'light' | 'dark', width: number): string | undefined {
   if (!card.specimen) return undefined;
   const params = new URLSearchParams({ element: card.specimen, theme, width: String(width) });

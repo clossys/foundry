@@ -23,7 +23,7 @@ function galleryLayers(records: GalleryRecords, theme: 'light' | 'dark'): Galler
         key: card.slot, name: card.name, ...(card.version !== undefined ? { version: card.version } : {}),
         statusLabel: DESIGNER_STATUS_LABEL[card.status], statusTone: DESIGNER_STATUS_TONE[card.status],
         href: designerLeafHref(card.slug),
-        ...(card.specimen ? { specimenSrc: specimenHref(card, theme, 480)! } : {}),
+        ...(card.specimen ? { specimenSrc: specimenHref(card, theme, 1280)! } : {}),
       })),
     });
   }
