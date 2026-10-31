@@ -4,7 +4,7 @@
     "frames.studio-shell": {
       "element": "studio-shell",
       "version": 6,
-      "hash": "sha256:51dea7b4ee0bf6c0a6738b3678271e9a0d1fc14c0e2c7e7ed18b60c998cd82d3",
+      "hash": "sha256:29fc10325034a41c24e8591cd46f1895d1ec30dd322b8366c139b2ecc7afd2fc",
       "event": "e27"
     },
     "sections.studio.home": {
@@ -69,9 +69,9 @@
     },
     "sections.module.explorer": {
       "element": "module-explorer",
-      "version": 1,
-      "hash": "sha256:f0211ba8426ad30640885ceaaf11d312207915d36efb1190ce7aa23f64cb78ae",
-      "event": "e20"
+      "version": 2,
+      "hash": "sha256:300440386e553b250dda2bd708fef7f1bff1177ed7ee34768543355231125101",
+      "event": "e30"
     },
     "sections.module.checks": {
       "element": "module-checks",
@@ -81,9 +81,9 @@
     },
     "sections.module.outline": {
       "element": "module-outline",
-      "version": 1,
-      "hash": "sha256:01362c221c9f471fb4898d428c92de8a3f9cacf97fdfe7b8c6cb27ddf3e24726",
-      "event": "e22"
+      "version": 2,
+      "hash": "sha256:b6e8a9d023b153bb3f1e816736446adb33e7fd48d5885bacd26e318ee92735b4",
+      "event": "e29"
     }
   },
   "history": [
@@ -404,7 +404,7 @@
       "slot": "frames.studio-shell",
       "element": "studio-shell",
       "version": 6,
-      "hash": "sha256:51dea7b4ee0bf6c0a6738b3678271e9a0d1fc14c0e2c7e7ed18b60c998cd82d3",
+      "hash": "sha256:29fc10325034a41c24e8591cd46f1895d1ec30dd322b8366c139b2ecc7afd2fc",
       "from": "option",
       "reason": "FRAME-PANELS (foundry#2553 L6): sidebar-15 shell with header popovers."
     },
@@ -415,6 +415,30 @@
       "action": "unpin",
       "slot": "frames.module",
       "reason": "FRAME-PANELS (foundry#2553 L6): the module column and accordion are removed; header popovers replace them."
+    },
+    {
+      "id": "e29",
+      "at": "2026-10-31T23:59:30Z",
+      "by": "FRAME-PANELS",
+      "action": "pin",
+      "slot": "sections.module.outline",
+      "element": "module-outline",
+      "version": 2,
+      "hash": "sha256:b6e8a9d023b153bb3f1e816736446adb33e7fd48d5885bacd26e318ee92735b4",
+      "from": "option",
+      "reason": "FRAME-PANELS (foundry#2553 L6): popover rows stay open on select."
+    },
+    {
+      "id": "e30",
+      "at": "2026-10-31T23:59:30Z",
+      "by": "FRAME-PANELS",
+      "action": "pin",
+      "slot": "sections.module.explorer",
+      "element": "module-explorer",
+      "version": 2,
+      "hash": "sha256:300440386e553b250dda2bd708fef7f1bff1177ed7ee34768543355231125101",
+      "from": "option",
+      "reason": "FRAME-PANELS (foundry#2553 L6): popover rows stay open on select."
     }
   ]
 }

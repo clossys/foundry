@@ -161,7 +161,8 @@ export async function runModulesCheck(origin, { only } = {}) {
   const blur = () => evaluate(`(() => { document.activeElement?.blur?.(); return true; })()`);
   const state = () => evaluate(STATE);
   const popover = id => `[data-popover=${js(id)}]`;
-  const shown = id => `(() => { const element = document.querySelector(${js(popover(id))}); return Boolean(element && element.getBoundingClientRect().width > 0); })()`;
+  // Shown and settled: measured after its entry animation, so its placement is final.
+  const shown = id => `(() => { const element = document.querySelector(${js(popover(id))}); return Boolean(element && element.getBoundingClientRect().width > 0 && !element.hasAttribute('data-entering')); })()`;
   const escape = () => key('Escape', { code: 'Escape', keyCode: 27 });
   const closeAll = async () => {
     for (let i = 0; i < 3 && (await state())?.open?.length; i++) { await escape(); await sleep(200); }

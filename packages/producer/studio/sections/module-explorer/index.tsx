@@ -39,6 +39,7 @@ export default function ExplorerSection({ explorer }: { explorer: ExplorerInput 
           textValue={item.label}
           data-explorer-target={item.target}
           className={`${INDENT[Math.min(item.depth, INDENT.length - 1)]} [&>svg:last-child]:hidden`}
+          shouldCloseOnSelect={false}
           onAction={() => explorer.onSelect(item.target)}
         >{item.label}</CommandItem>)}
       </CommandGroup>)}

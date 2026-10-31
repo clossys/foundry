@@ -18,6 +18,7 @@ export default function OutlineSection({ outline }: { outline: OutlineInput }) {
           textValue={item.label}
           data-outline-target={item.target}
           className="[&>svg:last-child]:hidden"
+          shouldCloseOnSelect={false}
           onAction={() => outline.onSelect(item.target)}
         >{item.label}</CommandItem>)}
       </CommandGroup>

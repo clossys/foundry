@@ -1142,7 +1142,7 @@
     {
       "slot": "sections.module.outline",
       "element": "module-outline",
-      "version": 1
+      "version": 2
     },
     {
       "slot": "sections.module.checks",
@@ -1192,7 +1192,7 @@
     {
       "slot": "sections.module.explorer",
       "element": "module-explorer",
-      "version": 1
+      "version": 2
     },
     {
       "slot": "sections.studio.publications",

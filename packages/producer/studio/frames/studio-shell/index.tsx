@@ -191,9 +191,11 @@ function useScrollSpy(targets: readonly string[]) {
   }, [targets, spy]);
   const select = useCallback((selector: string) => {
     const element = target(selector);
-    if (!element) return;
+    const main = mainColumn();
+    if (!element || !main) return;
     chosen.current = selector;
-    element.scrollIntoView({ block: 'start' });
+    // Scroll the page column only: scrolling an ancestor of the header would close the popover.
+    main.scrollTo({ top: main.scrollTop + element.getBoundingClientRect().top - main.getBoundingClientRect().top });
     setActive(selector);
   }, []);
   return { active, select };
@@ -247,6 +249,8 @@ export default function StudioShellFrame({ navigation, commands, breadcrumbs, po
     setChatOpen(value => { writeCookie(CHAT_COOKIE, !value); return !value; });
   };
 
+  const openRef = useRef(open);
+  openRef.current = open;
   const current = popovers.find(spec => spec.id === open);
   const spy = useScrollSpy(useMemo(() => current?.targets ?? [], [current]));
   const pageCommands = useMemo((): PageCommand[] => popovers.map(spec => ({
@@ -258,12 +262,22 @@ export default function StudioShellFrame({ navigation, commands, breadcrumbs, po
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key.toLowerCase() === 'k' && (event.metaKey || event.ctrlKey)) { event.preventDefault(); setSearchOpen(value => !value); return; }
-      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || typing(event.target) || document.querySelector('[role="dialog"]')) return;
+      // A header popover is itself a dialog; only another dialog (the command menu, a sheet) takes the keys.
+      const otherDialog = document.querySelector('[role="dialog"]:not([data-popover])');
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || typing(event.target) || otherDialog) return;
       const spec = popovers.find(row => row.shortcut && row.shortcut === event.key.toLowerCase());
       if (spec) { event.preventDefault(); show(spec.id); }
     };
+    // Esc closes the open popover wherever focus is, in the capture phase: a popover's own fields
+    // stop the key. A search with text keeps the first Esc, which clears it.
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || !openRef.current || document.querySelector('[role="dialog"]:not([data-popover])')) return;
+      if (event.target instanceof HTMLInputElement && event.target.value) return;
+      show(undefined);
+    };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('keydown', onEscape, true);
+    return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('keydown', onEscape, true); };
   }, [popovers, show]);
 
   const context: PopoverContext = { ...(spy.active ? { active: spy.active } : {}), select: spy.select };

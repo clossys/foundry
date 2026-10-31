@@ -78,7 +78,7 @@
     ]
   },
   "version": 6,
-  "hash": "sha256:51dea7b4ee0bf6c0a6738b3678271e9a0d1fc14c0e2c7e7ed18b60c998cd82d3",
+  "hash": "sha256:29fc10325034a41c24e8591cd46f1895d1ec30dd322b8366c139b2ecc7afd2fc",
   "payload": [
     "LICENCE.md",
     "PageNotice.tsx",
