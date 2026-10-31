@@ -13,7 +13,6 @@ describe("page check arguments", () => {
   });
 
   it.each([
-    ["check"],
     ["check", "--pages", "pages.json"],
     ["check", "--report", "report.json"],
     ["check", "--pages"],
@@ -22,6 +21,11 @@ describe("page check arguments", () => {
     ["check", "--pages", "pages.json", "--report", "--json"],
   ])("requires both valued paths: %j", (...argv) => {
     expect(() => parseArgs(argv)).toThrow(CliUsageError);
+  });
+
+  it("accepts default slot checks and readiness without an opt-in flag", () => {
+    expect(parseArgs(["check"])).toMatchObject({ verb: "check", slots: false });
+    expect(parseArgs(["check", "--readiness", "--strict"])).toMatchObject({ readiness: true, strict: true });
   });
 
   it("allows help without manifest and report paths", () => {

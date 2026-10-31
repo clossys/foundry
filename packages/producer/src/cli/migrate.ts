@@ -4,7 +4,7 @@
  */
 import { statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { checkSlotModel, compareSlotModel, formatCoverage, slotCoverage } from "../migrate/slot-check.js";
+import { checkSlotModel, compareSlotModel } from "../migrate/slot-check.js";
 import { planMigration, writePlan } from "../migrate/slots.js";
 import { SLOT_AGENTS } from "../records/slot-model/index.js";
 import { CliUsageError } from "./args.js";
@@ -72,16 +72,4 @@ export async function runMigrateCli(argv: readonly string[], cwd: string): Promi
     failed ||= diffs.length > 0;
   }
   return { exitCode: failed ? 1 : 0, message: lines.join("\n"), root: workspace, check: true };
-}
-
-/** `clossys check --slots [--readiness]`: model findings fail; coverage is reported. */
-export function runSlotCheck(start: string, readiness: boolean): CliResult {
-  let workspace: string;
-  try { workspace = discoverWorkspace(start); } catch (error) { return { exitCode: 2, message: `check --slots: ${(error as Error).message}` }; }
-  const consumer = join(workspace, "clossys");
-  const issues = checkSlotModel(consumer);
-  const lines = issues.map(issue => `${issue.code} ${issue.path}: ${issue.message}`);
-  if (!issues.length || issues.some(issue => issue.path !== "agents")) lines.push(formatCoverage(slotCoverage(consumer), readiness));
-  lines.push(`check --slots: ${issues.length} findings`);
-  return { verb: "check", root: workspace, check: true, exitCode: issues.length ? 1 : 0, message: lines.join("\n") };
 }

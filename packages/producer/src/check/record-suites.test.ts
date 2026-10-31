@@ -20,7 +20,7 @@ describe("check record-suite arguments", () => {
   it("accepts --suites alone or with the page lint, and keeps the flags on check", () => {
     expect(parseArgs(["check", "--suites"])).toMatchObject({ verb: "check", suites: true, strict: false });
     expect(parseArgs(["check", "--suites", "--strict", "--pages", "p.json", "--report", "r.json"])).toMatchObject({ suites: true, strict: true, pages: "p.json" });
-    expect(() => parseArgs(["check", "--strict"])).toThrow(/--pages and --report, or --suites/);
+    expect(parseArgs(["check", "--strict"])).toMatchObject({ strict: true });
     expect(() => parseArgs(["publish", "--install", "--page", "home", "--suites"])).toThrow(/require check/);
     expect(() => parseArgs(["check", "--suites", "--records", "lib"])).toThrow(/--records requires publish/);
     expect(parseArgs(["publish", "--install", "--page", "home", "--records", "a", "--records", "b"]).records).toEqual(["a", "b"]);
@@ -44,17 +44,18 @@ describe("record suites", () => {
     expect((await runRecordSuites(root, { strict: true })).exitCode).toBe(1);
   });
 
-  it("runs through clossys check with the exit code unchanged unless --strict", async () => {
+  it("enforces slot integrity alongside report-only record suites", async () => {
     const root = consumer();
     const result = await runCli(["check", "--suites", "--root", root]);
-    expect(result).toMatchObject({ exitCode: 0, verb: "check" });
+    expect(result).toMatchObject({ exitCode: 1, verb: "check" });
+    expect(result.slots?.findings.length).toBeGreaterThan(0);
     expect(result.message).toContain("Record suites (report only)");
     expect(result.message).toMatch(/Slot contracts: \d+ contracts, errors=0/);
     expect(result.suites?.suites).toHaveLength(4);
     expect(await runCli(["check", "--suites", "--strict", "--root", root])).toMatchObject({ exitCode: 1 });
     const outside = mkdtempSync(join(tmpdir(), "producer-record-suites-none-"));
     temps.push(outside);
-    expect(await runCli(["check", "--suites", "--root", outside])).toMatchObject({ exitCode: 2 });
+    expect(await runCli(["check", "--suites", "--root", outside])).toMatchObject({ exitCode: 1 });
   });
 });
 

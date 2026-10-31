@@ -99,6 +99,20 @@ result object (on shutdown for a serving command). `produce` accepts `--once`, `
 | `1` | Reserved for a verdict failure when verb behavior is implemented |
 | `2` | Usage error, missing root, unresolved agent, or current stub refusal |
 
+## Slot integrity
+
+`clossys check [--root <dir>]` enforces the common slot model by default.
+Every IA slot must have a candidate and a pin whose SHA-256 matches that
+candidate's bytes. Invalid slot references, IA placement, candidate schemas,
+provenance and candidate-side pin state are findings. Legacy stores do not
+supply fallback candidates or pins; migrate them with `clossys migrate slots`.
+
+The command prints candidate and pin coverage for each agent. Add `--readiness`
+for upstream blockers, or `--json` for slot rows, findings and coverage.
+`--slots` remains an explicit spelling of the same check. Slot findings exit `1`
+with or without `--strict`; page checks and requested record suites also run,
+and their failures cannot be hidden by a successful slot check.
+
 ## Publication previews
 
 Publisher's producer-preview destination writes a native snapshot. Producer reads its digest-enveloped
