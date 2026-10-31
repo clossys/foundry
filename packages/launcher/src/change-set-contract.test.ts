@@ -878,3 +878,12 @@ describe("bounded existing declaration resolution",()=>{
     expect(existingDeclarationVersionMatches(literal as string,resolved as string)).toBe(expected);
   });
 });
+
+
+describe("root Clossys install site", () => {
+  it("admits dependency keys at the dedicated Clossys manifest", () => {
+    const set = loose(SET);
+    for (const key of set.keys) key.file = "clossys/package.json";
+    expect(repositoryChangeSetViolations(reseal(set)).filter(row => row.rule === "schema")).toEqual([]);
+  });
+});
