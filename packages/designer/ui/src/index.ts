@@ -15,6 +15,7 @@ import * as breadcrumb from "./foundry/breadcrumb"
 import * as button from "./foundry/button"
 import * as card from "./foundry/card"
 import * as checkbox from "./foundry/checkbox"
+import * as collapsible from "./foundry/collapsible"
 import * as command from "./foundry/command"
 import * as dialog from "./foundry/dialog"
 import * as dropdownMenu from "./foundry/dropdown-menu"
@@ -43,6 +44,7 @@ export const FOUNDRY_COMPONENT_SLOTS = [
   "button",
   "card",
   "checkbox",
+  "collapsible",
   "command",
   "dialog",
   "dropdown-menu",
@@ -75,6 +77,7 @@ export const foundryComponents = {
   button: { Button: button.Button, LinkButton: button.LinkButton },
   card: { Card: card.Card, CardHeader: card.CardHeader, CardTitle: card.CardTitle, CardDescription: card.CardDescription, CardContent: card.CardContent },
   checkbox: { Checkbox: checkbox.Checkbox },
+  collapsible: { Collapsible: collapsible.Collapsible, CollapsibleTrigger: collapsible.CollapsibleTrigger, CollapsibleContent: collapsible.CollapsibleContent },
   command: { Command: command.Command, CommandDialog: command.CommandDialog, CommandInput: command.CommandInput, CommandList: command.CommandList, CommandItem: command.CommandItem },
   dialog: { Dialog: dialog.Dialog, DialogTrigger: dialog.DialogTrigger, DialogTitle: dialog.DialogTitle },
   "dropdown-menu": { DropdownMenu: dropdownMenu.DropdownMenu, DropdownMenuTrigger: dropdownMenu.DropdownMenuTrigger, DropdownMenuItem: dropdownMenu.DropdownMenuItem },
@@ -103,6 +106,7 @@ export * from "./foundry/breadcrumb"
 export * from "./foundry/button"
 export * from "./foundry/card"
 export * from "./foundry/checkbox"
+export * from "./foundry/collapsible"
 export * from "./foundry/command"
 export * from "./foundry/dialog"
 export * from "./foundry/dropdown-menu"

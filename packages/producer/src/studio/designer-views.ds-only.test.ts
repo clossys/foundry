@@ -1,4 +1,4 @@
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,7 +13,10 @@ import { describe, expect, it } from 'vitest';
  * A frame is the page shell of a shadcn block (sidebar-07), so it also runs the app: it may import
  * React, the Next router, lucide icons, type-only modules and Studio's runtime hooks, and its three
  * page landmarks (`header`, `main`, `aside`) carry the layout classes the block's shell carries.
- * Every other element a frame renders is a Designer component, exactly as in a section.
+ * Every other element a frame renders is a Designer component, exactly as in a section, or the
+ * block's own markup: a raw element whose tag and literal `className` appear verbatim in the
+ * reference block its pinned record's `lineage.source` names (the shadcn snapshot under
+ * `packages/designer/references/shadcn/<item>@<version>/registry/`).
  *
  * A section may also place another pinned Studio section's export (`../<folder>`) when, and only
  * when, its pinned library record declares that section in `deps.elements`: composition the record
@@ -29,6 +32,41 @@ const COMPONENT_LAYER = '@clossys/designer-ui';
 const FRAME_RUNTIME = new Set(['react', 'next/navigation', 'lucide-react', '../../components/StudioProviders', '../../lib/studio-icons']);
 const FRAME_LANDMARKS = new Set(['header', 'main', 'aside']);
 const CLOSSYS = resolve(STUDIO, '../../../clossys');
+const REFERENCES = resolve(STUDIO, '../../designer/references/shadcn');
+
+const filesUnder = (root: string): string[] => readdirSync(root, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? filesUnder(join(root, entry.name)) : [join(root, entry.name)]);
+const classAttribute = (node: ts.JsxOpeningElement | ts.JsxSelfClosingElement) => node.attributes.properties.find((attribute): attribute is ts.JsxAttribute => ts.isJsxAttribute(attribute) && attribute.name.getText() === 'className');
+
+/** `<tag> <className>` pairs of the raw elements in one reference block's source files. */
+export function referenceMarkup(root: string): Set<string> {
+  const pairs = new Set<string>();
+  for (const file of filesUnder(root).filter(path => path.endsWith('.tsx'))) {
+    const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+    const visit = (node: ts.Node) => {
+      if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
+        const tag = node.tagName.getText(source);
+        const value = classAttribute(node)?.initializer;
+        if (/^[a-z]/.test(tag) && value && ts.isStringLiteral(value)) pairs.add(`${tag} ${value.text}`);
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(source);
+  }
+  return pairs;
+}
+
+/** The raw markup of the reference block a placed frame's pinned record names in `lineage.source`. */
+export function frameBlockMarkup(folder: string, clossys = CLOSSYS, references = REFERENCES): Set<string> {
+  const pins = (JSON.parse(readFileSync(join(clossys, 'selection.json'), 'utf8')) as { pins: Record<string, { element: string; version: number }> }).pins;
+  const slot = Object.keys(pins).find(key => key.startsWith('frames.') && pins[key]!.element === folder);
+  if (!slot) return new Set();
+  const pin = pins[slot]!;
+  const record = JSON.parse(readFileSync(join(clossys, 'library', slot, pin.element, `v${pin.version}`, 'element.json'), 'utf8')) as { lineage?: { source?: { registry: string; item: string; version: string } } };
+  const source = record.lineage?.source;
+  if (source?.registry !== 'shadcn') return new Set();
+  const root = join(references, `${source.item}@${source.version}`, 'registry');
+  return existsSync(root) ? referenceMarkup(root) : new Set();
+}
 
 /** Sibling section folders a placed section's pinned record declares it composes (`deps.elements`). */
 export function declaredSections(folder: string, clossys = CLOSSYS): Set<string> {
@@ -40,7 +78,7 @@ export function declaredSections(folder: string, clossys = CLOSSYS): Set<string>
   return new Set((record.deps?.elements ?? []).filter(dep => dep.slot.startsWith('sections.')).map(dep => `../${dep.element}`));
 }
 
-export function dsOnlyViolations(folder: string, kind: 'section' | 'frame' = 'section', composes: ReadonlySet<string> = new Set()): string[] {
+export function dsOnlyViolations(folder: string, kind: 'section' | 'frame' = 'section', composes: ReadonlySet<string> = new Set(), blockMarkup: ReadonlySet<string> = new Set()): string[] {
   const violations: string[] = [];
   for (const name of readdirSync(folder)) {
     if (!/\.tsx?$/.test(name)) continue;
@@ -57,7 +95,10 @@ export function dsOnlyViolations(folder: string, kind: 'section' | 'frame' = 'se
       }
       if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
         const tag = node.tagName.getText(source);
+        const value = classAttribute(node)?.initializer;
+        const block = kind === 'frame' && !!value && ts.isStringLiteral(value) && blockMarkup.has(`${tag} ${value.text}`);
         if (/^[a-z]/.test(tag) && !(kind === 'frame' && FRAME_LANDMARKS.has(tag))) for (const attribute of node.attributes.properties) {
+          if (block && ts.isJsxAttribute(attribute) && attribute.name.getText(source) === 'className') continue;
           const attr = ts.isJsxAttribute(attribute) ? attribute.name.getText(source) : '{...spread}';
           if (attr === 'className' || attr === 'style' || attr === '{...spread}') violations.push(`${label}: <${tag} ${attr}>`);
         }
@@ -93,7 +134,7 @@ describe('Studio sections are ds-only', () => {
   });
 
   it.each(FRAME_FOLDERS)('frame %s renders only Designer components inside its page landmarks', folder => {
-    expect(dsOnlyViolations(join(FRAMES, folder), 'frame')).toEqual([]);
+    expect(dsOnlyViolations(join(FRAMES, folder), 'frame', new Set(), frameBlockMarkup(folder))).toEqual([]);
   });
 
   it('holds a frame to the section rule outside its landmarks and runtime imports', () => {
@@ -102,6 +143,11 @@ describe('Studio sections are ds-only', () => {
       writeFileSync(join(probe, 'Probe.tsx'), "import { useState } from 'react';\nimport type { X } from '@other/types';\nimport { Y } from 'other-ui';\nexport const A = () => <main className=\"p-4\"><span className=\"truncate\" /><img className=\"size-7\" /></main>;\n");
       expect(dsOnlyViolations(probe, 'frame').map(line => line.split(': ').at(-1))).toEqual(['imports other-ui', '<span className>', '<img className>']);
       expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['imports react', 'imports @other/types', 'imports other-ui', '<main className>', '<span className>', '<img className>']);
+      // The reference block's own markup passes in a frame only with its exact tag and className.
+      const block = new Set(['span truncate', 'div grid flex-1']);
+      expect(dsOnlyViolations(probe, 'frame', new Set(), block).map(line => line.split(': ').at(-1))).toEqual(['imports other-ui', '<img className>']);
+      expect(dsOnlyViolations(probe, 'section', new Set(), block).map(line => line.split(': ').at(-1))).toContain('<span className>');
+      expect(frameBlockMarkup('studio-shell').has('div flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground')).toBe(true);
     } finally { rmSync(probe, { recursive: true, force: true }); }
   });
 

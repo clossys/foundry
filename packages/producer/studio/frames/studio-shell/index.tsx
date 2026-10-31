@@ -2,19 +2,17 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { ChevronsUpDownIcon, MessageSquareIcon, MoonIcon, PanelRightCloseIcon, SearchIcon, SparklesIcon, SunIcon } from 'lucide-react';
+import { MessageSquareIcon, PanelRightCloseIcon, SparklesIcon } from 'lucide-react';
 import type { ContentMapCommandGroup, ContentMapNavigation } from '@clossys/publisher/content-map';
 import {
-  Avatar, AvatarFallback, AvatarImage, Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, Button,
+  Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, Button,
   Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle, CommandDialog, Command, CommandEmpty, CommandGroup,
-  CommandInput, CommandItem, CommandList, CommandShortcut, FieldContent, FieldDescription, FieldTitle, Popover, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger,
-  Sheet, SheetDescription, SheetHeader, SheetTitle, Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
-  SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
-  SidebarProvider, SidebarRail, SidebarTrigger, Skeleton, useSidebar, Tooltip, TooltipTrigger,
+  CommandInput, CommandItem, CommandList, CommandShortcut, Separator,
+  Sheet, SheetDescription, SheetHeader, SheetTitle, SidebarInset, SidebarProvider, SidebarTrigger, useSidebar, Tooltip, TooltipTrigger,
 } from '@clossys/designer-ui';
 import type { PageCommand } from '../studio-module';
 import { studioIcon } from '../../lib/studio-icons';
-import { useStudioData, useThemeMode } from '../../components/StudioProviders';
+import { AppSidebar } from './app-sidebar';
 
 export { PageNotice, type PageNoticeData } from './PageNotice';
 
@@ -36,63 +34,6 @@ function useMediaQuery(query: string): boolean {
 }
 
 const sentence = (value: string) => value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
-
-/**
- * The consumer's mark for one ground. The shadcn avatar shows its fallback until the served SVG
- * has loaded and again if it fails, so the rail never shows an empty mark in either theme.
- */
-function BrandMark({ ground, initial }: { ground: 'light' | 'dark'; initial: string }) {
-  return <Avatar data-brand-mark={ground} className={`rounded-md after:hidden ${ground === 'light' ? 'dark:hidden' : 'hidden dark:flex'}`}>
-    <AvatarImage src={`/api/brand/mark.svg?ground=${ground}`} alt="" className="rounded-none object-contain" />
-    <AvatarFallback className="rounded-md bg-sidebar-primary font-heading text-sidebar-primary-foreground">{initial}</AvatarFallback>
-  </Avatar>;
-}
-
-/** The consumer's own mark and name from its Designer output; Studio is the product beneath it. */
-function BrandButton({ homeHref }: { homeHref: string }) {
-  const { brand } = useStudioData();
-  const name = brand.state === 'ready' ? brand.value.name : undefined;
-  const initial = (name ?? 'Studio').charAt(0).toUpperCase();
-  return <SidebarMenuButton size="lg" href={homeHref} tooltip={name ? `${name} Studio` : 'Studio'}>
-    <BrandMark ground="light" initial={initial} />
-    <BrandMark ground="dark" initial={initial} />
-    <FieldContent className="min-w-0 gap-0 leading-tight">
-      {brand.state === 'loading' ? <Skeleton className="h-4 w-20" /> : <FieldTitle className="w-full truncate font-heading text-[15px] font-semibold tracking-tight">{name ?? 'Studio'}</FieldTitle>}
-      <FieldDescription className="truncate text-xs">{name ? 'Studio' : 'Local workspace'}</FieldDescription>
-    </FieldContent>
-  </SidebarMenuButton>;
-}
-
-function AccountMenu() {
-  return <PopoverTrigger>
-    <SidebarMenuButton size="lg" aria-label="Account">
-      <Avatar size="sm"><AvatarFallback>LW</AvatarFallback></Avatar>
-      <FieldContent className="min-w-0 gap-0 leading-tight">
-        <FieldTitle className="w-full truncate">Local workspace</FieldTitle>
-        <FieldDescription className="truncate text-xs">Producer on this machine</FieldDescription>
-      </FieldContent>
-      <ChevronsUpDownIcon className="ml-auto" />
-    </SidebarMenuButton>
-    <Popover placement="top start" className="w-64">
-      <PopoverHeader>
-        <PopoverTitle>Local workspace</PopoverTitle>
-        <PopoverDescription>Studio reads cells from the Producer running on this machine.</PopoverDescription>
-      </PopoverHeader>
-    </Popover>
-  </PopoverTrigger>;
-}
-
-/** One binary light/dark icon beside the account button (shadcn sidebar footer pattern). */
-function ThemeToggle() {
-  const { resolved, setMode } = useThemeMode();
-  const next = resolved === 'dark' ? 'light' : 'dark';
-  return <TooltipTrigger>
-    <Button variant="ghost" size="icon-sm" aria-label={`Switch to ${next} theme`} data-theme-toggle={resolved} className="shrink-0 group-data-[collapsible=icon]:hidden" onPress={() => setMode(next)}>
-      {resolved === 'dark' ? <SunIcon /> : <MoonIcon />}
-    </Button>
-    <Tooltip>{next === 'dark' ? 'Dark theme' : 'Light theme'}</Tooltip>
-  </TooltipTrigger>;
-}
 
 /** The right panel is chat only. Chat is not connected yet, so it shows its empty state; the close toggle sits in its top-right corner. */
 function ChatPanel({ onClose }: { onClose?: () => void }) {
@@ -143,13 +84,6 @@ function CommandMenu({ commands, pageCommands, open, onOpenChange }: { commands:
   </CommandDialog>;
 }
 
-/** On a phone the rail is a sheet, so its toggle sits in the page header's top-left corner instead. */
-function MobileRailToggle() {
-  const { isMobile } = useSidebar();
-  if (!isMobile) return null;
-  return <SidebarTrigger aria-label="Open navigation" data-panel-toggle="rail" />;
-}
-
 /** The mobile navigation sheet closes once a destination is chosen. */
 function CloseMobileNavigation() {
   const pathname = usePathname();
@@ -183,8 +117,12 @@ export interface StudioShellProps {
   children?: ReactNode;
 }
 
-/** `frames.studio-shell`: the Studio app shell, built from the shadcn sidebar-07 block parts. */
-export default function StudioShellFrame({ homeHref, navigation, commands, breadcrumbs, toolbar, modules, pageCommands = [], open = [], body = 'plain', head, children }: StudioShellProps) {
+/**
+ * `frames.studio-shell`: the shadcn sidebar-07 block (aria-nova) as Studio's app shell. The sidebar
+ * and the page header are the block's; Studio adds the chat panel, the module column and the
+ * command menu (⌘K) around the block's inset.
+ */
+export default function StudioShellFrame({ navigation, commands, breadcrumbs, toolbar, modules, pageCommands = [], open = [], body = 'plain', head, children }: StudioShellProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const wide = useMediaQuery('(min-width: 1280px)');
   const [chatOpen, setChatOpen] = useState(true);
@@ -202,64 +140,28 @@ export default function StudioShellFrame({ homeHref, navigation, commands, bread
   // The frame is exactly viewport height: sidebar and chat stay put, only the content column scrolls.
   return <SidebarProvider className="h-svh overflow-hidden">
     <CloseMobileNavigation />
-    <Sidebar collapsible="icon">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem className="flex h-10 items-center max-md:hidden">
-            <TooltipTrigger>
-              <SidebarTrigger aria-label="Toggle navigation" data-panel-toggle="rail" />
-              <Tooltip>Toggle navigation</Tooltip>
-            </TooltipTrigger>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <BrandButton homeHref={homeHref} />
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Search" onPress={() => setSearchOpen(true)} aria-label="Search pages">
-              <SearchIcon /><span>Search</span><CommandShortcut className="ml-auto">⌘K</CommandShortcut>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-      <SidebarContent>
-        {navigation.tree.map(node => {
-          const NodeIcon = studioIcon(node.icon, node.id);
-          if (!node.children?.length) {
-            return node.href ? <SidebarGroup key={node.id}><SidebarGroupContent><SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton href={node.href} isActive={navigation.activeId === node.id} tooltip={node.label}><NodeIcon /><span>{node.label}</span></SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu></SidebarGroupContent></SidebarGroup> : null;
-          }
-          return <SidebarGroup key={node.id}>
-            <SidebarGroupLabel>{node.label}</SidebarGroupLabel>
-            <SidebarGroupContent><SidebarMenu>
-              {node.children.map(child => {
-                if (!child.href) return null;
-                const ChildIcon = studioIcon(child.icon, child.id);
-                return <SidebarMenuItem key={child.id}>
-                  <SidebarMenuButton href={child.href} isActive={navigation.activeId === child.id} tooltip={child.label}><ChildIcon /><span>{child.label}</span></SidebarMenuButton>
-                </SidebarMenuItem>;
-              })}
-            </SidebarMenu></SidebarGroupContent>
-          </SidebarGroup>;
-        })}
-      </SidebarContent>
-      <SidebarFooter>
-        <SidebarMenu><SidebarMenuItem className="flex items-center gap-1"><AccountMenu /><ThemeToggle /></SidebarMenuItem></SidebarMenu>
-      </SidebarFooter>
-      <SidebarRail />
-    </Sidebar>
+    <AppSidebar navigation={navigation} />
     <SidebarInset className="grid min-h-0 min-w-0 grid-cols-1 grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden md:grid-cols-[minmax(0,1fr)_auto] md:grid-rows-[auto_minmax(0,1fr)]">
-      <header className="z-10 col-span-full flex h-14 shrink-0 items-center gap-1 border-b bg-background/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <MobileRailToggle />
-        <Breadcrumb className="min-w-0 flex-1 px-1">
-          <BreadcrumbList className="flex-nowrap overflow-hidden">
-            {breadcrumbs.map((crumb, index) => <BreadcrumbItem key={crumb.id} id={crumb.id} className={index < breadcrumbs.length - 1 ? 'hidden truncate md:inline-flex' : 'truncate'}>
-              {crumb.href && index < breadcrumbs.length - 1 ? <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink> : <BreadcrumbPage className="truncate">{crumb.label}</BreadcrumbPage>}
-            </BreadcrumbItem>)}
-          </BreadcrumbList>
-        </Breadcrumb>
+      {/* The block's header; Studio places it across the grid and keeps the page toolbar at its end. */}
+      <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 col-span-full pr-4 *:first:min-w-0 *:first:flex-1">
+        <div className="flex items-center gap-2 px-4">
+          <SidebarTrigger className="-ml-1" data-panel-toggle="rail" />
+          <Separator
+            orientation="vertical"
+            className="mr-2 data-vertical:h-4 data-vertical:self-auto"
+          />
+          <Breadcrumb>
+            <BreadcrumbList>
+              {breadcrumbs.map((crumb, index) => index < breadcrumbs.length - 1
+                ? <BreadcrumbItem key={crumb.id} id={crumb.id} className="hidden md:inline-flex">
+                  {crumb.href ? <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink> : <BreadcrumbPage>{crumb.label}</BreadcrumbPage>}
+                </BreadcrumbItem>
+                : <BreadcrumbItem key={crumb.id} id={crumb.id}>
+                  <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                </BreadcrumbItem>)}
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
         {toolbar}
         {!(wide && chatOpen) && <TooltipTrigger>
           <Button variant="ghost" size="icon-sm" aria-label="Open chat" data-panel-toggle="chat" onPress={toggleChat}><MessageSquareIcon /></Button>

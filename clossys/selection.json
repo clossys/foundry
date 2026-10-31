@@ -3,9 +3,9 @@
   "pins": {
     "frames.studio-shell": {
       "element": "studio-shell",
-      "version": 4,
-      "hash": "sha256:0739f0fe5aa6db914338140513ff9dd3a377c416e6276fe813175b66ae58bcdc",
-      "event": "e23"
+      "version": 5,
+      "hash": "sha256:b5484448374b9371a86c7e2e536f4c6158f184423372d25c5af78257c598eb3f",
+      "event": "e24"
     },
     "sections.studio.home": {
       "element": "studio-home",
@@ -368,6 +368,17 @@
       "hash": "sha256:0739f0fe5aa6db914338140513ff9dd3a377c416e6276fe813175b66ae58bcdc",
       "from": "option",
       "reason": "STUDIO-MODULES option v4 for frames.studio-shell."
+    },
+    {
+      "id": "e24",
+      "at": "2026-10-31T23:30:00Z",
+      "by": "NAV-RESET",
+      "action": "pin",
+      "slot": "frames.studio-shell",
+      "element": "studio-shell",
+      "version": 5,
+      "hash": "sha256:b5484448374b9371a86c7e2e536f4c6158f184423372d25c5af78257c598eb3f",
+      "from": "option"
     }
   ]
 }

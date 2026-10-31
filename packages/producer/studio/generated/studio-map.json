@@ -1076,7 +1076,7 @@
     {
       "slot": "frames.studio-shell",
       "element": "studio-shell",
-      "version": 4
+      "version": 5
     },
     {
       "slot": "sections.studio.home",

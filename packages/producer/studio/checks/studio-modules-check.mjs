@@ -81,7 +81,11 @@ const FRAME = `(() => {
   const rail = [...document.querySelectorAll('[data-panel-toggle="rail"]')].find(element => element.getBoundingClientRect().width > 0);
   const chat = [...document.querySelectorAll('[data-panel-toggle="chat"]')].find(element => element.getBoundingClientRect().width > 0);
   if (!rail) out.push({ rule: 'rail-toggle-missing' });
-  else { const r = rail.getBoundingClientRect(); if (r.left > 64 || r.top > 56) out.push({ rule: 'rail-toggle-corner', left: Math.round(r.left), top: Math.round(r.top) }); }
+  else {
+    // shadcn sidebar-07: the sidebar trigger opens the page header, before the breadcrumb.
+    const header = rail.closest('header'), crumbs = header?.querySelector('nav[aria-label="breadcrumb" i], [data-slot="breadcrumb"]');
+    if (!header || !crumbs || !(rail.compareDocumentPosition(crumbs) & Node.DOCUMENT_POSITION_FOLLOWING)) out.push({ rule: 'rail-toggle-header', inHeader: !!header });
+  }
   if (!chat) out.push({ rule: 'chat-toggle-missing' });
   else { const r = chat.getBoundingClientRect(); if (width - r.right > 64 || r.top > 56) out.push({ rule: 'chat-toggle-corner', right: Math.round(width - r.right), top: Math.round(r.top) }); }
   const header = document.querySelector('header');
@@ -92,7 +96,8 @@ const FRAME = `(() => {
       if (control.closest('[data-slot="breadcrumb"], nav[aria-label="breadcrumb" i]')) continue;
       if (control.matches('input, select, textarea')) { out.push({ rule: 'header-field' }); continue; }
       const text = [...control.childNodes].filter(node => node.nodeType === 3).map(node => node.textContent.trim()).join('');
-      if (text || !control.getAttribute('aria-label') || !control.querySelector('svg')) out.push({ rule: 'header-not-icon-button', label: (control.getAttribute('aria-label') || control.textContent).trim().slice(0, 40) });
+      const named = control.getAttribute('aria-label') || control.querySelector(':scope > .sr-only')?.textContent.trim();
+      if (text || !named || !control.querySelector('svg')) out.push({ rule: 'header-not-icon-button', label: (control.getAttribute('aria-label') || control.textContent).trim().slice(0, 40) });
     }
   }
   if (document.querySelector('form, textarea, [contenteditable="true"]')) out.push({ rule: 'read-only', found: 'form or text area' });

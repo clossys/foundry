@@ -182,9 +182,14 @@ const LAYOUT = `(() => {
     if (tabs.length) out.push({ rule: 'tabs', count: tabs.length });
   }
   for (const image of document.querySelectorAll('img')) if (visible(image) && !(image.complete && image.naturalWidth > 0)) out.push({ rule: 'image', src: image.getAttribute('src') });
-  for (const mark of document.querySelectorAll('[data-brand-mark]')) if (visible(mark) && !mark.querySelector('img[data-state="loaded"], img[data-state="loading"]')) out.push({ rule: 'image', src: 'brand mark ' + mark.getAttribute('data-brand-mark') + ' fell back' });
-  const toggles = document.querySelectorAll('[data-slot="sidebar-footer"] [data-theme-toggle]');
-  if (toggles.length !== 1) out.push({ rule: 'theme-toggle', count: toggles.length });
+  // On a phone the closed sidebar sheet is not rendered; the anatomy is checked where the rail shows.
+  const rail = document.querySelector('[data-slot="sidebar-header"]');
+  const marks = [...document.querySelectorAll('[data-slot="sidebar-header"] img[data-brand-mark]')].filter(visible);
+  if (rail && marks.length !== 1) out.push({ rule: 'image', src: 'brand mark', count: marks.length });
+  for (const mark of marks) if (!(mark.complete && mark.naturalWidth > 0)) out.push({ rule: 'image', src: 'brand mark ' + mark.getAttribute('data-brand-mark') + ' did not load' });
+  // shadcn sidebar-07 anatomy: team switcher in the header, the user menu in the footer.
+  if (rail && document.querySelectorAll('[data-slot="sidebar-header"] [data-slot="sidebar-menu-button"][data-size="lg"]').length !== 1) out.push({ rule: 'sidebar-anatomy', part: 'team switcher' });
+  if (rail && document.querySelectorAll('[data-slot="sidebar-footer"] [data-slot="sidebar-menu-button"][data-size="lg"] [data-slot="avatar"]').length !== 1) out.push({ rule: 'sidebar-anatomy', part: 'nav user' });
   return out;
 })()`;
 
