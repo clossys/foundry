@@ -12,8 +12,8 @@ function KindTable({ name, table, titled }: { name: string; table: DetailSpecime
       </TableHeader>
       <TableBody>
         {table.rows.map(row => <TableRow key={row.key} id={row.key}>
-          {row.cells.map((cell, index) => <TableCell key={index} className={index === table.prose ? 'min-w-64 whitespace-normal' : 'whitespace-normal'}>
-            {cell.href ? <LinkButton href={cell.href} variant="link" size="sm" className="h-auto px-0 text-left whitespace-normal break-all">{cell.text}</LinkButton> : cell.text}
+          {row.cells.map((cell, index) => <TableCell key={index} className={index === table.prose ? 'min-w-48 whitespace-normal' : 'whitespace-normal'}>
+            {cell.href ? <LinkButton href={cell.href} variant="link" size="sm" className="h-auto px-0 text-left whitespace-normal break-words">{cell.text}</LinkButton> : cell.text}
             {cell.statusLabel && <Badge variant={cell.statusTone ?? 'outline'} className="ml-2">{cell.statusLabel}</Badge>}
           </TableCell>)}
         </TableRow>)}
