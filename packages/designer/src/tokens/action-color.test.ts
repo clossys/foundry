@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import slots from "../catalog/slots/tokens.json" with { type: "json" };
+import slots from "../catalog/slots/themes.json" with { type: "json" };
 import action from "../catalog/fills/foundry/themes.primary.json" with { type: "json" };
 import text from "../catalog/fills/foundry/themes.foreground.json" with { type: "json" };
 import focus from "../catalog/fills/foundry/tokens.focus-shadow.json" with { type: "json" };

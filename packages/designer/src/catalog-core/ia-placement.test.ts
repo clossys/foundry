@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import tokens from "../catalog/ia/tokens.json" with { type: "json" };
+import tokens from "../catalog/ia/themes.json" with { type: "json" };
 import assets from "../catalog/ia/assets.json" with { type: "json" };
 import components from "../catalog/ia/components.json" with { type: "json" };
 import sections from "../catalog/ia/sections.json" with { type: "json" };

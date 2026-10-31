@@ -17,7 +17,7 @@ import { buildCandidates } from "./model.js";
 import { catalog, smallCatalog, emptyLibrary } from "./__fixtures__/studio.js";
 import { catalogFixture, expectOnlyResolvedCopy, pseudoStudioCopy } from "./__fixtures__/copy-hand-roll.js";
 
-const tokenPlacement = catalogFixture<Placement>("packages/designer/src/catalog/ia/tokens.json");
+const tokenPlacement = catalogFixture<Placement>("packages/designer/src/catalog/ia/themes.json");
 const color = tokenPlacement.nodes.find(node => node.id === "color")!;
 if (!("children" in color)) throw new Error("fixture.ia.color");
 const palettes = color.children.find(node => node.id === "color-palettes")!;

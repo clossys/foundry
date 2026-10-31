@@ -39,7 +39,7 @@ describe("historical package surfaces through native consumer operations", () =>
     const surfaceOptions = { packages: await evidence.readSurfacePackageEvidence(surfaces.fills), measurements: [] };
     const empty: CompositeLibraryData = { source: { id: "example", kind: "consumer", author: "consumer", license: "MIT" }, adoptedAt: "2026-10-30", values: { fills: [] }, components: { fills: [], files: [] }, surfaces: { version: 1, fills: [], files: [] } };
     const library = applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes: [
-      { portion: "values", change: { op: "adopt", slot: "tokens.accent-color", source: "foundry" } },
+      { portion: "values", change: { op: "adopt", slot: "themes.primary", source: "foundry" } },
       ...historicalHolds.map(([slot]) => ({ portion: "surfaces" as const, change: { op: "adopt" as const, slot, source: "foundry" } })),
     ] }, { surfaceOptions });
     const reader = await agentModule("designer", "library-cli/fs-library.js");

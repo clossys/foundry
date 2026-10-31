@@ -4,7 +4,7 @@ import placementData from "../catalog/ia/frames.json" with { type: "json" };
 import globalRetired from "../catalog/retired.json" with { type: "json" };
 import aliases from "../catalog/retired/frames.json" with { type: "json" };
 import slotData from "../catalog/slots/frames.json" with { type: "json" };
-import tokenSlots from "../catalog/slots/tokens.json" with { type: "json" };
+import tokenSlots from "../catalog/slots/themes.json" with { type: "json" };
 import type { FrameContract } from "./frames-contract.js";
 import { isValidId, MEMBER_ID, SLOT_ID } from "./ids.js";
 import type { Placement, PlacementNode } from "./types.js";

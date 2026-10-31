@@ -42,7 +42,7 @@ for (const name of [canonicalPath, hostPath, 'packages/designer/src/studio/speci
   if (result.emitSkipped || emitted !== installed) throw new Error(`Current source build required: ${name}`);
   sourceInputs.push({ path: name, sha256: sha256(file.text), compiledSha256: sha256(installed) });
 }
-const tokenRegistryPath = 'packages/designer/src/catalog/slots/tokens.json';
+const tokenRegistryPath = 'packages/designer/src/catalog/slots/themes.json';
 const tokenRegistrySource = await readFile(join(root, tokenRegistryPath), 'utf8');
 const tokenRegistryInstalled = await readFile(join(root, tokenRegistryPath.replace('/src/', '/dist/')), 'utf8');
 if (JSON.stringify(JSON.parse(tokenRegistrySource)) !== JSON.stringify(JSON.parse(tokenRegistryInstalled))) throw new Error('The current registered token/member emit mappings differ from the installed build');

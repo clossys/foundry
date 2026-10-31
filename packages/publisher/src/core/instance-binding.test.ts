@@ -255,7 +255,7 @@ describe("LK11 actual renderer source, conservative closed syntax", () => {
     const f = instanceFixture(), contract = f.registries.layouts[0]!.contract;
     contract.allowedReads = [];
     expect(checkLayoutRendererSource({ entry: "Layout.tsx", files: { "Layout.tsx": CLEAN_SOURCE } }, contract, f.registries.tokens)).not.toEqual([]);
-    contract.allowedReads = ["tokens.spacing"];
+    contract.allowedReads = ["themes.spacing"];
     const source = 'import {Child} from "./Child.js"; export const Layout = () => <Child />;';
     expect(checkLayoutRendererSource({ entry: "Layout.tsx", files: { "Layout.tsx": source } }, contract, f.registries.tokens)).not.toEqual([]);
     expect(checkLayoutRendererSource({ entry: "Layout.tsx", files: { "Layout.tsx": source, "Child.tsx": CLEAN_SOURCE.replace("Layout", "Child") } }, contract, f.registries.tokens)).toEqual([]);

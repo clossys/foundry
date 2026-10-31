@@ -45,7 +45,7 @@ it('renders all five layers through the published selection profile/runtime and 
     const html = render();
     expect(html).toContain(`font-size:${first.profile.values.members['tokens.body-size.default']!.css.light}`);
     expect(html).not.toMatch(/originKinds|confirmed|raw instruction|<pre|contenteditable/);
-    for (const id of ['tokens.accent-color', 'tokens.body-size', 'tokens.heading-size', 'tokens.spacing', 'tokens.radius', 'tokens.duration', 'tokens.typeface']) {
+    for (const id of ['themes.primary', 'tokens.body-size', 'tokens.heading-size', 'themes.spacing', 'themes.radius', 'tokens.duration', 'themes.font-sans']) {
       expect(render(id), id).toContain(`data-designer-specimen="${id}"`);
       expect(render(id), id).not.toContain('NEED:');
     }

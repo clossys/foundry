@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { dogfoodComposes } from "../catalog-core/dogfood.js";
-import tokenSlots from "../catalog/slots/tokens.json" with { type: "json" };
+import tokenSlots from "../catalog/slots/themes.json" with { type: "json" };
 import { consumerDogfoodSources, runConsumerDogfood, type ConsumerDogfoodContract } from "./consumer-dogfood.js";
 
 // Read the current Publisher graph in this checkout. A copied excerpt, frozen

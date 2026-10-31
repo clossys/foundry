@@ -2625,18 +2625,6 @@
       "status": "draft"
     },
     {
-      "recordId": "st.aa0s69mdxk",
-      "legacyRecordId": "st.kc4qwnns4j",
-      "source": "records/admin-studio.r1.en.json",
-      "context": "designer.item.tokens.icon-size",
-      "leaf": "strings.names",
-      "limits": {
-        "maxChars": 60
-      },
-      "origin": "foundry-default",
-      "status": "draft"
-    },
-    {
       "recordId": "st.13d97mrmzy",
       "legacyRecordId": "st.13d97mrmzy",
       "source": "records/admin-meta.r1.en.json",
@@ -5435,18 +5423,6 @@
       "legacyRecordId": "st.qrvmkqp6hq",
       "source": "records/admin-studio.r1.en.json",
       "context": "designer.ia.themes.type-spacing",
-      "leaf": "strings.names",
-      "limits": {
-        "maxChars": 60
-      },
-      "origin": "foundry-default",
-      "status": "draft"
-    },
-    {
-      "recordId": "st.sm9bq8fv8f",
-      "legacyRecordId": "st.sm9bq8fv8f",
-      "source": "records/admin-studio.r1.en.json",
-      "context": "designer.item.tokens.density",
       "leaf": "strings.names",
       "limits": {
         "maxChars": 60

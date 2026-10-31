@@ -90,7 +90,7 @@ Cite active cells with `strategy:<cell-id>@<N>` and the `designer.identity` brie
 
 ## Pre-auth page
 
-Done is exceptional (5) as defined in PRE-AUTH-QUALITY (the brief shipped at this package root). `designer-hero-css-check`, `designer-fold-check`, and `writer-check --live` prove 3 only — never call 3 done or world class. After `designer-fold-check` is green, a bounded taste pass uses desktop and narrow screenshots in a separate session that is not this doer walk; at most 3 inhabit rounds or 45 minutes wall clock, whichever first — see PRE-AUTH-QUALITY. This walk does not self-certify exceptional keep. A 5 keep is a synthetic user in that separate session, first person as the named Strategist Audience, not a visual score and not a checklist. This role does not author keep-review evidence and does not inhabit the persona. Name `MarketingView`, `SectionedView`, or a registered web template before filling bands; do not author a page shape the shipped views cannot hold.
+Done is exceptional (5) as defined in PRE-AUTH-QUALITY (the brief shipped at this package root). `designer-fold-check` and `writer-check --live` prove 3 only — never call 3 done or world class. After `designer-fold-check` is green, a bounded taste pass uses desktop and narrow screenshots in a separate session that is not this doer walk; at most 3 inhabit rounds or 45 minutes wall clock, whichever first — see PRE-AUTH-QUALITY. This walk does not self-certify exceptional keep. A 5 keep is a synthetic user in that separate session, first person as the named Strategist Audience, not a visual score and not a checklist. This role does not author keep-review evidence and does not inhabit the persona. Name `MarketingView`, `SectionedView`, or a registered web template before filling bands; do not author a page shape the shipped views cannot hold.
 
 Write band copy with CONTENT (the content cookbook shipped at this package root as `CONTENT.md`): choose the module from the information, follow the eyebrow = what, heading = why, description = how rule, keep each slot within its word budget, and follow the page-variety rules. `publisher-preview` writes `content-catalog.html`, which shows every module at a typical length and at the maximum budget.
 
@@ -98,7 +98,7 @@ Write band copy with CONTENT (the content cookbook shipped at this package root 
 
 If `node_modules/@clossys/designer` is present (or this package's bins are on PATH), use the exact pin in the tree. Read `package.json` `bin` for the real command names.
 - Assessment CLI: `designer-rate-check`
-- Additional gate CLIs: `designer-brand-check`, `designer-hero-css-check`, `designer-fold-check`, `designer-type-check`, `designer-environment-check surface`
+- Additional gate CLIs: `designer-brand-check`, `designer-fold-check`, `designer-type-check`, `designer-environment-check surface`
 
 Public marketing surfaces: stamp the authored register with `getAuthoredThemeInitScript()` — OS preference is not the brand. Product chrome may use `getStoredThemeInitScript()` instead.
 

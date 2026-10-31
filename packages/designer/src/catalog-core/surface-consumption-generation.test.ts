@@ -15,7 +15,7 @@ function fixture() {
   json("package.json", { name: "@example/designer" });
   mkdirSync(join(repo, "packages/publisher"), { recursive: true });
   writeFileSync(join(repo, "packages/publisher/package.json"), JSON.stringify({ name: "@example/publisher" }));
-  json("src/catalog/slots/tokens.json", [{ id: "tokens.ink", contract: { emit: { primary: "--color-ink" } } }]);
+  json("src/catalog/slots/themes.json", [{ id: "tokens.ink", contract: { emit: { primary: "--color-ink" } } }]);
   json("src/catalog/slots/assets.json", []);
   json("src/catalog/slots/components.json", [{ id: "components.button" }]);
   json("src/catalog/slots/sections.json", [{ id: "sections.example", contract: { allowedReads: { themes: ["tokens.ink", "tokens.unused"], assets: [] }, allowedComposes: ["components.button", "components.unused"], parts: [] } }]);

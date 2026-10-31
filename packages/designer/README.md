@@ -126,8 +126,8 @@ its own manifest:
 ## Pre-auth page quality
 
 Pre-auth marketing pages use a five-star contract: **done is exceptional (5)**;
-mechanical gates (`designer-hero-css-check`, `designer-fold-check`, and
-`writer-check --live` on the publishing repo) prove **good (3)** only. The
+mechanical gates (`designer-fold-check` and `writer-check --live` on the
+publishing repo) prove **good (3)** only. The
 full rubric — floor, authored great, review keep, and who certifies what — is
 in [PRE-AUTH-QUALITY.md](./PRE-AUTH-QUALITY.md).
 
@@ -612,10 +612,6 @@ blocks and shell use) or is defined in your own CSS. Any other utility class
 does nothing. Search `compiled.css` for a class before relying on it, or
 style the wrapper with your own CSS.
 
-Verify the stylesheet your app loads with `designer-hero-css-check
-path/to/your.css` (or point it at `node_modules/@clossys/designer/styles/compiled.css`
-when you import that file unchanged).
-
 Record fold evidence (from your app or a browser script) and verify it with
 `designer-fold-check path/to/fold-measurement.json` — optional
 `--also path/to/mobile-fold.json` for a second viewport. Missing evidence is
@@ -817,7 +813,7 @@ consumer supplies.
 
 **Default (pre-auth pages, no Tailwind):** import token + compiled styles and
 your brand overlay — see "Framework-portable components, without Tailwind"
-above. Run `designer-hero-css-check` on the CSS file your app actually loads.
+above.
 
 **Advanced (Tailwind v4 already in the project):** the token CSS has to be
 imported, and Tailwind has to be told to scan this package's built output

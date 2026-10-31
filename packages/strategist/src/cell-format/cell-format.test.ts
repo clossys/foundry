@@ -97,15 +97,15 @@ describe("body tokenization with physical line numbers", () => {
 });
 
 describe("shared identifiers, references and paths", () => {
-  it.each(["tokens.accent-color", "page.home2", "identity.visual.palette", "a1.b2.c3"])("accepts shared id %s", id => {
+  it.each(["themes.primary", "page.home2", "identity.visual.palette", "a1.b2.c3"])("accepts shared id %s", id => {
     expect(CELL_ID_PATTERN.test(id)).toBe(true);
   });
   it.each(["one", "a.b.c.d", "A.b", "a.B", "a._b", "a/b.c", "a..b", "a.b\n"])("rejects shared id %j", id => {
     expect(CELL_ID_PATTERN.test(id)).toBe(false);
   });
   it.each([
-    ["tokens.accent-color@2", { cell: "tokens.accent-color", version: 2 }],
-    ["designer:tokens.accent-color@2", { agent: "designer", cell: "tokens.accent-color", version: 2 }],
+    ["themes.primary@2", { cell: "themes.primary", version: 2 }],
+    ["designer:themes.primary@2", { agent: "designer", cell: "themes.primary", version: 2 }],
     ["strategist:identity.visual.palette@17", { agent: "strategist", cell: "identity.visual.palette", version: 17 }],
   ])("round-trips link %s", (text, value) => {
     expect(parseLinkRef(text)).toEqual(value);
@@ -122,7 +122,7 @@ describe("shared identifiers, references and paths", () => {
     expect(parseConfirmRef(text)).toBeUndefined();
   });
   it("checks safe positive versions, real dates and derived cell paths", () => {
-    expect(cellPath("tokens.accent-color", 3)).toBe("cells/tokens.accent-color/v3.md");
+    expect(cellPath("themes.primary", 3)).toBe("cells/themes.primary/v3.md");
     expect(positiveInteger(Number.MAX_SAFE_INTEGER)).toBe(true);
     for (const value of [0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1, Infinity, "1", null]) expect(positiveInteger(value)).toBe(false);
     expect(isoDate("2024-02-29")).toBe(true);

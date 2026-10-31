@@ -3,7 +3,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import componentSlots from "../catalog/slots/components.json" with { type: "json" };
-import tokenSlots from "../catalog/slots/tokens.json" with { type: "json" };
+import tokenSlots from "../catalog/slots/themes.json" with { type: "json" };
 import type { ComponentSlot } from "../catalog-core/types.js";
 import { FOUNDRY_COMPONENT_MAP } from "./foundry-components.map.js";
 import { importFoundryComponents } from "./foundry-components.js";

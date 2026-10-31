@@ -86,8 +86,8 @@ it('registered token host parts render current member references through the act
   expect(STUDIO_SPECIMEN_HOST_PARTS['studio.specimen-swatch'].export).toBe('renderSpecimenSwatchHostPart');
   expect(STUDIO_SPECIMEN_HOST_PARTS['studio.specimen-contrast'].export).toBe('renderSpecimenContrastHostPart');
   const parts = (['light', 'dark'] as const).flatMap(mode => [
-    renderSpecimenSwatchHostPart(context, { memberId: 'tokens.surface-color.base', mode }),
-    renderSpecimenContrastHostPart(context, { backgroundMemberId: 'tokens.surface-color.base', colorMemberId: 'tokens.text-color.primary', pairMemberId: 'tokens.text-color.primary', mode, children: 'Native provider content' }),
+    renderSpecimenSwatchHostPart(context, { memberId: 'themes.background.default', mode }),
+    renderSpecimenContrastHostPart(context, { backgroundMemberId: 'themes.background.default', colorMemberId: 'themes.foreground.default', pairMemberId: 'themes.foreground.default', mode, children: 'Native provider content' }),
   ]);
   const stream = await renderToReadableStream(createElement(production.ComponentProvider, { profile }, parts));
   await stream.allReady;
@@ -96,8 +96,8 @@ it('registered token host parts render current member references through the act
   expect(html.match(/color:var\(--color-ink-primary\)/g)).toHaveLength(2);
   expect(() => renderSpecimenSwatchHostPart(context, { memberId: '#ffffff', mode: 'light' })).toThrow(/no matching registered color reference/);
   const changed = structuredClone(profile);
-  changed.values.members['tokens.surface-color.base']!.emit = '--unregistered';
-  expect(() => renderSpecimenSwatchHostPart({ ...context, profile: changed }, { memberId: 'tokens.surface-color.base', mode: 'light' })).toThrow(/no matching registered color reference/);
+  changed.values.members['themes.background.default']!.emit = '--unregistered';
+  expect(() => renderSpecimenSwatchHostPart({ ...context, profile: changed }, { memberId: 'themes.background.default', mode: 'light' })).toThrow(/no matching registered color reference/);
 });
 
 it('preserves actual static unkeyed iframe siblings without manufacturing React key warnings', async () => {

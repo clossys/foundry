@@ -30,7 +30,7 @@ describe("clossys produce temporary projection paths", () => {
     await writeFile(join(consumer, "clossys/clossys.config.ts"), "export default {};\n");
     const catalog = loadCatalog();
     const empty: LibraryData = { source: { id: "example", kind: "consumer", author: "consumer", license: "MIT" }, adoptedAt: "2026-10-30", fills: [] };
-    const library = applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes: [{ op: "adopt", slot: "tokens.accent-color", source: "foundry" }] });
+    const library = applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes: [{ op: "adopt", slot: "themes.primary", source: "foundry" }] });
     const reader = await agentModule("designer", "library-cli/fs-library.js");
     const source = join(directory, "library");
     for (const [name, contents] of reader.libraryFiles(catalog, library, [])) {

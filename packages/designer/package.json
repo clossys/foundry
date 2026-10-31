@@ -157,7 +157,6 @@
     "designer-brand-check": "dist/tokens/cli.js",
     "designer-contrast-check": "dist/tokens/contrast-cli.js",
     "designer-environment-check": "dist/environment-conformance-cli.js",
-    "designer-hero-css-check": "dist/hero-css/hero-css-cli.js",
     "designer-fold-check": "dist/fold/fold-cli.js",
     "designer-type-check": "dist/type-record/type-record-cli.js",
     "designer-rate-check": "dist/design-conformance-rate-cli.js"
@@ -280,8 +279,8 @@
       },
       {
         "id": "structure-and-fold-conformance",
-        "subQuestion": "Does every mount compose only one visual primitive stack, and does its above-the-fold hero conform to its declared fold and hero-CSS contract?",
-        "worldClass": "Every route/surface mount composes exactly one visual primitive stack -- never a mix of design systems assembled under one mount (`surface-ladder.ts`, issues #1055/#1060) -- and its hero renders within its declared fold and hero-CSS contract, checked, never eyeballed per page. Checked today by three bins, each with its own qualification case group: `designer-environment-check surface` (surface-ladder), `designer-fold-check` (fold), and `designer-hero-css-check` (hero-css); `proofCase` names the fold group.",
+        "subQuestion": "Does every mount compose only one visual primitive stack, and does its above-the-fold hero conform to its declared fold contract?",
+        "worldClass": "Every route/surface mount composes exactly one visual primitive stack -- never a mix of design systems assembled under one mount (`surface-ladder.ts`, issues #1055/#1060) -- and its hero renders within its declared fold contract, checked, never eyeballed per page. Checked today by two bins, each with its own qualification case group: `designer-environment-check surface` (surface-ladder) and `designer-fold-check` (fold); `proofCase` names the fold group.",
         "inputs": [],
         "outputs": [
           "clossys/designer/.generated/structure-report.json"

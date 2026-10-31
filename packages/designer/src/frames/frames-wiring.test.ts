@@ -47,7 +47,7 @@ const sources: WiringInput["sources"] = [...walk("src/frames"), ...walk("src/she
 
 const run = (input: Partial<WiringInput> = {}) => checkWiring({
   sources,
-  tokens: JSON.parse(read("src/catalog/slots/tokens.json")) as WiringInput["themes"],
+  tokens: JSON.parse(read("src/catalog/slots/themes.json")) as WiringInput["themes"],
   // `styles/theme.css` imports `theme-keys.css`; its `@theme inline` keys are what expand utilities into token reads.
   themeCss: read("styles/theme-keys.css"),
   exceptions: foundryWiringExceptions(),

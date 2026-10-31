@@ -30,7 +30,7 @@ describe("native Designer item-name CopyRef boundary", () => {
     for (const patch of [{ id: "st.unknown000" }, { leaf: "strings.labels" }, { context: "designer.item.components.badge" }, { context: "unrelated.fixture" }]) {
       expect(() => pageCopy(source(patch))({ id: patch.id ?? record.id })).toThrow(/Writer/);
     }
-    for (const bindings of [[], [{ ...binding, kind: "ia-name" }], [{ ...binding, kind: "CopyRef" }], [{ ...binding, cellId: "designer.item.components.badge" }], [{ ...binding, target: "packages/designer/src/catalog/slots/tokens.json" }]]) {
+    for (const bindings of [[], [{ ...binding, kind: "ia-name" }], [{ ...binding, kind: "CopyRef" }], [{ ...binding, cellId: "designer.item.components.badge" }], [{ ...binding, target: "packages/designer/src/catalog/slots/themes.json" }]]) {
       expect(() => pageCopy(source({}, bindings))({ id: record.id })).toThrow(/Writer/);
     }
     expect(() => copy({ id: record.id, locale: "fr" })).toThrow(/locale/);

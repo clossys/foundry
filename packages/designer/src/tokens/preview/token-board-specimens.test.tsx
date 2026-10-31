@@ -11,7 +11,7 @@ import { buildCandidates } from "../../studio/model.js";
 import { CandidateCell } from "../../studio/CandidateCell.js";
 import { CompactPreview } from "../../studio/previews.js";
 import { labels } from "../../studio/__fixtures__/studio.js";
-import tokensIa from "../../catalog/ia/tokens.json" with { type: "json" };
+import tokensIa from "../../catalog/ia/themes.json" with { type: "json" };
 import { TokenValueText } from "./specimens.js";
 import { displayTokenValue, orderTokenMembers } from "./member-order.js";
 

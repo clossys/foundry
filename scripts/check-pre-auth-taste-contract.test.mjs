@@ -15,7 +15,7 @@ const scriptPath = join(scriptDir, "check-pre-auth-taste-contract.mjs");
 const repoRoot = resolve(scriptDir, "..");
 
 const fixture = {
-  floorGateClis: ["designer-hero-css-check", "designer-fold-check", "writer-check --live"],
+  floorGateClis: ["designer-fold-check", "writer-check --live"],
   tasteStartsAfterFoldCheckGreen: true,
   inhabitRoundCap: 3,
   wallClockMinutesCap: 45,
