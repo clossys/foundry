@@ -17,8 +17,10 @@ produce "bind" guidance, not new leaf records. Missing capabilities become
 `needs/NEED-NNN.json`; the writer deduplicates parent plus missing capability and merges
 new evidence. Apply and emit preserve these records. Never edit or delete them by hand.
 
-Search candidates in this order: shadcn's React Aria port, other React Aria skins,
-then a Foundry build with benchmark evidence. A proposal records the source, slot and reason:
+Search candidates only in the trusted registries (`registries` of `references/manifest.json`,
+shadcn first). A candidate is a reference adopted or customized, never an item invented from
+nothing (provenance rule in [SKILL.md](SKILL.md)). When no trusted reference fits, the need stays
+open for the owner with the missing reference named. A proposal records the source, slot and reason:
 
 ```sh
 designer-library needs set NEED-014 --root <library> --status proposed --candidate '{"library":"shadcn@aria","slotId":"components.search-field","reason":"React Aria candidate fits the contract"}'

@@ -70,6 +70,17 @@
       "licenseFiles": [
         "tailwindcss-typography/LICENSE"
       ]
+    },
+    "fontsource": {
+      "namespace": "@fontsource-variable",
+      "source": "https://cdn.jsdelivr.net/npm/@fontsource-variable/inter-tight@5.3.0/{path}",
+      "version": "5.3.0",
+      "versionBasis": "npm package @fontsource-variable/inter-tight@5.3.0 (immutable npm version, served by jsDelivr); Fontsource self-hosts the Google Fonts family",
+      "upstream": "github.com/fontsource/font-files (fonts/variable/inter-tight, npm publishHash eb0ef990773f983b)",
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "fontsource/LICENSE"
+      ]
     }
   },
   "licenses": [
@@ -78,6 +89,12 @@
       "sha256": "798456e9f649d796bad55d80f9ee50a71eb2d16920300a66a8221b70123e40db",
       "bytes": 1068,
       "sourceUrl": "https://raw.githubusercontent.com/sadmann7/diceui/04aad54e7cb02f209b31f294cea020208a3deed6/LICENSE"
+    },
+    {
+      "path": "fontsource/LICENSE",
+      "sha256": "1e1c8b3dc6dfcbd5498a33f17fcc68ff2d39c599f6e8195fbf14601261dbef6a",
+      "bytes": 4489,
+      "sourceUrl": "https://cdn.jsdelivr.net/npm/@fontsource-variable/inter-tight@5.3.0/LICENSE"
     },
     {
       "path": "lucide/LICENSE",
@@ -543,6 +560,34 @@
         "@diceui/file-upload",
         "@diceui/scroll-spy",
         "@diceui/stepper"
+      ]
+    },
+    {
+      "registry": "fontsource",
+      "name": "inter-tight",
+      "version": "5.3.0",
+      "dir": "fontsource/inter-tight@5.3.0",
+      "type": "registry:font",
+      "sourceUrl": "https://cdn.jsdelivr.net/npm/@fontsource-variable/inter-tight@5.3.0/package.json",
+      "license": "OFL-1.1",
+      "direct": true,
+      "slots": [
+        "themes.font-heading"
+      ],
+      "hash": "sha256:80d4fc0510f8d4c78877dd383ea2b33efdce109668036f02cc46b56bdd7f1ddf",
+      "files": [
+        {
+          "path": "metadata.json",
+          "sha256": "43aa6534ad0524e14a3baf98a97c06a76613c374f6c613f5b7909fac8f856525",
+          "bytes": 902,
+          "origin": "https://cdn.jsdelivr.net/npm/@fontsource-variable/inter-tight@5.3.0/metadata.json"
+        },
+        {
+          "path": "package.json",
+          "sha256": "37dd50afc0800ecee579a7f19197a47f31c8b03f2109c50724e710bef75e15d3",
+          "bytes": 1493,
+          "origin": "https://cdn.jsdelivr.net/npm/@fontsource-variable/inter-tight@5.3.0/package.json"
+        }
       ]
     },
     {
