@@ -2,8 +2,8 @@
   "schema": "clossys.element/1",
   "id": "neutral",
   "package": "designer",
-  "layer": "tokens",
-  "slot": "tokens.theme",
+  "layer": "themes",
+  "slot": "themes.preset",
   "kind": "registry:theme",
   "lineage": {
     "mode": "original"

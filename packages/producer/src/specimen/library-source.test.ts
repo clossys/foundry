@@ -18,7 +18,7 @@ const copy = () => {
 
 describe("library record source (SU-2A records through the slot engine loaders)", () => {
   it("lists and locates elements by slot/element or a bare element", () => {
-    expect(listLibraryElements([library])).toEqual(["components.button/sample-button", "components.card/sample-card", "tokens.theme/neutral"]);
+    expect(listLibraryElements([library])).toEqual(["components.button/sample-button", "components.card/sample-card", "themes.preset/neutral"]);
     expect(locateLibraryElement([library], "sample-card")).toMatchObject({ slot: "components.card", element: "sample-card" });
     expect(locateLibraryElement([library], "components.card/sample-card")).toMatchObject({ slot: "components.card" });
     expect(locateLibraryElement([library], "../sample-card")).toBeUndefined();
@@ -38,7 +38,7 @@ describe("library record source (SU-2A records through the slot engine loaders)"
     expect(card!.contentHash).toMatch(/^[0-9a-f]{64}$/);
     expect(await source.read("sample-card", 2)).toBeUndefined();
     const theme = await source.theme();
-    expect(theme).toMatchObject({ id: "tokens.theme/neutral" });
+    expect(theme).toMatchObject({ id: "themes.preset/neutral" });
   });
 
   it("refuses a record whose payload no longer matches its hash", async () => {
