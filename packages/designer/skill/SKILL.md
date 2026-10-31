@@ -122,12 +122,12 @@ The slot contracts carry these as `limits` (`compose.band`, `compose.header`,
   section is a band or ramp defect when the same value appears in another; change
   the band item (new version) and let every section inherit it.
 
-Check from the consumer repository, with the installed package (both scripts ship
-in it):
+Check from the consumer repository, with the installed package (both checks ship
+in it as bins):
 
 ```sh
-node node_modules/@clossys/designer/scripts/check-section-tokens.mjs --root clossys
-node node_modules/@clossys/designer/scripts/check-page-overflow.mjs --url <served substrate> --pages <id,...>
+npx designer-section-check --root clossys
+npx designer-overflow-check --url <served substrate> --pages <id,...>
 ```
 
 The second runs on pages installed with `clossys publish --install` and served by
