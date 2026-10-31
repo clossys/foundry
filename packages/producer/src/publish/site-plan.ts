@@ -42,6 +42,8 @@ export interface PublisherRoute {
 }
 export interface PublisherInput {
   readonly publicationId: string;
+  /** The content map's format (`web.page.responsive`, `deck.16x9`, ...). */
+  readonly format?: string;
   readonly entries: readonly PublisherEntry[];
   readonly routes: readonly PublisherRoute[];
   /** Page cell id → Copy bullets; entry id → page cell id. */
@@ -222,7 +224,7 @@ class Report {
 }
 
 /** Writer text by alias (`<cell>.<key>`), falling back to a record whose context is that alias. */
-function writerText(writer: WriterInput) {
+export function writerText(writer: WriterInput) {
   const byId = new Map(writer.records.map(record => [record.id, record]));
   const byContext = new Map(writer.records.filter(record => record.context).map(record => [record.context!, record]));
   return {

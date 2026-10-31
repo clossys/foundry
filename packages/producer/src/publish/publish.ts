@@ -21,6 +21,7 @@ import { studioTheme } from "../server/theme.js";
 import { planSite, type BuildReport } from "./site-plan.js";
 import { renderSite, siteRuntime } from "./site-render.js";
 import { readDesigner, readPublisher, readWriter } from "./site-source.js";
+import { listLibraryElements } from "../specimen/library-source.js";
 
 export const PUBLISH_TARGETS = ["preview"] as const;
 export const DEFAULT_PREVIEW_PORT = 4330;
@@ -30,8 +31,12 @@ const MARKER = ".clossys-publish";
 const STYLESHEET = "/assets/site.css";
 const MARK = "/assets/brand-mark.svg";
 
-export interface PublishOptions { root: string; out?: string; port?: number; serve?: boolean }
-export interface PublishResult { url?: string; out: string; port?: number; report: BuildReport; pages: { id: string; path: string }[]; selection: { fallback: string[]; missingFonts: string[] } }
+export interface PublishOptions {
+  root: string; out?: string; port?: number; serve?: boolean;
+  /** Library roots served at `/__specimen`; defaults to `<root>/clossys/library` when it exists. */
+  records?: readonly string[];
+}
+export interface PublishResult { url?: string; specimens?: { url: string; elements: string[] }; out: string; port?: number; report: BuildReport; pages: { id: string; path: string }[]; selection: { fallback: string[]; missingFonts: string[] } }
 
 function portFree(port: number): Promise<boolean> {
   return new Promise(done => {
@@ -130,18 +135,35 @@ export async function publishPreview(options: PublishOptions): Promise<PublishRe
 
   const port = await choosePort(options.port ?? DEFAULT_PREVIEW_PORT);
   const server = join(dirname(fileURLToPath(import.meta.url)), "site-server.js");
-  const child = spawn(process.execPath, [server, site, String(port)], { detached: true, stdio: "ignore" });
+  const records = specimenRoots(root, options.records);
+  const specimenArgs = records.length ? [...records.flatMap(dir => ["--records", dir]), "--workspace", specimenWorkspace(root)] : [];
+  const child = spawn(process.execPath, [server, site, String(port), ...specimenArgs], { detached: true, stdio: "ignore" });
   child.unref();
   const url = `http://127.0.0.1:${port}/`;
   if (!await waitFor(url)) throw new Error(`publish: preview server did not start on ${port}`);
   await writeFile(join(out, ".server.json"), `${JSON.stringify({ pid: child.pid, port, out })}\n`);
-  return { ...result, url, port };
+  const specimens = records.length ? { url: `${url}__specimen`, elements: listLibraryElements(records) } : undefined;
+  return { ...result, url, port, ...(specimens ? { specimens } : {}) };
+}
+
+/** Library roots to serve: the ones given, else the consumer's own `clossys/library` when present. */
+export function specimenRoots(root: string, given?: readonly string[]): string[] {
+  if (given?.length) return given.map(dir => resolve(root, dir));
+  const own = join(root, "clossys", "library");
+  return existsSync(own) ? [own] : [];
+}
+
+/** Payload npm imports resolve from the consumer's install when it has React, else from Producer's own. */
+export function specimenWorkspace(root: string): string {
+  const consumer = join(root, "clossys");
+  return existsSync(join(consumer, "node_modules", "react", "package.json")) ? consumer : resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 }
 
 export function reportSummary(result: PublishResult): string {
   const { report } = result;
   const lines = [
     ...(result.url ? [`Preview: ${result.url}`] : []),
+    ...(result.specimens ? [`Specimens: ${result.specimens.url}?element=<id> (${result.specimens.elements.length} elements${result.specimens.elements.length ? `: ${result.specimens.elements.slice(0, 5).join(", ")}${result.specimens.elements.length > 5 ? ", ..." : ""}` : ""})`] : []),
     `Pages: ${report.pages.map(page => `${page.path} (${page.frame} + ${page.sections.length} sections)`).join(", ")}`,
     `Empty slots: ${report.emptySlots.length}`, ...report.emptySlots.map(row => `  ${row.page} ${row.section}: ${row.reason}`),
     `Unbound keys: ${report.unboundKeys.length}`, ...report.unboundKeys.map(row => `  ${row.page} ${row.key}: ${row.reason}`),

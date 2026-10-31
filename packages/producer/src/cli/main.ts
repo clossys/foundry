@@ -2,12 +2,13 @@ import { resolve } from "node:path";
 import { resolveAgent } from "../agents.js";
 import type { AgentKind } from "../agents.js";
 import type { PageLintReport } from "../check/page-types.js";
+import type { RecordSuitesReport } from "../check/record-suites.js";
 import { runSpecimenCli } from "./specimen.js";
 import { CliUsageError, parseArgs, USAGE } from "./args.js";
 import type { Verb } from "./args.js";
 import { discoverRoot } from "./root.js";
 import { runProduce } from "./produce.js";
-import { runPageCheck } from "./check.js";
+import { runCheck } from "./check.js";
 import { runPublish } from "./publish.js";
 
 const VERB_AGENTS: Record<Exclude<Verb, "check">, readonly AgentKind[]> = {
@@ -25,6 +26,7 @@ export interface CliResult {
   root?: string;
   check?: boolean;
   report?: PageLintReport;
+  suites?: RecordSuitesReport;
   reportPath?: string;
 }
 
@@ -35,10 +37,10 @@ export async function runCli(argv: readonly string[], cwd = process.cwd()): Prom
     const args = parseArgs(argv);
     if (args.help) return { exitCode: 0, message: USAGE };
     const verb = args.verb!;
-    if (verb === "check") return await runPageCheck(args, cwd);
+    if (verb === "check") return await runCheck(args, cwd);
     const root = discoverRoot(resolve(cwd, args.root ?? "."));
     if (verb === "produce") return await runProduce(args, root);
-    if (verb === "publish" && args.target !== undefined) return await runPublish(args, root);
+    if (verb === "publish" && args.target !== undefined) return await runPublish(args, root, cwd);
     for (const kind of VERB_AGENTS[verb]) resolveAgent(kind);
     return { exitCode: 2, message: `${verb}: not implemented in this build`, verb, root, check: args.check };
   } catch (error) {

@@ -14,6 +14,12 @@ export interface CliArgs {
   pages?: string;
   report?: string;
   out?: string;
+  /** check: run the record suites (archetypes, Writer/Director slots, slot contracts). */
+  suites: boolean;
+  /** check: record-suite findings fail the command (exit 1). */
+  strict: boolean;
+  /** publish: library roots served at `/__specimen`. */
+  records: string[];
 }
 
 export class CliUsageError extends Error {
@@ -22,10 +28,12 @@ export class CliUsageError extends Error {
 
 export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check> [--check] [--root <dir>] [--json]\n"
   + "Options: --help; produce --once --port <0-65535> --no-open; publish --target preview [--port <0-65535>] [--out <dir>]\n"
-  + "Page check: clossys check --pages <generated-manifest.json> --report <report.json> [--json]";
+  + "Page check: clossys check --pages <generated-manifest.json> --report <report.json> [--json]\n"
+  + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root)\n"
+  + "Specimens: clossys publish --target preview [--records <library dir>]... (default <root>/clossys/library)";
 
 export function parseArgs(argv: readonly string[]): CliArgs {
-  const args: CliArgs = { help: false, check: false, json: false, once: false, noOpen: false };
+  const args: CliArgs = { help: false, check: false, json: false, once: false, noOpen: false, suites: false, strict: false, records: [] };
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index]!;
     const value = (): string => {
@@ -44,6 +52,9 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       case "--pages": args.pages = value(); break;
       case "--report": args.report = value(); break;
       case "--out": args.out = value(); break;
+      case "--suites": args.suites = true; break;
+      case "--strict": args.strict = true; break;
+      case "--records": args.records.push(value()); break;
       case "--port": {
         const port = value();
         if (!/^\d+$/.test(port) || Number(port) > 65535) throw new CliUsageError("--port must be an integer from 0 to 65535");
@@ -62,9 +73,13 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   if ((args.pages !== undefined || args.report !== undefined) && args.verb !== "check") {
     throw new CliUsageError("--pages and --report require check");
   }
+  if ((args.suites || args.strict) && args.verb !== "check") throw new CliUsageError("--suites and --strict require check");
+  if (args.records.length && args.verb !== "publish") throw new CliUsageError("--records requires publish");
   if (!args.verb && !args.help) throw new CliUsageError("A verb is required");
-  if (args.verb === "check" && !args.help && (args.pages === undefined || args.report === undefined)) {
-    throw new CliUsageError("check requires --pages and --report");
+  if (args.verb === "check" && !args.help) {
+    const page = args.pages !== undefined || args.report !== undefined;
+    if (page && (args.pages === undefined || args.report === undefined)) throw new CliUsageError("check requires --pages and --report");
+    if (!page && !args.suites) throw new CliUsageError("check requires --pages and --report, or --suites");
   }
   return args;
 }

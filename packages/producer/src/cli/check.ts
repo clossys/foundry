@@ -1,8 +1,11 @@
+import { statSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { lintPages } from "../check/page-lint.js";
 import { readPageCheckSource, readPageManifest } from "../check/page-manifest.js";
 import type { PageLintReport } from "../check/page-types.js";
+import { recordSuitesSummary, runRecordSuites } from "../check/record-suites.js";
+import { discoverRoot } from "./root.js";
 import type { CliArgs } from "./args.js";
 import type { CliResult } from "./main.js";
 
@@ -69,4 +72,29 @@ export async function runPageCheck(args: CliArgs, cwd: string): Promise<CliResul
     report,
     ...(reportPath ? { reportPath } : {}),
   };
+}
+
+const consumerRoot = (dir: string) => statSync(join(dir, "clossys", "clossys.config.ts"), { throwIfNoEntry: false })?.isFile() === true;
+
+/**
+ * `clossys check`: the PROC-5 page lint (`--pages`/`--report`) and the record suites.
+ * `--suites` runs the suites on the discovered consumer root; with `--pages`/`--report`
+ * they also run when `--root` itself is a consumer root. Suite findings are report only:
+ * the exit code is the page lint's (0 for suites alone) unless `--strict`.
+ */
+export async function runCheck(args: CliArgs, cwd: string): Promise<CliResult> {
+  const page = args.pages !== undefined ? await runPageCheck(args, cwd) : undefined;
+  const start = resolve(cwd, args.root ?? ".");
+  let root: string | undefined;
+  if (args.suites) {
+    try { root = discoverRoot(start); } catch (error) {
+      const message = `check --suites: ${errorMessage(error)}`;
+      return { ...(page ?? { verb: "check" as const, root: start, check: true }), exitCode: 2, message: page ? `${page.message}\n${message}` : message };
+    }
+  } else if (consumerRoot(start)) root = start;
+  if (!root) return page!;
+  const suites = await runRecordSuites(root, { strict: args.strict });
+  const summary = recordSuitesSummary(suites);
+  const exitCode = Math.max(page?.exitCode ?? 0, suites.exitCode) as 0 | 1 | 2;
+  return { ...(page ?? { verb: "check" as const, root, check: true }), exitCode, message: page ? `${page.message}\n${summary}` : summary, suites };
 }

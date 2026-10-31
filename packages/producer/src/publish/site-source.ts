@@ -42,7 +42,7 @@ export async function readPublisher(root: string, publication?: string): Promise
   const cells = await readCells(root, "publisher", true);
   const copy: Record<string, PageCopyBinding[]> = {};
   for (const cell of cells) if (Object.values(cellOfEntry).includes(cell.id)) copy[cell.id] = pageCopy(cell.source);
-  return { publicationId: map.publicationId, entries: map.entries, routes, copy, cellOfEntry };
+  return { publicationId: map.publicationId, ...(typeof map.format === "string" ? { format: map.format } : {}), entries: map.entries, routes, copy, cellOfEntry };
 }
 
 /** Writer: the compiled locale files (records, aliases) and its section bindings. */
