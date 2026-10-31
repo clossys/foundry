@@ -70,7 +70,8 @@ describe("ref-verbatim allowed-hunk grammar", () => {
 
   it("ignores formatting and accepts the allowed kinds", () => {
     expect(rules(ref.replace(/"/g, "'").replace("p-8\", className)", "p-8\",\n      className,\n    )"))).toEqual([]);
-    expect(rules(ref.replace('"@/lib/utils"', '"cn"'))).toEqual(["H-IMPORT"]);
+    // A changed import source reads as one import removed plus one added.
+    expect(rules(ref.replace('"@/lib/utils"', '"cn"'))).toEqual(["H-IMPORT", "H-IMPORT"]);
     expect(rules(ref.replace("bg-background", "bg-surface"), { themeVars: ["--color-surface"] })).toEqual(["H-TOKEN"]);
     expect(rules(ref.replace("<h1 ", '<h1 id="hero-title" '))).toEqual(["H-PROPS"]);
     expect(rules(ref.replace(">Title<", ">{title}<"))).toEqual(["H-DATA"]);
@@ -180,7 +181,8 @@ describe("ref-verbatim pin gate (strict, one element version)", () => {
     const wrongPath = consumer([button({ lineage: { mode: "verbatim", source: sourceOf("shadcn-aria", "button", { "button.tsx": "registry/aria-nova/ui/nope.tsx" }) } })]);
     expect(gate(wrongPath, "components.button/button/v1")).toEqual(["REF-FILE-UNMAPPED"]);
 
-    const structure = consumer([button({ files: { "button.tsx": BUTTON.replace("<ButtonPrimitive", "<div").replace("</ButtonPrimitive>", "</div>") } })]);
+    const structure = consumer([button({ files: { "button.tsx": BUTTON.replace("(\n    <ButtonPrimitive\n", "(\n    <div\n") } })]);
+    expect(readFileSync(join(structure, "library/components.button/button/v1/button.tsx"), "utf8")).not.toBe(BUTTON);
     expect(gate(structure, "components.button/button/v1")).toContain("REF-HUNK-STRUCTURE");
     const logic = consumer([button({ files: { "button.tsx": `${BUTTON}\nconsole.log("x")\n` } })]);
     expect(gate(logic, "components.button/button/v1")).toEqual(["REF-HUNK-LOGIC"]);

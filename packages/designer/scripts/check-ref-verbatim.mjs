@@ -315,7 +315,9 @@ export function refVerbatimReport(root, { all = false, ...options } = {}) {
     ? versionDirs(join(root, "library"))
     : Object.entries(pins).map(([slot, pin]) => ({ slot, element: pin.element, version: pin.version, pinHash: pin.hash }));
   const { rows, findings: baselineFindings } = loadBaseline(options);
-  const baseline = new Set(rows.map(baselineKey));
+  // A row outside the ceiling is itself a finding and excuses nothing.
+  const ceiling = new Set(defaults(options).ceiling);
+  const baseline = new Set(rows.map(baselineKey).filter((k) => ceiling.has(k)));
   const used = new Set();
   const elements = [];
   const findings = [...baselineFindings];
