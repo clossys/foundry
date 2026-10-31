@@ -9,6 +9,8 @@ export interface GalleryCardData {
   statusTone: GalleryTone;
   href: string;
   specimenSrc?: string;
+  /** Newer, unpinned versions waiting for approval. */
+  options: number;
 }
 
 export interface GalleryGroupData { id: string; label: string; level: 1 | 2; cards: readonly GalleryCardData[] }

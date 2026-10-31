@@ -8,6 +8,8 @@ export type DesignerStatus = 'pinned' | 'missing' | 'failing' | 'stale' | 'unrel
 export interface DesignerCard {
   slot: string; slug: string; name: string; layer: string; status: DesignerStatus;
   element?: string; version?: number; pinned: boolean; specimen?: string;
+  /** Versions of the pinned element newer than the pin: options pending approval. */
+  options: number[];
 }
 export interface DesignerSection { id: string; label: string; level: 0 | 1 | 2; cards: DesignerCard[] }
 export interface DesignerGallery { state: 'ready' | 'missing'; sections: DesignerSection[]; count: number }

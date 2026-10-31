@@ -1,7 +1,7 @@
 // Foundry layout primitives: shared by every Studio view that lays out cards or specimens.
 // Sizes come from the layout tokens in ../index.css (`--card-grid-*`, `--specimen-ratio-*`),
 // so a view never carries its own grid or ratio classes.
-import type { ComponentProps } from "react"
+import type { ComponentProps, ReactNode } from "react"
 import { cn } from "../lib/utils"
 
 /** A responsive card grid: as many `--card-grid-min` columns as fit, `--card-grid-gap` apart. */
@@ -43,4 +43,14 @@ function SpecimenFrame({ src, title, ratio = "thumbnail", interactive = false, c
   )
 }
 
-export { CardGrid, SpecimenFrame }
+/** A specimen with its caption beneath (a version badge, a reason): one grid cell of a side-by-side comparison. */
+function SpecimenFigure({ caption, className, children, ...props }: ComponentProps<"figure"> & { caption: ReactNode }) {
+  return (
+    <figure data-slot="specimen-figure" className={cn("flex min-w-0 flex-col gap-2", className)} {...props}>
+      {children}
+      <figcaption className="flex min-w-0 flex-wrap items-center gap-2 text-sm text-muted-foreground">{caption}</figcaption>
+    </figure>
+  )
+}
+
+export { CardGrid, SpecimenFigure, SpecimenFrame }

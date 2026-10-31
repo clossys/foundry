@@ -25,3 +25,6 @@ export interface DetailVersionRow { version: number; createdAt: string; reason: 
 
 /** One viewport's specimen URLs; the frame renders the page at `viewport` CSS px and scales it to fit. */
 export interface DetailSpecimenData { viewport: 375 | 768 | 1280; light: string; dark: string }
+
+/** One version beside the pin: the pinned version first, then each newer option, framed at 1280 CSS px. */
+export interface DetailOptionData { version: number; pinned: boolean; reason: string; src: string }

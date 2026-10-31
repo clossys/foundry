@@ -17,6 +17,7 @@ export function LeafCard({ card }: { card: GalleryCardData }) {
     <CardContent className="flex flex-wrap items-center gap-2">
       {card.version !== undefined && <Badge variant="ghost">v{card.version}</Badge>}
       <Badge variant={card.statusTone}>{card.statusLabel}</Badge>
+      {card.options > 0 && <Badge variant="outline">{card.options === 1 ? '1 option pending' : `${card.options} options pending`}</Badge>}
     </CardContent>
   </Card>;
 }

@@ -10,6 +10,8 @@ import { DesignerGallery, GalleryNotice, type GalleryLayerData } from './designe
 type Load = { state: 'loading' } | { state: 'ready'; value: GalleryRecords } | { state: 'error'; message: string };
 
 const NO_ACTIONS: never[] = [];
+/** A component is a small part of a page: frame it at a phone viewport so it reads at thumbnail scale; pages and themes frame at desktop. */
+const THUMBNAIL_WIDTH: Record<string, number> = { components: 375 };
 
 /** Records -> display data: L0 sections open a layer; L1/L2 sections become its groups. */
 function galleryLayers(records: GalleryRecords, theme: 'light' | 'dark'): GalleryLayerData[] {
@@ -22,8 +24,8 @@ function galleryLayers(records: GalleryRecords, theme: 'light' | 'dark'): Galler
       cards: section.cards.map(card => ({
         key: card.slot, name: card.name, ...(card.version !== undefined ? { version: card.version } : {}),
         statusLabel: DESIGNER_STATUS_LABEL[card.status], statusTone: DESIGNER_STATUS_TONE[card.status],
-        href: designerLeafHref(card.slug),
-        ...(card.specimen ? { specimenSrc: specimenHref(card, theme, 1280)! } : {}),
+        href: designerLeafHref(card.slug), options: card.options.length,
+        ...(card.specimen ? { specimenSrc: specimenHref(card, theme, THUMBNAIL_WIDTH[card.layer] ?? 1280)! } : {}),
       })),
     });
   }

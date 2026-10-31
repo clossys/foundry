@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { notFound } from 'next/navigation';
 import { StudioFrame } from '../components/StudioFrame';
+import { useThemeMode } from '../components/StudioProviders';
 import { DESIGNER_STATUS_LABEL, DESIGNER_STATUS_TONE, loadDesignerLeaf, specimenHref, type DesignerLeaf } from '../lib/designer-library';
 import { PROOF_PAGE_ID } from '../lib/proof-routes';
 import { DesignerDetail } from './designer-detail';
@@ -16,6 +17,7 @@ const versionFlags = (row: DesignerLeaf['versions'][number]) => [row.pinned && '
 
 /** `/designer/<leaf>`: one leaf's specimen, contract, lineage and versions. */
 export default function DesignerLeafView({ slug }: { slug: string }) {
+  const { resolved } = useThemeMode();
   const [load, setLoad] = useState<Load>({ state: 'loading' });
   useEffect(() => {
     const controller = new AbortController();
@@ -37,6 +39,11 @@ export default function DesignerLeafView({ slug }: { slug: string }) {
           statusDetail: leaf.statusDetail, trail: leaf.trail, galleryHref: '/designer',
         }}
         specimens={leaf.card.specimen ? SPECIMEN_VIEWPORTS.map(viewport => ({ viewport, light: specimenHref(leaf.card, 'light', viewport)!, dark: specimenHref(leaf.card, 'dark', viewport)! })) : []}
+        options={leaf.card.specimen && leaf.card.version !== undefined && leaf.card.options.length ? [leaf.card.version, ...leaf.card.options].map(version => ({
+          version, pinned: version === leaf.card.version,
+          reason: leaf.versions.find(row => row.version === version)?.reason ?? '',
+          src: specimenHref({ specimen: leaf.card.specimen, version }, resolved, 1280)!,
+        })) : []}
         contract={{
           ...(leaf.contract.kind ? { kind: leaf.contract.kind } : {}), ...(leaf.contract.root ? { root: leaf.contract.root } : {}),
           inputs: leaf.contract.inputs,

@@ -27,6 +27,8 @@ export interface DesignerCard {
   readonly pinned: boolean;
   /** Specimen id for `/__specimen?element=` (`<slot>/<element>`). */
   readonly specimen?: string;
+  /** Versions of the pinned element newer than the pin: options pending approval, oldest first. */
+  readonly options: readonly number[];
 }
 export interface DesignerSection {
   /** Anchor id, unique on the page. */
@@ -109,11 +111,14 @@ function cards(ws: Workspace): Map<string, DesignerCard> {
   return new Map(ws.slots.map(slot => {
     const pin = ws.selection.pins[slot];
     const element = pin?.element ?? elementsOf(ws, slot)[0];
-    const version = pin?.version ?? (element ? listVersions(ws.library, slot, element).at(-1) : undefined);
+    const versions = element ? listVersions(ws.library, slot, element) : [];
+    // The card shows what selection.json pins; only an unpinned slot shows its newest version.
+    const version = pin?.version ?? versions.at(-1);
+    const options = pin && element === pin.element ? versions.filter(candidate => candidate > pin.version) : [];
     const card: DesignerCard = {
       slot, slug: slug.get(slot)!, name: humanize(slug.get(slot)!.replace(/^[a-z]+\./, "")), layer: slot.split(".")[0]!,
       status: status.get(slot)?.status ?? "missing", pinned: !!pin,
-      ...(element ? { element, specimen: `${slot}/${element}` } : {}), ...(version ? { version } : {}),
+      ...(element ? { element, specimen: `${slot}/${element}` } : {}), ...(version ? { version } : {}), options,
     };
     return [slot, card];
   }));
@@ -228,6 +233,7 @@ export function designerDefaultTheme(root: string): string | undefined {
   const selectionPath = join(root, SELECTION_FILE);
   if (!existsSync(selectionPath)) return undefined;
   const pins = loadSelection(selectionPath).pins;
-  const slot = Object.keys(pins).sort().find(name => name.startsWith("themes."));
+  // The theme slot itself, not the first `themes.*` slot by name (`themes.font-heading` sorts first).
+  const slot = pins["themes.theme"] ? "themes.theme" : Object.keys(pins).sort().find(name => name.startsWith("themes.") && !name.startsWith("themes.font"));
   return slot ? `${slot}/${pins[slot]!.element}` : undefined;
 }
