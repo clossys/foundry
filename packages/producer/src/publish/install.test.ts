@@ -41,7 +41,7 @@ describe("clossys publish --install", () => {
     const result = await runCli(["publish", "--install", "--page", join(fixture, "clossys", "publisher", "pages", "home.json"), "--root", fixture, "--out", out]);
     expect(result.message).toContain("Findings: 0");
     expect(result.exitCode).toBe(0);
-    expect(result.message).toContain("Bound: home (frame frames.plain/plain-frame + 1 sections, 3 copy slots bound)");
+    expect(result.message).toContain("Bound: home (frame frames.plain/plain-frame + 1 sections + 0 parts, 3 copy slots bound)");
     const html = readFileSync(join(out, "site", "home", "index.html"), "utf8");
     for (const text of ["Example Studio", "Pages assembled from records", "Every word here comes from a Writer key."]) expect(html).toContain(text);
     const again = await runCli(["publish", "--install", "--page", join(fixture, "clossys", "publisher", "pages", "home.json"), "--root", fixture, "--out", out]);

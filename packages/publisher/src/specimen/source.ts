@@ -30,7 +30,7 @@ const KIND_ALIASES: Readonly<Record<string, SpecimenKind>> = {
   component: "visual", components: "visual", section: "visual", sections: "visual", frame: "visual", frames: "visual",
   page: "visual", block: "visual", ui: "visual", "registry:ui": "visual", "registry:block": "visual", "registry:component": "visual",
   copy: "text", writer: "text", cell: "text", "registry:text": "text",
-  table: "data", chart: "data", dataset: "data", theme: "data", "registry:theme": "data", tokens: "data",
+  table: "data", chart: "data", dataset: "data", theme: "data", themes: "data", "registry:theme": "data", "registry:font": "data", tokens: "data",
   asset: "media", assets: "media", image: "media", icon: "media", logo: "media", video: "media",
   director: "flow", route: "flow", journey: "flow",
   // Library record kinds and layers (the element record schema's `kind` and `layer`).
@@ -139,6 +139,7 @@ export function specimenRecordFrom(input: SpecimenElementVersion): SpecimenRecor
   return {
     id: input.id, version: input.version, kind,
     payload: { path: primary.path, raw: primary.content, files },
+    sources: input.files.map(file => ({ path: file.path, content: file.content })),
     preview: adaptPreview(input.preview),
     contentHash: input.contentHash,
   };

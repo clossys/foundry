@@ -56,6 +56,8 @@ export interface SpecimenRecord {
   readonly kind: SpecimenKind;
   /** The payload: shadcn registry-item files for code, or the cell text for copy. */
   readonly payload: { readonly path: string; readonly files: readonly SpecimenFile[]; readonly raw: string };
+  /** Every payload file as stored, before any registry-item expansion (a registry item can name sibling files instead of inlining them). */
+  readonly sources?: readonly SpecimenFile[];
   readonly preview: SpecimenPreview;
   /** sha256 of the record's own files (element.json, preview.json, payload). */
   readonly contentHash: string;

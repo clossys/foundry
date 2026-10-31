@@ -25,7 +25,11 @@ export interface InstallPageRecord {
   readonly id: string;
   readonly frame: string;
   readonly sections: readonly string[];
-  /** Per slot: copy slot name to Writer key, asset slot name to consumer asset id. */
+  /** Slots installed before the page but never mounted, such as a theme or a font. */
+  readonly include?: readonly string[];
+  /** Page-wide copy bindings: copy slot name to Writer key, for every mounted slot. */
+  readonly copy?: Readonly<Record<string, string>>;
+  /** Per slot: copy slot name to Writer key, asset slot name to consumer asset id. A slot binding overrides the page-wide one. */
   readonly bindings?: Readonly<Record<string, {
     readonly copy?: Readonly<Record<string, string>>;
     readonly assets?: Readonly<Record<string, string>>;
@@ -37,7 +41,7 @@ export interface InstallPin { readonly element: string; readonly version: number
 export type InstallPins = Readonly<Record<string, InstallPin>>;
 
 export type InstallFindingCode =
-  | "invalid-page" | "unpinned-slot" | "missing-record" | "not-a-registry-item" | "no-entry"
+  | "invalid-page" | "unpinned-slot" | "unpinned-dependency" | "missing-record" | "not-a-registry-item" | "no-entry"
   | "install-failed" | "hash-mismatch" | "unbound-copy-slot" | "missing-copy-key"
   | "unbound-asset-slot" | "missing-asset";
 export interface InstallFinding { readonly code: InstallFindingCode; readonly slot?: string; readonly detail: string }
@@ -48,26 +52,44 @@ export type ShadcnRunner = (args: readonly string[], options: { readonly cwd: st
 /** The installed file a slot mounts; without `export`, the renderer takes the default or sole component export. */
 export interface SlotEntry { readonly file: string; readonly export?: string }
 
-interface RegistryFile { readonly path: string; readonly type?: string; readonly target?: string }
+interface RegistryFile { readonly path: string; readonly type?: string; readonly target?: string; readonly content?: string }
+
+/**
+ * How a slot is placed on a page. `frame` and `section` come from the page record; `part` is a
+ * slot another mounted slot's props name with `{ "$element": "<slot>" }`; `dependency` is a
+ * pinned slot a registry item names in `registryDependencies` (`@<namespace>/<element>`);
+ * `include` is a page `include` slot. Frames, sections and parts are mounted and bound.
+ */
+export type SlotRole = "frame" | "section" | "part" | "dependency" | "include";
 
 /** A slot resolved to its pinned registry item. */
 export interface ResolvedSlot {
   readonly slot: string;
-  readonly role: "frame" | "section";
+  readonly role: SlotRole;
+  readonly mounted: boolean;
   readonly record: SpecimenRecord;
-  /** sha256 of the registry item JSON as pinned. */
+  /** The registry item JSON handed to shadcn: files inlined, pinned dependencies removed. */
+  readonly item: string;
+  /** sha256 of `item`. */
   readonly itemHash: string;
   /** Substrate-relative paths the item installs to. */
   readonly files: readonly string[];
   /** The installed file the page mounts, and its export when the preview names one. */
-  readonly entry: SlotEntry;
+  readonly entry?: SlotEntry;
+  /** The export that maps the element's copy props to its copy slot names, when it has one. */
+  readonly copyKeys?: string;
+  /** The props the element mounts with, from its preview fixtures. */
+  readonly props: Readonly<Record<string, unknown>>;
   readonly copySlots: readonly string[];
   readonly assetSlots: readonly string[];
 }
 
 const isRecord = (value: unknown): value is Record<string, any> => !!value && typeof value === "object" && !Array.isArray(value);
+const str = (value: unknown): string | undefined => typeof value === "string" && value ? value : undefined;
 const CODE = /\.(?:[cm]?[jt]sx?)$/;
+const NAMESPACED = /^@[^/\s]+\/([^/\s]+)$/;
 const sha256 = (value: string | Uint8Array) => createHash("sha256").update(value).digest("hex");
+const MOUNTED: ReadonlySet<SlotRole> = new Set(["frame", "section", "part"]);
 
 /** Where shadcn writes a registry file without a `target`, by registry file type. */
 const DEFAULT_DIRS: Readonly<Record<string, string>> = {
@@ -82,46 +104,139 @@ function installedPath(file: RegistryFile): string | undefined {
   return isAbsolute(normal) || normal.startsWith("..") ? undefined : normal;
 }
 
-/** Copy and asset slots an element reads: `{ "$copy": name }` / `{ "$asset": name }` in its fixtures, plus its copy keys. */
-function slotsOf(record: SpecimenRecord): { copy: string[]; assets: string[] } {
-  const copy = new Set<string>(Object.keys(record.preview.copy ?? {})), assets = new Set<string>();
-  for (const value of Object.values(record.preview.fixtures ?? {})) {
-    if (isRecord(value) && typeof value.$copy === "string") copy.add(value.$copy);
-    if (isRecord(value) && typeof value.$asset === "string") assets.add(value.$asset);
+/** Every object node under a value, depth first. */
+function eachNode(value: unknown, visit: (node: Record<string, any>) => void): void {
+  if (Array.isArray(value)) for (const item of value) eachNode(item, visit);
+  else if (isRecord(value)) { visit(value); for (const item of Object.values(value)) eachNode(item, visit); }
+}
+
+/**
+ * The mount a preview describes. Either the fixtures are the props themselves, or they are a
+ * mount spec: `{ file, export?, copyKeys?, props? }`, where `file` is the registry file to mount
+ * and `copyKeys` names the export mapping each copy prop to a copy slot name.
+ */
+function mountOf(record: SpecimenRecord): { file?: string; export?: string; copyKeys?: string; props: Record<string, unknown> } {
+  const fixtures = record.preview.fixtures ?? {};
+  if (typeof fixtures.file === "string" && (fixtures.props === undefined || isRecord(fixtures.props))) {
+    const name = str(fixtures.export) ?? record.preview.export, copyKeys = str(fixtures.copyKeys);
+    return { file: fixtures.file, ...(name ? { export: name } : {}), ...(copyKeys ? { copyKeys } : {}), props: { ...(fixtures.props as Record<string, unknown> | undefined) } };
   }
+  return { ...(record.preview.entry ? { file: record.preview.entry } : {}), ...(record.preview.export ? { export: record.preview.export } : {}), props: { ...fixtures } };
+}
+
+/** Copy and asset slots an element reads: its preview copy keys plus every `{ "$copy" }` / `{ "$asset" }` in its props. */
+function slotsOf(record: SpecimenRecord, props: Record<string, unknown>): { copy: string[]; assets: string[] } {
+  const copy = new Set<string>(Object.keys(record.preview.copy ?? {})), assets = new Set<string>();
+  eachNode(props, node => {
+    if (typeof node.$copy === "string") copy.add(node.$copy);
+    if (typeof node.$asset === "string") assets.add(node.$asset);
+  });
   return { copy: [...copy].sort(), assets: [...assets].sort() };
 }
 
-/** Resolve every slot of a page to its pinned registry item. Unpinned slots are findings. */
+/** The record's registry item: its payload, or the payload file that is one. */
+function registryItemOf(record: SpecimenRecord): { path: string; item: Record<string, any> } | undefined {
+  const candidates = [{ path: record.payload.path, content: record.payload.raw }, ...(record.sources ?? []).filter(file => file.path !== record.payload.path)];
+  for (const file of candidates) {
+    if (!file.path.endsWith(".json")) continue;
+    let item: unknown;
+    try { item = JSON.parse(file.content); } catch { continue; }
+    // An item without files (a theme's cssVars, a font) is still an item when it names its registry type.
+    if (isRecord(item) && typeof item.name === "string" && (Array.isArray(item.files) || (typeof item.type === "string" && item.type.startsWith("registry:")))) {
+      return { path: file.path, item: { ...item, files: Array.isArray(item.files) ? item.files : [] } };
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Resolve every slot of a page to its pinned registry item, with the pinned slots those items
+ * depend on or compose. A dependency is installed before the item that needs it. Unpinned slots
+ * and dependencies are findings.
+ */
 export async function resolvePage(page: InstallPageRecord, pins: InstallPins, source: SpecimenRecordSource): Promise<{ slots: ResolvedSlot[]; findings: InstallFinding[] }> {
   const findings: InstallFinding[] = [], slots: ResolvedSlot[] = [];
-  if (typeof page?.id !== "string" || typeof page.frame !== "string" || !Array.isArray(page.sections)) {
+  if (typeof page?.id !== "string" || typeof page.frame !== "string" || !Array.isArray(page.sections) || (page.include !== undefined && !Array.isArray(page.include))) {
     return { slots, findings: [{ code: "invalid-page", detail: "a page record needs an id, a frame slot and an ordered sections list" }] };
   }
-  const order: { slot: string; role: ResolvedSlot["role"] }[] = [{ slot: page.frame, role: "frame" }, ...page.sections.map(slot => ({ slot, role: "section" as const }))];
-  for (const { slot, role } of order) {
+  const byElement = new Map<string, string[]>();
+  for (const [slot, pin] of Object.entries(pins)) byElement.set(pin.element, [...(byElement.get(pin.element) ?? []), slot]);
+  const done = new Map<string, ResolvedSlot>(), active = new Set<string>();
+
+  async function visit(slot: string, role: SlotRole, via?: string): Promise<void> {
+    const seen = done.get(slot);
+    if (seen) {
+      if (MOUNTED.has(role) && !seen.mounted) {
+        if (!seen.entry) { findings.push({ code: "no-entry", slot, detail: `${seen.record.id}: the registry item has no code file to mount` }); return; }
+        const index = slots.indexOf(seen);
+        const upgraded = { ...seen, role, mounted: true };
+        slots[index] = upgraded; done.set(slot, upgraded);
+      }
+      return;
+    }
+    if (active.has(slot)) { findings.push({ code: "invalid-page", slot, detail: `${page.id}: slot ${slot} depends on itself through ${via}` }); return; }
     const pin = pins[slot];
-    if (!pin) { findings.push({ code: "unpinned-slot", slot, detail: `${page.id}: slot ${slot} has no pinned registry item` }); continue; }
+    if (!pin) {
+      findings.push(role === "dependency" || role === "part"
+        ? { code: "unpinned-dependency", slot, detail: `${page.id}: ${via} needs slot ${slot}, which has no pinned registry item` }
+        : { code: "unpinned-slot", slot, detail: `${page.id}: slot ${slot} has no pinned registry item` });
+      return;
+    }
     const id = `${slot}/${pin.element}`;
     const record = await source.read(id, pin.version);
-    if (!record) { findings.push({ code: "missing-record", slot, detail: `${id}@v${pin.version} is pinned but not in the library` }); continue; }
-    let item: unknown;
-    try { item = JSON.parse(record.payload.raw); } catch { item = undefined; }
-    if (!isRecord(item) || typeof item.name !== "string" || !Array.isArray(item.files) || !item.files.length) {
-      findings.push({ code: "not-a-registry-item", slot, detail: `${id}@v${record.version}: payload ${record.payload.path} is not a shadcn registry item` });
-      continue;
+    if (!record) { findings.push({ code: "missing-record", slot, detail: `${id}@v${pin.version} is pinned but not in the library` }); return; }
+    const found = registryItemOf(record);
+    if (!found) { findings.push({ code: "not-a-registry-item", slot, detail: `${id}@v${record.version}: no payload file is a shadcn registry item` }); return; }
+    active.add(slot);
+    try {
+      const sources = new Map((record.sources ?? record.payload.files).map(file => [file.path, file.content]));
+      const registryFiles: RegistryFile[] = [];
+      for (const file of found.item.files as unknown[]) {
+        if (!isRecord(file) || typeof file.path !== "string") continue;
+        const content = typeof file.content === "string" ? file.content : sources.get(file.path);
+        if (content === undefined) { findings.push({ code: "not-a-registry-item", slot, detail: `${id}: registry file ${file.path} has no content and is not in the record payload` }); return; }
+        registryFiles.push({ ...(file as RegistryFile), content });
+      }
+      const files = registryFiles.map(installedPath);
+      if (files.some(file => !file)) { findings.push({ code: "not-a-registry-item", slot, detail: `${id}: a registry file has no target or known type` }); return; }
+      // Pinned dependencies install from their own records; only unnamespaced ones go to shadcn.
+      const kept: string[] = [];
+      for (const dependency of Array.isArray(found.item.registryDependencies) ? found.item.registryDependencies : []) {
+        if (typeof dependency !== "string") continue;
+        const match = NAMESPACED.exec(dependency);
+        if (!match) { kept.push(dependency); continue; }
+        const candidates = byElement.get(match[1]!) ?? [];
+        if (candidates.length !== 1) {
+          findings.push({ code: "unpinned-dependency", slot, detail: `${id} depends on ${dependency}, which ${candidates.length ? `${candidates.length} slots pin (${candidates.join(", ")})` : "no slot pins"}` });
+          continue;
+        }
+        await visit(candidates[0]!, "dependency", id);
+      }
+      const mount = mountOf(record);
+      if (role === "frame") delete mount.props.children;
+      const parts = new Set<string>();
+      eachNode(mount.props, node => { if (typeof node.$element === "string") parts.add(node.$element); });
+      for (const part of parts) await visit(part, "part", id);
+      const entryIndex = mount.file ? registryFiles.findIndex(file => file.path === mount.file) : registryFiles.findIndex(file => CODE.test(file.path));
+      const mounted = MOUNTED.has(role);
+      if (mounted && entryIndex < 0) { findings.push({ code: "no-entry", slot, detail: `${id}: the registry item has no code file to mount` }); return; }
+      const item = `${JSON.stringify({ ...found.item, files: registryFiles, registryDependencies: kept }, null, 2)}\n`;
+      const { copy, assets } = slotsOf(record, mount.props);
+      const resolved: ResolvedSlot = {
+        slot, role, mounted, record, item, itemHash: sha256(item), files: files as string[],
+        ...(entryIndex >= 0 ? { entry: { file: files[entryIndex]!, ...(mount.export ? { export: mount.export } : {}) } } : {}),
+        ...(mount.copyKeys ? { copyKeys: mount.copyKeys } : {}),
+        props: mount.props, copySlots: copy, assetSlots: assets,
+      };
+      slots.push(resolved); done.set(slot, resolved);
+    } finally {
+      active.delete(slot);
     }
-    const registryFiles = (item.files as unknown[]).filter((file): file is RegistryFile => isRecord(file) && typeof file.path === "string");
-    const files = registryFiles.map(installedPath);
-    if (files.some(file => !file)) { findings.push({ code: "not-a-registry-item", slot, detail: `${id}: a registry file has no target or known type` }); continue; }
-    const entryIndex = record.preview.entry ? registryFiles.findIndex(file => file.path === record.preview.entry) : registryFiles.findIndex(file => CODE.test(file.path));
-    if (entryIndex < 0) { findings.push({ code: "no-entry", slot, detail: `${id}: the registry item has no code file to mount` }); continue; }
-    const { copy, assets } = slotsOf(record);
-    slots.push({
-      slot, role, record, itemHash: sha256(record.payload.raw), files: files as string[],
-      entry: { file: files[entryIndex]!, ...(record.preview.export ? { export: record.preview.export } : {}) }, copySlots: copy, assetSlots: assets,
-    });
   }
+
+  for (const slot of page.include ?? []) await visit(slot, "include");
+  await visit(page.frame, "frame");
+  for (const slot of page.sections) await visit(slot, "section");
   return { slots, findings };
 }
 
@@ -178,7 +293,7 @@ export async function installPage(options: InstallOptions): Promise<InstallResul
         continue;
       }
       const itemFile = join(scratch, `${id.replace(/[^A-Za-z0-9._-]/g, "_")}.v${version}.json`);
-      await writeFile(itemFile, slot.record.payload.raw);
+      await writeFile(itemFile, slot.item);
       const run = await options.runner(["add", itemFile, "--yes", "--overwrite", "--cwd", substrate], { cwd: substrate });
       if (run.code !== 0) { findings.push({ code: "install-failed", slot: slot.slot, detail: `shadcn add ${id}@v${version} exited ${run.code}: ${(run.stderr || run.stdout).trim().split("\n").slice(-3).join(" ")}` }); continue; }
       const hashes: Record<string, string> = {};
@@ -202,12 +317,18 @@ export async function installPage(options: InstallOptions): Promise<InstallResul
 /** One mounted slot of a bound page: the installed entry and its bound props. */
 export interface BoundSlot {
   readonly slot: string;
+  readonly role: SlotRole;
   readonly id: string;
   readonly version: number;
   readonly entry: SlotEntry;
+  /** Props with copy and assets resolved; `{ "$element": "<slot>" }` stays a reference to another bound slot. */
   readonly props: Readonly<Record<string, unknown>>;
+  /** The export mapping copy props to copy slot names; the renderer passes the mapped text as the `copy` prop. */
+  readonly copyKeys?: string;
   /** Copy slot name to the Writer key it is bound to. */
   readonly copy: Readonly<Record<string, string>>;
+  /** Copy slot name to its bound Writer text. */
+  readonly text: Readonly<Record<string, string>>;
   readonly assets: Readonly<Record<string, string>>;
 }
 export interface BoundPage {
@@ -215,6 +336,8 @@ export interface BoundPage {
   readonly id: string;
   readonly frame: BoundSlot;
   readonly sections: readonly BoundSlot[];
+  /** Slots the frame or a section composes through `$element`. */
+  readonly parts: readonly BoundSlot[];
 }
 
 export interface BindOptions {
@@ -226,15 +349,25 @@ export interface BindOptions {
   readonly assets?: Readonly<Record<string, unknown>>;
 }
 
-/** Bind every copy and asset slot. Any unbound slot or unknown key is a finding, and then no page is emitted. */
+function resolveProps(value: unknown, texts: Readonly<Record<string, string>>, values: Readonly<Record<string, unknown>>): unknown {
+  if (Array.isArray(value)) return value.map(item => resolveProps(item, texts, values));
+  if (!isRecord(value)) return value;
+  if (typeof value.$copy === "string") return texts[value.$copy];
+  if (typeof value.$asset === "string") return values[value.$asset];
+  if (typeof value.$element === "string") return { $element: value.$element };
+  return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, resolveProps(item, texts, values)]));
+}
+
+/** Bind every copy and asset slot of every mounted slot. Any unbound slot or unknown key is a finding, and then no page is emitted. */
 export function bindPage(options: BindOptions): { page?: BoundPage; findings: InstallFinding[] } {
   const findings: InstallFinding[] = [];
   const bound: BoundSlot[] = [];
   for (const slot of options.slots) {
+    if (!slot.mounted || !slot.entry) continue;
     const binding = options.page.bindings?.[slot.slot] ?? {};
     const copy: Record<string, string> = {}, assets: Record<string, string> = {}, texts: Record<string, string> = {}, values: Record<string, unknown> = {};
     for (const name of slot.copySlots) {
-      const key = binding.copy?.[name];
+      const key = binding.copy?.[name] ?? options.page.copy?.[name];
       if (!key) { findings.push({ code: "unbound-copy-slot", slot: slot.slot, detail: `${options.page.id}: ${slot.record.id} copy slot ${name} is bound to no Writer key` }); continue; }
       if (!Object.hasOwn(options.copy, key)) { findings.push({ code: "missing-copy-key", slot: slot.slot, detail: `${options.page.id}: Writer has no key ${key} (for ${slot.record.id} ${name})` }); continue; }
       copy[name] = key; texts[name] = options.copy[key]!;
@@ -245,17 +378,17 @@ export function bindPage(options: BindOptions): { page?: BoundPage; findings: In
       if (!options.assets || !Object.hasOwn(options.assets, asset)) { findings.push({ code: "missing-asset", slot: slot.slot, detail: `${options.page.id}: no consumer asset ${asset} (for ${slot.record.id} ${name})` }); continue; }
       assets[name] = asset; values[name] = options.assets[asset];
     }
-    const props: Record<string, unknown> = {};
-    for (const [prop, value] of Object.entries(slot.record.preview.fixtures ?? {})) {
-      if (isRecord(value) && typeof value.$copy === "string") { if (value.$copy in texts) props[prop] = texts[value.$copy]; }
-      else if (isRecord(value) && typeof value.$asset === "string") { if (value.$asset in values) props[prop] = values[value.$asset]; }
-      else props[prop] = value;
-    }
-    bound.push({ slot: slot.slot, id: slot.record.id, version: slot.record.version, entry: slot.entry, props, copy, assets });
+    const props = resolveProps(slot.props, texts, values) as Record<string, unknown>;
+    if (slot.role === "frame") props.children = options.page.sections.map(section => ({ $element: section }));
+    bound.push({
+      slot: slot.slot, role: slot.role, id: slot.record.id, version: slot.record.version, entry: slot.entry, props,
+      ...(slot.copyKeys ? { copyKeys: slot.copyKeys } : {}), copy, text: texts, assets,
+    });
   }
-  const frame = bound.find((_, index) => options.slots[index]!.role === "frame");
+  const frame = bound.find(slot => slot.role === "frame");
   if (findings.length || !frame) return { findings };
-  return { page: { schema: "clossys.bound-page/1", id: options.page.id, frame, sections: bound.filter(slot => slot !== frame) }, findings };
+  const sections = options.page.sections.map(name => bound.find(slot => slot.slot === name)).filter((slot): slot is BoundSlot => !!slot);
+  return { page: { schema: "clossys.bound-page/1", id: options.page.id, frame, sections, parts: bound.filter(slot => slot.role === "part") }, findings };
 }
 
 /** Install and bind in one step: what `clossys publish --install` runs per page. */
