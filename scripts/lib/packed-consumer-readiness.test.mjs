@@ -421,42 +421,61 @@ test("Publisher's optional-peer matrix binds both default and react-server web o
     "@clossys/publisher/web/consent/preview": { default: "refuses", development: "imports", "react-server": "refuses" },
   });
   const rows = OPTIONAL_PEER_POLICY["@clossys/publisher"];
+  // Landed subpaths: the three Publisher view entries reject without their
+  // client peers, and content-route follows the web entry's two conditions.
+  const landedSpecifiers = [
+    "@clossys/publisher/archetypes", "@clossys/publisher/content", "@clossys/publisher/content-map",
+    "@clossys/publisher/content-map/cells", "@clossys/publisher/content/node", "@clossys/publisher/install",
+    "@clossys/publisher/specimen", "@clossys/publisher/web/admin-pages", "@clossys/publisher/web/preview",
+    "@clossys/publisher/web/publisher-v2",
+  ];
+  const landed = (rejected, contentRoute) => ({
+    ...Object.fromEntries(landedSpecifiers.map((specifier) => [specifier, rejected.includes(specifier) ? "rejects" : "imports"])),
+    "@clossys/publisher/web/content-route": contentRoute,
+  });
+  const views = ["@clossys/publisher/web/admin-pages", "@clossys/publisher/web/preview", "@clossys/publisher/web/publisher-v2"];
 
   assert.deepEqual(rows["@internationalized/date"], {
     ...expected([], { default: "rejects", "react-server": "imports" }, "rejects", "rejects"),
     "@clossys/publisher/web/registered-route": "rejects",
     "@clossys/publisher/web/registered-route-check": { browser: "refuses", default: "imports" },
     "@clossys/publisher/web/registered-route-wiring": { browser: "refuses", default: "imports" },
+    ...landed(views, { default: "rejects", "react-server": "imports" }),
   });
   assert.deepEqual(rows.react, {
     ...expected(["@clossys/publisher/document", "@clossys/publisher/testing"], { default: "rejects", "react-server": "rejects" }, "rejects", "rejects"),
     "@clossys/publisher/web/registered-route": "rejects",
     "@clossys/publisher/web/registered-route-check": { browser: "refuses", default: "imports" },
     "@clossys/publisher/web/registered-route-wiring": { browser: "refuses", default: "imports" },
+    ...landed(views, { default: "rejects", "react-server": "rejects" }),
   });
   assert.deepEqual(rows["react-aria-components"], {
     ...expected([], { default: "rejects", "react-server": "imports" }, "rejects", "rejects"),
     "@clossys/publisher/web/registered-route": "rejects",
     "@clossys/publisher/web/registered-route-check": { browser: "refuses", default: "imports" },
     "@clossys/publisher/web/registered-route-wiring": { browser: "refuses", default: "imports" },
+    ...landed(views, { default: "rejects", "react-server": "imports" }),
   });
   assert.deepEqual(rows["react-dom"], {
     ...expected(["@clossys/publisher/testing"], { default: "rejects", "react-server": "imports" }, "rejects", "rejects"),
     "@clossys/publisher/web/registered-route": "rejects",
     "@clossys/publisher/web/registered-route-check": { browser: "refuses", default: "imports" },
     "@clossys/publisher/web/registered-route-wiring": { browser: "refuses", default: "imports" },
+    ...landed(views, { default: "rejects", "react-server": "imports" }),
   });
   assert.deepEqual(rows["tailwind-merge"], {
     ...expected([], { default: "imports", "react-server": "imports" }),
     "@clossys/publisher/web/registered-route": "imports",
     "@clossys/publisher/web/registered-route-check": { browser: "refuses", default: "imports" },
     "@clossys/publisher/web/registered-route-wiring": { browser: "refuses", default: "imports" },
+    ...landed(["@clossys/publisher/web/admin-pages"], { default: "imports", "react-server": "imports" }),
   });
   assert.deepEqual(rows.tailwindcss, {
     ...expected(),
     "@clossys/publisher/web/registered-route": "imports",
     "@clossys/publisher/web/registered-route-check": { browser: "refuses", default: "imports" },
     "@clossys/publisher/web/registered-route-wiring": { browser: "refuses", default: "imports" },
+    ...landed([], { default: "imports", "react-server": "imports" }),
   });
 });
 
