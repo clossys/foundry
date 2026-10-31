@@ -1,8 +1,13 @@
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  hashFiles,
+  loadReferencesManifest,
+  manifestReferenceHash,
+  validateReferencesManifest,
   createRelease,
   deriveSlotStatus,
   ELEMENT_SCHEMA,
@@ -214,6 +219,29 @@ describe("releases/<n>.json", () => {
     writeRelease(root, release);
     expect(() => writeRelease(root, release)).toThrow(/immutable/);
     expect(latestRelease(root)).toEqual(release);
+  });
+});
+
+describe("Designer references manifest", () => {
+  const referencesRoot = fileURLToPath(new URL("../../../designer/references/", import.meta.url));
+
+  it("validates against the Producer schema and its item hashes recompute with treeHash", () => {
+    const manifest = loadReferencesManifest(join(referencesRoot, "manifest.json"));
+    expect(manifest.items.length).toBeGreaterThan(0);
+    for (const item of manifest.items) {
+      expect(hashFiles(join(referencesRoot, item.dir), item.files.map((file) => file.path)), item.dir).toBe(item.hash);
+    }
+    const resolve = manifestReferenceHash([manifest]);
+    const first = manifest.items[0]!;
+    expect(resolve({ registry: first.registry, item: first.name, version: first.version })).toBe(first.hash);
+  });
+
+  it("rejects a manifest whose item hash no longer matches its files (mutation)", () => {
+    const manifest = JSON.parse(readFileSync(join(referencesRoot, "manifest.json"), "utf8"));
+    manifest.items[0].files[0].sha256 = "0".repeat(64);
+    const result = validateReferencesManifest(manifest);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.issues.map((issue) => issue.path)).toContain("$.items[0].hash");
   });
 });
 

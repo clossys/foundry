@@ -1,0 +1,12 @@
+{
+  "name": "use-ref-with-init",
+  "type": "registry:hook",
+  "files": [
+    {
+      "path": "hooks/use-ref-with-init.ts",
+      "type": "registry:hook",
+      "content": "import * as React from \"react\";\n\nconst UNINITIALIZED = {};\n\nfunction useRefWithInit<T>(init: () => T): React.RefObject<T> {\n  const ref = React.useRef<T | typeof UNINITIALIZED>(UNINITIALIZED);\n\n  if (ref.current === UNINITIALIZED) {\n    ref.current = init();\n  }\n\n  return ref as React.RefObject<T>;\n}\n\nexport { useRefWithInit };\n",
+      "target": ""
+    }
+  ]
+}
