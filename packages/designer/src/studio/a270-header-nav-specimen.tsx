@@ -4,7 +4,7 @@ import type { SpecimenLeafDefinition, SpecimenLeafProps } from "./specimen-layou
 import { studioSpecimenLeaves, enumerateRegisteredDesignerSpecimenCases } from "./specimen-registry.js";
 import { siteHeaderProps } from "../runtime/frames/site-header.js";
 import type { CopyResolver } from "../frames/site-frame/copy-contract.js";
-import { createHeaderNavSpecimen } from "./__fixtures__/a270-header-nav.js";
+import { createHeaderNavSpecimen } from "./a270-header-nav.js";
 
 /**
  * The host supplies an emitted, descriptor-bound context and its NEED renderer.

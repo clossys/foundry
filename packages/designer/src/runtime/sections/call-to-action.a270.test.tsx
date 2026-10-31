@@ -60,7 +60,7 @@ beforeAll(async () => {
     return result.exports;
   }
   const native = compile(descriptor.impl.entry);
-  const profile: ResolvedComponents = JSON.parse(readFileSync(resolve(import.meta.dirname, "../../studio/__fixtures__/default-component-preview-profile.json"), "utf8"));
+  const profile: ResolvedComponents = JSON.parse(readFileSync(resolve(import.meta.dirname, "../../studio/default-component-preview-profile.json"), "utf8"));
   const previous = profile.components["components.card"];
   if (!previous) throw new Error("NEED registered Card preview selection");
   profile.components = { ...profile.components, "components.card": { ...previous, descriptor, impl: descriptor.impl, propMap: descriptor.propMap } };

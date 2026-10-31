@@ -335,10 +335,6 @@
   "files": [
     "dist",
     "src",
-    "!src/**/*.test.ts",
-    "!src/**/*.test.tsx",
-    "!src/**/*.test.json",
-    "!src/**/__fixtures__/**",
     "styles",
     "templates",
     "README.md",
@@ -350,7 +346,16 @@
     "THIRD-PARTY-NOTICES.md",
     "fit-signal-declarations.json",
     "strategy-brief.json",
-    "!dist/catalog-core/__fixtures__/**"
+    "!dist/**/__fixtures__/**",
+    "!dist/**/__tests__/**",
+    "!dist/**/__mocks__/**",
+    "!dist/**/__snapshots__/**",
+    "!dist/**/*.test.*",
+    "!src/**/__fixtures__/**",
+    "!src/**/__tests__/**",
+    "!src/**/__mocks__/**",
+    "!src/**/__snapshots__/**",
+    "!src/**/*.test.*"
   ],
   "scripts": {
     "check": "npm run check:usage-graph",

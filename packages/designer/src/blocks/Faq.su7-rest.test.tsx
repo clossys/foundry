@@ -9,7 +9,7 @@ import { ConsumerComponentProvider, type ConsumerComponentSelection } from "../r
 import { defaultSourceModules } from "../components/preview-runtime/modules.js";
 import { GROUP_A_SECTION_RENDERERS } from "../runtime/sections/group-a.js";
 import { groupASectionInput } from "../runtime/sections/group-a-dataset.js";
-import savedSelection from "../studio/__fixtures__/default-component-preview-profile.json" with { type: "json" };
+import savedSelection from "../studio/default-component-preview-profile.json" with { type: "json" };
 import faqFill from "../catalog/fills/foundry/sections.faq.json" with { type: "json" };
 import contribution from "../runtime/sections/a270-faq.contribution.json" with { type: "json" };
 import { specimenDataset } from "../studio/specimen-dataset.js";

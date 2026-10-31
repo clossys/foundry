@@ -28,11 +28,20 @@
   "files": [
     "dist",
     "src",
-    "!src/**/*.test.ts",
     "README.md",
     "LICENSE",
     "skill",
-    "fit-signals.json"
+    "fit-signals.json",
+    "!dist/**/__fixtures__/**",
+    "!dist/**/__tests__/**",
+    "!dist/**/__mocks__/**",
+    "!dist/**/__snapshots__/**",
+    "!dist/**/*.test.*",
+    "!src/**/__fixtures__/**",
+    "!src/**/__tests__/**",
+    "!src/**/__mocks__/**",
+    "!src/**/__snapshots__/**",
+    "!src/**/*.test.*"
   ],
   "sideEffects": false,
   "foundry": {

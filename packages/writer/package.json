@@ -61,13 +61,22 @@
   "files": [
     "dist",
     "src",
-    "!src/**/*.test.ts",
     "templates",
     "fit-signals.json",
     "README.md",
     "LICENSE",
     "skill",
-    "strategy-brief.json"
+    "strategy-brief.json",
+    "!dist/**/__fixtures__/**",
+    "!dist/**/__tests__/**",
+    "!dist/**/__mocks__/**",
+    "!dist/**/__snapshots__/**",
+    "!dist/**/*.test.*",
+    "!src/**/__fixtures__/**",
+    "!src/**/__tests__/**",
+    "!src/**/__mocks__/**",
+    "!src/**/__snapshots__/**",
+    "!src/**/*.test.*"
   ],
   "sideEffects": false,
   "foundry": {

@@ -38,7 +38,7 @@ export function nativeStatsSelection(): Promise<ConsumerComponentSelection> {
     `, require.resolve("esbuild")], { input: JSON.stringify({ files, entry: descriptor.impl.entry }), encoding: "utf8" });
     const module = { exports: {} };
     new Function("require", "module", "exports", compiled)(require, module, module.exports);
-    const profile: ResolvedComponents = JSON.parse(readFileSync(resolve(import.meta.dirname, "../../../studio/__fixtures__/default-component-preview-profile.json"), "utf8"));
+    const profile: ResolvedComponents = JSON.parse(readFileSync(resolve(import.meta.dirname, "../../../studio/default-component-preview-profile.json"), "utf8"));
     const prior = profile.components["components.card"]!;
     profile.components = { ...profile.components, "components.card": { ...prior, impl: descriptor.impl, descriptor, propMap: descriptor.propMap,
       origin: { kind: "adopted", source: descriptor.source, fill: document.$extensions["com.clossys.fill"].id, pin: descriptor.pin, license: descriptor.license, sha256: componentDescriptorHash(descriptor), adoptedAt: "2026-10-30" } } };

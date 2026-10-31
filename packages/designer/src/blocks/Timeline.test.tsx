@@ -11,7 +11,7 @@ import { ConsumerComponentProvider, SelectedComponentLeaf, type ConsumerComponen
 import { componentDescriptorHash, verifyComponentOutput, type ComponentCandidate, type ResolvedComponents } from "../catalog-core/resolve-components.js";
 import { loadCatalogBundles } from "../catalog-bundles.js";
 import cardDocument from "../catalog/fills/shadcn@aria/components.card.json" with { type: "json" };
-import selectedProfile from "../studio/__fixtures__/default-component-preview-profile.json" with { type: "json" };
+import selectedProfile from "../studio/default-component-preview-profile.json" with { type: "json" };
 import fillDocument from "../catalog/fills/foundry/sections.timeline.json" with { type: "json" };
 import { loadSectionRegistry } from "../catalog-core/sections-contract.js";
 import { renderTimeline, timelineSection } from "../runtime/sections/timeline.js";

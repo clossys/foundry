@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import selected from "../studio/__fixtures__/default-component-preview-profile.json" with { type: "json" };
+import selected from "../studio/default-component-preview-profile.json" with { type: "json" };
 import * as components from "../components/index.js";
 import * as itemModule from "../components/item/item.js";
 import { importShadcnAriaRail } from "../importers/shadcn-aria-rail.js";

@@ -9,7 +9,7 @@ import { CompactPreview } from "./previews.js";
 import { labels } from "./__fixtures__/studio.js";
 import { designerSurfacePreviews, designerSurfacePreview } from "./system-canvas/DesignerPage.js";
 import { defaultComponentPreviews } from "./default-component-previews.js";
-import componentProfile from "./__fixtures__/default-component-preview-profile.json" with { type: "json" };
+import componentProfile from "./default-component-preview-profile.json" with { type: "json" };
 import { glyphs } from "../components/preview-runtime/adapters/glyphs.js";
 import { ShellCopyProvider } from "../components/Banner.copy-context.js";
 import { shellCopyFixtureResolver } from "../frames/__fixtures__/shell-copy.js";

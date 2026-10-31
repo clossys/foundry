@@ -17,9 +17,20 @@
   },
   "files": [
     "dist",
+    "src",
     "README.md",
     "LICENSE",
-    "skill"
+    "skill",
+    "!dist/**/__fixtures__/**",
+    "!dist/**/__tests__/**",
+    "!dist/**/__mocks__/**",
+    "!dist/**/__snapshots__/**",
+    "!dist/**/*.test.*",
+    "!src/**/__fixtures__/**",
+    "!src/**/__tests__/**",
+    "!src/**/__mocks__/**",
+    "!src/**/__snapshots__/**",
+    "!src/**/*.test.*"
   ],
   "sideEffects": false,
   "description": "Private executable tooling scaffold for agent resolution and clossys command dispatch.",
