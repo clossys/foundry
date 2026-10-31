@@ -20,5 +20,14 @@ export function proofRouteForSegments(segments: readonly string[]): ProofRoute |
   return slug === undefined ? { view: 'agent-gallery', agent } : { view: 'agent-leaf', agent, slug };
 }
 
+/**
+ * The library route for a Studio page id: every agent page now lives at `/<agent>`. The shared
+ * header resolves breadcrumb and navigation hrefs through this one function, so no crumb still
+ * points at the projection's legacy `/agents/<agent>` path.
+ */
+export function libraryRouteHref(pageId: string): string | undefined {
+  return pageId === 'designer' || isLibraryAgent(pageId) ? `/${pageId}` : undefined;
+}
+
 /** The Studio page the Designer proof routes belong to, for navigation and breadcrumbs. */
 export const PROOF_PAGE_ID = 'designer';

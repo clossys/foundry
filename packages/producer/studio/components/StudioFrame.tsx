@@ -14,6 +14,7 @@ import {
 } from '@clossys/designer-ui';
 import { studioBreadcrumbs, studioCommands, studioHome, studioNavigation, studioPageActions, studioRouteForPath, type StudioPageAction } from '../generated/studio-map';
 import { studioIcon } from '../lib/studio-icons';
+import { libraryRouteHref } from '../lib/proof-routes';
 import type { StudioReport } from '../lib/studio-report';
 import { useStudioData, useThemeMode, type ThemeMode } from './StudioProviders';
 
@@ -307,6 +308,21 @@ function AppFrame({ navigation, commands, breadcrumbs, actions, children }: AppF
 
 const NO_ACTIONS: readonly StudioPageAction[] = [];
 
+/** Command menu entries follow the same library routes as the breadcrumbs. */
+const LIBRARY_COMMANDS: readonly ContentMapCommandGroup[] = studioCommands.map(group => ({
+  ...group, items: group.items.map(item => { const href = 'href' in item && item.href ? libraryRouteHref(item.id) : undefined; return href ? { ...item, href } as typeof item : item; }),
+}));
+
+/** Navigation entries follow the same library routes as the breadcrumbs. */
+function libraryNavigation(navigation: ContentMapNavigation): ContentMapNavigation {
+  type Node = ContentMapNavigation['tree'][number];
+  const relink = (node: Node): Node => {
+    const href = libraryRouteHref(node.id);
+    return { ...node, ...(href ? { href } : {}), ...(node.children ? { children: node.children.map(relink) } : {}) };
+  };
+  return { ...navigation, tree: navigation.tree.map(relink) };
+}
+
 /**
  * Studio pages render through one shell; the projection owns navigation, commands and breadcrumbs.
  * `pageId` names the page for paths the projection does not list yet (the PROOF-2 leaf routes);
@@ -317,15 +333,19 @@ export function StudioFrame({ trail, pageId, actions, children }: { trail?: stri
   const route = studioRouteForPath(pathname);
   const activeId = pageId ?? route?.instanceId ?? studioHome.id;
   const breadcrumbs = useMemo(() => {
-    const base = studioBreadcrumbs[activeId] ?? studioBreadcrumbs[studioHome.id] ?? [];
+    const base = (studioBreadcrumbs[activeId] ?? studioBreadcrumbs[studioHome.id] ?? []).map(crumb => {
+      const href = libraryRouteHref(crumb.id);
+      return href ? { ...crumb, href } : crumb;
+    });
     return trail ? [...base, { id: 'studio-trail', label: trail }] : base;
   }, [activeId, trail]);
   // The Inspector module is removed; the projection still declares its action until the content drops it.
   const declared = studioPageActions[activeId] ?? NO_ACTIONS;
   const pageActions = useMemo(() => declared.filter(action => action.id !== 'inspector'), [declared]);
+  const navigation = useMemo(() => libraryNavigation(studioNavigation[activeId] ?? studioNavigation[studioHome.id]!), [activeId]);
   return <AppFrame
-    navigation={studioNavigation[activeId] ?? studioNavigation[studioHome.id]!}
-    commands={studioCommands}
+    navigation={navigation}
+    commands={LIBRARY_COMMANDS}
     breadcrumbs={breadcrumbs}
     actions={actions ?? pageActions}
   >{children}</AppFrame>;
