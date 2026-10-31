@@ -146,7 +146,7 @@ describe("selected library → Tokens → Assets → Components → Sections →
 
   it.each([
     ["Library", /unresolved|missing|selected component set/i],
-    ["Tokens", /tokens\.text-color|unresolved/i],
+    ["Tokens", /themes\.foreground|unresolved/i],
     ["Assets", /assets\.icon-chevron-right|glyph module/i],
     ["Components", /components\.icon|selected component set/i],
     ["Sections", /CallToAction/],

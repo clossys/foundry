@@ -16,6 +16,7 @@
       "reads": {
         "assets": [],
         "themes": [
+          "themes.border.default",
           "themes.spacing.default"
         ]
       },

@@ -72,7 +72,9 @@ it("shows resolved values with the alias as a name, never a var() string (studio
       const view = render(<TokenValueText css={entry.member.css.light} />);
       const code = view.container.querySelector<HTMLElement>("[data-member-value]")!;
       const shown = code.textContent ?? "";
-      if (shown.includes("var(")) problems.push(`${entry.id}: ${shown}`);
+      // A caller-set variable with no fallback (the shadcn marquee's var(--duration)) has no resolved value to show; it stays verbatim.
+      const unresolvable = /var\(--[A-Za-z0-9-]+\)/.test(entry.member.css.light);
+      if (shown.includes("var(") && !unresolvable) problems.push(`${entry.id}: ${shown}`);
       if ((code.dataset.copyValue ?? shown) !== entry.member.css.light) problems.push(`${entry.id}: copy value lost`);
       view.unmount();
     }

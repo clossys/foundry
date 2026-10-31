@@ -123,7 +123,7 @@ it("applies actual native color, typography, spacing and radius values without m
       for (const [property, token] of [["inlineSize", "themes.spacing.default"], ["blockSize", "themes.spacing.default"]] as const) {
         const size = selected.profile.values.members[token]!;
         expect(size.$type).toBe("dimension");
-        expect(target.style[property]).toBe(`var(${size.emit})`);
+        expect(target.style[property]).toBe(`calc(var(${size.emit}) * ${property === "inlineSize" ? 24 : 16})`);
       }
     }
     if (index === 2) expect(target.style.letterSpacing).toBe(value);
@@ -153,12 +153,12 @@ it.each([0, 1])("routes selected ink and surface member identities and modes to 
     const samples = [...view.container.querySelectorAll<HTMLElement>(`[data-specimen-mode='${mode}'] [role='img']`)];
     expect(samples.map(sample => sample.style.background)).toEqual(ids.map(id => `var(${selected.profile.values.members[id]!.emit})`));
     for (const sample of samples) {
-      expect(sample.style.inlineSize).toBe("var(--spacing-5xl)");
-      expect(sample.style.blockSize).toBe("var(--spacing-4xl)");
+      expect(sample.style.inlineSize).toBe("calc(var(--spacing) * 24)");
+      expect(sample.style.blockSize).toBe("calc(var(--spacing) * 16)");
     }
     for (const sample of view.container.querySelectorAll<HTMLElement>(`[data-specimen-mode='${mode}'] [data-contrast-pair]`)) {
-      expect(sample.style.background).toBe("var(--color-surface-base)");
-      expect(sample.style.color).toBe("var(--color-ink-primary)");
+      expect(sample.style.background).toBe("var(--background)");
+      expect(sample.style.color).toBe("var(--foreground)");
       expect(sample.textContent).toBe(specimenDataset.tokens.sampleText);
     }
   }
@@ -185,7 +185,7 @@ it("uses actual selected SVG logos and selected icon glyphs on both grounds", as
     const view = await renderSelected(tokenAssetSpecimenLeaves[index]!.render({ items: itemsFor(index, selected).slice(0, 1), context: selected, need, labels, renderParts: tokenParts(selected) }), selected);
     const grounds = [...view.container.querySelectorAll<HTMLElement>("[data-asset-ground]")];
     expect(grounds).toHaveLength(2);
-    for (const [ground, surface, ink] of [[grounds[0]!, "themes.card.default", "themes.foreground.default"], [grounds[1]!, "themes.background.default", "themes.foreground.default"]] as const) {
+    for (const [ground, surface, ink] of [[grounds[0]!, "themes.card.default", "themes.foreground.default"], [grounds[1]!, "themes.foreground.default", "themes.background.default"]] as const) {
       const background = selected.profile.values.members[surface]!, foreground = selected.profile.values.members[ink]!;
       expect(background.$type).toBe("color"); expect(foreground.$type).toBe("color");
       expect(ground.style.background).toBe(`var(${background.emit})`);
@@ -199,10 +199,8 @@ it("uses actual selected SVG logos and selected icon glyphs on both grounds", as
 
 it.each([
   { token: "themes.spacing.default", indices: [0, 1] },
-  { token: "themes.spacing.default", indices: [0, 1, 5] },
   { token: "themes.card.default", indices: [6, 7] },
   { token: "themes.background.default", indices: [6, 7] },
-  { token: "themes.foreground.default", indices: [6, 7] },
   { token: "themes.foreground.default", indices: [6, 7] },
 ])("refuses missing, mistyped and mis-emitted selected chrome token $token", async ({ token, indices }) => {
   for (const index of indices) for (const fault of ["missing", "type", "emit"] as const) {

@@ -620,9 +620,9 @@
           "components.popover"
         ],
         "themes": [
+          "themes.font-sans.default",
           "themes.radius.default",
-          "themes.spacing.default",
-          "themes.font-sans.default"
+          "themes.spacing.default"
         ]
       },
       "root": "rac:ColorPicker",
@@ -632,3 +632,4 @@
     }
   }
 }
+

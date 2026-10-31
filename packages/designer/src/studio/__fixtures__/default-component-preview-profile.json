@@ -28,7 +28,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "b005c6b767936a072551d0660e2d8bc78a4e9b8dac5025c6dab8006ea41ba33d",
+        "sha256": "c68dd38ed2e23738e2d0683ae52dfd143a64a1bd169893e65588d2e029ffe56d",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -61,13 +61,13 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-action",
-          "themes.border.default": "--color-line-base",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.background.default": "--color-surface-base",
-          "themes.muted.default": "--color-surface-sunken",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.primary-foreground.default": "--color-ink-on-action"
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.muted.default": "--muted",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.primary.default": "--primary",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -197,7 +197,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "b005c6b767936a072551d0660e2d8bc78a4e9b8dac5025c6dab8006ea41ba33d",
+          "sha256": "c68dd38ed2e23738e2d0683ae52dfd143a64a1bd169893e65588d2e029ffe56d",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -244,7 +244,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "ed94165c93ebf91828f5ec6463a22a108e2c72e338b272562c190c9140a92494",
+        "sha256": "aad73eabd11214431ec2cbb77b67cbeed644a23dcb1b8b86db79ca20a2c30902",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -274,17 +274,17 @@
       },
       "reads": {
         "themes": {
-          "themes.accent-foreground.default": "--color-accent-text",
-          "themes.primary.default": "--color-action",
-          "themes.border.default": "--color-line-base",
-          "themes.secondary.default": "--color-control-tonal",
-          "themes.ring.default": "--color-focus-ring",
-          "themes.spacing.default": "--spacing-lg",
-          "themes.destructive.default": "--color-status-danger",
-          "themes.muted.default": "--color-surface-sunken",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary"
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.border.default": "--border",
+          "themes.destructive.default": "--destructive",
+          "themes.foreground.default": "--foreground",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.muted.default": "--muted",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.primary.default": "--primary",
+          "themes.ring.default": "--ring",
+          "themes.secondary.default": "--secondary",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -417,7 +417,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "ed94165c93ebf91828f5ec6463a22a108e2c72e338b272562c190c9140a92494",
+          "sha256": "aad73eabd11214431ec2cbb77b67cbeed644a23dcb1b8b86db79ca20a2c30902",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -464,7 +464,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "6a57d023093c03aa43d5c918ea014925f476706123314d9bd0f8843a294650ab",
+        "sha256": "816b480be65d4ab11d70c055739a7e38cf30fcfa3641a4a62cd7de47f4cecbdb",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -494,12 +494,12 @@
       },
       "reads": {
         "themes": {
-          "themes.radius.default": "--radius-control",
-          "themes.spacing.default": "--spacing-4xl",
-          "themes.destructive.default": "--color-status-danger",
-          "themes.card.default": "--color-surface-raised",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.foreground.default": "--color-ink-primary"
+          "themes.card.default": "--card",
+          "themes.destructive.default": "--destructive",
+          "themes.foreground.default": "--foreground",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.radius.default": "--radius",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -627,7 +627,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "6a57d023093c03aa43d5c918ea014925f476706123314d9bd0f8843a294650ab",
+          "sha256": "816b480be65d4ab11d70c055739a7e38cf30fcfa3641a4a62cd7de47f4cecbdb",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -674,7 +674,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "633ce66ca8da760cc69af24c35233944213569e3c7e5e1c4a8d7d9ef68998c5e",
+        "sha256": "ff67d4ada99065d1d568b3069cb029c54137ba5b626d06c7b739eb5751d538f8",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -704,9 +704,9 @@
       },
       "reads": {
         "themes": {
-          "themes.spacing.default": "--spacing-lg",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.foreground.default": "--color-ink-primary"
+          "themes.foreground.default": "--foreground",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [
           "assets.icon-chevron-down",
@@ -843,7 +843,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "633ce66ca8da760cc69af24c35233944213569e3c7e5e1c4a8d7d9ef68998c5e",
+          "sha256": "ff67d4ada99065d1d568b3069cb029c54137ba5b626d06c7b739eb5751d538f8",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -877,7 +877,7 @@
           "export": "./components#Button"
         },
         "license": "MIT",
-        "sha256": "d7a2e0c9f223447ec637dc7d6511336bea7c94b2c6837b766ac70d41859b95de",
+        "sha256": "1aee026ee6467d8e0d9d0bf54fce2e954dee47d11c97ee2a24299d63f2dc6996",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -903,27 +903,37 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-accent",
-          "themes.accent-foreground.default": "--color-accent-text",
-          "themes.accent.default": "--color-accent-tint",
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.secondary.default": "--color-control-tonal",
-          "themes.radius.default": "--radius-control",
-          "themes.ring.default": "--color-focus-ring",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.destructive.default": "--color-status-danger",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.destructive.default": "--destructive",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary.default": "--primary",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.radius.default": "--radius",
+          "themes.ring.default": "--ring",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary.default": "--sidebar-primary",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground",
+          "themes.sidebar-ring.default": "--sidebar-ring",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [
           "assets.icon-chevron-right"
@@ -1067,7 +1077,7 @@
             "export": "./components#Button"
           },
           "license": "MIT",
-          "sha256": "d7a2e0c9f223447ec637dc7d6511336bea7c94b2c6837b766ac70d41859b95de",
+          "sha256": "1aee026ee6467d8e0d9d0bf54fce2e954dee47d11c97ee2a24299d63f2dc6996",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -1098,7 +1108,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "2bb09f0ea48d2604744d7bb97c9941e38eb4fe769f77d389d41f0ec1ea328a84",
+        "sha256": "c47567fa13708bcb023f8c29508f60cf2f81948d4a7492df28787fe8264855f8",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -1128,15 +1138,15 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-action",
-          "themes.radius.default": "--radius-control",
-          "themes.ring.default": "--color-focus-ring",
-          "themes.spacing.default": "--spacing-lg",
-          "themes.background.default": "--color-surface-base",
-          "themes.muted.default": "--color-surface-sunken",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary"
+          "themes.background.default": "--background",
+          "themes.foreground.default": "--foreground",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.muted.default": "--muted",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.primary.default": "--primary",
+          "themes.radius.default": "--radius",
+          "themes.ring.default": "--ring",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [
           "assets.icon-chevron-left",
@@ -1330,7 +1340,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "2bb09f0ea48d2604744d7bb97c9941e38eb4fe769f77d389d41f0ec1ea328a84",
+          "sha256": "c47567fa13708bcb023f8c29508f60cf2f81948d4a7492df28787fe8264855f8",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -1364,7 +1374,7 @@
           "export": "./components#Card"
         },
         "license": "MIT",
-        "sha256": "6d69e918a50d07417a5181e657b3483b84fee5165c63d56f1919f994a0cbd765",
+        "sha256": "4c128af5507c49e13d819f529801df38ed9a163ab3c602878858c92f6c82eff9",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -1375,24 +1385,36 @@
       "propMap": {},
       "reads": {
         "themes": {
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.radius.default": "--radius-control",
-          "themes.shadow.lg": "--ui-elevation-floating",
-          "themes.shadow.md": "--ui-elevation-panel",
-          "themes.shadow.sm": "--ui-elevation-raised",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.accent.default": "--color-surface-selected",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.primary.default": "--color-ink-link",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.accent-foreground.default": "--color-ink-on-accent",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.radius.default": "--radius",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.shadow.2xl": "--shadow-2xl",
+          "themes.shadow.2xs": "--shadow-2xs",
+          "themes.shadow.lg": "--shadow-lg",
+          "themes.shadow.md": "--shadow-md",
+          "themes.shadow.sm": "--shadow-sm",
+          "themes.shadow.xl": "--shadow-xl",
+          "themes.shadow.xs": "--shadow-xs",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -1483,7 +1505,7 @@
             "export": "./components#Card"
           },
           "license": "MIT",
-          "sha256": "6d69e918a50d07417a5181e657b3483b84fee5165c63d56f1919f994a0cbd765",
+          "sha256": "4c128af5507c49e13d819f529801df38ed9a163ab3c602878858c92f6c82eff9",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -1501,7 +1523,7 @@
           "export": "./charts#AreaChart"
         },
         "license": "MIT",
-        "sha256": "5045f94dd46b5193d2ede3fd65d174be972f7d01dd61964c236b57f387d0cad8",
+        "sha256": "bb7d3906443d653ba0913bba0166ae17895ed095e27d8640c1125829b346308b",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -1517,28 +1539,36 @@
       },
       "reads": {
         "themes": {
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.chart-1.default": "--color-chart-categorical-1",
-          "themes.chart-2.default": "--color-chart-categorical-2",
-          "themes.chart-3.default": "--color-chart-categorical-3",
-          "themes.chart-4.default": "--color-chart-categorical-4",
-          "themes.chart-5.default": "--color-chart-categorical-5",
-          "themes.radius.default": "--radius-2xl",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.accent.default": "--color-surface-selected",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.primary.default": "--color-ink-link",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.accent-foreground.default": "--color-ink-on-accent",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.chart-1.default": "--chart-1",
+          "themes.chart-2.default": "--chart-2",
+          "themes.chart-3.default": "--chart-3",
+          "themes.chart-4.default": "--chart-4",
+          "themes.chart-5.default": "--chart-5",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.radius.default": "--radius",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground"
         },
         "assets": [],
         "components": []
@@ -1640,7 +1670,7 @@
             "export": "./charts#AreaChart"
           },
           "license": "MIT",
-          "sha256": "5045f94dd46b5193d2ede3fd65d174be972f7d01dd61964c236b57f387d0cad8",
+          "sha256": "bb7d3906443d653ba0913bba0166ae17895ed095e27d8640c1125829b346308b",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -1658,7 +1688,7 @@
           "export": "./charts#BarChart"
         },
         "license": "MIT",
-        "sha256": "5112619e3bf48da64a7275c6714108489eecd16df133aa9cb2f87ebc63eb7953",
+        "sha256": "626695581acfd7ed3d2bbe92d80fbebe5ffcb8855ad0c2d0a600b2e4a320361e",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -1674,28 +1704,36 @@
       },
       "reads": {
         "themes": {
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.chart-1.default": "--color-chart-categorical-1",
-          "themes.chart-2.default": "--color-chart-categorical-2",
-          "themes.chart-3.default": "--color-chart-categorical-3",
-          "themes.chart-4.default": "--color-chart-categorical-4",
-          "themes.chart-5.default": "--color-chart-categorical-5",
-          "themes.radius.default": "--radius-2xl",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.accent.default": "--color-surface-selected",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.primary.default": "--color-ink-link",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.accent-foreground.default": "--color-ink-on-accent",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.chart-1.default": "--chart-1",
+          "themes.chart-2.default": "--chart-2",
+          "themes.chart-3.default": "--chart-3",
+          "themes.chart-4.default": "--chart-4",
+          "themes.chart-5.default": "--chart-5",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.radius.default": "--radius",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground"
         },
         "assets": [],
         "components": []
@@ -1798,7 +1836,7 @@
             "export": "./charts#BarChart"
           },
           "license": "MIT",
-          "sha256": "5112619e3bf48da64a7275c6714108489eecd16df133aa9cb2f87ebc63eb7953",
+          "sha256": "626695581acfd7ed3d2bbe92d80fbebe5ffcb8855ad0c2d0a600b2e4a320361e",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -1816,7 +1854,7 @@
           "export": "./charts#Heatmap"
         },
         "license": "MIT",
-        "sha256": "e1eba0a83f90d02bdab77202b12635de707563855a88d004a60d61b7a8c09493",
+        "sha256": "13b86f710fe6a0c7e34102b5074c4997a5a3a6b7afb9f6e02dad85ca103e882c",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -1832,28 +1870,36 @@
       },
       "reads": {
         "themes": {
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.chart-1.default": "--color-chart-categorical-1",
-          "themes.chart-2.default": "--color-chart-categorical-2",
-          "themes.chart-3.default": "--color-chart-categorical-3",
-          "themes.chart-4.default": "--color-chart-categorical-4",
-          "themes.chart-5.default": "--color-chart-categorical-5",
-          "themes.radius.default": "--radius-2xl",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.accent.default": "--color-surface-selected",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.primary.default": "--color-ink-link",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.accent-foreground.default": "--color-ink-on-accent",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.chart-1.default": "--chart-1",
+          "themes.chart-2.default": "--chart-2",
+          "themes.chart-3.default": "--chart-3",
+          "themes.chart-4.default": "--chart-4",
+          "themes.chart-5.default": "--chart-5",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.radius.default": "--radius",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground"
         },
         "assets": [],
         "components": []
@@ -1956,7 +2002,7 @@
             "export": "./charts#Heatmap"
           },
           "license": "MIT",
-          "sha256": "e1eba0a83f90d02bdab77202b12635de707563855a88d004a60d61b7a8c09493",
+          "sha256": "13b86f710fe6a0c7e34102b5074c4997a5a3a6b7afb9f6e02dad85ca103e882c",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -1974,7 +2020,7 @@
           "export": "./charts#LineChart"
         },
         "license": "MIT",
-        "sha256": "699ef54a9b1a3666819fe81eccbc4ff4f278fc262e73dc62f9336dcbb0aa87db",
+        "sha256": "c962e7fd415d1e1d14d24378f86f95bfa1f21b58bc6b1abb299f51ea653bb4c7",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -1990,28 +2036,36 @@
       },
       "reads": {
         "themes": {
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.chart-1.default": "--color-chart-categorical-1",
-          "themes.chart-2.default": "--color-chart-categorical-2",
-          "themes.chart-3.default": "--color-chart-categorical-3",
-          "themes.chart-4.default": "--color-chart-categorical-4",
-          "themes.chart-5.default": "--color-chart-categorical-5",
-          "themes.radius.default": "--radius-2xl",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.accent.default": "--color-surface-selected",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.primary.default": "--color-ink-link",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.accent-foreground.default": "--color-ink-on-accent",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.chart-1.default": "--chart-1",
+          "themes.chart-2.default": "--chart-2",
+          "themes.chart-3.default": "--chart-3",
+          "themes.chart-4.default": "--chart-4",
+          "themes.chart-5.default": "--chart-5",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.radius.default": "--radius",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground"
         },
         "assets": [],
         "components": []
@@ -2114,7 +2168,7 @@
             "export": "./charts#LineChart"
           },
           "license": "MIT",
-          "sha256": "699ef54a9b1a3666819fe81eccbc4ff4f278fc262e73dc62f9336dcbb0aa87db",
+          "sha256": "c962e7fd415d1e1d14d24378f86f95bfa1f21b58bc6b1abb299f51ea653bb4c7",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -2132,7 +2186,7 @@
           "export": "./charts#RangeChart"
         },
         "license": "MIT",
-        "sha256": "471ebb0c43b0720d96a503b6db71e6abb1d1a194a2941c568f376d4ab6c43b08",
+        "sha256": "6ec06b4c55345d11caad780d7128bf08d69b45395aa6a6475d723ac7c0444099",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -2148,28 +2202,36 @@
       },
       "reads": {
         "themes": {
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.chart-1.default": "--color-chart-categorical-1",
-          "themes.chart-2.default": "--color-chart-categorical-2",
-          "themes.chart-3.default": "--color-chart-categorical-3",
-          "themes.chart-4.default": "--color-chart-categorical-4",
-          "themes.chart-5.default": "--color-chart-categorical-5",
-          "themes.radius.default": "--radius-2xl",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.accent.default": "--color-surface-selected",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.primary.default": "--color-ink-link",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.accent-foreground.default": "--color-ink-on-accent",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.chart-1.default": "--chart-1",
+          "themes.chart-2.default": "--chart-2",
+          "themes.chart-3.default": "--chart-3",
+          "themes.chart-4.default": "--chart-4",
+          "themes.chart-5.default": "--chart-5",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.radius.default": "--radius",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground"
         },
         "assets": [],
         "components": []
@@ -2272,7 +2334,7 @@
             "export": "./charts#RangeChart"
           },
           "license": "MIT",
-          "sha256": "471ebb0c43b0720d96a503b6db71e6abb1d1a194a2941c568f376d4ab6c43b08",
+          "sha256": "6ec06b4c55345d11caad780d7128bf08d69b45395aa6a6475d723ac7c0444099",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -2290,7 +2352,7 @@
           "export": "./charts#ScatterChart"
         },
         "license": "MIT",
-        "sha256": "422afded2a9f421cbf146c44196a3dc88487219bbe909747fea89432c9d51dff",
+        "sha256": "cc399a4143e50eb2b64568a5412ffe64925a3cf280006b185d6513759b8b933b",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -2306,28 +2368,36 @@
       },
       "reads": {
         "themes": {
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.chart-1.default": "--color-chart-categorical-1",
-          "themes.chart-2.default": "--color-chart-categorical-2",
-          "themes.chart-3.default": "--color-chart-categorical-3",
-          "themes.chart-4.default": "--color-chart-categorical-4",
-          "themes.chart-5.default": "--color-chart-categorical-5",
-          "themes.radius.default": "--radius-2xl",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.accent.default": "--color-surface-selected",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.primary.default": "--color-ink-link",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.accent-foreground.default": "--color-ink-on-accent",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.chart-1.default": "--chart-1",
+          "themes.chart-2.default": "--chart-2",
+          "themes.chart-3.default": "--chart-3",
+          "themes.chart-4.default": "--chart-4",
+          "themes.chart-5.default": "--chart-5",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.radius.default": "--radius",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground"
         },
         "assets": [],
         "components": []
@@ -2432,7 +2502,7 @@
             "export": "./charts#ScatterChart"
           },
           "license": "MIT",
-          "sha256": "422afded2a9f421cbf146c44196a3dc88487219bbe909747fea89432c9d51dff",
+          "sha256": "cc399a4143e50eb2b64568a5412ffe64925a3cf280006b185d6513759b8b933b",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -2450,7 +2520,7 @@
           "export": "./charts#Sparkline"
         },
         "license": "MIT",
-        "sha256": "2f5778c17027d93c9f17c895a2f0d1e80534e658666b9c0e5e7f0bbd614eee3b",
+        "sha256": "6bd269f6669f5b0c592e1500646a9799e5eb3b6489e75f50925656fb3b4ae6b9",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -2466,28 +2536,36 @@
       },
       "reads": {
         "themes": {
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.chart-1.default": "--color-chart-categorical-1",
-          "themes.chart-2.default": "--color-chart-categorical-2",
-          "themes.chart-3.default": "--color-chart-categorical-3",
-          "themes.chart-4.default": "--color-chart-categorical-4",
-          "themes.chart-5.default": "--color-chart-categorical-5",
-          "themes.radius.default": "--radius-2xl",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.accent.default": "--color-surface-selected",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.primary.default": "--color-ink-link",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.accent-foreground.default": "--color-ink-on-accent",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.chart-1.default": "--chart-1",
+          "themes.chart-2.default": "--chart-2",
+          "themes.chart-3.default": "--chart-3",
+          "themes.chart-4.default": "--chart-4",
+          "themes.chart-5.default": "--chart-5",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.radius.default": "--radius",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground"
         },
         "assets": [],
         "components": []
@@ -2592,7 +2670,7 @@
             "export": "./charts#Sparkline"
           },
           "license": "MIT",
-          "sha256": "2f5778c17027d93c9f17c895a2f0d1e80534e658666b9c0e5e7f0bbd614eee3b",
+          "sha256": "6bd269f6669f5b0c592e1500646a9799e5eb3b6489e75f50925656fb3b4ae6b9",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -2610,7 +2688,7 @@
           "export": "./charts#StatusStrip"
         },
         "license": "MIT",
-        "sha256": "8b4fb43997a35f6bc310d1f0639c87c46e6de257618cb6ab763497d7b32f80ad",
+        "sha256": "28be20f362bd12fe26052b76938a4cad32548759043abbac725b15c217fb93f0",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -2626,28 +2704,36 @@
       },
       "reads": {
         "themes": {
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.chart-1.default": "--color-chart-categorical-1",
-          "themes.chart-2.default": "--color-chart-categorical-2",
-          "themes.chart-3.default": "--color-chart-categorical-3",
-          "themes.chart-4.default": "--color-chart-categorical-4",
-          "themes.chart-5.default": "--color-chart-categorical-5",
-          "themes.radius.default": "--radius-2xl",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.accent.default": "--color-surface-selected",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.primary.default": "--color-ink-link",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.accent-foreground.default": "--color-ink-on-accent",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.chart-1.default": "--chart-1",
+          "themes.chart-2.default": "--chart-2",
+          "themes.chart-3.default": "--chart-3",
+          "themes.chart-4.default": "--chart-4",
+          "themes.chart-5.default": "--chart-5",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.radius.default": "--radius",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground"
         },
         "assets": [],
         "components": []
@@ -2748,7 +2834,7 @@
             "export": "./charts#StatusStrip"
           },
           "license": "MIT",
-          "sha256": "8b4fb43997a35f6bc310d1f0639c87c46e6de257618cb6ab763497d7b32f80ad",
+          "sha256": "28be20f362bd12fe26052b76938a4cad32548759043abbac725b15c217fb93f0",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -2766,7 +2852,7 @@
           "export": "./charts#WaterfallChart"
         },
         "license": "MIT",
-        "sha256": "7610a50df49a8b850fbc5143fd816dbe7ca7b4ac1c6a5928a5b48119ee2847be",
+        "sha256": "274955c5267c43c1d5b7e9feb761cd702d767542da33bb947ce19e11d97d23ad",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -2782,28 +2868,36 @@
       },
       "reads": {
         "themes": {
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.chart-1.default": "--color-chart-categorical-1",
-          "themes.chart-2.default": "--color-chart-categorical-2",
-          "themes.chart-3.default": "--color-chart-categorical-3",
-          "themes.chart-4.default": "--color-chart-categorical-4",
-          "themes.chart-5.default": "--color-chart-categorical-5",
-          "themes.radius.default": "--radius-2xl",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.accent.default": "--color-surface-selected",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.primary.default": "--color-ink-link",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.accent-foreground.default": "--color-ink-on-accent",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.chart-1.default": "--chart-1",
+          "themes.chart-2.default": "--chart-2",
+          "themes.chart-3.default": "--chart-3",
+          "themes.chart-4.default": "--chart-4",
+          "themes.chart-5.default": "--chart-5",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.radius.default": "--radius",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground"
         },
         "assets": [],
         "components": []
@@ -2907,7 +3001,7 @@
             "export": "./charts#WaterfallChart"
           },
           "license": "MIT",
-          "sha256": "7610a50df49a8b850fbc5143fd816dbe7ca7b4ac1c6a5928a5b48119ee2847be",
+          "sha256": "274955c5267c43c1d5b7e9feb761cd702d767542da33bb947ce19e11d97d23ad",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -2938,7 +3032,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "bb0e431030c274f94b2f200976c42f899b1064ca44e43a81524f81acda25ba3c",
+        "sha256": "7ae04c63cebb56ac83cdd000dcf42d4a589a848b4bd275a692cd3f5f6af765a4",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -2970,12 +3064,12 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-action",
-          "themes.ring.default": "--color-focus-ring",
-          "themes.radius.default": "--radius-default",
-          "themes.spacing.default": "--spacing-lg",
-          "themes.destructive.default": "--color-status-danger",
-          "themes.primary-foreground.default": "--color-ink-on-action"
+          "themes.destructive.default": "--destructive",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.primary.default": "--primary",
+          "themes.radius.default": "--radius",
+          "themes.ring.default": "--ring",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [
           "assets.icon-check"
@@ -3117,7 +3211,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "bb0e431030c274f94b2f200976c42f899b1064ca44e43a81524f81acda25ba3c",
+          "sha256": "7ae04c63cebb56ac83cdd000dcf42d4a589a848b4bd275a692cd3f5f6af765a4",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -3151,7 +3245,7 @@
           "export": "./components#ColorPicker"
         },
         "license": "MIT",
-        "sha256": "3dd56a2b9f7f1d672db289d188627938cce4619735ec8738e6dffa43c201ab79",
+        "sha256": "708309570127475e14b8f02b07c8bc821ad94b18f9f710036618952eb662a342",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -3168,24 +3262,32 @@
       },
       "reads": {
         "themes": {
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.radius.default": "--radius-control",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.accent.default": "--color-surface-selected",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.primary.default": "--color-ink-link",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.accent-foreground.default": "--color-ink-on-accent",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.radius.default": "--radius",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -3291,7 +3393,7 @@
             "export": "./components#ColorPicker"
           },
           "license": "MIT",
-          "sha256": "3dd56a2b9f7f1d672db289d188627938cce4619735ec8738e6dffa43c201ab79",
+          "sha256": "708309570127475e14b8f02b07c8bc821ad94b18f9f710036618952eb662a342",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -3326,7 +3428,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "8bc91e572a56bd3bbb84825b2eef174e085b982a209dfb5d73b054718e3be027",
+        "sha256": "24fc158fb5ead496a41bfc1563200b5459124eb169ae4fabf23fcc603d08a44f",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -3364,18 +3466,18 @@
       },
       "reads": {
         "themes": {
-          "themes.border.default": "--color-line-base",
-          "themes.radius.default": "--radius-control",
-          "themes.shadow.lg": "--ui-elevation-floating",
-          "themes.ring.default": "--color-focus-ring",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.destructive.default": "--color-status-danger",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.accent.default": "--color-surface-selected",
-          "themes.muted.default": "--color-surface-sunken",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body"
+          "themes.accent.default": "--accent",
+          "themes.border.default": "--border",
+          "themes.destructive.default": "--destructive",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.muted.default": "--muted",
+          "themes.popover.default": "--popover",
+          "themes.radius.default": "--radius",
+          "themes.ring.default": "--ring",
+          "themes.shadow.lg": "--shadow-lg",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [
           "assets.icon-check",
@@ -3563,7 +3665,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "8bc91e572a56bd3bbb84825b2eef174e085b982a209dfb5d73b054718e3be027",
+          "sha256": "24fc158fb5ead496a41bfc1563200b5459124eb169ae4fabf23fcc603d08a44f",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -3605,7 +3707,7 @@
           "export": "./components#DateField"
         },
         "license": "MIT",
-        "sha256": "e1995e373c68542f72de0e06ed5fbe94e183e87f4a5064da9f1e8a29a5ffb642",
+        "sha256": "80f34f0178c546bb760c272231e0e61787b382491e6481d2c1292259c5c3eef4",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -3621,25 +3723,34 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-accent",
-          "themes.accent-foreground.default": "--color-accent-text",
-          "themes.accent.default": "--color-accent-tint",
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.radius.default": "--radius-control",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.destructive.default": "--color-status-danger",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.destructive.default": "--destructive",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary.default": "--primary",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.radius.default": "--radius",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -3747,7 +3858,7 @@
             "export": "./components#DateField"
           },
           "license": "MIT",
-          "sha256": "e1995e373c68542f72de0e06ed5fbe94e183e87f4a5064da9f1e8a29a5ffb642",
+          "sha256": "80f34f0178c546bb760c272231e0e61787b382491e6481d2c1292259c5c3eef4",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -3927,7 +4038,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "3bb36afda69c511cc8227e8f28a9b36137e1093eacc85e9c5c1ea50cd14c6b8b",
+        "sha256": "e0d71b9ea4ef1be9e8180343401f8fa340dbfde179a6fec8081cabb86cdd9e6f",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -3957,13 +4068,13 @@
       },
       "reads": {
         "themes": {
-          "themes.radius.default": "--radius-control",
-          "themes.ring.default": "--color-focus-ring",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.muted.default": "--color-surface-sunken",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.foreground.default": "--color-ink-primary"
+          "themes.foreground.default": "--foreground",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.muted.default": "--muted",
+          "themes.popover.default": "--popover",
+          "themes.radius.default": "--radius",
+          "themes.ring.default": "--ring",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [
           "assets.icon-close"
@@ -4126,7 +4237,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "3bb36afda69c511cc8227e8f28a9b36137e1093eacc85e9c5c1ea50cd14c6b8b",
+          "sha256": "e0d71b9ea4ef1be9e8180343401f8fa340dbfde179a6fec8081cabb86cdd9e6f",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -4173,7 +4284,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "f63b4f0b220cd5626a6e770fa36b41d78e83b19e24d2b5a9cdb8ac0e4a545502",
+        "sha256": "8efb30dd7a5ae23a5c91e8590e19b918de59b411f8d7c4d0a8479991b273c050",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -4202,11 +4313,11 @@
       },
       "reads": {
         "themes": {
-          "themes.radius.default": "--radius-control",
-          "themes.ring.default": "--color-focus-ring",
-          "themes.spacing.default": "--spacing-lg",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.foreground.default": "--color-ink-primary"
+          "themes.foreground.default": "--foreground",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.radius.default": "--radius",
+          "themes.ring.default": "--ring",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [
           "assets.icon-chevron-down",
@@ -4343,7 +4454,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "f63b4f0b220cd5626a6e770fa36b41d78e83b19e24d2b5a9cdb8ac0e4a545502",
+          "sha256": "8efb30dd7a5ae23a5c91e8590e19b918de59b411f8d7c4d0a8479991b273c050",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -4377,7 +4488,7 @@
           "export": "./components#Field"
         },
         "license": "MIT",
-        "sha256": "78d2fe6594c48662b47c23262a4a188bc00c5d5e87c8ee4c8b9a1acfdf555b52",
+        "sha256": "53317f24b649d89968159056d1ab336136b7a118bf20f9e8bcf0f1aec9bea101",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -4395,16 +4506,21 @@
       },
       "reads": {
         "themes": {
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.destructive.default": "--color-status-danger",
-          "themes.primary.default": "--color-ink-link",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.accent-foreground.default": "--color-ink-on-accent",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.destructive.default": "--destructive",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -4504,7 +4620,7 @@
             "export": "./components#Field"
           },
           "license": "MIT",
-          "sha256": "78d2fe6594c48662b47c23262a4a188bc00c5d5e87c8ee4c8b9a1acfdf555b52",
+          "sha256": "53317f24b649d89968159056d1ab336136b7a118bf20f9e8bcf0f1aec9bea101",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -4626,7 +4742,7 @@
           "export": "./components#Form"
         },
         "license": "MIT",
-        "sha256": "9eff4f34fab61fc886a92b21a254feb4c76e193b62f8235e3fc0bfebbbb4c01e",
+        "sha256": "d5467bbf2124d78cf30f300f75967b7da94aa43f83189672a8661b7e3133c08a",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -4640,7 +4756,7 @@
       },
       "reads": {
         "themes": {
-          "themes.spacing.default": "--spacing-2xl"
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -4718,7 +4834,7 @@
             "export": "./components#Form"
           },
           "license": "MIT",
-          "sha256": "9eff4f34fab61fc886a92b21a254feb4c76e193b62f8235e3fc0bfebbbb4c01e",
+          "sha256": "d5467bbf2124d78cf30f300f75967b7da94aa43f83189672a8661b7e3133c08a",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -4736,7 +4852,7 @@
           "export": "./components#GridList"
         },
         "license": "MIT",
-        "sha256": "58d4d41743d3ffe3d2e681dccddedff4145eec5682ea84b3a291d5b52c2c8df4",
+        "sha256": "847638b256e234f48e7295b651dd925e649255046cfeff31277ba99382deb73d",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -4751,20 +4867,29 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-accent",
-          "themes.accent-foreground.default": "--color-accent-text",
-          "themes.accent.default": "--color-accent-tint",
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary.default": "--primary",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": [
@@ -4872,7 +4997,7 @@
             "export": "./components#GridList"
           },
           "license": "MIT",
-          "sha256": "58d4d41743d3ffe3d2e681dccddedff4145eec5682ea84b3a291d5b52c2c8df4",
+          "sha256": "847638b256e234f48e7295b651dd925e649255046cfeff31277ba99382deb73d",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -4890,7 +5015,7 @@
           "export": "./components#Icon"
         },
         "license": "MIT",
-        "sha256": "fb8cfb28807a8e67f3d3d12e6733203a8ca65d4dd55a7ec95a0df70a61830c0a",
+        "sha256": "d0985f2ab670218bab858312ed936d0ff0dabdd0cf84ac432004f7f46e3bd301",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -4905,7 +5030,7 @@
       },
       "reads": {
         "themes": {
-          "themes.spacing.default": "--spacing-2xl"
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -4983,7 +5108,7 @@
             "export": "./components#Icon"
           },
           "license": "MIT",
-          "sha256": "fb8cfb28807a8e67f3d3d12e6733203a8ca65d4dd55a7ec95a0df70a61830c0a",
+          "sha256": "d0985f2ab670218bab858312ed936d0ff0dabdd0cf84ac432004f7f46e3bd301",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -5014,7 +5139,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "f51a74e35362826297b5b76b1f46e56dcfa8a3464688395e0905115a4fa3e38e",
+        "sha256": "40a7ede01df487206325079da7178b16a68b03df8c66a1bb0adda3131168267b",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -5044,12 +5169,12 @@
       },
       "reads": {
         "themes": {
-          "themes.radius.default": "--radius-control",
-          "themes.spacing.default": "--spacing-md",
-          "themes.background.default": "--color-surface-base",
-          "themes.muted.default": "--color-surface-sunken",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.font-sans.default": "--font-body"
+          "themes.background.default": "--background",
+          "themes.font-sans.default": "--font-sans",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.muted.default": "--muted",
+          "themes.radius.default": "--radius",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -5177,7 +5302,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "f51a74e35362826297b5b76b1f46e56dcfa8a3464688395e0905115a4fa3e38e",
+          "sha256": "40a7ede01df487206325079da7178b16a68b03df8c66a1bb0adda3131168267b",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -5211,7 +5336,7 @@
           "export": "./components#Link"
         },
         "license": "MIT",
-        "sha256": "e17c1c9a9c18125db225255e9729b796e29cfc6e4a7552c914795ad61de1d438",
+        "sha256": "3f34441079e9de628d78cd9fe25232ae3c010b7ee4d512495081f37dd02761d8",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -5225,27 +5350,37 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-accent",
-          "themes.accent-foreground.default": "--color-accent-text",
-          "themes.accent.default": "--color-accent-tint",
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.secondary.default": "--color-control-tonal",
-          "themes.radius.default": "--radius-control",
-          "themes.ring.default": "--color-focus-ring",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.destructive.default": "--color-status-danger",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.destructive.default": "--destructive",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary.default": "--primary",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.radius.default": "--radius",
+          "themes.ring.default": "--ring",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary.default": "--sidebar-primary",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground",
+          "themes.sidebar-ring.default": "--sidebar-ring",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -5351,7 +5486,7 @@
             "export": "./components#Link"
           },
           "license": "MIT",
-          "sha256": "e17c1c9a9c18125db225255e9729b796e29cfc6e4a7552c914795ad61de1d438",
+          "sha256": "3f34441079e9de628d78cd9fe25232ae3c010b7ee4d512495081f37dd02761d8",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -5369,7 +5504,7 @@
           "export": "./components#Logomark"
         },
         "license": "MIT",
-        "sha256": "80b99c9af995db54fffb1ed56fd6681f55f465f4bc66404a1aef2b7020955ba2",
+        "sha256": "79073cef0c24f048fb806eaa767faa82efb18ff38dd0424f78f357b79b32647c",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -5388,12 +5523,17 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-accent",
-          "themes.accent-foreground.default": "--color-accent-text",
-          "themes.accent.default": "--color-accent-tint",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary"
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.foreground.default": "--foreground",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary.default": "--primary",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground"
         },
         "assets": [],
         "components": []
@@ -5490,7 +5630,7 @@
             "export": "./components#Logomark"
           },
           "license": "MIT",
-          "sha256": "80b99c9af995db54fffb1ed56fd6681f55f465f4bc66404a1aef2b7020955ba2",
+          "sha256": "79073cef0c24f048fb806eaa767faa82efb18ff38dd0424f78f357b79b32647c",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -5508,7 +5648,7 @@
           "export": "./components#Menu"
         },
         "license": "MIT",
-        "sha256": "aa12acd1499aa179ff191fabb067be952ae80b571c7a7e3ead3190fe179f56b2",
+        "sha256": "cad4f714c3a0b182d76d83ac300928959f823d585cc7fcac3b080ee8f94cbf55",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -5525,30 +5665,43 @@
       },
       "reads": {
         "themes": {
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.radius.default": "--radius-control",
-          "themes.shadow.lg": "--ui-elevation-floating",
-          "themes.shadow.md": "--ui-elevation-panel",
-          "themes.shadow.sm": "--ui-elevation-raised",
-          "themes.ring.default": "--color-focus-ring",
-          "themes.tracking-tight.default": "--tracking-label",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.destructive.default": "--color-status-danger",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.accent.default": "--color-surface-selected",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.primary.default": "--color-ink-link",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.accent-foreground.default": "--color-ink-on-accent",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.destructive.default": "--destructive",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.radius.default": "--radius",
+          "themes.ring.default": "--ring",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.shadow.2xl": "--shadow-2xl",
+          "themes.shadow.2xs": "--shadow-2xs",
+          "themes.shadow.lg": "--shadow-lg",
+          "themes.shadow.md": "--shadow-md",
+          "themes.shadow.sm": "--shadow-sm",
+          "themes.shadow.xl": "--shadow-xl",
+          "themes.shadow.xs": "--shadow-xs",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground",
+          "themes.sidebar-ring.default": "--sidebar-ring",
+          "themes.spacing.default": "--spacing",
+          "themes.tracking-tight.default": "--tracking-tight"
         },
         "assets": [
           "assets.icon-check"
@@ -5668,7 +5821,7 @@
             "export": "./components#Menu"
           },
           "license": "MIT",
-          "sha256": "aa12acd1499aa179ff191fabb067be952ae80b571c7a7e3ead3190fe179f56b2",
+          "sha256": "cad4f714c3a0b182d76d83ac300928959f823d585cc7fcac3b080ee8f94cbf55",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -5686,7 +5839,7 @@
           "export": "./components#Meter"
         },
         "license": "MIT",
-        "sha256": "ee24fc1a1fc1e0147fc07c9033b09924839e87f63b7d2babfe096c821e88f2a9",
+        "sha256": "f5d12471afa5ee315c1ad1628fe6fee93b64abf3e2814d30ff284979fa2c4d96",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -5700,25 +5853,34 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-accent",
-          "themes.accent-foreground.default": "--color-accent-text",
-          "themes.accent.default": "--color-accent-tint",
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.radius.default": "--radius-2xl",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.destructive.default": "--color-status-danger",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.destructive.default": "--destructive",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary.default": "--primary",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.radius.default": "--radius",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -5822,7 +5984,7 @@
             "export": "./components#Meter"
           },
           "license": "MIT",
-          "sha256": "ee24fc1a1fc1e0147fc07c9033b09924839e87f63b7d2babfe096c821e88f2a9",
+          "sha256": "f5d12471afa5ee315c1ad1628fe6fee93b64abf3e2814d30ff284979fa2c4d96",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -5840,7 +6002,7 @@
           "export": "./components#NativeAction"
         },
         "license": "MIT",
-        "sha256": "43a9b0a707ed8f13a66f5bcbcc76cae947e7417ad80a5ec890a51adf5299703f",
+        "sha256": "a57d775f8b3a6458bb317a7fa9c9ca2e30e9a758a67241467e3c80e32c5e2e24",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -5859,17 +6021,25 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-action",
-          "themes.radius.default": "--radius-control",
-          "themes.ring.default": "--color-focus-ring",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.accent-foreground.default": "--color-ink-on-accent",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary.default": "--primary",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.radius.default": "--radius",
+          "themes.ring.default": "--ring",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary.default": "--sidebar-primary",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground",
+          "themes.sidebar-ring.default": "--sidebar-ring",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -5975,7 +6145,7 @@
             "export": "./components#NativeAction"
           },
           "license": "MIT",
-          "sha256": "43a9b0a707ed8f13a66f5bcbcc76cae947e7417ad80a5ec890a51adf5299703f",
+          "sha256": "a57d775f8b3a6458bb317a7fa9c9ca2e30e9a758a67241467e3c80e32c5e2e24",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -5993,7 +6163,7 @@
           "export": "./components#NavigationTree"
         },
         "license": "MIT",
-        "sha256": "548220d668287457546bf6a539065a399ba26cf2a31ecc52ef11ea3307c7095a",
+        "sha256": "1deb1138cfba73d6e42348744f29157f5ef1806cca92abe724e112100bddd70c",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -6007,20 +6177,29 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-accent",
-          "themes.accent-foreground.default": "--color-accent-text",
-          "themes.accent.default": "--color-accent-tint",
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary.default": "--primary",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -6122,7 +6301,7 @@
             "export": "./components#NavigationTree"
           },
           "license": "MIT",
-          "sha256": "548220d668287457546bf6a539065a399ba26cf2a31ecc52ef11ea3307c7095a",
+          "sha256": "1deb1138cfba73d6e42348744f29157f5ef1806cca92abe724e112100bddd70c",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -6140,7 +6319,7 @@
           "export": "./components#NumberField"
         },
         "license": "MIT",
-        "sha256": "4c9839c5949a0e7421495ed47497416f74902c6407cb7853998b26ff36916b6e",
+        "sha256": "735a7922269adacea321ed60a66772f7d9c973430d98c888e11412d2db9e88b4",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -6155,25 +6334,34 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-accent",
-          "themes.accent-foreground.default": "--color-accent-text",
-          "themes.accent.default": "--color-accent-tint",
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.radius.default": "--radius-control",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.destructive.default": "--color-status-danger",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.destructive.default": "--destructive",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary.default": "--primary",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.radius.default": "--radius",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [
           "assets.icon-chevron-down",
@@ -6300,7 +6488,7 @@
             "export": "./components#NumberField"
           },
           "license": "MIT",
-          "sha256": "4c9839c5949a0e7421495ed47497416f74902c6407cb7853998b26ff36916b6e",
+          "sha256": "735a7922269adacea321ed60a66772f7d9c973430d98c888e11412d2db9e88b4",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -6331,7 +6519,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "8bd422bb996d8683be3d36ff80503fe7af0697642e220d32b094549a4750247e",
+        "sha256": "dced6d527643aa38ef6920ab15ce1c262388ca34e9b6bcb2e60c1cd883f9c210",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -6360,13 +6548,13 @@
       },
       "reads": {
         "themes": {
-          "themes.radius.default": "--radius-control",
-          "themes.shadow.lg": "--ui-elevation-floating",
-          "themes.ring.default": "--color-focus-ring",
-          "themes.spacing.default": "--spacing-6xl",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.foreground.default": "--color-ink-primary"
+          "themes.foreground.default": "--foreground",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.radius.default": "--radius",
+          "themes.ring.default": "--ring",
+          "themes.shadow.lg": "--shadow-lg",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -6493,7 +6681,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "8bd422bb996d8683be3d36ff80503fe7af0697642e220d32b094549a4750247e",
+          "sha256": "dced6d527643aa38ef6920ab15ce1c262388ca34e9b6bcb2e60c1cd883f9c210",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -6540,7 +6728,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "04a7510087c1c6044c05dbabb69c4fe7582d0976b8ae81ae85e4dddf6320c3d4",
+        "sha256": "47b7c7698271e6dc16ed990c451cfb703fe34e90ca3b4eb30a0b5e664a26edcc",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -6570,10 +6758,10 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-action",
-          "themes.spacing.default": "--spacing-md",
-          "themes.muted.default": "--color-surface-sunken",
-          "themes.muted-foreground.default": "--color-ink-muted"
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.muted.default": "--muted",
+          "themes.primary.default": "--primary",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -6699,7 +6887,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "04a7510087c1c6044c05dbabb69c4fe7582d0976b8ae81ae85e4dddf6320c3d4",
+          "sha256": "47b7c7698271e6dc16ed990c451cfb703fe34e90ca3b4eb30a0b5e664a26edcc",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -6746,7 +6934,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "038f7f1f1e8673850aaea5c31e841b57396866c1227c7df1d1db6161d83a7762",
+        "sha256": "3729262570b9ccde7993b23eabb48514c7f9691084996c4790d01d195ec8210e",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -6777,11 +6965,11 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-action",
-          "themes.ring.default": "--color-focus-ring",
-          "themes.spacing.default": "--spacing-lg",
-          "themes.destructive.default": "--color-status-danger",
-          "themes.primary-foreground.default": "--color-ink-on-action"
+          "themes.destructive.default": "--destructive",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.primary.default": "--primary",
+          "themes.ring.default": "--ring",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -6910,7 +7098,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "038f7f1f1e8673850aaea5c31e841b57396866c1227c7df1d1db6161d83a7762",
+          "sha256": "3729262570b9ccde7993b23eabb48514c7f9691084996c4790d01d195ec8210e",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -6944,7 +7132,7 @@
           "export": "./components#ResizeHandle"
         },
         "license": "MIT",
-        "sha256": "e46f7b703c7c6da8ffab6345cb6e73ba724ac10e738d19f613d7ad0f54fe32ab",
+        "sha256": "52589dc20d53efe4cbeb981b937d0ce9f81d0dc7b343cabfc3af573a458440d9",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -6958,11 +7146,10 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-accent",
-          "themes.accent-foreground.default": "--color-accent-text",
-          "themes.accent.default": "--color-accent-tint",
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control"
+          "themes.border.default": "--border",
+          "themes.input.default": "--input",
+          "themes.primary.default": "--primary",
+          "themes.sidebar-border.default": "--sidebar-border"
         },
         "assets": [],
         "components": []
@@ -7043,7 +7230,7 @@
             "export": "./components#ResizeHandle"
           },
           "license": "MIT",
-          "sha256": "e46f7b703c7c6da8ffab6345cb6e73ba724ac10e738d19f613d7ad0f54fe32ab",
+          "sha256": "52589dc20d53efe4cbeb981b937d0ce9f81d0dc7b343cabfc3af573a458440d9",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -7061,7 +7248,7 @@
           "export": "./components#SearchField"
         },
         "license": "MIT",
-        "sha256": "178376ffcea27b4347e8e0131436e01cea2f240e1e8d2e6375e484682b885b94",
+        "sha256": "bd36aa7d6a63c1584bd6d3e1443047e70417f1bec473b9c70755eb697474bf97",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -7077,25 +7264,34 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-accent",
-          "themes.accent-foreground.default": "--color-accent-text",
-          "themes.accent.default": "--color-accent-tint",
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.radius.default": "--radius-control",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.destructive.default": "--color-status-danger",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.destructive.default": "--destructive",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary.default": "--primary",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.radius.default": "--radius",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -7203,7 +7399,7 @@
             "export": "./components#SearchField"
           },
           "license": "MIT",
-          "sha256": "178376ffcea27b4347e8e0131436e01cea2f240e1e8d2e6375e484682b885b94",
+          "sha256": "bd36aa7d6a63c1584bd6d3e1443047e70417f1bec473b9c70755eb697474bf97",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -7238,7 +7434,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "37f4ab9f0848c4d1d0c3888f5a731d98f8be6a85a4943a75b323e9ce149a6b46",
+        "sha256": "ae0c03ec09591789558436f95418aef44a5e89f2760435b17dfa20c870408181",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -7279,17 +7475,17 @@
       },
       "reads": {
         "themes": {
-          "themes.border.default": "--color-line-base",
-          "themes.radius.default": "--radius-control",
-          "themes.shadow.lg": "--ui-elevation-floating",
-          "themes.ring.default": "--color-focus-ring",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.destructive.default": "--color-status-danger",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.accent.default": "--color-surface-selected",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body"
+          "themes.accent.default": "--accent",
+          "themes.border.default": "--border",
+          "themes.destructive.default": "--destructive",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.radius.default": "--radius",
+          "themes.ring.default": "--ring",
+          "themes.shadow.lg": "--shadow-lg",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [
           "assets.icon-check",
@@ -7504,7 +7700,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "37f4ab9f0848c4d1d0c3888f5a731d98f8be6a85a4943a75b323e9ce149a6b46",
+          "sha256": "ae0c03ec09591789558436f95418aef44a5e89f2760435b17dfa20c870408181",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -7546,7 +7742,7 @@
           "export": "./components#SemanticContent"
         },
         "license": "MIT",
-        "sha256": "6d309a33b8120eba71e1951983251d552e0b9b93029218314119d9d30288917d",
+        "sha256": "553ac67d1a1862c0c85be13d3204d5aa20f635a4e4dd2ca579f0892b7e7df9b5",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -7687,7 +7883,7 @@
             "export": "./components#SemanticContent"
           },
           "license": "MIT",
-          "sha256": "6d309a33b8120eba71e1951983251d552e0b9b93029218314119d9d30288917d",
+          "sha256": "553ac67d1a1862c0c85be13d3204d5aa20f635a4e4dd2ca579f0892b7e7df9b5",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -7718,7 +7914,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "261ae5a7cc18dbcd943c12d38125059d67f41ad0c079d4bfb53293dd7f2d6557",
+        "sha256": "355034d74688f9d41124dbd3a8c0b1fd1dba3ded8cb5fe3728557a9bb27e12f6",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -7748,7 +7944,7 @@
       },
       "reads": {
         "themes": {
-          "themes.border.default": "--color-line-base"
+          "themes.border.default": "--border"
         },
         "assets": [],
         "components": []
@@ -7871,7 +8067,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "261ae5a7cc18dbcd943c12d38125059d67f41ad0c079d4bfb53293dd7f2d6557",
+          "sha256": "355034d74688f9d41124dbd3a8c0b1fd1dba3ded8cb5fe3728557a9bb27e12f6",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -7918,7 +8114,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "bc48741c4d23717b4ba74b87ec76add086e0f7b637e7cadefea8fe04ed3079f8",
+        "sha256": "801936de69c9f0441e36c2809f50b1da68a3753f27492c4b081a8dd6f55c4a76",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -7947,8 +8143,8 @@
       },
       "reads": {
         "themes": {
-          "themes.radius.default": "--radius-control",
-          "themes.muted.default": "--color-surface-sunken"
+          "themes.muted.default": "--muted",
+          "themes.radius.default": "--radius"
         },
         "assets": [],
         "components": []
@@ -8065,7 +8261,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "bc48741c4d23717b4ba74b87ec76add086e0f7b637e7cadefea8fe04ed3079f8",
+          "sha256": "801936de69c9f0441e36c2809f50b1da68a3753f27492c4b081a8dd6f55c4a76",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -8112,7 +8308,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "a714e88aec5ee29c5ae47e92517d32a661e9e9c123862e33fdbeb52f29965e8d",
+        "sha256": "f9aa7aad878f37ffe9b89fb74f42016dc5738acb8e92e17d5239fcbaf0b7112d",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -8144,11 +8340,11 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-action",
-          "themes.ring.default": "--color-focus-ring",
-          "themes.spacing.default": "--spacing-6xl",
-          "themes.card.default": "--color-surface-raised",
-          "themes.muted.default": "--color-surface-sunken"
+          "themes.card.default": "--card",
+          "themes.muted.default": "--muted",
+          "themes.primary.default": "--primary",
+          "themes.ring.default": "--ring",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -8279,7 +8475,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "a714e88aec5ee29c5ae47e92517d32a661e9e9c123862e33fdbeb52f29965e8d",
+          "sha256": "f9aa7aad878f37ffe9b89fb74f42016dc5738acb8e92e17d5239fcbaf0b7112d",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -8313,7 +8509,7 @@
           "export": "./components#Spinner"
         },
         "license": "MIT",
-        "sha256": "845a056e7288e4c7573575d487605435b1bbde5d789ef404d7f81a996708dc06",
+        "sha256": "e208b657073d7970617cac20bb210c69e6d29762308f401b017ebc6a627ce7ae",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -8328,11 +8524,16 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-ink-link",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.accent-foreground.default": "--color-ink-on-accent",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary"
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.foreground.default": "--foreground",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground"
         },
         "assets": [],
         "components": []
@@ -8416,7 +8617,7 @@
             "export": "./components#Spinner"
           },
           "license": "MIT",
-          "sha256": "845a056e7288e4c7573575d487605435b1bbde5d789ef404d7f81a996708dc06",
+          "sha256": "e208b657073d7970617cac20bb210c69e6d29762308f401b017ebc6a627ce7ae",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -8434,7 +8635,7 @@
           "export": "./components#StatusMark"
         },
         "license": "MIT",
-        "sha256": "64a5d0773e27660f926830a59be53df39502eaa7cca3a716b4ea28750c078a16",
+        "sha256": "af4c88e08798ba88a5b6a805f4d57e41dc83fe6024fe12e2d5262c8adcb0fd7d",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -8451,16 +8652,21 @@
       },
       "reads": {
         "themes": {
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.destructive.default": "--color-status-danger",
-          "themes.primary.default": "--color-ink-link",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.accent-foreground.default": "--color-ink-on-accent",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.destructive.default": "--destructive",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -8553,7 +8759,7 @@
             "export": "./components#StatusMark"
           },
           "license": "MIT",
-          "sha256": "64a5d0773e27660f926830a59be53df39502eaa7cca3a716b4ea28750c078a16",
+          "sha256": "af4c88e08798ba88a5b6a805f4d57e41dc83fe6024fe12e2d5262c8adcb0fd7d",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -8584,7 +8790,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "77fba61b0de96ccb1ac0fbb6df232ea05d0709ae0dccca827f7b562ab6ad256f",
+        "sha256": "50dea316bb4a2bf38e3b6ef48b1c6ec20591156ee9996cf9c3885147e7dc32fc",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -8615,13 +8821,13 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-action",
-          "themes.ring.default": "--color-focus-ring",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.destructive.default": "--color-status-danger",
-          "themes.background.default": "--color-surface-base",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary"
+          "themes.background.default": "--background",
+          "themes.destructive.default": "--destructive",
+          "themes.foreground.default": "--foreground",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.primary.default": "--primary",
+          "themes.ring.default": "--ring",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -8752,7 +8958,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "77fba61b0de96ccb1ac0fbb6df232ea05d0709ae0dccca827f7b562ab6ad256f",
+          "sha256": "50dea316bb4a2bf38e3b6ef48b1c6ec20591156ee9996cf9c3885147e7dc32fc",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -8786,7 +8992,7 @@
           "export": "./components#Table"
         },
         "license": "MIT",
-        "sha256": "c8a4fec3bc5455074b34bf4e24596e25ef112fd8f0fc1e2ae65343e04fb5b771",
+        "sha256": "a5facc06ee8530b04789ed5d137ecce61975f0892158ca10ccce51ea43c05614",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -8800,23 +9006,32 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-accent",
-          "themes.accent-foreground.default": "--color-accent-text",
-          "themes.accent.default": "--color-accent-tint",
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary.default": "--primary",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": [
@@ -8924,7 +9139,7 @@
             "export": "./components#Table"
           },
           "license": "MIT",
-          "sha256": "c8a4fec3bc5455074b34bf4e24596e25ef112fd8f0fc1e2ae65343e04fb5b771",
+          "sha256": "a5facc06ee8530b04789ed5d137ecce61975f0892158ca10ccce51ea43c05614",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -8955,7 +9170,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "eb9a86e3a1c410ede10dc104ac62415329ed3e465af51a97aee5e8646f447375",
+        "sha256": "4bf085f468e127e53e98ea40b3a24206b56d1bc7636a332df58fd26c975727d8",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -8985,14 +9200,14 @@
       },
       "reads": {
         "themes": {
-          "themes.radius.default": "--radius-control",
-          "themes.shadow.sm": "--ui-elevation-raised",
-          "themes.ring.default": "--color-focus-ring",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.background.default": "--color-surface-base",
-          "themes.muted.default": "--color-surface-sunken",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.foreground.default": "--color-ink-primary"
+          "themes.background.default": "--background",
+          "themes.foreground.default": "--foreground",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.muted.default": "--muted",
+          "themes.radius.default": "--radius",
+          "themes.ring.default": "--ring",
+          "themes.shadow.sm": "--shadow-sm",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -9127,7 +9342,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "eb9a86e3a1c410ede10dc104ac62415329ed3e465af51a97aee5e8646f447375",
+          "sha256": "4bf085f468e127e53e98ea40b3a24206b56d1bc7636a332df58fd26c975727d8",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -9161,7 +9376,7 @@
           "export": "./components#TagGroup"
         },
         "license": "MIT",
-        "sha256": "c5cb9135d885170444d9eddab4ac8e2583542317af6be6656a2fe2796387c193",
+        "sha256": "5eece008f1ef273c4ff8e52c516bec8423b40edf1da9e45d1416db3653542c4a",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -9177,24 +9392,33 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-accent",
-          "themes.accent-foreground.default": "--color-accent-text",
-          "themes.accent.default": "--color-accent-tint",
-          "themes.ring.default": "--color-focus-ring",
-          "themes.tracking-tight.default": "--tracking-label",
-          "themes.radius.default": "--radius-2xl",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary.default": "--primary",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.radius.default": "--radius",
+          "themes.ring.default": "--ring",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground",
+          "themes.sidebar-ring.default": "--sidebar-ring",
+          "themes.spacing.default": "--spacing",
+          "themes.tracking-tight.default": "--tracking-tight"
         },
         "assets": [
           "assets.icon-close"
@@ -9307,7 +9531,7 @@
             "export": "./components#TagGroup"
           },
           "license": "MIT",
-          "sha256": "c5cb9135d885170444d9eddab4ac8e2583542317af6be6656a2fe2796387c193",
+          "sha256": "5eece008f1ef273c4ff8e52c516bec8423b40edf1da9e45d1416db3653542c4a",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -9325,7 +9549,7 @@
           "export": "./components#TextField"
         },
         "license": "MIT",
-        "sha256": "ffd0e9f49e36b8b9ef7a0eb008d3b114ced53cff17efc1ae58fb0ca1145c2da7",
+        "sha256": "8a4e3a28cc1696c7b393a50d8ae520666c8820e044c7a28b2315f52f68dc0b82",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -9345,25 +9569,34 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-accent",
-          "themes.accent-foreground.default": "--color-accent-text",
-          "themes.accent.default": "--color-accent-tint",
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.radius.default": "--radius-control",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.destructive.default": "--color-status-danger",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary",
-          "themes.font-sans.default": "--font-body",
-          "themes.font-heading.default": "--font-display",
-          "themes.font-mono.default": "--font-mono"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.destructive.default": "--destructive",
+          "themes.font-heading.default": "--font-heading",
+          "themes.font-mono.default": "--font-mono",
+          "themes.font-sans.default": "--font-sans",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary.default": "--primary",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.radius.default": "--radius",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -9482,7 +9715,7 @@
             "export": "./components#TextField"
           },
           "license": "MIT",
-          "sha256": "ffd0e9f49e36b8b9ef7a0eb008d3b114ced53cff17efc1ae58fb0ca1145c2da7",
+          "sha256": "8a4e3a28cc1696c7b393a50d8ae520666c8820e044c7a28b2315f52f68dc0b82",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -9500,7 +9733,7 @@
           "export": "./shell#Toaster"
         },
         "license": "MIT",
-        "sha256": "a02c2f8dbb1288a9cdc44e8402d689e11b2ee42a5fb5c8622315f9439951a6e3",
+        "sha256": "6607797605e968f33e5482936634ebe02935a5cee92fbd94ac4e7f620720e194",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -9600,7 +9833,7 @@
             "export": "./shell#Toaster"
           },
           "license": "MIT",
-          "sha256": "a02c2f8dbb1288a9cdc44e8402d689e11b2ee42a5fb5c8622315f9439951a6e3",
+          "sha256": "6607797605e968f33e5482936634ebe02935a5cee92fbd94ac4e7f620720e194",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -9631,7 +9864,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "5d4ee56a9f3d80ebab46b988a0c80cc0a416ce1eb0a462cc5fb6a1bb4b2a991a",
+        "sha256": "8985e13bcbec367d04ae39222bb8b5f6e7612dea632bd2187436f8327c6985f8",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -9668,14 +9901,14 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-action",
-          "themes.radius.default": "--radius-control",
-          "themes.ring.default": "--color-focus-ring",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.destructive.default": "--color-status-danger",
-          "themes.muted.default": "--color-surface-sunken",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary"
+          "themes.destructive.default": "--destructive",
+          "themes.foreground.default": "--foreground",
+          "themes.muted.default": "--muted",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.primary.default": "--primary",
+          "themes.radius.default": "--radius",
+          "themes.ring.default": "--ring",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -9824,7 +10057,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "5d4ee56a9f3d80ebab46b988a0c80cc0a416ce1eb0a462cc5fb6a1bb4b2a991a",
+          "sha256": "8985e13bcbec367d04ae39222bb8b5f6e7612dea632bd2187436f8327c6985f8",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -9871,7 +10104,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "4e8e811d5536b94e234af86882a22c5cbd1e4655dbf62d8db538568e3288bee4",
+        "sha256": "6de1c6ab5a80a682afa37c927e5e9b1350de2baa2e0e3a4e9db385227d563c8c",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -9903,9 +10136,9 @@
       },
       "reads": {
         "themes": {
-          "themes.radius.default": "--radius-control",
-          "themes.ring.default": "--color-focus-ring",
-          "themes.spacing.default": "--spacing-sm"
+          "themes.radius.default": "--radius",
+          "themes.ring.default": "--ring",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": [
@@ -10052,7 +10285,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "4e8e811d5536b94e234af86882a22c5cbd1e4655dbf62d8db538568e3288bee4",
+          "sha256": "6de1c6ab5a80a682afa37c927e5e9b1350de2baa2e0e3a4e9db385227d563c8c",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -10086,7 +10319,7 @@
           "export": "./components#Toolbar"
         },
         "license": "MIT",
-        "sha256": "66da26ee2be600bddca4ed11f59ae0043d7b8a212758a5ee62fc6131a7008cb4",
+        "sha256": "0bf8d7198ff7aaa9e355ace4f648c8ca88e719606336f049a7606c8bc9e3c8b8",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -10100,9 +10333,10 @@
       },
       "reads": {
         "themes": {
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.spacing.default": "--spacing-2xl"
+          "themes.border.default": "--border",
+          "themes.input.default": "--input",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -10180,7 +10414,7 @@
             "export": "./components#Toolbar"
           },
           "license": "MIT",
-          "sha256": "66da26ee2be600bddca4ed11f59ae0043d7b8a212758a5ee62fc6131a7008cb4",
+          "sha256": "0bf8d7198ff7aaa9e355ace4f648c8ca88e719606336f049a7606c8bc9e3c8b8",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -10211,7 +10445,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "1232ae7e41fc421adab12a808f86c556aeefdecb455e2f972a8144c73dd60d13",
+        "sha256": "dded26aa9679456006d5eb1145d6290a400ac777bb4ce73a4495189b5f53eb5f",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -10240,10 +10474,10 @@
       },
       "reads": {
         "themes": {
-          "themes.radius.default": "--radius-control",
-          "themes.spacing.default": "--spacing-md",
-          "themes.background.default": "--color-surface-base",
-          "themes.foreground.default": "--color-ink-primary"
+          "themes.background.default": "--background",
+          "themes.foreground.default": "--foreground",
+          "themes.radius.default": "--radius",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [],
         "components": []
@@ -10339,7 +10573,7 @@
           },
           {
             "path": "components/tooltip/tooltip.tsx",
-            "sha256": "b2d158774b4d78c462eeee316120ef9aeac6b9dd094c48f8c73d2466f9f5e958"
+            "sha256": "bb30c14808bcfb9e5473af12fde222c6f01e0a0df793fa4971e2df4d1c742fb9"
           },
           {
             "path": "notices/THIRD-PARTY.md",
@@ -10375,7 +10609,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "1232ae7e41fc421adab12a808f86c556aeefdecb455e2f972a8144c73dd60d13",
+          "sha256": "dded26aa9679456006d5eb1145d6290a400ac777bb4ce73a4495189b5f53eb5f",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -10409,7 +10643,7 @@
           "export": "./components#Tree"
         },
         "license": "MIT",
-        "sha256": "b13ece0dd9d9f7bda8aa1b130c28a9eba73e332a4018d66c0581205c98acb9c7",
+        "sha256": "5a4d81b2e7bf6feb3bedac9328b352f751f11aa49d8abf909aeaadc6dc3c697f",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -10423,20 +10657,29 @@
       },
       "reads": {
         "themes": {
-          "themes.primary.default": "--color-accent",
-          "themes.accent-foreground.default": "--color-accent-text",
-          "themes.accent.default": "--color-accent-tint",
-          "themes.border.default": "--color-line-base",
-          "themes.input.default": "--color-line-control",
-          "themes.spacing.default": "--spacing-2xl",
-          "themes.sidebar.default": "--color-surface-aside",
-          "themes.background.default": "--color-surface-base",
-          "themes.popover.default": "--color-overlay-surface",
-          "themes.card.default": "--color-surface-raised",
-          "themes.muted.default": "--color-skeleton-fill",
-          "themes.muted-foreground.default": "--color-ink-muted",
-          "themes.primary-foreground.default": "--color-ink-on-action",
-          "themes.foreground.default": "--color-ink-primary"
+          "themes.accent.default": "--accent",
+          "themes.accent-foreground.default": "--accent-foreground",
+          "themes.background.default": "--background",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.card-foreground.default": "--card-foreground",
+          "themes.foreground.default": "--foreground",
+          "themes.input.default": "--input",
+          "themes.muted.default": "--muted",
+          "themes.muted-foreground.default": "--muted-foreground",
+          "themes.popover.default": "--popover",
+          "themes.popover-foreground.default": "--popover-foreground",
+          "themes.primary.default": "--primary",
+          "themes.primary-foreground.default": "--primary-foreground",
+          "themes.secondary.default": "--secondary",
+          "themes.secondary-foreground.default": "--secondary-foreground",
+          "themes.sidebar.default": "--sidebar",
+          "themes.sidebar-accent.default": "--sidebar-accent",
+          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
+          "themes.sidebar-border.default": "--sidebar-border",
+          "themes.sidebar-foreground.default": "--sidebar-foreground",
+          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground",
+          "themes.spacing.default": "--spacing"
         },
         "assets": [
           "assets.icon-chevron-right"
@@ -10542,7 +10785,7 @@
             "export": "./components#Tree"
           },
           "license": "MIT",
-          "sha256": "b13ece0dd9d9f7bda8aa1b130c28a9eba73e332a4018d66c0581205c98acb9c7",
+          "sha256": "5a4d81b2e7bf6feb3bedac9328b352f751f11aa49d8abf909aeaadc6dc3c697f",
           "adoptedAt": "2026-10-26"
         }
       }

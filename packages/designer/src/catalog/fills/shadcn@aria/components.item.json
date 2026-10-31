@@ -32,13 +32,13 @@
       "propMap": {},
       "reads": {
         "themes": [
-          "themes.primary.default",
           "themes.border.default",
+          "themes.muted-foreground.default",
+          "themes.muted.default",
+          "themes.primary.default",
           "themes.radius.default",
           "themes.ring.default",
-          "themes.spacing.default",
-          "themes.muted.default",
-          "themes.muted-foreground.default"
+          "themes.spacing.default"
         ],
         "assets": [],
         "components": []

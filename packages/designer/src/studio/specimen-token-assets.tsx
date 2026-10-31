@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { componentLeaf } from "../runtime/component-leaf.js";
 import type { IconNode } from "../components/Icon.js";
 import type { ResolvedMember } from "../catalog-core/types.js";
@@ -28,6 +28,12 @@ export interface TokenAssetSpecimenDefinition extends SpecimenLeafDefinition {
   validate(props: SpecimenLeafProps): readonly DesignerSpecimenNeed[];
 }
 
+/** A themes.animate-* member's CSS `animation` shorthand: keyframes name, a time or one var(), then timing words. */
+const ANIMATION = /^[a-z][a-z0-9-]*\s+(?:(?:\d*\.)?\d+m?s|var\(--[a-z][\w-]*\))(?:\s+(?:[a-z-]+|cubic-bezier\([\d.\s,+-]+\)))*$/;
+const animation = (member: ResolvedMember): string | undefined => {
+  const css = member.css.light;
+  return member.slot.startsWith("themes.animate-") && typeof css === "string" && !unsafeText(css) && ANIMATION.test(css.trim()) ? css.trim() : undefined;
+};
 const valid = (member: ResolvedMember): boolean => (["light", "dark"] as const).every(mode => {
   const css = member.css[mode], value = member.value[mode];
   return mode === "dark" && css === undefined && value === undefined || typeof css === "string" && value !== undefined
@@ -71,8 +77,7 @@ export function colorRampSpecimenItems(context: DesignerSpecimenContext, leaf: s
 type Mode = "swatch" | "color-ramp" | "type-ladder" | "spacing-ladder" | "radius-ladder" | "motion-player" | "asset-grid" | "icon-grid";
 function chromeNeeds(mode: Mode, context: DesignerSpecimenContext): readonly string[] {
   const dimensions = mode === "swatch" || mode === "color-ramp"
-    ? [["themes.spacing.default", "--spacing"]] as const
-    : mode === "motion-player" ? [["themes.spacing.default", "--spacing"]] as const : [];
+    ? [["themes.spacing.default", "--spacing"]] as const : [];
   const colors = mode === "asset-grid" || mode === "icon-grid" ? [
     ["themes.card.default", "--card"], ["themes.foreground.default", "--foreground"], ["themes.background.default", "--background"],
   ] as const : [];
@@ -109,17 +114,11 @@ function valueNeed(mode: Mode, item: SpecimenItem, context: DesignerSpecimenCont
     try { inspectSvg(member.value.light, memberId(item.value) === "assets.favicon.vector" ? { favicon: true } : undefined); } catch { return "The selected artwork is invalid."; }
     return;
   }
+  if (mode === "motion-player") return animation(member) ? undefined : "Motion requires a selected themes animation shorthand.";
   if (!valid(member)) return "The selected token value is invalid.";
   if (mode === "swatch" && (!["color", "gradient"].includes(member.$type) || !pairOf(context, member))) return "A swatch requires a selected color and contrast pair.";
   if (mode === "type-ladder" && !typeStyle(member)) return "The token has no applicable typography property.";
   if ((mode === "spacing-ladder" || mode === "radius-ladder") && member.$type !== "dimension") return "The ruler or box requires a selected dimension.";
-  if (mode === "motion-player" && (!["duration", "cubicBezier"].includes(member.$type) || !motionValues(context, member))) return "Motion requires valid selected duration and easing tokens.";
-}
-function motionValues(context: DesignerSpecimenContext, member: ResolvedMember): { duration: string; easing: string } | undefined {
-  const values = Object.values(context.profile.values.members);
-  const duration = member.$type === "duration" ? member : values.find(value => value.$type === "duration" && valid(value));
-  const easing = member.$type === "cubicBezier" ? member : values.find(value => value.$type === "cubicBezier" && valid(value));
-  return duration && easing && valid(duration) && valid(easing) ? { duration: duration.css.light, easing: easing.css.light } : undefined;
 }
 function validate(mode: Mode, props: SpecimenLeafProps, layout: SpecimenLayout): readonly DesignerSpecimenNeed[] {
   const leaf: SpecimenLeafId = `sections.specimen-${mode}`;
@@ -147,24 +146,22 @@ function Swatch({ id, member, context, renderParts }: { id: string; member: Reso
   })}</>;
 }
 /** Animation state is local to the specimen; the cell and consumer values stay read-only. */
-function MotionPlayer({ id, duration, easing }: { id: string; duration: string; easing: string }): ReactNode {
-  const target = useRef<HTMLDivElement | null>(null), running = useRef<Animation | undefined>(undefined);
-  const [reduced, setReduced] = useState(false);
+function MotionPlayer({ id, animation }: { id: string; animation: string }): ReactNode {
+  const [run, setRun] = useState(0), [reduced, setReduced] = useState(false);
   useEffect(() => {
     const media = typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)") : undefined;
-    const changed = () => { setReduced(media?.matches ?? false); if (media?.matches) running.current?.cancel(); };
+    const changed = () => { setReduced(media?.matches ?? false); if (media?.matches) setRun(0); };
     changed(); media?.addEventListener?.("change", changed);
-    return () => { media?.removeEventListener?.("change", changed); running.current?.cancel(); };
+    return () => { media?.removeEventListener?.("change", changed); };
   }, []);
   const play = () => {
-    running.current?.cancel();
     const reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
     setReduced(reduce);
-    if (reduce) return;
-    running.current = target.current?.animate?.([{ transform: "translateX(0)" }, { transform: "translateX(calc(var(--spacing) * 16))" }], { duration: Number.parseFloat(duration) * (duration.endsWith("ms") ? 1 : 1000), easing, fill: "forwards" });
+    setRun(reduce ? 0 : count => count + 1);
   };
+  // The member's own shorthand plays on the sample; reduced motion keeps the sample static.
   return <Content as="section" data-motion-specimen={id}>
-    <Content as="div" ref={target} role="img" aria-label={id} className="size-lg bg-accent" style={{ transform: reduced ? "translateX(calc(var(--spacing) * 16))" : undefined }} data-reduced-motion={reduced ? "static-final" : undefined} />
+    <Content as="div" key={run} role="img" aria-label={id} className="size-lg bg-accent" style={{ animation: run && !reduced ? animation : undefined }} data-playing={run && !reduced ? "" : undefined} data-reduced-motion={reduced ? "static-final" : undefined} />
     <Button onPress={play}>Play motion</Button>
     {reduced ? <Content as="p" role="status">Reduced motion is enabled.</Content> : null}
   </Content>;
@@ -183,8 +180,8 @@ function renderItem(mode: Mode, item: SpecimenItem, props: SpecimenLeafProps): R
   if (mode === "spacing-ladder") return <Content as="div" role="img" aria-label={id} className="h-sm max-w-full bg-accent border-s border-e border-line-strong" style={{ inlineSize: member.css.light }} />;
   if (mode === "radius-ladder") return <Content as="div" role="img" aria-label={id} className="size-3xl border border-line-strong bg-surface-raised" style={{ borderRadius: member.css.light }} />;
   if (mode === "motion-player") {
-    const button = selected(props.context, "components.button"), motion = motionValues(props.context, member);
-    return isNeed(button) ? props.need(button) : motion ? <MotionPlayer id={id} {...motion} /> : props.need({ leaf: id, reason: "Selected motion values are unavailable." });
+    const button = selected(props.context, "components.button"), shorthand = animation(member);
+    return isNeed(button) ? props.need(button) : shorthand ? <MotionPlayer id={id} animation={shorthand} /> : props.need({ leaf: id, reason: "Selected motion values are unavailable." });
   }
   const artwork = selected(props.context, mode === "icon-grid" ? "components.icon" : "components.logo");
   if (isNeed(artwork)) return props.need(artwork);

@@ -68,9 +68,10 @@ export function studioSpecimenTokenStyle(part: 'studio.specimen-contrast', value
 export function studioSpecimenTokenStyle(part: StudioSpecimenHostPartId, values: Resolved, input: SwatchInput | ContrastInput, refs: SwatchReferences | ContrastReferences) {
   if (part === 'studio.specimen-swatch') {
     const request = input as SwatchInput, references = refs as SwatchReferences;
-    const width = registered(values, 'themes.spacing.default', 'light', ['dimension']), height = registered(values, 'themes.spacing.default', 'light', ['dimension']);
-    if (width.property !== '--spacing-5xl' || height.property !== '--spacing-4xl') throw new Error('NEED: the Studio swatch layout token mapping differs.');
-    return { display: 'inline-block' as const, inlineSize: 'var(--spacing-5xl)', blockSize: 'var(--spacing-4xl)', background: read(values, request.memberId, request.mode, references.member) };
+    // The swatch is sized in steps of the one shadcn spacing base (24 x 16 steps: 96px x 64px at 0.25rem).
+    const step = registered(values, 'themes.spacing.default', 'light', ['dimension']);
+    if (step.property !== '--spacing') throw new Error('NEED: the Studio swatch layout token mapping differs.');
+    return { display: 'inline-block' as const, inlineSize: 'calc(var(--spacing) * 24)', blockSize: 'calc(var(--spacing) * 16)', background: read(values, request.memberId, request.mode, references.member) };
   }
   if (part === 'studio.specimen-contrast') {
     const request = input as ContrastInput, references = refs as ContrastReferences;

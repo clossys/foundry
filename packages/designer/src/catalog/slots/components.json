@@ -1032,8 +1032,6 @@
           "themes.sidebar-primary-foreground",
           "themes.sidebar-accent-foreground",
           "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono",
           "themes.ring",
           "themes.sidebar-ring"
         ],
@@ -1096,8 +1094,7 @@
           "themes.sidebar-primary-foreground",
           "themes.sidebar-accent-foreground",
           "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
+          "themes.ring"
         ],
         "assets": []
       }
@@ -1849,8 +1846,7 @@
           "themes.sidebar-primary-foreground",
           "themes.sidebar-accent-foreground",
           "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
+          "themes.ring"
         ],
         "assets": [
           "assets.icon-chevron-up",
@@ -2004,8 +2000,6 @@
           "themes.sidebar-primary-foreground",
           "themes.sidebar-accent-foreground",
           "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono",
           "themes.sidebar-primary",
           "themes.ring",
           "themes.sidebar-ring"
@@ -2089,8 +2083,7 @@
           "themes.sidebar-primary-foreground",
           "themes.sidebar-accent-foreground",
           "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
+          "themes.ring"
         ],
         "assets": [
           "assets.icon-search",
@@ -2150,8 +2143,6 @@
           "themes.sidebar-primary-foreground",
           "themes.sidebar-accent-foreground",
           "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono",
           "themes.ring",
           "themes.sidebar-ring"
         ],
@@ -2602,9 +2593,7 @@
           "themes.sidebar-foreground",
           "themes.sidebar-primary-foreground",
           "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
+          "themes.font-sans"
         ],
         "assets": [
           "assets.icon-close"
@@ -2662,8 +2651,7 @@
           "themes.sidebar-primary-foreground",
           "themes.sidebar-accent-foreground",
           "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
+          "themes.ring"
         ],
         "assets": []
       }
@@ -2811,8 +2799,6 @@
           "themes.sidebar-primary-foreground",
           "themes.sidebar-accent-foreground",
           "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono",
           "themes.ring",
           "themes.sidebar-ring"
         ],

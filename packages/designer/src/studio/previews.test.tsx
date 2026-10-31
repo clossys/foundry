@@ -8,8 +8,8 @@ import { catalog, adopt, labels } from "./__fixtures__/studio.js";
 afterEach(cleanup);
 it("uses actual resolved token previews and caps member rows", () => {
  const library=adopt(); const candidate=buildCandidates({catalog,library,working:library,slotId:"themes.background",scope:"slot",target:"themes.background"})[0]!;
- const view=render(<SlotPreview members={candidate.members} labels={labels}/>); expect(view.container.querySelectorAll("figure").length).toBeGreaterThan(0);
- const members=Array.from({length:PREVIEW_LIMIT+6},(_,i)=>({...candidate.members[0]!,id:`themes.background.default${i}`})); const capped=render(<SlotPreview members={members} labels={labels}/>); expect(capped.container.querySelectorAll("li")).toHaveLength(24); expect(capped.container.querySelector("[data-preview-more]")).toHaveTextContent("+6");
+ const view=render(<SlotPreview members={candidate.members} labels={labels}/>); expect(view.container.querySelector<HTMLElement>(`[data-token-value-preview="themes.background.default"] [data-preview-kind="swatch"]`)?.style.background).toBe(candidate.members[0]!.member.css.light);
+ const colors=catalog.slots.filter(slot=>slot.layer==="themes"&&(slot.contract as {$type?:string}).$type==="color").slice(0,PREVIEW_LIMIT+6); expect(colors).toHaveLength(PREVIEW_LIMIT+6); const members=colors.map(slot=>({id:`${slot.id}.default`,member:{...candidate.members[0]!.member,slot:slot.id,emit:(slot.contract as {emit?:Record<string,string>}).emit?.default}})); const capped=render(<SlotPreview members={members} labels={labels}/>); expect(capped.container.querySelectorAll("li")).toHaveLength(24); expect(capped.container.querySelector("[data-preview-more]")).toHaveTextContent("+6");
 });
 it("does not claim an undeclared page font is loaded",()=>{expect(isFontDeclared("Unknown Font")).toBe(false);});
 it("renders checked SVG assets through the existing image route rather than a token sample", () => {
