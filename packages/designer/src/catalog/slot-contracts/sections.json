@@ -1,6 +1,157 @@
 [
   {
     "schema": "clossys.slot-contract/1",
+    "slot": "sections.band",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Shared section shell every section composes: ground, measure (container width and gutter) and vertical rhythm, and the single source of the section type ramp.",
+    "inputs": [
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "emits.theme": "--spacing-section,--spacing-section-compact,--spacing-stack,--spacing-gutter,--container-measure-prose,--container-measure,--container-measure-wide,--text-display,--text-heading,--text-title,--text-lead,--text-figure",
+      "measure": "prose|content|wide",
+      "rhythm": "standard|compact"
+    },
+    "references": [
+      {
+        "registry": "tailark-oss",
+        "item": "mist-content-1",
+        "version": "8139698",
+        "hash": "sha256:0cf80a2d54e12d33e43610eb0bd50703a9964a4be0b27a76a97e8ee6104b0aca"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.section-header",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Shared section header: optional eyebrow, one heading, optional description and up to two actions, sized by density from the band type ramp.",
+    "inputs": [
+      {
+        "name": "eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "heading",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "actions[].label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "actions.max": 2,
+      "actions[].label.maxLength.en": 120,
+      "compose.band": "sections.band",
+      "density": "display|standard|compact",
+      "description.maxLength.en": 480,
+      "eyebrow.maxLength.en": 120,
+      "heading.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
+      "type.compact": "--text-title",
+      "type.display": "--text-display",
+      "type.lead": "--text-lead",
+      "type.standard": "--text-heading"
+    },
+    "references": [
+      {
+        "registry": "tailark-oss",
+        "item": "mist-features-1",
+        "version": "8139698",
+        "hash": "sha256:db3281ad9f475e7812837d9badf22d2d94ebd70340f18556c6f6a4ea8297418a"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
     "slot": "sections.hero",
     "package": "designer",
     "layer": "sections",
@@ -91,11 +242,18 @@
       "actions.max": 2,
       "actions.primary.label.maxLength.en": 120,
       "actions.secondary.label.maxLength.en": 120,
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
       "header.description.maxLength.en": 480,
       "header.eyebrow.maxLength.en": 120,
       "header.heading.maxLength.en": 160,
       "media.series[].name.maxLength.en": 160,
-      "media.title.maxLength.en": 160
+      "media.title.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
     },
     "references": [
       {
@@ -187,11 +345,18 @@
       }
     ],
     "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
       "header.description.maxLength.en": 480,
       "header.eyebrow.maxLength.en": 120,
       "header.heading.maxLength.en": 160,
       "items[].description.maxLength.en": 480,
-      "items[].heading.maxLength.en": 160
+      "items[].heading.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
     },
     "references": [
       {
@@ -310,6 +475,8 @@
     "limits": {
       "columns[].description.maxLength.en": 480,
       "columns[].label.maxLength.en": 120,
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
       "controls[].label.maxLength.en": 120,
       "header.description.maxLength.en": 480,
       "header.eyebrow.maxLength.en": 120,
@@ -321,7 +488,12 @@
       "rows[].cells[].text.maxLength.en": 120,
       "rows[].cells[].value.maxLength.en": 160,
       "rows[].description.maxLength.en": 480,
-      "rows[].label.maxLength.en": 120
+      "rows[].label.maxLength.en": 120,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
     },
     "references": [
       {
@@ -433,6 +605,8 @@
       }
     ],
     "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
       "header.description.maxLength.en": 480,
       "header.eyebrow.maxLength.en": 120,
       "header.heading.maxLength.en": 160,
@@ -444,7 +618,12 @@
       "plans[].name.maxLength.en": 160,
       "plans[].price.maxLength.en": 120,
       "plans[].priceByInterval[].amount.maxLength.en": 160,
-      "plans[].priceByInterval[].priceText.maxLength.en": 160
+      "plans[].priceByInterval[].priceText.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
     },
     "references": [
       {
@@ -504,9 +683,16 @@
       "actions.max": 2,
       "actions.primary.label.maxLength.en": 120,
       "actions.secondary.label.maxLength.en": 120,
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
       "header.description.maxLength.en": 480,
       "header.eyebrow.maxLength.en": 120,
-      "header.title.maxLength.en": 160
+      "header.title.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
     },
     "references": [
       {
@@ -648,6 +834,8 @@
       }
     ],
     "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
       "error-summary.heading.maxLength.en": 160,
       "error-summary.items[].message.maxLength.en": 120,
       "error.message.maxLength.en": 480,
@@ -660,6 +848,11 @@
       "header.eyebrow.maxLength.en": 120,
       "header.heading.maxLength.en": 160,
       "references.blocked": "@shadcn/form is served empty by the radix-nova registry; @shadcn/field is its successor",
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
       "submit.label.maxLength.en": 120,
       "success.message.maxLength.en": 480
     },
@@ -728,9 +921,15 @@
     ],
     "limits": {
       "body.maxLength.en": 48000,
+      "compose.band": "sections.band",
       "heading.maxLength.en": 160,
       "revision.label.maxLength.en": 120,
-      "revision.value.maxLength.en": 160
+      "revision.value.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
     },
     "references": [
       {
@@ -748,7 +947,7 @@
     "slot": "sections.steps",
     "package": "designer",
     "layer": "sections",
-    "purpose": "Ordered process steps laid out as a horizontal timeline, each with a heading, optional description and ordinal.",
+    "purpose": "Ordered process steps laid out as one timeline, horizontal where the steps fit side by side and vertical below, each with a heading, optional description and ordinal.",
     "inputs": [
       {
         "name": "header.eyebrow",
@@ -812,10 +1011,18 @@
       }
     ],
     "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
       "header.description.maxLength.en": 480,
       "header.eyebrow.maxLength.en": 120,
       "header.heading.maxLength.en": 160,
-      "orientation": "horizontal",
+      "orientation": "horizontal|vertical",
+      "orientation.rule": "one timeline whose orientation follows the measure: horizontal from lg, vertical below; never two renderings or a scroll region",
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
       "steps[].description.maxLength.en": 480,
       "steps[].heading.maxLength.en": 160,
       "steps[].ordinal.maxLength.en": 120

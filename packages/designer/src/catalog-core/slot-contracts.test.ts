@@ -15,8 +15,8 @@ const context = (layer: "sections" | "frames"): SlotContractContext => ({ layer,
 const committed = { sections: sections as unknown as SlotContractRecord[], frames: frames as unknown as SlotContractRecord[] };
 
 describe("section and frame slot contracts", () => {
-  it("covers exactly the Home page section and frame L3 slots", () => {
-    expect(committed.sections.map(row => row.slot)).toEqual(["sections.hero", "sections.features", "sections.comparison", "sections.pricing", "sections.call-to-action", "sections.form", "sections.legal-prose", "sections.steps"]);
+  it("covers exactly the Home page section and frame L3 slots and the shared section shell", () => {
+    expect(committed.sections.map(row => row.slot)).toEqual(["sections.band", "sections.section-header", "sections.hero", "sections.features", "sections.comparison", "sections.pricing", "sections.call-to-action", "sections.form", "sections.legal-prose", "sections.steps"]);
     expect(committed.frames.map(row => row.slot)).toEqual(["frames.site-header", "frames.site-footer", "frames.site-shell"]);
   });
 
@@ -42,16 +42,28 @@ describe("section and frame slot contracts", () => {
     expect(shell.inputs.some(row => row.kind === "cell")).toBe(true);
   });
 
+  it("makes every section that names the band compose the shell and its tokens", () => {
+    const band = committed.sections.find(row => row.slot === "sections.band")!;
+    expect(String(band.limits["emits.theme"]).split(",")).toEqual(expect.arrayContaining(["--spacing-section", "--container-measure", "--text-display", "--text-heading", "--text-figure"]));
+    for (const row of committed.sections.filter(row => row.slot !== "sections.band")) {
+      expect(row.limits["compose.band"], row.slot).toBe("sections.band");
+      for (const rule of ["rule.spacing", "rule.type", "rule.decoration", "rule.copy", "rule.overflow"]) expect(row.limits[rule], `${row.slot} ${rule}`).toEqual(expect.any(String));
+    }
+    expect(committed.sections.find(row => row.slot === "sections.legal-prose")!.limits["compose.header"]).toBeUndefined();
+    expect(committed.sections.find(row => row.slot === "sections.comparison")!.limits["compose.header"]).toBe("sections.section-header");
+    for (const slot of ["frames.site-header", "frames.site-footer"]) expect(committed.frames.find(row => row.slot === slot)!.limits["compose.measure"]).toBe("sections.band");
+  });
+
   it("fails a section contract that points at a missing reference folder", () => {
-    const [hero, ...rest] = committed.sections;
+    const [band, header, hero, ...rest] = committed.sections;
     const moved = { ...hero!, references: [{ ...hero!.references[0]!, version: "0000000" }] };
-    expect(slotContractFindings([moved, ...rest], context("sections"))).toEqual([`sections.hero: missing reference folder references/tailark-oss/mist-hero-section-1@0000000`]);
+    expect(slotContractFindings([band!, header!, moved, ...rest], context("sections"))).toEqual([`sections.hero: missing reference folder references/tailark-oss/mist-hero-section-1@0000000`]);
   });
 
   it("fails reads, copy keys and hashes the slot or manifest does not back", () => {
-    const [hero, ...rest] = committed.sections;
+    const [band, header, hero, ...rest] = committed.sections;
     const forged = { ...hero!, inputs: [...hero!.inputs, { name: "themes.chart-5", kind: "theme" as const, required: true }, { name: "header.subtitle", kind: "copy" as const, required: false }], references: [{ ...hero!.references[0]!, hash: "sha256:" + "0".repeat(64) }] };
-    expect(slotContractFindings([forged, ...rest], context("sections"))).toEqual([
+    expect(slotContractFindings([band!, header!, forged, ...rest], context("sections"))).toEqual([
       "sections.hero: theme read themes.chart-5 is not allowed by the slot",
       "sections.hero: copy key header.subtitle is not declared by the slot",
       "sections.hero: reference tailark-oss/mist-hero-section-1@8139698 hash differs from references/manifest.json",

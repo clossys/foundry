@@ -25,11 +25,34 @@ const ref = (registry, item) => {
 };
 const mist = item => ref("tailark-oss", item);
 
-// The Home page L3 slots. Every other mapped section or frame slot stays mapped with no
+// The Home page L3 slots and the shared section shell they compose. Every other mapped section or frame slot stays mapped with no
 // contract (consumed-only rule). `blocked` names a reference the map requires but this
 // package's references/ does not hold; the contract records it as a limit, never a ref.
+// The shared section shell. Every section whose catalog anatomy names `band` composes
+// `sections.band` (ground, measure, rhythm) and, when it names `header`,
+// `sections.section-header`. The band item is the only place section spacing, container
+// width and the type ramp are defined; it emits them as Tailwind theme variables so a
+// section writes `py-section`, `mt-stack`, `max-w-measure`, `text-heading` and never a number.
+// Token names are the contract; values belong to the consumer's band item.
+const SHELL_TOKENS = {
+  rhythm: ["--spacing-section", "--spacing-section-compact", "--spacing-stack"],
+  gutter: ["--spacing-gutter"],
+  measure: ["--container-measure-prose", "--container-measure", "--container-measure-wide"],
+  type: ["--text-display", "--text-heading", "--text-title", "--text-lead", "--text-figure"],
+};
+// Class-wide section rules, recorded on every contract that composes the band.
+const SECTION_RULES = {
+  "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+  "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
+  "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+  "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+  "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+};
+
 const SEED = {
   sections: [
+    { slot: "sections.band", purpose: "Shared section shell every section composes: ground, measure (container width and gutter) and vertical rhythm, and the single source of the section type ramp.", references: [mist("mist-content-1")], limits: { "measure": "prose|content|wide", "rhythm": "standard|compact", "emits.theme": Object.values(SHELL_TOKENS).flat().join(",") } },
+    { slot: "sections.section-header", purpose: "Shared section header: optional eyebrow, one heading, optional description and up to two actions, sized by density from the band type ramp.", references: [mist("mist-features-1")], limits: { "density": "display|standard|compact", "type.display": "--text-display", "type.standard": "--text-heading", "type.compact": "--text-title", "type.lead": "--text-lead" } },
     { slot: "sections.hero", purpose: "Opening band of a marketing page: one heading, an optional eyebrow and description, up to two calls to action and optional media.", references: [mist("mist-hero-section-1")] },
     { slot: "sections.features", purpose: "Grid of product features, each a heading with an optional description and icon, under an optional section header.", references: [mist("mist-features-1")] },
     { slot: "sections.comparison", purpose: "Plan or product comparison table: rows of capabilities against columns of offers.", references: [mist("mist-comparator-1")] },
@@ -37,11 +60,11 @@ const SEED = {
     { slot: "sections.call-to-action", purpose: "Closing band that repeats the page's primary and secondary actions under one heading.", references: [mist("mist-call-to-action-1")] },
     { slot: "sections.form", purpose: "Contact-style form band: labelled fields with descriptions and errors, one submit action, and optional error summary, success and anti-spam regions.", references: [ref("shadcn", "field"), ref("shadcn", "label"), ref("shadcn", "input"), ref("shadcn", "textarea"), ref("shadcn", "button")], limits: { "references.blocked": "@shadcn/form is served empty by the radix-nova registry; @shadcn/field is its successor" } },
     { slot: "sections.legal-prose", purpose: "Long-form legal document (privacy, terms): one heading, an optional revision line and a typographic prose body.", references: [ref("tailwindcss-typography", "typography")] },
-    { slot: "sections.steps", purpose: "Ordered process steps laid out as a horizontal timeline, each with a heading, optional description and ordinal.", references: [ref("diceui", "timeline")], limits: { orientation: "horizontal" } },
+    { slot: "sections.steps", purpose: "Ordered process steps laid out as one timeline, horizontal where the steps fit side by side and vertical below, each with a heading, optional description and ordinal.", references: [ref("diceui", "timeline")], limits: { orientation: "horizontal|vertical", "orientation.rule": "one timeline whose orientation follows the measure: horizontal from lg, vertical below; never two renderings or a scroll region" } },
   ],
   frames: [
-    { slot: "frames.site-header", purpose: "Marketing site header: brand, primary navigation and header actions, collapsing to a menu on small screens.", references: [mist("mist-hero-section-1-header")] },
-    { slot: "frames.site-footer", purpose: "Marketing site footer: link columns, legal line and social links.", references: [mist("mist-footer-1")] },
+    { slot: "frames.site-header", purpose: "Marketing site header: brand, primary navigation and header actions, collapsing to a menu on small screens.", references: [mist("mist-hero-section-1-header")], limits: { "compose.measure": "sections.band" } },
+    { slot: "frames.site-footer", purpose: "Marketing site footer: link columns, legal line and social links.", references: [mist("mist-footer-1")], limits: { "compose.measure": "sections.band" } },
     { slot: "frames.site-shell", purpose: "Marketing page shell: skip link, site header, main landmark, site footer and the toast region.", references: [mist("mist-hero-section-1-header"), mist("mist-footer-1"), ref("shadcn", "sonner"), ref("diceui", "skip-nav")], limits: { skipTarget: "main-content" } },
   ],
 };
@@ -82,6 +105,10 @@ function contract(layer, seed, slot) {
   const limits = {};
   for (const port of definition.slots ?? []) if (port.max !== undefined) limits[`${port.name ?? port.id}.max`] = port.max;
   for (const field of definition.copy?.fields ?? []) if (field.maxLength?.en !== undefined) limits[`${field.key}.maxLength.en`] = field.maxLength.en;
+  const anatomy = definition.anatomy ?? {};
+  if (anatomy.band) Object.assign(limits, { "compose.band": anatomy.band, ...SECTION_RULES });
+  if (anatomy.header) limits["compose.header"] = anatomy.header;
+  if (seed.limits?.["compose.measure"]) Object.assign(limits, { "rule.spacing": SECTION_RULES["rule.spacing"], "rule.overflow": SECTION_RULES["rule.overflow"] });
   Object.assign(limits, seed.limits ?? {});
   const inputs = [
     ...(definition.copy?.fields ?? []).map(field => ({ name: field.key, kind: "copy", required: field.required === true })),
