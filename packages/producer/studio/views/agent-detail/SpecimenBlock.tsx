@@ -12,9 +12,9 @@ function KindTable({ name, table, titled }: { name: string; table: DetailSpecime
       </TableHeader>
       <TableBody>
         {table.rows.map(row => <TableRow key={row.key} id={row.key}>
-          {row.cells.map((cell, index) => <TableCell key={index} className={index === table.prose ? 'min-w-72 whitespace-normal' : 'whitespace-normal'}>
-            {cell.statusLabel && <Badge variant={cell.statusTone ?? 'outline'}>{cell.statusLabel}</Badge>}
-            {cell.href ? <LinkButton href={cell.href} variant="link" size="sm" className="h-auto px-0">{cell.text}</LinkButton> : cell.statusLabel ? ` ${cell.text}` : cell.text}
+          {row.cells.map((cell, index) => <TableCell key={index} className={index === table.prose ? 'min-w-64 whitespace-normal' : 'whitespace-normal'}>
+            {cell.href ? <LinkButton href={cell.href} variant="link" size="sm" className="h-auto px-0 text-left whitespace-normal break-all">{cell.text}</LinkButton> : cell.text}
+            {cell.statusLabel && <Badge variant={cell.statusTone ?? 'outline'} className="ml-2">{cell.statusLabel}</Badge>}
           </TableCell>)}
         </TableRow>)}
       </TableBody>

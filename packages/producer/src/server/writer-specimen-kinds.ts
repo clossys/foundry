@@ -78,25 +78,26 @@ function claims(cellId: string, records: readonly Fields[]): WriterKindSpecimen 
     const strategy = (record.strategy ?? {}) as Fields;
     const source = text(strategy.cell);
     const version = typeof strategy.version === "number" ? strategy.version : undefined;
+    // An unsourced claim that needs a citation has nothing behind it: the shared `missing` status.
+    const unsupported = !source && record.requiresCitation === true;
     const evidence: SpecimenTableCell = source
       ? { text: `${source}${version === undefined ? "" : ` v${version}`}`, ref: { label: source, agent: "director", slug: source } }
-      : { text: "No evidence recorded" };
-    const status = text(record.status) || "draft";
+      : { text: unsupported ? "Citation required, no source recorded" : "No citation required", ...(unsupported ? { status: "missing" } : {}) };
     return {
       key: rowKey(record, index),
       cells: [
-        { text: humanize(contextKey(record, cellId)) },
+        { text: humanize(contextKey(record, cellId)), status: text(record.status) || "draft" },
         { text: strings(record.phrasings).join("\n") || "No phrasing recorded" },
         evidence,
-        { text: record.requiresCitation === true ? (source ? "Citation required" : "Citation required, no source") : "No citation required", status: source || record.requiresCitation !== true ? status : "missing" },
       ],
     };
   });
   const sourced = records.filter(record => text(((record.strategy ?? {}) as Fields).cell)).length;
+  const cited = records.filter(record => record.requiresCitation === true).length;
   return {
     kind: "claims",
-    tables: rows.length ? [{ id: "claims", label: "Claims", columns: ["Claim", "Phrasing", "Evidence", "Status"], prose: 1, rows }] : [],
-    summary: `${plural(records.length, "claim", "claims")}, ${sourced} with a recorded Director source.`,
+    tables: rows.length ? [{ id: "claims", label: "Claims", columns: ["Claim", "Phrasing", "Evidence"], prose: 1, rows }] : [],
+    summary: `${plural(records.length, "claim", "claims")}: ${cited} require a citation, ${sourced} have a recorded Director source.`,
     excerpt: records.slice(0, 2).map(record => strings(record.phrasings)[0] ?? "").filter(Boolean),
   };
 }

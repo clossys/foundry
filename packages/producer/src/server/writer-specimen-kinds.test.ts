@@ -30,10 +30,9 @@ describe("Writer specimen kinds", () => {
     ])!;
     const [sourced, unsourced] = claims.tables[0]!.rows;
     expect(sourced!.cells[2]).toEqual({ text: "advantage.proposition.promise v4", ref: { label: "advantage.proposition.promise", agent: "director", slug: "advantage.proposition.promise" } });
-    expect(sourced!.cells[3]!.status).toBe("draft");
-    expect(unsourced!.cells[2]!.text).toBe("No evidence recorded");
-    expect(unsourced!.cells[3]).toEqual({ text: "Citation required, no source", status: "missing" });
-    expect(claims.summary).toBe("2 claims, 1 with a recorded Director source.");
+    expect(sourced!.cells[0]).toEqual({ text: "Promise", status: "draft" });
+    expect(unsourced!.cells[2]).toEqual({ text: "Citation required, no source recorded", status: "missing" });
+    expect(claims.summary).toBe("2 claims: 2 require a citation, 1 have a recorded Director source.");
   });
 
   it("renders names with their forms and usage rules", () => {
