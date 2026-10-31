@@ -50,6 +50,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { generateLoopSection, loadStageActivities } from "./generate-loop-section.mjs";
 import { loadToolingPackageNames, classifyPackage, classificationFinding, isInvalidClassification, readManifest } from "./package-classification.mjs";
+import { roleFolder } from "./lib/role-folder.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const STAGES = ["sense", "judge", "act", "verify", "learn"];
@@ -118,7 +119,7 @@ export function validateLoopMatrixShape(role, matrixDoc, capabilityIds) {
     } else if (cell.applicable === true) {
       if (!isText(cell.inputs)) fail("invalid-cell-inputs", `capability "${cell.capability}" stage "${cell.stage}": inputs must be a nonempty string`);
       if (!isText(cell.check)) fail("invalid-cell-check", `capability "${cell.capability}" stage "${cell.stage}": check must be a nonempty string`);
-      const expectedPrefix = `clossys/${roleShortName(role)}/`;
+      const expectedPrefix = roleFolder(role);
       if (!isSafeRelativePath(cell.output) || !cell.output.startsWith(expectedPrefix)) {
         fail("cell-output-outside-role-folder", `capability "${cell.capability}" stage "${cell.stage}": output must be a package-relative path starting with "${expectedPrefix}"`);
       }

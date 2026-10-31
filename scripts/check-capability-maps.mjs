@@ -123,6 +123,7 @@
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { dirname, join, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
+import { roleFolder } from "./lib/role-folder.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 
@@ -173,7 +174,7 @@ export function validateCapabilityShape(capability, role, knownProofCaseIds) {
   if (!Array.isArray(capability.inputs) || !capability.inputs.every(isCapabilityInputEntry)) {
     fail("invalid-capability-inputs", `capability "${capability.id}" inputs must be an array of { producerRole, artifact } (may be empty)`);
   }
-  const expectedPrefix = `clossys/${roleShortName(role)}/`;
+  const expectedPrefix = roleFolder(role);
   if (!isNonEmptyArray(capability.outputs) || !capability.outputs.every((path) => typeof path === "string")) {
     fail("invalid-capability-outputs", `capability "${capability.id}" outputs must be a non-empty array of path strings`);
   } else {

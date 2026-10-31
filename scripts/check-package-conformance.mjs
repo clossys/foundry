@@ -94,6 +94,7 @@ import { evaluateCapabilityMaps } from "./check-capability-maps.mjs";
 import { evaluateLoopMatrix } from "./check-loop-matrix.mjs";
 import { loadStageActivities } from "./generate-loop-section.mjs";
 import { loadToolingPackageNames, classifyPackage, classificationFinding, isInvalidClassification, readManifest } from "./package-classification.mjs";
+import { roleFolder } from "./lib/role-folder.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 
@@ -406,7 +407,7 @@ function layoutGap(role, manifest) {
   if (Array.isArray(foundry.feeds)) for (const item of foundry.feeds) paths.push(isRecord(item) ? item.path : item);
   if (Array.isArray(foundry.capabilities)) for (const item of foundry.capabilities) if (isRecord(item) && Array.isArray(item.outputs)) paths.push(...item.outputs);
   if (paths.length === 0) return { status: "absent" };
-  const prefix = `clossys/${roleShortName(role)}/`;
+  const prefix = roleFolder(role);
   const inside = paths.every((path) => isText(path) && path.startsWith(prefix) && !path.split("/").includes(".."));
   return { status: inside ? "declared" : "malformed" };
 }
