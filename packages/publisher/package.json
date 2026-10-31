@@ -56,6 +56,10 @@
       "types": "./dist/media/index.d.ts",
       "import": "./dist/media/index.js"
     },
+    "./specimen": {
+      "types": "./dist/specimen/index.d.ts",
+      "node": "./dist/specimen/index.js"
+    },
     "./web/preview": {
       "types": "./dist/web/preview/index.d.ts",
       "import": "./dist/web/preview/index.js"

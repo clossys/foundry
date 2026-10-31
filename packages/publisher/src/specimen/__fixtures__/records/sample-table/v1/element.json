@@ -1,0 +1,7 @@
+{
+  "id": "sample-table",
+  "version": 1,
+  "kind": "table",
+  "payload": "rows.json",
+  "reason": "fixture: data record, stub renderer"
+}

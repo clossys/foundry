@@ -1,0 +1,31 @@
+{
+  "copy": {
+    "hero.title": {
+      "text": "Ship a calmer release, every week.",
+      "role": "display",
+      "limits": {
+        "maxChars": 48,
+        "maxLines": 2
+      }
+    },
+    "hero.subtitle": {
+      "text": "Plan, review and publish from one place, with every change checked before it reaches your readers.",
+      "role": "subheading",
+      "limits": {
+        "maxChars": 140,
+        "maxLines": 3
+      }
+    },
+    "hero.cta": {
+      "text": "Start free",
+      "role": "label",
+      "limits": {
+        "maxChars": 20,
+        "maxLines": 1
+      }
+    }
+  },
+  "container": "page",
+  "theme": "neutral",
+  "width": 768
+}

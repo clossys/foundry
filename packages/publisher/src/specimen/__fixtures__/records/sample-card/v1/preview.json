@@ -1,0 +1,33 @@
+{
+  "fixtures": {
+    "title": {
+      "$copy": "card.title"
+    },
+    "body": {
+      "$copy": "card.body"
+    },
+    "action": {
+      "$copy": "card.action"
+    }
+  },
+  "copy": {
+    "card.title": {
+      "text": "Weekly report ready",
+      "role": "heading",
+      "maxChars": 40
+    },
+    "card.body": {
+      "text": "Review the numbers from the last seven days before they go out to the team.",
+      "role": "body",
+      "maxChars": 120
+    },
+    "card.action": {
+      "text": "Open report",
+      "role": "label",
+      "maxChars": 18
+    }
+  },
+  "container": "canvas",
+  "theme": "neutral",
+  "width": 480
+}
