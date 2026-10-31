@@ -3,16 +3,16 @@ import { LEAF_STATUS_LABEL, LEAF_STATUS_TONE, specimenDescription } from '../../
 import type { DetailSpecimenData, DetailSpecimenTable } from './types';
 
 /** One table of a structured specimen kind: its label, then the record content row by row. */
-function KindTable({ name, table }: { name: string; table: DetailSpecimenTable }) {
+function KindTable({ name, table, titled }: { name: string; table: DetailSpecimenTable; titled: boolean }) {
   return <CardContent className="flex flex-col gap-2">
-    <CardDescription role="heading" aria-level={3} className="font-medium text-foreground">{table.label}</CardDescription>
+    {titled && <CardDescription role="heading" aria-level={3} className="font-medium text-foreground">{table.label}</CardDescription>}
     <Table aria-label={`${name} ${table.label}`}>
       <TableHeader>
         {table.columns.map((column, index) => <TableHead key={column} isRowHeader={index === 0}>{column}</TableHead>)}
       </TableHeader>
       <TableBody>
         {table.rows.map(row => <TableRow key={row.key} id={row.key}>
-          {row.cells.map((cell, index) => <TableCell key={index} className="whitespace-normal">
+          {row.cells.map((cell, index) => <TableCell key={index} className={index === table.prose ? 'min-w-72 whitespace-normal' : 'whitespace-normal'}>
             {cell.statusLabel && <Badge variant={cell.statusTone ?? 'outline'}>{cell.statusLabel}</Badge>}
             {cell.href ? <LinkButton href={cell.href} variant="link" size="sm" className="h-auto px-0">{cell.text}</LinkButton> : cell.statusLabel ? ` ${cell.text}` : cell.text}
           </TableCell>)}
@@ -30,7 +30,7 @@ export function SpecimenBlock({ name, specimen }: { name: string; specimen: Deta
       <CardDescription className="max-w-(--measure)">{specimen.description}</CardDescription>
     </CardHeader>
     {specimen.tables?.length
-      ? specimen.tables.map(table => <KindTable key={table.id} name={name} table={table} />)
+      ? specimen.tables.map(table => <KindTable key={table.id} name={name} table={table} titled={specimen.tables!.length > 1} />)
       : specimen.src
       ? <CardContent><SpecimenFrame interactive ratio="desktop" title={`${name} specimen`} src={specimen.src} /></CardContent>
       : specimen.rows?.length

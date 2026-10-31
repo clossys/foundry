@@ -31,6 +31,8 @@ export interface DetailSpecimenTable {
   id: string;
   label: string;
   columns: readonly string[];
+  /** The prose column, given a readable minimum width. */
+  prose?: number;
   rows: readonly { key: string; cells: readonly { text: string; href?: string; statusLabel?: string; statusTone?: DetailTone }[] }[];
 }
 

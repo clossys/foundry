@@ -29,7 +29,7 @@ describe("Writer specimen kinds", () => {
       { id: "c2", context: "brand.claims.unsourced", kind: "claim", status: "draft", phrasings: ["Faster."], requiresCitation: true },
     ])!;
     const [sourced, unsourced] = claims.tables[0]!.rows;
-    expect(sourced!.cells[2]).toEqual({ text: "director:advantage.proposition.promise@4", ref: { label: "advantage.proposition.promise", agent: "director", slug: "advantage.proposition.promise" } });
+    expect(sourced!.cells[2]).toEqual({ text: "advantage.proposition.promise v4", ref: { label: "advantage.proposition.promise", agent: "director", slug: "advantage.proposition.promise" } });
     expect(sourced!.cells[3]!.status).toBe("draft");
     expect(unsourced!.cells[2]!.text).toBe("No evidence recorded");
     expect(unsourced!.cells[3]).toEqual({ text: "Citation required, no source", status: "missing" });

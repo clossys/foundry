@@ -15,7 +15,7 @@ export const isLibraryAgent = (value: string): value is LibraryAgent => (LIBRARY
 export type AgentLeafStatus = 'active' | 'draft' | 'retired';
 export interface AgentRef { label: string; agent?: string; slug?: string }
 export interface AgentCard { id: string; slug: string; name: string; version: number; status: AgentLeafStatus; excerpt: string[]; records?: number }
-export interface AgentSpecimenTable { id: string; label: string; columns: string[]; rows: { key: string; cells: { text: string; ref?: AgentRef; status?: string }[] }[] }
+export interface AgentSpecimenTable { id: string; label: string; columns: string[]; prose?: number; rows: { key: string; cells: { text: string; ref?: AgentRef; status?: string }[] }[] }
 export interface AgentSection { id: string; label: string; level: 0 | 1 | 2; cards: AgentCard[] }
 export interface AgentGalleryRecords { state: 'ready' | 'missing'; agent: LibraryAgent; grouping?: 'ia' | 'kind'; sections: AgentSection[]; count: number }
 export interface AgentLeafRecords {
@@ -127,7 +127,7 @@ export function agentDetailData(leaf: AgentLeafRecords): AgentDetailData {
         return { key: `${index}`, label: row.label, text: row.text, ...(href ? { href } : {}) };
       }),
       ...(leaf.specimen.tables?.length ? { tables: leaf.specimen.tables.map(table => ({
-        id: table.id, label: table.label, columns: table.columns,
+        id: table.id, label: table.label, columns: table.columns, ...(table.prose === undefined ? {} : { prose: table.prose }),
         rows: table.rows.map(row => ({ key: row.key, cells: row.cells.map(cell => {
           const href = cell.ref ? refHref(cell.ref) : undefined;
           return { text: cell.text, ...(href ? { href } : {}), ...(isLeafStatus(cell.status) ? { statusLabel: STATUS_LABEL[cell.status], statusTone: STATUS_TONE[cell.status] } : {}) };

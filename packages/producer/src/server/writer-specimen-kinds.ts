@@ -11,6 +11,8 @@ export interface SpecimenTable {
   readonly id: string;
   readonly label: string;
   readonly columns: readonly string[];
+  /** The column holding prose, kept readable when other columns carry long ids. */
+  readonly prose?: number;
   readonly rows: readonly { readonly key: string; readonly cells: readonly SpecimenTableCell[] }[];
 }
 export interface WriterKindSpecimen {
@@ -56,7 +58,7 @@ function voice(cellId: string, records: readonly Fields[]): WriterKindSpecimen {
   });
   const tables: SpecimenTable[] = [];
   if (rules.length) tables.push({
-    id: "principles", label: "Principles", columns: ["Rule", "Do"],
+    id: "principles", label: "Principles", columns: ["Rule", "Do"], prose: 1,
     rows: rules.map((record, index) => ({ key: rowKey(record, index), cells: [{ text: humanize(text(record.rule) || contextKey(record, cellId)) }, { text: text(record.value) }] })),
   });
   if (prefer.length) tables.push({ id: "do", label: "Do: preferred words", columns: ["Word", "Forms", "Why"], rows: prefer.map(termRow) });
@@ -77,7 +79,7 @@ function claims(cellId: string, records: readonly Fields[]): WriterKindSpecimen 
     const source = text(strategy.cell);
     const version = typeof strategy.version === "number" ? strategy.version : undefined;
     const evidence: SpecimenTableCell = source
-      ? { text: `director:${source}${version === undefined ? "" : `@${version}`}`, ref: { label: source, agent: "director", slug: source } }
+      ? { text: `${source}${version === undefined ? "" : ` v${version}`}`, ref: { label: source, agent: "director", slug: source } }
       : { text: "No evidence recorded" };
     const status = text(record.status) || "draft";
     return {
@@ -86,14 +88,14 @@ function claims(cellId: string, records: readonly Fields[]): WriterKindSpecimen 
         { text: humanize(contextKey(record, cellId)) },
         { text: strings(record.phrasings).join("\n") || "No phrasing recorded" },
         evidence,
-        { text: record.requiresCitation === true ? (source ? "Citation required, source recorded" : "Citation required, no source") : "No citation required", status: source || record.requiresCitation !== true ? status : "missing" },
+        { text: record.requiresCitation === true ? (source ? "Citation required" : "Citation required, no source") : "No citation required", status: source || record.requiresCitation !== true ? status : "missing" },
       ],
     };
   });
   const sourced = records.filter(record => text(((record.strategy ?? {}) as Fields).cell)).length;
   return {
     kind: "claims",
-    tables: rows.length ? [{ id: "claims", label: "Claims", columns: ["Claim", "Phrasing", "Evidence", "Status"], rows }] : [],
+    tables: rows.length ? [{ id: "claims", label: "Claims", columns: ["Claim", "Phrasing", "Evidence", "Status"], prose: 1, rows }] : [],
     summary: `${plural(records.length, "claim", "claims")}, ${sourced} with a recorded Director source.`,
     excerpt: records.slice(0, 2).map(record => strings(record.phrasings)[0] ?? "").filter(Boolean),
   };
@@ -116,7 +118,7 @@ function naming(cellId: string, records: readonly Fields[]): WriterKindSpecimen 
   const names = [...new Set(records.map(record => text(record.term)).filter(Boolean))];
   return {
     kind: "naming",
-    tables: rows.length ? [{ id: "names", label: "Names", columns: ["Use", "Name", "Forms", "Usage rule"], rows }] : [],
+    tables: rows.length ? [{ id: "names", label: "Names", columns: ["Use", "Name", "Forms", "Usage rule"], prose: 3, rows }] : [],
     summary: `${plural(names.length, "name", "names")} across ${plural(records.length, "usage rule", "usage rules")}.`,
     excerpt: names.length ? [names.join(" · ")] : [],
   };
