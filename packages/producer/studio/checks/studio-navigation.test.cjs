@@ -36,6 +36,7 @@ const { default: Frame } = compile(path.join(studio, 'frames/studio-shell/index.
   '../../components/StudioProviders': `export const useStudioData=()=>({reports:[],brand:{name:'Fixture'}}); export const useThemeMode=()=>({mode:'light',setMode(){}});`,
 });
 const routes = compile(path.join(studio, 'lib/studio-route-map.ts'));
+const { studioPages } = compile(path.join(studio, 'generated/studio-map.ts'));
 
 /** A map with one fixture leaf per gallery, the way the record stores fill it at runtime. */
 const leaves = Object.fromEntries(routes.studioLeafPages.map(page => [page.id, [{ slug: 'fixture-leaf', title: 'Fixture leaf' }]]));
@@ -47,7 +48,7 @@ function render(entry) {
   globalThis.__studioPath = entry.path;
   try {
     const projection = routes.studioShellProjection(map, entry.id);
-    return { projection, html: renderToStaticMarkup(React.createElement(Frame, { ...projection, actions: entry.actions ?? [] }, 'Content')) };
+    return { projection, html: renderToStaticMarkup(React.createElement(Frame, { ...projection }, 'Content')) };
   } finally { delete globalThis.__studioPath; }
 }
 const hrefs = html => [...html.matchAll(/<a\b[^>]*?\shref="([^"]*)"/g)].map(match => match[1].replace(/&amp;/g, '&'));
@@ -82,7 +83,24 @@ test('frame navigation, commands and breadcrumbs are the Publisher projections o
   for (const entry of entries) assert.ok(commandHrefs.has(entry.path), `the command menu lists ${entry.path}`);
 });
 
-test('agent pages declare no module actions; Home declares Needs', () => {
-  assert.deepEqual(entries.filter(entry => (entry.actions ?? []).length).map(entry => entry.id), ['home']);
+test('every page manifest declares its navigator, modules and header actions (agent pages: explorer; L3 pages: outline)', () => {
+  for (const page of studioPages) {
+    const specs = [['page', page, page.id === 'home' ? 'outline' : 'explorer'], ...(page.leaf ? [['leaf', page.leaf, 'outline']] : [])];
+    for (const [where, spec, navigator] of specs) {
+      const manifest = spec.manifest;
+      assert.ok(manifest, `${page.id} ${where} has a manifest`);
+      assert.equal(manifest.navigator, navigator, `${page.id} ${where} navigator`);
+      assert.deepEqual(manifest.modules.map(module => module.id), [navigator, 'checks'], `${page.id} ${where} modules`);
+      assert.ok(manifest.actions.some(action => action.id === 'copy-link'), `${page.id} ${where} copies its link`);
+      if (where === 'leaf') assert.deepEqual(manifest.actions.map(action => action.id), ['request-change', 'versions', 'copy-link']);
+    }
+  }
 });
 
+test('the frame header holds the breadcrumb and icon buttons only; the right panel holds no form', () => {
+  const { html } = render(entries.find(entry => entry.id === 'home'));
+  const header = html.match(/<header\b[\s\S]*?<\/header>/)?.[0] ?? '';
+  assert.ok(header.includes('aria-label="breadcrumb"') || header.includes('Breadcrumb'), 'header carries the breadcrumb');
+  assert.doesNotMatch(header, /<(input|textarea|select|form)\b/);
+  assert.doesNotMatch(html, /<(form|textarea)\b/);
+});

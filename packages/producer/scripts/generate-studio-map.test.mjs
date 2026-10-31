@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { contentMapFromCells, compileContentMaps } from '@clossys/publisher/content-map/cells';
 import { projectNavigation, projectCommands } from '@clossys/publisher/content-map';
-import { generateStudioMap } from './generate-studio-map.mjs';
+import { checkManifest, generateStudioMap } from './generate-studio-map.mjs';
 
 const clossys = fileURLToPath(new URL('../../../clossys/', import.meta.url));
 const GENERIC_PAGE = { file: 'studio/app/[[...route]]/page.tsx', export: 'default' };
@@ -48,7 +48,7 @@ test('every Studio page is a Publisher assembly: frame + ordered sections + bind
   for (const route of projection.routes) assert.deepEqual(route.entry, GENERIC_PAGE);
   for (const page of map.entries.filter(row => row.kind === 'page')) assert.deepEqual(projection.pageActions[page.id], page.actions ?? []);
   assert.deepEqual(projection.items.map(item => item.slot).sort(), [
-    'frames.studio-shell', 'sections.studio.agent-gallery', 'sections.studio.checks', 'sections.studio.contract', 'sections.studio.history', 'sections.studio.home',
+    'frames.module', 'frames.studio-shell', 'sections.module.checks', 'sections.module.explorer', 'sections.module.outline', 'sections.studio.agent-gallery', 'sections.studio.checks', 'sections.studio.contract', 'sections.studio.history', 'sections.studio.home',
     'sections.studio.leaf-header', 'sections.studio.options', 'sections.studio.publications', 'sections.studio.references', 'sections.studio.specimen',
   ]);
   const bindings = await readFile(join(options.outputDir, 'assembly-bindings.ts'), 'utf8');
@@ -100,6 +100,40 @@ test('a slot with no pin, or an item with no trusted reference, fails closed', a
   delete selection.pins['sections.studio.history'];
   await writeFile(path, JSON.stringify(selection));
   await assert.rejects(run(options), /no pin/);
+});
+
+/** Rewrite the Route json of a page cell: `edit` changes the parsed route in place. */
+async function editRoute(path, edit) {
+  const source = await readFile(path, 'utf8');
+  const blocks = [...source.matchAll(/```json\n([\s\S]*?)\n```/g)].filter(match => match[1].includes('"manifest"'));
+  assert.equal(blocks.length, 1, `${path} has one Route json with a manifest`);
+  const route = JSON.parse(blocks[0][1]);
+  edit(route);
+  await writeFile(path, source.replace(blocks[0][1], JSON.stringify(route, null, 2)));
+}
+
+test('a page manifest missing its explorer, modules or actions fails closed (mutation proof)', async t => {
+  const mutations = [
+    ['no manifest', route => { delete route.manifest; }, /declares no page manifest/],
+    ['no explorer', route => { delete route.manifest.navigator; }, /needs an explorer or an outline/],
+    ['explorer module removed', route => { route.manifest.modules = route.manifest.modules.filter(module => module.id !== 'explorer'); }, /explorer/],
+    ['no modules', route => { route.manifest.modules = []; }, /declares no modules/],
+    ['no actions', route => { route.manifest.actions = []; }, /declares no actions/],
+    ['an action with no wiring line', route => { route.manifest.wiring = route.manifest.wiring.filter(line => !line.do.startsWith('action ')); }, /wiring/],
+    ['a leaf with no outline', route => { delete route.leaf.manifest.navigator; }, /needs an explorer or an outline/],
+  ];
+  const clean = await fixture(t);
+  await run(clean);
+  for (const [label, edit, error] of mutations) {
+    const options = await fixture(t);
+    await editRoute(join(options.cellRoot, 'cells/page.designer/v2.md'), edit);
+    await assert.rejects(run(options), error, label);
+  }
+});
+
+test('checkManifest names what a manifest lacks', () => {
+  assert.throws(() => checkManifest('page.x', undefined, {}), /declares no page manifest/);
+  assert.throws(() => checkManifest('page.x', { frame: 'frames.module', navigator: 'explorer', modules: [], actions: [], wiring: [] }, {}), /declares no modules/);
 });
 
 test('Studio runs exactly the pinned payload: code that drifts from the library record fails', async t => {

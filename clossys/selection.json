@@ -3,9 +3,9 @@
   "pins": {
     "frames.studio-shell": {
       "element": "studio-shell",
-      "version": 3,
-      "hash": "sha256:6fc5a12b517db3b167215e51972593c3a4a392df1e66fa2aa59f1049a7373fbf",
-      "event": "e18"
+      "version": 4,
+      "hash": "sha256:0739f0fe5aa6db914338140513ff9dd3a377c416e6276fe813175b66ae58bcdc",
+      "event": "e23"
     },
     "sections.studio.home": {
       "element": "studio-home",
@@ -66,6 +66,30 @@
       "version": 2,
       "hash": "sha256:c2945681ba2ebbee6af2ec9d4b0d50ae07311d13ddf56b9cfad792f96c7f5948",
       "event": "e15"
+    },
+    "frames.module": {
+      "element": "studio-module",
+      "version": 1,
+      "hash": "sha256:fd088e6336f8d3b03fd0fc3c3ebdab6e00cfaf9f120e90fd2232b0879ebc7872",
+      "event": "e19"
+    },
+    "sections.module.explorer": {
+      "element": "module-explorer",
+      "version": 1,
+      "hash": "sha256:f0211ba8426ad30640885ceaaf11d312207915d36efb1190ce7aa23f64cb78ae",
+      "event": "e20"
+    },
+    "sections.module.checks": {
+      "element": "module-checks",
+      "version": 1,
+      "hash": "sha256:abf76369a04d24fa3c504b5532bd98c1e00a55b792d591960c73c5f1ceebbc2a",
+      "event": "e21"
+    },
+    "sections.module.outline": {
+      "element": "module-outline",
+      "version": 1,
+      "hash": "sha256:01362c221c9f471fb4898d428c92de8a3f9cacf97fdfe7b8c6cb27ddf3e24726",
+      "event": "e22"
     }
   },
   "history": [
@@ -284,6 +308,66 @@
       "hash": "sha256:6fc5a12b517db3b167215e51972593c3a4a392df1e66fa2aa59f1049a7373fbf",
       "from": "option",
       "reason": "Round-2 A2 option v3 for frames.studio-shell."
+    },
+    {
+      "id": "e19",
+      "at": "2026-10-31T22:00:00Z",
+      "by": "designer/STUDIO-MODULES",
+      "action": "pin",
+      "slot": "frames.module",
+      "element": "studio-module",
+      "version": 1,
+      "hash": "sha256:fd088e6336f8d3b03fd0fc3c3ebdab6e00cfaf9f120e90fd2232b0879ebc7872",
+      "from": "option",
+      "reason": "STUDIO-MODULES option v1 for frames.module."
+    },
+    {
+      "id": "e20",
+      "at": "2026-10-31T22:00:00Z",
+      "by": "designer/STUDIO-MODULES",
+      "action": "pin",
+      "slot": "sections.module.explorer",
+      "element": "module-explorer",
+      "version": 1,
+      "hash": "sha256:f0211ba8426ad30640885ceaaf11d312207915d36efb1190ce7aa23f64cb78ae",
+      "from": "option",
+      "reason": "STUDIO-MODULES option v1 for sections.module.explorer."
+    },
+    {
+      "id": "e21",
+      "at": "2026-10-31T22:00:00Z",
+      "by": "designer/STUDIO-MODULES",
+      "action": "pin",
+      "slot": "sections.module.checks",
+      "element": "module-checks",
+      "version": 1,
+      "hash": "sha256:abf76369a04d24fa3c504b5532bd98c1e00a55b792d591960c73c5f1ceebbc2a",
+      "from": "option",
+      "reason": "STUDIO-MODULES option v1 for sections.module.checks."
+    },
+    {
+      "id": "e22",
+      "at": "2026-10-31T22:00:00Z",
+      "by": "designer/STUDIO-MODULES",
+      "action": "pin",
+      "slot": "sections.module.outline",
+      "element": "module-outline",
+      "version": 1,
+      "hash": "sha256:01362c221c9f471fb4898d428c92de8a3f9cacf97fdfe7b8c6cb27ddf3e24726",
+      "from": "option",
+      "reason": "STUDIO-MODULES option v1 for sections.module.outline."
+    },
+    {
+      "id": "e23",
+      "at": "2026-10-31T22:00:00Z",
+      "by": "designer/STUDIO-MODULES",
+      "action": "pin",
+      "slot": "frames.studio-shell",
+      "element": "studio-shell",
+      "version": 4,
+      "hash": "sha256:0739f0fe5aa6db914338140513ff9dd3a377c416e6276fe813175b66ae58bcdc",
+      "from": "option",
+      "reason": "STUDIO-MODULES option v4 for frames.studio-shell."
     }
   ]
 }

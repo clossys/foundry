@@ -1,28 +1,26 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { ArrowUpIcon, ChevronsUpDownIcon, MessageSquareIcon, MoonIcon, SearchIcon, SparklesIcon, SunIcon, TriangleAlertIcon } from 'lucide-react';
+import { ChevronsUpDownIcon, MessageSquareIcon, MoonIcon, PanelRightCloseIcon, SearchIcon, SparklesIcon, SunIcon } from 'lucide-react';
 import type { ContentMapCommandGroup, ContentMapNavigation } from '@clossys/publisher/content-map';
 import {
-  Avatar, AvatarFallback, AvatarImage, Badge, Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, Button,
-  Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, CommandDialog, Command, CommandEmpty, CommandGroup,
-  CommandInput, CommandItem, CommandList, CommandShortcut, Field, FieldContent, FieldDescription, FieldGroup, FieldTitle, Popover, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger,
-  ScrollArea, Separator, Sheet, SheetDescription, SheetHeader, SheetTitle, Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
+  Avatar, AvatarFallback, AvatarImage, Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, Button,
+  Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle, CommandDialog, Command, CommandEmpty, CommandGroup,
+  CommandInput, CommandItem, CommandList, CommandShortcut, FieldContent, FieldDescription, FieldTitle, Popover, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger,
+  Sheet, SheetDescription, SheetHeader, SheetTitle, Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
   SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
-  SidebarProvider, SidebarRail, SidebarTrigger, Skeleton, Textarea, useSidebar, Tooltip, TooltipTrigger,
+  SidebarProvider, SidebarRail, SidebarTrigger, Skeleton, useSidebar, Tooltip, TooltipTrigger,
 } from '@clossys/designer-ui';
-import type { ContentMapPageAction } from '@clossys/publisher/content-map';
+import type { PageCommand } from '../studio-module';
 import { studioIcon } from '../../lib/studio-icons';
-import type { StudioReport } from '../../lib/studio-report';
 import { useStudioData, useThemeMode } from '../../components/StudioProviders';
 
 export { PageNotice, type PageNoticeData } from './PageNotice';
-export type StudioPageAction = ContentMapPageAction;
 
-/* Page modules: the header icon actions toggle the modules a page declares. */
-interface PageModules { actions: readonly StudioPageAction[]; isOpen: (id: string) => boolean; toggle: (id: string) => void }
-const PageModulesContext = createContext<PageModules>({ actions: [], isOpen: () => false, toggle: () => {} });
+/* The open page's modules, as the page manifest's module frame reports them (read by section inputs). */
+interface PageModules { open: readonly string[]; isOpen: (id: string) => boolean }
+const PageModulesContext = createContext<PageModules>({ open: [], isOpen: () => false });
 export function usePageModules() { return useContext(PageModulesContext); }
 
 function useMediaQuery(query: string): boolean {
@@ -38,40 +36,6 @@ function useMediaQuery(query: string): boolean {
 }
 
 const sentence = (value: string) => value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
-const SEVERITY_BADGE = { error: 'destructive', warning: 'secondary', info: 'outline' } as const;
-
-export function ReportList({ reports, empty = 'Nothing needs attention.' }: { reports: readonly StudioReport[]; empty?: string }) {
-  if (!reports.length) return <FieldDescription>{empty}</FieldDescription>;
-  return <FieldGroup className="gap-3">
-    {reports.map(report => <Field key={report.id} className="gap-1">
-      <FieldTitle><Badge variant={SEVERITY_BADGE[report.severity]}>{sentence(report.severity)}</Badge>{report.title}</FieldTitle>
-      <FieldDescription className="text-xs leading-relaxed">{report.detail}</FieldDescription>
-    </Field>)}
-  </FieldGroup>;
-}
-
-function ReportsPopover() {
-  const { reports } = useStudioData();
-  const list = reports.state === 'ready' ? reports.value : [];
-  const attention = list.filter(report => report.severity !== 'info').length;
-  return <PopoverTrigger>
-    <TooltipTrigger>
-      <Button variant="ghost" size="icon-sm" aria-label={`Reports, ${list.length} open`} className="relative">
-        <TriangleAlertIcon />
-        {attention > 0 && <Badge aria-hidden className="absolute -top-1 -right-1 h-4 min-w-4 px-1 text-[10px] tabular-nums">{attention}</Badge>}
-      </Button>
-      <Tooltip>Reports</Tooltip>
-    </TooltipTrigger>
-    <Popover placement="bottom end" className="w-80">
-      <PopoverHeader>
-        <PopoverTitle>Reports</PopoverTitle>
-        <PopoverDescription>Producer facts that do not block Studio.</PopoverDescription>
-      </PopoverHeader>
-      <Separator />
-      {reports.state === 'error' ? <FieldDescription className="text-destructive">{reports.message}</FieldDescription> : <ReportList reports={list} />}
-    </Popover>
-  </PopoverTrigger>;
-}
 
 /**
  * The consumer's mark for one ground. The shadcn avatar shows its fallback until the served SVG
@@ -130,33 +94,40 @@ function ThemeToggle() {
   </TooltipTrigger>;
 }
 
-function ChatPanel() {
+/** The right panel is chat only. Chat is not connected yet, so it shows its empty state; the close toggle sits in its top-right corner. */
+function ChatPanel({ onClose }: { onClose?: () => void }) {
   return <Card className="flex h-full min-h-0 flex-col gap-0 rounded-none border-0 py-0 shadow-none ring-0">
-    <CardHeader className="border-b py-4">
+    <CardHeader className="h-14 content-center border-b py-0">
       <CardTitle className="flex items-center gap-2"><SparklesIcon className="size-4 text-primary" />Chat</CardTitle>
-      <CardDescription>Ask an agent about the open page.</CardDescription>
+      {onClose && <CardAction className="self-center">
+        <TooltipTrigger>
+          <Button variant="ghost" size="icon-sm" aria-label="Close chat" data-panel-toggle="chat" onPress={onClose}><PanelRightCloseIcon /></Button>
+          <Tooltip>Close chat</Tooltip>
+        </TooltipTrigger>
+      </CardAction>}
     </CardHeader>
-    <CardContent className="min-h-0 flex-1 px-0">
-      <ScrollArea className="h-full px-4 py-4">
-        <CardContent className="flex flex-col gap-3 px-0">
-          <CardDescription className="max-w-[85%] rounded-lg bg-muted px-3 py-2 text-foreground">Conversations with Director, Designer, Writer and Publisher will appear here.</CardDescription>
-          <CardDescription className="text-xs">Chat is not connected in this build. Agents work through the CLI for now.</CardDescription>
-        </CardContent>
-      </ScrollArea>
+    <CardContent data-chat-empty className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
+      <MessageSquareIcon className="size-5 text-muted-foreground" />
+      <CardTitle className="text-sm">No conversation yet</CardTitle>
+      <CardDescription>Chat with Director, Designer, Writer and Publisher will open here. Agents work through the CLI for now.</CardDescription>
     </CardContent>
-    <CardFooter className="items-end gap-2 border-t p-3">
-      <Textarea aria-label="Message" placeholder="Message an agent" rows={2} className="min-h-0 flex-1 resize-none" disabled />
-      <Button size="icon" aria-label="Send message" isDisabled><ArrowUpIcon /></Button>
-    </CardFooter>
   </Card>;
 }
 
-function CommandMenu({ commands, open, onOpenChange }: { commands: readonly ContentMapCommandGroup[]; open: boolean; onOpenChange: (open: boolean) => void }) {
+function CommandMenu({ commands, pageCommands, open, onOpenChange }: { commands: readonly ContentMapCommandGroup[]; pageCommands: readonly PageCommand[]; open: boolean; onOpenChange: (open: boolean) => void }) {
   const router = useRouter();
-  return <CommandDialog open={open} onOpenChange={onOpenChange} title="Find a page" description="Search Studio pages">
+  return <CommandDialog open={open} onOpenChange={onOpenChange} title="Find a page" description="Search Studio pages and this page's commands">
     <Command>
-      <CommandInput placeholder="Search pages" />
+      <CommandInput placeholder="Search pages and commands" />
       <CommandList aria-label="Pages" renderEmptyState={() => <CommandEmpty>No matching pages</CommandEmpty>}>
+        {pageCommands.length > 0 && <CommandGroup id="page" heading="This page">
+          {pageCommands.map(command => {
+            const Icon = studioIcon(command.icon, command.id);
+            return <CommandItem key={command.id} id={`page:${command.id}`} textValue={command.label} data-page-command={command.id} onAction={() => { onOpenChange(false); command.run(); }}>
+              <Icon />{command.label}{command.shortcut && <CommandShortcut>{command.shortcut.toUpperCase()}</CommandShortcut>}
+            </CommandItem>;
+          })}
+        </CommandGroup>}
         {commands.map(group => <CommandGroup key={group.id} id={group.id} heading={sentence(group.label)}>
           {group.items.flatMap(item => {
             if (!item.href) return [];
@@ -172,7 +143,12 @@ function CommandMenu({ commands, open, onOpenChange }: { commands: readonly Cont
   </CommandDialog>;
 }
 
-const defaultModules = (actions: readonly StudioPageAction[]): ReadonlySet<string> => new Set(actions.filter(action => action.defaultOpen).map(action => action.id));
+/** On a phone the rail is a sheet, so its toggle sits in the page header's top-left corner instead. */
+function MobileRailToggle() {
+  const { isMobile } = useSidebar();
+  if (!isMobile) return null;
+  return <SidebarTrigger aria-label="Open navigation" data-panel-toggle="rail" />;
+}
 
 /** The mobile navigation sheet closes once a destination is chosen. */
 function CloseMobileNavigation() {
@@ -187,8 +163,9 @@ function CloseMobileNavigation() {
 }
 
 /**
- * The inputs of `frames.studio-shell`, all projected by Publisher from the one Studio map:
- * the rail navigation, the command menu, the breadcrumbs and the page's module actions.
+ * The inputs of `frames.studio-shell`. Navigation, commands and breadcrumbs are projected by
+ * Publisher from the one Studio map; `toolbar`, `modules`, `pageCommands` and `open` come from the
+ * page manifest's `frames.module` (header icon buttons, the module column, the page commands).
  * `body` is the assembly's layout: both stack the sections in the padded page column with no
  * outer card (`detail` keeps the first section as the head).
  */
@@ -197,28 +174,22 @@ export interface StudioShellProps {
   navigation: ContentMapNavigation;
   commands: readonly ContentMapCommandGroup[];
   breadcrumbs: readonly { id: string; label: string; href?: string }[];
-  actions: readonly StudioPageAction[];
+  toolbar?: ReactNode;
+  modules?: ReactNode;
+  pageCommands?: readonly PageCommand[];
+  open?: readonly string[];
   body?: 'plain' | 'detail';
   head?: ReactNode;
   children?: ReactNode;
 }
 
 /** `frames.studio-shell`: the Studio app shell, built from the shadcn sidebar-07 block parts. */
-export default function StudioShellFrame({ homeHref, navigation, commands, breadcrumbs, actions, body = 'plain', head, children }: StudioShellProps) {
+export default function StudioShellFrame({ homeHref, navigation, commands, breadcrumbs, toolbar, modules, pageCommands = [], open = [], body = 'plain', head, children }: StudioShellProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const wide = useMediaQuery('(min-width: 1280px)');
   const [chatOpen, setChatOpen] = useState(true);
   const [chatSheet, setChatSheet] = useState(false);
-  // Module state belongs to the page: a new page starts from its declared defaults.
-  const [state, setState] = useState(() => ({ actions, open: defaultModules(actions) }));
-  if (state.actions !== actions) setState({ actions, open: defaultModules(actions) });
-  const open = state.actions === actions ? state.open : defaultModules(actions);
-  const toggle = useCallback((id: string) => setState(current => {
-    const next = new Set(current.open);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    return { actions: current.actions, open: next };
-  }), []);
-  const modules = useMemo(() => ({ actions, isOpen: (id: string) => open.has(id), toggle }), [actions, open, toggle]);
+  const pageModules = { open, isOpen: (id: string) => open.includes(id) };
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key.toLowerCase() === 'k' && (event.metaKey || event.ctrlKey)) { event.preventDefault(); setSearchOpen(value => !value); }
@@ -234,6 +205,12 @@ export default function StudioShellFrame({ homeHref, navigation, commands, bread
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
+          <SidebarMenuItem className="flex h-10 items-center max-md:hidden">
+            <TooltipTrigger>
+              <SidebarTrigger aria-label="Toggle navigation" data-panel-toggle="rail" />
+              <Tooltip>Toggle navigation</Tooltip>
+            </TooltipTrigger>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <BrandButton homeHref={homeHref} />
           </SidebarMenuItem>
@@ -273,38 +250,29 @@ export default function StudioShellFrame({ homeHref, navigation, commands, bread
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
-    <SidebarInset className="min-h-0 min-w-0 overflow-hidden">
-      <header className="z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <SidebarTrigger aria-label="Toggle navigation" />
-        <Separator orientation="vertical" className="mx-1 h-4 self-center!" />
-        <Breadcrumb className="min-w-0 flex-1">
+    <SidebarInset className="grid min-h-0 min-w-0 grid-cols-1 grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden md:grid-cols-[minmax(0,1fr)_auto] md:grid-rows-[auto_minmax(0,1fr)]">
+      <header className="z-10 col-span-full flex h-14 shrink-0 items-center gap-1 border-b bg-background/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <MobileRailToggle />
+        <Breadcrumb className="min-w-0 flex-1 px-1">
           <BreadcrumbList className="flex-nowrap overflow-hidden">
             {breadcrumbs.map((crumb, index) => <BreadcrumbItem key={crumb.id} id={crumb.id} className={index < breadcrumbs.length - 1 ? 'hidden truncate md:inline-flex' : 'truncate'}>
               {crumb.href && index < breadcrumbs.length - 1 ? <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink> : <BreadcrumbPage className="truncate">{crumb.label}</BreadcrumbPage>}
             </BreadcrumbItem>)}
           </BreadcrumbList>
         </Breadcrumb>
-          {actions.map(action => {
-            const Icon = studioIcon(action.icon, action.id);
-            const pressed = open.has(action.id);
-            return <TooltipTrigger key={action.id}>
-              <Button variant={pressed ? 'secondary' : 'ghost'} size="icon-sm" aria-label={action.label} aria-pressed={pressed} onPress={() => toggle(action.id)}><Icon /></Button>
-              <Tooltip>{action.label}</Tooltip>
-            </TooltipTrigger>;
-          })}
-          {actions.length > 0 && <Separator orientation="vertical" className="mx-1 h-4 self-center!" />}
-          <ReportsPopover />
-          <TooltipTrigger>
-            <Button variant={wide && chatOpen ? 'secondary' : 'ghost'} size="icon-sm" aria-label="Chat" aria-pressed={wide && chatOpen} onPress={toggleChat}><MessageSquareIcon /></Button>
-            <Tooltip>Chat</Tooltip>
-          </TooltipTrigger>
+        {toolbar}
+        {!(wide && chatOpen) && <TooltipTrigger>
+          <Button variant="ghost" size="icon-sm" aria-label="Open chat" data-panel-toggle="chat" onPress={toggleChat}><MessageSquareIcon /></Button>
+          <Tooltip>Open chat</Tooltip>
+        </TooltipTrigger>}
       </header>
-      <main id="studio-main" data-body={body} className="flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-x-hidden overflow-y-auto overscroll-contain p-4 md:p-6 *:shrink-0">
-        <PageModulesContext.Provider value={modules}>{head}{children}</PageModulesContext.Provider>
+      <main id="studio-main" data-body={body} className="row-start-3 flex min-h-0 min-w-0 flex-col gap-6 overflow-x-hidden overflow-y-auto overscroll-contain p-4 md:col-start-1 md:row-start-2 md:p-6 *:shrink-0">
+        <PageModulesContext.Provider value={pageModules}>{head}{children}</PageModulesContext.Provider>
       </main>
+      {modules}
     </SidebarInset>
-    {wide && chatOpen && <aside aria-label="Chat" className="h-svh min-h-0 w-80 shrink-0 border-l bg-background"><ChatPanel /></aside>}
-    <CommandMenu commands={commands} open={searchOpen} onOpenChange={setSearchOpen} />
+    {wide && chatOpen && <aside aria-label="Chat" className="h-svh min-h-0 w-80 shrink-0 border-l bg-background"><ChatPanel onClose={() => setChatOpen(false)} /></aside>}
+    <CommandMenu commands={commands} pageCommands={pageCommands} open={searchOpen} onOpenChange={setSearchOpen} />
     {!wide && <Sheet isOpen={chatSheet} onOpenChange={setChatSheet} side="right" className="w-[22rem] max-w-[90vw] p-0">
       <SheetHeader className="sr-only"><SheetTitle>Chat</SheetTitle><SheetDescription>Ask an agent about the open page.</SheetDescription></SheetHeader>
       <ChatPanel />

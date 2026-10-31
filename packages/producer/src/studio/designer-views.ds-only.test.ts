@@ -71,7 +71,7 @@ export function dsOnlyViolations(folder: string, kind: 'section' | 'frame' = 'se
 
 describe('Studio sections are ds-only', () => {
   it('covers every placed Studio section', () => {
-    expect(FOLDERS).toEqual(['studio-agent-gallery', 'studio-checks', 'studio-contract', 'studio-history', 'studio-home', 'studio-leaf-header', 'studio-options', 'studio-publications', 'studio-references', 'studio-specimen']);
+    expect(FOLDERS).toEqual(['module-checks', 'module-explorer', 'module-outline', 'studio-agent-gallery', 'studio-checks', 'studio-contract', 'studio-history', 'studio-home', 'studio-leaf-header', 'studio-options', 'studio-publications', 'studio-references', 'studio-specimen']);
   });
 
   it.each(FOLDERS)('%s imports only the Designer component layer and carries no raw styled markup', folder => {
@@ -89,7 +89,7 @@ describe('Studio sections are ds-only', () => {
   });
 
   it('covers every placed Studio frame', () => {
-    expect(FRAME_FOLDERS).toEqual(['studio-shell']);
+    expect(FRAME_FOLDERS).toEqual(['studio-module', 'studio-shell']);
   });
 
   it.each(FRAME_FOLDERS)('frame %s renders only Designer components inside its page landmarks', folder => {

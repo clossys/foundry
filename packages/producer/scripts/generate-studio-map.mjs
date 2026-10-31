@@ -14,13 +14,77 @@ const LAYER_FOLDER = { frames: 'frames', sections: 'sections' };
 
 function fail(message) { throw new Error(`Studio assembly: ${message}`); }
 const object = value => typeof value === 'object' && value !== null && !Array.isArray(value);
+const nonEmpty = value => typeof value === 'string' && value.length > 0;
+
+/** The page manifest vocabulary: navigators, module sources, action handlers and wiring verbs. */
+export const MODULE_FRAME = 'frames.module';
+export const NAVIGATORS = ['explorer', 'outline'];
+export const MODULE_SOURCES = ['page.explorer', 'page.outline', 'page.checks'];
+export const HANDLERS = ['copy-link', 'copy-prompt', 'scroll'];
+const WIRING_EXPECT = { 'copy-link': 'clipboard link', 'copy-prompt': 'clipboard prompt', scroll: 'target in view' };
+
+/**
+ * A page manifest (app-frame-target "Page manifest"): the navigator (explorer or outline), the
+ * modules the header toggles open (each a pinned module section fed from a named source), the
+ * header actions (handlers as data, each with a shortcut and a cmdk entry) and one wiring line per
+ * interaction. A page missing any part fails here, before anything renders.
+ */
+export function checkManifest(owner, manifest, contracts) {
+  if (!object(manifest)) fail(`${owner} declares no page manifest`);
+  if (manifest.frame !== MODULE_FRAME) fail(`${owner} manifest must name ${MODULE_FRAME} as its module frame`);
+  if (!NAVIGATORS.includes(manifest.navigator)) fail(`${owner} manifest needs an explorer or an outline`);
+  if (!Array.isArray(manifest.modules) || !manifest.modules.length) fail(`${owner} manifest declares no modules`);
+  if (!Array.isArray(manifest.actions) || !manifest.actions.length) fail(`${owner} manifest declares no actions`);
+  if (!Array.isArray(manifest.wiring) || !manifest.wiring.length) fail(`${owner} manifest declares no wiring checks`);
+  const ids = new Set(), keys = new Set();
+  const key = (id, shortcut) => {
+    if (shortcut === undefined) return;
+    if (!/^[a-z]$/.test(shortcut)) fail(`${owner} ${id} shortcut must be one lowercase letter`);
+    if (keys.has(shortcut)) fail(`${owner} reuses the shortcut ${shortcut}`);
+    keys.add(shortcut);
+  };
+  const modules = manifest.modules.map(module => {
+    if (!object(module) || !nonEmpty(module.id) || !nonEmpty(module.icon) || !nonEmpty(module.label) || typeof module.defaultOpen !== 'boolean') fail(`${owner} has an invalid module`);
+    if (ids.has(module.id)) fail(`${owner} declares ${module.id} twice`);
+    ids.add(module.id);
+    if (!/^sections\.module\.[a-z][a-z0-9-]*$/.test(module.section ?? '')) fail(`${owner} module ${module.id} must place a sections.module.* section`);
+    const contract = contracts.get(module.section);
+    if (!contract) fail(`${owner} module ${module.id} places ${module.section}, which has no slot contract`);
+    if (!MODULE_SOURCES.includes(module.source)) fail(`${owner} module ${module.id} reads an unknown source ${module.source}`);
+    key(module.id, module.shortcut);
+    return { ...module, input: contract.inputs[0].name };
+  });
+  const navigator = modules.find(module => module.id === manifest.navigator);
+  if (!navigator || navigator.section !== `sections.module.${manifest.navigator}`) fail(`${owner} manifest names ${manifest.navigator} but places no sections.module.${manifest.navigator} module`);
+  for (const action of manifest.actions) {
+    if (!object(action) || !nonEmpty(action.id) || !nonEmpty(action.icon) || !nonEmpty(action.label) || typeof action.cmdk !== 'boolean') fail(`${owner} has an invalid action`);
+    if (ids.has(action.id)) fail(`${owner} declares ${action.id} twice`);
+    ids.add(action.id);
+    const handler = action.handler;
+    if (!object(handler) || !HANDLERS.includes(handler.kind)) fail(`${owner} action ${action.id} has no handler`);
+    if (handler.kind === 'copy-prompt' && !nonEmpty(handler.prompt)) fail(`${owner} action ${action.id} copies no prompt`);
+    if (handler.kind === 'scroll' && !nonEmpty(handler.target)) fail(`${owner} action ${action.id} scrolls to no target`);
+    key(action.id, action.shortcut);
+  }
+  const lines = manifest.wiring.map(line => {
+    if (!object(line) || !nonEmpty(line.do) || !nonEmpty(line.expect)) fail(`${owner} has an invalid wiring line`);
+    return line;
+  });
+  const has = (verb, expect) => lines.some(line => line.do === verb && (expect === undefined || line.expect.startsWith(expect)));
+  for (const module of modules) if (!has(`toggle ${module.id}`, `${module.id} open`)) fail(`${owner} has no wiring line for the ${module.id} toggle`);
+  for (const action of manifest.actions) if (!has(`action ${action.id}`, WIRING_EXPECT[action.handler.kind])) fail(`${owner} has no wiring line for the ${action.id} action`);
+  if (!has(`select ${manifest.navigator}`)) fail(`${owner} has no wiring line for ${manifest.navigator} selection`);
+  if (!has('cmdk')) fail(`${owner} has no wiring line for the command menu`);
+  if (!has('key escape') || !lines.some(line => /^key [a-z]$/.test(line.do))) fail(`${owner} has no wiring line for keyboard use`);
+  return { frame: manifest.frame, navigator: manifest.navigator, modules, actions: manifest.actions, wiring: lines };
+}
 
 /**
  * One assembly per Publisher page cell: the frame, the ordered sections and, per section, the
  * data field its single contract input reads. A page with a `leaf` template also assembles every
  * leaf beneath it at runtime from the same frame.
  */
-function assemblyOf(entry, route, contracts) {
+export function assemblyOf(entry, route, contracts) {
   const { source } = entry;
   if (!object(source) || typeof source.frameId !== 'string' || !Array.isArray(source.sectionIds)) fail(`${entry.id} is not a frame + sections assembly`);
   const checkInputs = (owner, sections, inputs) => {
@@ -35,12 +99,12 @@ function assemblyOf(entry, route, contracts) {
   };
   if (!['plain', 'detail'].includes(route.body) || !object(route.data) || typeof route.data.loader !== 'string') fail(`${entry.id} needs a body and a data loader`);
   checkInputs(entry.id, source.sectionIds, route.inputs);
-  const page = { id: entry.id, path: entry.path, title: entry.title, frameId: source.frameId, sectionIds: source.sectionIds, body: route.body, data: route.data, inputs: route.inputs };
+  const page = { id: entry.id, path: entry.path, title: entry.title, frameId: source.frameId, sectionIds: source.sectionIds, body: route.body, data: route.data, inputs: route.inputs, manifest: checkManifest(entry.id, route.manifest, contracts) };
   if (route.leaf !== undefined) {
     const leaf = route.leaf;
     if (!object(leaf) || leaf.param !== 'slug' || !['plain', 'detail'].includes(leaf.body) || !object(leaf.data) || !Array.isArray(leaf.sections)) fail(`${entry.id} has an invalid leaf template`);
     checkInputs(`${entry.id} leaf`, leaf.sections, leaf.inputs);
-    page.leaf = { param: leaf.param, body: leaf.body, data: leaf.data, sectionIds: leaf.sections, inputs: leaf.inputs };
+    page.leaf = { param: leaf.param, body: leaf.body, data: leaf.data, sectionIds: leaf.sections, inputs: leaf.inputs, manifest: checkManifest(`${entry.id} leaf`, leaf.manifest, contracts) };
   }
   return page;
 }
@@ -91,11 +155,13 @@ export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outp
     return assemblyOf(entry, route, contracts);
   });
   const selection = await readJson(join(clossysRoot, 'selection.json'));
-  const slots = [...new Set(pages.flatMap(page => [page.frameId, ...page.sectionIds, ...(page.leaf?.sectionIds ?? [])]))];
+  const manifestSlots = manifest => [manifest.frame, ...manifest.modules.map(module => module.section)];
+  const slots = [...new Set(pages.flatMap(page => [page.frameId, ...page.sectionIds, ...(page.leaf?.sectionIds ?? []), ...manifestSlots(page.manifest), ...(page.leaf ? manifestSlots(page.leaf.manifest) : [])]))];
   const items = [];
   for (const slot of slots) items.push(await pinnedItem(clossysRoot, selection, slot));
   if (payloads) for (const item of items) await checkPayload(item);
-  const frames = items.filter(item => item.slot.startsWith('frames.'));
+  const frames = items.filter(item => item.slot.startsWith('frames.') && item.slot !== MODULE_FRAME);
+  const moduleFrames = items.filter(item => item.slot === MODULE_FRAME);
   const sections = items.filter(item => item.slot.startsWith('sections.'));
   const projection = {
     publicationId: map.publicationId, homeId: routePack.homeRouteId, root, map, pages,
@@ -108,8 +174,14 @@ export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outp
   const module = `${banner}import type { ContentMap, ContentMapPageAction } from '@clossys/publisher/content-map';
 import projection from './studio-map.json';
 
+/** One page module: a header toggle that opens a pinned module section, fed from a named source. */
+export interface StudioManifestModule { id: string; icon: string; label: string; section: string; input: string; source: string; shortcut?: string; defaultOpen: boolean }
+/** One header action; its handler is data the module frame runs. */
+export interface StudioManifestAction { id: string; icon: string; label: string; shortcut?: string; cmdk: boolean; handler: { kind: 'copy-link' } | { kind: 'copy-prompt'; prompt: string } | { kind: 'scroll'; target: string } }
+/** The page manifest: navigator, modules, header actions and one wiring line per interaction. */
+export interface StudioPageManifest { frame: string; navigator: 'explorer' | 'outline'; modules: readonly StudioManifestModule[]; actions: readonly StudioManifestAction[]; wiring: readonly { do: string; expect: string }[] }
 /** How one assembly is laid out and fed: a data loader, and per section the data field its contract input reads. */
-export interface StudioAssemblySpec { body: 'plain' | 'detail'; data: { loader: string; agent?: string }; inputs: Record<string, string>; sectionIds: readonly string[] }
+export interface StudioAssemblySpec { body: 'plain' | 'detail'; data: { loader: string; agent?: string }; inputs: Record<string, string>; sectionIds: readonly string[]; manifest: StudioPageManifest }
 /** A Publisher page record: frame + ordered sections + bindings; \`leaf\` assembles every leaf beneath the page. */
 export interface StudioPageRecord extends StudioAssemblySpec { id: string; path: string; title: string; frameId: string; leaf?: StudioAssemblySpec & { param: 'slug' } }
 
@@ -125,12 +197,18 @@ export const studioAgents = studioMap.entries.filter(row => row.kind === 'page' 
 `;
   const bindings = `${banner}import type { ComponentType } from 'react';
 import type { StudioShellProps } from '../frames/studio-shell';
+import type { ModuleFrameProps } from '../frames/studio-module';
 ${frames.map((item, i) => `import Frame${i} from ${JSON.stringify(item.module)};`).join('\n')}
+${moduleFrames.map((item, i) => `import ModuleFrame${i} from ${JSON.stringify(item.module)};`).join('\n')}
 ${sections.map((item, i) => `import Section${i} from ${JSON.stringify(item.module)};`).join('\n')}
 
-/** Pinned frame per frame slot. */
+/** Pinned page frame per frame slot. */
 export const studioFrames: Record<string, ComponentType<StudioShellProps>> = {
 ${frames.map((item, i) => `  ${JSON.stringify(item.slot)}: Frame${i},`).join('\n')}
+};
+/** Pinned module frame per module frame slot: the column and chrome a page manifest's modules open in. */
+export const studioModuleFrames: Record<string, ComponentType<ModuleFrameProps>> = {
+${moduleFrames.map((item, i) => `  ${JSON.stringify(item.slot)}: ModuleFrame${i},`).join('\n')}
 };
 /** Pinned section per section slot; each takes one prop, named by its contract input. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- each section types its own input; the assembly binds it by name.

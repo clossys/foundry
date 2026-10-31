@@ -8,12 +8,18 @@
  */
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { notFound } from 'next/navigation';
-import { ArrowRightIcon, XIcon } from 'lucide-react';
+import { ArrowRightIcon } from 'lucide-react';
 import type { ContentMap, ContentMapEntry } from '@clossys/publisher/content-map';
-import { studioFrames, studioSections } from '../generated/assembly-bindings';
+import { studioFrames, studioModuleFrames, studioSections } from '../generated/assembly-bindings';
 import { studioPublicationRoot, type StudioAssemblySpec, type StudioPageRecord } from '../generated/studio-map';
-import { PageNotice, usePageModules, type PageNoticeData } from '../frames/studio-shell';
-import type { HomeInput, HomeTone } from '../sections/studio-home';
+import { PageNotice, type PageNoticeData } from '../frames/studio-shell';
+import type { ActionSpec, ModuleSpec } from '../frames/studio-module';
+import type { AgentGalleryInput } from '../sections/studio-agent-gallery';
+import type { CheckRow } from '../sections/studio-checks';
+import type { ExplorerGroup } from '../sections/module-explorer';
+import type { ModuleCheckGroup, ModuleCheckRow, ModuleChecksInput } from '../sections/module-checks';
+import type { OptionsInput } from '../sections/studio-options';
+import type { HomeInput } from '../sections/studio-home';
 import type { OptionRow } from '../sections/studio-options';
 import type { Publication, PublicationsInput } from '../sections/studio-publications';
 import type { ViewportSpecimen } from '../sections/studio-specimen';
@@ -29,14 +35,14 @@ import { loadPublication, safePreviewUrl, siteRoot, type PublicationResponse } f
 import { studioIcon } from '../lib/studio-icons';
 import type { StudioReport } from '../lib/studio-report';
 import { resolveStudioRoute, studioHref, studioLeafCount, studioLeafHref, studioPageEntries, studioShellProjection, type StudioRoute } from '../lib/studio-route-map';
-import { leafCountLabel } from '../lib/leaf-status';
+import { LEAF_STATUS_LABEL, leafCountLabel } from '../lib/leaf-status';
 import { useStudioData, useThemeMode, type Resource } from './StudioProviders';
 import { useStudioRoutes } from './StudioRouteMap';
 
-/** A section's input: a value, or a function of the page's open modules (Home's Needs). */
-type Modules = ReturnType<typeof usePageModules>;
-type Inputs = Record<string, unknown | ((modules: Modules) => unknown)>;
-type Loaded = { state: 'loading' } | { state: 'notice'; notice: PageNoticeData } | { state: 'ready'; inputs: Inputs };
+type Inputs = Record<string, unknown>;
+/** What a page's modules show, by manifest source: the explorer tree and the checks. The outline is derived from the placed sections. */
+interface ModuleData { explorer?: readonly ExplorerGroup[]; checks?: ModuleChecksInput }
+type Loaded = { state: 'loading' } | { state: 'notice'; notice: PageNoticeData } | { state: 'ready'; inputs: Inputs; modules?: ModuleData };
 
 const AGENT_PURPOSE: Record<string, string> = {
   director: 'Strategy: the direction, reasoning and signals the business runs on.',
@@ -44,7 +50,67 @@ const AGENT_PURPOSE: Record<string, string> = {
   writer: 'Copy: the voice and every string the product shows.',
   publisher: 'Pages: what gets published, where, and its preview state.',
 };
-const SEVERITY_TONE: Record<string, HomeTone> = { error: 'destructive', warning: 'outline', info: 'secondary' };
+const SEVERITY_TONE: Record<string, ModuleCheckRow['tone']> = { error: 'destructive', warning: 'outline', info: 'secondary' };
+const sentence = (value: string) => value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
+/** An attribute selector for an element id (ids may hold characters a `#` selector would need escaped). */
+const byId = (id: string) => `[id=${JSON.stringify(id)}]`;
+const sectionTarget = (name: string) => `[data-studio-section=${JSON.stringify(name)}]`;
+
+/* Module data: what the checks and explorer modules show, from the same records the sections read. */
+
+const needRow = (report: StudioReport): ModuleCheckRow => ({ id: report.id, badge: sentence(report.severity), tone: SEVERITY_TONE[report.severity] ?? 'outline', title: report.title, detail: report.detail });
+const openNeeds = (reports: readonly StudioReport[], keep: (report: StudioReport) => boolean = () => true) => reports.filter(report => report.severity !== 'info' && report.area !== 'compile' && keep(report));
+
+function checksInput(failing: readonly ModuleCheckRow[], options: readonly ModuleCheckRow[], needs: readonly ModuleCheckRow[]): ModuleChecksInput {
+  const total = failing.length + options.length + needs.length;
+  return {
+    summary: total ? `${total} ${total === 1 ? 'item needs' : 'items need'} attention on this page.` : 'Nothing needs attention on this page.',
+    groups: [
+      { id: 'failing', label: 'Failing checks', empty: 'No check reports a finding.', rows: failing },
+      { id: 'options', label: 'Pending options', empty: 'No option waits for approval.', rows: options },
+      { id: 'needs', label: 'Open needs', empty: 'Nothing is waiting on you.', rows: needs },
+    ] satisfies ModuleCheckGroup[],
+  };
+}
+
+/** The explorer tree of an agent gallery: IA level 1 on top, then its groups and leaves (the map's L3 pages). */
+function galleryExplorer(gallery: AgentGalleryInput): ExplorerGroup[] {
+  return gallery.layers.map(layer => ({
+    id: layer.id, label: layer.label,
+    items: layer.groups.flatMap(group => [
+      { id: `group:${group.id}`, label: group.label, depth: group.level - 1, target: byId(group.id) },
+      ...group.cards.map(card => ({ id: `leaf:${card.key}`, label: card.name, depth: group.level, target: `[data-gallery-leaf=${JSON.stringify(card.key)}]` })),
+    ]),
+  }));
+}
+
+function galleryChecks(gallery: AgentGalleryInput, reports: readonly StudioReport[], agent: string): ModuleChecksInput {
+  const cards = gallery.layers.flatMap(layer => layer.groups.flatMap(group => group.cards));
+  const cardRow = (card: (typeof cards)[number]): ModuleCheckRow => ({ id: card.key, badge: card.statusLabel, tone: card.statusTone, title: card.name, href: card.href, openLabel: `Open ${card.name}` });
+  return checksInput(
+    cards.filter(card => card.statusTone === 'destructive').map(cardRow),
+    cards.filter(card => card.statusLabel === LEAF_STATUS_LABEL.pending).map(cardRow),
+    openNeeds(reports, report => report.agent === agent).map(needRow),
+  );
+}
+
+function leafChecks(inputs: Inputs, reports: readonly StudioReport[], agent: string, slug: string): ModuleChecksInput {
+  const checks = (inputs.checks as readonly CheckRow[] | undefined) ?? [];
+  const options = inputs.options as OptionsInput | undefined;
+  return checksInput(
+    checks.filter(row => !row.ok).map(row => ({ id: row.key, badge: 'Finding', tone: 'destructive', title: row.label, detail: row.detail })),
+    (options?.rows ?? []).filter(row => !row.pinned).map(row => ({ id: `v${row.version}`, badge: `v${row.version}`, tone: 'outline', title: row.label, detail: row.reason })),
+    openNeeds(reports, report => report.agent === agent && `${report.title} ${report.detail}`.includes(slug)).map(needRow),
+  );
+}
+
+/** Outline labels for the sections a page places, by the section's short name. */
+const OUTLINE_LABEL: Record<string, string> = {
+  home: 'Agents', 'agent-gallery': 'Library', publications: 'Publications', 'leaf-header': 'Overview', specimen: 'Specimen',
+  options: 'Options', checks: 'Checks', contract: 'Contract', history: 'History', references: 'References',
+};
+const shortName = (slot: string) => slot.replace(/^sections\.studio\./, '');
+
 const VIEWPORTS = [375, 768, 1280] as const;
 const message = (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback;
 
@@ -72,16 +138,10 @@ function useHomeInputs(): Loaded {
         href, openLabel: `Open ${AGENT_LABELS[agent]}`, openIcon: <ArrowRightIcon data-icon="inline-end" />,
       }];
     });
-    const needs = list.filter(report => report.severity !== 'info' && report.area !== 'compile')
-      .map(report => ({ id: report.id, severity: report.severity, tone: SEVERITY_TONE[report.severity] ?? 'outline', title: report.title, detail: report.detail }));
-    const home = (modules: Modules): HomeInput => ({
-      title: 'Home', description: 'Your agents and what they have written for this workspace.', agentsLabel: 'Agents', agents,
-      ...(modules.isOpen('needs') ? { needs: {
-        title: 'Needs', description: 'Open requests for the owner.', empty: 'Nothing is waiting on you.', rows: needs,
-        closeLabel: 'Close Needs', closeIcon: <XIcon />, onClose: () => modules.toggle('needs'),
-      } } : {}),
-    });
-    return { state: 'ready', inputs: { home } };
+    const home: HomeInput = { title: 'Home', description: 'Your agents and what they have written for this workspace.', agentsLabel: 'Agents', agents };
+    const needs = openNeeds(list).map(needRow);
+    const checks = checksInput(needs.filter(row => row.tone === 'destructive'), [], needs.filter(row => row.tone !== 'destructive'));
+    return { state: 'ready', inputs: { home }, modules: { checks } };
   }, [reports, map, galleries]);
 }
 
@@ -121,6 +181,7 @@ function sitePublication(publication: PublicationResponse | undefined, error: st
 
 function useGalleryInputs(page: StudioPageRecord): Loaded {
   const { map, galleries } = useStudioRoutes();
+  const { reports } = useStudioData();
   const { resolved } = useThemeMode();
   const gallery = galleries[page.id];
   const withPublications = page.sectionIds.includes('sections.studio.publications');
@@ -160,6 +221,9 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
     }));
     const input = gallery.value.agent === 'designer' ? designerGalleryInput(gallery.value.records, resolved, links, count) : agentGalleryInput(gallery.value.records, links, count, previews);
     const inputs: Inputs = {};
+    const list: readonly StudioReport[] = reports.state === 'ready' ? reports.value : [];
+    const explorer: ExplorerGroup[] = 'layers' in input ? galleryExplorer(input) : [];
+    const modules: ModuleData = { explorer, checks: 'layers' in input ? galleryChecks(input, list, agent) : checksInput([], [], openNeeds(list, report => report.agent === agent).map(needRow)) };
     if ('layers' in input) inputs.gallery = input;
     else if (!withPublications) return { state: 'notice', notice: input };
     if (withPublications) {
@@ -178,9 +242,10 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
         publications: [studioPublication(map, origin), ...(withSite ? [withSite] : [])],
       };
       inputs.publications = publications;
+      explorer.push({ id: 'publications', label: 'Publications', items: publications.publications.map(row => ({ id: `publication:${row.id}`, label: row.title, depth: 0, target: byId(`publication-${row.id}`) })) });
     }
-    return { state: 'ready', inputs };
-  }, [map, gallery, resolved, page, withPublications, publication, leaves, origin]);
+    return { state: 'ready', inputs, modules };
+  }, [map, gallery, resolved, page, withPublications, publication, leaves, origin, reports]);
 }
 
 /** Every leaf of one agent, a few requests at a time; a leaf that cannot load is `undefined`. */
@@ -226,7 +291,7 @@ async function loadLeaf(agent: string, slug: string, signal: AbortSignal): Promi
 
 function useLeafInputs(page: StudioPageRecord, slug: string): Loaded {
   const { map } = useStudioRoutes();
-  const { revision } = useStudioData();
+  const { revision, reports } = useStudioData();
   const { resolved } = useThemeMode();
   const agent = page.leaf?.data.agent ?? page.id;
   const [record, setRecord] = useState<Resource<LeafRecord | undefined>>({ state: 'loading' });
@@ -242,7 +307,9 @@ function useLeafInputs(page: StudioPageRecord, slug: string): Loaded {
     if (record.state === 'error') return { state: 'notice', notice: { title: 'This leaf could not load', description: record.message } };
     if (!record.value) return { state: 'notice', notice: { title: 'This leaf is gone', description: `${label} no longer records ${slug}.` } };
     const links = mapLinks(map);
-    if (record.value.agent === 'designer') return { state: 'ready', inputs: designerLeafInputs(record.value.leaf, resolved, links) };
+    const list: readonly StudioReport[] = reports.state === 'ready' ? reports.value : [];
+    const ready = (inputs: Inputs): Loaded => ({ state: 'ready', inputs, modules: { checks: leafChecks(inputs, list, agent, slug) } });
+    if (record.value.agent === 'designer') return ready(designerLeafInputs(record.value.leaf, resolved, links));
     const { leaf, previews, specimens } = record.value;
     const specimen = specimens
       ? specimens.length
@@ -250,29 +317,65 @@ function useLeafInputs(page: StudioPageRecord, slug: string): Loaded {
         : agentRecordSpecimen(leaf, links)
       : undefined;
     const options = agentOptionsInput(leaf, previews);
-    return { state: 'ready', inputs: agentLeafInputs(leaf, links, { ...(specimen ? { specimen } : {}), ...(options ? { options } : {}) }) };
-  }, [record, map, resolved, agent, slug]);
+    return ready(agentLeafInputs(leaf, links, { ...(specimen ? { specimen } : {}), ...(options ? { options } : {}) }));
+  }, [record, map, resolved, agent, slug, reports]);
 }
 
 /* Assembly. */
 
 function Placed({ slot, spec, inputs }: { slot: string; spec: StudioAssemblySpec; inputs: Inputs }) {
-  const modules = usePageModules();
   const Section = studioSections[slot];
   const name = spec.inputs[slot];
   if (!Section || !name) return null;
-  const raw = inputs[name];
-  const value = typeof raw === 'function' ? (raw as (modules: Modules) => unknown)(modules) : raw;
+  const value = inputs[name];
   if (value === undefined) return null;
   return <Section {...{ [name]: value }} />;
 }
 
-function Frame({ entry, page, spec, children, head }: { entry: ContentMapEntry; page: StudioPageRecord; spec: StudioAssemblySpec; children?: ReactNode; head?: ReactNode }) {
+/** The module specs a page manifest declares, each placing its pinned module section over the loaded module data. */
+function useManifestModules(entry: ContentMapEntry, spec: StudioAssemblySpec, loaded: Loaded): { modules: ModuleSpec[]; actions: ActionSpec[] } {
+  return useMemo(() => {
+    const inputs = loaded.state === 'ready' ? loaded.inputs : {};
+    const data = loaded.state === 'ready' ? loaded.modules ?? {} : {};
+    const outline = spec.sectionIds.filter(slot => inputs[spec.inputs[slot] ?? ''] !== undefined).map(slot => {
+      const name = shortName(slot);
+      return { id: name, label: OUTLINE_LABEL[name] ?? sentence(name), target: sectionTarget(name) };
+    });
+    const pending = loaded.state === 'loading';
+    const modules = spec.manifest.modules.map((module): ModuleSpec => {
+      const Section = studioSections[module.section];
+      const explorer = data.explorer ?? [];
+      const content = module.source === 'page.explorer'
+        ? { label: `${entry.title} explorer`, searchLabel: `Search ${entry.title}`, empty: pending ? 'Loading…' : 'Nothing matches.', groups: explorer }
+        : module.source === 'page.outline'
+          ? { label: `${entry.title} outline`, heading: 'On this page', items: outline }
+          : data.checks ?? checksInput([], [], []);
+      const targets = module.source === 'page.explorer' ? explorer.flatMap(group => group.items.map(item => item.target))
+        : module.source === 'page.outline' ? outline.map(item => item.target) : [];
+      return {
+        id: module.id, label: module.label, icon: module.icon, targets, defaultOpen: module.defaultOpen, ...(module.shortcut ? { shortcut: module.shortcut } : {}),
+        render: context => Section ? <Section {...{ [module.input]: { ...content, ...(context.active ? { active: context.active } : {}), onSelect: context.select } }} /> : null,
+      };
+    });
+    const agent = spec.data.agent ? (AGENT_LABELS[spec.data.agent as Agent] ?? spec.data.agent) : 'an agent';
+    const actions = spec.manifest.actions.map((action): ActionSpec => ({
+      ...action,
+      handler: action.handler.kind === 'copy-prompt' ? { kind: 'copy-prompt', prompt: action.handler.prompt.replaceAll('{agent}', agent).replaceAll('{title}', entry.title) } : action.handler,
+    }));
+    return { modules, actions };
+  }, [entry.title, spec, loaded]);
+}
+
+function Frame({ entry, page, spec, loaded = { state: 'loading' }, children, head }: { entry: ContentMapEntry; page: StudioPageRecord; spec: StudioAssemblySpec; loaded?: Loaded; children?: ReactNode; head?: ReactNode }) {
   const { map } = useStudioRoutes();
   const Shell = studioFrames[page.frameId];
+  const Modules = studioModuleFrames[spec.manifest.frame];
   const projection = useMemo(() => studioShellProjection(map, entry.id), [map, entry.id]);
-  if (!Shell) return <PageNotice notice={{ title: 'This page has no frame', description: `Nothing is pinned for ${page.frameId}.` }} />;
-  return <Shell {...projection} actions={entry.actions ?? []} body={spec.body} head={head}>{children}</Shell>;
+  const { modules, actions } = useManifestModules(entry, spec, loaded);
+  if (!Shell || !Modules) return <PageNotice notice={{ title: 'This page has no frame', description: `Nothing is pinned for ${Shell ? spec.manifest.frame : page.frameId}.` }} />;
+  return <Modules modules={modules} actions={actions}>
+    {chrome => <Shell {...projection} toolbar={chrome.toolbar} modules={chrome.column} pageCommands={chrome.commands} open={chrome.open} body={spec.body} head={head}>{children}</Shell>}
+  </Modules>;
 }
 
 function Body({ spec, loaded }: { spec: StudioAssemblySpec; loaded: Loaded }): { head?: ReactNode; children: ReactNode } {
@@ -284,7 +387,7 @@ function Body({ spec, loaded }: { spec: StudioAssemblySpec; loaded: Loaded }): {
 
 function Assembled({ entry, page, spec, loaded }: { entry: ContentMapEntry; page: StudioPageRecord; spec: StudioAssemblySpec; loaded: Loaded }) {
   const body = Body({ spec, loaded });
-  return <Frame entry={entry} page={page} spec={spec} head={body.head}>{body.children}</Frame>;
+  return <Frame entry={entry} page={page} spec={spec} loaded={loaded} head={body.head}>{body.children}</Frame>;
 }
 
 function HomePage(props: { entry: ContentMapEntry; page: StudioPageRecord; spec: StudioAssemblySpec }) { return <Assembled {...props} loaded={useHomeInputs()} />; }

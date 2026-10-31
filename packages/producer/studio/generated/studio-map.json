@@ -147,6 +147,74 @@
       },
       "inputs": {
         "sections.studio.home": "home"
+      },
+      "manifest": {
+        "frame": "frames.module",
+        "navigator": "outline",
+        "modules": [
+          {
+            "id": "outline",
+            "icon": "assets.icon-outline",
+            "label": "Outline",
+            "section": "sections.module.outline",
+            "source": "page.outline",
+            "shortcut": "o",
+            "defaultOpen": false,
+            "input": "outline"
+          },
+          {
+            "id": "checks",
+            "icon": "assets.icon-checks",
+            "label": "Checks",
+            "section": "sections.module.checks",
+            "source": "page.checks",
+            "shortcut": "c",
+            "defaultOpen": false,
+            "input": "checks"
+          }
+        ],
+        "actions": [
+          {
+            "id": "copy-link",
+            "icon": "assets.icon-link",
+            "label": "Copy link",
+            "handler": {
+              "kind": "copy-link"
+            },
+            "shortcut": "l",
+            "cmdk": true
+          }
+        ],
+        "wiring": [
+          {
+            "do": "toggle outline",
+            "expect": "outline open, then closed"
+          },
+          {
+            "do": "toggle checks",
+            "expect": "checks open, then closed"
+          },
+          {
+            "do": "select outline",
+            "expect": "target in view and highlighted"
+          },
+          {
+            "do": "action copy-link",
+            "expect": "clipboard link"
+          },
+          {
+            "do": "cmdk",
+            "expect": "page commands listed with shortcuts"
+          },
+          {
+            "do": "key o",
+            "expect": "outline open"
+          },
+          {
+            "do": "key escape",
+            "expect": "top module closed"
+          }
+        ]
       }
     },
     {
@@ -164,6 +232,78 @@
       },
       "inputs": {
         "sections.studio.agent-gallery": "gallery"
+      },
+      "manifest": {
+        "frame": "frames.module",
+        "navigator": "explorer",
+        "modules": [
+          {
+            "id": "explorer",
+            "icon": "assets.icon-explorer",
+            "label": "Explorer",
+            "section": "sections.module.explorer",
+            "source": "page.explorer",
+            "shortcut": "e",
+            "defaultOpen": false,
+            "input": "explorer"
+          },
+          {
+            "id": "checks",
+            "icon": "assets.icon-checks",
+            "label": "Checks",
+            "section": "sections.module.checks",
+            "source": "page.checks",
+            "shortcut": "c",
+            "defaultOpen": false,
+            "input": "checks"
+          }
+        ],
+        "actions": [
+          {
+            "id": "copy-link",
+            "icon": "assets.icon-link",
+            "label": "Copy link",
+            "handler": {
+              "kind": "copy-link"
+            },
+            "shortcut": "l",
+            "cmdk": true
+          }
+        ],
+        "wiring": [
+          {
+            "do": "toggle explorer",
+            "expect": "explorer open, then closed"
+          },
+          {
+            "do": "toggle checks",
+            "expect": "checks open, then closed"
+          },
+          {
+            "do": "select explorer",
+            "expect": "target in view and highlighted"
+          },
+          {
+            "do": "search explorer",
+            "expect": "items filtered"
+          },
+          {
+            "do": "action copy-link",
+            "expect": "clipboard link"
+          },
+          {
+            "do": "cmdk",
+            "expect": "page commands listed with shortcuts"
+          },
+          {
+            "do": "key e",
+            "expect": "explorer open"
+          },
+          {
+            "do": "key escape",
+            "expect": "top module closed"
+          }
+        ]
       },
       "leaf": {
         "param": "slug",
@@ -189,6 +329,104 @@
           "sections.studio.contract": "contract",
           "sections.studio.history": "history",
           "sections.studio.references": "references"
+        },
+        "manifest": {
+          "frame": "frames.module",
+          "navigator": "outline",
+          "modules": [
+            {
+              "id": "outline",
+              "icon": "assets.icon-outline",
+              "label": "Outline",
+              "section": "sections.module.outline",
+              "source": "page.outline",
+              "shortcut": "o",
+              "defaultOpen": false,
+              "input": "outline"
+            },
+            {
+              "id": "checks",
+              "icon": "assets.icon-checks",
+              "label": "Checks",
+              "section": "sections.module.checks",
+              "source": "page.checks",
+              "shortcut": "c",
+              "defaultOpen": false,
+              "input": "checks"
+            }
+          ],
+          "actions": [
+            {
+              "id": "request-change",
+              "icon": "assets.icon-request",
+              "label": "Request change",
+              "handler": {
+                "kind": "copy-prompt",
+                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+              },
+              "shortcut": "r",
+              "cmdk": true
+            },
+            {
+              "id": "versions",
+              "icon": "assets.icon-versions",
+              "label": "Versions",
+              "handler": {
+                "kind": "scroll",
+                "target": "[data-studio-section=\"history\"]"
+              },
+              "shortcut": "v",
+              "cmdk": true
+            },
+            {
+              "id": "copy-link",
+              "icon": "assets.icon-link",
+              "label": "Copy link",
+              "handler": {
+                "kind": "copy-link"
+              },
+              "shortcut": "l",
+              "cmdk": true
+            }
+          ],
+          "wiring": [
+            {
+              "do": "toggle outline",
+              "expect": "outline open, then closed"
+            },
+            {
+              "do": "toggle checks",
+              "expect": "checks open, then closed"
+            },
+            {
+              "do": "select outline",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "action request-change",
+              "expect": "clipboard prompt"
+            },
+            {
+              "do": "action versions",
+              "expect": "target in view"
+            },
+            {
+              "do": "action copy-link",
+              "expect": "clipboard link"
+            },
+            {
+              "do": "cmdk",
+              "expect": "page commands listed with shortcuts"
+            },
+            {
+              "do": "key o",
+              "expect": "outline open"
+            },
+            {
+              "do": "key escape",
+              "expect": "top module closed"
+            }
+          ]
         }
       }
     },
@@ -207,6 +445,78 @@
       },
       "inputs": {
         "sections.studio.agent-gallery": "gallery"
+      },
+      "manifest": {
+        "frame": "frames.module",
+        "navigator": "explorer",
+        "modules": [
+          {
+            "id": "explorer",
+            "icon": "assets.icon-explorer",
+            "label": "Explorer",
+            "section": "sections.module.explorer",
+            "source": "page.explorer",
+            "shortcut": "e",
+            "defaultOpen": false,
+            "input": "explorer"
+          },
+          {
+            "id": "checks",
+            "icon": "assets.icon-checks",
+            "label": "Checks",
+            "section": "sections.module.checks",
+            "source": "page.checks",
+            "shortcut": "c",
+            "defaultOpen": false,
+            "input": "checks"
+          }
+        ],
+        "actions": [
+          {
+            "id": "copy-link",
+            "icon": "assets.icon-link",
+            "label": "Copy link",
+            "handler": {
+              "kind": "copy-link"
+            },
+            "shortcut": "l",
+            "cmdk": true
+          }
+        ],
+        "wiring": [
+          {
+            "do": "toggle explorer",
+            "expect": "explorer open, then closed"
+          },
+          {
+            "do": "toggle checks",
+            "expect": "checks open, then closed"
+          },
+          {
+            "do": "select explorer",
+            "expect": "target in view and highlighted"
+          },
+          {
+            "do": "search explorer",
+            "expect": "items filtered"
+          },
+          {
+            "do": "action copy-link",
+            "expect": "clipboard link"
+          },
+          {
+            "do": "cmdk",
+            "expect": "page commands listed with shortcuts"
+          },
+          {
+            "do": "key e",
+            "expect": "explorer open"
+          },
+          {
+            "do": "key escape",
+            "expect": "top module closed"
+          }
+        ]
       },
       "leaf": {
         "param": "slug",
@@ -232,6 +542,104 @@
           "sections.studio.contract": "contract",
           "sections.studio.history": "history",
           "sections.studio.references": "references"
+        },
+        "manifest": {
+          "frame": "frames.module",
+          "navigator": "outline",
+          "modules": [
+            {
+              "id": "outline",
+              "icon": "assets.icon-outline",
+              "label": "Outline",
+              "section": "sections.module.outline",
+              "source": "page.outline",
+              "shortcut": "o",
+              "defaultOpen": false,
+              "input": "outline"
+            },
+            {
+              "id": "checks",
+              "icon": "assets.icon-checks",
+              "label": "Checks",
+              "section": "sections.module.checks",
+              "source": "page.checks",
+              "shortcut": "c",
+              "defaultOpen": false,
+              "input": "checks"
+            }
+          ],
+          "actions": [
+            {
+              "id": "request-change",
+              "icon": "assets.icon-request",
+              "label": "Request change",
+              "handler": {
+                "kind": "copy-prompt",
+                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+              },
+              "shortcut": "r",
+              "cmdk": true
+            },
+            {
+              "id": "versions",
+              "icon": "assets.icon-versions",
+              "label": "Versions",
+              "handler": {
+                "kind": "scroll",
+                "target": "[data-studio-section=\"history\"]"
+              },
+              "shortcut": "v",
+              "cmdk": true
+            },
+            {
+              "id": "copy-link",
+              "icon": "assets.icon-link",
+              "label": "Copy link",
+              "handler": {
+                "kind": "copy-link"
+              },
+              "shortcut": "l",
+              "cmdk": true
+            }
+          ],
+          "wiring": [
+            {
+              "do": "toggle outline",
+              "expect": "outline open, then closed"
+            },
+            {
+              "do": "toggle checks",
+              "expect": "checks open, then closed"
+            },
+            {
+              "do": "select outline",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "action request-change",
+              "expect": "clipboard prompt"
+            },
+            {
+              "do": "action versions",
+              "expect": "target in view"
+            },
+            {
+              "do": "action copy-link",
+              "expect": "clipboard link"
+            },
+            {
+              "do": "cmdk",
+              "expect": "page commands listed with shortcuts"
+            },
+            {
+              "do": "key o",
+              "expect": "outline open"
+            },
+            {
+              "do": "key escape",
+              "expect": "top module closed"
+            }
+          ]
         }
       }
     },
@@ -250,6 +658,78 @@
       },
       "inputs": {
         "sections.studio.agent-gallery": "gallery"
+      },
+      "manifest": {
+        "frame": "frames.module",
+        "navigator": "explorer",
+        "modules": [
+          {
+            "id": "explorer",
+            "icon": "assets.icon-explorer",
+            "label": "Explorer",
+            "section": "sections.module.explorer",
+            "source": "page.explorer",
+            "shortcut": "e",
+            "defaultOpen": false,
+            "input": "explorer"
+          },
+          {
+            "id": "checks",
+            "icon": "assets.icon-checks",
+            "label": "Checks",
+            "section": "sections.module.checks",
+            "source": "page.checks",
+            "shortcut": "c",
+            "defaultOpen": false,
+            "input": "checks"
+          }
+        ],
+        "actions": [
+          {
+            "id": "copy-link",
+            "icon": "assets.icon-link",
+            "label": "Copy link",
+            "handler": {
+              "kind": "copy-link"
+            },
+            "shortcut": "l",
+            "cmdk": true
+          }
+        ],
+        "wiring": [
+          {
+            "do": "toggle explorer",
+            "expect": "explorer open, then closed"
+          },
+          {
+            "do": "toggle checks",
+            "expect": "checks open, then closed"
+          },
+          {
+            "do": "select explorer",
+            "expect": "target in view and highlighted"
+          },
+          {
+            "do": "search explorer",
+            "expect": "items filtered"
+          },
+          {
+            "do": "action copy-link",
+            "expect": "clipboard link"
+          },
+          {
+            "do": "cmdk",
+            "expect": "page commands listed with shortcuts"
+          },
+          {
+            "do": "key e",
+            "expect": "explorer open"
+          },
+          {
+            "do": "key escape",
+            "expect": "top module closed"
+          }
+        ]
       },
       "leaf": {
         "param": "slug",
@@ -275,6 +755,104 @@
           "sections.studio.contract": "contract",
           "sections.studio.history": "history",
           "sections.studio.references": "references"
+        },
+        "manifest": {
+          "frame": "frames.module",
+          "navigator": "outline",
+          "modules": [
+            {
+              "id": "outline",
+              "icon": "assets.icon-outline",
+              "label": "Outline",
+              "section": "sections.module.outline",
+              "source": "page.outline",
+              "shortcut": "o",
+              "defaultOpen": false,
+              "input": "outline"
+            },
+            {
+              "id": "checks",
+              "icon": "assets.icon-checks",
+              "label": "Checks",
+              "section": "sections.module.checks",
+              "source": "page.checks",
+              "shortcut": "c",
+              "defaultOpen": false,
+              "input": "checks"
+            }
+          ],
+          "actions": [
+            {
+              "id": "request-change",
+              "icon": "assets.icon-request",
+              "label": "Request change",
+              "handler": {
+                "kind": "copy-prompt",
+                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+              },
+              "shortcut": "r",
+              "cmdk": true
+            },
+            {
+              "id": "versions",
+              "icon": "assets.icon-versions",
+              "label": "Versions",
+              "handler": {
+                "kind": "scroll",
+                "target": "[data-studio-section=\"history\"]"
+              },
+              "shortcut": "v",
+              "cmdk": true
+            },
+            {
+              "id": "copy-link",
+              "icon": "assets.icon-link",
+              "label": "Copy link",
+              "handler": {
+                "kind": "copy-link"
+              },
+              "shortcut": "l",
+              "cmdk": true
+            }
+          ],
+          "wiring": [
+            {
+              "do": "toggle outline",
+              "expect": "outline open, then closed"
+            },
+            {
+              "do": "toggle checks",
+              "expect": "checks open, then closed"
+            },
+            {
+              "do": "select outline",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "action request-change",
+              "expect": "clipboard prompt"
+            },
+            {
+              "do": "action versions",
+              "expect": "target in view"
+            },
+            {
+              "do": "action copy-link",
+              "expect": "clipboard link"
+            },
+            {
+              "do": "cmdk",
+              "expect": "page commands listed with shortcuts"
+            },
+            {
+              "do": "key o",
+              "expect": "outline open"
+            },
+            {
+              "do": "key escape",
+              "expect": "top module closed"
+            }
+          ]
         }
       }
     },
@@ -295,6 +873,78 @@
       "inputs": {
         "sections.studio.agent-gallery": "gallery",
         "sections.studio.publications": "publications"
+      },
+      "manifest": {
+        "frame": "frames.module",
+        "navigator": "explorer",
+        "modules": [
+          {
+            "id": "explorer",
+            "icon": "assets.icon-explorer",
+            "label": "Explorer",
+            "section": "sections.module.explorer",
+            "source": "page.explorer",
+            "shortcut": "e",
+            "defaultOpen": false,
+            "input": "explorer"
+          },
+          {
+            "id": "checks",
+            "icon": "assets.icon-checks",
+            "label": "Checks",
+            "section": "sections.module.checks",
+            "source": "page.checks",
+            "shortcut": "c",
+            "defaultOpen": false,
+            "input": "checks"
+          }
+        ],
+        "actions": [
+          {
+            "id": "copy-link",
+            "icon": "assets.icon-link",
+            "label": "Copy link",
+            "handler": {
+              "kind": "copy-link"
+            },
+            "shortcut": "l",
+            "cmdk": true
+          }
+        ],
+        "wiring": [
+          {
+            "do": "toggle explorer",
+            "expect": "explorer open, then closed"
+          },
+          {
+            "do": "toggle checks",
+            "expect": "checks open, then closed"
+          },
+          {
+            "do": "select explorer",
+            "expect": "target in view and highlighted"
+          },
+          {
+            "do": "search explorer",
+            "expect": "items filtered"
+          },
+          {
+            "do": "action copy-link",
+            "expect": "clipboard link"
+          },
+          {
+            "do": "cmdk",
+            "expect": "page commands listed with shortcuts"
+          },
+          {
+            "do": "key e",
+            "expect": "explorer open"
+          },
+          {
+            "do": "key escape",
+            "expect": "top module closed"
+          }
+        ]
       },
       "leaf": {
         "param": "slug",
@@ -320,6 +970,104 @@
           "sections.studio.contract": "contract",
           "sections.studio.history": "history",
           "sections.studio.references": "references"
+        },
+        "manifest": {
+          "frame": "frames.module",
+          "navigator": "outline",
+          "modules": [
+            {
+              "id": "outline",
+              "icon": "assets.icon-outline",
+              "label": "Outline",
+              "section": "sections.module.outline",
+              "source": "page.outline",
+              "shortcut": "o",
+              "defaultOpen": false,
+              "input": "outline"
+            },
+            {
+              "id": "checks",
+              "icon": "assets.icon-checks",
+              "label": "Checks",
+              "section": "sections.module.checks",
+              "source": "page.checks",
+              "shortcut": "c",
+              "defaultOpen": false,
+              "input": "checks"
+            }
+          ],
+          "actions": [
+            {
+              "id": "request-change",
+              "icon": "assets.icon-request",
+              "label": "Request change",
+              "handler": {
+                "kind": "copy-prompt",
+                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+              },
+              "shortcut": "r",
+              "cmdk": true
+            },
+            {
+              "id": "versions",
+              "icon": "assets.icon-versions",
+              "label": "Versions",
+              "handler": {
+                "kind": "scroll",
+                "target": "[data-studio-section=\"history\"]"
+              },
+              "shortcut": "v",
+              "cmdk": true
+            },
+            {
+              "id": "copy-link",
+              "icon": "assets.icon-link",
+              "label": "Copy link",
+              "handler": {
+                "kind": "copy-link"
+              },
+              "shortcut": "l",
+              "cmdk": true
+            }
+          ],
+          "wiring": [
+            {
+              "do": "toggle outline",
+              "expect": "outline open, then closed"
+            },
+            {
+              "do": "toggle checks",
+              "expect": "checks open, then closed"
+            },
+            {
+              "do": "select outline",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "action request-change",
+              "expect": "clipboard prompt"
+            },
+            {
+              "do": "action versions",
+              "expect": "target in view"
+            },
+            {
+              "do": "action copy-link",
+              "expect": "clipboard link"
+            },
+            {
+              "do": "cmdk",
+              "expect": "page commands listed with shortcuts"
+            },
+            {
+              "do": "key o",
+              "expect": "outline open"
+            },
+            {
+              "do": "key escape",
+              "expect": "top module closed"
+            }
+          ]
         }
       }
     }
@@ -328,12 +1076,27 @@
     {
       "slot": "frames.studio-shell",
       "element": "studio-shell",
-      "version": 3
+      "version": 4
     },
     {
       "slot": "sections.studio.home",
       "element": "studio-home",
       "version": 2
+    },
+    {
+      "slot": "frames.module",
+      "element": "studio-module",
+      "version": 1
+    },
+    {
+      "slot": "sections.module.outline",
+      "element": "module-outline",
+      "version": 1
+    },
+    {
+      "slot": "sections.module.checks",
+      "element": "module-checks",
+      "version": 1
     },
     {
       "slot": "sections.studio.agent-gallery",
@@ -373,6 +1136,11 @@
     {
       "slot": "sections.studio.references",
       "element": "studio-references",
+      "version": 1
+    },
+    {
+      "slot": "sections.module.explorer",
+      "element": "module-explorer",
       "version": 1
     },
     {

@@ -1,0 +1,66 @@
+{
+  "schema": "clossys.element/1",
+  "id": "studio-module",
+  "package": "producer",
+  "layer": "frames",
+  "slot": "frames.module",
+  "kind": "registry:block",
+  "lineage": {
+    "mode": "customized",
+    "source": {
+      "registry": "shadcn",
+      "item": "collapsible",
+      "version": "4.23.0",
+      "hash": "sha256:4609e7d77ea3680af4da1bffb9024f4e5c36cf5eed33161c2cb5db67558204f2",
+      "url": "https://ui.shadcn.com/r/styles/radix-nova/collapsible.json"
+    }
+  },
+  "license": {
+    "spdx": "MIT",
+    "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+    "file": "LICENCE.md"
+  },
+  "creator": {
+    "agent": "designer",
+    "model": "claude-opus-5-5",
+    "by": "STUDIO-MODULES"
+  },
+  "reason": "STUDIO-MODULES M1: every module the header opens is placed in this frame (owner 2026-10-31: modules are built via Designer).",
+  "createdAt": "2026-10-31T22:00:00Z",
+  "checks": [
+    {
+      "id": "lineage.reference",
+      "suite": "studio",
+      "type": "fixed",
+      "status": "pass",
+      "at": "2026-10-31T22:00:00Z"
+    },
+    {
+      "id": "studio.ds-only",
+      "suite": "studio",
+      "type": "fixed",
+      "status": "pass",
+      "at": "2026-10-31T22:00:00Z"
+    }
+  ],
+  "deps": {
+    "npm": {},
+    "elements": []
+  },
+  "reads": {
+    "copyKeys": [],
+    "themeVars": [
+      "--card",
+      "--border",
+      "--background",
+      "--secondary"
+    ]
+  },
+  "version": 1,
+  "hash": "sha256:fd088e6336f8d3b03fd0fc3c3ebdab6e00cfaf9f120e90fd2232b0879ebc7872",
+  "payload": [
+    "LICENCE.md",
+    "index.tsx",
+    "registry-item.json"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "studio-shell",
+  "type": "registry:block",
+  "title": "Studio Shell",
+  "description": "The Studio app shell: rail toggle top-left, header of breadcrumbs and icon buttons only, chat-only right panel with its toggle top-right, the module column beside the page column.",
+  "author": "Clossys",
+  "dependencies": [],
+  "registryDependencies": [
+    "sidebar-07"
+  ],
+  "files": [
+    {
+      "path": "PageNotice.tsx",
+      "type": "registry:component",
+      "target": "studio/frames/studio-shell/PageNotice.tsx"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:component",
+      "target": "studio/frames/studio-shell/index.tsx"
+    }
+  ]
+}
