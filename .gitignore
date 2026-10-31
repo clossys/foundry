@@ -56,3 +56,7 @@ packages/writer/src/generated/
 packages/producer/studio/.next/
 packages/producer/.studio-stage/
 packages/producer/dist/
+
+# Writer mechanical-audit report, rewritten by every run of
+# packages/writer/src/catalog/records/mechanical-audit.test.ts; nothing reads it.
+packages/writer/reports/mechanical-audit.json
