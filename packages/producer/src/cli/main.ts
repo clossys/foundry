@@ -4,7 +4,7 @@ import type { AgentKind } from "../agents.js";
 import type { PageLintReport } from "../check/page-types.js";
 import type { RecordSuitesReport } from "../check/record-suites.js";
 import { runSpecimenCli } from "./specimen.js";
-import { runMigrateCli, runSlotCheck } from "./migrate.js";
+import { runMigrateCli } from "./migrate.js";
 import { CliUsageError, parseArgs, USAGE } from "./args.js";
 import type { Verb } from "./args.js";
 import { discoverRoot } from "./root.js";
@@ -28,6 +28,7 @@ export interface CliResult {
   check?: boolean;
   report?: PageLintReport;
   suites?: RecordSuitesReport;
+  slots?: import("../check/slot-resolve.js").SlotResolveReport;
   reportPath?: string;
 }
 
@@ -40,7 +41,6 @@ export async function runCli(argv: readonly string[], cwd = process.cwd()): Prom
     const args = parseArgs(argv);
     if (args.help) return { exitCode: 0, message: USAGE };
     const verb = args.verb!;
-    if (verb === "check" && args.slots && args.pages === undefined && !args.suites) return runSlotCheck(resolve(cwd, args.root ?? "."), args.readiness);
     if (verb === "check") return await runCheck(args, cwd);
     const root = discoverRoot(resolve(cwd, args.root ?? "."));
     if (verb === "produce") return await runProduce(args, root);

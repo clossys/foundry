@@ -4,7 +4,7 @@ import { runCli } from "./main.js";
 const argv = process.argv.slice(2);
 const result = await runCli(argv);
 if (argv.includes("--json")) {
-  console.log(JSON.stringify(result));
+  console.log(JSON.stringify(result.slots && !result.report && !result.suites ? result.slots : result));
 } else if (result.exitCode === 0) {
   console.log(result.message);
 } else {
