@@ -5,22 +5,27 @@ import { DetailHeader } from './DetailHeader';
 import { HistoryBlock } from './HistoryBlock';
 import { SpecimenBlock } from './SpecimenBlock';
 import { UsesBlock } from './UsesBlock';
-import type { DetailCheckRow, DetailContractData, DetailHeaderData, DetailHistoryRow, DetailSpecimenData, DetailUsesData } from './types';
+import type { DetailCheckRow, DetailContractData, DetailHeaderData, DetailHistoryData, DetailSlots, DetailSpecimenData, DetailUsesData } from './types';
 
-export type { DetailCheckRow, DetailContractData, DetailHeaderData, DetailHistoryRow, DetailRef, DetailSpecimenData, DetailTone, DetailUsesData } from './types';
+export type { DetailCheckRow, DetailContractData, DetailHeaderData, DetailHistoryData, DetailHistoryRow, DetailRef, DetailSlots, DetailSpecimenData, DetailTone, DetailUsesData } from './types';
 
-/** Any agent's leaf: its specimen, then checks, contract, history and uses as plain blocks. */
-export function AgentDetail({ header, specimen, checks, contract, history, uses }: {
-  header: DetailHeaderData; specimen: DetailSpecimenData; checks: readonly DetailCheckRow[]; contract: DetailContractData; history: readonly DetailHistoryRow[]; uses: DetailUsesData;
+/**
+ * Any agent's leaf, Designer included: its specimen, then checks, contract, history and uses as
+ * plain blocks across the full content column. An agent adds its own blocks only through `slots`.
+ */
+export function AgentDetail({ header, specimen, checks, contract, history, uses, slots }: {
+  header: DetailHeaderData; specimen: DetailSpecimenData; checks?: readonly DetailCheckRow[]; contract: DetailContractData;
+  history: DetailHistoryData; uses?: DetailUsesData; slots?: DetailSlots;
 }) {
   return <Card className="m-4 md:m-6">
     <DetailHeader header={header} />
-    <CardContent className="flex flex-col gap-6">
-      <SpecimenBlock name={header.name} specimen={specimen} />
-      <ChecksBlock rows={checks} />
+    <CardContent className="flex min-w-0 flex-col gap-6">
+      {slots?.specimen ?? <SpecimenBlock name={header.name} specimen={specimen} />}
+      {slots?.afterSpecimen}
+      {checks && checks.length > 0 && <ChecksBlock rows={checks} />}
       <ContractBlock contract={contract} />
-      <HistoryBlock rows={history} />
-      <UsesBlock uses={uses} />
+      <HistoryBlock history={history} />
+      {uses && <UsesBlock uses={uses} />}
     </CardContent>
   </Card>;
 }

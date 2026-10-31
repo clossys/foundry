@@ -11,6 +11,6 @@ export function DetailHeader({ header }: { header: DetailHeaderData }) {
       <Badge variant={header.statusTone}>{header.statusLabel}</Badge>
     </CardTitle>
     <CardDescription>{[header.id, ...header.trail].join(' · ')}</CardDescription>
-    {header.statusDetail.map(line => <CardDescription key={line}>{line}</CardDescription>)}
+    {header.statusDetail.map(line => <CardDescription key={line} className="max-w-(--measure)">{line}</CardDescription>)}
   </CardHeader>;
 }

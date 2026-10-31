@@ -20,16 +20,19 @@ export interface DesignerCard {
   readonly slug: string;
   readonly name: string;
   readonly layer: string;
-  readonly status: SlotStatus;
+  /** `pending`: nothing is pinned but recorded versions wait for approval; `missing` means no version exists at all. */
+  readonly status: DesignerStatus;
   /** The pinned version (or the newest one when the slot has no pin). */
   readonly element?: string;
   readonly version?: number;
   readonly pinned: boolean;
   /** Specimen id for `/__specimen?element=` (`<slot>/<element>`). */
   readonly specimen?: string;
-  /** Versions of the pinned element newer than the pin: options pending approval, oldest first. */
+  /** Options pending approval, oldest first: versions newer than the pin, or every version when nothing is pinned. */
   readonly options: readonly number[];
 }
+export type DesignerStatus = SlotStatus | "pending";
+
 export interface DesignerSection {
   /** Anchor id, unique on the page. */
   readonly id: string;
@@ -114,10 +117,12 @@ function cards(ws: Workspace): Map<string, DesignerCard> {
     const versions = element ? listVersions(ws.library, slot, element) : [];
     // The card shows what selection.json pins; only an unpinned slot shows its newest version.
     const version = pin?.version ?? versions.at(-1);
-    const options = pin && element === pin.element ? versions.filter(candidate => candidate > pin.version) : [];
+    // Unpinned with recorded versions: every version is an option pending approval, not a missing leaf.
+    const options = pin ? (element === pin.element ? versions.filter(candidate => candidate > pin.version) : []) : versions;
+    const slotStatus = status.get(slot)?.status ?? "missing";
     const card: DesignerCard = {
       slot, slug: slug.get(slot)!, name: humanize(slug.get(slot)!.replace(/^[a-z]+\./, "")), layer: slot.split(".")[0]!,
-      status: status.get(slot)?.status ?? "missing", pinned: !!pin,
+      status: !pin && versions.length && slotStatus === "missing" ? "pending" : slotStatus, pinned: !!pin,
       ...(element ? { element, specimen: `${slot}/${element}` } : {}), ...(version ? { version } : {}), options,
     };
     return [slot, card];
@@ -200,7 +205,10 @@ export function designerLeaf(root: string, key: string): DesignerLeaf | undefine
   const pin = ws.selection.pins[card.slot];
   const released = ws.release?.pins[card.slot];
   return {
-    card, trail, statusDetail: status?.detail ?? [],
+    card, trail,
+    statusDetail: card.status === "pending"
+      ? [`Nothing is pinned yet; ${card.options.length === 1 ? "1 recorded version waits" : `${card.options.length} recorded versions wait`} for approval.`]
+      : status?.detail ?? [],
     ...(current ? { record: {
       kind: current.kind, package: current.package, license: current.license.spdx,
       creator: current.creator.by ? `${current.creator.agent} (${current.creator.by})` : current.creator.agent,

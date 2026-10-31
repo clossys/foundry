@@ -50,8 +50,11 @@
 
 :root {
     /* Layout tokens for the Foundry layout primitives (foundry/layout.tsx); mode-independent. */
-    --card-grid-min: 18rem;
+    --card-grid-min: 11rem;
     --card-grid-gap: 1rem;
+    --specimen-grid-min: 18rem;
+    /* Comfortable reading width for prose inside full-width layouts. */
+    --measure: 65ch;
     --specimen-ratio-thumbnail: 16 / 10;
     --specimen-ratio-mobile: 375 / 720;
     --specimen-ratio-tablet: 768 / 960;

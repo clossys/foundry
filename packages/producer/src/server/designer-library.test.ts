@@ -1,3 +1,5 @@
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -24,6 +26,20 @@ describe('PROOF-2 Designer library projection over the record store', () => {
     expect(leaf.lineage).toEqual([{ version: 1, mode: 'original' }, { version: 2, mode: 'original', parent: 1 }]);
     expect(leaf.versions.map(row => [row.version, row.pinned, row.released])).toEqual([[2, true, false], [1, false, true]]);
     expect(designerLeaf(workspace, 'no-such-leaf')).toBeUndefined();
+  });
+
+  it('marks an unpinned slot with recorded versions pending approval, never missing', () => {
+    const copy = mkdtempSync(join(tmpdir(), 'designer-pending-'));
+    try {
+      cpSync(workspace, copy, { recursive: true });
+      const selection = JSON.parse(readFileSync(join(copy, 'selection.json'), 'utf8'));
+      delete selection.pins['sections.hero'];
+      selection.history = selection.history.filter((event: { slot: string }) => event.slot !== 'sections.hero');
+      writeFileSync(join(copy, 'selection.json'), JSON.stringify(selection));
+      const leaf = designerLeaf(copy, 'hero')!;
+      expect(leaf.card).toMatchObject({ status: 'pending', pinned: false, version: 2, options: [1, 2] });
+      expect(leaf.statusDetail).toEqual(['Nothing is pinned yet; 2 recorded versions wait for approval.']);
+    } finally { rmSync(copy, { recursive: true, force: true }); }
   });
 
   it('names the pinned theme as the specimen default', () => {

@@ -11,6 +11,8 @@ export interface GalleryCardData {
   /** A rendered specimen (`/__specimen`) thumbnail; agents without one show `excerpt` lines. */
   specimenSrc?: string;
   excerpt?: readonly string[];
+  /** Extra outline marks beside the status, such as options pending approval. */
+  badges?: readonly string[];
 }
 
 export interface GalleryGroupData { id: string; label: string; level: 1 | 2; cards: readonly GalleryCardData[] }

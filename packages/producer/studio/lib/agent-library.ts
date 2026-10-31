@@ -4,8 +4,9 @@
  * and one adapter per agent turns it into the shared gallery and detail template data.
  * REPLACE with the Publisher content-map projection when it lands.
  */
-import type { GalleryHeaderData, GalleryLayerData, GalleryNoticeData, GalleryTone } from '../views/agent-gallery/types';
-import type { DetailCheckRow, DetailContractData, DetailHeaderData, DetailHistoryRow, DetailRef, DetailSpecimenData, DetailUsesData } from '../views/agent-detail/types';
+import type { GalleryHeaderData, GalleryLayerData, GalleryNoticeData } from '../views/agent-gallery/types';
+import type { DetailCheckRow, DetailContractData, DetailHeaderData, DetailHistoryData, DetailRef, DetailSpecimenData, DetailUsesData } from '../views/agent-detail/types';
+import { LEAF_STATUS_LABEL as STATUS_LABEL, LEAF_STATUS_TONE as STATUS_TONE } from './leaf-status';
 
 export const LIBRARY_AGENTS = ['director', 'writer', 'publisher'] as const;
 export type LibraryAgent = typeof LIBRARY_AGENTS[number];
@@ -38,8 +39,6 @@ const ADAPTERS: Record<LibraryAgent, AgentAdapter> = {
   publisher: { label: 'Publisher', unit: ['page', 'pages'], description: 'Page records. Open one for the sections it assembles and the copy it binds.', specimenTitle: 'Sections' },
 };
 
-const STATUS_LABEL: Record<AgentLeafStatus, string> = { active: 'Active', draft: 'Draft', retired: 'Retired' };
-const STATUS_TONE: Record<AgentLeafStatus, GalleryTone> = { active: 'secondary', draft: 'outline', retired: 'destructive' };
 
 export const agentGalleryHref = (agent: string) => `/${agent}`;
 export const agentLeafHref = (agent: string, slug: string) => `/${agent}/${encodeURIComponent(slug)}`;
@@ -104,7 +103,7 @@ export function agentGalleryLayers(records: AgentGalleryRecords): GalleryLayerDa
 }
 
 export interface AgentDetailData {
-  header: DetailHeaderData; specimen: DetailSpecimenData; checks: DetailCheckRow[]; contract: DetailContractData; history: DetailHistoryRow[]; uses: DetailUsesData;
+  header: DetailHeaderData; specimen: DetailSpecimenData; checks: DetailCheckRow[]; contract: DetailContractData; history: DetailHistoryData; uses: DetailUsesData;
 }
 
 export function agentDetailData(leaf: AgentLeafRecords): AgentDetailData {
@@ -124,10 +123,10 @@ export function agentDetailData(leaf: AgentLeafRecords): AgentDetailData {
     },
     checks: leaf.checks.map((check, index) => ({ key: `${index}`, label: check.label, ok: check.ok, detail: check.detail ?? '' })),
     contract: { facts: leaf.contract.facts, lists: leaf.contract.lists },
-    history: leaf.history.map(row => ({
+    history: { rows: leaf.history.map(row => ({
       version: row.version, date: row.updated, note: row.note || '—',
       marks: [row.active && 'Active', STATUS_LABEL[row.status]].filter((mark, index, all): mark is string => Boolean(mark) && all.indexOf(mark) === index),
-    })),
+    })) },
     uses: { uses: leaf.uses.map(toRef), usedBy: leaf.usedBy.map(toRef) },
   };
 }

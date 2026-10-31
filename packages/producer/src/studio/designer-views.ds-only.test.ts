@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest';
  * element carrying `className` or `style`).
  */
 const VIEWS = resolve(dirname(fileURLToPath(import.meta.url)), '../../studio/views');
-const FOLDERS = ['designer-gallery', 'designer-detail', 'agent-gallery', 'agent-detail'];
+const FOLDERS = ['agent-gallery', 'agent-detail', 'designer-slots'];
 const COMPONENT_LAYER = '@clossys/designer-ui';
 
 export function dsOnlyViolations(folder: string): string[] {

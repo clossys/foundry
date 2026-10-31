@@ -1,4 +1,4 @@
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, LinkButton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, LinkButton, SpecimenFrame, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';
 import type { DetailSpecimenData } from './types';
 
 /** What the leaf produces: a rendered specimen, or its text as labelled rows. */
@@ -6,10 +6,10 @@ export function SpecimenBlock({ name, specimen }: { name: string; specimen: Deta
   return <Card size="sm">
     <CardHeader>
       <CardTitle role="heading" aria-level={2}>{specimen.title}</CardTitle>
-      <CardDescription>{specimen.description}</CardDescription>
+      <CardDescription className="max-w-(--measure)">{specimen.description}</CardDescription>
     </CardHeader>
     {specimen.src
-      ? <iframe title={`${name} specimen`} src={specimen.src} width="100%" height="460" />
+      ? <CardContent><SpecimenFrame interactive ratio="desktop" title={`${name} specimen`} src={specimen.src} /></CardContent>
       : specimen.rows?.length
         ? <CardContent>
           <Table aria-label={`${name} specimen`}>

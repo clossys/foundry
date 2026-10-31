@@ -1,21 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { notFound } from 'next/navigation';
 import { StudioFrame } from '../components/StudioFrame';
 import { useThemeMode } from '../components/StudioProviders';
-import { DESIGNER_STATUS_LABEL, DESIGNER_STATUS_TONE, loadDesignerLeaf, specimenHref, type DesignerLeaf } from '../lib/designer-library';
+import { designerDetailData, designerNotice, loadDesignerLeaf, type DesignerLeaf } from '../lib/designer-library';
 import { PROOF_PAGE_ID } from '../lib/proof-routes';
-import { DesignerDetail } from './designer-detail';
-import { GalleryNotice } from './designer-gallery';
+import { AgentDetail } from './agent-detail';
+import { GalleryNotice } from './agent-gallery';
+import { OptionsBlock, ViewportSpecimens } from './designer-slots';
 
 type Load = { state: 'loading' } | { state: 'ready'; value: DesignerLeaf } | { state: 'missing' } | { state: 'error'; message: string };
 const NO_ACTIONS: never[] = [];
-const SPECIMEN_VIEWPORTS = [375, 768, 1280] as const;
 
-const versionFlags = (row: DesignerLeaf['versions'][number]) => [row.pinned && 'Pinned', row.released && 'Released', row.verified && 'Verified'].filter((flag): flag is string => Boolean(flag));
-
-/** `/designer/<leaf>`: one leaf's specimen, contract, lineage and versions. */
+/** `/designer/<leaf>`: one leaf through the shared agent detail template; Designer adds viewport specimens and options as slots. */
 export default function DesignerLeafView({ slug }: { slug: string }) {
   const { resolved } = useThemeMode();
   const [load, setLoad] = useState<Load>({ state: 'loading' });
@@ -27,35 +25,20 @@ export default function DesignerLeafView({ slug }: { slug: string }) {
     });
     return () => controller.abort();
   }, [slug]);
+  const data = useMemo(() => load.state === 'ready' ? designerDetailData(load.value, resolved) : undefined, [load, resolved]);
   if (load.state === 'missing') notFound();
-  const leaf = load.state === 'ready' ? load.value : undefined;
-  return <StudioFrame pageId={PROOF_PAGE_ID} actions={NO_ACTIONS} {...(leaf ? { trail: leaf.card.name } : {})}>
-    {load.state === 'loading' ? <GalleryNotice state="loading" />
-      : load.state === 'error' ? <GalleryNotice state="error" message={load.message} />
-      : leaf && <DesignerDetail
-        header={{
-          name: leaf.card.name, slot: leaf.card.slot, ...(leaf.card.version !== undefined ? { version: leaf.card.version } : {}),
-          statusLabel: DESIGNER_STATUS_LABEL[leaf.card.status], statusTone: DESIGNER_STATUS_TONE[leaf.card.status],
-          statusDetail: leaf.statusDetail, trail: leaf.trail, galleryHref: '/designer',
+  return <StudioFrame pageId={PROOF_PAGE_ID} actions={NO_ACTIONS} {...(data ? { trail: data.header.name } : {})}>
+    {load.state === 'loading' ? <GalleryNotice />
+      : load.state === 'error' ? <GalleryNotice notice={designerNotice('error', load.message)} />
+      : data && <AgentDetail
+        header={data.header}
+        specimen={{ title: 'Specimen', description: 'The pinned version, installed and bound the way the site renders it.' }}
+        contract={data.contract}
+        history={data.history}
+        slots={{
+          specimen: <ViewportSpecimens name={data.header.name} specimens={data.specimens} />,
+          ...(data.options.some(row => !row.pinned) ? { afterSpecimen: <OptionsBlock name={data.header.name} rows={data.options} /> } : {}),
         }}
-        specimens={leaf.card.specimen ? SPECIMEN_VIEWPORTS.map(viewport => ({ viewport, light: specimenHref(leaf.card, 'light', viewport)!, dark: specimenHref(leaf.card, 'dark', viewport)! })) : []}
-        options={leaf.card.specimen && leaf.card.version !== undefined && leaf.card.options.length ? [leaf.card.version, ...leaf.card.options].map(version => ({
-          version, pinned: version === leaf.card.version,
-          reason: leaf.versions.find(row => row.version === version)?.reason ?? '',
-          src: specimenHref({ specimen: leaf.card.specimen, version }, resolved, 1280)!,
-        })) : []}
-        contract={{
-          ...(leaf.contract.kind ? { kind: leaf.contract.kind } : {}), ...(leaf.contract.root ? { root: leaf.contract.root } : {}),
-          inputs: leaf.contract.inputs,
-          lists: [
-            { label: 'Composes', items: leaf.contract.composes },
-            { label: 'Copy keys', items: leaf.contract.copyKeys },
-            { label: 'Theme variables', items: leaf.contract.themeVars },
-            { label: 'Depends on', items: leaf.contract.dependencies },
-          ],
-        }}
-        lineage={leaf.lineage.map(row => ({ version: row.version, mode: row.mode, parent: row.parent !== undefined ? `v${row.parent}` : '—', source: row.source ?? '—' }))}
-        versions={leaf.versions.map(row => ({ version: row.version, createdAt: row.createdAt, reason: row.reason, hash: row.hash.slice(0, 19), flags: versionFlags(row) }))}
       />}
   </StudioFrame>;
 }

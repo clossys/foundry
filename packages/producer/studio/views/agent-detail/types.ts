@@ -31,6 +31,16 @@ export interface DetailContractData {
   lists: readonly { label: string; items: readonly string[] }[];
 }
 
-export interface DetailHistoryRow { version: number; date: string; note: string; marks: readonly string[] }
+/** One recorded version; `extra` holds one value per `DetailHistoryData.columns` entry. */
+export interface DetailHistoryRow { version: number; date: string; note: string; marks: readonly string[]; extra?: readonly string[] }
+
+/** The history table: rows newest first, plus any agent-specific columns after Note. */
+export interface DetailHistoryData { rows: readonly DetailHistoryRow[]; columns?: readonly string[] }
 
 export interface DetailUsesData { uses: readonly DetailRef[]; usedBy: readonly DetailRef[] }
+
+/**
+ * Agent-owned blocks the template places without knowing them: `specimen` replaces the default
+ * specimen block, `afterSpecimen` sits directly beneath it.
+ */
+export interface DetailSlots { specimen?: import('react').ReactNode; afterSpecimen?: import('react').ReactNode }

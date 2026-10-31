@@ -1,15 +1,24 @@
 // Foundry layout primitives: shared by every Studio view that lays out cards or specimens.
-// Sizes come from the layout tokens in ../index.css (`--card-grid-*`, `--specimen-ratio-*`),
+// Sizes come from the layout tokens in ../index.css (`--card-grid-*`, `--specimen-grid-min`,
+// `--specimen-ratio-*`, `--measure`),
 // so a view never carries its own grid or ratio classes.
 import type { ComponentProps, ReactNode } from "react"
 import { cn } from "../lib/utils"
 
-/** A responsive card grid: as many `--card-grid-min` columns as fit, `--card-grid-gap` apart. */
-function CardGrid({ className, ...props }: ComponentProps<"div">) {
+const CARD_GRID_DENSITY = {
+  /** Gallery cards: `--card-grid-min` columns, so a content column fills with several per row. */
+  cards: "grid-cols-[repeat(auto-fill,minmax(min(100%,var(--card-grid-min)),1fr))]",
+  /** Side-by-side specimens: wider `--specimen-grid-min` columns that fit as many as the column allows. */
+  specimens: "grid-cols-[repeat(auto-fit,minmax(min(100%,var(--specimen-grid-min)),1fr))]",
+} as const
+
+/** A responsive grid that fills its column: as many min-width columns as fit, `--card-grid-gap` apart. */
+function CardGrid({ density = "cards", className, ...props }: ComponentProps<"div"> & { density?: keyof typeof CARD_GRID_DENSITY }) {
   return (
     <div
       data-slot="card-grid"
-      className={cn("grid grid-cols-[repeat(auto-fill,minmax(min(100%,var(--card-grid-min)),1fr))] gap-(--card-grid-gap)", className)}
+      data-density={density}
+      className={cn("grid w-full min-w-0 gap-(--card-grid-gap)", CARD_GRID_DENSITY[density], className)}
       {...props}
     />
   )
