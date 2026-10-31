@@ -15,18 +15,15 @@ it("real Chromium: panels have zero overflowing text nodes at 390/1440; removing
   const modulePath = (path: string) => JSON.stringify(join(pkg, "src", path));
   const fixture = `import React,{useEffect}from'react';import{createRoot}from'react-dom/client';
 import{TreeView}from${modulePath("studio/TreeView.tsx")};
-import{SystemInspector}from${modulePath("studio/system-canvas/inspector/Inspector.tsx")};
-import{InspectorChange}from${modulePath("studio/Inspector.tsx")};
 import{ExplorerTree}from${modulePath("studio/rail/ExplorerTree.tsx")};
+import{StudioDataValue}from${modulePath("studio/data-value.tsx")};
 import{createRouteStudioLabels}from${modulePath("studio/route-labels.ts")};
 const long='unbroken-candidate-and-helper-data-'.repeat(18);
 const copy={locale:'en',messages:new Proxy({},{get:(_,id)=>({id})}),resolver:ref=>({ref,text:'[['+ref.id+']]',servedLocale:'en',chain:['en']})};
 const labels={...createRouteStudioLabels(copy),howToChange:long};
 function App(){useEffect(()=>{window.ready=true},[]);return <main>
 <aside data-panel='tree'><TreeView aria-label='Fixture tree' nodes={[{id:'root',label:long,children:[{id:'child',label:long}]}]} defaultExpandedIds={['root']}/></aside>
-<aside data-panel='inspector'><SystemInspector copy={copy} labels={labels} identity={{id:'components.fixture',layer:'components',path:[],status:'ready',fill:{source:long,pin:long}}} onNavigate={()=>{}} onClose={()=>{}} canNavigate={()=>false} changeCommandFor={()=>long} writeHistory={()=>[{index:1,command:long,contentHash:'f'.repeat(128),inputs:{fixture:long}}]}/></aside>
-<aside data-panel='helper'><InspectorChange labels={labels}/></aside>
-<aside data-panel='empty'><SystemInspector copy={copy} labels={labels} onNavigate={()=>{}} onClose={()=>{}} canNavigate={()=>false}/></aside>
+<aside data-panel='values'><StudioDataValue kind='hash' value={'f'.repeat(128)}/><StudioDataValue kind='path' value={long}/></aside>
 <aside data-panel='zero'><ExplorerTree copy={copy} labels={labels} placements={[]} onNavigate={()=>{}}/></aside>
 </main>};createRoot(document.getElementById('root')).render(<App/>);
 window.measure=()=>{const failures=[];for(const panel of document.querySelectorAll('[data-panel]')){const bounds=panel.getBoundingClientRect();const walker=document.createTreeWalker(panel,NodeFilter.SHOW_TEXT);let node;while(node=walker.nextNode()){if(!node.textContent.trim())continue;const parent=node.parentElement;const style=getComputedStyle(parent);if(style.visibility==='hidden'||!parent.getClientRects().length)continue;if(style.textOverflow==='ellipsis'&&style.overflowX==='hidden'&&style.whiteSpace==='nowrap')continue;const range=document.createRange();range.selectNodeContents(node);for(const rect of range.getClientRects()){if(rect.width&& (rect.left<bounds.left-1||rect.right>bounds.right+1)){failures.push({panel:panel.dataset.panel,text:node.textContent.slice(0,80),left:rect.left,right:rect.right,bounds:bounds.right});break;}}}}return failures;};`;
@@ -70,7 +67,7 @@ window.measure=()=>{const failures=[];for(const panel of document.querySelectorA
       expect(await evaluate("innerWidth")).toBe(width);
       expect(await evaluate("window.measure()"), `overflow at ${width}`).toEqual([]);
       expect(await evaluate("[...document.querySelectorAll('[data-tree-label]')].every(n=>getComputedStyle(n).textOverflow==='ellipsis'&&n.scrollWidth>n.clientWidth)")).toBe(true);
-      expect(await evaluate("document.querySelectorAll('[data-panel=empty] [data-ds-leaf=\"sections.empty-state\"], [data-panel=zero] [data-ds-leaf=\"sections.empty-state\"]').length")).toBe(2);
+      expect(await evaluate("document.querySelectorAll('[data-panel=zero] [data-ds-leaf=\"sections.empty-state\"]').length")).toBe(1);
       expect(await evaluate("getComputedStyle(document.querySelector('[data-studio-data-kind=hash]')).fontFamily")).toMatch(/mono/i);
       await evaluate("document.querySelectorAll('[data-tree-label]').forEach(n=>n.classList.remove('truncate'))");
       // Hyphenated labels may wrap without overflowing after mutation; the row must still ellipsize.

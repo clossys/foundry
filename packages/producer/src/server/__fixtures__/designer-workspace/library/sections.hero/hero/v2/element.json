@@ -1,0 +1,51 @@
+{
+  "schema": "clossys.element/1",
+  "id": "hero",
+  "package": "designer",
+  "layer": "sections",
+  "slot": "sections.hero",
+  "kind": "registry:block",
+  "license": {
+    "spdx": "MIT"
+  },
+  "creator": {
+    "agent": "designer",
+    "model": "fixture"
+  },
+  "checks": [],
+  "lineage": {
+    "mode": "original",
+    "parent": {
+      "version": 1,
+      "hash": "sha256:aebd846672272190b3194be3dbd08ae9dfd333b3baa3273553ea8229f050cb93"
+    }
+  },
+  "reason": "fixture: left-aligned hero with an eyebrow and a second action",
+  "createdAt": "2026-10-30T01:00:00Z",
+  "deps": {
+    "npm": {},
+    "elements": [
+      {
+        "slot": "components.button",
+        "element": "sample-button",
+        "version": 1,
+        "hash": "sha256:8177fc6c4d6dba3e6af863ad3177a06d96b8e9bca147fad86e62a75d4839ff39"
+      }
+    ]
+  },
+  "reads": {
+    "copyKeys": [
+      "hero.eyebrow",
+      "hero.title",
+      "hero.body",
+      "hero.action",
+      "hero.secondary"
+    ],
+    "themeVars": []
+  },
+  "version": 2,
+  "hash": "sha256:f896e31dab3213c8e386a2d610aa79cab3816f3d9fb51521a458d9482065a243",
+  "payload": [
+    "hero.json"
+  ]
+}

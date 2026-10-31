@@ -2,13 +2,12 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowRightIcon, ExternalLinkIcon, XIcon } from 'lucide-react';
+import { ArrowRightIcon, XIcon } from 'lucide-react';
 import {
   Badge, Button, Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, LinkButton, ScrollArea, Skeleton,
 } from '@clossys/designer-ui';
 import { AGENT_LABELS, AGENTS, type Agent } from '../lib/agents';
 import { cellHierarchy, loadCell, type AgentCells, type CellDetail, type CellNode } from '../lib/cells-client';
-import { cellContentTarget } from '../lib/cell-content';
 import { designerLayer } from '../lib/designer-fill';
 import { studioIcon } from '../lib/studio-icons';
 import type { StudioReport } from '../lib/studio-report';
@@ -97,31 +96,6 @@ function ModuleCard({ id, title, description, children }: { id: string; title: s
   </Card>;
 }
 
-function Inspector({ agent, detail, titles }: { agent: Agent; detail: CellDetail; titles: ReadonlyMap<string, string> }) {
-  const fields = detail.fields ?? {};
-  const links = Array.isArray(fields.links) ? fields.links.filter((link): link is string => typeof link === 'string') : [];
-  const sources = Array.isArray(fields.sources) ? fields.sources.length : 0;
-  const rows: [string, ReactNode][] = [
-    ['Title', cellTitle(detail)],
-    ['Agent', AGENT_LABELS[agent]],
-    ['Version', `v${detail.version}`],
-    ['Status', <Badge key="status" variant={detail.status === 'active' ? 'secondary' : 'outline'}>{humanize(detail.status ?? 'unknown')}</Badge>],
-    ['Updated', typeof fields.updated === 'string' ? fields.updated : 'Not recorded'],
-    ['Sources', sources ? String(sources) : 'None'],
-  ];
-  const content = cellContentTarget(agent, detail.id);
-  return <div className="flex flex-col gap-4">
-    <dl className="grid grid-cols-[7rem_1fr] gap-x-3 gap-y-2 text-sm">
-      {rows.map(([label, value]) => <div key={label} className="contents"><dt className="text-muted-foreground">{label}</dt><dd className="min-w-0">{value}</dd></div>)}
-    </dl>
-    {links.length > 0 && <div className="flex flex-col gap-2">
-      <span className="text-xs font-medium text-muted-foreground">Builds on</span>
-      <div className="flex flex-wrap gap-1.5">{links.map(link => <Badge key={link} variant="outline">{presentText(link, titles).text}</Badge>)}</div>
-    </div>}
-    <div><LinkButton variant="outline" size="sm" href={content.href} target={content.target} rel={content.rel}><ExternalLinkIcon data-icon="inline-start" />Open content view</LinkButton></div>
-  </div>;
-}
-
 function Checks({ agent, detail, reports }: { agent: Agent; detail?: CellDetail; reports: readonly StudioReport[] }) {
   const relevant = reports.filter(report => !report.agent || report.agent === agent);
   const shown = detail ? presentText(detail.content) : undefined;
@@ -173,7 +147,6 @@ function AgentWorkspace({ agent, indexes, revision, reports }: { agent: Agent; i
 
   const explorerOpen = isOpen('explorer');
   const sideModules = [
-    isOpen('inspector') && current ? <ModuleCard key="inspector" id="inspector" title="Inspector" description="Facts about the selected cell."><Inspector agent={agent} detail={current} titles={titles} /></ModuleCard> : null,
     isOpen('checks') ? <ModuleCard key="checks" id="checks" title="Checks" description="What Producer verified."><Checks agent={agent} detail={current} reports={reports} /></ModuleCard> : null,
     isOpen('needs') ? <ModuleCard key="needs" id="needs" title="Needs" description="Open requests for the owner."><Needs detail={current} reports={reports.filter(report => !report.agent || report.agent === agent)} /></ModuleCard> : null,
   ].filter(Boolean);

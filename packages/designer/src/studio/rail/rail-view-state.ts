@@ -2,8 +2,8 @@
 import { useCallback, useEffect, useState } from "react";
 
 /** The rail's cards, in rail order. */
-export type RailCardId = "explorer" | "inspector" | "map" | "zoom" | "checks";
-export const RAIL_CARDS: readonly RailCardId[] = ["explorer", "inspector", "map", "zoom", "checks"];
+export type RailCardId = "explorer" | "map" | "zoom" | "checks";
+export const RAIL_CARDS: readonly RailCardId[] = ["explorer", "map", "zoom", "checks"];
 
 /** Per-user rail view: whether the whole rail is hidden, and which cards are collapsed (in rail order). */
 export interface RailViewState { readonly hidden: boolean; readonly collapsed: readonly RailCardId[] }

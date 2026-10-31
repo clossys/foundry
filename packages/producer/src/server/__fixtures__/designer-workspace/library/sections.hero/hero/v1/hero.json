@@ -1,0 +1,15 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "hero",
+  "type": "registry:block",
+  "registryDependencies": [
+    "sample-button"
+  ],
+  "files": [
+    {
+      "path": "registry/blocks/hero.tsx",
+      "type": "registry:block",
+      "content": "import * as React from \"react\";\nimport { cn } from \"@/lib/utils\";\nimport { SampleButton } from \"@/components/ui/sample-button\";\n\nexport function Hero({ title, body, action, className }: { title: string; body: string; action: string; className?: string }) {\n  return (\n    <section data-slot=\"hero\" className={cn(\"flex flex-col items-center gap-6 bg-background px-6 py-16 text-center text-foreground\", className)}>\n      <h1 className=\"max-w-2xl text-4xl font-semibold tracking-tight\">{title}</h1>\n      <p className=\"max-w-xl text-lg text-muted-foreground\">{body}</p>\n      <SampleButton>{action}</SampleButton>\n    </section>\n  );\n}\n"
+    }
+  ]
+}

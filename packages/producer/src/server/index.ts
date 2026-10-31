@@ -14,6 +14,11 @@ import { publication, servePreview } from "./publication.js";
 import { selectionProfile, selectionRuntime, studioSelection } from "./selection.js";
 import { consumerApps } from "./publications.js";
 import { DESIGNER_FONT_PREFIX, consumerBrand, consumerFontFile, consumerGlobals } from "./designer-globals.js";
+import { designerDefaultTheme, designerGallery, designerLeaf } from "./designer-library.js";
+import { specimenMount } from "../publish/site-server.js";
+import { existsSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 export type { AgentCells, CellSummary, CellsResponse, ChangeEvent } from "./contract.js";
 export { TOKEN_HEADER } from "./contract.js";
@@ -22,6 +27,8 @@ export interface ProducerServerOptions {
   /** Tests and embedding applications can own process signals themselves. */
   handleSignals?: boolean;
   compilation?: CompileResult[];
+  /** Workspace holding `library/`, `selection.json` and `releases/` for the Designer gallery; defaults to `<root>/clossys`. */
+  library?: string;
 }
 export interface ProducerServer {
   port: number; url: string; closed: Promise<void>; close: () => Promise<void>;
@@ -43,9 +50,18 @@ function cleanHeaders(headers: IncomingMessage["headers"]): IncomingMessage["hea
   return Object.fromEntries(Object.entries(headers).filter(([name]) => !blocked.has(name) && name !== TOKEN_HEADER.toLowerCase() && !name.startsWith("x-forwarded-") && name !== "forwarded"));
 }
 
+/** Where payload npm imports resolve: the library workspace's own install when it has React, else Producer's. */
+function specimenNpmRoot(workspace: string): string {
+  return existsSync(join(workspace, "node_modules", "react", "package.json")) ? workspace : resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+}
+
 /** The public listener always binds IPv4 loopback; Next remains a supervised child. */
 export async function startProducerServer(options: ProducerServerOptions): Promise<ProducerServer> {
   const entry = await studioEntry(options.studioEntry);
+  const library = resolve(options.root, options.library ?? "clossys");
+  const hasLibrary = existsSync(join(library, "library"));
+  const defaultTheme = hasLibrary ? designerDefaultTheme(library) : undefined;
+  const specimen = hasLibrary ? await specimenMount({ records: [join(library, "library")], workspace: specimenNpmRoot(library), ...(defaultTheme ? { defaultTheme } : {}) }) : undefined;
   const token = randomBytes(32).toString("base64url");
   const aborter = new AbortController();
   const streams = new Set<ServerResponse>();
@@ -106,6 +122,16 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
         if (!font) { json(response, 404, { error: "Font is not part of the consumer's Designer globals" }); return; }
         response.writeHead(200, { "Content-Type": font.type, "Cache-Control": "public, max-age=3600", "X-Content-Type-Options": "nosniff" });
         response.end(font.body); return;
+      }
+      // REPLACE (PROOF-2 route table): the Publisher content-map projection supersedes these two routes.
+      if (pathname === "/api/designer/library") {
+        json(response, 200, hasLibrary ? { state: "ready", ...designerGallery(library) } : { state: "missing", sections: [], count: 0 }); return;
+      }
+      const leafMatch = /^\/api\/designer\/library\/([a-z0-9][a-z0-9.-]*)$/.exec(pathname);
+      if (leafMatch) {
+        const leaf = hasLibrary ? designerLeaf(library, leafMatch[1]!) : undefined;
+        if (!leaf) { json(response, 404, { state: "missing", error: "No Designer leaf with that name" }); return; }
+        json(response, 200, { state: "ready", leaf }); return;
       }
       if (pathname === "/api/brand") {
         const brand = await consumerBrand(options.root);
@@ -168,6 +194,10 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
     // Run tokens are header-only; do not forward a token accidentally placed in a URL.
     const decodedQuery = [...new URL(raw, origin).searchParams].flat().join(" ");
     if (raw.includes(token) || decodedQuery.includes(token)) { json(response, 400, { error: "Run tokens must use the request header" }); return; }
+    if (specimen && (pathname === "/__specimen" || pathname.startsWith("/__specimen/"))) {
+      if (request.method !== "GET" && request.method !== "HEAD") { json(response, 405, { error: "Specimens are read-only" }); return; }
+      if (await specimen(request, response)) return;
+    }
     if (pathname === "/preview" || pathname.startsWith("/preview/")) { await servePreview(options.root, pathname, request.method ?? "", response); return; }
     if (!child) { json(response, 503, { error: "Studio child is not ready" }); return; }
     const headers = cleanHeaders(request.headers); headers.host = `127.0.0.1:${child.port}`;

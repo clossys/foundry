@@ -1,4 +1,7 @@
-import type { DesignerAgentData } from "./system-canvas/inspector/types.js";
+/** Host-supplied, view-only Designer data. The page never invokes a write command. */
+export interface DesignerAgentData {
+  readonly renderStaticThumbnail?: (leaf: string) => ReactNode;
+}
 import type { CanvasFilter } from "./canvas-model.js";
 import type { CSSProperties, ReactNode, Ref } from "react";
 import type { CheckCategory } from "./matrix-model.js";

@@ -27,7 +27,7 @@ export function DesignerRoutePage({ serverData, initialSession, copy, ...agent }
   if (checked.status === "refused") return <Banner variant="danger">{readRouteStudioLabel(copy, "route.refused")}</Banner>;
   return <StudioCopyProvider binding={copy}><CheckedDesignerRoute copy={copy} checked={checked.value} initialSession={initialSession!} agent={agent} /></StudioCopyProvider>;
 }
-function CheckedDesignerRoute({ checked, initialSession, agent, copy }: { copy: StudioCopyBinding; agent: import("./system-canvas/inspector/types.js").DesignerAgentData; checked: ReturnType<typeof checkedDesignerRouteData>; initialSession: NonNullable<DesignerRoutePageProps["initialSession"]> }) {
+function CheckedDesignerRoute({ checked, initialSession, agent, copy }: { copy: StudioCopyBinding; agent: import("./types.js").DesignerAgentData; checked: ReturnType<typeof checkedDesignerRouteData>; initialSession: NonNullable<DesignerRoutePageProps["initialSession"]> }) {
   const { data, catalog, contracts } = checked;
   const adapter = useMemo(() => {
     const content = new Map(data.contents.map(row => [runtimeHash(row.reference), row]));
@@ -37,7 +37,7 @@ function CheckedDesignerRoute({ checked, initialSession, agent, copy }: { copy: 
   const labels = useMemo(() => createRouteStudioLabels(copy), [copy]);
   return <WholeStudioProvider copy={copy} adapter={adapter} labels={labels} initialSession={initialSession} initialSlotId={data.initialSlotId}><DesignerRouteSurface checked={checked} agent={agent} /></WholeStudioProvider>;
 }
-function DesignerRouteSurface({ checked, agent }: { agent: import("./system-canvas/inspector/types.js").DesignerAgentData; checked: ReturnType<typeof checkedDesignerRouteData> }) {
+function DesignerRouteSurface({ checked, agent }: { agent: import("./types.js").DesignerAgentData; checked: ReturnType<typeof checkedDesignerRouteData> }) {
   const whole = useWholeStudio()!;
   const copy = useStudioCopy();
   if (whole.failed) return <Banner variant="danger">{readRouteStudioLabel(copy, "route.failed")}</Banner>;

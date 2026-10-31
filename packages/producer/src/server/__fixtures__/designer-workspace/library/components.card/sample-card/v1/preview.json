@@ -1,0 +1,22 @@
+{
+  "schema": "clossys.preview/1",
+  "fixtures": {
+    "title": {
+      "$copy": "card.title"
+    },
+    "body": {
+      "$copy": "card.body"
+    },
+    "action": {
+      "$copy": "card.action"
+    }
+  },
+  "copy": {
+    "card.title": "Weekly report ready",
+    "card.body": "Review the numbers from the last seven days before they go out to the team.",
+    "card.action": "Open report"
+  },
+  "container": "canvas",
+  "theme": "light",
+  "width": 480
+}

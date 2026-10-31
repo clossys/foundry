@@ -1,0 +1,22 @@
+{
+  "schema": "clossys.preview/1",
+  "fixtures": {
+    "title": {
+      "$copy": "hero.title"
+    },
+    "body": {
+      "$copy": "hero.body"
+    },
+    "action": {
+      "$copy": "hero.action"
+    }
+  },
+  "copy": {
+    "hero.title": "Plan the week in one place",
+    "hero.body": "Bring tasks, notes and dates together so the team starts Monday knowing what matters.",
+    "hero.action": "Start planning"
+  },
+  "container": "canvas",
+  "theme": "light",
+  "width": 960
+}

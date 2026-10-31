@@ -17,7 +17,6 @@ import { componentIntegration } from "../../catalog-core/__fixtures__/component-
 import type { CompositeStudioLabels } from "../types.js";
 import { studioTestCopy } from "../__fixtures__/copy.js";
 import { systemLayout } from "../system-canvas/layout.js";
-import { identityFor } from "../system-canvas/inspector/model.js";
 import type { StudioCopyBinding, StudioCopyRef } from "../copy-binding.js";
 import { loadBuildCatalog } from "../../catalog-core/index.js";
 
@@ -41,7 +40,6 @@ for (const board of fixtureLayout.boards.values()) addFixtureMessage(`studio.ia.
 for (const line of fixtureLayout.lines.values()) addFixtureMessage(`studio.ia.line.${line.id}`, line.label);
 for (const cell of fixtureLayout.cells.values()) {
   addFixtureMessage(`studio.ia.item.${cell.leaf}`, cell.leaf);
-  addFixtureMessage(`studio.inspector.path.${cell.leaf}`, identityFor(placements, cell.leaf).path.join(" › "));
 }
 }
 addFixtureMessage("designer.scorecard.resolved-count", "fixture-count");
@@ -80,13 +78,13 @@ describe("no page tabs", () => {
 });
 
 describe("right rail of cards", () => {
-  it("renders five collapsible cards in order: Explorer, Inspector, Canvas map, Zoom", async () => {
+  it("renders four collapsible cards in order: Explorer, Canvas map, Zoom, Checks", async () => {
     render(legacy());
     await studioReady();
     expect(screen.getByRole("complementary", { name: labels.rail.label })).toBeTruthy();
-    expect(railCards().map(card => card.dataset.studioRailCard)).toEqual(["explorer", "inspector", "map", "zoom", "checks"]);
+    expect(railCards().map(card => card.dataset.studioRailCard)).toEqual(["explorer", "map", "zoom", "checks"]);
     const user = userEvent.setup();
-    for (const id of ["explorer", "inspector", "map", "zoom"] as const) {
+    for (const id of ["explorer", "map", "zoom"] as const) {
       const trigger = cardTrigger(id);
       expect(trigger.getAttribute("aria-expanded"), id).toBe("true");
       await user.click(trigger);
@@ -106,7 +104,7 @@ describe("right rail of cards", () => {
     await studioReady();
     expect(railCards()).toEqual([]);
     await user.click(screen.getByRole("button", { name: labels.rail.show }));
-    expect(railCards().length).toBe(5);
+    expect(railCards().length).toBe(4);
     expect(cardTrigger("map").getAttribute("aria-expanded")).toBe("false");
     expect(cardTrigger("explorer").getAttribute("aria-expanded")).toBe("true");
   }, 30_000);
@@ -118,7 +116,7 @@ describe("right rail of cards", () => {
     expect(railCards()).toEqual([]);
     await userEvent.click(screen.getByRole("button", { name: labels.rail.show }));
     const sheet = await screen.findByRole("dialog");
-    expect([...sheet.querySelectorAll<HTMLElement>("[data-studio-rail-card]")].map(card => card.dataset.studioRailCard)).toEqual(["explorer", "inspector", "map", "zoom", "checks"]);
+    expect([...sheet.querySelectorAll<HTMLElement>("[data-studio-rail-card]")].map(card => card.dataset.studioRailCard)).toEqual(["explorer", "map", "zoom", "checks"]);
   }, 30_000);
 
   it("registers no Designer module into FrameDock or the AppFrame right panel", async () => {
@@ -132,32 +130,6 @@ describe("right rail of cards", () => {
       return /\.tsx?$/.test(name) && !name.includes(".test.") ? [path] : [];
     });
     for (const path of sources(studio)) expect(readFileSync(path, "utf8"), path).not.toMatch(/\bSlotModule\b/);
-  }, 30_000);
-});
-
-describe("inspector card", () => {
-  it("shows its empty hint, fills on an L3 select, and Escape clears it (and the URL node)", async () => {
-    const user = userEvent.setup();
-    render(legacy());
-    await studioReady();
-    const inspector = railCard("inspector")!;
-    expect(within(inspector).getByText(labels.rail.inspectorEmpty)).toBeTruthy();
-    const tree = screen.getByRole("treegrid", { name: labels.treeLabel });
-    await user.click(within(tree).getByText(/^themes\.surface-color/));
-    await waitFor(() => expect(within(railCard("inspector")!).queryByText(labels.rail.inspectorEmpty)).toBeNull());
-    expect(railCard("inspector")!.querySelector('[data-studio-panel="inspector"]')).not.toBeNull();
-    expect(window.location.search).toBe("?layer=themes&node=themes.background");
-    await user.keyboard("{Escape}");
-    await waitFor(() => expect(within(railCard("inspector")!).getByText(labels.rail.inspectorEmpty)).toBeTruthy());
-    expect(window.location.search).toBe("?layer=themes");
-  }, 30_000);
-
-  it("opens on a deep-linked ?node= leaf and normalises the URL", async () => {
-    window.history.replaceState(null, "", "/?node=assets.icon-search");
-    render(legacy());
-    await studioReady();
-    expect(window.location.search).toBe("?layer=assets&node=assets.icon-search");
-    await waitFor(() => expect(railCard("inspector")!.querySelector('[data-studio-panel="inspector"]')).not.toBeNull());
   }, 30_000);
 });
 

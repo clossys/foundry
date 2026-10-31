@@ -1,0 +1,8 @@
+{
+  "schema": "clossys.preview/1",
+  "fixtures": {},
+  "copy": {},
+  "container": "page",
+  "theme": "light",
+  "width": 480
+}

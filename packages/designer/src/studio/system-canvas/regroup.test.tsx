@@ -5,7 +5,6 @@ import { checkFrozenLeafSets } from "../../catalog-core/leaf-freeze.js";
 import { trailAt } from "./breadcrumb.js";
 import { centreOn } from "./stops.js";
 import { systemLayout } from "./layout.js";
-import { identityFor } from "./inspector/model.js";
 import { normaliseStudioUrl, resolverFromPlacements } from "./url.js";
 import type { StudioCopyBinding, StudioCopyRef } from "../copy-binding.js";
 
@@ -31,7 +30,7 @@ function fixtureCopy(placements: readonly Placement[]): StudioCopyBinding {
   } };
 }
 
-it("regroups a Sections leaf without changing its identity, fill, URL, frozen membership or any leaf id",()=>{
+it("regroups a Sections leaf without changing its URL, frozen membership or any leaf id",()=>{
  const build=loadBuildCatalog(), before=build.placements, after=structuredClone(before) as Placement[];
  const leaves:(PlacementNode & {leaves:string[]})[]=[];
  const visit=(nodes:readonly PlacementNode[])=>nodes.forEach(node=>{"leaves" in node?leaves.push(node as PlacementNode & {leaves:string[]}):visit(node.children);});
@@ -46,10 +45,6 @@ it("regroups a Sections leaf without changing its identity, fill, URL, frozen me
   expect(normaliseStudioUrl({search:"?node="+leaf,hash:""},resolverFromPlacements(placements)).location.node).toBe(leaf);
   for(const id of systemLayout(placements).cells.keys())expect(id).toMatch(/^(themes|assets|components|sections|frames)\.[a-z0-9-]+$/);
  }
- const info={source:"foundry",pin:"recorded",origin:"composed"};
- expect(identityFor(after,leaf,info).path).toContain(to.label);
- expect(identityFor(after,leaf,info).id).toBe(identityFor(before,leaf,info).id);
- expect(identityFor(after,leaf,info).fill).toEqual(identityFor(before,leaf,info).fill);
 });
 
 import { createRef } from "react";
