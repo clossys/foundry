@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import { runCli } from "../cli/main.js";
 import { parseArgs } from "../cli/args.js";
 import { recordSuitesSummary, runRecordSuites, slotContractSuite } from "./record-suites.js";
@@ -55,5 +55,34 @@ describe("record suites", () => {
     const outside = mkdtempSync(join(tmpdir(), "producer-record-suites-none-"));
     temps.push(outside);
     expect(await runCli(["check", "--suites", "--root", outside])).toMatchObject({ exitCode: 2 });
+  });
+});
+
+describe("archetype page copy", () => {
+  it("resolves Copy bullets as cell.key, so a bound meta line clears the finding and a missing one keeps it", async () => {
+    vi.resetModules();
+    const entry = (id: string) => ({ id, kind: "page", archetype: "legal" });
+    vi.doMock("../publish/site-source.js", () => ({
+      readPublisher: async () => ({
+        publicationId: "pub", format: "web", entries: [entry("bound"), entry("missing")],
+        cellOfEntry: { bound: "home", missing: "about" },
+        copy: { home: [{ cell: "home", key: "meta-title" }, { cell: "home", key: "meta-description" }], about: [{ cell: "about", key: "meta-title" }, { cell: "about", key: "meta-description" }] },
+        routes: [{ instanceId: "bound", path: "/" }, { instanceId: "missing", path: "/about" }],
+      }),
+      readWriter: async () => ({
+        sections: [], aliases: { "home.meta-title": "r1", "home.meta-description": "r2" },
+        records: [{ id: "r1", text: "Home" }, { id: "r2", text: "Home page." }],
+      }),
+    }));
+    vi.doMock("../server/cells.js", async importOriginal => ({ ...(await importOriginal<object>()), readCells: async () => [] }));
+    const { consumerPageRecords } = await import("./record-suites.js");
+    const { records } = await consumerPageRecords(consumer());
+    const archetypes = await import("../../../publisher/src/archetypes/index.js");
+    const { findings } = archetypes.checkPageRecords({ records, routes: ["/", "/about"], directorCells: [] }, { strict: false });
+    const meta = (page: string) => findings.filter((f: any) => f.page === page && f.check === "meta").map((f: any) => f.code);
+    expect(meta("bound")).toEqual([]);
+    expect(meta("missing")).toEqual(expect.arrayContaining(["meta-title-missing", "meta-description-missing"]));
+    vi.doUnmock("../publish/site-source.js");
+    vi.doUnmock("../server/cells.js");
   });
 });

@@ -62,7 +62,7 @@ export async function consumerPageRecords(root: string): Promise<{ records: unkn
     const cell = publisher.cellOfEntry[id];
     const copy: Record<string, string> = {};
     for (const bullet of cell ? publisher.copy[cell] ?? [] : []) {
-      const value = text.alias(bullet.cell);
+      const value = text.alias(`${bullet.cell}.${bullet.key}`);
       if (value !== undefined) copy[bullet.key] = value;
     }
     pageCopy[id] = copy;
