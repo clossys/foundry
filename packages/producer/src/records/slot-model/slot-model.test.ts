@@ -1,0 +1,51 @@
+import { describe, expect, it } from "vitest";
+import { deriveRefs, toSlotId, validateCandidate, validateIa, validatePin, validateSlotDoc } from "./index.js";
+
+const codes = (issues: readonly { code: string }[]) => issues.map(issue => issue.code);
+const ia = { schema: "clossys.ia/1", source: "@clossys/designer#leaf-freeze", extensions: [], nodes: [{ id: "components", label: "Components", children: [{ id: "actions", label: "Actions", slots: ["components.button"] }] }] };
+const slot = { schema: "clossys.slot/1", id: "components.button", agent: "designer", ia: { l1: "components", l2: "actions", order: 0 }, kind: "element", contract: {}, inputs: [], uses: [] };
+const pin = { candidate: "button-v1.json", sha256: "a".repeat(64), pinnedBy: "migration:SLOT-MODEL", at: "2026-10-31T00:00:00Z" };
+
+describe("slot model schema (F1)", () => {
+  it("accepts a well-formed ia.json, slot.json and pin.json", () => {
+    expect(validateIa(ia)).toEqual([]);
+    expect(validateSlotDoc(slot)).toEqual([]);
+    expect(validatePin(pin)).toEqual([]);
+  });
+
+  it("rejects a slot placed twice, a stored usedBy and a pin without a hash", () => {
+    const twice = { ...ia, nodes: [{ ...ia.nodes[0], children: [{ id: "actions", label: "Actions", slots: ["components.button", "components.button"] }] }] };
+    expect(codes(validateIa(twice))).toContain("ia-invalid");
+    expect(validateSlotDoc({ ...slot, usedBy: [] }).map(issue => issue.message).join()).toMatch(/usedBy is computed/);
+    expect(codes(validatePin({ ...pin, sha256: "nope" }))).toEqual(["pin-invalid"]);
+    expect(codes(validatePin({ ...pin, pinnedBy: "someone" }))).toEqual(["pin-invalid"]);
+  });
+
+  it("refuses pin state and legacy provenance on a candidate", () => {
+    const page = { schema: "clossys.page/1", path: "/", title: "Home", frame: null, sections: [], copy: {}, meta: { source: { kind: "original", ref: [] } } };
+    expect(validateCandidate("page", "page.home", "page-v1.json", JSON.stringify(page))).toEqual([]);
+    expect(codes(validateCandidate("page", "page.home", "page-v1.json", JSON.stringify({ ...page, status: "active" })))).toContain("candidate-status");
+    expect(codes(validateCandidate("page", "page.home", "page-v1.md", "{}"))).toEqual(["candidate-name"]);
+    expect(codes(validateCandidate("page", "page.home", "page.json", "{}"))).toEqual(["candidate-name"]);
+  });
+});
+
+describe("derived inputs and uses (F10)", () => {
+  const known = new Set(["identity.brand.essence", "strings.common", "components.button", "sections.hero", "page.home"]);
+
+  it("maps raw references to slot ids and drops unknown ones", () => {
+    expect(toSlotId("writer:strings.common@2", known)).toBe("strings.common");
+    expect(toSlotId("@acme/registry/components.button", known)).toBe("components.button");
+    expect(toSlotId("button", known)).toBe("components.button");
+    expect(toSlotId("nothing.here", known)).toBeUndefined();
+  });
+
+  it("gives a Writer slot its feeding briefs as inputs and a page inputs equal to uses", () => {
+    const ctx = { known, feeds: new Map([["strings.common", ["identity.brand.essence"]]]) };
+    expect(deriveRefs("writer", "strings", "strings.common", {}, ctx).inputs).toEqual(["identity.brand.essence"]);
+    const page = deriveRefs("publisher", "page", "page.home", { uses: ["sections.hero", "writer:strings.common@1", "frames.gone"] }, ctx);
+    expect(page.uses).toEqual(["sections.hero", "strings.common"]);
+    expect(page.inputs).toEqual(page.uses);
+    expect(page.dropped).toEqual(["frames.gone"]);
+  });
+});
