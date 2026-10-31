@@ -1677,6 +1677,7 @@ function detectMainModule(): boolean {
  * try/catch wrapper of their own to add.
  */
 import { mainAdminCopyDraft } from "./admin-copy-draft-cli.js";
+import { mainWriterSlotCheck } from "./slot-contracts/cli.js";
 
 if (detectMainModule()) {
   const rawArgs = process.argv.slice(2);
@@ -1696,6 +1697,8 @@ if (detectMainModule()) {
     process.exitCode = mainApproveCommand(rawArgs.slice(1));
   } else if (rawArgs[0] === "approval-state") {
     process.exitCode = mainApprovalStateCommand(rawArgs.slice(1));
+  } else if (rawArgs[0] === "slots") {
+    process.exitCode = mainWriterSlotCheck(rawArgs.slice(1));
   } else {
     run();
   }
