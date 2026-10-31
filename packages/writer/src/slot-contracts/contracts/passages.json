@@ -1,0 +1,4973 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/writer",
+  "layer": "passages",
+  "checkSuiteId": "writer.copy.v1",
+  "slots": [
+    {
+      "id": "passages.band",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "A decorative band with no copy of its own.",
+      "inputs": [
+        "director:identity.visual.imagery"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {},
+        "designerSection": "sections.band"
+      },
+      "references": [
+        {
+          "id": "passages.band.guide",
+          "kind": "guide",
+          "guide": "Bands carry no text; if a band needs words, use a section header or call to action instead.",
+          "exemplars": [
+            {
+              "note": "Use a band to separate two long sections; it holds no copy."
+            },
+            {
+              "note": "If the band seems to need a caption, the section above it is missing its own heading."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.section-header",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a section header inside a page.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": true,
+        "claims": true,
+        "fields": {
+          "eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "heading": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "actions[].label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          }
+        },
+        "designerSection": "sections.section-header"
+      },
+      "references": [
+        {
+          "id": "passages.section-header.guide",
+          "kind": "guide",
+          "guide": "The heading says what the section shows; the description says why it matters.",
+          "exemplars": [
+            {
+              "fields": {
+                "eyebrow": "How it works",
+                "heading": "Three steps to a finished rota",
+                "description": "Plan, publish and let the team handle swaps."
+              }
+            },
+            {
+              "fields": {
+                "heading": "What managers ask first",
+                "description": "Short answers to the questions that come up in every demo.",
+                "actions[].label": [
+                  "See all questions"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.pagination",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for pagination controls.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "page.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "page.previousLabel": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "page.nextLabel": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "page.pageText": {
+            "required": false,
+            "maxChars": 120
+          },
+          "total.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "page.noResultsLabel": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "page.pageSizeLabel": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "total.rangeText": {
+            "required": false,
+            "maxChars": 120
+          }
+        },
+        "designerSection": "sections.pagination"
+      },
+      "references": [
+        {
+          "id": "passages.pagination.guide",
+          "kind": "guide",
+          "guide": "Previous and next name the direction; counts use ICU plurals.",
+          "exemplars": [
+            {
+              "fields": {
+                "page.label": "Pagination",
+                "page.previousLabel": "Previous",
+                "page.nextLabel": "Next",
+                "page.pageText": "Page {page} of {total}",
+                "total.rangeText": "{start} to {end} of {total}"
+              }
+            },
+            {
+              "fields": {
+                "page.label": "Pages",
+                "page.previousLabel": "Newer",
+                "page.nextLabel": "Older",
+                "page.noResultsLabel": "No results",
+                "page.pageSizeLabel": "Rows per page"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.hero",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for the opening hero of a page.",
+      "inputs": [
+        "director:advantage.proposition.promise",
+        "director:focus.lifecycle.acquisition",
+        "director:focus.segment.core",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": true,
+        "claims": true,
+        "fields": {
+          "header.heading": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "actions.primary.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "actions.secondary.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "media.title": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "media.series[].name": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 1
+          }
+        },
+        "designerSection": "sections.hero"
+      },
+      "references": [
+        {
+          "id": "passages.hero.guide",
+          "kind": "guide",
+          "guide": "The heading states the promise for the core segment; the description says how; actions follow the call-to-action rules.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.eyebrow": "Shift planning for small teams",
+                "header.heading": "Rotas that keep up when plans change",
+                "header.description": "Plan the week, offer open shifts to the right people, and approve swaps from your phone.",
+                "actions.primary.label": "Start free trial",
+                "actions.secondary.label": "See how it works"
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "A diary the whole clinic can trust",
+                "header.description": "One diary for the desk and the practitioners, with the right note opened from each booking.",
+                "actions.primary.label": "Try it free"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.logo-hero",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "The brand name as shown in a logo hero.",
+      "inputs": [
+        "director:identity.naming.name"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "name": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 1
+          }
+        },
+        "designerSection": "sections.logo-hero"
+      },
+      "references": [
+        {
+          "id": "passages.logo-hero.guide",
+          "kind": "guide",
+          "guide": "Use the exact brand-name spelling from the lexicon; nothing else.",
+          "exemplars": [
+            {
+              "fields": {
+                "name": "Tidewell"
+              }
+            },
+            {
+              "fields": {
+                "name": "Tidewell Planner"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.page-header",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for the header of an app or content page.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "title": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "breadcrumbs.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "breadcrumbs.items[].label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "actions[].label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "meta[].label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "meta[].value": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          }
+        },
+        "designerSection": "sections.page-header"
+      },
+      "references": [
+        {
+          "id": "passages.page-header.guide",
+          "kind": "guide",
+          "guide": "The title names the page; the description says what it is for; actions are verbs.",
+          "exemplars": [
+            {
+              "fields": {
+                "title": "Rotas",
+                "description": "Plan and publish shifts for each location.",
+                "breadcrumbs.label": "Breadcrumb",
+                "breadcrumbs.items[].label": [
+                  "Workspace",
+                  "Rotas"
+                ],
+                "actions[].label": [
+                  "New rota"
+                ]
+              }
+            },
+            {
+              "fields": {
+                "title": "Billing",
+                "description": "Your plan, invoices and payment method.",
+                "meta[].label": [
+                  "Plan"
+                ],
+                "meta[].value": [
+                  "Team"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.logo-mark",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "A logo mark with no copy of its own.",
+      "inputs": [
+        "director:identity.naming.name",
+        "director:identity.visual.style"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {},
+        "designerSection": "sections.logo-mark"
+      },
+      "references": [
+        {
+          "id": "passages.logo-mark.guide",
+          "kind": "guide",
+          "guide": "The mark carries no text; its accessible name comes from the brand-names lexicon.",
+          "exemplars": [
+            {
+              "note": "The mark's accessible name is the brand name, spelled as in the lexicon."
+            },
+            {
+              "note": "Never add a tagline to the mark; place it in a separate pattern."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.content",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a general content section with body text.",
+      "inputs": [
+        "director:identity.verbal.narrative",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "header.actions[].label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "body[].text": {
+            "required": true,
+            "maxChars": 8000
+          },
+          "body[].items[]": {
+            "required": false,
+            "maxChars": 8000
+          },
+          "media.title": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "media.series[].name": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 1
+          },
+          "footnote": {
+            "required": false,
+            "maxChars": 480
+          }
+        },
+        "designerSection": "sections.content"
+      },
+      "references": [
+        {
+          "id": "passages.content.guide",
+          "kind": "guide",
+          "guide": "Lead with the point, support it with one example, and keep footnotes for sources.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Built for teams that change plans",
+                "body[].text": [
+                  "When a shift changes, everyone affected hears about it once, on the device they use."
+                ],
+                "footnote": "Delivery times depend on the reader's notification settings."
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "What happens to your data",
+                "body[].text": [
+                  "Rotas are stored in the region you choose when you create the workspace."
+                ],
+                "media.title": "Where data is stored"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.article",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a long-form article body.",
+      "inputs": [
+        "director:identity.verbal.narrative",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "body[].text": {
+            "required": true,
+            "maxChars": 8000
+          },
+          "body[].items[]": {
+            "required": false,
+            "maxChars": 8000
+          },
+          "toc.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "toc.items[].label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          }
+        },
+        "designerSection": "sections.article"
+      },
+      "references": [
+        {
+          "id": "passages.article.guide",
+          "kind": "guide",
+          "guide": "One idea per paragraph; headings say what the section answers.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "How to plan a rota around school holidays",
+                "header.description": "A step-by-step method for small teams with parents on staff.",
+                "body[].text": [
+                  "Start with the weeks you already know are short-staffed, then work outwards."
+                ],
+                "toc.label": "On this page"
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Why shift swaps need an approval step",
+                "body[].text": [
+                  "A swap that skips the manager can leave a shift without a qualified person."
+                ],
+                "toc.label": "Contents"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.legal-prose",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a legal document body.",
+      "inputs": [
+        "director:focus.reach.geography",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "heading": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "revision.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "revision.value": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 1
+          },
+          "body": {
+            "required": true,
+            "maxChars": 48000
+          }
+        },
+        "designerSection": "sections.legal-prose"
+      },
+      "references": [
+        {
+          "id": "passages.legal-prose.guide",
+          "kind": "guide",
+          "guide": "Plain words first; define terms once; the revision label and date are exact.",
+          "exemplars": [
+            {
+              "fields": {
+                "heading": "Terms of service",
+                "revision.label": "Last updated",
+                "revision.value": "1 November 2026",
+                "body": "These terms apply when you create a workspace. In short: you own your data, we keep it safe, and either of us can end the agreement with notice."
+              }
+            },
+            {
+              "fields": {
+                "heading": "Privacy notice",
+                "revision.label": "Effective from",
+                "revision.value": "1 November 2026",
+                "body": "This notice explains what we collect, why we collect it, and the choices you have."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.features",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a set of features, each with a heading and description.",
+      "inputs": [
+        "director:advantage.defensibility.differentiator",
+        "director:advantage.proposition.promise",
+        "director:focus.offer.included"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": true,
+        "claims": true,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "items[].heading": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "items[].description": {
+            "required": false,
+            "maxChars": 480
+          }
+        },
+        "designerSection": "sections.features"
+      },
+      "references": [
+        {
+          "id": "passages.features.guide",
+          "kind": "guide",
+          "guide": "Headings name the benefit; descriptions say how it works in one or two sentences.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Everything a weekly rota needs",
+                "items[].heading": [
+                  "Templates",
+                  "Swaps with approval",
+                  "Reminders"
+                ],
+                "items[].description": [
+                  "Start each week from the last one, or from a saved pattern."
+                ]
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Made for the front desk",
+                "items[].heading": [
+                  "One shared diary",
+                  "Notes on every booking"
+                ],
+                "items[].description": [
+                  "Each booking opens its own note, so nothing is filed against the wrong person."
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.call-to-action",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a call-to-action section that asks for one decision.",
+      "inputs": [
+        "director:advantage.proposition.promise",
+        "director:focus.lifecycle.acquisition",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": true,
+        "claims": true,
+        "fields": {
+          "header.title": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "actions.primary.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "actions.secondary.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          }
+        },
+        "designerSection": "sections.call-to-action"
+      },
+      "references": [
+        {
+          "id": "passages.call-to-action.guide",
+          "kind": "guide",
+          "guide": "The title restates the outcome; the primary action names the next step, the secondary a smaller one.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.title": "Plan next week in ten minutes",
+                "header.description": "Start with a template and invite your team when you are ready.",
+                "actions.primary.label": "Start free trial",
+                "actions.secondary.label": "See pricing"
+              }
+            },
+            {
+              "fields": {
+                "header.title": "Bring your rota out of the group chat",
+                "actions.primary.label": "Create a workspace",
+                "actions.secondary.label": "Book a demo"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.testimonials",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a set of customer testimonials.",
+      "inputs": [
+        "director:advantage.proposition.proof"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "quotes[].quote": {
+            "required": true,
+            "maxChars": 2400
+          },
+          "quotes[].attributorName": {
+            "required": true,
+            "maxChars": 120
+          },
+          "quotes[].attributorRole": {
+            "required": false,
+            "maxChars": 120
+          }
+        },
+        "designerSection": "sections.testimonials"
+      },
+      "references": [
+        {
+          "id": "passages.testimonials.guide",
+          "kind": "guide",
+          "guide": "Quotes are permissioned and specific; attribution names a real role; never edit a quote's meaning.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "What managers say",
+                "quotes[].quote": [
+                  "I approve swaps on the bus now instead of phoning round on my day off."
+                ],
+                "quotes[].attributorName": [
+                  "Sam Okafor"
+                ],
+                "quotes[].attributorRole": [
+                  "Kitchen manager"
+                ]
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "From the front desk",
+                "quotes[].quote": [
+                  "Claims go out the same afternoon because the notes are already attached."
+                ],
+                "quotes[].attributorName": [
+                  "Rita Alves"
+                ],
+                "quotes[].attributorRole": [
+                  "Clinic owner"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.logo-cloud",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a row of customer or partner logos.",
+      "inputs": [
+        "director:advantage.proposition.proof"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "logos[].name": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 1
+          }
+        },
+        "designerSection": "sections.logo-cloud"
+      },
+      "references": [
+        {
+          "id": "passages.logo-cloud.guide",
+          "kind": "guide",
+          "guide": "The heading states the relationship truthfully; names must match permissioned customers in the proof cell.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Used by independent cafes and clinics",
+                "logos[].name": [
+                  "Example Bakery Co",
+                  "Sample Retail Ltd"
+                ]
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Pilot partners",
+                "logos[].name": [
+                  "Demo Care Group"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.people",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a list of people with roles.",
+      "inputs": [
+        "director:advantage.proposition.proof",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "people[].name": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 1
+          },
+          "people[].role": {
+            "required": false,
+            "maxChars": 120
+          },
+          "people[].initials": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          }
+        },
+        "designerSection": "sections.people"
+      },
+      "references": [
+        {
+          "id": "passages.people.guide",
+          "kind": "guide",
+          "guide": "Use names as people write them; roles are job titles, not adjectives.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "The team",
+                "people[].name": [
+                  "Ana Ruiz",
+                  "Tom Becker"
+                ],
+                "people[].role": [
+                  "Founder",
+                  "Engineering lead"
+                ],
+                "people[].initials": [
+                  "AR",
+                  "TB"
+                ]
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Your account managers",
+                "people[].name": [
+                  "Priya Shah"
+                ],
+                "people[].role": [
+                  "Customer success"
+                ],
+                "people[].initials": [
+                  "PS"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.media",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a media figure with callouts.",
+      "inputs": [
+        "director:identity.verbal.voice",
+        "director:identity.visual.imagery"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "figure.caption": {
+            "required": false,
+            "maxChars": 480
+          },
+          "figure.media.title": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "figure.media.series[].name": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 1
+          },
+          "figure.chromeLabel": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 1
+          },
+          "callouts.label": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 1
+          },
+          "callouts.items[].body": {
+            "required": false,
+            "maxChars": 480
+          }
+        },
+        "designerSection": "sections.media"
+      },
+      "references": [
+        {
+          "id": "passages.media.guide",
+          "kind": "guide",
+          "guide": "The media title identifies the figure; callouts point at one detail each.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "See the week at a glance",
+                "figure.media.title": "Weekly rota on a laptop",
+                "figure.caption": "Colours show roles; open shifts are outlined.",
+                "callouts.items[].body": [
+                  "Drag a shift to move it."
+                ]
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Approvals on the go",
+                "figure.media.title": "Swap approval on a phone",
+                "callouts.label": "What to notice"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.gallery",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for an image gallery with captions.",
+      "inputs": [
+        "director:identity.verbal.voice",
+        "director:identity.visual.imagery"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "images.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "images.items[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "images.items[].caption": {
+            "required": false,
+            "maxChars": 480
+          },
+          "images.items[].media.title": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          }
+        },
+        "designerSection": "sections.gallery"
+      },
+      "references": [
+        {
+          "id": "passages.gallery.guide",
+          "kind": "guide",
+          "guide": "Each label identifies the image; captions add what the reader should notice.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Inside the app",
+                "images.label": "Product screenshots",
+                "images.items[].label": [
+                  "Rota view",
+                  "Swap request"
+                ],
+                "images.items[].caption": [
+                  "Open shifts sit at the top so they are filled first."
+                ]
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "From the pilot sites",
+                "images.label": "Photos from pilot sites",
+                "images.items[].label": [
+                  "Morning briefing"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.faq",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for frequently asked questions.",
+      "inputs": [
+        "director:advantage.proposition.proof",
+        "director:context.customer.buying",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "items[].question": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "items[].answer": {
+            "required": true,
+            "maxChars": 2400
+          }
+        },
+        "designerSection": "sections.faq"
+      },
+      "references": [
+        {
+          "id": "passages.faq.guide",
+          "kind": "guide",
+          "guide": "Questions use the reader's words; answers start with yes, no or the fact, then explain.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Questions before you switch",
+                "items[].question": [
+                  "Can I import my current rota?",
+                  "Do staff need to install anything?"
+                ],
+                "items[].answer": [
+                  "Yes. Upload a spreadsheet and match the columns; it takes a few minutes.",
+                  "No. Staff can use the web app on any phone, or install the app if they prefer."
+                ]
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Billing questions",
+                "items[].question": [
+                  "When am I charged?"
+                ],
+                "items[].answer": [
+                  "At the end of your trial, and then on the same date each month."
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.steps",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a sequence of steps.",
+      "inputs": [
+        "director:focus.offer.included",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "steps[].heading": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "steps[].description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "steps[].ordinal": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          }
+        },
+        "designerSection": "sections.steps"
+      },
+      "references": [
+        {
+          "id": "passages.steps.guide",
+          "kind": "guide",
+          "guide": "Step headings start with a verb; descriptions say what the reader has at the end of the step.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "From spreadsheet to rota in three steps",
+                "steps[].heading": [
+                  "Import your staff",
+                  "Pick a template",
+                  "Publish the week"
+                ],
+                "steps[].description": [
+                  "Upload a spreadsheet; names and roles are matched for you."
+                ]
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Getting started",
+                "steps[].heading": [
+                  "Create a workspace",
+                  "Invite your team"
+                ],
+                "steps[].ordinal": [
+                  "Step 1",
+                  "Step 2"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.timeline",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a dated timeline of events.",
+      "inputs": [
+        "director:execution.roadmap.milestone",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "events[].heading": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "events[].dateText": {
+            "required": true,
+            "maxChars": 120
+          },
+          "events[].description": {
+            "required": false,
+            "maxChars": 480
+          }
+        },
+        "designerSection": "sections.timeline"
+      },
+      "references": [
+        {
+          "id": "passages.timeline.guide",
+          "kind": "guide",
+          "guide": "Headings say what happened; dates are exact and use the date-format rule.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "How we got here",
+                "events[].heading": [
+                  "First pilot site",
+                  "Shift swaps launch"
+                ],
+                "events[].dateText": [
+                  "March 2025",
+                  "January 2026"
+                ],
+                "events[].description": [
+                  "One cafe group tested the planner for twelve weeks."
+                ]
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "What is next",
+                "events[].heading": [
+                  "Payroll export"
+                ],
+                "events[].dateText": [
+                  "Planned for 2027"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.cards",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a grid of cards, each a title with a short description.",
+      "inputs": [
+        "director:focus.offer.included",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "records[].title": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "records[].description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "records[].meta": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.loading.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.loading.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.empty.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.empty.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.error.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.error.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "records[].badge.label": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 1
+          }
+        },
+        "designerSection": "sections.cards"
+      },
+      "references": [
+        {
+          "id": "passages.cards.guide",
+          "kind": "guide",
+          "guide": "Titles are parallel in form; descriptions add one detail each; Loading, empty and error states each say what is happening and what the reader can do next.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Templates to start from",
+                "records[].title": [
+                  "Cafe week",
+                  "Retail weekend",
+                  "Care home nights"
+                ],
+                "records[].description": [
+                  "Early and late shifts with a split lunch cover."
+                ],
+                "states.loading.label": "Loading templates",
+                "states.empty.label": "No templates yet",
+                "states.error.label": "Templates did not load"
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Guides",
+                "records[].title": [
+                  "Plan a holiday rota",
+                  "Set up shift swaps"
+                ],
+                "records[].meta": [
+                  "5 min read"
+                ],
+                "states.loading.label": "Loading guides",
+                "states.empty.label": "No guides match",
+                "states.error.label": "Guides are unavailable"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.resource-list",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a list of resources with search and pagination.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "records[].title": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "records[].description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "records[].meta": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "toolbar.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "toolbar.search.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "toolbar.search.placeholder": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "pagination.pageText": {
+            "required": false,
+            "maxChars": 120
+          },
+          "pagination.totalText": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.loading.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.loading.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.empty.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.empty.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.error.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.error.description": {
+            "required": false,
+            "maxChars": 480
+          }
+        },
+        "designerSection": "sections.resource-list"
+      },
+      "references": [
+        {
+          "id": "passages.resource-list.guide",
+          "kind": "guide",
+          "guide": "Titles are what the reader recognises; meta gives one sortable fact; Loading, empty and error states each say what is happening and what the reader can do next.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Rotas",
+                "records[].title": [
+                  "Week of 2 November"
+                ],
+                "records[].meta": [
+                  "Published"
+                ],
+                "toolbar.search.label": "Search rotas",
+                "toolbar.search.placeholder": "Week or location",
+                "states.loading.label": "Loading rotas",
+                "states.empty.label": "No rotas yet",
+                "states.error.label": "Rotas did not load"
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Templates",
+                "records[].title": [
+                  "Cafe week"
+                ],
+                "states.loading.label": "Loading templates",
+                "states.empty.label": "No templates",
+                "states.empty.description": "Save a rota as a template to reuse it.",
+                "states.error.label": "Templates are unavailable"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.task-list",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a checklist of tasks with progress.",
+      "inputs": [
+        "director:focus.offer.included",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "tasks[].title": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "tasks[].description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "tasks[].meta": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "labels.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "labels.progress": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.done": {
+            "required": false,
+            "maxChars": 120
+          },
+          "states.loading.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.loading.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.empty.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.empty.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.error.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.error.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "labels.todo": {
+            "required": false,
+            "maxChars": 160
+          },
+          "labels.in-progress": {
+            "required": false,
+            "maxChars": 160
+          },
+          "labels.blocked": {
+            "required": false,
+            "maxChars": 160
+          }
+        },
+        "designerSection": "sections.task-list"
+      },
+      "references": [
+        {
+          "id": "passages.task-list.guide",
+          "kind": "guide",
+          "guide": "Task titles start with a verb; progress text uses ICU counts; Loading, empty and error states each say what is happening and what the reader can do next.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Set up your workspace",
+                "tasks[].title": [
+                  "Add a location",
+                  "Invite your team",
+                  "Publish your first rota"
+                ],
+                "labels.progress": "{done} of {total} done",
+                "labels.done": "Done",
+                "labels.todo": "To do",
+                "states.loading.label": "Loading tasks",
+                "states.empty.label": "All set",
+                "states.error.label": "Tasks did not load"
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Before payroll closes",
+                "tasks[].title": [
+                  "Approve overtime",
+                  "Lock last week"
+                ],
+                "labels.blocked": "Waiting on someone",
+                "states.loading.label": "Loading",
+                "states.empty.label": "Nothing to do",
+                "states.error.label": "Tasks are unavailable"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.comparison",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a side-by-side comparison of plans or options.",
+      "inputs": [
+        "director:advantage.model.pricing",
+        "director:context.competition.alternative",
+        "director:focus.offer.included"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "columns[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "columns[].description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "rows[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "rows[].description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "rows[].cells[].text": {
+            "required": false,
+            "maxChars": 120
+          },
+          "highlight.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "controls[].label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "labels.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "labels.feature": {
+            "required": false,
+            "maxChars": 120
+          },
+          "rows[].cells[].value": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 1
+          },
+          "rows[].cells[].delta": {
+            "required": false,
+            "maxChars": 160
+          }
+        },
+        "designerSection": "sections.comparison"
+      },
+      "references": [
+        {
+          "id": "passages.comparison.guide",
+          "kind": "guide",
+          "guide": "Row labels name the capability, not the feature brand; cells say yes, no or the limit.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Compare plans",
+                "columns[].label": [
+                  "Starter",
+                  "Team"
+                ],
+                "rows[].label": [
+                  "Shift swaps",
+                  "Locations"
+                ],
+                "rows[].cells[].text": [
+                  "Included",
+                  "Up to 1"
+                ],
+                "labels.feature": "Feature",
+                "highlight.label": "Most chosen"
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Spreadsheet or planner",
+                "columns[].label": [
+                  "Spreadsheet",
+                  "Planner"
+                ],
+                "rows[].label": [
+                  "Finds cover",
+                  "Sends reminders"
+                ],
+                "rows[].cells[].text": [
+                  "By hand",
+                  "Automatically"
+                ],
+                "labels.feature": "What you need"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.pricing",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for pricing plans.",
+      "inputs": [
+        "director:advantage.model.pricing",
+        "director:focus.lifecycle.acquisition",
+        "director:focus.offer.included"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "plans[].name": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 1
+          },
+          "plans[].price": {
+            "required": false,
+            "maxChars": 120
+          },
+          "plans[].description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "plans[].features[]": {
+            "required": false,
+            "maxChars": 120
+          },
+          "plans[].cta.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "plans[].badge": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "interval": {
+            "required": false,
+            "maxChars": 120
+          },
+          "plans[].priceByInterval[].amount": {
+            "required": true,
+            "maxChars": 160
+          },
+          "plans[].priceByInterval[].priceText": {
+            "required": true,
+            "maxChars": 160
+          }
+        },
+        "designerSection": "sections.pricing"
+      },
+      "references": [
+        {
+          "id": "passages.pricing.guide",
+          "kind": "guide",
+          "guide": "Plan names, prices and features must match the pricing cell exactly; the call to action names the plan.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Simple pricing per location",
+                "plans[].name": [
+                  "Starter",
+                  "Team"
+                ],
+                "plans[].description": [
+                  "For one location getting started."
+                ],
+                "plans[].features[]": [
+                  "Up to 10 staff",
+                  "Shift swaps"
+                ],
+                "plans[].cta.label": [
+                  "Start free",
+                  "Start trial"
+                ],
+                "interval": "Billed monthly"
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Plans",
+                "plans[].name": [
+                  "Clinic"
+                ],
+                "plans[].cta.label": [
+                  "Choose Clinic"
+                ],
+                "plans[].badge": [
+                  "Most chosen"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.stats",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a set of statistics.",
+      "inputs": [
+        "director:advantage.proposition.proof"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "stats[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "stats[].description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "stats[].value": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "stats[].delta": {
+            "required": false,
+            "maxChars": 120
+          },
+          "states.loading.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.loading.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.empty.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.empty.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.error.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.error.description": {
+            "required": false,
+            "maxChars": 480
+          }
+        },
+        "designerSection": "sections.stats"
+      },
+      "references": [
+        {
+          "id": "passages.stats.guide",
+          "kind": "guide",
+          "guide": "Every value needs a source in the proof cell; labels say the unit and period; Loading, empty and error states each say what is happening and what the reader can do next.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Results from pilot sites",
+                "stats[].value": [
+                  "3 hours",
+                  "12 min"
+                ],
+                "stats[].label": [
+                  "saved per manager each week",
+                  "median setup time"
+                ],
+                "stats[].description": [
+                  "Measured across pilot sites in 2026."
+                ],
+                "states.loading.label": "Loading results",
+                "states.empty.label": "No results yet",
+                "states.error.label": "Results did not load"
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "This week",
+                "stats[].value": [
+                  "{count}"
+                ],
+                "stats[].label": [
+                  "open shifts"
+                ],
+                "states.loading.label": "Loading",
+                "states.empty.label": "No data for this week",
+                "states.error.label": "Numbers are unavailable"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.status-list",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a list of items with availability or status.",
+      "inputs": [
+        "director:focus.offer.included",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "items[].heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "items[].items[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "legend": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.available": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.partial": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.planned": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.notOffered": {
+            "required": false,
+            "maxChars": 120
+          },
+          "states.loading.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.loading.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.empty.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.empty.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.error.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.error.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "items[].label": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 1
+          },
+          "items[].detail": {
+            "required": false,
+            "maxChars": 480
+          },
+          "items[].items[].detail": {
+            "required": false,
+            "maxChars": 480
+          }
+        },
+        "designerSection": "sections.status-list"
+      },
+      "references": [
+        {
+          "id": "passages.status-list.guide",
+          "kind": "guide",
+          "guide": "Status labels are a fixed set; details explain partial or planned items.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Feature availability",
+                "items[].items[].label": [
+                  "Shift swaps",
+                  "Payroll export"
+                ],
+                "labels.available": "Available",
+                "labels.partial": "Partly available",
+                "labels.planned": "Planned",
+                "labels.notOffered": "Not offered",
+                "states.loading.label": "Loading status",
+                "states.empty.label": "Nothing to show",
+                "states.error.label": "Status did not load"
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Integrations",
+                "items[].items[].label": [
+                  "Calendar sync"
+                ],
+                "items[].items[].detail": [
+                  "Read-only for now; two-way sync is planned."
+                ],
+                "legend": "Status key",
+                "states.loading.label": "Loading",
+                "states.empty.label": "No integrations",
+                "states.error.label": "Integrations are unavailable"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.usage",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for usage meters against plan limits.",
+      "inputs": [
+        "director:advantage.model.pricing",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "meters[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "meters[].usedText": {
+            "required": false,
+            "maxChars": 120
+          },
+          "meters[].limitText": {
+            "required": false,
+            "maxChars": 120
+          },
+          "meters[].periodText": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.loading.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.loading.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.empty.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.empty.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.error.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.error.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "meters[].projectedText": {
+            "required": false,
+            "maxChars": 160
+          },
+          "meters[].thresholds[].message": {
+            "required": false,
+            "maxChars": 160
+          }
+        },
+        "designerSection": "sections.usage"
+      },
+      "references": [
+        {
+          "id": "passages.usage.guide",
+          "kind": "guide",
+          "guide": "Used and limit text use ICU numbers; threshold messages say what happens at the limit; Loading, empty and error states each say what is happening and what the reader can do next.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Usage this month",
+                "meters[].label": [
+                  "Staff",
+                  "Locations"
+                ],
+                "meters[].usedText": [
+                  "{used} used"
+                ],
+                "meters[].limitText": [
+                  "of {limit}"
+                ],
+                "meters[].thresholds[].message": [
+                  "You are close to your staff limit. Upgrade to add more people."
+                ],
+                "states.loading.label": "Loading usage",
+                "states.empty.label": "No usage yet",
+                "states.error.label": "Usage did not load"
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Plan limits",
+                "meters[].label": [
+                  "Reminders sent"
+                ],
+                "meters[].periodText": [
+                  "Resets on the 1st"
+                ],
+                "states.loading.label": "Loading",
+                "states.empty.label": "Nothing used yet",
+                "states.error.label": "Usage is unavailable"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.account-summary",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a summary of the signed-in account.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "heading": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "identity.name": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 1
+          },
+          "identity.nameLabel": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "identity.email": {
+            "required": true,
+            "maxChars": 320
+          },
+          "identity.emailLabel": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "rows[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "rows[].value": {
+            "required": true,
+            "maxChars": 1000,
+            "maxLines": 1
+          },
+          "actions[].label": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 1
+          }
+        },
+        "designerSection": "sections.account-summary"
+      },
+      "references": [
+        {
+          "id": "passages.account-summary.guide",
+          "kind": "guide",
+          "guide": "Label each value plainly; actions say exactly what they change.",
+          "exemplars": [
+            {
+              "fields": {
+                "heading": "Your account",
+                "identity.nameLabel": "Name",
+                "identity.emailLabel": "Email",
+                "rows[].label": [
+                  "Plan",
+                  "Locations"
+                ],
+                "actions[].label": [
+                  "Change plan",
+                  "Sign out"
+                ]
+              }
+            },
+            {
+              "fields": {
+                "heading": "Account details",
+                "identity.nameLabel": "Full name",
+                "identity.emailLabel": "Work email",
+                "rows[].label": [
+                  "Workspace",
+                  "Role"
+                ],
+                "actions[].label": [
+                  "Edit details"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.data-table",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a read-only data table with search and pagination.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "columns[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "rows[].cells[].text": {
+            "required": false,
+            "maxChars": 120
+          },
+          "toolbar.search.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "toolbar.search.placeholder": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "toolbar.actions[].label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "pagination.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "pagination.pageText": {
+            "required": false,
+            "maxChars": 120
+          },
+          "pagination.totalText": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "labels.selection": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.sort": {
+            "required": false,
+            "maxChars": 120
+          },
+          "states.loading.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.loading.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.empty.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.empty.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.error.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.error.description": {
+            "required": false,
+            "maxChars": 480
+          }
+        },
+        "designerSection": "sections.data-table"
+      },
+      "references": [
+        {
+          "id": "passages.data-table.guide",
+          "kind": "guide",
+          "guide": "Search placeholders give an example query; pagination text uses ICU for numbers; Loading, empty and error states each say what is happening and what the reader can do next.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Staff",
+                "columns[].label": [
+                  "Name",
+                  "Role",
+                  "Location"
+                ],
+                "toolbar.search.label": "Search staff",
+                "toolbar.search.placeholder": "Name or role",
+                "pagination.pageText": "Page {page} of {total}",
+                "states.loading.label": "Loading staff",
+                "states.empty.label": "No staff match",
+                "states.empty.description": "Try a different name or clear the filter.",
+                "states.error.label": "Staff did not load"
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Invoices",
+                "columns[].label": [
+                  "Date",
+                  "Amount",
+                  "Status"
+                ],
+                "toolbar.actions[].label": [
+                  "Download all"
+                ],
+                "states.loading.label": "Loading invoices",
+                "states.empty.label": "No invoices yet",
+                "states.error.label": "Invoices are unavailable"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.data-grid",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for an editable data grid.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "cells[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "rows[].cells[].text": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "labels.selection": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.sort": {
+            "required": false,
+            "maxChars": 120
+          },
+          "states.loading.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.loading.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.empty.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.empty.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.error.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.error.description": {
+            "required": false,
+            "maxChars": 480
+          }
+        },
+        "designerSection": "sections.data-grid"
+      },
+      "references": [
+        {
+          "id": "passages.data-grid.guide",
+          "kind": "guide",
+          "guide": "Column labels name the value and unit; selection and sort labels describe the current state; Loading, empty and error states each say what is happening and what the reader can do next.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Shift grid",
+                "cells[].label": [
+                  "Name",
+                  "Mon",
+                  "Tue"
+                ],
+                "labels.selection": "{count, plural, one {# shift selected} other {# shifts selected}}",
+                "labels.sort": "Sorted by name",
+                "states.loading.label": "Loading shifts",
+                "states.empty.label": "No shifts this week",
+                "states.error.label": "Shifts did not load"
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Hours by person",
+                "cells[].label": [
+                  "Person",
+                  "Planned hours"
+                ],
+                "states.loading.label": "Loading hours",
+                "states.empty.label": "No hours recorded",
+                "states.error.label": "Hours are unavailable"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.record-detail",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a single record's detail view.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "fields[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "fields[].value": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "groups[].label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "status": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "actions[].label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.loading.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.loading.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.empty.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.empty.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.error.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.error.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "labels.title": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          }
+        },
+        "designerSection": "sections.record-detail"
+      },
+      "references": [
+        {
+          "id": "passages.record-detail.guide",
+          "kind": "guide",
+          "guide": "Field labels match the list view; status is one word or short phrase; Loading, empty and error states each say what is happening and what the reader can do next.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Shift details",
+                "fields[].label": [
+                  "Starts",
+                  "Ends",
+                  "Assigned to"
+                ],
+                "status": "Published",
+                "actions[].label": [
+                  "Edit shift",
+                  "Offer for swap"
+                ],
+                "states.loading.label": "Loading shift",
+                "states.empty.label": "Shift not found",
+                "states.error.label": "Shift did not load"
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Person",
+                "fields[].label": [
+                  "Email",
+                  "Role"
+                ],
+                "groups[].label": [
+                  "Contact"
+                ],
+                "states.loading.label": "Loading",
+                "states.empty.label": "No details yet",
+                "states.error.label": "Details are unavailable"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.activity-feed",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a feed of recent events.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "grouping[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "filters.links[].label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "labels.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.loading.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.loading.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.empty.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.empty.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.error.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.error.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "events[].actor.name": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 1
+          },
+          "events[].summary": {
+            "required": true,
+            "maxChars": 480
+          },
+          "events[].timeText": {
+            "required": true,
+            "maxChars": 160
+          },
+          "events[].changes[].field": {
+            "required": true,
+            "maxChars": 160
+          },
+          "events[].changes[].from": {
+            "required": false,
+            "maxChars": 160
+          },
+          "events[].changes[].to": {
+            "required": false,
+            "maxChars": 160
+          },
+          "events[].detail": {
+            "required": false,
+            "maxChars": 480
+          },
+          "labels.unread": {
+            "required": false,
+            "maxChars": 160
+          },
+          "labels.changedFrom": {
+            "required": false,
+            "maxChars": 160
+          },
+          "labels.changedTo": {
+            "required": false,
+            "maxChars": 160
+          },
+          "labels.cleared": {
+            "required": false,
+            "maxChars": 160
+          }
+        },
+        "designerSection": "sections.activity-feed"
+      },
+      "references": [
+        {
+          "id": "passages.activity-feed.guide",
+          "kind": "guide",
+          "guide": "Each event reads as actor, verb, object; Loading, empty and error states each say what is happening and what the reader can do next.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Recent activity",
+                "grouping[].label": [
+                  "Today",
+                  "Earlier this week"
+                ],
+                "states.loading.label": "Loading activity",
+                "states.empty.label": "No activity yet",
+                "states.empty.description": "Changes to rotas and shifts will appear here.",
+                "states.error.label": "Activity did not load",
+                "events[].summary": [
+                  "Moved the Friday close shift to Saturday"
+                ]
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "What changed",
+                "grouping[].label": [
+                  "This month"
+                ],
+                "states.loading.label": "Fetching changes",
+                "states.empty.label": "Nothing has changed",
+                "states.error.label": "We could not load changes",
+                "states.error.description": "Refresh the page to try again.",
+                "labels.changedFrom": "was",
+                "labels.changedTo": "now"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.audit-log",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for an audit log of who changed what.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "entries[].actor": {
+            "required": true,
+            "maxChars": 120
+          },
+          "entries[].action": {
+            "required": true,
+            "maxChars": 120
+          },
+          "entries[].target": {
+            "required": false,
+            "maxChars": 120
+          },
+          "filter.search.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "filter.search.placeholder": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "export.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "labels.time": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.actor": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.action": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.target": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.loading.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.loading.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.empty.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.empty.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "states.error.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "states.error.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "entries[].timeText": {
+            "required": true,
+            "maxChars": 160
+          }
+        },
+        "designerSection": "sections.audit-log"
+      },
+      "references": [
+        {
+          "id": "passages.audit-log.guide",
+          "kind": "guide",
+          "guide": "Columns name the fact, entries use past-tense verbs; Loading, empty and error states each say what is happening and what the reader can do next.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Audit log",
+                "labels.time": "Time",
+                "labels.actor": "Who",
+                "labels.action": "Action",
+                "labels.target": "Item",
+                "states.loading.label": "Loading entries",
+                "states.empty.label": "No entries for this period",
+                "states.error.label": "Entries did not load",
+                "export.label": "Export log"
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Change history",
+                "entries[].action": [
+                  "Published rota",
+                  "Removed location"
+                ],
+                "filter.search.label": "Search entries",
+                "filter.search.placeholder": "Name or action",
+                "states.loading.label": "Loading",
+                "states.empty.label": "Nothing recorded yet",
+                "states.error.label": "History is unavailable"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.form",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a form with fields, submission and error summary.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "fields[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "fields[].description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "fields[].placeholder": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "fields[].options[].label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "fields[].error": {
+            "required": false,
+            "maxChars": 120
+          },
+          "submit.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "error-summary.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "error-summary.items[].message": {
+            "required": false,
+            "maxChars": 120
+          },
+          "success.message": {
+            "required": false,
+            "maxChars": 480
+          },
+          "error.message": {
+            "required": false,
+            "maxChars": 480
+          }
+        },
+        "designerSection": "sections.form"
+      },
+      "references": [
+        {
+          "id": "passages.form.guide",
+          "kind": "guide",
+          "guide": "Labels name values, errors explain the fix, and the submit label names the result.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Create a location",
+                "fields[].label": [
+                  "Location name",
+                  "Time zone"
+                ],
+                "fields[].error": [
+                  "Enter a location name."
+                ],
+                "submit.label": "Create location",
+                "error-summary.heading": "Fix these to continue",
+                "success.message": "Location created. Add a rota next."
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Contact support",
+                "fields[].label": [
+                  "Your email",
+                  "What happened"
+                ],
+                "fields[].placeholder": [
+                  "name@example.com"
+                ],
+                "submit.label": "Send message",
+                "success.message": "Message sent. We reply within one working day."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.newsletter",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a newsletter sign-up.",
+      "inputs": [
+        "director:focus.lifecycle.acquisition",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "email.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "email.placeholder": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "consent": {
+            "required": true,
+            "maxChars": 120
+          },
+          "submit.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "submit.pendingLabel": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "submit.sentMessage": {
+            "required": true,
+            "maxChars": 120
+          },
+          "submit.failedMessage": {
+            "required": true,
+            "maxChars": 120
+          }
+        },
+        "designerSection": "sections.newsletter"
+      },
+      "references": [
+        {
+          "id": "passages.newsletter.guide",
+          "kind": "guide",
+          "guide": "Say what arrives and how often; the consent line is plain; every submit state is covered.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "One useful rota tip a month",
+                "email.label": "Email",
+                "email.placeholder": "name@example.com",
+                "consent": "Monthly email. Unsubscribe at any time.",
+                "submit.label": "Subscribe",
+                "submit.pendingLabel": "Subscribing",
+                "submit.sentMessage": "Check your inbox to confirm.",
+                "submit.failedMessage": "That did not work. Try again."
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Product updates",
+                "email.label": "Work email",
+                "consent": "We email when something changes. No other mail.",
+                "submit.label": "Get updates",
+                "submit.pendingLabel": "Sending",
+                "submit.sentMessage": "You are on the list.",
+                "submit.failedMessage": "Could not subscribe. Check the address."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.wizard",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a multi-step wizard.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "steps[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "progress.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "back.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "next.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "next.finish": {
+            "required": false,
+            "maxChars": 120
+          },
+          "review.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          }
+        },
+        "designerSection": "sections.wizard"
+      },
+      "references": [
+        {
+          "id": "passages.wizard.guide",
+          "kind": "guide",
+          "guide": "Step labels are nouns for the stage; next and finish name what happens.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Set up a location",
+                "steps[].label": [
+                  "Details",
+                  "Opening hours",
+                  "Review"
+                ],
+                "progress.label": "Setup progress",
+                "back.label": "Back",
+                "next.label": "Continue",
+                "next.finish": "Create location",
+                "review.label": "Check your answers"
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Import a rota",
+                "steps[].label": [
+                  "Upload",
+                  "Match columns",
+                  "Confirm"
+                ],
+                "next.label": "Next",
+                "next.finish": "Import rota"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.settings",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a settings page with grouped controls.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "groups[].legend": {
+            "required": true,
+            "maxChars": 120
+          },
+          "groups[].description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "groups[].controls[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "groups[].controls[].description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "groups[].controls[].placeholder": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "groups[].controls[].options[].label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "save-bar.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "save-bar.save": {
+            "required": false,
+            "maxChars": 120
+          },
+          "save-bar.discard": {
+            "required": false,
+            "maxChars": 120
+          },
+          "save-bar.unsaved": {
+            "required": false,
+            "maxChars": 120
+          }
+        },
+        "designerSection": "sections.settings"
+      },
+      "references": [
+        {
+          "id": "passages.settings.guide",
+          "kind": "guide",
+          "guide": "Legends group by task; control descriptions state the effect of the setting; the save bar names unsaved state.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Workspace settings",
+                "groups[].legend": [
+                  "Notifications",
+                  "Rota rules"
+                ],
+                "groups[].controls[].label": [
+                  "Email me when a swap is requested"
+                ],
+                "groups[].controls[].description": [
+                  "Managers get one email per request."
+                ],
+                "save-bar.save": "Save changes",
+                "save-bar.discard": "Discard",
+                "save-bar.unsaved": "You have unsaved changes"
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Profile",
+                "groups[].legend": [
+                  "Personal details"
+                ],
+                "groups[].controls[].label": [
+                  "Display name"
+                ],
+                "save-bar.save": "Save",
+                "save-bar.discard": "Cancel"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.column-mapper",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for mapping imported columns to fields.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "source-columns[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "target-fields[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "target-fields[].description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "labels.source": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.target": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.unmapped": {
+            "required": false,
+            "maxChars": 120
+          }
+        },
+        "designerSection": "sections.column-mapper"
+      },
+      "references": [
+        {
+          "id": "passages.column-mapper.guide",
+          "kind": "guide",
+          "guide": "Name source and target plainly; the unmapped label says what happens to that data.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Match your columns",
+                "header.description": "Tell us which column holds each value in your file.",
+                "labels.source": "Your column",
+                "labels.target": "Field",
+                "labels.unmapped": "Skip this column",
+                "target-fields[].label": [
+                  "Staff name",
+                  "Start time"
+                ]
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Map imported data",
+                "labels.source": "In your file",
+                "labels.target": "In the planner",
+                "labels.unmapped": "Not imported",
+                "source-columns[].label": [
+                  "Column A"
+                ],
+                "target-fields[].label": [
+                  "Email"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.access-matrix",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a roles-by-permissions matrix.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "roles[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "permissions[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "permissions[].permissions[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "permissions[].permissions[].description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "labels.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "roles[].lockedReason": {
+            "required": false,
+            "maxChars": 160
+          },
+          "labels.permissionHeader": {
+            "required": false,
+            "maxChars": 160
+          },
+          "labels.cell": {
+            "required": false,
+            "maxChars": 160
+          },
+          "labels.groupAll": {
+            "required": false,
+            "maxChars": 160
+          },
+          "labels.inherited": {
+            "required": false,
+            "maxChars": 160
+          },
+          "labels.locked": {
+            "required": false,
+            "maxChars": 160
+          },
+          "labels.changeSummary": {
+            "required": false,
+            "maxChars": 160
+          }
+        },
+        "designerSection": "sections.access-matrix"
+      },
+      "references": [
+        {
+          "id": "passages.access-matrix.guide",
+          "kind": "guide",
+          "guide": "Name roles by what they do, and permissions by the action they allow; locked reasons say who can change them.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Who can do what",
+                "roles[].label": [
+                  "Owner",
+                  "Manager",
+                  "Staff"
+                ],
+                "permissions[].label": [
+                  "Rotas"
+                ],
+                "permissions[].permissions[].label": [
+                  "Publish a rota",
+                  "Approve a swap"
+                ],
+                "roles[].lockedReason": "Only the owner can change owner permissions."
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Team permissions",
+                "roles[].label": [
+                  "Admin",
+                  "Editor",
+                  "Viewer"
+                ],
+                "permissions[].label": [
+                  "Billing"
+                ],
+                "permissions[].permissions[].label": [
+                  "Change plan",
+                  "Download invoices"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.chat",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a chat or assistant conversation surface.",
+      "inputs": [
+        "director:identity.brand.personality",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "parts[].content": {
+            "required": true,
+            "maxChars": 2400
+          },
+          "composer.placeholder": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "composer.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "labels.status": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "parts[].timestamp": {
+            "required": false,
+            "maxChars": 160
+          }
+        },
+        "designerSection": "sections.chat"
+      },
+      "references": [
+        {
+          "id": "passages.chat.guide",
+          "kind": "guide",
+          "guide": "The composer placeholder suggests a real first question; status labels are short and present tense.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Ask about your rota",
+                "composer.placeholder": "Who is free on Saturday morning?",
+                "composer.label": "Message",
+                "labels.status": "Thinking"
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Support chat",
+                "composer.placeholder": "Describe what you were trying to do",
+                "composer.label": "Your message",
+                "labels.status": "Typing"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.sign-in-form",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a sign-in form with providers, credentials and verification.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.heading": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "providers[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "credentials.identifierLabel": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "credentials.identifierPlaceholder": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "credentials.passwordLabel": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "credentials.passwordPlaceholder": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "verification.codeLabel": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "verification.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "verification.placeholder": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "actions.submit": {
+            "required": true,
+            "maxChars": 120
+          },
+          "actions.verify": {
+            "required": true,
+            "maxChars": 120
+          },
+          "actions.pending": {
+            "required": true,
+            "maxChars": 120
+          },
+          "actions.back": {
+            "required": true,
+            "maxChars": 120
+          },
+          "actions.resend": {
+            "required": true,
+            "maxChars": 120
+          },
+          "actions.divider": {
+            "required": true,
+            "maxChars": 160
+          },
+          "error.message": {
+            "required": false,
+            "maxChars": 480
+          },
+          "error.identifier": {
+            "required": false,
+            "maxChars": 240
+          },
+          "error.password": {
+            "required": false,
+            "maxChars": 240
+          },
+          "error.code": {
+            "required": false,
+            "maxChars": 240,
+            "maxLines": 1
+          }
+        },
+        "designerSection": "sections.sign-in-form"
+      },
+      "references": [
+        {
+          "id": "passages.sign-in-form.guide",
+          "kind": "guide",
+          "guide": "Labels are plain; errors say what to fix without revealing which part of a credential was wrong.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Sign in to your workspace",
+                "providers[].label": [
+                  "Continue with email"
+                ],
+                "credentials.identifierLabel": "Email",
+                "credentials.passwordLabel": "Password",
+                "verification.codeLabel": "Verification code",
+                "actions.submit": "Sign in",
+                "actions.verify": "Verify",
+                "actions.pending": "Signing in",
+                "actions.back": "Back",
+                "actions.resend": "Send a new code",
+                "actions.divider": "or",
+                "error.message": "That email and password do not match. Try again or reset your password."
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Welcome back",
+                "header.description": "Sign in with the email you were invited with.",
+                "credentials.identifierLabel": "Work email",
+                "credentials.passwordLabel": "Password",
+                "verification.codeLabel": "Code from your email",
+                "actions.submit": "Continue",
+                "actions.verify": "Confirm code",
+                "actions.pending": "Checking",
+                "actions.back": "Use a different email",
+                "actions.resend": "Resend code",
+                "actions.divider": "or continue with"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.link-index",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for an index of links with descriptions.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "links[].title": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "links[].description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "links[].label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "links[].badge": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          }
+        },
+        "designerSection": "sections.link-index"
+      },
+      "references": [
+        {
+          "id": "passages.link-index.guide",
+          "kind": "guide",
+          "guide": "Titles name the destination; descriptions say why to go there.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Help topics",
+                "links[].title": [
+                  "Getting started",
+                  "Billing"
+                ],
+                "links[].description": [
+                  "Set up a workspace and plan your first week."
+                ],
+                "links[].label": [
+                  "Read guide"
+                ]
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Developer resources",
+                "links[].title": [
+                  "API reference",
+                  "Webhooks"
+                ],
+                "links[].badge": [
+                  "New"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.table-of-contents",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a table of contents.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "headings[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "labels.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          }
+        },
+        "designerSection": "sections.table-of-contents"
+      },
+      "references": [
+        {
+          "id": "passages.table-of-contents.guide",
+          "kind": "guide",
+          "guide": "Entries match the headings they link to exactly.",
+          "exemplars": [
+            {
+              "fields": {
+                "label": "On this page",
+                "headings[].label": [
+                  "Before you start",
+                  "Import staff",
+                  "Publish a rota"
+                ]
+              }
+            },
+            {
+              "fields": {
+                "label": "Contents",
+                "headings[].label": [
+                  "Summary",
+                  "What we collect",
+                  "Your choices"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.explorer",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a tree-and-list explorer.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "tree.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "tree.nodes[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "tree.nodes[].description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "list.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "list.items[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "labels.details": {
+            "required": false,
+            "maxChars": 120
+          }
+        },
+        "designerSection": "sections.explorer"
+      },
+      "references": [
+        {
+          "id": "passages.explorer.guide",
+          "kind": "guide",
+          "guide": "Tree and list labels name what they contain so screen readers can tell them apart.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Locations",
+                "tree.label": "Regions and sites",
+                "tree.nodes[].label": [
+                  "North",
+                  "City centre"
+                ],
+                "list.label": "Rotas in this site",
+                "list.items[].label": [
+                  "Week of 2 Nov"
+                ],
+                "labels.details": "Details"
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Files",
+                "tree.label": "Folders",
+                "tree.nodes[].label": [
+                  "Templates"
+                ],
+                "list.label": "Files in folder",
+                "list.items[].label": [
+                  "Weekend cover"
+                ],
+                "labels.details": "File details"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.filter-builder",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for building filter rules.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "fields[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "fields[].options[].label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "operators[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "groups[].label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "labels.addRule": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.addGroup": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.remove": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.matchAll": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.matchAny": {
+            "required": false,
+            "maxChars": 120
+          },
+          "labels.value": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          }
+        },
+        "designerSection": "sections.filter-builder"
+      },
+      "references": [
+        {
+          "id": "passages.filter-builder.guide",
+          "kind": "guide",
+          "guide": "Operators read as plain words; add and remove labels say what they act on.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Filter shifts",
+                "fields[].label": [
+                  "Location",
+                  "Role"
+                ],
+                "operators[].label": [
+                  "is",
+                  "is not"
+                ],
+                "labels.addRule": "Add a condition",
+                "labels.addGroup": "Add a group",
+                "labels.remove": "Remove condition",
+                "labels.matchAll": "Match all",
+                "labels.matchAny": "Match any"
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Show staff where",
+                "fields[].label": [
+                  "Hours this week"
+                ],
+                "operators[].label": [
+                  "is more than",
+                  "is less than"
+                ],
+                "labels.addRule": "Add rule",
+                "labels.value": "Value"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.empty-state",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a whole-surface empty state.",
+      "inputs": [
+        "director:focus.offer.included",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "actions[].label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "illustration.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          }
+        },
+        "designerSection": "sections.empty-state"
+      },
+      "references": [
+        {
+          "id": "passages.empty-state.guide",
+          "kind": "guide",
+          "guide": "Explain why it is empty and offer the one action that fills it.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "No rotas yet",
+                "header.description": "Create your first rota from a template, or import one from a spreadsheet.",
+                "actions[].label": [
+                  "Create a rota",
+                  "Import a file"
+                ]
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "Nobody has joined",
+                "header.description": "Invite your team so they can see their shifts.",
+                "actions[].label": [
+                  "Invite people"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.error-state",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a whole-surface error state.",
+      "inputs": [
+        "director:identity.brand.personality",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "code": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "retry.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "report.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          }
+        },
+        "designerSection": "sections.error-state"
+      },
+      "references": [
+        {
+          "id": "passages.error-state.guide",
+          "kind": "guide",
+          "guide": "Say what failed and what to try; the report action says what gets sent.",
+          "exemplars": [
+            {
+              "fields": {
+                "header.heading": "Something went wrong on our side",
+                "header.description": "Your changes are saved. Try again in a minute.",
+                "retry.label": "Try again",
+                "report.label": "Report this problem"
+              }
+            },
+            {
+              "fields": {
+                "header.heading": "This rota could not be opened",
+                "header.description": "It may have been deleted by another manager.",
+                "retry.label": "Reload",
+                "code": "Error code: ROTA-404"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.boundary-message",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy shown at a hard boundary such as not found, no access or maintenance.",
+      "inputs": [
+        "director:identity.brand.personality",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "status": {
+            "required": true,
+            "maxChars": 80,
+            "maxLines": 1
+          },
+          "title": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "description": {
+            "required": true,
+            "maxChars": 480
+          },
+          "actions[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "notes": {
+            "required": false,
+            "maxChars": 480
+          }
+        },
+        "designerSection": "sections.boundary-message"
+      },
+      "references": [
+        {
+          "id": "passages.boundary-message.guide",
+          "kind": "guide",
+          "guide": "Say what happened, why, and where to go; never blame the reader.",
+          "exemplars": [
+            {
+              "fields": {
+                "status": "Not found",
+                "title": "This page has moved or no longer exists",
+                "description": "Check the address, or go back to your rotas.",
+                "actions[].label": [
+                  "Go to rotas"
+                ]
+              }
+            },
+            {
+              "fields": {
+                "status": "No access",
+                "title": "You need permission to see this",
+                "description": "Ask a manager in your workspace to give you access.",
+                "actions[].label": [
+                  "Request access",
+                  "Go back"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.notices",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for in-product notices and banners.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "notices[].title": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "notices[].body": {
+            "required": false,
+            "maxChars": 2400
+          },
+          "notices[].action.label": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "notices[].dismissLabel": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 1
+          }
+        },
+        "designerSection": "sections.notices"
+      },
+      "references": [
+        {
+          "id": "passages.notices.guide",
+          "kind": "guide",
+          "guide": "The title says what changed; the body says what to do; dismiss labels say what dismissing means.",
+          "exemplars": [
+            {
+              "fields": {
+                "notices[].title": [
+                  "Your trial ends in 3 days"
+                ],
+                "notices[].body": [
+                  "Add a payment method to keep your rotas and history."
+                ],
+                "notices[].action.label": [
+                  "Add payment method"
+                ],
+                "notices[].dismissLabel": [
+                  "Remind me later"
+                ]
+              }
+            },
+            {
+              "fields": {
+                "notices[].title": [
+                  "Scheduled maintenance on Sunday"
+                ],
+                "notices[].body": [
+                  "The app will be read-only from 02:00 to 03:00 UTC."
+                ],
+                "notices[].dismissLabel": [
+                  "Dismiss"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.consent",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "Copy for a consent request such as cookies or data sharing.",
+      "inputs": [
+        "director:advantage.proposition.proof",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "header.eyebrow": {
+            "required": false,
+            "maxChars": 120,
+            "maxLines": 2
+          },
+          "header.heading": {
+            "required": false,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "header.description": {
+            "required": false,
+            "maxChars": 480
+          },
+          "copy.title": {
+            "required": true,
+            "maxChars": 160,
+            "maxLines": 2
+          },
+          "copy.body": {
+            "required": true,
+            "maxChars": 2400
+          },
+          "actions[].label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          },
+          "policy.label": {
+            "required": true,
+            "maxChars": 120,
+            "maxLines": 1
+          }
+        },
+        "designerSection": "sections.consent"
+      },
+      "references": [
+        {
+          "id": "passages.consent.guide",
+          "kind": "guide",
+          "guide": "Say what is collected, why and how to change the choice; the decline action is as clear as accept.",
+          "exemplars": [
+            {
+              "fields": {
+                "copy.title": "Cookies on this site",
+                "copy.body": "We use essential cookies to keep you signed in. With your permission we also measure which pages are used, so we can improve them. You can change this at any time in settings.",
+                "actions[].label": [
+                  "Accept measurement",
+                  "Essential only"
+                ],
+                "policy.label": "Cookie notice"
+              }
+            },
+            {
+              "fields": {
+                "copy.title": "Share usage data",
+                "copy.body": "Share anonymous usage data to help us fix problems faster. We never share the content of your rotas.",
+                "actions[].label": [
+                  "Share data",
+                  "Do not share"
+                ],
+                "policy.label": "Privacy notice"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    }
+  ]
+}

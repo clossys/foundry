@@ -1,0 +1,1277 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/writer",
+  "layer": "patterns",
+  "checkSuiteId": "writer.copy.v1",
+  "slots": [
+    {
+      "id": "patterns.headline",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "A single headline that states the main point of a page or section.",
+      "inputs": [
+        "director:advantage.proposition.promise",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": true,
+        "claims": true,
+        "fields": {
+          "headline": {
+            "required": true,
+            "maxChars": 100,
+            "maxWords": 18,
+            "minWords": 2,
+            "maxLines": 2
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.headline.guide",
+          "kind": "guide",
+          "guide": "Lead with the outcome for the reader, in their words; one idea, no stacked clauses.",
+          "exemplars": [
+            {
+              "fields": {
+                "headline": "Rotas that fill themselves when plans change"
+              }
+            },
+            {
+              "fields": {
+                "headline": "Close every booking before the patient leaves"
+              }
+            },
+            {
+              "fields": {
+                "headline": "Know who is on shift without asking the group chat"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.headline-subhead",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "A headline with a supporting line that explains how or for whom.",
+      "inputs": [
+        "director:advantage.proposition.promise",
+        "director:focus.segment.core",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": true,
+        "claims": true,
+        "fields": {
+          "headline": {
+            "required": true,
+            "maxChars": 100,
+            "maxWords": 18,
+            "minWords": 2,
+            "maxLines": 2
+          },
+          "subhead": {
+            "required": true,
+            "maxChars": 180,
+            "maxWords": 32,
+            "maxLines": 3
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.headline-subhead.guide",
+          "kind": "guide",
+          "guide": "The headline makes the promise; the subhead says how it works or who it is for, without repeating words.",
+          "exemplars": [
+            {
+              "fields": {
+                "headline": "Shift swaps in two taps",
+                "subhead": "Staff offer a shift, a qualified colleague accepts it, and the manager approves it from their phone."
+              }
+            },
+            {
+              "fields": {
+                "headline": "One diary for the whole clinic",
+                "subhead": "Front desk and practitioners see the same bookings, with notes attached to each one."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.eyebrow-headline",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "A short category label above a headline.",
+      "inputs": [
+        "director:advantage.proposition.promise",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": true,
+        "claims": true,
+        "fields": {
+          "eyebrow": {
+            "required": true,
+            "maxChars": 48,
+            "maxWords": 6,
+            "maxLines": 1
+          },
+          "headline": {
+            "required": true,
+            "maxChars": 100,
+            "maxWords": 18,
+            "maxLines": 2
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.eyebrow-headline.guide",
+          "kind": "guide",
+          "guide": "The eyebrow names the topic or audience in a few words; the headline carries the point.",
+          "exemplars": [
+            {
+              "fields": {
+                "eyebrow": "For small bakeries",
+                "headline": "Plan the early shift the night before"
+              }
+            },
+            {
+              "fields": {
+                "eyebrow": "Reporting",
+                "headline": "See every overtime hour before payroll closes"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.section-title",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "A section title with an optional one-line description.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": true,
+        "claims": true,
+        "fields": {
+          "title": {
+            "required": true,
+            "maxChars": 100,
+            "maxWords": 18,
+            "maxLines": 2
+          },
+          "description": {
+            "required": false,
+            "maxChars": 240,
+            "maxWords": 45
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.section-title.guide",
+          "kind": "guide",
+          "guide": "Name what the section contains; the description adds why it matters.",
+          "exemplars": [
+            {
+              "fields": {
+                "title": "What changes on day one",
+                "description": "Three things your team will notice in the first week."
+              }
+            },
+            {
+              "fields": {
+                "title": "Questions from managers",
+                "description": "Answers to what people ask before they switch."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.primary-action",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "The main call to action, written as a verb and an object.",
+      "inputs": [
+        "director:focus.lifecycle.acquisition",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "verb": {
+            "required": true,
+            "maxChars": 24,
+            "maxWords": 3,
+            "maxLines": 1
+          },
+          "object": {
+            "required": true,
+            "maxChars": 48,
+            "maxWords": 6,
+            "maxLines": 1
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.primary-action.guide",
+          "kind": "guide",
+          "guide": "Use a specific verb and the thing the reader gets; avoid Submit and Click here.",
+          "exemplars": [
+            {
+              "fields": {
+                "verb": "Start",
+                "object": "free trial"
+              }
+            },
+            {
+              "fields": {
+                "verb": "Book",
+                "object": "a 20-minute demo"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.secondary-action",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "A lower-commitment alternative to the primary action.",
+      "inputs": [
+        "director:focus.lifecycle.acquisition",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "verb": {
+            "required": true,
+            "maxChars": 24,
+            "maxWords": 3,
+            "maxLines": 1
+          },
+          "object": {
+            "required": true,
+            "maxChars": 48,
+            "maxWords": 6,
+            "maxLines": 1
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.secondary-action.guide",
+          "kind": "guide",
+          "guide": "Offer a smaller step, such as seeing more, rather than a competing goal.",
+          "exemplars": [
+            {
+              "fields": {
+                "verb": "See",
+                "object": "pricing"
+              }
+            },
+            {
+              "fields": {
+                "verb": "Watch",
+                "object": "the 2-minute tour"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.inline-link",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "Link text inside a sentence, with an optional accessible name.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "label": {
+            "required": true,
+            "maxChars": 80,
+            "maxWords": 12,
+            "maxLines": 1
+          },
+          "accessible-name": {
+            "required": false,
+            "maxChars": 160,
+            "maxWords": 24
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.inline-link.guide",
+          "kind": "guide",
+          "guide": "The label names the destination; add an accessible name when the label alone is ambiguous.",
+          "exemplars": [
+            {
+              "fields": {
+                "label": "read the setup guide",
+                "accessible-name": "Read the setup guide for shift templates"
+              }
+            },
+            {
+              "fields": {
+                "label": "compare plans"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.error-message",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "An error message in three parts: what happened, why, and what to do next.",
+      "inputs": [
+        "director:identity.brand.personality",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "what": {
+            "required": true,
+            "maxChars": 160,
+            "maxWords": 28,
+            "minWords": 2
+          },
+          "why": {
+            "required": true,
+            "maxChars": 240,
+            "maxWords": 45
+          },
+          "next": {
+            "required": true,
+            "maxChars": 160,
+            "maxWords": 28
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.error-message.guide",
+          "kind": "guide",
+          "guide": "Be specific and calm; the next step must be something the reader can do now.",
+          "exemplars": [
+            {
+              "fields": {
+                "what": "We could not save the rota.",
+                "why": "The connection dropped while the changes were uploading.",
+                "next": "Check your connection and press Save again."
+              }
+            },
+            {
+              "fields": {
+                "what": "This shift overlaps another one.",
+                "why": "The same person is already booked from 09:00 to 13:00.",
+                "next": "Pick a different person or change the times."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.warning-message",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "A warning that states what will happen and its consequence.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "what": {
+            "required": true,
+            "maxChars": 160,
+            "maxWords": 28
+          },
+          "consequence": {
+            "required": true,
+            "maxChars": 200,
+            "maxWords": 35
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.warning-message.guide",
+          "kind": "guide",
+          "guide": "Put the consequence in concrete terms, such as how many items are affected.",
+          "exemplars": [
+            {
+              "fields": {
+                "what": "You are about to remove this location.",
+                "consequence": "Its 6 rotas and their history will be deleted for everyone."
+              }
+            },
+            {
+              "fields": {
+                "what": "This change applies to next week too.",
+                "consequence": "People who already accepted those shifts will be notified."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.confirmation",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "A confirmation that says what happened, with an optional undo.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "what-happened": {
+            "required": true,
+            "maxChars": 160,
+            "maxWords": 28
+          },
+          "undo": {
+            "required": false,
+            "maxChars": 80,
+            "maxWords": 12,
+            "maxLines": 1
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.confirmation.guide",
+          "kind": "guide",
+          "guide": "Past tense, one line, and undo when the action can be reversed.",
+          "exemplars": [
+            {
+              "fields": {
+                "what-happened": "Shift moved to Thursday.",
+                "undo": "Undo"
+              }
+            },
+            {
+              "fields": {
+                "what-happened": "The weekly rota was sent to 18 people."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.empty-state",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "An empty state with a title, an explanation and an optional action.",
+      "inputs": [
+        "director:focus.offer.included",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "title": {
+            "required": true,
+            "maxChars": 100,
+            "maxWords": 18
+          },
+          "body": {
+            "required": true,
+            "maxChars": 400,
+            "maxWords": 72
+          },
+          "action": {
+            "required": false,
+            "maxChars": 80,
+            "maxWords": 12
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.empty-state.guide",
+          "kind": "guide",
+          "guide": "Tell the reader why the space is empty and the one action that fills it.",
+          "exemplars": [
+            {
+              "fields": {
+                "title": "No shifts this week",
+                "body": "Copy last week's rota or start from a template to plan the next seven days.",
+                "action": "Copy last week"
+              }
+            },
+            {
+              "fields": {
+                "title": "No swap requests",
+                "body": "When someone offers a shift, it appears here for you to approve."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.hint",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "A short hint that helps the reader complete a task.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 240,
+            "maxWords": 45
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.hint.guide",
+          "kind": "guide",
+          "guide": "Answer the question the reader is about to have; keep it to one sentence.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "Use a shared email so the whole team can reset access."
+              }
+            },
+            {
+              "fields": {
+                "text": "Times are shown in the location's time zone, not yours."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.tooltip",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "A tooltip that explains a control or term on hover or focus.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 240,
+            "maxWords": 45,
+            "maxLines": 2
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.tooltip.guide",
+          "kind": "guide",
+          "guide": "Explain what the control does, not what it is called; never hide essential information here.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "Lock the rota so only managers can change it."
+              }
+            },
+            {
+              "fields": {
+                "text": "Hours worked this week, including approved overtime."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.form-field",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "A complete form field: label, help, error and placeholder.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "label": {
+            "required": true,
+            "maxChars": 80,
+            "maxWords": 12,
+            "maxLines": 1
+          },
+          "help": {
+            "required": false,
+            "maxChars": 200,
+            "maxWords": 35
+          },
+          "error": {
+            "required": false,
+            "maxChars": 240,
+            "maxWords": 45
+          },
+          "placeholder": {
+            "required": false,
+            "maxChars": 80,
+            "maxWords": 12,
+            "maxLines": 1
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.form-field.guide",
+          "kind": "guide",
+          "guide": "The label names the value, help prevents mistakes, the error explains the fix, the placeholder shows the format only.",
+          "exemplars": [
+            {
+              "fields": {
+                "label": "Team name",
+                "help": "Shown to everyone you invite.",
+                "error": "Enter a team name of 2 to 40 characters.",
+                "placeholder": "Front of house"
+              }
+            },
+            {
+              "fields": {
+                "label": "Phone number",
+                "help": "Used only for shift reminders.",
+                "error": "Enter the number with its country code, such as +44 7700 900123."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.consent-line",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "A consent statement with a link to the governing policy.",
+      "inputs": [
+        "director:advantage.proposition.proof",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "statement": {
+            "required": true,
+            "maxChars": 400,
+            "maxWords": 72
+          },
+          "policy-link": {
+            "required": true,
+            "maxChars": 80,
+            "maxWords": 12
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.consent-line.guide",
+          "kind": "guide",
+          "guide": "Say plainly what the reader agrees to; the link names the policy.",
+          "exemplars": [
+            {
+              "fields": {
+                "statement": "We will email you about your account and product changes. You can unsubscribe at any time.",
+                "policy-link": "Privacy notice"
+              }
+            },
+            {
+              "fields": {
+                "statement": "By creating a team you agree to the terms that apply to your workspace.",
+                "policy-link": "Terms of service"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.feature-bullet",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "A feature with a short title and a body that explains the benefit.",
+      "inputs": [
+        "director:advantage.defensibility.differentiator",
+        "director:focus.offer.included"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": true,
+        "claims": true,
+        "fields": {
+          "title": {
+            "required": true,
+            "maxChars": 100,
+            "maxWords": 18
+          },
+          "body": {
+            "required": true,
+            "maxChars": 400,
+            "maxWords": 72
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.feature-bullet.guide",
+          "kind": "guide",
+          "guide": "Title the benefit, then show how it works with one concrete detail.",
+          "exemplars": [
+            {
+              "fields": {
+                "title": "Cover found for you",
+                "body": "When someone calls in sick, qualified colleagues get the open shift first, in order of hours worked."
+              }
+            },
+            {
+              "fields": {
+                "title": "Notes linked to bookings",
+                "body": "Each appointment opens its own note, so nothing is filed against the wrong patient."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.stat",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "A statistic with its value and a label.",
+      "inputs": [
+        "director:advantage.proposition.proof"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "value": {
+            "required": true,
+            "maxChars": 48,
+            "maxWords": 10,
+            "maxLines": 1
+          },
+          "label": {
+            "required": true,
+            "maxChars": 80,
+            "maxWords": 12,
+            "maxLines": 2
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.stat.guide",
+          "kind": "guide",
+          "guide": "Every value needs a source in the proof cell; label the unit and the period.",
+          "exemplars": [
+            {
+              "fields": {
+                "value": "3 hours",
+                "label": "saved per manager each week"
+              }
+            },
+            {
+              "fields": {
+                "value": "12 min",
+                "label": "median setup time in 2026 trials"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.pricing-item",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "A price point: plan name, price, interval and an optional note.",
+      "inputs": [
+        "director:advantage.model.pricing",
+        "director:focus.offer.included"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "name": {
+            "required": true,
+            "maxChars": 80,
+            "maxWords": 12
+          },
+          "price": {
+            "required": true,
+            "maxChars": 48,
+            "maxWords": 10,
+            "maxLines": 1
+          },
+          "interval": {
+            "required": true,
+            "maxChars": 48,
+            "maxWords": 6,
+            "maxLines": 1
+          },
+          "note": {
+            "required": false,
+            "maxChars": 180,
+            "maxWords": 32
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.pricing-item.guide",
+          "kind": "guide",
+          "guide": "Match the pricing cell exactly; the note says what is included or who it suits.",
+          "exemplars": [
+            {
+              "fields": {
+                "name": "Team",
+                "price": "39",
+                "interval": "per location per month",
+                "note": "Unlimited staff, shift swaps and reminders."
+              }
+            },
+            {
+              "fields": {
+                "name": "Starter",
+                "price": "0",
+                "interval": "for one location",
+                "note": "Up to 10 staff."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.table-header",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "A table column header with an optional description.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "label": {
+            "required": true,
+            "maxChars": 80,
+            "maxWords": 12,
+            "maxLines": 1
+          },
+          "description": {
+            "required": false,
+            "maxChars": 240,
+            "maxWords": 45
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.table-header.guide",
+          "kind": "guide",
+          "guide": "Name the value in the column and its unit; the description defines the term.",
+          "exemplars": [
+            {
+              "fields": {
+                "label": "Hours (this week)",
+                "description": "Scheduled hours, including approved overtime."
+              }
+            },
+            {
+              "fields": {
+                "label": "Status"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.table-caption",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "A caption that explains what a table shows.",
+      "inputs": [
+        "director:advantage.proposition.proof",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "caption": {
+            "required": true,
+            "maxChars": 400,
+            "maxWords": 72
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.table-caption.guide",
+          "kind": "guide",
+          "guide": "Say what the rows and columns are and where the data comes from.",
+          "exemplars": [
+            {
+              "fields": {
+                "caption": "Shifts per location for the week of 2 November, with open shifts listed last."
+              }
+            },
+            {
+              "fields": {
+                "caption": "Plan features compared; a dash means not included."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.quote",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "A quotation with its attribution.",
+      "inputs": [
+        "director:advantage.proposition.proof"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "quote": {
+            "required": true,
+            "maxChars": 1200,
+            "maxWords": 220
+          },
+          "attribution": {
+            "required": true,
+            "maxChars": 160,
+            "maxWords": 28
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.quote.guide",
+          "kind": "guide",
+          "guide": "Quote real words from a cited source only; keep the attribution specific.",
+          "exemplars": [
+            {
+              "fields": {
+                "quote": "We stopped arguing about the rota in the group chat within a week.",
+                "attribution": "Operations lead, 30-person cafe group"
+              }
+            },
+            {
+              "fields": {
+                "quote": "The desk finally sees what the practitioners see.",
+                "attribution": "Owner, four-room clinic"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.testimonial",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "A customer testimonial with the person, role and company.",
+      "inputs": [
+        "director:advantage.proposition.proof"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "quote": {
+            "required": true,
+            "maxChars": 1200,
+            "maxWords": 220
+          },
+          "person": {
+            "required": true,
+            "maxChars": 80,
+            "maxWords": 12
+          },
+          "role": {
+            "required": true,
+            "maxChars": 100,
+            "maxWords": 18
+          },
+          "company": {
+            "required": true,
+            "maxChars": 100,
+            "maxWords": 18
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.testimonial.guide",
+          "kind": "guide",
+          "guide": "Use permissioned quotes only; one specific outcome beats general praise.",
+          "exemplars": [
+            {
+              "fields": {
+                "quote": "Sunday nights used to be rota night. Now I check it on Monday morning and it is done.",
+                "person": "Sam Okafor",
+                "role": "Kitchen manager",
+                "company": "Example Bakery Co"
+              }
+            },
+            {
+              "fields": {
+                "quote": "Swap requests dropped from twenty messages a week to two approvals.",
+                "person": "Rita Alves",
+                "role": "Store lead",
+                "company": "Sample Retail Ltd"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.figure-caption",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "A caption and optional credit for a figure.",
+      "inputs": [
+        "director:identity.visual.imagery"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "caption": {
+            "required": true,
+            "maxChars": 400,
+            "maxWords": 72
+          },
+          "credit": {
+            "required": false,
+            "maxChars": 160,
+            "maxWords": 28
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.figure-caption.guide",
+          "kind": "guide",
+          "guide": "Say what the figure shows; credit the source or photographer.",
+          "exemplars": [
+            {
+              "fields": {
+                "caption": "The rota view on a phone, with open shifts at the top.",
+                "credit": "Product screenshot, October 2026"
+              }
+            },
+            {
+              "fields": {
+                "caption": "Shift swaps per month before and after rollout at one pilot site."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "patterns.messaging-kit",
+      "package": "writer",
+      "layer": "patterns",
+      "purpose": "The governed messaging kit: one-liner, elevator pitch, paragraph pitch and boilerplates.",
+      "inputs": [
+        "director:advantage.proposition.promise",
+        "director:aspiration.purpose.mission",
+        "director:identity.brand.essence",
+        "director:identity.verbal.narrative"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": true,
+        "claims": true,
+        "fields": {
+          "pitch-one-liner": {
+            "required": true,
+            "maxChars": 160,
+            "maxWords": 28
+          },
+          "pitch-elevator": {
+            "required": true,
+            "maxChars": 600,
+            "maxWords": 110
+          },
+          "pitch-paragraph": {
+            "required": true,
+            "maxChars": 1200,
+            "maxWords": 220
+          },
+          "boilerplate-short": {
+            "required": true,
+            "maxChars": 600,
+            "maxWords": 110
+          },
+          "boilerplate-medium": {
+            "required": true,
+            "maxChars": 1200,
+            "maxWords": 220
+          },
+          "boilerplate-long": {
+            "required": true,
+            "maxChars": 2400,
+            "maxWords": 440
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "patterns.messaging-kit.guide",
+          "kind": "guide",
+          "guide": "Write the one-liner first, then expand without adding new claims; every longer form must contain the shorter one's idea.",
+          "exemplars": [
+            {
+              "fields": {
+                "pitch-one-liner": "Tidewell plans shifts for small teams and fixes the rota when plans change.",
+                "pitch-elevator": "Small teams still run their rota in spreadsheets and group chats. Tidewell plans the week, offers open shifts to the right people, and keeps everyone on the same page.",
+                "pitch-paragraph": "When someone calls in sick, a small team loses an hour finding cover. Tidewell offers the open shift to qualified colleagues first, lets them accept it in two taps, and shows the manager one change to approve.",
+                "boilerplate-short": "Tidewell is shift planning software for teams of 5 to 50.",
+                "boilerplate-medium": "Tidewell is shift planning software for teams of 5 to 50. It plans rotas, handles swaps and sends reminders, so managers spend less time on the schedule.",
+                "boilerplate-long": "Tidewell is shift planning software for teams of 5 to 50 in hospitality, retail and care. It plans rotas, handles shift swaps and sends reminders, so managers spend less time on the schedule and more time with their teams."
+              }
+            },
+            {
+              "fields": {
+                "pitch-one-liner": "A diary and notes tool that closes every booking on the day.",
+                "pitch-elevator": "Small clinics book in one place and write notes in another, so notes go missing. This tool links each note to its booking, so the day ends with nothing left open.",
+                "pitch-paragraph": "Front desks re-key bookings and practitioners write notes later. This tool gives both one shared diary and opens the right note from each booking, so claims leave with their notes attached.",
+                "boilerplate-short": "A diary and notes tool for small clinics.",
+                "boilerplate-medium": "A diary and notes tool for small clinics that links every treatment note to its booking.",
+                "boilerplate-long": "A diary and notes tool for small clinics with 2 to 10 practitioners. It links every treatment note to its booking and exports claims with their notes attached."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    }
+  ]
+}

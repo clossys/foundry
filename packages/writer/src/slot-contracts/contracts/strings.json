@@ -1,0 +1,974 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/writer",
+  "layer": "strings",
+  "checkSuiteId": "writer.copy.v1",
+  "slots": [
+    {
+      "id": "strings.actions",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "Short action labels on buttons and menu items.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 40,
+            "maxWords": 6,
+            "maxLines": 1
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.actions.guide",
+          "kind": "guide",
+          "guide": "Start with a verb, name the object when it is not obvious, and never end with a full stop.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "Save draft"
+              }
+            },
+            {
+              "fields": {
+                "text": "Invite teammates"
+              }
+            },
+            {
+              "fields": {
+                "text": "Export as CSV"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "strings.navigation",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "Labels for navigation links, tabs and menu headings.",
+      "inputs": [
+        "director:identity.naming.architecture",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 40,
+            "maxWords": 6,
+            "maxLines": 1
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.navigation.guide",
+          "kind": "guide",
+          "guide": "Use the noun the reader would look for; keep sibling labels parallel in form.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "Projects"
+              }
+            },
+            {
+              "fields": {
+                "text": "Billing and invoices"
+              }
+            },
+            {
+              "fields": {
+                "text": "Help centre"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "strings.field-labels",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "Labels for form fields and data fields.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 60,
+            "maxWords": 10,
+            "maxLines": 1
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.field-labels.guide",
+          "kind": "guide",
+          "guide": "Name the value, not the action; add the unit or format only when it prevents an error.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "Work email"
+              }
+            },
+            {
+              "fields": {
+                "text": "Start date (DD/MM/YYYY)"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "strings.common",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "Shared short strings reused across screens, such as Cancel or Close.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 320,
+            "maxWords": 60
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.common.guide",
+          "kind": "guide",
+          "guide": "Keep one wording per meaning across the whole product; reuse before you add.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "Cancel"
+              }
+            },
+            {
+              "fields": {
+                "text": "Close"
+              }
+            },
+            {
+              "fields": {
+                "text": "Learn more"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "strings.statuses",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "Status labels and short status lines for records and processes.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 80,
+            "maxWords": 12,
+            "maxLines": 1
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.statuses.guide",
+          "kind": "guide",
+          "guide": "Say the state in one or two words; use the same tense for every status in a set.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "Draft"
+              }
+            },
+            {
+              "fields": {
+                "text": "Waiting for approval"
+              }
+            },
+            {
+              "fields": {
+                "text": "Sent 2 minutes ago"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "strings.counters",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "Counts and quantities with their nouns, usually as ICU plural messages.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 60,
+            "maxWords": 10,
+            "maxLines": 1
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.counters.guide",
+          "kind": "guide",
+          "guide": "Write every plural category the locale needs; never build counts by string concatenation.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "{count, plural, one {# file} other {# files}}"
+              }
+            },
+            {
+              "fields": {
+                "text": "{done} of {total} steps done"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "strings.errors",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "Short error strings: what went wrong and what to do next.",
+      "inputs": [
+        "director:identity.brand.personality",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 240,
+            "maxWords": 40
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.errors.guide",
+          "kind": "guide",
+          "guide": "Say what happened in plain words and give one next step; never blame the reader.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "That email is already in use. Sign in instead, or use a different address."
+              }
+            },
+            {
+              "fields": {
+                "text": "The file is larger than 10 MB. Choose a smaller file or compress it first."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "strings.warnings",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "Short warnings shown before something irreversible or risky happens.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 240,
+            "maxWords": 40
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.warnings.guide",
+          "kind": "guide",
+          "guide": "State the consequence first, then the way out.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "Deleting this project also deletes its 14 tasks. This cannot be undone."
+              }
+            },
+            {
+              "fields": {
+                "text": "You have unsaved changes. Leave anyway?"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "strings.confirmations",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "Short confirmations after an action succeeds.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 160,
+            "maxWords": 30
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.confirmations.guide",
+          "kind": "guide",
+          "guide": "Say what happened, in the past tense, and offer undo when it exists.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "Invitation sent to the new teammate."
+              }
+            },
+            {
+              "fields": {
+                "text": "Changes saved. Undo"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "strings.empty",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "Copy for empty lists, inboxes and search results.",
+      "inputs": [
+        "director:focus.offer.included",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 320,
+            "maxWords": 60
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.empty.guide",
+          "kind": "guide",
+          "guide": "Explain why it is empty and what the reader can do to fill it.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "No projects yet. Create one to start planning with your team."
+              }
+            },
+            {
+              "fields": {
+                "text": "Nothing matches that search. Try fewer words or check the spelling."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "strings.loading",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "Short loading and progress strings.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 80,
+            "maxWords": 12,
+            "maxLines": 1
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.loading.guide",
+          "kind": "guide",
+          "guide": "Say what is loading; avoid jokes in strings people see often.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "Loading projects"
+              }
+            },
+            {
+              "fields": {
+                "text": "Preparing your export"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "strings.names",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "Proper names of products, plans and features as they appear in copy.",
+      "inputs": [
+        "director:identity.naming.architecture",
+        "director:identity.naming.name"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": true,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 100,
+            "maxWords": 16,
+            "maxLines": 1
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.names.guide",
+          "kind": "guide",
+          "guide": "Copy names exactly from the brand-names lexicon; never invent a variant in a string.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "Tidewell Planner"
+              }
+            },
+            {
+              "fields": {
+                "text": "Team plan"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "strings.taglines",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "The short line that sums up the offer under a name or logo.",
+      "inputs": [
+        "director:advantage.proposition.promise",
+        "director:identity.brand.essence"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": true,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 120,
+            "maxWords": 20,
+            "maxLines": 2
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.taglines.guide",
+          "kind": "guide",
+          "guide": "One idea, concrete enough to picture; no superlatives unless the proof cell approves them.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "Shift plans that fix themselves when someone calls in sick."
+              }
+            },
+            {
+              "fields": {
+                "text": "Every booking, finished on the day."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "strings.legal-lines",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "Short legal lines such as footers, consent notes and disclaimers.",
+      "inputs": [
+        "director:advantage.proposition.proof"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 1000,
+            "maxWords": 180
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.legal-lines.guide",
+          "kind": "guide",
+          "guide": "Use approved compliance wording; keep the line short and link to the full text.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "Prices exclude local taxes, which are added at checkout."
+              }
+            },
+            {
+              "fields": {
+                "text": "By continuing you agree to the terms of service and the privacy notice."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "strings.alt-text",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "Text alternatives for images, tied to the asset they describe.",
+      "inputs": [
+        "director:identity.visual.imagery"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 300,
+            "maxWords": 50
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.alt-text.guide",
+          "kind": "guide",
+          "guide": "Describe what the image shows and why it is there; skip 'image of'.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "A weekly rota on a tablet, with two shifts highlighted in amber."
+              }
+            },
+            {
+              "fields": {
+                "text": "Two bakers loading trays into an oven at dawn."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "strings.captions",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "Captions for images, charts and videos.",
+      "inputs": [
+        "director:advantage.proposition.proof",
+        "director:identity.visual.imagery"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 1000,
+            "maxWords": 180
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.captions.guide",
+          "kind": "guide",
+          "guide": "Add what the image cannot say on its own, such as the date, place or source.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "The morning rota at a 12-person bakery, photographed in March 2026."
+              }
+            },
+            {
+              "fields": {
+                "text": "Average setup time per team over the last two quarters, from trial data."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "strings.transcripts",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "Full transcripts for audio and video assets.",
+      "inputs": [
+        "director:identity.verbal.narrative"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 30000,
+            "maxWords": 6000
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.transcripts.guide",
+          "kind": "guide",
+          "guide": "Transcribe speech verbatim and mark speakers and meaningful sounds in brackets.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "[Narrator] Monday starts with three missing shifts. [Sound of a phone buzzing] By nine, the rota has filled itself."
+              }
+            },
+            {
+              "fields": {
+                "text": "[Host] Today we will set up a team in four steps. First, open Settings."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "strings.page-titles",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "Document titles shown in the browser tab and search results.",
+      "inputs": [
+        "director:aspiration.purpose.mission",
+        "director:identity.naming.name"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": true,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 65,
+            "maxWords": 12,
+            "maxLines": 1
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.page-titles.guide",
+          "kind": "guide",
+          "guide": "Put the page topic first and the brand last; keep it under the limit so it is not cut off.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "Pricing for small teams | Tidewell"
+              }
+            },
+            {
+              "fields": {
+                "text": "Shift swaps without the group chat | Tidewell"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "strings.descriptions",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "Meta descriptions for search results and link previews.",
+      "inputs": [
+        "director:advantage.proposition.promise",
+        "director:focus.segment.core"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": true,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 160,
+            "maxWords": 30,
+            "minChars": 50
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.descriptions.guide",
+          "kind": "guide",
+          "guide": "Say what the page offers and who it is for in one or two sentences.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "Plan shifts, swap cover and see who is in today. Built for teams of 5 to 50 who still run the rota in a spreadsheet."
+              }
+            },
+            {
+              "fields": {
+                "text": "Compare plans and see what each one includes, with prices per person per month."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "strings.share-text",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "Prefilled text for social and messaging shares.",
+      "inputs": [
+        "director:advantage.proposition.promise",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": true,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 280,
+            "maxWords": 50
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.share-text.guide",
+          "kind": "guide",
+          "guide": "Write it as the sharer would say it, in the first person, with no hashtags unless asked.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "Our rota used to live in a group chat. Now it fixes itself when someone calls in sick."
+              }
+            },
+            {
+              "fields": {
+                "text": "Found a planner that handles shift swaps without the back-and-forth."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "strings.email-subjects",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "Email subject lines.",
+      "inputs": [
+        "director:focus.lifecycle.retention",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": true,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 78,
+            "maxWords": 14,
+            "maxLines": 1
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.email-subjects.guide",
+          "kind": "guide",
+          "guide": "Lead with the reason to open; keep the key words in the first 40 characters.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "Your rota for next week is ready"
+              }
+            },
+            {
+              "fields": {
+                "text": "Three shifts still need cover"
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "strings.email-preheaders",
+      "package": "writer",
+      "layer": "strings",
+      "purpose": "Preview text shown after the subject in inboxes.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": true,
+        "claims": true,
+        "fields": {
+          "text": {
+            "required": true,
+            "maxChars": 120,
+            "maxWords": 24,
+            "maxLines": 1
+          }
+        }
+      },
+      "references": [
+        {
+          "id": "strings.email-preheaders.guide",
+          "kind": "guide",
+          "guide": "Add to the subject line rather than repeat it.",
+          "exemplars": [
+            {
+              "fields": {
+                "text": "Two people swapped shifts since Friday. Review the changes in one place."
+              }
+            },
+            {
+              "fields": {
+                "text": "Approve or reassign before Thursday so the team can plan."
+              }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    }
+  ]
+}
