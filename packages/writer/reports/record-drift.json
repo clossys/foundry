@@ -19,7 +19,7 @@
     },
     {
       "path": "admin-studio.r1.en.json",
-      "sha256": "455bd4e19a1f4f887e94f4d586f8320a5b2fa6f06dae873a79dea5042417f4fe"
+      "sha256": "86dd332f49b4d487f367c6e9fca9213a9fbc1b024cabdca0bb7a4ba0a094210f"
     },
     {
       "path": "admin-voice.r1.en.json",
@@ -35,7 +35,7 @@
     },
     {
       "path": "common-labels.r1.en.json",
-      "sha256": "34ceac23dd69fb8877bc29ee0419da340fce86c07158393a43ecb35bdf6a2f46"
+      "sha256": "b6ab82971317c7e13420d820ba842f28d3dc883a06775fdfe7951de8fc035c37"
     },
     {
       "path": "pending/sections-upgrade.r1.en.json",
