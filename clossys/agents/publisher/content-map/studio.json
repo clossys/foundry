@@ -10,7 +10,10 @@
       "kind": "page",
       "path": "/",
       "source": {
-        "planItemId": "studio.home"
+        "frameId": "frames.studio-shell",
+        "sectionIds": [
+          "sections.studio.home"
+        ]
       },
       "pin": {
         "nav": true
@@ -49,63 +52,18 @@
       "order": 0,
       "title": "Director",
       "kind": "page",
-      "path": "/agents/director",
+      "path": "/director",
       "source": {
-        "planItemId": "studio.director"
+        "frameId": "frames.studio-shell",
+        "sectionIds": [
+          "sections.studio.agent-gallery"
+        ]
       },
       "pin": {
         "nav": true,
         "group": "agents"
       },
-      "actions": [
-        {
-          "id": "explorer",
-          "label": "Explorer",
-          "icon": "assets.icon-explorer",
-          "defaultOpen": true,
-          "module": {
-            "section": "sections.explorer"
-          }
-        },
-        {
-          "id": "inspector",
-          "label": "Inspector",
-          "icon": "assets.icon-inspector",
-          "defaultOpen": false,
-          "module": {
-            "section": "sections.record-detail",
-            "source": "director.inspector"
-          }
-        },
-        {
-          "id": "source",
-          "label": "Source",
-          "icon": "assets.icon-source",
-          "defaultOpen": false,
-          "module": {
-            "section": "sections.content"
-          }
-        },
-        {
-          "id": "checks",
-          "label": "Checks",
-          "icon": "assets.icon-checks",
-          "defaultOpen": false,
-          "module": {
-            "section": "sections.status-list"
-          }
-        },
-        {
-          "id": "needs",
-          "label": "Needs",
-          "icon": "assets.icon-needs",
-          "defaultOpen": false,
-          "module": {
-            "section": "sections.task-list",
-            "source": "director.open-requests"
-          }
-        }
-      ]
+      "actions": []
     },
     {
       "id": "designer",
@@ -113,63 +71,18 @@
       "order": 1,
       "title": "Designer",
       "kind": "page",
-      "path": "/agents/designer",
+      "path": "/designer",
       "source": {
-        "planItemId": "studio.designer"
+        "frameId": "frames.studio-shell",
+        "sectionIds": [
+          "sections.studio.agent-gallery"
+        ]
       },
       "pin": {
         "nav": true,
         "group": "agents"
       },
-      "actions": [
-        {
-          "id": "explorer",
-          "label": "Explorer",
-          "icon": "assets.icon-explorer",
-          "defaultOpen": true,
-          "module": {
-            "section": "sections.explorer"
-          }
-        },
-        {
-          "id": "inspector",
-          "label": "Inspector",
-          "icon": "assets.icon-inspector",
-          "defaultOpen": false,
-          "module": {
-            "section": "sections.record-detail",
-            "source": "designer.inspector"
-          }
-        },
-        {
-          "id": "source",
-          "label": "Source",
-          "icon": "assets.icon-source",
-          "defaultOpen": false,
-          "module": {
-            "section": "sections.content"
-          }
-        },
-        {
-          "id": "checks",
-          "label": "Checks",
-          "icon": "assets.icon-checks",
-          "defaultOpen": false,
-          "module": {
-            "section": "sections.status-list"
-          }
-        },
-        {
-          "id": "needs",
-          "label": "Needs",
-          "icon": "assets.icon-needs",
-          "defaultOpen": false,
-          "module": {
-            "section": "sections.task-list",
-            "source": "designer.open-requests"
-          }
-        }
-      ]
+      "actions": []
     },
     {
       "id": "writer",
@@ -177,63 +90,18 @@
       "order": 2,
       "title": "Writer",
       "kind": "page",
-      "path": "/agents/writer",
+      "path": "/writer",
       "source": {
-        "planItemId": "studio.writer"
+        "frameId": "frames.studio-shell",
+        "sectionIds": [
+          "sections.studio.agent-gallery"
+        ]
       },
       "pin": {
         "nav": true,
         "group": "agents"
       },
-      "actions": [
-        {
-          "id": "explorer",
-          "label": "Explorer",
-          "icon": "assets.icon-explorer",
-          "defaultOpen": true,
-          "module": {
-            "section": "sections.explorer"
-          }
-        },
-        {
-          "id": "inspector",
-          "label": "Inspector",
-          "icon": "assets.icon-inspector",
-          "defaultOpen": false,
-          "module": {
-            "section": "sections.record-detail",
-            "source": "writer.inspector"
-          }
-        },
-        {
-          "id": "source",
-          "label": "Source",
-          "icon": "assets.icon-source",
-          "defaultOpen": false,
-          "module": {
-            "section": "sections.content"
-          }
-        },
-        {
-          "id": "checks",
-          "label": "Checks",
-          "icon": "assets.icon-checks",
-          "defaultOpen": false,
-          "module": {
-            "section": "sections.status-list"
-          }
-        },
-        {
-          "id": "needs",
-          "label": "Needs",
-          "icon": "assets.icon-needs",
-          "defaultOpen": false,
-          "module": {
-            "section": "sections.task-list",
-            "source": "writer.open-requests"
-          }
-        }
-      ]
+      "actions": []
     },
     {
       "id": "publisher",
@@ -241,63 +109,19 @@
       "order": 3,
       "title": "Publisher",
       "kind": "page",
-      "path": "/agents/publisher",
+      "path": "/publisher",
       "source": {
-        "planItemId": "studio.publisher"
+        "frameId": "frames.studio-shell",
+        "sectionIds": [
+          "sections.studio.agent-gallery",
+          "sections.studio.publications"
+        ]
       },
       "pin": {
         "nav": true,
         "group": "agents"
       },
-      "actions": [
-        {
-          "id": "explorer",
-          "label": "Explorer",
-          "icon": "assets.icon-explorer",
-          "defaultOpen": true,
-          "module": {
-            "section": "sections.explorer"
-          }
-        },
-        {
-          "id": "inspector",
-          "label": "Inspector",
-          "icon": "assets.icon-inspector",
-          "defaultOpen": false,
-          "module": {
-            "section": "sections.record-detail",
-            "source": "publisher.inspector"
-          }
-        },
-        {
-          "id": "source",
-          "label": "Source",
-          "icon": "assets.icon-source",
-          "defaultOpen": false,
-          "module": {
-            "section": "sections.content"
-          }
-        },
-        {
-          "id": "checks",
-          "label": "Checks",
-          "icon": "assets.icon-checks",
-          "defaultOpen": false,
-          "module": {
-            "section": "sections.status-list"
-          }
-        },
-        {
-          "id": "needs",
-          "label": "Needs",
-          "icon": "assets.icon-needs",
-          "defaultOpen": false,
-          "module": {
-            "section": "sections.task-list",
-            "source": "publisher.open-requests"
-          }
-        }
-      ]
+      "actions": []
     }
   ]
 }

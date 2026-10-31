@@ -12,14 +12,20 @@ The map check reads the ordinary Foundry Publisher cells under
 `clossys/agents/publisher`, verifies their normal compiled content-map and route
 pack, and regenerates the Studio projection in memory to compare exact output
 bytes. Editing a page cell without regenerating fails. Navigation, command
-search, breadcrumbs and routes are projections of that one publication map;
-Studio's `AppFrame` must obtain both navigation and commands from its generated
-exports. Adding a hand-authored map node alongside those exports also fails.
+search, breadcrumbs and routes are projections of that one publication map.
+`lib/studio-route-map.ts` adds the record-store leaves to it at runtime
+(`studioRuntimeMap`) and builds the frame inputs with Publisher's
+`projectNavigation`, `projectCommands` and `projectBreadcrumbs`. The generic
+renderer (`components/StudioPage.tsx`) must hand the pinned `frames.studio-shell`
+those inputs only by spreading `studioShellProjection(...)`; explicit
+`navigation`/`commands`/`breadcrumbs`/`homeHref` attributes or a hand-authored
+`{ id, label }` node fail.
 
-The source rule parses TypeScript/JavaScript ASTs throughout production Studio
-source, including view modules. Executable root route strings, template route
+The source rule parses TypeScript/JavaScript ASTs throughout the Studio source
+the App Router entries actually reach (the relative-import graph from `app/`),
+including sections and frames. Executable root route strings, template route
 prefixes and literal navigation destinations fail outside Publisher's exact
-`generated/studio-map.ts` and `generated/view-bindings.ts` outputs. An unused
+`generated/studio-map.ts` and the runtime map module `lib/studio-route-map.ts`. An unused
 duplicate route array still fails. Internal `/api/` data paths, asset URLs,
 path-delimiter operations and query/fragment cell or Source state are distinct
 from Studio page routes. An API or asset literal used as a navigation
@@ -31,10 +37,42 @@ This production source check excludes `checks/`, test/spec files, static public
 assets, dependencies and Next output. Browser fixture route lists in the existing
 focused checks are synthetic test inputs, outside this production navigation
 contract. The direct tests prove the real checked-in projection passes, an
-inserted redundant StudioFrame route list fails, replacing either generated
-frame input fails, and changing an ordinary page cell without regenerating
-produces projection drift. The check is scoped to Studio's publication seam;
-it does not modify or replace repository-wide scanners.
+inserted redundant route list fails, replacing a projected frame input fails,
+and changing an ordinary page cell without regenerating produces projection
+drift. `studio-navigation.test.cjs` renders the frame for every runtime-map
+entry and proves every rendered link, command and breadcrumb is a map path.
+The check is scoped to Studio's publication seam; it does not modify or
+replace repository-wide scanners.
+
+## No page JSX
+
+```sh
+node --test packages/producer/studio/checks/check-no-page-jsx.test.cjs
+node packages/producer/studio/checks/check-no-page-jsx.cjs
+```
+
+Every Studio page is a Publisher assembly (frame + ordered sections + bindings)
+rendered by the one generic renderer, `components/StudioPage.tsx`. `app/` may
+hold only `layout.tsx`, `globals.css` and the catch-all `[[...route]]/page.tsx`,
+and those files may render only the document shell, `StudioProviders` and
+`StudioPage`. Any other route file, page JSX (fragments included), an import of
+a section, frame, old view or binding module into `app/`, a catch-all that stops
+handing the route to the renderer, or a parked `views/` folder fails. The tests
+mutate a copy of the tree for each rule.
+
+## Rendered map and sections (DOM)
+
+```sh
+node packages/producer/studio/checks/studio-dom-check.mjs http://127.0.0.1:4641 --out report.json
+```
+
+Loads the runtime map the way Studio does (its own loaders against the live
+Producer APIs), then visits every entry in headless Chrome over raw CDP. Each
+entry must return 200, render the frame and a heading without an error or
+not-found state, show no "No specimen" text, link only to map paths, and render
+Options, History, Checks and References whenever the leaf's data has them. On
+Home it opens the command menu and requires one item per map entry. Chrome is
+read from `/Applications/Google Chrome.app` (override with `CHROME_PATH`).
 
 ## Designer composition
 
@@ -76,7 +114,7 @@ unstamped body siblings fail. It does not add leaf stamps for those proofs.
 DOM ancestry alone cannot distinguish a host-authored tree inside AppFrame from
 Designer-authored content: both are within an existing leaf subtree. The separate
 TypeScript AST rule therefore rejects host-authored `nav`, `ul`, and `li` JSX in
-`CellsWorkspace.tsx`, where cell navigation must use Designer composition. Its
+`components/StudioPage.tsx`, where cell navigation must use Designer composition. Its
 tests include a mutation from Designer composition to raw navigation/list JSX.
 This focused rule does not claim to prohibit all raw JSX or validate leaf
 registration or provenance; those remain separate contracts.

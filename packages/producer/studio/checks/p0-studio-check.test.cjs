@@ -21,7 +21,7 @@ function projectionFixture() {
   write(root, 'studio/generated/studio-map.json', JSON.stringify({ routes }));
   write(root, 'clossys/agents/publisher/route-pack/studio.json', JSON.stringify({ routes }));
   write(root, 'clossys/agents/publisher/content-map/studio.json', JSON.stringify({ entries: [{ kind: 'page', path: '/', id: 'home' }, { kind: 'page', path: '/agents/publisher', id: 'publisher', parentId: 'agents' }] }));
-  write(root, 'studio/app/[[...route]]/page.tsx', 'studioRouteForSegments(route)');
+  write(root, 'studio/app/[[...route]]/page.tsx', 'resolveStudioRoute(map, leaves, route)');
   write(root, 'studio/app/content/[agent]/[id]/page.tsx', 'StandaloneCellContent');
   return { root, studio, options: { repositoryRoot: root, studioRoot: studio } };
 }
@@ -31,8 +31,8 @@ test('checked-in publication and every real App Router route are discovered', ()
   const plan = discoverRoutePlan();
   assert.ok(plan.routes.includes('/'));
   assert.ok(plan.routes.length > 1);
-  assert.ok(plan.templates.includes('/content/[agent]/[id]'));
-  assert.equal(plan.contentRoute, true);
+  assert.deepEqual(plan.templates, ['/[[...route]]'], 'one generic App Router page');
+  assert.equal(plan.contentRoute, false, 'the standalone content route is retired');
 });
 
 test('coverage expands every live identity and exposed version instead of selecting one dynamic example', () => {

@@ -1,0 +1,473 @@
+[
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "frames.studio-shell",
+    "package": "producer",
+    "layer": "frames",
+    "purpose": "The Studio app shell: icon-collapsible rail navigation with its toggle in the top-left corner, a header of breadcrumbs on the left and icon buttons on the right only, the chat-only panel on the right with its toggle in the top-right corner, the page module column beside the page column, and an h-svh layout where #studio-main is the page scroller.",
+    "inputs": [
+      {
+        "name": "navigation",
+        "kind": "data",
+        "required": true,
+        "description": "Rail navigation projected from the Studio map."
+      },
+      {
+        "name": "commands",
+        "kind": "data",
+        "required": true,
+        "description": "Command menu groups projected from the Studio map: every page."
+      },
+      {
+        "name": "breadcrumbs",
+        "kind": "data",
+        "required": true,
+        "description": "Ancestry of the open page projected from the Studio map."
+      },
+      {
+        "name": "toolbar",
+        "kind": "prop",
+        "required": false,
+        "description": "The header icon buttons frames.module renders from the page manifest: module toggles, then actions."
+      },
+      {
+        "name": "modules",
+        "kind": "prop",
+        "required": false,
+        "description": "The module column frames.module renders while any module is open."
+      },
+      {
+        "name": "pageCommands",
+        "kind": "data",
+        "required": false,
+        "description": "Every module toggle and cmdk action of the page, with its shortcut, listed in the command menu."
+      },
+      {
+        "name": "body",
+        "kind": "prop",
+        "required": false,
+        "description": "plain stacks the sections; detail puts them in one card with the first as its head."
+      }
+    ],
+    "limits": {
+      "scroller": "#studio-main",
+      "chatWidth": "20rem",
+      "wideAt": 1280
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "sidebar-07",
+        "version": "4.23.0",
+        "hash": "sha256:cb3b5a933d64347eb59403336ca1be71d991fcd50921142e7ed4fe974afe7d60",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/sidebar-07.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "flow"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.studio.home",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "Home: the workspace agents as cards with their purpose, cell counts and a link to each library, and the owner's open requests when the Needs module is open.",
+    "inputs": [
+      {
+        "name": "home",
+        "kind": "data",
+        "required": true,
+        "description": "Display-ready agents and, when open, needs."
+      }
+    ],
+    "limits": {
+      "agents": 4
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "card",
+        "version": "4.23.0",
+        "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/card.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "data"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.studio.agent-gallery",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "One agent library: layers with jump links, groups, and a card per leaf with its status and a specimen thumbnail or excerpt.",
+    "inputs": [
+      {
+        "name": "gallery",
+        "kind": "data",
+        "required": true,
+        "description": "Header, unit and layers of leaf cards, display-ready."
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "card",
+        "version": "4.23.0",
+        "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/card.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.studio.leaf-header",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "The head of a leaf page: back link to its library, name, shown version, status, id and IA trail, and status notes.",
+    "inputs": [
+      {
+        "name": "header",
+        "kind": "data",
+        "required": true,
+        "description": "Name, id, version, status and trail."
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "card",
+        "version": "4.23.0",
+        "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/card.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "text"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.studio.specimen",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "What a leaf produces, for every agent: rendered output framed at 375, 768 and 1280 px in light and dark, or the record content as titled tables.",
+    "inputs": [
+      {
+        "name": "specimen",
+        "kind": "data",
+        "required": true,
+        "description": "A viewports or record specimen."
+      }
+    ],
+    "limits": {
+      "viewports": "375,768,1280"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "tabs",
+        "version": "4.23.0",
+        "hash": "sha256:3694a0147e4ed8eccfc7644b7cb5214b76f9e0f76780740faf9f1908cef3d0f7",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/tabs.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.studio.options",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "Options pending approval, for every agent: the pinned or active version beside every newer unpinned version or draft, framed or as changed strings.",
+    "inputs": [
+      {
+        "name": "options",
+        "kind": "data",
+        "required": true,
+        "description": "Rows of versions with a frame, strings or note preview."
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "card",
+        "version": "4.23.0",
+        "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/card.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.studio.checks",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "The checks recorded for a leaf, each passing or reported.",
+    "inputs": [
+      {
+        "name": "checks",
+        "kind": "data",
+        "required": true,
+        "description": "Check rows."
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "table",
+        "version": "4.23.0",
+        "hash": "sha256:7c761c65cbdd8a04693fbde181016cf3af26590ebc57c1073a47fd6a0e188561",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/table.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "data"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.studio.contract",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "A leaf's recorded facts, inputs and the lists it reads, binds and depends on.",
+    "inputs": [
+      {
+        "name": "contract",
+        "kind": "data",
+        "required": true,
+        "description": "Facts, inputs and lists."
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "table",
+        "version": "4.23.0",
+        "hash": "sha256:7c761c65cbdd8a04693fbde181016cf3af26590ebc57c1073a47fd6a0e188561",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/table.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "data"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.studio.history",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "Every recorded version of a leaf, newest first, with marks, lineage and hash.",
+    "inputs": [
+      {
+        "name": "history",
+        "kind": "data",
+        "required": true,
+        "description": "Version rows."
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "table",
+        "version": "4.23.0",
+        "hash": "sha256:7c761c65cbdd8a04693fbde181016cf3af26590ebc57c1073a47fd6a0e188561",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/table.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "data"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.studio.references",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "Uses and used by, in both directions across agents, and the lineage of each version.",
+    "inputs": [
+      {
+        "name": "references",
+        "kind": "data",
+        "required": true,
+        "description": "Links in both directions and lineage rows."
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "card",
+        "version": "4.23.0",
+        "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/card.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "data"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.studio.publications",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "Each publication with its configured root and its full route table: path, page, frame, sections, status and the leaf page.",
+    "inputs": [
+      {
+        "name": "publications",
+        "kind": "data",
+        "required": true,
+        "description": "Publications with root and routes."
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "table",
+        "version": "4.23.0",
+        "hash": "sha256:7c761c65cbdd8a04693fbde181016cf3af26590ebc57c1073a47fd6a0e188561",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/table.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "data"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "frames.module",
+    "package": "producer",
+    "layer": "frames",
+    "purpose": "The page module column and module chrome: one header toggle per declared module (icon button, pressed state, tooltip), the open modules stacked beside the page column in icon order, each with a title bar that collapses on click, a close button and a scroll body. Open state lives in the URL (?m=), Esc closes the top module, header actions run their data handlers, and every toggle and action is a page command with its shortcut.",
+    "inputs": [
+      {
+        "name": "modules",
+        "kind": "data",
+        "required": true,
+        "description": "The manifest modules, each with its icon, label, shortcut, the page targets it points at and the pinned module section it renders."
+      },
+      {
+        "name": "actions",
+        "kind": "data",
+        "required": true,
+        "description": "The manifest header actions with their data handlers (copy-link, copy-prompt, scroll)."
+      },
+      {
+        "name": "children",
+        "kind": "prop",
+        "required": true,
+        "description": "Render prop that receives the toolbar, column, page commands and open ids for the app shell."
+      }
+    ],
+    "limits": {
+      "columnWidth": "20rem",
+      "narrowAt": 768,
+      "urlParam": "m"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "collapsible",
+        "version": "4.23.0",
+        "hash": "sha256:4609e7d77ea3680af4da1bffb9024f4e5c36cf5eed33161c2cb5db67558204f2",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/collapsible.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "flow"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.module.explorer",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "Explorer module: the page's map as a searchable tree with IA level 1 as the top grouping; a row click brings its page part into view and the part in view is highlighted.",
+    "inputs": [
+      {
+        "name": "explorer",
+        "kind": "data",
+        "required": true,
+        "description": "Groups of rows (label, depth, target selector), the active target and the select callback."
+      }
+    ],
+    "limits": {
+      "depth": 4
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "command",
+        "version": "4.23.0",
+        "hash": "sha256:549cd010f34024eea234a587e123b487112262775590c6e9baa82e3a6212545c",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/command.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "flow"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.module.checks",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "Checks module: the open page's failing checks, pending options and open needs, each row linking to its leaf.",
+    "inputs": [
+      {
+        "name": "checks",
+        "kind": "data",
+        "required": true,
+        "description": "A summary and three groups (failing, options, needs) of display-ready rows."
+      }
+    ],
+    "limits": {
+      "groups": 3
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "item",
+        "version": "4.23.0",
+        "hash": "sha256:d77118866e85aa15a62c24e3475ad410f23a7851c46932d92a73f8c493cf53f9",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/item.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "flow"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.module.outline",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "Outline module: the open page's own sections in page order; a click brings one into view and the section in view is highlighted.",
+    "inputs": [
+      {
+        "name": "outline",
+        "kind": "data",
+        "required": true,
+        "description": "The page's sections (label, target selector), the active target and the select callback."
+      }
+    ],
+    "limits": {
+      "items": 12
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "command",
+        "version": "4.23.0",
+        "hash": "sha256:549cd010f34024eea234a587e123b487112262775590c6e9baa82e3a6212545c",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/command.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "flow"
+  }
+]

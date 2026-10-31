@@ -1,0 +1,70 @@
+{
+  "schema": "clossys.element/1",
+  "id": "studio-shell",
+  "package": "producer",
+  "layer": "frames",
+  "slot": "frames.studio-shell",
+  "kind": "registry:block",
+  "lineage": {
+    "mode": "customized",
+    "source": {
+      "registry": "shadcn",
+      "item": "sidebar-07",
+      "version": "4.23.0",
+      "hash": "sha256:cb3b5a933d64347eb59403336ca1be71d991fcd50921142e7ed4fe974afe7d60",
+      "url": "https://ui.shadcn.com/r/styles/radix-nova/sidebar-07.json"
+    }
+  },
+  "license": {
+    "spdx": "MIT",
+    "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+    "file": "LICENCE.md"
+  },
+  "creator": {
+    "agent": "designer",
+    "model": "claude-opus-5-5",
+    "by": "STUDIO-PUB"
+  },
+  "reason": "Registers the shell Studio already runs (moved from components/StudioFrame.tsx) so every Studio page is a Publisher assembly of this frame; built from the shadcn sidebar-07 block parts.",
+  "createdAt": "2026-10-31T12:00:00Z",
+  "checks": [
+    {
+      "id": "lineage.reference",
+      "suite": "studio",
+      "type": "fixed",
+      "status": "pass",
+      "at": "2026-10-31T12:00:00Z"
+    },
+    {
+      "id": "studio.ds-only",
+      "suite": "studio",
+      "type": "fixed",
+      "status": "skip",
+      "at": "2026-10-31T12:00:00Z"
+    }
+  ],
+  "deps": {
+    "npm": {},
+    "elements": []
+  },
+  "reads": {
+    "copyKeys": [],
+    "themeVars": [
+      "--background",
+      "--foreground",
+      "--muted-foreground",
+      "--primary",
+      "--primary-foreground",
+      "--accent",
+      "--sidebar"
+    ]
+  },
+  "version": 1,
+  "hash": "sha256:75ef1885d4c5f41d277e27ae85b74d0b172828e68edaa5863bd3b83462e08eed",
+  "payload": [
+    "LICENCE.md",
+    "PageNotice.tsx",
+    "index.tsx",
+    "registry-item.json"
+  ]
+}

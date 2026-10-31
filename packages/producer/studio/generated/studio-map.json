@@ -1,5 +1,10 @@
 {
   "publicationId": "studio",
+  "homeId": "home",
+  "root": {
+    "kind": "local-origin",
+    "note": "Producer serves Studio on this machine, so the root is the origin it runs on."
+  },
   "map": {
     "version": 1,
     "publicationId": "studio",
@@ -12,7 +17,10 @@
         "kind": "page",
         "path": "/",
         "source": {
-          "planItemId": "studio.home"
+          "frameId": "frames.studio-shell",
+          "sectionIds": [
+            "sections.studio.home"
+          ]
         },
         "pin": {
           "nav": true
@@ -51,63 +59,18 @@
         "order": 0,
         "title": "Director",
         "kind": "page",
-        "path": "/agents/director",
+        "path": "/director",
         "source": {
-          "planItemId": "studio.director"
+          "frameId": "frames.studio-shell",
+          "sectionIds": [
+            "sections.studio.agent-gallery"
+          ]
         },
         "pin": {
           "nav": true,
           "group": "agents"
         },
-        "actions": [
-          {
-            "id": "explorer",
-            "label": "Explorer",
-            "icon": "assets.icon-explorer",
-            "defaultOpen": true,
-            "module": {
-              "section": "sections.explorer"
-            }
-          },
-          {
-            "id": "inspector",
-            "label": "Inspector",
-            "icon": "assets.icon-inspector",
-            "defaultOpen": false,
-            "module": {
-              "section": "sections.record-detail",
-              "source": "director.inspector"
-            }
-          },
-          {
-            "id": "source",
-            "label": "Source",
-            "icon": "assets.icon-source",
-            "defaultOpen": false,
-            "module": {
-              "section": "sections.content"
-            }
-          },
-          {
-            "id": "checks",
-            "label": "Checks",
-            "icon": "assets.icon-checks",
-            "defaultOpen": false,
-            "module": {
-              "section": "sections.status-list"
-            }
-          },
-          {
-            "id": "needs",
-            "label": "Needs",
-            "icon": "assets.icon-needs",
-            "defaultOpen": false,
-            "module": {
-              "section": "sections.task-list",
-              "source": "director.open-requests"
-            }
-          }
-        ]
+        "actions": []
       },
       {
         "id": "designer",
@@ -115,63 +78,18 @@
         "order": 1,
         "title": "Designer",
         "kind": "page",
-        "path": "/agents/designer",
+        "path": "/designer",
         "source": {
-          "planItemId": "studio.designer"
+          "frameId": "frames.studio-shell",
+          "sectionIds": [
+            "sections.studio.agent-gallery"
+          ]
         },
         "pin": {
           "nav": true,
           "group": "agents"
         },
-        "actions": [
-          {
-            "id": "explorer",
-            "label": "Explorer",
-            "icon": "assets.icon-explorer",
-            "defaultOpen": true,
-            "module": {
-              "section": "sections.explorer"
-            }
-          },
-          {
-            "id": "inspector",
-            "label": "Inspector",
-            "icon": "assets.icon-inspector",
-            "defaultOpen": false,
-            "module": {
-              "section": "sections.record-detail",
-              "source": "designer.inspector"
-            }
-          },
-          {
-            "id": "source",
-            "label": "Source",
-            "icon": "assets.icon-source",
-            "defaultOpen": false,
-            "module": {
-              "section": "sections.content"
-            }
-          },
-          {
-            "id": "checks",
-            "label": "Checks",
-            "icon": "assets.icon-checks",
-            "defaultOpen": false,
-            "module": {
-              "section": "sections.status-list"
-            }
-          },
-          {
-            "id": "needs",
-            "label": "Needs",
-            "icon": "assets.icon-needs",
-            "defaultOpen": false,
-            "module": {
-              "section": "sections.task-list",
-              "source": "designer.open-requests"
-            }
-          }
-        ]
+        "actions": []
       },
       {
         "id": "writer",
@@ -179,63 +97,18 @@
         "order": 2,
         "title": "Writer",
         "kind": "page",
-        "path": "/agents/writer",
+        "path": "/writer",
         "source": {
-          "planItemId": "studio.writer"
+          "frameId": "frames.studio-shell",
+          "sectionIds": [
+            "sections.studio.agent-gallery"
+          ]
         },
         "pin": {
           "nav": true,
           "group": "agents"
         },
-        "actions": [
-          {
-            "id": "explorer",
-            "label": "Explorer",
-            "icon": "assets.icon-explorer",
-            "defaultOpen": true,
-            "module": {
-              "section": "sections.explorer"
-            }
-          },
-          {
-            "id": "inspector",
-            "label": "Inspector",
-            "icon": "assets.icon-inspector",
-            "defaultOpen": false,
-            "module": {
-              "section": "sections.record-detail",
-              "source": "writer.inspector"
-            }
-          },
-          {
-            "id": "source",
-            "label": "Source",
-            "icon": "assets.icon-source",
-            "defaultOpen": false,
-            "module": {
-              "section": "sections.content"
-            }
-          },
-          {
-            "id": "checks",
-            "label": "Checks",
-            "icon": "assets.icon-checks",
-            "defaultOpen": false,
-            "module": {
-              "section": "sections.status-list"
-            }
-          },
-          {
-            "id": "needs",
-            "label": "Needs",
-            "icon": "assets.icon-needs",
-            "defaultOpen": false,
-            "module": {
-              "section": "sections.task-list",
-              "source": "writer.open-requests"
-            }
-          }
-        ]
+        "actions": []
       },
       {
         "id": "publisher",
@@ -243,343 +116,1037 @@
         "order": 3,
         "title": "Publisher",
         "kind": "page",
-        "path": "/agents/publisher",
+        "path": "/publisher",
         "source": {
-          "planItemId": "studio.publisher"
+          "frameId": "frames.studio-shell",
+          "sectionIds": [
+            "sections.studio.agent-gallery",
+            "sections.studio.publications"
+          ]
         },
         "pin": {
           "nav": true,
           "group": "agents"
         },
-        "actions": [
-          {
-            "id": "explorer",
-            "label": "Explorer",
-            "icon": "assets.icon-explorer",
-            "defaultOpen": true,
-            "module": {
-              "section": "sections.explorer"
-            }
-          },
-          {
-            "id": "inspector",
-            "label": "Inspector",
-            "icon": "assets.icon-inspector",
-            "defaultOpen": false,
-            "module": {
-              "section": "sections.record-detail",
-              "source": "publisher.inspector"
-            }
-          },
-          {
-            "id": "source",
-            "label": "Source",
-            "icon": "assets.icon-source",
-            "defaultOpen": false,
-            "module": {
-              "section": "sections.content"
-            }
-          },
-          {
-            "id": "checks",
-            "label": "Checks",
-            "icon": "assets.icon-checks",
-            "defaultOpen": false,
-            "module": {
-              "section": "sections.status-list"
-            }
-          },
-          {
-            "id": "needs",
-            "label": "Needs",
-            "icon": "assets.icon-needs",
-            "defaultOpen": false,
-            "module": {
-              "section": "sections.task-list",
-              "source": "publisher.open-requests"
-            }
-          }
-        ]
+        "actions": []
       }
     ]
   },
-  "routes": [
+  "pages": [
     {
-      "entry": {
-        "file": "studio/views/HomeView.tsx",
-        "export": "default"
-      },
-      "instanceId": "home",
+      "id": "home",
       "path": "/",
-      "label": "Home"
+      "title": "Home",
+      "frameId": "frames.studio-shell",
+      "sectionIds": [
+        "sections.studio.home"
+      ],
+      "body": "plain",
+      "data": {
+        "loader": "home"
+      },
+      "inputs": {
+        "sections.studio.home": "home"
+      },
+      "manifest": {
+        "frame": "frames.module",
+        "navigator": "outline",
+        "modules": [
+          {
+            "id": "outline",
+            "icon": "assets.icon-outline",
+            "label": "Outline",
+            "section": "sections.module.outline",
+            "source": "page.outline",
+            "shortcut": "o",
+            "defaultOpen": false,
+            "input": "outline"
+          },
+          {
+            "id": "checks",
+            "icon": "assets.icon-checks",
+            "label": "Checks",
+            "section": "sections.module.checks",
+            "source": "page.checks",
+            "shortcut": "c",
+            "defaultOpen": false,
+            "input": "checks"
+          }
+        ],
+        "actions": [
+          {
+            "id": "copy-link",
+            "icon": "assets.icon-link",
+            "label": "Copy link",
+            "handler": {
+              "kind": "copy-link"
+            },
+            "shortcut": "l",
+            "cmdk": true
+          }
+        ],
+        "wiring": [
+          {
+            "do": "toggle outline",
+            "expect": "outline open, then closed"
+          },
+          {
+            "do": "toggle checks",
+            "expect": "checks open, then closed"
+          },
+          {
+            "do": "select outline",
+            "expect": "target in view and highlighted"
+          },
+          {
+            "do": "action copy-link",
+            "expect": "clipboard link"
+          },
+          {
+            "do": "cmdk",
+            "expect": "page commands listed with shortcuts"
+          },
+          {
+            "do": "key o",
+            "expect": "outline open"
+          },
+          {
+            "do": "key escape",
+            "expect": "top module closed"
+          }
+        ]
+      }
     },
     {
-      "entry": {
-        "file": "studio/views/DirectorView.tsx",
-        "export": "default"
+      "id": "director",
+      "path": "/director",
+      "title": "Director",
+      "frameId": "frames.studio-shell",
+      "sectionIds": [
+        "sections.studio.agent-gallery"
+      ],
+      "body": "plain",
+      "data": {
+        "loader": "gallery",
+        "agent": "director"
       },
-      "instanceId": "director",
-      "path": "/agents/director",
-      "label": "Director"
+      "inputs": {
+        "sections.studio.agent-gallery": "gallery"
+      },
+      "manifest": {
+        "frame": "frames.module",
+        "navigator": "explorer",
+        "modules": [
+          {
+            "id": "explorer",
+            "icon": "assets.icon-explorer",
+            "label": "Explorer",
+            "section": "sections.module.explorer",
+            "source": "page.explorer",
+            "shortcut": "e",
+            "defaultOpen": false,
+            "input": "explorer"
+          },
+          {
+            "id": "checks",
+            "icon": "assets.icon-checks",
+            "label": "Checks",
+            "section": "sections.module.checks",
+            "source": "page.checks",
+            "shortcut": "c",
+            "defaultOpen": false,
+            "input": "checks"
+          }
+        ],
+        "actions": [
+          {
+            "id": "copy-link",
+            "icon": "assets.icon-link",
+            "label": "Copy link",
+            "handler": {
+              "kind": "copy-link"
+            },
+            "shortcut": "l",
+            "cmdk": true
+          }
+        ],
+        "wiring": [
+          {
+            "do": "toggle explorer",
+            "expect": "explorer open, then closed"
+          },
+          {
+            "do": "toggle checks",
+            "expect": "checks open, then closed"
+          },
+          {
+            "do": "select explorer",
+            "expect": "target in view and highlighted"
+          },
+          {
+            "do": "search explorer",
+            "expect": "items filtered"
+          },
+          {
+            "do": "action copy-link",
+            "expect": "clipboard link"
+          },
+          {
+            "do": "cmdk",
+            "expect": "page commands listed with shortcuts"
+          },
+          {
+            "do": "key e",
+            "expect": "explorer open"
+          },
+          {
+            "do": "key escape",
+            "expect": "top module closed"
+          }
+        ]
+      },
+      "leaf": {
+        "param": "slug",
+        "body": "detail",
+        "data": {
+          "loader": "leaf",
+          "agent": "director"
+        },
+        "sectionIds": [
+          "sections.studio.leaf-header",
+          "sections.studio.specimen",
+          "sections.studio.options",
+          "sections.studio.checks",
+          "sections.studio.contract",
+          "sections.studio.history",
+          "sections.studio.references"
+        ],
+        "inputs": {
+          "sections.studio.leaf-header": "header",
+          "sections.studio.specimen": "specimen",
+          "sections.studio.options": "options",
+          "sections.studio.checks": "checks",
+          "sections.studio.contract": "contract",
+          "sections.studio.history": "history",
+          "sections.studio.references": "references"
+        },
+        "manifest": {
+          "frame": "frames.module",
+          "navigator": "outline",
+          "modules": [
+            {
+              "id": "outline",
+              "icon": "assets.icon-outline",
+              "label": "Outline",
+              "section": "sections.module.outline",
+              "source": "page.outline",
+              "shortcut": "o",
+              "defaultOpen": false,
+              "input": "outline"
+            },
+            {
+              "id": "checks",
+              "icon": "assets.icon-checks",
+              "label": "Checks",
+              "section": "sections.module.checks",
+              "source": "page.checks",
+              "shortcut": "c",
+              "defaultOpen": false,
+              "input": "checks"
+            }
+          ],
+          "actions": [
+            {
+              "id": "request-change",
+              "icon": "assets.icon-request",
+              "label": "Request change",
+              "handler": {
+                "kind": "copy-prompt",
+                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+              },
+              "shortcut": "r",
+              "cmdk": true
+            },
+            {
+              "id": "versions",
+              "icon": "assets.icon-versions",
+              "label": "Versions",
+              "handler": {
+                "kind": "scroll",
+                "target": "[data-studio-section=\"history\"]"
+              },
+              "shortcut": "v",
+              "cmdk": true
+            },
+            {
+              "id": "copy-link",
+              "icon": "assets.icon-link",
+              "label": "Copy link",
+              "handler": {
+                "kind": "copy-link"
+              },
+              "shortcut": "l",
+              "cmdk": true
+            }
+          ],
+          "wiring": [
+            {
+              "do": "toggle outline",
+              "expect": "outline open, then closed"
+            },
+            {
+              "do": "toggle checks",
+              "expect": "checks open, then closed"
+            },
+            {
+              "do": "select outline",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "action request-change",
+              "expect": "clipboard prompt"
+            },
+            {
+              "do": "action versions",
+              "expect": "target in view"
+            },
+            {
+              "do": "action copy-link",
+              "expect": "clipboard link"
+            },
+            {
+              "do": "cmdk",
+              "expect": "page commands listed with shortcuts"
+            },
+            {
+              "do": "key o",
+              "expect": "outline open"
+            },
+            {
+              "do": "key escape",
+              "expect": "top module closed"
+            }
+          ]
+        }
+      }
     },
     {
-      "entry": {
-        "file": "studio/views/DesignerView.tsx",
-        "export": "default"
+      "id": "designer",
+      "path": "/designer",
+      "title": "Designer",
+      "frameId": "frames.studio-shell",
+      "sectionIds": [
+        "sections.studio.agent-gallery"
+      ],
+      "body": "plain",
+      "data": {
+        "loader": "gallery",
+        "agent": "designer"
       },
-      "instanceId": "designer",
-      "path": "/agents/designer",
-      "label": "Designer"
+      "inputs": {
+        "sections.studio.agent-gallery": "gallery"
+      },
+      "manifest": {
+        "frame": "frames.module",
+        "navigator": "explorer",
+        "modules": [
+          {
+            "id": "explorer",
+            "icon": "assets.icon-explorer",
+            "label": "Explorer",
+            "section": "sections.module.explorer",
+            "source": "page.explorer",
+            "shortcut": "e",
+            "defaultOpen": false,
+            "input": "explorer"
+          },
+          {
+            "id": "checks",
+            "icon": "assets.icon-checks",
+            "label": "Checks",
+            "section": "sections.module.checks",
+            "source": "page.checks",
+            "shortcut": "c",
+            "defaultOpen": false,
+            "input": "checks"
+          }
+        ],
+        "actions": [
+          {
+            "id": "copy-link",
+            "icon": "assets.icon-link",
+            "label": "Copy link",
+            "handler": {
+              "kind": "copy-link"
+            },
+            "shortcut": "l",
+            "cmdk": true
+          }
+        ],
+        "wiring": [
+          {
+            "do": "toggle explorer",
+            "expect": "explorer open, then closed"
+          },
+          {
+            "do": "toggle checks",
+            "expect": "checks open, then closed"
+          },
+          {
+            "do": "select explorer",
+            "expect": "target in view and highlighted"
+          },
+          {
+            "do": "search explorer",
+            "expect": "items filtered"
+          },
+          {
+            "do": "action copy-link",
+            "expect": "clipboard link"
+          },
+          {
+            "do": "cmdk",
+            "expect": "page commands listed with shortcuts"
+          },
+          {
+            "do": "key e",
+            "expect": "explorer open"
+          },
+          {
+            "do": "key escape",
+            "expect": "top module closed"
+          }
+        ]
+      },
+      "leaf": {
+        "param": "slug",
+        "body": "detail",
+        "data": {
+          "loader": "leaf",
+          "agent": "designer"
+        },
+        "sectionIds": [
+          "sections.studio.leaf-header",
+          "sections.studio.specimen",
+          "sections.studio.options",
+          "sections.studio.checks",
+          "sections.studio.contract",
+          "sections.studio.history",
+          "sections.studio.references"
+        ],
+        "inputs": {
+          "sections.studio.leaf-header": "header",
+          "sections.studio.specimen": "specimen",
+          "sections.studio.options": "options",
+          "sections.studio.checks": "checks",
+          "sections.studio.contract": "contract",
+          "sections.studio.history": "history",
+          "sections.studio.references": "references"
+        },
+        "manifest": {
+          "frame": "frames.module",
+          "navigator": "outline",
+          "modules": [
+            {
+              "id": "outline",
+              "icon": "assets.icon-outline",
+              "label": "Outline",
+              "section": "sections.module.outline",
+              "source": "page.outline",
+              "shortcut": "o",
+              "defaultOpen": false,
+              "input": "outline"
+            },
+            {
+              "id": "checks",
+              "icon": "assets.icon-checks",
+              "label": "Checks",
+              "section": "sections.module.checks",
+              "source": "page.checks",
+              "shortcut": "c",
+              "defaultOpen": false,
+              "input": "checks"
+            }
+          ],
+          "actions": [
+            {
+              "id": "request-change",
+              "icon": "assets.icon-request",
+              "label": "Request change",
+              "handler": {
+                "kind": "copy-prompt",
+                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+              },
+              "shortcut": "r",
+              "cmdk": true
+            },
+            {
+              "id": "versions",
+              "icon": "assets.icon-versions",
+              "label": "Versions",
+              "handler": {
+                "kind": "scroll",
+                "target": "[data-studio-section=\"history\"]"
+              },
+              "shortcut": "v",
+              "cmdk": true
+            },
+            {
+              "id": "copy-link",
+              "icon": "assets.icon-link",
+              "label": "Copy link",
+              "handler": {
+                "kind": "copy-link"
+              },
+              "shortcut": "l",
+              "cmdk": true
+            }
+          ],
+          "wiring": [
+            {
+              "do": "toggle outline",
+              "expect": "outline open, then closed"
+            },
+            {
+              "do": "toggle checks",
+              "expect": "checks open, then closed"
+            },
+            {
+              "do": "select outline",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "action request-change",
+              "expect": "clipboard prompt"
+            },
+            {
+              "do": "action versions",
+              "expect": "target in view"
+            },
+            {
+              "do": "action copy-link",
+              "expect": "clipboard link"
+            },
+            {
+              "do": "cmdk",
+              "expect": "page commands listed with shortcuts"
+            },
+            {
+              "do": "key o",
+              "expect": "outline open"
+            },
+            {
+              "do": "key escape",
+              "expect": "top module closed"
+            }
+          ]
+        }
+      }
     },
     {
-      "entry": {
-        "file": "studio/views/WriterView.tsx",
-        "export": "default"
+      "id": "writer",
+      "path": "/writer",
+      "title": "Writer",
+      "frameId": "frames.studio-shell",
+      "sectionIds": [
+        "sections.studio.agent-gallery"
+      ],
+      "body": "plain",
+      "data": {
+        "loader": "gallery",
+        "agent": "writer"
       },
-      "instanceId": "writer",
-      "path": "/agents/writer",
-      "label": "Writer"
+      "inputs": {
+        "sections.studio.agent-gallery": "gallery"
+      },
+      "manifest": {
+        "frame": "frames.module",
+        "navigator": "explorer",
+        "modules": [
+          {
+            "id": "explorer",
+            "icon": "assets.icon-explorer",
+            "label": "Explorer",
+            "section": "sections.module.explorer",
+            "source": "page.explorer",
+            "shortcut": "e",
+            "defaultOpen": false,
+            "input": "explorer"
+          },
+          {
+            "id": "checks",
+            "icon": "assets.icon-checks",
+            "label": "Checks",
+            "section": "sections.module.checks",
+            "source": "page.checks",
+            "shortcut": "c",
+            "defaultOpen": false,
+            "input": "checks"
+          }
+        ],
+        "actions": [
+          {
+            "id": "copy-link",
+            "icon": "assets.icon-link",
+            "label": "Copy link",
+            "handler": {
+              "kind": "copy-link"
+            },
+            "shortcut": "l",
+            "cmdk": true
+          }
+        ],
+        "wiring": [
+          {
+            "do": "toggle explorer",
+            "expect": "explorer open, then closed"
+          },
+          {
+            "do": "toggle checks",
+            "expect": "checks open, then closed"
+          },
+          {
+            "do": "select explorer",
+            "expect": "target in view and highlighted"
+          },
+          {
+            "do": "search explorer",
+            "expect": "items filtered"
+          },
+          {
+            "do": "action copy-link",
+            "expect": "clipboard link"
+          },
+          {
+            "do": "cmdk",
+            "expect": "page commands listed with shortcuts"
+          },
+          {
+            "do": "key e",
+            "expect": "explorer open"
+          },
+          {
+            "do": "key escape",
+            "expect": "top module closed"
+          }
+        ]
+      },
+      "leaf": {
+        "param": "slug",
+        "body": "detail",
+        "data": {
+          "loader": "leaf",
+          "agent": "writer"
+        },
+        "sectionIds": [
+          "sections.studio.leaf-header",
+          "sections.studio.specimen",
+          "sections.studio.options",
+          "sections.studio.checks",
+          "sections.studio.contract",
+          "sections.studio.history",
+          "sections.studio.references"
+        ],
+        "inputs": {
+          "sections.studio.leaf-header": "header",
+          "sections.studio.specimen": "specimen",
+          "sections.studio.options": "options",
+          "sections.studio.checks": "checks",
+          "sections.studio.contract": "contract",
+          "sections.studio.history": "history",
+          "sections.studio.references": "references"
+        },
+        "manifest": {
+          "frame": "frames.module",
+          "navigator": "outline",
+          "modules": [
+            {
+              "id": "outline",
+              "icon": "assets.icon-outline",
+              "label": "Outline",
+              "section": "sections.module.outline",
+              "source": "page.outline",
+              "shortcut": "o",
+              "defaultOpen": false,
+              "input": "outline"
+            },
+            {
+              "id": "checks",
+              "icon": "assets.icon-checks",
+              "label": "Checks",
+              "section": "sections.module.checks",
+              "source": "page.checks",
+              "shortcut": "c",
+              "defaultOpen": false,
+              "input": "checks"
+            }
+          ],
+          "actions": [
+            {
+              "id": "request-change",
+              "icon": "assets.icon-request",
+              "label": "Request change",
+              "handler": {
+                "kind": "copy-prompt",
+                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+              },
+              "shortcut": "r",
+              "cmdk": true
+            },
+            {
+              "id": "versions",
+              "icon": "assets.icon-versions",
+              "label": "Versions",
+              "handler": {
+                "kind": "scroll",
+                "target": "[data-studio-section=\"history\"]"
+              },
+              "shortcut": "v",
+              "cmdk": true
+            },
+            {
+              "id": "copy-link",
+              "icon": "assets.icon-link",
+              "label": "Copy link",
+              "handler": {
+                "kind": "copy-link"
+              },
+              "shortcut": "l",
+              "cmdk": true
+            }
+          ],
+          "wiring": [
+            {
+              "do": "toggle outline",
+              "expect": "outline open, then closed"
+            },
+            {
+              "do": "toggle checks",
+              "expect": "checks open, then closed"
+            },
+            {
+              "do": "select outline",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "action request-change",
+              "expect": "clipboard prompt"
+            },
+            {
+              "do": "action versions",
+              "expect": "target in view"
+            },
+            {
+              "do": "action copy-link",
+              "expect": "clipboard link"
+            },
+            {
+              "do": "cmdk",
+              "expect": "page commands listed with shortcuts"
+            },
+            {
+              "do": "key o",
+              "expect": "outline open"
+            },
+            {
+              "do": "key escape",
+              "expect": "top module closed"
+            }
+          ]
+        }
+      }
     },
     {
-      "entry": {
-        "file": "studio/views/PublisherView.tsx",
-        "export": "default"
+      "id": "publisher",
+      "path": "/publisher",
+      "title": "Publisher",
+      "frameId": "frames.studio-shell",
+      "sectionIds": [
+        "sections.studio.agent-gallery",
+        "sections.studio.publications"
+      ],
+      "body": "plain",
+      "data": {
+        "loader": "gallery",
+        "agent": "publisher"
       },
-      "instanceId": "publisher",
-      "path": "/agents/publisher",
-      "label": "Publisher"
+      "inputs": {
+        "sections.studio.agent-gallery": "gallery",
+        "sections.studio.publications": "publications"
+      },
+      "manifest": {
+        "frame": "frames.module",
+        "navigator": "explorer",
+        "modules": [
+          {
+            "id": "explorer",
+            "icon": "assets.icon-explorer",
+            "label": "Explorer",
+            "section": "sections.module.explorer",
+            "source": "page.explorer",
+            "shortcut": "e",
+            "defaultOpen": false,
+            "input": "explorer"
+          },
+          {
+            "id": "checks",
+            "icon": "assets.icon-checks",
+            "label": "Checks",
+            "section": "sections.module.checks",
+            "source": "page.checks",
+            "shortcut": "c",
+            "defaultOpen": false,
+            "input": "checks"
+          }
+        ],
+        "actions": [
+          {
+            "id": "copy-link",
+            "icon": "assets.icon-link",
+            "label": "Copy link",
+            "handler": {
+              "kind": "copy-link"
+            },
+            "shortcut": "l",
+            "cmdk": true
+          }
+        ],
+        "wiring": [
+          {
+            "do": "toggle explorer",
+            "expect": "explorer open, then closed"
+          },
+          {
+            "do": "toggle checks",
+            "expect": "checks open, then closed"
+          },
+          {
+            "do": "select explorer",
+            "expect": "target in view and highlighted"
+          },
+          {
+            "do": "search explorer",
+            "expect": "items filtered"
+          },
+          {
+            "do": "action copy-link",
+            "expect": "clipboard link"
+          },
+          {
+            "do": "cmdk",
+            "expect": "page commands listed with shortcuts"
+          },
+          {
+            "do": "key e",
+            "expect": "explorer open"
+          },
+          {
+            "do": "key escape",
+            "expect": "top module closed"
+          }
+        ]
+      },
+      "leaf": {
+        "param": "slug",
+        "body": "detail",
+        "data": {
+          "loader": "leaf",
+          "agent": "publisher"
+        },
+        "sectionIds": [
+          "sections.studio.leaf-header",
+          "sections.studio.specimen",
+          "sections.studio.options",
+          "sections.studio.checks",
+          "sections.studio.contract",
+          "sections.studio.history",
+          "sections.studio.references"
+        ],
+        "inputs": {
+          "sections.studio.leaf-header": "header",
+          "sections.studio.specimen": "specimen",
+          "sections.studio.options": "options",
+          "sections.studio.checks": "checks",
+          "sections.studio.contract": "contract",
+          "sections.studio.history": "history",
+          "sections.studio.references": "references"
+        },
+        "manifest": {
+          "frame": "frames.module",
+          "navigator": "outline",
+          "modules": [
+            {
+              "id": "outline",
+              "icon": "assets.icon-outline",
+              "label": "Outline",
+              "section": "sections.module.outline",
+              "source": "page.outline",
+              "shortcut": "o",
+              "defaultOpen": false,
+              "input": "outline"
+            },
+            {
+              "id": "checks",
+              "icon": "assets.icon-checks",
+              "label": "Checks",
+              "section": "sections.module.checks",
+              "source": "page.checks",
+              "shortcut": "c",
+              "defaultOpen": false,
+              "input": "checks"
+            }
+          ],
+          "actions": [
+            {
+              "id": "request-change",
+              "icon": "assets.icon-request",
+              "label": "Request change",
+              "handler": {
+                "kind": "copy-prompt",
+                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+              },
+              "shortcut": "r",
+              "cmdk": true
+            },
+            {
+              "id": "versions",
+              "icon": "assets.icon-versions",
+              "label": "Versions",
+              "handler": {
+                "kind": "scroll",
+                "target": "[data-studio-section=\"history\"]"
+              },
+              "shortcut": "v",
+              "cmdk": true
+            },
+            {
+              "id": "copy-link",
+              "icon": "assets.icon-link",
+              "label": "Copy link",
+              "handler": {
+                "kind": "copy-link"
+              },
+              "shortcut": "l",
+              "cmdk": true
+            }
+          ],
+          "wiring": [
+            {
+              "do": "toggle outline",
+              "expect": "outline open, then closed"
+            },
+            {
+              "do": "toggle checks",
+              "expect": "checks open, then closed"
+            },
+            {
+              "do": "select outline",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "action request-change",
+              "expect": "clipboard prompt"
+            },
+            {
+              "do": "action versions",
+              "expect": "target in view"
+            },
+            {
+              "do": "action copy-link",
+              "expect": "clipboard link"
+            },
+            {
+              "do": "cmdk",
+              "expect": "page commands listed with shortcuts"
+            },
+            {
+              "do": "key o",
+              "expect": "outline open"
+            },
+            {
+              "do": "key escape",
+              "expect": "top module closed"
+            }
+          ]
+        }
+      }
     }
   ],
-  "navigation": {
-    "home": {
-      "tree": [
-        {
-          "id": "home",
-          "label": "Home",
-          "icon": "assets.icon-home",
-          "href": "/"
-        },
-        {
-          "id": "agents",
-          "label": "Agents",
-          "icon": "assets.icon-team",
-          "children": [
-            {
-              "id": "director",
-              "label": "Director",
-              "href": "/agents/director"
-            },
-            {
-              "id": "designer",
-              "label": "Designer",
-              "href": "/agents/designer"
-            },
-            {
-              "id": "writer",
-              "label": "Writer",
-              "href": "/agents/writer"
-            },
-            {
-              "id": "publisher",
-              "label": "Publisher",
-              "href": "/agents/publisher"
-            }
-          ]
-        }
-      ],
-      "activeId": "home"
-    },
-    "director": {
-      "tree": [
-        {
-          "id": "home",
-          "label": "Home",
-          "icon": "assets.icon-home",
-          "href": "/"
-        },
-        {
-          "id": "agents",
-          "label": "Agents",
-          "icon": "assets.icon-team",
-          "children": [
-            {
-              "id": "director",
-              "label": "Director",
-              "href": "/agents/director"
-            },
-            {
-              "id": "designer",
-              "label": "Designer",
-              "href": "/agents/designer"
-            },
-            {
-              "id": "writer",
-              "label": "Writer",
-              "href": "/agents/writer"
-            },
-            {
-              "id": "publisher",
-              "label": "Publisher",
-              "href": "/agents/publisher"
-            }
-          ]
-        }
-      ],
-      "activeId": "director"
-    },
-    "designer": {
-      "tree": [
-        {
-          "id": "home",
-          "label": "Home",
-          "icon": "assets.icon-home",
-          "href": "/"
-        },
-        {
-          "id": "agents",
-          "label": "Agents",
-          "icon": "assets.icon-team",
-          "children": [
-            {
-              "id": "director",
-              "label": "Director",
-              "href": "/agents/director"
-            },
-            {
-              "id": "designer",
-              "label": "Designer",
-              "href": "/agents/designer"
-            },
-            {
-              "id": "writer",
-              "label": "Writer",
-              "href": "/agents/writer"
-            },
-            {
-              "id": "publisher",
-              "label": "Publisher",
-              "href": "/agents/publisher"
-            }
-          ]
-        }
-      ],
-      "activeId": "designer"
-    },
-    "writer": {
-      "tree": [
-        {
-          "id": "home",
-          "label": "Home",
-          "icon": "assets.icon-home",
-          "href": "/"
-        },
-        {
-          "id": "agents",
-          "label": "Agents",
-          "icon": "assets.icon-team",
-          "children": [
-            {
-              "id": "director",
-              "label": "Director",
-              "href": "/agents/director"
-            },
-            {
-              "id": "designer",
-              "label": "Designer",
-              "href": "/agents/designer"
-            },
-            {
-              "id": "writer",
-              "label": "Writer",
-              "href": "/agents/writer"
-            },
-            {
-              "id": "publisher",
-              "label": "Publisher",
-              "href": "/agents/publisher"
-            }
-          ]
-        }
-      ],
-      "activeId": "writer"
-    },
-    "publisher": {
-      "tree": [
-        {
-          "id": "home",
-          "label": "Home",
-          "icon": "assets.icon-home",
-          "href": "/"
-        },
-        {
-          "id": "agents",
-          "label": "Agents",
-          "icon": "assets.icon-team",
-          "children": [
-            {
-              "id": "director",
-              "label": "Director",
-              "href": "/agents/director"
-            },
-            {
-              "id": "designer",
-              "label": "Designer",
-              "href": "/agents/designer"
-            },
-            {
-              "id": "writer",
-              "label": "Writer",
-              "href": "/agents/writer"
-            },
-            {
-              "id": "publisher",
-              "label": "Publisher",
-              "href": "/agents/publisher"
-            }
-          ]
-        }
-      ],
-      "activeId": "publisher"
-    }
-  },
-  "commands": [
+  "items": [
     {
-      "id": "studio",
-      "label": "studio",
-      "items": [
-        {
-          "id": "home",
-          "label": "Home",
-          "icon": "assets.icon-home",
-          "href": "/"
-        }
-      ]
+      "slot": "frames.studio-shell",
+      "element": "studio-shell",
+      "version": 5
     },
     {
-      "id": "agents",
-      "label": "Agents",
-      "items": [
-        {
-          "id": "director",
-          "label": "Director",
-          "href": "/agents/director"
-        },
-        {
-          "id": "designer",
-          "label": "Designer",
-          "href": "/agents/designer"
-        },
-        {
-          "id": "writer",
-          "label": "Writer",
-          "href": "/agents/writer"
-        },
-        {
-          "id": "publisher",
-          "label": "Publisher",
-          "href": "/agents/publisher"
-        }
-      ]
+      "slot": "sections.studio.home",
+      "element": "studio-home",
+      "version": 2
+    },
+    {
+      "slot": "frames.module",
+      "element": "studio-module",
+      "version": 1
+    },
+    {
+      "slot": "sections.module.outline",
+      "element": "module-outline",
+      "version": 1
+    },
+    {
+      "slot": "sections.module.checks",
+      "element": "module-checks",
+      "version": 1
+    },
+    {
+      "slot": "sections.studio.agent-gallery",
+      "element": "studio-agent-gallery",
+      "version": 3
+    },
+    {
+      "slot": "sections.studio.leaf-header",
+      "element": "studio-leaf-header",
+      "version": 1
+    },
+    {
+      "slot": "sections.studio.specimen",
+      "element": "studio-specimen",
+      "version": 2
+    },
+    {
+      "slot": "sections.studio.options",
+      "element": "studio-options",
+      "version": 1
+    },
+    {
+      "slot": "sections.studio.checks",
+      "element": "studio-checks",
+      "version": 1
+    },
+    {
+      "slot": "sections.studio.contract",
+      "element": "studio-contract",
+      "version": 1
+    },
+    {
+      "slot": "sections.studio.history",
+      "element": "studio-history",
+      "version": 1
+    },
+    {
+      "slot": "sections.studio.references",
+      "element": "studio-references",
+      "version": 1
+    },
+    {
+      "slot": "sections.module.explorer",
+      "element": "module-explorer",
+      "version": 1
+    },
+    {
+      "slot": "sections.studio.publications",
+      "element": "studio-publications",
+      "version": 2
     }
   ],
   "pageActions": {
@@ -595,254 +1162,56 @@
         }
       }
     ],
-    "director": [
-      {
-        "id": "explorer",
-        "label": "Explorer",
-        "icon": "assets.icon-explorer",
-        "defaultOpen": true,
-        "module": {
-          "section": "sections.explorer"
-        }
-      },
-      {
-        "id": "inspector",
-        "label": "Inspector",
-        "icon": "assets.icon-inspector",
-        "defaultOpen": false,
-        "module": {
-          "section": "sections.record-detail",
-          "source": "director.inspector"
-        }
-      },
-      {
-        "id": "source",
-        "label": "Source",
-        "icon": "assets.icon-source",
-        "defaultOpen": false,
-        "module": {
-          "section": "sections.content"
-        }
-      },
-      {
-        "id": "checks",
-        "label": "Checks",
-        "icon": "assets.icon-checks",
-        "defaultOpen": false,
-        "module": {
-          "section": "sections.status-list"
-        }
-      },
-      {
-        "id": "needs",
-        "label": "Needs",
-        "icon": "assets.icon-needs",
-        "defaultOpen": false,
-        "module": {
-          "section": "sections.task-list",
-          "source": "director.open-requests"
-        }
-      }
-    ],
-    "designer": [
-      {
-        "id": "explorer",
-        "label": "Explorer",
-        "icon": "assets.icon-explorer",
-        "defaultOpen": true,
-        "module": {
-          "section": "sections.explorer"
-        }
-      },
-      {
-        "id": "inspector",
-        "label": "Inspector",
-        "icon": "assets.icon-inspector",
-        "defaultOpen": false,
-        "module": {
-          "section": "sections.record-detail",
-          "source": "designer.inspector"
-        }
-      },
-      {
-        "id": "source",
-        "label": "Source",
-        "icon": "assets.icon-source",
-        "defaultOpen": false,
-        "module": {
-          "section": "sections.content"
-        }
-      },
-      {
-        "id": "checks",
-        "label": "Checks",
-        "icon": "assets.icon-checks",
-        "defaultOpen": false,
-        "module": {
-          "section": "sections.status-list"
-        }
-      },
-      {
-        "id": "needs",
-        "label": "Needs",
-        "icon": "assets.icon-needs",
-        "defaultOpen": false,
-        "module": {
-          "section": "sections.task-list",
-          "source": "designer.open-requests"
-        }
-      }
-    ],
-    "writer": [
-      {
-        "id": "explorer",
-        "label": "Explorer",
-        "icon": "assets.icon-explorer",
-        "defaultOpen": true,
-        "module": {
-          "section": "sections.explorer"
-        }
-      },
-      {
-        "id": "inspector",
-        "label": "Inspector",
-        "icon": "assets.icon-inspector",
-        "defaultOpen": false,
-        "module": {
-          "section": "sections.record-detail",
-          "source": "writer.inspector"
-        }
-      },
-      {
-        "id": "source",
-        "label": "Source",
-        "icon": "assets.icon-source",
-        "defaultOpen": false,
-        "module": {
-          "section": "sections.content"
-        }
-      },
-      {
-        "id": "checks",
-        "label": "Checks",
-        "icon": "assets.icon-checks",
-        "defaultOpen": false,
-        "module": {
-          "section": "sections.status-list"
-        }
-      },
-      {
-        "id": "needs",
-        "label": "Needs",
-        "icon": "assets.icon-needs",
-        "defaultOpen": false,
-        "module": {
-          "section": "sections.task-list",
-          "source": "writer.open-requests"
-        }
-      }
-    ],
-    "publisher": [
-      {
-        "id": "explorer",
-        "label": "Explorer",
-        "icon": "assets.icon-explorer",
-        "defaultOpen": true,
-        "module": {
-          "section": "sections.explorer"
-        }
-      },
-      {
-        "id": "inspector",
-        "label": "Inspector",
-        "icon": "assets.icon-inspector",
-        "defaultOpen": false,
-        "module": {
-          "section": "sections.record-detail",
-          "source": "publisher.inspector"
-        }
-      },
-      {
-        "id": "source",
-        "label": "Source",
-        "icon": "assets.icon-source",
-        "defaultOpen": false,
-        "module": {
-          "section": "sections.content"
-        }
-      },
-      {
-        "id": "checks",
-        "label": "Checks",
-        "icon": "assets.icon-checks",
-        "defaultOpen": false,
-        "module": {
-          "section": "sections.status-list"
-        }
-      },
-      {
-        "id": "needs",
-        "label": "Needs",
-        "icon": "assets.icon-needs",
-        "defaultOpen": false,
-        "module": {
-          "section": "sections.task-list",
-          "source": "publisher.open-requests"
-        }
-      }
-    ]
+    "director": [],
+    "designer": [],
+    "writer": [],
+    "publisher": []
   },
-  "breadcrumbs": {
-    "home": [
-      {
-        "id": "home",
-        "label": "Home",
-        "href": "/"
+  "routes": [
+    {
+      "instanceId": "home",
+      "path": "/",
+      "label": "Home",
+      "entry": {
+        "file": "studio/app/[[...route]]/page.tsx",
+        "export": "default"
       }
-    ],
-    "director": [
-      {
-        "id": "agents",
-        "label": "Agents"
-      },
-      {
-        "id": "director",
-        "label": "Director",
-        "href": "/agents/director"
+    },
+    {
+      "instanceId": "director",
+      "path": "/director",
+      "label": "Director",
+      "entry": {
+        "file": "studio/app/[[...route]]/page.tsx",
+        "export": "default"
       }
-    ],
-    "designer": [
-      {
-        "id": "agents",
-        "label": "Agents"
-      },
-      {
-        "id": "designer",
-        "label": "Designer",
-        "href": "/agents/designer"
+    },
+    {
+      "instanceId": "designer",
+      "path": "/designer",
+      "label": "Designer",
+      "entry": {
+        "file": "studio/app/[[...route]]/page.tsx",
+        "export": "default"
       }
-    ],
-    "writer": [
-      {
-        "id": "agents",
-        "label": "Agents"
-      },
-      {
-        "id": "writer",
-        "label": "Writer",
-        "href": "/agents/writer"
+    },
+    {
+      "instanceId": "writer",
+      "path": "/writer",
+      "label": "Writer",
+      "entry": {
+        "file": "studio/app/[[...route]]/page.tsx",
+        "export": "default"
       }
-    ],
-    "publisher": [
-      {
-        "id": "agents",
-        "label": "Agents"
-      },
-      {
-        "id": "publisher",
-        "label": "Publisher",
-        "href": "/agents/publisher"
+    },
+    {
+      "instanceId": "publisher",
+      "path": "/publisher",
+      "label": "Publisher",
+      "entry": {
+        "file": "studio/app/[[...route]]/page.tsx",
+        "export": "default"
       }
-    ]
-  }
+    }
+  ]
 }

@@ -3,84 +3,104 @@ const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const path = require('node:path');
 const fs = require('node:fs');
+const os = require('node:os');
 const Module = require('node:module');
 const React = require('react');
 const { renderToStaticMarkup } = require('react-dom/server');
 const { buildSync } = require('esbuild');
 
 const studio = path.resolve(__dirname, '..');
-const projection = JSON.parse(fs.readFileSync(path.join(studio, 'generated/studio-map.json'), 'utf8'));
 
-// Exercise the real frame and generated projection with only runtime ports substituted.
-function frameModule() {
-  const mocks = {
-    'next/navigation': `export const usePathname=()=>globalThis.__studioFrameTest.path; export const useRouter=()=>({push(){}});`,
-    './StudioSelection': `export const useStudioSelection=()=>({selection:{leaves:[]}}); export const useStudioUI=()=>({Icon:()=>null,AppFrame:props=>{globalThis.__studioFrameTest.frame=props;return props.children;}});`,
-    './StudioBrand': `export const useStudioBrand=()=>({source:'consumer'});`,
-  };
-  const source = fs.readFileSync(path.join(studio, 'components/StudioFrame.tsx'), 'utf8');
-  const scratch = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'studio-frame-test-'));
+/** Bundle Studio source as CommonJS; `mocks` swaps named imports of the source for runtime ports. */
+function compile(file, mocks = {}) {
+  const scratch = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'studio-frame-test-')));
   try {
-    const rewritten = source.replace(/from ('[^']+')/g, (match, quoted) => {
+    const source = fs.readFileSync(file, 'utf8').replace(/from ('[^']+')/g, (match, quoted) => {
       const name = quoted.slice(1, -1);
       if (!mocks[name]) return match;
-      const file = path.join(scratch, `${Object.keys(mocks).indexOf(name)}.js`);
-      fs.writeFileSync(file, mocks[name]);
-      return `from ${JSON.stringify(file)}`;
+      const port = path.join(scratch, `${Object.keys(mocks).indexOf(name)}.js`);
+      fs.writeFileSync(port, mocks[name]);
+      return `from ${JSON.stringify(port)}`;
     });
-    const output = buildSync({ stdin: { contents: rewritten, resolveDir: path.join(studio, 'components'), loader: 'tsx' }, bundle: true, platform: 'node', format: 'cjs', packages: 'external', jsx: 'automatic', write: false }).outputFiles[0].text;
+    const output = buildSync({ stdin: { contents: source, resolveDir: path.dirname(file), loader: 'tsx' }, bundle: true, platform: 'node', format: 'cjs', external: ['react', 'react-dom', 'react/*', 'react-dom/*'], loader: { '.css': 'empty' }, jsx: 'automatic', write: false, logLevel: 'silent' }).outputFiles[0].text;
     const compiled = new Module(path.join(studio, 'checks/frame-test.cjs'), module);
     compiled.filename = path.join(studio, 'checks/frame-test.cjs');
     compiled.paths = Module._nodeModulePaths(studio);
     compiled._compile(output, compiled.filename);
-    return compiled.exports.StudioFrame;
+    return compiled.exports;
   } finally { fs.rmSync(scratch, { recursive: true, force: true }); }
 }
-const Frame = frameModule();
-function render(pathname) {
-  globalThis.__studioFrameTest = { path: pathname };
-  renderToStaticMarkup(React.createElement(Frame, { page: { title: 'Fixture' } }, 'Content'));
-  const captured = globalThis.__studioFrameTest.frame;
-  delete globalThis.__studioFrameTest;
-  return captured;
-}
-function targets(tree) { return tree.flatMap(node => [...(node.href ? [{ id: node.id, label: node.label, href: node.href }] : []), ...targets(node.children ?? [])]); }
 
-test('frame navigation, commands and breadcrumbs consume the generated Publisher projection', () => {
-  for (const route of projection.routes) {
-    const frame = render(route.path);
-    assert.deepEqual(targets(frame.navigation.tree), targets(projection.navigation[route.instanceId].tree));
-    assert.deepEqual(frame.commands.groups.flatMap(group => group.items.map(({ id, label, href }) => ({ id, label, href }))), projection.commands.flatMap(group => group.items.filter(item => item.href).map(({ id, label, href }) => ({ id, label, href }))));
-    assert.deepEqual(frame.page.breadcrumb, projection.breadcrumbs[route.instanceId]);
-    assert.deepEqual(frame.page.actions.map(({ id, label }) => ({ id, label })), projection.pageActions[route.instanceId].map(({ id, label }) => ({ id, label })));
-    assert.ok(frame.page.actions.every(action => action.icon), 'every projected page action uses the selected Designer icon');
-  }
+const { default: Frame } = compile(path.join(studio, 'frames/studio-shell/index.tsx'), {
+  'next/navigation': `export const usePathname=()=>globalThis.__studioPath ?? '/'; export const useRouter=()=>({push(){}});`,
+  '../../components/StudioProviders': `export const useStudioData=()=>({reports:[],brand:{name:'Fixture'}}); export const useThemeMode=()=>({mode:'light',setMode(){}});`,
 });
+const routes = compile(path.join(studio, 'lib/studio-route-map.ts'));
+const { studioPages } = compile(path.join(studio, 'generated/studio-map.ts'));
 
-test('page actions dispatch every generated manifest to the module host', () => {
-  const target = new EventTarget();
-  const received = [];
-  target.addEventListener('studio:page-action', event => received.push(event.detail));
-  const priorWindow = globalThis.window;
-  globalThis.window = target;
+/** A map with one fixture leaf per gallery, the way the record stores fill it at runtime. */
+const leaves = Object.fromEntries(routes.studioLeafPages.map(page => [page.id, [{ slug: 'fixture-leaf', title: 'Fixture leaf' }]]));
+const map = routes.studioRuntimeMap(leaves);
+const entries = routes.studioPageEntries(map);
+const paths = new Set(entries.map(entry => entry.path));
+
+function render(entry) {
+  globalThis.__studioPath = entry.path;
   try {
-    const expected = [];
-    for (const route of projection.routes) {
-      const frame = render(route.path);
-      const manifest = projection.pageActions[route.instanceId];
-      for (const action of manifest) frame.page.actions.find(item => item.id === action.id).onAction();
-      expected.push(...manifest.map(action => ({ pageId: route.instanceId, action })));
-    }
-    assert.deepEqual(received, expected);
-    assert.ok(received.some(item => item.action.defaultOpen), 'host receives the authored Explorer default');
-  } finally {
-    if (priorWindow === undefined) delete globalThis.window;
-    else globalThis.window = priorWindow;
+    const projection = routes.studioShellProjection(map, entry.id);
+    return { projection, html: renderToStaticMarkup(React.createElement(Frame, { ...projection }, 'Content')) };
+  } finally { delete globalThis.__studioPath; }
+}
+const hrefs = html => [...html.matchAll(/<a\b[^>]*?\shref="([^"]*)"/g)].map(match => match[1].replace(/&amp;/g, '&'));
+
+test('the runtime map holds home, the galleries and every leaf, each at its served path', () => {
+  assert.equal(entries.find(entry => entry.id === 'home')?.path, '/');
+  for (const page of routes.studioLeafPages) {
+    assert.ok(paths.has(page.path), page.id);
+    assert.ok(paths.has(`${page.path}/fixture-leaf`), `${page.id} leaf`);
+  }
+  assert.equal(new Set(entries.map(entry => entry.path)).size, entries.length, 'no two entries share a path');
+});
+
+test('every link the frame renders, on every map entry, is a map path', () => {
+  for (const entry of entries) {
+    const { html } = render(entry);
+    const links = hrefs(html);
+    assert.ok(links.length > 0, entry.id);
+    for (const href of links) assert.ok(paths.has(href), `${entry.id} renders ${href}, which the map does not hold`);
   }
 });
 
-test('cell workspaces leave page actions to the Publisher manifest', () => {
-  const source = fs.readFileSync(path.join(studio, 'components/CellsWorkspace.tsx'), 'utf8');
-  assert.doesNotMatch(source, /actions\s*:/);
-  assert.doesNotMatch(source, /Reload cells|label:\s*`Open/);
+test('frame navigation, commands and breadcrumbs are the Publisher projections of the one map', () => {
+  for (const entry of entries) {
+    const { projection } = render(entry);
+    const commands = projection.commands.flatMap(group => group.items.filter(item => item.href).map(item => item.href));
+    for (const href of commands) assert.ok(paths.has(href), href);
+    assert.equal(projection.breadcrumbs.at(-1)?.label, entry.title, `${entry.id} breadcrumb ends at the page`);
+    for (const crumb of projection.breadcrumbs) if (crumb.href) assert.ok(paths.has(crumb.href), crumb.href);
+  }
+  const commandHrefs = new Set(routes.studioShellProjection(map, 'home').commands.flatMap(group => group.items.map(item => item.href)));
+  for (const entry of entries) assert.ok(commandHrefs.has(entry.path), `the command menu lists ${entry.path}`);
+});
+
+test('every page manifest declares its navigator, modules and header actions (agent pages: explorer; L3 pages: outline)', () => {
+  for (const page of studioPages) {
+    const specs = [['page', page, page.id === 'home' ? 'outline' : 'explorer'], ...(page.leaf ? [['leaf', page.leaf, 'outline']] : [])];
+    for (const [where, spec, navigator] of specs) {
+      const manifest = spec.manifest;
+      assert.ok(manifest, `${page.id} ${where} has a manifest`);
+      assert.equal(manifest.navigator, navigator, `${page.id} ${where} navigator`);
+      assert.deepEqual(manifest.modules.map(module => module.id), [navigator, 'checks'], `${page.id} ${where} modules`);
+      assert.ok(manifest.actions.some(action => action.id === 'copy-link'), `${page.id} ${where} copies its link`);
+      if (where === 'leaf') assert.deepEqual(manifest.actions.map(action => action.id), ['request-change', 'versions', 'copy-link']);
+    }
+  }
+});
+
+test('the frame header holds the breadcrumb and icon buttons only; the right panel holds no form', () => {
+  const { html } = render(entries.find(entry => entry.id === 'home'));
+  const header = html.match(/<header\b[\s\S]*?<\/header>/)?.[0] ?? '';
+  assert.ok(header.includes('aria-label="breadcrumb"') || header.includes('Breadcrumb'), 'header carries the breadcrumb');
+  assert.doesNotMatch(header, /<(input|textarea|select|form)\b/);
+  assert.doesNotMatch(html, /<(form|textarea)\b/);
 });

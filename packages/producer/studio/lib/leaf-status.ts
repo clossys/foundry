@@ -18,8 +18,9 @@ export const LEAF_STATUS_TONE: Record<LeafStatus, LeafTone> = {
   missing: 'destructive', failing: 'destructive', retired: 'destructive',
 };
 
-/** Badge text for options waiting on the owner's approval. */
-export const pendingOptionsBadge = (count: number) => count === 1 ? '1 option pending' : `${count} options pending`;
+/** The one count unit every Studio surface uses: a leaf is one L3 page in the Studio map. */
+export const LEAF_UNIT = ['leaf', 'leaves'] as const;
+export const leafCountLabel = (count: number) => `${count} ${count === 1 ? LEAF_UNIT[0] : LEAF_UNIT[1]}`;
 
 /**
  * The specimen description for a leaf, following its status: a pending leaf has no pin, so its

@@ -1,16 +1,27 @@
 /**
- * Studio agent library client: the Director, Writer and Publisher galleries and leaf
- * details read Producer's record projection over HTTP only (`/api/agents/<agent>/library[/<leaf>]`),
- * and one adapter per agent turns it into the shared gallery and detail template data.
- * REPLACE with the Publisher content-map projection when it lands.
+ * Studio agent library client: the Director, Writer and Publisher galleries and leaves read
+ * Producer's record projection over HTTP only (`/api/agents/<agent>/library[/<leaf>]`), and one
+ * adapter per agent turns it into the inputs of the Studio sections the page records place.
+ * Every link resolves through the Studio map (`StudioLinks`); no route string is built here.
  */
-import type { GalleryHeaderData, GalleryLayerData, GalleryNoticeData } from '../views/agent-gallery/types';
-import type { DetailCheckRow, DetailContractData, DetailHeaderData, DetailHistoryData, DetailRef, DetailSpecimenData, DetailUsesData } from '../views/agent-detail/types';
-import { LEAF_STATUS_LABEL as STATUS_LABEL, LEAF_STATUS_TONE as STATUS_TONE, type LeafStatus } from './leaf-status';
+import type { AgentGalleryInput, GalleryCardData, GalleryLayerData } from '../sections/studio-agent-gallery/types';
+import type { CheckRow } from '../sections/studio-checks';
+import type { ContractInput } from '../sections/studio-contract';
+import type { HistoryInput } from '../sections/studio-history';
+import type { LeafHeaderInput } from '../sections/studio-leaf-header';
+import type { OptionRow, OptionsInput } from '../sections/studio-options';
+import type { ReferenceLink, ReferencesInput } from '../sections/studio-references';
+import type { SpecimenInput, ViewportSpecimen } from '../sections/studio-specimen';
+import type { PageNoticeData } from '../frames/studio-shell/PageNotice';
+import { optionsDescription } from './designer-library';
+import { LEAF_STATUS_LABEL as STATUS_LABEL, LEAF_STATUS_TONE as STATUS_TONE, LEAF_UNIT, leafCountLabel, type LeafStatus } from './leaf-status';
 
 export const LIBRARY_AGENTS = ['director', 'writer', 'publisher'] as const;
 export type LibraryAgent = typeof LIBRARY_AGENTS[number];
 export const isLibraryAgent = (value: string): value is LibraryAgent => (LIBRARY_AGENTS as readonly string[]).includes(value);
+
+/** Map-backed links: the served path of an agent's gallery or one of its leaves, when the map has it. */
+export interface StudioLinks { gallery: (agent: string) => string | undefined; leaf: (agent: string, slug: string) => string | undefined }
 
 export type AgentLeafStatus = 'active' | 'draft' | 'retired';
 export interface AgentRef { label: string; agent?: string; slug?: string }
@@ -18,37 +29,32 @@ export interface AgentCard { id: string; slug: string; name: string; version: nu
 export interface AgentSpecimenTable { id: string; label: string; columns: string[]; prose?: number; rows: { key: string; cells: { text: string; ref?: AgentRef; status?: string }[] }[] }
 export interface AgentSection { id: string; label: string; level: 0 | 1 | 2; cards: AgentCard[] }
 export interface AgentGalleryRecords { state: 'ready' | 'missing'; agent: LibraryAgent; grouping?: 'ia' | 'kind'; sections: AgentSection[]; count: number }
+export interface AgentHistoryRow { version: number; status: AgentLeafStatus; updated: string; note: string; active: boolean }
 export interface AgentLeafRecords {
   agent: LibraryAgent; card: AgentCard; trail: string[]; statusDetail: string[];
   specimen: { summary: string; rows: { label: string; text: string; ref?: AgentRef }[]; kind?: string; tables?: AgentSpecimenTable[] };
   checks: { label: string; ok: boolean; detail?: string }[];
   contract: { facts: { label: string; value: string }[]; lists: { label: string; items: string[] }[] };
-  history: { version: number; status: AgentLeafStatus; updated: string; note: string; active: boolean }[];
+  history: AgentHistoryRow[];
   uses: AgentRef[]; usedBy: AgentRef[];
 }
 
-/** Per-agent copy: the only thing that differs between the agents' galleries and details. */
-interface AgentAdapter {
-  label: string;
-  unit: readonly [string, string];
-  description: string;
-  specimenTitle: string;
-}
+/** Per-agent copy: the only thing that differs between the agents' galleries and leaves. */
+interface AgentAdapter { label: string; description: string; specimenTitle: string }
 const ADAPTERS: Record<LibraryAgent, AgentAdapter> = {
-  director: { label: 'Director', unit: ['brief', 'briefs'], description: 'Strategy records, grouped by the strategy catalog. Open one for its direction, checks and lineage.', specimenTitle: 'Direction' },
-  writer: { label: 'Writer', unit: ['copy cell', 'copy cells'], description: 'Copy cells and their keys. Open one for its strings, bindings and history.', specimenTitle: 'Strings' },
-  publisher: { label: 'Publisher', unit: ['page', 'pages'], description: 'Page records. Open one for the sections it assembles and the copy it binds.', specimenTitle: 'Sections' },
+  director: { label: 'Director', description: 'Strategy records, grouped by the strategy catalog. Open one for its direction, checks and lineage.', specimenTitle: 'Direction' },
+  writer: { label: 'Writer', description: 'Copy cells and their keys. Open one for its strings, bindings and history.', specimenTitle: 'Strings' },
+  publisher: { label: 'Publisher', description: 'Page records. Open one for the sections it assembles and the copy it binds.', specimenTitle: 'Sections' },
 };
+export const agentLabel = (agent: LibraryAgent) => ADAPTERS[agent].label;
 
-
-export const agentGalleryHref = (agent: string) => `/${agent}`;
-export const agentLeafHref = (agent: string, slug: string) => `/${agent}/${encodeURIComponent(slug)}`;
 const KIND_TITLE: Record<string, string> = { voice: 'Voice', claims: 'Claims', naming: 'Names' };
 const isLeafStatus = (value: string | undefined): value is LeafStatus => value !== undefined && value in STATUS_LABEL;
+const status = (value: LeafStatus) => ({ label: STATUS_LABEL[value], tone: STATUS_TONE[value] });
 /** A cell with no records has nothing to preview: the shared `missing` status says so. */
 const emptyStatus = (card: AgentCard): LeafStatus | undefined => card.records === 0 ? 'missing' : undefined;
-const refHref = (ref: AgentRef) => ref.agent && ref.slug ? agentLeafHref(ref.agent, ref.slug) : undefined;
-const toRef = (ref: AgentRef): DetailRef => { const href = refHref(ref); return { label: ref.label, ...(href ? { href } : {}) }; };
+const refHref = (links: StudioLinks, ref: AgentRef) => ref.agent && ref.slug ? links.leaf(ref.agent, ref.slug) : undefined;
+const toRef = (links: StudioLinks, ref: AgentRef): ReferenceLink => { const href = refHref(links, ref); return { label: ref.label, ...(href ? { href } : {}) }; };
 
 async function request(path: string, signal: AbortSignal): Promise<unknown> {
   const response = await fetch(path, { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
@@ -71,76 +77,159 @@ export async function loadAgentLeaf(agent: LibraryAgent, slug: string, signal: A
   return value.leaf as unknown as AgentLeafRecords;
 }
 
-export const agentUnit = (agent: LibraryAgent) => ADAPTERS[agent].unit;
-
-export function agentNotice(agent: LibraryAgent, state: 'missing' | 'error', message?: string): GalleryNoticeData {
+export function agentNotice(agent: LibraryAgent, state: 'missing' | 'error', message?: string): PageNoticeData {
   const { label } = ADAPTERS[agent];
   return state === 'missing'
     ? { title: `No ${label} records yet`, description: `Producer found no ${label} cells in this workspace.` }
     : { title: `The ${label} library could not load`, description: message ?? 'Producer returned an error.' };
 }
 
-export function agentGalleryHeader(records: AgentGalleryRecords): GalleryHeaderData {
-  const adapter = ADAPTERS[records.agent];
-  return {
-    title: `${adapter.label} library`,
-    description: `${records.count} ${records.count === 1 ? adapter.unit[0] : adapter.unit[1]} from the record store. ${adapter.description}`,
-    ...(records.grouping === 'kind' ? { notice: 'Grouped by record kind: this agent has no IA data.' } : {}),
-  };
+/**
+ * Each leaf's gallery preview, keyed by card id: its full specimen once the loader has it, `null`
+ * when its leaf could not load. A card missing from the map is still loading.
+ */
+export type GalleryPreviews = ReadonlyMap<string, SpecimenInput | null>;
+const LOADING = { label: 'Loading preview', tone: 'outline' as const, loading: true };
+const UNAVAILABLE = { label: 'Preview unavailable', tone: 'outline' as const };
+
+/**
+ * A leaf's full gallery preview: a Publisher page as its last install emitted it, framed view-only
+ * at desktop width, else the record's own content (a Director brief, a Writer leaf's strings).
+ */
+export function agentGalleryPreview(leaf: AgentLeafRecords, links: StudioLinks, pageUrl?: string): SpecimenInput {
+  if (pageUrl) return { kind: 'viewports', name: leaf.card.name, title: 'Rendered page', description: '', specimens: [{ viewport: 1280, light: pageUrl, interactive: false }], empty: 'Publish this page to preview it.' };
+  return agentRecordSpecimen(leaf, links);
 }
 
 /** Records -> display data: L0 sections open a layer; L1/L2 sections become its groups. */
-export function agentGalleryLayers(records: AgentGalleryRecords): GalleryLayerData[] {
+export function agentGalleryLayers(records: AgentGalleryRecords, links: StudioLinks, previews: GalleryPreviews = new Map()): GalleryLayerData[] {
   const layers: { id: string; label: string; groups: GalleryLayerData['groups'][number][] }[] = [];
   for (const section of records.sections) {
     if (section.level === 0) { layers.push({ id: section.id, label: section.label, groups: [] }); continue; }
     if (!layers.length) layers.push({ id: `${section.id}-layer`, label: section.label, groups: [] });
     layers.at(-1)!.groups.push({
       id: section.id, label: section.label, level: section.level,
-      cards: section.cards.map(card => ({
-        key: card.id, name: card.name, version: card.version,
-        statusLabel: STATUS_LABEL[card.status], statusTone: STATUS_TONE[card.status],
-        href: agentLeafHref(records.agent, card.slug), excerpt: card.excerpt,
-        ...(emptyStatus(card) ? { specimenStatus: emptyStatus(card)! } : {}),
-      })),
+      cards: section.cards.flatMap(card => {
+        const href = links.leaf(records.agent, card.slug);
+        if (!href) return [];
+        const empty = emptyStatus(card);
+        return [{
+          key: card.id, name: card.name, version: card.version,
+          statusLabel: STATUS_LABEL[card.status], statusTone: STATUS_TONE[card.status],
+          href, ...previewFields(card, empty, previews),
+        }];
+      }),
     });
   }
   return layers.filter(layer => layer.groups.length);
 }
 
-export interface AgentDetailData {
-  header: DetailHeaderData; specimen: DetailSpecimenData; checks: DetailCheckRow[]; contract: DetailContractData; history: DetailHistoryData; uses: DetailUsesData;
+function previewFields(card: AgentCard, empty: LeafStatus | undefined, previews: GalleryPreviews): Pick<GalleryCardData, 'specimen' | 'specimenStatus'> {
+  if (empty) return { specimenStatus: status(empty) };
+  const preview = previews.get(card.id);
+  if (preview) return { specimen: preview };
+  return { specimenStatus: preview === null ? UNAVAILABLE : LOADING };
 }
 
-export function agentDetailData(leaf: AgentLeafRecords): AgentDetailData {
-  const adapter = ADAPTERS[leaf.agent];
+/** The `gallery` input for one agent, or a notice when it has nothing to show. `count` is the gallery's leaf entries in the Studio map. */
+export function agentGalleryInput(records: AgentGalleryRecords, links: StudioLinks, count: number, previews: GalleryPreviews = new Map()): AgentGalleryInput | PageNoticeData {
+  const adapter = ADAPTERS[records.agent];
+  const layers = agentGalleryLayers(records, links, previews);
+  if (records.state === 'missing' || !layers.length) return agentNotice(records.agent, 'missing');
   return {
     header: {
-      name: leaf.card.name, id: leaf.card.id, version: leaf.card.version,
-      statusLabel: STATUS_LABEL[leaf.card.status], statusTone: STATUS_TONE[leaf.card.status],
-      statusDetail: leaf.statusDetail, trail: leaf.trail, galleryHref: agentGalleryHref(leaf.agent), galleryLabel: `${adapter.label} library`,
+      title: `${adapter.label} library`,
+      description: `${leafCountLabel(count)} from the record store. ${adapter.description}`,
+      ...(records.grouping === 'kind' ? { notice: 'Grouped by record kind: this agent has no IA data.' } : {}),
     },
-    specimen: {
-      title: KIND_TITLE[leaf.specimen.kind ?? ''] ?? adapter.specimenTitle, description: leaf.specimen.summary,
-      rows: leaf.specimen.rows.map((row, index) => {
-        const href = row.ref ? refHref(row.ref) : undefined;
-        return { key: `${index}`, label: row.label, text: row.text, ...(href ? { href } : {}) };
-      }),
-      ...(leaf.specimen.tables?.length ? { tables: leaf.specimen.tables.map(table => ({
-        id: table.id, label: table.label, columns: table.columns, ...(table.prose === undefined ? {} : { prose: table.prose }),
-        rows: table.rows.map(row => ({ key: row.key, cells: row.cells.map(cell => {
-          const href = cell.ref ? refHref(cell.ref) : undefined;
-          return { text: cell.text, ...(href ? { href } : {}), ...(isLeafStatus(cell.status) ? { statusLabel: STATUS_LABEL[cell.status], statusTone: STATUS_TONE[cell.status] } : {}) };
-        }) })),
-      })) } : {}),
-      ...(emptyStatus(leaf.card) ? { status: emptyStatus(leaf.card)! } : {}),
-    },
-    checks: leaf.checks.map((check, index) => ({ key: `${index}`, label: check.label, ok: check.ok, detail: check.detail ?? '' })),
-    contract: { facts: leaf.contract.facts, lists: leaf.contract.lists },
-    history: { rows: leaf.history.map(row => ({
-      version: row.version, date: row.updated, note: row.note || '—',
-      marks: [row.active && 'Active', STATUS_LABEL[row.status]].filter((mark, index, all): mark is string => Boolean(mark) && all.indexOf(mark) === index),
-    })) },
-    uses: { uses: leaf.uses.map(toRef), usedBy: leaf.usedBy.map(toRef) },
+    unit: LEAF_UNIT, layers,
+  };
+}
+
+/** The version a leaf shows: the active one, else the newest. */
+export function shownVersion(leaf: AgentLeafRecords): AgentHistoryRow | undefined {
+  return leaf.history.find(row => row.active) ?? leaf.history[0];
+}
+
+/**
+ * Options pending approval: every version newer than the active one that is not retired, or every
+ * draft when nothing is active yet. The history comes newest first.
+ */
+export function agentOptionVersions(leaf: AgentLeafRecords): AgentHistoryRow[] {
+  const active = leaf.history.find(row => row.active);
+  return leaf.history.filter(row => row.status !== 'retired' && !row.active && (active ? row.version > active.version : row.status === 'draft')).sort((a, b) => a.version - b.version);
+}
+
+/** The `options` input for an agent leaf, from per-version previews the loader prepared. */
+export function agentOptionsInput(leaf: AgentLeafRecords, previews: ReadonlyMap<number, OptionRow['preview']>): OptionsInput | undefined {
+  const options = agentOptionVersions(leaf);
+  if (!options.length) return undefined;
+  const active = leaf.history.find(row => row.active);
+  const rows: OptionRow[] = [...(active ? [active] : []), ...options].map(row => ({
+    version: row.version, pinned: row.active, label: row.active ? `Active v${row.version}` : `Option v${row.version}`,
+    reason: row.note || '—', preview: previews.get(row.version) ?? { kind: 'note', text: row.note || 'No note recorded for this version.' },
+  }));
+  return {
+    name: leaf.card.name,
+    description: optionsDescription(Boolean(active), options.length, 'active'),
+    rows,
+  };
+}
+
+/** Each version's step in the chain: the first version starts it, every later one revises the one before. */
+function agentLineage(leaf: AgentLeafRecords): ReferencesInput['lineage'] {
+  const versions = [...leaf.history].sort((a, b) => b.version - a.version);
+  return versions.map((row, index) => {
+    const previous = versions[index + 1];
+    return { key: `v${row.version}`, version: `v${row.version}`, mode: previous ? `revises v${previous.version}` : 'first recorded', source: `${ADAPTERS[leaf.agent].label} record, ${row.updated}` };
+  });
+}
+
+/** The record specimen every agent leaf can show: its own content as tables or labelled rows. */
+export function agentRecordSpecimen(leaf: AgentLeafRecords, links: StudioLinks): SpecimenInput {
+  const adapter = ADAPTERS[leaf.agent];
+  const empty = emptyStatus(leaf.card);
+  return {
+    kind: 'record', name: leaf.card.name, title: KIND_TITLE[leaf.specimen.kind ?? ''] ?? adapter.specimenTitle, description: leaf.specimen.summary,
+    rows: leaf.specimen.rows.map((row, index) => {
+      const href = row.ref ? refHref(links, row.ref) : undefined;
+      return { key: `${index}`, label: row.label, text: row.text, ...(href ? { href } : {}) };
+    }),
+    ...(leaf.specimen.tables?.length ? { tables: leaf.specimen.tables.map(table => ({
+      id: table.id, label: table.label, columns: table.columns, ...(table.prose === undefined ? {} : { prose: table.prose }),
+      rows: table.rows.map(row => ({ key: row.key, cells: row.cells.map(cell => {
+        const href = cell.ref ? refHref(links, cell.ref) : undefined;
+        return { text: cell.text, ...(href ? { href } : {}), ...(isLeafStatus(cell.status) ? { statusLabel: STATUS_LABEL[cell.status], statusTone: STATUS_TONE[cell.status] } : {}) };
+      }) })),
+    })) } : {}),
+    ...(empty ? { status: { ...status(empty), description: 'This cell holds no records yet, so there is nothing to preview.' } } : {}),
+    empty: 'This record holds no content yet.',
+  };
+}
+
+/** A rendered page specimen: the installed page framed at every viewport. */
+export function viewportSpecimen(leaf: AgentLeafRecords, specimens: readonly ViewportSpecimen[], description: string): SpecimenInput {
+  return { kind: 'viewports', name: leaf.card.name, title: 'Rendered page', description, specimens, empty: 'Publish this page to preview it.' };
+}
+
+/** Every section input an agent leaf page places, display-ready. `options` and `specimen` come from the loader. */
+export function agentLeafInputs(leaf: AgentLeafRecords, links: StudioLinks, extra: { specimen?: SpecimenInput; options?: OptionsInput } = {}): Record<string, unknown> {
+  const adapter = ADAPTERS[leaf.agent];
+  const galleryHref = links.gallery(leaf.agent) ?? '';
+  const header: LeafHeaderInput = {
+    name: leaf.card.name, id: leaf.card.id, version: leaf.card.version,
+    statusLabel: STATUS_LABEL[leaf.card.status], statusTone: STATUS_TONE[leaf.card.status],
+    statusDetail: leaf.statusDetail, trail: leaf.trail, galleryHref, galleryLabel: `${adapter.label} library`,
+  };
+  const checks: CheckRow[] = leaf.checks.map((check, index) => ({ key: `${index}`, label: check.label, ok: check.ok, detail: check.detail ?? '' }));
+  const contract: ContractInput = { facts: leaf.contract.facts, lists: leaf.contract.lists };
+  const history: HistoryInput = { rows: leaf.history.map(row => ({
+    version: row.version, date: row.updated, note: row.note || '—',
+    marks: [row.active && 'Active', STATUS_LABEL[row.status]].filter((mark, index, all): mark is string => Boolean(mark) && all.indexOf(mark) === index),
+  })) };
+  const references: ReferencesInput = { uses: leaf.uses.map(ref => toRef(links, ref)), usedBy: leaf.usedBy.map(ref => toRef(links, ref)), lineage: agentLineage(leaf) };
+  return {
+    header, specimen: extra.specimen ?? agentRecordSpecimen(leaf, links), options: extra.options,
+    checks: checks.length ? checks : undefined, contract, history, references,
   };
 }

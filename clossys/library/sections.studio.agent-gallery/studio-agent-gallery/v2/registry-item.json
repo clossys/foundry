@@ -1,0 +1,44 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "studio-agent-gallery",
+  "type": "registry:block",
+  "title": "Agent Gallery",
+  "description": "One agent library: layers with jump links, groups, and a card per leaf with its status and a specimen thumbnail or excerpt.",
+  "author": "Clossys",
+  "dependencies": [],
+  "registryDependencies": [
+    "card"
+  ],
+  "files": [
+    {
+      "path": "GalleryHeader.tsx",
+      "type": "registry:component",
+      "target": "studio/sections/studio-agent-gallery/GalleryHeader.tsx"
+    },
+    {
+      "path": "GroupSection.tsx",
+      "type": "registry:component",
+      "target": "studio/sections/studio-agent-gallery/GroupSection.tsx"
+    },
+    {
+      "path": "LayerSection.tsx",
+      "type": "registry:component",
+      "target": "studio/sections/studio-agent-gallery/LayerSection.tsx"
+    },
+    {
+      "path": "LeafCard.tsx",
+      "type": "registry:component",
+      "target": "studio/sections/studio-agent-gallery/LeafCard.tsx"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:component",
+      "target": "studio/sections/studio-agent-gallery/index.tsx"
+    },
+    {
+      "path": "types.ts",
+      "type": "registry:component",
+      "target": "studio/sections/studio-agent-gallery/types.ts"
+    }
+  ]
+}

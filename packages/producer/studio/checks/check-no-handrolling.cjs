@@ -140,7 +140,7 @@ async function proveSelectionDetector(page, selection) {
   await page.locator('#studio-unowned-rac-probe').evaluate(element => element.remove());
 }
 
-function findHostCellTree(source, file = 'CellsWorkspace.tsx') {
+function findHostCellTree(source, file = 'StudioPage.tsx') {
   const ts = require('typescript');
   const tree = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const findings = [];
@@ -222,8 +222,8 @@ async function proveSourceDisclosure(page, id) {
 async function main() {
   const { chromium } = require('playwright');
   const origin = new URL(process.argv[2] ?? 'http://127.0.0.1:4301').origin;
-  const sourceFile = path.join(__dirname, '../components/CellsWorkspace.tsx');
-  assert.deepEqual(findHostCellTree(fs.readFileSync(sourceFile, 'utf8')), [], 'Cell navigation must use Designer composition, not host-authored nav/ul/li');
+  const sourceFile = path.join(__dirname, '../components/StudioPage.tsx');
+  assert.deepEqual(findHostCellTree(fs.readFileSync(sourceFile, 'utf8'), 'StudioPage.tsx'), [], 'The generic renderer places sections; it authors no nav/ul/li of its own');
   const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? '/usr/bin/chromium', headless: true, args: ['--no-sandbox'] });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
@@ -295,7 +295,7 @@ async function main() {
       checks.push({ route: '/agents/director', state, ...result, selection: selectionEvidence });
     }
     assert.deepEqual(errors, [], 'browser page errors');
-    console.log(JSON.stringify({ check: 'Studio no handrolling', routes: routes.length, checks, positiveProof: 'unstamped descendants inside an existing leaf and bare text accepted', negativeProof: 'visible and hidden unstamped body siblings, stale selected fills, altered selected CSS, and unowned RAC descendants rejected on every route', sourceProof: 'CellsWorkspace has no host-authored nav/ul/li' }, null, 2));
+    console.log(JSON.stringify({ check: 'Studio no handrolling', routes: routes.length, checks, positiveProof: 'unstamped descendants inside an existing leaf and bare text accepted', negativeProof: 'visible and hidden unstamped body siblings, stale selected fills, altered selected CSS, and unowned RAC descendants rejected on every route', sourceProof: 'the generic renderer has no host-authored nav/ul/li' }, null, 2));
   } finally {
     await browser.close();
   }

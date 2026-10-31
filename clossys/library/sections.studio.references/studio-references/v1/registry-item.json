@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "studio-references",
+  "type": "registry:block",
+  "title": "Leaf References",
+  "description": "Uses and used by, in both directions across agents, and the lineage of each version.",
+  "author": "Clossys",
+  "dependencies": [],
+  "registryDependencies": [
+    "card"
+  ],
+  "files": [
+    {
+      "path": "index.tsx",
+      "type": "registry:component",
+      "target": "studio/sections/studio-references/index.tsx"
+    }
+  ]
+}

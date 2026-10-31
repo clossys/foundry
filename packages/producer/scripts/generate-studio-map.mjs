@@ -1,66 +1,227 @@
 import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
-import { resolve, relative, isAbsolute } from 'node:path';
+import { existsSync } from 'node:fs';
+import { resolve, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { contentMapFromCells, compileContentMaps } from '@clossys/publisher/content-map/cells';
-import { projectNavigation, projectCommands, projectBreadcrumbs } from '@clossys/publisher/content-map';
 
 const studioRoot = fileURLToPath(new URL('../studio/', import.meta.url));
-const defaultCellRoot = fileURLToPath(new URL('../../../clossys/agents/publisher/', import.meta.url));
+const defaultClossysRoot = fileURLToPath(new URL('../../../clossys/', import.meta.url));
 const json = value => `${JSON.stringify(value, null, 2)}\n`;
-const banner = '// Generated from Foundry Publisher cells. Run npm run generate:studio-map.\n';
+const banner = '// Generated from Foundry Publisher cells and the Studio library selection. Run npm run generate:studio-map.\n';
+/** Files a library version carries beside the code Studio runs: provenance, not payload. */
+const RECORD_ONLY = new Set(['registry-item.json', 'LICENCE.md']);
+const LAYER_FOLDER = { frames: 'frames', sections: 'sections' };
 
-function sourceModule(source) {
-  if (!source || typeof source.file !== 'string' || source.export !== 'default' || !/^studio\/views\/[A-Za-z][A-Za-z0-9]*\.tsx$/.test(source.file)) throw new TypeError('Studio routes require a real default-export Studio view');
-  return `../${source.file.slice('studio/'.length, -'.tsx'.length)}`;
+function fail(message) { throw new Error(`Studio assembly: ${message}`); }
+const object = value => typeof value === 'object' && value !== null && !Array.isArray(value);
+const nonEmpty = value => typeof value === 'string' && value.length > 0;
+
+/** The page manifest vocabulary: navigators, module sources, action handlers and wiring verbs. */
+export const MODULE_FRAME = 'frames.module';
+export const NAVIGATORS = ['explorer', 'outline'];
+export const MODULE_SOURCES = ['page.explorer', 'page.outline', 'page.checks'];
+export const HANDLERS = ['copy-link', 'copy-prompt', 'scroll'];
+const WIRING_EXPECT = { 'copy-link': 'clipboard link', 'copy-prompt': 'clipboard prompt', scroll: 'target in view' };
+
+/**
+ * A page manifest (app-frame-target "Page manifest"): the navigator (explorer or outline), the
+ * modules the header toggles open (each a pinned module section fed from a named source), the
+ * header actions (handlers as data, each with a shortcut and a cmdk entry) and one wiring line per
+ * interaction. A page missing any part fails here, before anything renders.
+ */
+export function checkManifest(owner, manifest, contracts) {
+  if (!object(manifest)) fail(`${owner} declares no page manifest`);
+  if (manifest.frame !== MODULE_FRAME) fail(`${owner} manifest must name ${MODULE_FRAME} as its module frame`);
+  if (!NAVIGATORS.includes(manifest.navigator)) fail(`${owner} manifest needs an explorer or an outline`);
+  if (!Array.isArray(manifest.modules) || !manifest.modules.length) fail(`${owner} manifest declares no modules`);
+  if (!Array.isArray(manifest.actions) || !manifest.actions.length) fail(`${owner} manifest declares no actions`);
+  if (!Array.isArray(manifest.wiring) || !manifest.wiring.length) fail(`${owner} manifest declares no wiring checks`);
+  const ids = new Set(), keys = new Set();
+  const key = (id, shortcut) => {
+    if (shortcut === undefined) return;
+    if (!/^[a-z]$/.test(shortcut)) fail(`${owner} ${id} shortcut must be one lowercase letter`);
+    if (keys.has(shortcut)) fail(`${owner} reuses the shortcut ${shortcut}`);
+    keys.add(shortcut);
+  };
+  const modules = manifest.modules.map(module => {
+    if (!object(module) || !nonEmpty(module.id) || !nonEmpty(module.icon) || !nonEmpty(module.label) || typeof module.defaultOpen !== 'boolean') fail(`${owner} has an invalid module`);
+    if (ids.has(module.id)) fail(`${owner} declares ${module.id} twice`);
+    ids.add(module.id);
+    if (!/^sections\.module\.[a-z][a-z0-9-]*$/.test(module.section ?? '')) fail(`${owner} module ${module.id} must place a sections.module.* section`);
+    const contract = contracts.get(module.section);
+    if (!contract) fail(`${owner} module ${module.id} places ${module.section}, which has no slot contract`);
+    if (!MODULE_SOURCES.includes(module.source)) fail(`${owner} module ${module.id} reads an unknown source ${module.source}`);
+    key(module.id, module.shortcut);
+    return { ...module, input: contract.inputs[0].name };
+  });
+  const navigator = modules.find(module => module.id === manifest.navigator);
+  if (!navigator || navigator.section !== `sections.module.${manifest.navigator}`) fail(`${owner} manifest names ${manifest.navigator} but places no sections.module.${manifest.navigator} module`);
+  for (const action of manifest.actions) {
+    if (!object(action) || !nonEmpty(action.id) || !nonEmpty(action.icon) || !nonEmpty(action.label) || typeof action.cmdk !== 'boolean') fail(`${owner} has an invalid action`);
+    if (ids.has(action.id)) fail(`${owner} declares ${action.id} twice`);
+    ids.add(action.id);
+    const handler = action.handler;
+    if (!object(handler) || !HANDLERS.includes(handler.kind)) fail(`${owner} action ${action.id} has no handler`);
+    if (handler.kind === 'copy-prompt' && !nonEmpty(handler.prompt)) fail(`${owner} action ${action.id} copies no prompt`);
+    if (handler.kind === 'scroll' && !nonEmpty(handler.target)) fail(`${owner} action ${action.id} scrolls to no target`);
+    key(action.id, action.shortcut);
+  }
+  const lines = manifest.wiring.map(line => {
+    if (!object(line) || !nonEmpty(line.do) || !nonEmpty(line.expect)) fail(`${owner} has an invalid wiring line`);
+    return line;
+  });
+  const has = (verb, expect) => lines.some(line => line.do === verb && (expect === undefined || line.expect.startsWith(expect)));
+  for (const module of modules) if (!has(`toggle ${module.id}`, `${module.id} open`)) fail(`${owner} has no wiring line for the ${module.id} toggle`);
+  for (const action of manifest.actions) if (!has(`action ${action.id}`, WIRING_EXPECT[action.handler.kind])) fail(`${owner} has no wiring line for the ${action.id} action`);
+  if (!has(`select ${manifest.navigator}`)) fail(`${owner} has no wiring line for ${manifest.navigator} selection`);
+  if (!has('cmdk')) fail(`${owner} has no wiring line for the command menu`);
+  if (!has('key escape') || !lines.some(line => /^key [a-z]$/.test(line.do))) fail(`${owner} has no wiring line for keyboard use`);
+  return { frame: manifest.frame, navigator: manifest.navigator, modules, actions: manifest.actions, wiring: lines };
+}
+
+/**
+ * One assembly per Publisher page cell: the frame, the ordered sections and, per section, the
+ * data field its single contract input reads. A page with a `leaf` template also assembles every
+ * leaf beneath it at runtime from the same frame.
+ */
+export function assemblyOf(entry, route, contracts) {
+  const { source } = entry;
+  if (!object(source) || typeof source.frameId !== 'string' || !Array.isArray(source.sectionIds)) fail(`${entry.id} is not a frame + sections assembly`);
+  const checkInputs = (owner, sections, inputs) => {
+    if (!object(inputs)) fail(`${owner} has no section inputs`);
+    for (const slot of sections) {
+      const contract = contracts.get(slot);
+      if (!contract) fail(`${owner} places ${slot}, which has no slot contract`);
+      const input = contract.inputs[0]?.name;
+      if (inputs[slot] !== input) fail(`${owner} binds ${slot} to "${inputs[slot]}", but its contract input is "${input}"`);
+    }
+    for (const slot of Object.keys(inputs)) if (!sections.includes(slot)) fail(`${owner} binds ${slot}, which it does not place`);
+  };
+  if (!['plain', 'detail'].includes(route.body) || !object(route.data) || typeof route.data.loader !== 'string') fail(`${entry.id} needs a body and a data loader`);
+  checkInputs(entry.id, source.sectionIds, route.inputs);
+  const page = { id: entry.id, path: entry.path, title: entry.title, frameId: source.frameId, sectionIds: source.sectionIds, body: route.body, data: route.data, inputs: route.inputs, manifest: checkManifest(entry.id, route.manifest, contracts) };
+  if (route.leaf !== undefined) {
+    const leaf = route.leaf;
+    if (!object(leaf) || leaf.param !== 'slug' || !['plain', 'detail'].includes(leaf.body) || !object(leaf.data) || !Array.isArray(leaf.sections)) fail(`${entry.id} has an invalid leaf template`);
+    checkInputs(`${entry.id} leaf`, leaf.sections, leaf.inputs);
+    page.leaf = { param: leaf.param, body: leaf.body, data: leaf.data, sectionIds: leaf.sections, inputs: leaf.inputs, manifest: checkManifest(`${entry.id} leaf`, leaf.manifest, contracts) };
+  }
+  return page;
+}
+
+async function readJson(path) { return JSON.parse(await readFile(path, 'utf8')); }
+
+/** The pinned element for a slot, and the Studio folder that runs it. */
+async function pinnedItem(clossysRoot, selection, slot) {
+  const pin = selection.pins?.[slot];
+  if (!pin) fail(`${slot} has no pin in the Studio library selection`);
+  const layer = slot.split('.')[0];
+  const folder = LAYER_FOLDER[layer];
+  if (!folder) fail(`${slot} is not a frame or section`);
+  const versionDir = join(clossysRoot, 'library', slot, pin.element, `v${pin.version}`);
+  const element = await readJson(join(versionDir, 'element.json'));
+  if (element.hash !== pin.hash) fail(`${slot} pin hash does not match its library record`);
+  if (!['adopted', 'customized', 'verbatim'].includes(element.lineage?.mode) || !element.lineage?.source?.registry) fail(`${slot} must come from a trusted reference (lineage adopted/customized with a source)`);
+  return { slot, element: pin.element, version: pin.version, versionDir, payload: element.payload, studioDir: join(studioRoot, folder, pin.element), module: `../${folder}/${pin.element}` };
+}
+
+/** The Studio folder must hold exactly the pinned payload's code: Studio runs the registered item, nothing else. */
+async function checkPayload(item) {
+  const code = item.payload.filter(file => !RECORD_ONLY.has(file)).sort();
+  const present = existsSync(item.studioDir) ? (await readdir(item.studioDir)).filter(name => !name.startsWith('.')).sort() : [];
+  if (JSON.stringify(code) !== JSON.stringify(present)) fail(`${item.slot}: studio folder files [${present}] differ from the pinned payload [${code}]`);
+  for (const file of code) {
+    const [stored, running] = await Promise.all([readFile(join(item.versionDir, file), 'utf8'), readFile(join(item.studioDir, file), 'utf8')]);
+    if (stored !== running) fail(`${item.slot}: ${file} differs from ${item.element} v${item.version} in the library`);
+  }
 }
 
 /** Build-time authoring only. Runtime consumers read the generated projection. */
-export async function generateStudioMap({ cellRoot = defaultCellRoot, outputDir = resolve(studioRoot, 'generated'), check = false } = {}) {
-  const tree = JSON.parse(await readFile(resolve(cellRoot, 'tree.json'), 'utf8'));
+export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outputDir = resolve(studioRoot, 'generated'), check = false, payloads = true } = {}) {
+  const cellRoot = join(clossysRoot, 'agents', 'publisher');
+  const tree = await readJson(join(cellRoot, 'tree.json'));
   const publication = tree.meta.publications.find(value => value.id === 'studio');
-  if (!publication?.routePack) throw new TypeError('Studio publication requires authored route metadata');
+  if (!publication?.routePack) fail('the studio publication has no route metadata');
+  const root = publication.routePack.root;
+  if (!object(root) || typeof root.kind !== 'string' || typeof root.note !== 'string') fail('the studio publication config names no root');
   const map = await contentMapFromCells(cellRoot, publication.id);
   await compileContentMaps(cellRoot, { check });
-  // CELL-P projects Route source metadata with each active cell's current path/title.
-  // These consumer view exports are not Publisher executable assembly registrations.
-  const routePack = JSON.parse(await readFile(resolve(cellRoot, 'route-pack', `${publication.id}.json`), 'utf8'));
-  for (const route of routePack.routes) {
-    sourceModule(route.entry);
-    const target = resolve(studioRoot, '..', route.entry.file);
-    const rel = relative(studioRoot, target);
-    if (isAbsolute(rel) || rel.startsWith('..')) throw new TypeError('Studio view escapes its package');
-    const view = await readFile(target, 'utf8');
-    if (!/export\s+default\s/.test(view)) throw new TypeError(`Studio view has no default export: ${route.entry.file}`);
-  }
-  const routes = routePack.routes;
-  const pages = map.entries.filter(row => row.kind === 'page');
+  const routePack = await readJson(join(cellRoot, 'route-pack', `${publication.id}.json`));
+  const contracts = new Map((await readJson(join(clossysRoot, 'agents', 'designer', 'slot-contracts', 'studio.json'))).map(contract => [contract.slot, contract]));
+  const routes = new Map(routePack.routes.map(route => [route.instanceId, route]));
+  const pages = map.entries.filter(entry => entry.kind === 'page').map(entry => {
+    const route = routes.get(entry.id);
+    if (!route) fail(`${entry.id} has no Route metadata`);
+    return assemblyOf(entry, route, contracts);
+  });
+  const selection = await readJson(join(clossysRoot, 'selection.json'));
+  const manifestSlots = manifest => [manifest.frame, ...manifest.modules.map(module => module.section)];
+  const slots = [...new Set(pages.flatMap(page => [page.frameId, ...page.sectionIds, ...(page.leaf?.sectionIds ?? []), ...manifestSlots(page.manifest), ...(page.leaf ? manifestSlots(page.leaf.manifest) : [])]))];
+  const items = [];
+  for (const slot of slots) items.push(await pinnedItem(clossysRoot, selection, slot));
+  if (payloads) for (const item of items) await checkPayload(item);
+  const frames = items.filter(item => item.slot.startsWith('frames.') && item.slot !== MODULE_FRAME);
+  const moduleFrames = items.filter(item => item.slot === MODULE_FRAME);
+  const sections = items.filter(item => item.slot.startsWith('sections.'));
   const projection = {
-    publicationId: map.publicationId, map, routes,
-    navigation: Object.fromEntries(pages.map(page => [page.id, projectNavigation(map, page.id)])),
-    commands: projectCommands(map),
-    pageActions: Object.fromEntries(pages.map(page => [page.id, page.actions ?? []])),
-    breadcrumbs: Object.fromEntries(pages.map(page => [page.id, projectBreadcrumbs(map, page.id)])),
+    publicationId: map.publicationId, homeId: routePack.homeRouteId, root, map, pages,
+    items: items.map(item => ({ slot: item.slot, element: item.element, version: item.version })),
+    // Page module actions per page, for the selected-runtime module census.
+    pageActions: Object.fromEntries(map.entries.filter(entry => entry.kind === 'page').map(entry => [entry.id, entry.actions ?? []])),
+    // Every page renders through the one generic App Router page.
+    routes: pages.map(page => ({ instanceId: page.id, path: page.path, label: page.title, entry: { file: 'studio/app/[[...route]]/page.tsx', export: 'default' } })),
   };
-  const module = `${banner}import type { ContentMap, ContentMapNavigation, ContentMapCommandGroup, ContentMapBreadcrumb, ContentMapPageAction } from '@clossys/publisher/content-map';
+  const module = `${banner}import type { ContentMap, ContentMapPageAction } from '@clossys/publisher/content-map';
 import projection from './studio-map.json';
-export type StudioPageAction = ContentMapPageAction;
+
+/** One page module: a header toggle that opens a pinned module section, fed from a named source. */
+export interface StudioManifestModule { id: string; icon: string; label: string; section: string; input: string; source: string; shortcut?: string; defaultOpen: boolean }
+/** One header action; its handler is data the module frame runs. */
+export interface StudioManifestAction { id: string; icon: string; label: string; shortcut?: string; cmdk: boolean; handler: { kind: 'copy-link' } | { kind: 'copy-prompt'; prompt: string } | { kind: 'scroll'; target: string } }
+/** The page manifest: navigator, modules, header actions and one wiring line per interaction. */
+export interface StudioPageManifest { frame: string; navigator: 'explorer' | 'outline'; modules: readonly StudioManifestModule[]; actions: readonly StudioManifestAction[]; wiring: readonly { do: string; expect: string }[] }
+/** How one assembly is laid out and fed: a data loader, and per section the data field its contract input reads. */
+export interface StudioAssemblySpec { body: 'plain' | 'detail'; data: { loader: string; agent?: string }; inputs: Record<string, string>; sectionIds: readonly string[]; manifest: StudioPageManifest }
+/** A Publisher page record: frame + ordered sections + bindings; \`leaf\` assembles every leaf beneath the page. */
+export interface StudioPageRecord extends StudioAssemblySpec { id: string; path: string; title: string; frameId: string; leaf?: StudioAssemblySpec & { param: 'slug' } }
+
 export const studioMap = projection.map as ContentMap;
-export const studioPageActions = projection.pageActions as Record<string, readonly StudioPageAction[]>;
-export const studioRoutes = projection.routes;
-export const studioNavigation = projection.navigation as Record<string, ContentMapNavigation>;
-export const studioCommands = projection.commands as readonly ContentMapCommandGroup[];
-export const studioBreadcrumbs = projection.breadcrumbs as Record<string, readonly ContentMapBreadcrumb[]>;
-export const studioHome = (() => { const route = studioRoutes.find(row => row.instanceId === ${JSON.stringify(routePack.homeRouteId)})!; return { id: route.instanceId, label: route.label, href: route.path }; })();
-export const studioAgents = studioMap.entries.filter(row => row.kind === 'page' && row.parentId === 'agents').sort((a,b) => a.order-b.order).map(row => ({ id: row.id, label: row.title }));
-export function studioRouteForPath(path: string) { return studioRoutes.find(row => row.path === path); }
-export function studioRouteForSegments(segments: readonly string[]) { return studioRouteForPath('/' + segments.join('/')); }
-export function studioAgentHref(agent: string) { return studioRoutes.find(row => row.instanceId === agent)?.path ?? studioHome.href; }
+export const studioPages = projection.pages as unknown as readonly StudioPageRecord[];
+export const studioHomeId: string = projection.homeId;
+export const studioPublicationRoot = projection.root as { kind: string; note: string };
+export const studioItems = projection.items as readonly { slot: string; element: string; version: number }[];
+/** A page module action, as the Publisher content map declares it. */
+export type StudioPageAction = ContentMapPageAction;
+export const studioPageActions = projection.pageActions as unknown as Readonly<Record<string, readonly ContentMapPageAction[]>>;
+export const studioAgents = studioMap.entries.filter(row => row.kind === 'page' && row.parentId === 'agents').sort((a, b) => a.order - b.order).map(row => ({ id: row.id, label: row.title }));
 `;
-  const bindings = `${banner}import type { ComponentType } from 'react';\n${routes.map((route, i) => `import View${i} from ${JSON.stringify(sourceModule(route.entry))};`).join('\n')}
-export const studioViewBindings: Record<string, ComponentType> = {\n${routes.map((route, i) => `  ${JSON.stringify(route.instanceId)}: View${i},`).join('\n')}\n};\n`;
-  const files = { 'studio-map.json': json(projection), 'studio-map.ts': module, 'view-bindings.ts': bindings };
+  const bindings = `${banner}import type { ComponentType } from 'react';
+import type { StudioShellProps } from '../frames/studio-shell';
+import type { ModuleFrameProps } from '../frames/studio-module';
+${frames.map((item, i) => `import Frame${i} from ${JSON.stringify(item.module)};`).join('\n')}
+${moduleFrames.map((item, i) => `import ModuleFrame${i} from ${JSON.stringify(item.module)};`).join('\n')}
+${sections.map((item, i) => `import Section${i} from ${JSON.stringify(item.module)};`).join('\n')}
+
+/** Pinned page frame per frame slot. */
+export const studioFrames: Record<string, ComponentType<StudioShellProps>> = {
+${frames.map((item, i) => `  ${JSON.stringify(item.slot)}: Frame${i},`).join('\n')}
+};
+/** Pinned module frame per module frame slot: the column and chrome a page manifest's modules open in. */
+export const studioModuleFrames: Record<string, ComponentType<ModuleFrameProps>> = {
+${moduleFrames.map((item, i) => `  ${JSON.stringify(item.slot)}: ModuleFrame${i},`).join('\n')}
+};
+/** Pinned section per section slot; each takes one prop, named by its contract input. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- each section types its own input; the assembly binds it by name.
+export const studioSections: Record<string, ComponentType<any>> = {
+${sections.map((item, i) => `  ${JSON.stringify(item.slot)}: Section${i},`).join('\n')}
+};
+`;
+  const files = { 'studio-map.json': json(projection), 'studio-map.ts': module, 'assembly-bindings.ts': bindings };
   if (check && (await readdir(outputDir)).some(name => !Object.hasOwn(files, name))) throw new Error('Unexpected file in generated Studio projection');
-  if (!check) await mkdir(outputDir, { recursive: true });
+  if (!check) {
+    await mkdir(outputDir, { recursive: true });
+    for (const name of await readdir(outputDir)) if (!Object.hasOwn(files, name)) await import('node:fs/promises').then(fs => fs.rm(join(outputDir, name)));
+  }
   for (const [name, content] of Object.entries(files)) {
     const path = resolve(outputDir, name);
     if (check) {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { writerKindSpecimen, writerSpecimenKind } from "./writer-specimen-kinds.js";
-import { agentDetailData, agentGalleryLayers } from "../../studio/lib/agent-library";
+import { agentGalleryLayers, agentRecordSpecimen, type StudioLinks } from "../../studio/lib/agent-library";
+import { studioHref, studioLeafHref, studioRuntimeMap } from "../../studio/lib/studio-route-map";
 
 const rule = (id: string, ruleName: string, value: string) => ({ id, context: `brand.voice.${ruleName}`, kind: "voice-rule", rule: ruleName, value, status: "draft" });
 const term = (id: string, value: string, termStatus: string, extra: Record<string, unknown> = {}) => ({ id, context: `brand.x.${id}`, kind: "term", term: value, forms: [], termStatus, ...extra });
@@ -47,11 +48,14 @@ describe("Writer specimen kinds", () => {
       agent: "writer" as const, card, trail: [], statusDetail: [], checks: [], contract: { facts: [], lists: [] }, history: [], uses: [], usedBy: [],
       specimen: { summary: "", rows: [], kind: "claims", tables: [{ id: "claims", label: "Claims", columns: ["Claim"], rows: [{ key: "c1", cells: [{ text: "director:x@1", ref: { label: "x", agent: "director", slug: "x" }, status: "draft" }] }] }] },
     };
-    const detail = agentDetailData(leaf).specimen;
+    const map = studioRuntimeMap({ director: [{ slug: "x", title: "X" }], writer: [{ slug: "brand.claims", title: "Claims" }] });
+    const links: StudioLinks = { gallery: agent => studioHref(map, agent), leaf: (agent, slug) => studioLeafHref(map, agent, slug) };
+    const detail = agentRecordSpecimen(leaf, links);
     expect(detail.title).toBe("Claims");
+    if (detail.kind !== "record") throw new Error("expected a record specimen");
     expect(detail.tables![0]!.rows[0]!.cells[0]).toEqual({ text: "director:x@1", href: "/director/x", statusLabel: "Draft", statusTone: "outline" });
-    expect(detail.status).toBe("missing");
-    const layers = agentGalleryLayers({ state: "ready", agent: "writer", sections: [{ id: "l", label: "L", level: 0, cards: [] }, { id: "g", label: "G", level: 1, cards: [card] }], count: 1 });
-    expect(layers[0]!.groups[0]!.cards[0]!.specimenStatus).toBe("missing");
+    expect(detail.status).toMatchObject({ label: "Missing", tone: "destructive" });
+    const layers = agentGalleryLayers({ state: "ready", agent: "writer", sections: [{ id: "l", label: "L", level: 0, cards: [] }, { id: "g", label: "G", level: 1, cards: [card] }], count: 1 }, links);
+    expect(layers[0]!.groups[0]!.cards[0]!.specimenStatus).toEqual({ label: "Missing", tone: "destructive" });
   });
 });

@@ -1,7 +1,7 @@
 import type { ComponentType, SVGProps } from 'react';
 import {
-  BotIcon, CheckCircle2Icon, CircleAlertIcon, CodeIcon, CompassIcon, FolderTreeIcon, HouseIcon,
-  InfoIcon, ListTodoIcon, PaletteIcon, PenLineIcon, SendIcon, UsersIcon,
+  BotIcon, CheckCircle2Icon, CircleAlertIcon, CodeIcon, CompassIcon, FolderTreeIcon, HistoryIcon, HouseIcon,
+  InfoIcon, LinkIcon, ListIcon, ListTodoIcon, MessageSquarePlusIcon, PaletteIcon, PenLineIcon, SendIcon, UsersIcon,
 } from 'lucide-react';
 
 type Icon = ComponentType<SVGProps<SVGSVGElement>>;
@@ -15,6 +15,10 @@ const ASSET_ICONS: Record<string, Icon> = {
   'assets.icon-source': CodeIcon,
   'assets.icon-checks': CheckCircle2Icon,
   'assets.icon-needs': ListTodoIcon,
+  'assets.icon-outline': ListIcon,
+  'assets.icon-link': LinkIcon,
+  'assets.icon-request': MessageSquarePlusIcon,
+  'assets.icon-versions': HistoryIcon,
 };
 const AGENT_ICONS: Record<string, Icon> = { director: CompassIcon, designer: PaletteIcon, writer: PenLineIcon, publisher: SendIcon };
 

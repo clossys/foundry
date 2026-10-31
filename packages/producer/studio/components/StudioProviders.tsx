@@ -4,8 +4,9 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { useRouter } from 'next/navigation';
 import { RouterProvider } from 'react-aria-components';
 import { loadCells, type AgentCells } from '../lib/cells-client';
-import { studioCellChange } from '../lib/studio-module-data';
+import { studioCellChange } from '../lib/cell-events';
 import { studioReports, type StudioReport } from '../lib/studio-report';
+import { StudioRouteMapProvider } from './StudioRouteMap';
 
 export type Resource<T> = { state: 'loading' } | { state: 'error'; message: string } | { state: 'ready'; value: T };
 export type ThemeMode = 'light' | 'dark' | 'system';
@@ -95,6 +96,6 @@ export function StudioProviders({ children }: { children: ReactNode }) {
   const data = useMemo(() => ({ cells, revision, reports, brand }), [cells, revision, reports, brand]);
   const theme = useMemo(() => ({ mode, resolved, setMode }), [mode, resolved, setMode]);
   return <RouterProvider navigate={href => router.push(href)}>
-    <ThemeContext.Provider value={theme}><DataContext.Provider value={data}>{children}</DataContext.Provider></ThemeContext.Provider>
+    <ThemeContext.Provider value={theme}><DataContext.Provider value={data}><StudioRouteMapProvider revision={revision}>{children}</StudioRouteMapProvider></DataContext.Provider></ThemeContext.Provider>
   </RouterProvider>;
 }
