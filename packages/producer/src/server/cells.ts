@@ -5,6 +5,8 @@ import { pathToFileURL } from "node:url";
 import { AGENT_PACKAGES, resolveAgent, type AgentKind } from "../agents.js";
 import type { AgentCells, CellSummary } from "./contract.js";
 import type { StudioReportSink } from './studio-render-policy.js';
+import { hasSlotModel } from "../records/slots.js";
+import { slotInventory } from "./slot-inventory.js";
 
 export const AGENT_KINDS = Object.keys(AGENT_PACKAGES) as AgentKind[];
 export const CELL_ID = /^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*){1,2}$(?![\s\S])/;
@@ -110,6 +112,9 @@ export async function inventory(root: string, agent: AgentKind, report?: StudioR
   let packageName: string = AGENT_PACKAGES[agent][0];
   try {
     packageName = resolveAgent(agent).packageName;
+    // Flag-free switch: a consumer with any agents/<agent>/ia.json reads the slot model.
+    const consumer = join(root, "clossys");
+    if (hasSlotModel(consumer)) return slotInventory(consumer, agent, packageName);
     if (!await hasCellTree(agentRoot(root, agent))) return { agent, packageName, state: "missing", cells: [], message: "Agent cells are not initialized" };
     const all = report ? await readStudioCells(root, agent, report) : await readCells(root, agent);
     const latest = new Map<string, StoredCell>();
