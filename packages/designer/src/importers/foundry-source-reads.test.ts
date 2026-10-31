@@ -75,10 +75,9 @@ describe("Foundry source token reads", () => {
   });
   it("pins which mapped components' frozen reads still omit source-consumed themes slots (owner ASK: widen contracts, then enforce)", () => {
     const omissions = Object.fromEntries(importFoundryComponents().coverage.flatMap(row => row.notes.filter(note => note.includes("source-consumed")).map(note => [row.slot.slice(11), note.replace(/^Frozen reads omit source-consumed (.*); .*$/, "$1")])));
-    // Slider (Foundry slot added by the slider mapping) extends the ask list: its source consumes type, radius and text-colour
-    // themes slots that the frozen contract's allowedReads do not yet list. It is a genuine omission of the same class as the rest.
-    expect(Object.keys(omissions).sort()).toEqual(["chart-range", "chart-scatter", "chart-sparkline", "checkbox", "disclosure", "menu", "slider", "toast"]);
-    expect(omissions["slider"]).toBe("themes.accent-foreground, themes.card-foreground, themes.font-heading, themes.font-mono, themes.font-sans, themes.foreground, themes.muted-foreground, themes.popover-foreground, themes.primary-foreground, themes.radius, themes.secondary-foreground, themes.sidebar-accent-foreground, themes.sidebar-foreground, themes.sidebar-primary-foreground");
+    // The themes layer emits only the shadcn variables (--primary, --radius, --spacing ...). Foundry component sources still
+    // read Foundry token properties, so the live derivation finds no themes read to omit. Re-pin when sources adopt the themes vars.
+    expect(omissions).toEqual({});
     // tag-group: its contract lists the focus ring its TagGroup source consumes.
     expect(omissions["tag-group"]).toBeUndefined();
     expect(omissions["color-picker"]).toBeUndefined();
