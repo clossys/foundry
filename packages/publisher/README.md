@@ -6334,7 +6334,7 @@ import {
   checkContentAssetFill, resolveSectionedViewDocument,
   validateSectionedViewDocument, type SectionedViewDocument,
 } from "@clossys/publisher/core";
-import { LandingView } from "@clossys/publisher/web";
+import { SectionedView } from "@clossys/publisher/web";
 
 const registry = {
   id: "content-example", revision: "1", locale: "en",
@@ -6368,7 +6368,7 @@ if (findings.some(finding => finding.severity === "error") || !fillReport.ok) {
   throw new Error("Invalid content declaration or fill metadata");
 }
 export const resolved = resolveSectionedViewDocument(document, createCopyResolver(registry));
-export const element = createElement(LandingView, {
+export const element = createElement(SectionedView, {
   document: resolved,
   resolveAssetId: id => id === "example.image" ? fill : undefined,
 });
