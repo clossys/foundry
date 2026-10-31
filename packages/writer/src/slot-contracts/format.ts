@@ -2,10 +2,13 @@
  * Writer slot contracts: one per L3 Writer slot (key group), text-native.
  *
  * The record shape follows the shared slot-contract field list (purpose,
- * inputs, limits, references[], check suite id, specimen kind). Until the
- * shared producer type lands, `adaptSlotContract` is the single place that
- * validates and normalizes a contract, so a later switch is one function.
+ * inputs, limits, references[], check suite id, specimen kind).
+ * `adaptSlotContract` validates the native contract (nested field limits and
+ * guide exemplars the suite reads); `toSlotContractRecord` projects it onto the
+ * shared `clossys.slot-contract/1` record, which Producer validates with the
+ * slot engine's own schema. Writer never imports Producer.
  */
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import type { WriterLayer } from "../catalog-core/ids.js";
 
@@ -124,6 +127,54 @@ export function adaptSlotContract(value: unknown, where = "writer"): WriterSlotC
     id: value.id, package: "writer", layer: value.layer as WriterLayer, purpose: value.purpose as string,
     inputs: [...value.inputs], limits: writerLimits(value.limits, at), references,
     checkSuiteId: WRITER_CHECK_SUITE_ID, specimenKind: "text",
+  };
+}
+
+/** The shared `clossys.slot-contract/1` record (structural; Producer owns the schema). */
+export interface SharedSlotContractRecord {
+  schema: "clossys.slot-contract/1";
+  slot: string;
+  package: string;
+  layer: string;
+  purpose: string;
+  inputs: Array<{ name: string; kind: "cell"; required: boolean }>;
+  limits: Record<string, number | string | boolean>;
+  references: Array<{ registry: string; item: string; version: string; hash: string }>;
+  checkSuite: string;
+  specimenKind: "text";
+}
+
+/** JSON with sorted keys, so a reference's hash names its content and nothing else. */
+export function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value && typeof value === "object") return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonicalJson((value as Record<string, unknown>)[key])}`).join(",")}}`;
+  return JSON.stringify(value);
+}
+const contentHash = (value: unknown) => `sha256:${createHash("sha256").update(canonicalJson(value)).digest("hex")}`;
+
+/**
+ * Flatten Writer limits onto the shared record's scalar map: per-field limits
+ * become `fields.<key>.<limit>`, lists are comma-joined. Nothing is dropped.
+ */
+export function flattenWriterLimits(limits: WriterLimits): Record<string, number | string | boolean> {
+  const out: Record<string, number | string | boolean> = {};
+  for (const [key, field] of Object.entries(limits.fields)) for (const [name, value] of Object.entries(field)) out[`fields.${key}.${name}`] = value as number | boolean;
+  for (const [name, value] of Object.entries(limits)) {
+    if (name === "fields" || value === undefined) continue;
+    out[name] = Array.isArray(value) ? value.join(",") : value as number | string | boolean;
+  }
+  return out;
+}
+
+/** Project one Writer contract onto the shared slot-contract record. Pure. */
+export function toSlotContractRecord(contract: WriterSlotContract): SharedSlotContractRecord {
+  return {
+    schema: "clossys.slot-contract/1",
+    slot: contract.id, package: contract.package, layer: contract.layer, purpose: contract.purpose,
+    inputs: contract.inputs.map(name => ({ name, kind: "cell", required: true })),
+    limits: flattenWriterLimits(contract.limits),
+    references: contract.references.map(ref => ({ registry: contract.package, item: ref.id, version: "1", hash: contentHash(ref) })),
+    checkSuite: contract.checkSuiteId, specimenKind: contract.specimenKind,
   };
 }
 

@@ -2,10 +2,14 @@
  * Director slot contracts: one per L3 strategy cell.
  *
  * The record shape follows the shared slot-contract field list (purpose,
- * inputs, limits, references[], check suite id, specimen kind). Until the
- * shared producer type lands, `adaptSlotContract` is the single place that
- * validates and normalizes a contract, so a later switch is one function.
+ * inputs, limits, references[], check suite id, specimen kind).
+ * `adaptSlotContract` validates the native contract (list limits and framework
+ * references the suite reads); `toSlotContractRecord` projects it onto the
+ * shared `clossys.slot-contract/1` record, which Producer validates with the
+ * slot engine's own schema. Director cell ids are not layer-prefixed, so the
+ * shared slot is `strategy.<cell id>`. Strategist never imports Producer.
  */
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
 export const DIRECTOR_CHECK_SUITE_ID = "director.cell.v1" as const;
@@ -99,6 +103,41 @@ export function adaptDirectorContract(value: unknown, where = "director"): Direc
     if (ref.kind !== "framework" || !text(ref.meaning) || !strings(ref.good) || !strings(ref.bad) || !text(ref.whyBad)) throw new Error(`${where}:${base.id}: framework reference needs meaning, good, bad and whyBad`);
   }
   return { ...base, package: "director", layer: "strategy", references: base.references as unknown as DirectorFrameworkReference[], feeds: [...raw.feeds] };
+}
+
+/** The shared `clossys.slot-contract/1` record (structural; Producer owns the schema). */
+export interface SharedSlotContractRecord {
+  schema: "clossys.slot-contract/1";
+  slot: string;
+  package: string;
+  layer: string;
+  purpose: string;
+  inputs: Array<{ name: string; kind: "cell"; required: boolean }>;
+  limits: Record<string, number | string | boolean>;
+  references: Array<{ registry: string; item: string; version: string; hash: string }>;
+  checkSuite: string;
+  specimenKind: SpecimenKind;
+}
+
+/** JSON with sorted keys, so a reference's hash names its content and nothing else. */
+export function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value && typeof value === "object") return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonicalJson((value as Record<string, unknown>)[key])}`).join(",")}}`;
+  return JSON.stringify(value);
+}
+const contentHash = (value: unknown) => `sha256:${createHash("sha256").update(canonicalJson(value)).digest("hex")}`;
+
+/** Project one Director contract onto the shared slot-contract record (lists comma-joined). Pure. */
+export function toSlotContractRecord(contract: DirectorSlotContract): SharedSlotContractRecord {
+  const { requiredKeys, minWordsPerKey, singleTokenKeys } = contract.limits;
+  return {
+    schema: "clossys.slot-contract/1",
+    slot: `${contract.layer}.${contract.id}`, package: contract.package, layer: contract.layer, purpose: contract.purpose,
+    inputs: contract.inputs.map(name => ({ name, kind: "cell", required: true })),
+    limits: { requiredKeys: requiredKeys.join(","), minWordsPerKey, singleTokenKeys: singleTokenKeys.join(","), feeds: contract.feeds.join(",") },
+    references: contract.references.map(ref => ({ registry: contract.package, item: ref.id, version: "1", hash: contentHash(ref) })),
+    checkSuite: contract.checkSuiteId, specimenKind: contract.specimenKind,
+  };
 }
 
 const readJson = (name: string): unknown => JSON.parse(readFileSync(new URL(`../../src/slot-contracts/${name}`, import.meta.url), "utf8"));
