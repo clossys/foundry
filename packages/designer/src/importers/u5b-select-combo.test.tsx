@@ -45,16 +45,18 @@ describe("select and combo-box source closure", () => {
     }
     expect(result.rewrites.select!.files.find(file => file.path === "components/select/select.tsx")!.content).toContain('size?: "sm" | "default" | "lg"');
   });
-  it("binds labels to the selected field leaves and select heights to control-size", () => {
+  it("binds labels to the selected field typeface and select heights to the control-height vars", () => {
     const result = imported();
-    const labelLeaves = (reads: readonly string[]) => [...new Set(reads.filter(read => /(?:body-size|caption-size|typeface|font-size)(?:\.|$)/.test(read)).map(read => read.split(".").slice(0, 2).join(".")))].sort();
+    const labelLeaves = (reads: readonly string[]) => [...new Set(reads.filter(read => /^themes\.font-(?:sans|heading|mono)(?:\.|$)/.test(read)).map(read => read.split(".").slice(0, 2).join(".")))].sort();
     for (const item of ["select", "combobox"]) {
-      expect(labelLeaves(result.rewrites[item]!.reads.themes)).toEqual(labelLeaves(foundryTextField.components["text-field"].reads.themes));
-      expect(result.rewrites[item]!.reads.themes).toContain("themes.shadow.lg");
+      const labels = labelLeaves(result.rewrites[item]!.reads.themes);
+      expect(labels).toEqual(["themes.font-sans"]);
+      expect(labelLeaves(foundryTextField.components["text-field"].reads.themes)).toEqual(expect.arrayContaining(labels));
+      expect(result.rewrites[item]!.reads.themes).toContain("themes.shadow.md");
     }
     const source = result.rewrites.select!.files.find(file => file.path === "components/select/select.tsx")!.content;
+    expect(result.rewrites.select!.reads.themes.some(read => /control-size/.test(read))).toBe(false);
     for (const size of ["sm", "md", "lg"]) {
-      expect(result.rewrites.select!.reads.themes).toContain(`tokens.control-size.h-${size}`);
       expect(source).toContain(`--ui-control-h-${size}`);
     }
   });

@@ -109,13 +109,13 @@
         "assets": [],
         "components": [],
         "themes": [
-          "themes.radius.default",
-          "themes.shadow.lg",
-          "themes.ring.default",
-          "themes.spacing.default",
-          "themes.popover.default",
+          "themes.foreground.default",
           "themes.muted-foreground.default",
-          "themes.foreground.default"
+          "themes.popover.default",
+          "themes.radius.default",
+          "themes.ring.default",
+          "themes.shadow.md",
+          "themes.spacing.default"
         ]
       },
       "root": "rac:Popover",

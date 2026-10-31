@@ -8,7 +8,7 @@ import { labels } from "./__fixtures__/studio.js";
 import type { StudioCandidateWorkflow } from "./types.js";
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
-const data: CandidatePromptData = { consumer: "sample", board: { id: "tokens/color", label: "Color" }, slot: { id: "themes.background", label: "Surface" }, variants: ["themes.background.default", "themes.card.default"], tokens: [{ id: "tokens.space.base", value: "8px" }], siblings: [{ id: "themes.foreground", source: "shadcn@aria" }], currentCandidate: { id: "custom-fill", source: "sample", variants: ["themes.background.default"] }, returnStep: "Return here and check new candidates." };
+const data: CandidatePromptData = { consumer: "sample", board: { id: "themes/colors", label: "Colors" }, slot: { id: "themes.background", label: "Surface" }, variants: ["themes.background.default", "themes.card.default"], tokens: [{ id: "themes.spacing.default", value: "0.25rem" }], siblings: [{ id: "themes.foreground", source: "shadcn@aria" }], currentCandidate: { id: "custom-fill", source: "sample", variants: ["themes.background.default"] }, returnStep: "Return here and check new candidates." };
 const open = async (workflow?: StudioCandidateWorkflow) => {
   const user = userEvent.setup();
   render(<CandidatePromptDialog trigger={<Button>Refresh custom</Button>} data={data} labels={labels} workflow={workflow} />);
@@ -19,7 +19,7 @@ it("copies the exact refresh data prompt, includes real context and omits absent
   const user = await open(); const copy = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
   const prompt = candidatePrompt(labels.board.promptInstruction, data);
   expect(screen.getByRole("dialog").querySelector("code")?.textContent).toBe(prompt);
-  expect(prompt).toContain('"custom-fill"'); expect(prompt).toContain('"8px"'); expect(prompt).toContain(data.returnStep);
+  expect(prompt).toContain('"custom-fill"'); expect(prompt).toContain('"0.25rem"'); expect(prompt).toContain(data.returnStep);
   expect(JSON.parse(prompt.slice(prompt.indexOf("\n\n") + 2))).not.toHaveProperty("guidelines"); expect(prompt).not.toContain("projectPath"); const localRoot = /\/[A-Z][a-z]+\//; expect("/Accounts/").toMatch(localRoot); expect(prompt).not.toMatch(localRoot);
   await user.click(screen.getByRole("button", { name: labels.board.copy }));
   await waitFor(() => expect(copy).toHaveBeenCalledWith(prompt));

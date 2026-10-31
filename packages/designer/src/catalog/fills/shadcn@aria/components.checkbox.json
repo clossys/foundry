@@ -123,12 +123,12 @@
           "components.icon"
         ],
         "themes": [
-          "themes.primary.default",
-          "themes.ring.default",
-          "themes.radius.default",
-          "themes.spacing.default",
           "themes.destructive.default",
-          "themes.primary-foreground.default"
+          "themes.primary-foreground.default",
+          "themes.primary.default",
+          "themes.radius.default",
+          "themes.ring.default",
+          "themes.spacing.default"
         ]
       },
       "root": "rac:Checkbox",

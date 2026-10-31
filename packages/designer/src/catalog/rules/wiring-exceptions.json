@@ -2,39 +2,6 @@
   "schemaVersion": 1,
   "exceptions": [
     {
-      "name": "wire4-frames-app-frame-layout-breakpoint-mobile-lg",
-      "file": "src/frames/app-frame-layout.ts",
-      "elementId": "src/frames/app-frame-layout.ts#file@f4ef91ec5cc7",
-      "hash": "sha256:f4ef91ec5cc7397552e06de9d94eb21b22dd4e69e87074cfc44f5749489b50ce",
-      "reason": "WIRE-4 frame layout read: frame layout switch point read by the responsive frame logic.",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-frames-app-frame-layout-breakpoint-tablet-lg",
-      "file": "src/frames/app-frame-layout.ts",
-      "elementId": "src/frames/app-frame-layout.ts#file@f4ef91ec5cc7",
-      "hash": "sha256:f4ef91ec5cc7397552e06de9d94eb21b22dd4e69e87074cfc44f5749489b50ce",
-      "reason": "WIRE-4 frame layout read: frame layout switch point read by the responsive frame logic.",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-frames-app-frame-layout-region-width-sidebar",
-      "file": "src/frames/app-frame-layout.ts",
-      "elementId": "src/frames/app-frame-layout.ts#file@f4ef91ec5cc7",
-      "hash": "sha256:f4ef91ec5cc7397552e06de9d94eb21b22dd4e69e87074cfc44f5749489b50ce",
-      "reason": "WIRE-4 frame layout read: frame region width (resizable or responsive panel bounds).",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
       "name": "wire4-frames-app-frame-layout-spacing-md",
       "file": "src/frames/app-frame-layout.ts",
       "elementId": "src/frames/app-frame-layout.ts#file@f4ef91ec5cc7",
@@ -55,39 +22,6 @@
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
       "read": "themes.spacing.default",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-frames-app-frame-layout-touch-target-default",
-      "file": "src/frames/app-frame-layout.ts",
-      "elementId": "src/frames/app-frame-layout.ts#file@f4ef91ec5cc7",
-      "hash": "sha256:f4ef91ec5cc7397552e06de9d94eb21b22dd4e69e87074cfc44f5749489b50ce",
-      "reason": "WIRE-4 frame layout read: frame control hit-region minimum.",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-frames-app-frame-layout-z-index-shell",
-      "file": "src/frames/app-frame-layout.ts",
-      "elementId": "src/frames/app-frame-layout.ts#file@f4ef91ec5cc7",
-      "hash": "sha256:f4ef91ec5cc7397552e06de9d94eb21b22dd4e69e87074cfc44f5749489b50ce",
-      "reason": "WIRE-4 frame layout read: frame stacking order between persistent chrome and overlays.",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-frames-app-frame-layout-z-index-sticky",
-      "file": "src/frames/app-frame-layout.ts",
-      "elementId": "src/frames/app-frame-layout.ts#file@f4ef91ec5cc7",
-      "hash": "sha256:f4ef91ec5cc7397552e06de9d94eb21b22dd4e69e87074cfc44f5749489b50ce",
-      "reason": "WIRE-4 frame layout read: frame stacking order between persistent chrome and overlays.",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -176,50 +110,6 @@
       "status": "proposed"
     },
     {
-      "name": "wire4-frames-frame-dock-layout-breakpoint-tablet",
-      "file": "src/frames/frame-dock-layout.ts",
-      "elementId": "src/frames/frame-dock-layout.ts#file@cca0c414d9cc",
-      "hash": "sha256:cca0c414d9ccdfd1302a092956cb6550cc9718c5d706c73426a21680f9a12fcf",
-      "reason": "WIRE-4 frame layout read: frame layout switch point read by the responsive frame logic.",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-frames-frame-dock-layout-content-size-dock-default",
-      "file": "src/frames/frame-dock-layout.ts",
-      "elementId": "src/frames/frame-dock-layout.ts#file@cca0c414d9cc",
-      "hash": "sha256:cca0c414d9ccdfd1302a092956cb6550cc9718c5d706c73426a21680f9a12fcf",
-      "reason": "WIRE-4 frame layout read: frame dock or content measure bound.",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-frames-frame-dock-layout-content-size-dock-max",
-      "file": "src/frames/frame-dock-layout.ts",
-      "elementId": "src/frames/frame-dock-layout.ts#file@cca0c414d9cc",
-      "hash": "sha256:cca0c414d9ccdfd1302a092956cb6550cc9718c5d706c73426a21680f9a12fcf",
-      "reason": "WIRE-4 frame layout read: frame dock or content measure bound.",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-frames-frame-dock-layout-content-size-dock-min",
-      "file": "src/frames/frame-dock-layout.ts",
-      "elementId": "src/frames/frame-dock-layout.ts#file@cca0c414d9cc",
-      "hash": "sha256:cca0c414d9ccdfd1302a092956cb6550cc9718c5d706c73426a21680f9a12fcf",
-      "reason": "WIRE-4 frame layout read: frame dock or content measure bound.",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
       "name": "wire4-frames-framedock-spacing-sm",
       "file": "src/frames/FrameDock.tsx",
       "elementId": "src/frames/FrameDock.tsx#file@8abc3321a3c7",
@@ -268,160 +158,6 @@
       "status": "proposed"
     },
     {
-      "name": "wire4-frames-right-panel-config-region-width-inspector",
-      "file": "src/frames/right-panel-config.ts",
-      "elementId": "src/frames/right-panel-config.ts#file@96fe386a0d39",
-      "hash": "sha256:96fe386a0d3928ca2b61e55f5d3ef4e6b5e24c3ea0fbed4983ed1df72b3ea22c",
-      "reason": "WIRE-4 frame layout read: frame region width (resizable or responsive panel bounds).",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-frames-right-panel-config-region-width-inspector-max",
-      "file": "src/frames/right-panel-config.ts",
-      "elementId": "src/frames/right-panel-config.ts#file@96fe386a0d39",
-      "hash": "sha256:96fe386a0d3928ca2b61e55f5d3ef4e6b5e24c3ea0fbed4983ed1df72b3ea22c",
-      "reason": "WIRE-4 frame layout read: frame region width (resizable or responsive panel bounds).",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-frames-right-panel-config-region-width-inspector-min",
-      "file": "src/frames/right-panel-config.ts",
-      "elementId": "src/frames/right-panel-config.ts#file@96fe386a0d39",
-      "hash": "sha256:96fe386a0d3928ca2b61e55f5d3ef4e6b5e24c3ea0fbed4983ed1df72b3ea22c",
-      "reason": "WIRE-4 frame layout read: frame region width (resizable or responsive panel bounds).",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-shell-internal-shell-vars-border-width-hairline",
-      "file": "src/shell/internal/shell-vars.ts",
-      "elementId": "src/shell/internal/shell-vars.ts#file@662ffc7e288f",
-      "hash": "sha256:662ffc7e288f722504186d2fcb01fc4c20f3a4e4186971c29f3901be84b4513b",
-      "reason": "WIRE-4 frame layout read: frame region divider width.",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-shell-internal-shell-vars-content-size-content",
-      "file": "src/shell/internal/shell-vars.ts",
-      "elementId": "src/shell/internal/shell-vars.ts#file@662ffc7e288f",
-      "hash": "sha256:662ffc7e288f722504186d2fcb01fc4c20f3a4e4186971c29f3901be84b4513b",
-      "reason": "WIRE-4 frame layout read: frame dock or content measure bound.",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-shell-internal-shell-vars-gutter-page-x",
-      "file": "src/shell/internal/shell-vars.ts",
-      "elementId": "src/shell/internal/shell-vars.ts#file@662ffc7e288f",
-      "hash": "sha256:662ffc7e288f722504186d2fcb01fc4c20f3a4e4186971c29f3901be84b4513b",
-      "reason": "WIRE-4 frame layout read: frame page inset applied to full-bleed regions.",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-shell-internal-shell-vars-region-width-aside",
-      "file": "src/shell/internal/shell-vars.ts",
-      "elementId": "src/shell/internal/shell-vars.ts#file@662ffc7e288f",
-      "hash": "sha256:662ffc7e288f722504186d2fcb01fc4c20f3a4e4186971c29f3901be84b4513b",
-      "reason": "WIRE-4 frame layout read: frame region width (resizable or responsive panel bounds).",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-shell-internal-shell-vars-region-width-drawer",
-      "file": "src/shell/internal/shell-vars.ts",
-      "elementId": "src/shell/internal/shell-vars.ts#file@662ffc7e288f",
-      "hash": "sha256:662ffc7e288f722504186d2fcb01fc4c20f3a4e4186971c29f3901be84b4513b",
-      "reason": "WIRE-4 frame layout read: frame region width (resizable or responsive panel bounds).",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-shell-internal-shell-vars-touch-target-default",
-      "file": "src/shell/internal/shell-vars.ts",
-      "elementId": "src/shell/internal/shell-vars.ts#file@662ffc7e288f",
-      "hash": "sha256:662ffc7e288f722504186d2fcb01fc4c20f3a4e4186971c29f3901be84b4513b",
-      "reason": "WIRE-4 frame layout read: frame control hit-region minimum.",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-shell-internal-shell-vars-z-index-aside",
-      "file": "src/shell/internal/shell-vars.ts",
-      "elementId": "src/shell/internal/shell-vars.ts#file@662ffc7e288f",
-      "hash": "sha256:662ffc7e288f722504186d2fcb01fc4c20f3a4e4186971c29f3901be84b4513b",
-      "reason": "WIRE-4 frame layout read: frame stacking order between persistent chrome and overlays.",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-shell-internal-shell-vars-z-index-shell",
-      "file": "src/shell/internal/shell-vars.ts",
-      "elementId": "src/shell/internal/shell-vars.ts#file@662ffc7e288f",
-      "hash": "sha256:662ffc7e288f722504186d2fcb01fc4c20f3a4e4186971c29f3901be84b4513b",
-      "reason": "WIRE-4 frame layout read: frame stacking order between persistent chrome and overlays.",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-shell-internal-shell-vars-z-index-toast",
-      "file": "src/shell/internal/shell-vars.ts",
-      "elementId": "src/shell/internal/shell-vars.ts#file@662ffc7e288f",
-      "hash": "sha256:662ffc7e288f722504186d2fcb01fc4c20f3a4e4186971c29f3901be84b4513b",
-      "reason": "WIRE-4 frame layout read: frame stacking order between persistent chrome and overlays.",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-shell-navdisclosure-border-width-hairline",
-      "file": "src/shell/NavDisclosure.tsx",
-      "elementId": "src/shell/NavDisclosure.tsx#file@cf9e1f98f5a6",
-      "hash": "sha256:cf9e1f98f5a62914db18b4f31cf9fc7f250c16bbd4e9c7d2e8edde99b7fc344b",
-      "reason": "WIRE-4 frame layout read: frame region divider width.",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-shell-navdisclosure-breakpoint-tablet",
-      "file": "src/shell/NavDisclosure.tsx",
-      "elementId": "src/shell/NavDisclosure.tsx#file@cf9e1f98f5a6",
-      "hash": "sha256:cf9e1f98f5a62914db18b4f31cf9fc7f250c16bbd4e9c7d2e8edde99b7fc344b",
-      "reason": "WIRE-4 frame layout read: frame layout switch point read by the responsive frame logic.",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
       "name": "wire4-shell-navdisclosure-spacing-sm",
       "file": "src/shell/NavDisclosure.tsx",
       "elementId": "src/shell/NavDisclosure.tsx#file@cf9e1f98f5a6",
@@ -430,17 +166,6 @@
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
       "read": "themes.spacing.default",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-shell-navdisclosure-touch-target-default",
-      "file": "src/shell/NavDisclosure.tsx",
-      "elementId": "src/shell/NavDisclosure.tsx#file@cf9e1f98f5a6",
-      "hash": "sha256:cf9e1f98f5a62914db18b4f31cf9fc7f250c16bbd4e9c7d2e8edde99b7fc344b",
-      "reason": "WIRE-4 frame layout read: frame control hit-region minimum.",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -477,28 +202,6 @@
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
       "read": "themes.spacing.default",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-shell-shell-region-width-sidebar",
-      "file": "src/shell/Shell.tsx",
-      "elementId": "src/shell/Shell.tsx#file@3ac4cce5094f",
-      "hash": "sha256:3ac4cce5094f92169a208cf7ba7d51fe0bc747750c53ad866c22320b3362aea5",
-      "reason": "WIRE-4 frame layout read: frame region width (resizable or responsive panel bounds).",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-shell-shell-region-width-sidebar-rail",
-      "file": "src/shell/Shell.tsx",
-      "elementId": "src/shell/Shell.tsx#file@3ac4cce5094f",
-      "hash": "sha256:3ac4cce5094f92169a208cf7ba7d51fe0bc747750c53ad866c22320b3362aea5",
-      "reason": "WIRE-4 frame layout read: frame region width (resizable or responsive panel bounds).",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -571,17 +274,6 @@
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
       "read": "themes.spacing.default",
-      "reasonCode": "layout-geometry",
-      "status": "proposed"
-    },
-    {
-      "name": "wire4-shell-siteheader-z-index-sticky",
-      "file": "src/shell/SiteHeader.tsx",
-      "elementId": "src/shell/SiteHeader.tsx#file@2d3f9d681291",
-      "hash": "sha256:2d3f9d6812919d45f7ccba0613b0e8b1df85068cfc200b33d908a9e5ffa23ee2",
-      "reason": "WIRE-4 frame layout read: frame stacking order between persistent chrome and overlays.",
-      "owner": "designer-maintainers",
-      "expiry": "2027-01-31",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },

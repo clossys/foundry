@@ -33,8 +33,9 @@ describe("read-contract reconciliation at the accepted U5c source", () => {
       expect(new Set(slot.contract.allowedReads.themes).size, slot.id).toBe(slot.contract.allowedReads.themes.length);
     }
     const unchanged = structuredClone(componentSlots); for (const slot of unchanged) slot.contract.allowedReads.themes = [];
-    // Accepted W2 adds DateField/DatePicker protocol surfaces; BF-B1 changes no contracts.
-    expect(sha256(JSON.stringify(unchanged))).toBe("dde857e3c0fe81698fcd824698ad126d2170a849703341ef4dcfe539b6a8b4ff");
+    // Accepted W2 adds DateField/DatePicker protocol surfaces; BF-B1 changes no contracts. THEMES-F changes only the
+    // allowedReads key (tokens -> themes): the pre-rename contracts with that key renamed hash to the same value.
+    expect(sha256(JSON.stringify(unchanged))).toBe("a4308fcf509dc1f7848be6d32ef3f91337db2d35dd3c3b4a5944a446c53ec9f8");
   });
   for (const descriptor of descriptors) it(`restores K3 when a granted ${descriptor.slot} read leaf is removed`, () => {
     expect(tokenFindings(slots, [descriptor])).toEqual([]);
@@ -42,7 +43,8 @@ describe("read-contract reconciliation at the accepted U5c source", () => {
       const changed = structuredClone(slots);
       const contract = changed.find(slot => slot.id === descriptor.slot)!.contract;
       contract.allowedReads.themes = contract.allowedReads.themes.filter(read => read !== leaf);
-      const member = descriptor.reads.themes.find(read => read.startsWith(`${leaf}.`))!;
+      // components.rich-text reads whole leaves (themes.font-sans); every other descriptor reads members.
+      const member = descriptor.reads.themes.find(read => read === leaf || read.startsWith(`${leaf}.`))!;
       expect(tokenFindings(changed, [descriptor]), leaf).toContainEqual(expect.objectContaining({ subject: descriptor.slot, message: `Read ${member} is outside the contract` }));
     }
   });

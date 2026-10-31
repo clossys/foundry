@@ -24,7 +24,7 @@ afterEach(cleanup);
 const catalog = loadCatalog();
 const library = completedTokenLibrary(catalog, { id: "vf12-consumer", kind: "consumer", author: "consumer", license: "UNLICENSED" }, "2026-10-25");
 const selected = (leaf: string) => buildCandidates({ catalog, library, working: library, scope: "slot", target: leaf, slotId: leaf }).find(entry => entry.selected)!;
-const typeLeaves = (tokensIa.nodes.find(node => node.id === "type")!.children ?? []).flatMap(child => child.leaves);
+const typeLeaves = (tokensIa.nodes.find(node => node.id === "typography")!.children ?? []).flatMap(child => child.leaves);
 const keysOf = (leaf: string) => orderTokenMembers(selected(leaf).members).map(entry => entry.id.slice(leaf.length + 1));
 const CONTAIN = "token-specimen-contain";
 
@@ -37,7 +37,7 @@ it("defines the containment utility from a size token, clipping its content", ()
 });
 
 it("contains every Type board specimen in the full and the compact zoom tier (studio-01)", () => {
-  expect(typeLeaves.length).toBeGreaterThan(8);
+  expect(typeLeaves).toEqual(["themes.font-sans", "themes.font-heading", "themes.font-mono", "themes.font-serif", "themes.tracking-tight"]);
   const problems: string[] = [];
   for (const leaf of typeLeaves) {
     const candidate = selected(leaf);
@@ -84,25 +84,16 @@ it("shows resolved values with the alias as a name, never a var() string (studio
 }, 120_000);
 
 it("sorts scale members by ordinal, then by value (studio-04)", () => {
-  expect(keysOf("tokens.font-size")).toEqual(["xs", "sm", "base", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl", "7xl", "8xl", "9xl"]);
-  expect(keysOf("tokens.display-size")).toEqual(["m", "l", "xl", "2xl"]);
-  expect(keysOf("tokens.heading-size")).toEqual(["2xl", "h0", "h1", "h2", "h3"]);
-  expect(keysOf("themes.spacing")).toEqual(["xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl"]);
-  const ramp = keysOf("tokens.color-ramp");
-  expect(ramp.slice(0, 11)).toEqual(["50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"].map(step => `amber.${step}`));
-  expect(ramp.indexOf("amber.950")).toBeLessThan(ramp.indexOf("blue.50"));
-  expect(keysOf("tokens.duration")).toEqual(["instant", "fast", "default", "deliberate", "flash"]);
-  expect(keysOf("tokens.font-weight")).toEqual(["thin", "extralight", "light", "normal", "medium", "semibold", "bold", "extrabold", "black"]);
-  expect(keysOf("tokens.line-height").slice(0, 3)).toEqual(["xs", "sm", "base"]);
+  // The themes layer keeps one multi-member scale (shadow); every other leaf is the single shadcn member.
+  expect(keysOf("themes.shadow")).toEqual(["2xs", "xs", "sm", "md", "lg", "xl", "2xl"]);
+  expect(keysOf("themes.spacing")).toEqual(["default"]);
 });
 
-it("renders the cell and its palette rows in the sorted order", () => {
-  const candidate = selected("tokens.color-ramp");
+it("renders the cell in the sorted order", () => {
+  const candidate = selected("themes.shadow");
   const view = render(<CandidateCell candidate={candidate} labels={labels} />);
   const ids = [...view.container.querySelectorAll<HTMLElement>("[data-candidate-variant]")].map(variant => variant.dataset.candidateVariant);
   expect(ids).toEqual(orderTokenMembers(candidate.members).map(entry => entry.id));
-  expect(ids.indexOf("tokens.color-ramp.amber.50")).toBe(0);
-  const rows = view.container.querySelectorAll("[data-candidate-family]");
-  expect(rows.length).toBeGreaterThan(1);
-  expect(rows[0]!.querySelectorAll("[data-candidate-variant]")).toHaveLength(11);
+  expect(ids).toHaveLength(7);
+  expect(ids.indexOf("themes.shadow.2xs")).toBe(0);
 });

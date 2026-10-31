@@ -171,15 +171,15 @@
           "components.select"
         ],
         "themes": [
+          "themes.background.default",
+          "themes.foreground.default",
+          "themes.muted-foreground.default",
+          "themes.muted.default",
+          "themes.primary-foreground.default",
           "themes.primary.default",
           "themes.radius.default",
           "themes.ring.default",
-          "themes.spacing.default",
-          "themes.background.default",
-          "themes.muted.default",
-          "themes.muted-foreground.default",
-          "themes.primary-foreground.default",
-          "themes.foreground.default"
+          "themes.spacing.default"
         ]
       },
       "root": "rac:Calendar",

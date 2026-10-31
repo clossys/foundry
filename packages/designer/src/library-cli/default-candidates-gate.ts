@@ -103,7 +103,7 @@ export function checkDefaultCandidates(input: DefaultCandidatesInput): { exitCod
         addRead(surface, fill, read);
       }
     }
-    if (required && (!Array.isArray(value.tokens) || !Array.isArray(value.assets))) fail(`${fill}: explicit token and asset read evidence is required`);
+    if (required && (!Array.isArray(value.themes) || !Array.isArray(value.assets))) fail(`${fill}: explicit themes and asset read evidence is required`);
   };
   const links = (surface: string, fill: string, values: unknown, required = false) => {
     if (values === undefined && !required) return;

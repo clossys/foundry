@@ -17,8 +17,8 @@ const counts = (engine: ReturnType<typeof countedEngine>) => [engine.applyLibrar
 it("bounds whole-library work by distinct operations across group representatives, leaves, members and summaries", () => {
   const working = adopt(); const engine = countedEngine();
   const originalSpacing = grouped.fills.find(fill => fill.$extensions["com.clossys.fill"].source === "tailwind-default" && fill.$extensions["com.clossys.fill"].slot === "themes.spacing")!;
-  // SYNTHETIC: reuse a complete member payload with fresh fixture provenance.
-  // The real imported spacing recipe remains unregistered and unavailable.
+  // SYNTHETIC: reuse the complete shipped member payload under fresh fixture provenance,
+  // so the spacing leaf carries two usable sources beside the group representative.
   const spacing = structuredClone(originalSpacing);
   spacing.$extensions["com.clossys.fill"] = {
     id: "fixture-spacing/themes.spacing", slot: "themes.spacing", source: "fixture-spacing",
@@ -36,13 +36,12 @@ it("bounds whole-library work by distinct operations across group representative
   const rows = matrixRows(input);
   expect(rows.find(row => row.scope === "node")?.candidates.map(candidate => candidate.source)).toContain("tailwind-default");
   const spacingRow = rows.find(row => row.scope === "slot" && row.target === "themes.spacing")!;
-  const unregistered = spacingRow.candidates.find(candidate => candidate.source === "tailwind-default")!;
-  expect(unregistered).toMatchObject({ usable: false, reason: "invalid", members: [] });
-  expect(unregistered.findings.some(finding => finding.code === "C7" && /registered rule with declared inputs/.test(finding.message))).toBe(true);
-  expect(originalSpacing.$extensions["com.clossys.fill"]).toMatchObject({ mode: "derived", derivation: { rule: "n x --spacing" } });
-  const complete = spacingRow.candidates.find(candidate => candidate.source === "fixture-spacing")!;
-  expect(complete).toMatchObject({ usable: true, errors: 0 });
-  expect(complete.members.map(member => member.id).sort()).toEqual(scopeTargets({ catalog, library: working, slotId: "themes.spacing", scope: "member" }).sort());
+  expect(originalSpacing.$extensions["com.clossys.fill"]).toMatchObject({ mode: "implementation" });
+  for (const source of ["tailwind-default", "fixture-spacing"]) {
+    const complete = spacingRow.candidates.find(candidate => candidate.source === source)!;
+    expect(complete, source).toMatchObject({ usable: true, errors: 0 });
+    expect(complete.members.map(member => member.id).sort(), source).toEqual(scopeTargets({ catalog, library: working, slotId: "themes.spacing", scope: "member" }).sort());
+  }
   // The group repeats the same source operations as these two leaves, despite using two representative slots.
   expect(counts(engine)).toEqual([3, 4, 4]);
   const calls = engine.applyLibraryChange.mock.calls.map(([, , change]) => JSON.stringify(change.changes));
@@ -112,10 +111,14 @@ it("preserves C1 findings and safe CSS fallback while reference candidates reuse
 
 it("projects a shared adoption failure to each representative row without contaminating cached findings", () => {
   const working = { ...adopt(), adoptedAt: undefined }; const engine = countedEngine();
-  const spacing = grouped.fills.find(fill => fill.$extensions["com.clossys.fill"].slot === "themes.spacing")!;
-  const catalog = { ...grouped, fills: [...grouped.fills, { ...spacing, $extensions: { "com.clossys.fill": { ...spacing.$extensions["com.clossys.fill"], source: "foundry", id: "foundry/themes.spacing" } } }] };
+  // SYNTHETIC: one shared source offers both representative leaves, so one node adoption covers the pair.
+  const shared = (["themes.background", "themes.spacing"] as const).map(slot => {
+    const fill = grouped.fills.find(entry => entry.$extensions["com.clossys.fill"].slot === slot)!;
+    return { ...fill, $extensions: { "com.clossys.fill": { ...fill.$extensions["com.clossys.fill"], source: "foundry", id: `foundry/${slot}` } } };
+  });
+  const catalog = { ...grouped, fills: [...grouped.fills, ...shared] };
   const evaluation = createStudioEvaluation({ catalog, working, engine });
-  const input = { catalog, library: working, working, engine, evaluation, scope: "node" as const, target: "tokens/pair" };
+  const input = { catalog, library: working, working, engine, evaluation, scope: "node" as const, target: "themes/pair" };
   const first = buildCandidates({ ...input, slotId: "themes.background" }).find(card => card.source === "foundry")!;
   const second = buildCandidates({ ...input, slotId: "themes.spacing" }).find(card => card.source === "foundry")!;
   expect(first.findings.some(finding => finding.code === "C7" && finding.subject === "themes.background")).toBe(true);

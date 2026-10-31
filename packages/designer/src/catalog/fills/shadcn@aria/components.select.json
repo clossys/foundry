@@ -163,17 +163,17 @@
           "components.icon"
         ],
         "themes": [
-          "themes.border.default",
-          "themes.radius.default",
-          "themes.shadow.lg",
-          "themes.ring.default",
-          "themes.spacing.default",
-          "themes.destructive.default",
-          "themes.popover.default",
           "themes.accent.default",
-          "themes.muted-foreground.default",
+          "themes.border.default",
+          "themes.destructive.default",
+          "themes.font-sans.default",
           "themes.foreground.default",
-          "themes.font-sans.default"
+          "themes.muted-foreground.default",
+          "themes.popover.default",
+          "themes.radius.default",
+          "themes.ring.default",
+          "themes.shadow.md",
+          "themes.spacing.default"
         ]
       },
       "root": "rac:Select",

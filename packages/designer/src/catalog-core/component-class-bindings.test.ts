@@ -9,8 +9,8 @@ const tokens = {
   "themes.spacing.default": { property: "--spacing-sm", light: "8px" },
   "themes.radius.default": { property: "--radius-pill", light: "999px" },
   "themes.muted-foreground.default": { property: "--color-ink-secondary", light: "#555", dark: "#ccc" },
-  "tokens.shared.a": { property: "--shared", light: "1px" },
-  "tokens.shared.b": { property: "--shared", light: "1px" },
+  "themes.shared.a": { property: "--shared", light: "1px" },
+  "themes.shared.b": { property: "--shared", light: "1px" },
 };
 
 describe("bindCompiledClasses", () => {

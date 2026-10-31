@@ -27,7 +27,6 @@ it("preserves the typography classifier including unanchored prefixes and final 
   const compare = (slot: string, type: string, css: string | undefined) => {
     const expected = type === "fontFamily" ? { fontFamily: css }
       : type === "fontWeight" ? { fontWeight: css }
-      : slot === "tokens.line-height" ? { lineHeight: css }
       : slot === "themes.tracking-tight" ? { letterSpacing: css }
       : type === "dimension" && /(?:font|body|heading|display|caption)-size$/.test(slot) ? { fontSize: css }
       : undefined;
@@ -35,5 +34,5 @@ it("preserves the typography classifier including unanchored prefixes and final 
   };
   for (const prefix of prefixes) for (const slot of slots) for (const ending of endings) for (const type of types)
     for (const css of ["var(--font-size)", "custom-value", undefined]) compare(prefix + slot + ending, type, css);
-  for (const slot of ["tokens.line-height", "themes.tracking-tight"]) for (const type of ["dimension", "fontFamily", "fontWeight", "unknown"]) compare(slot, type, "custom");
+  for (const slot of ["themes.tracking-tight"]) for (const type of ["dimension", "fontFamily", "fontWeight", "unknown"]) compare(slot, type, "custom");
 });

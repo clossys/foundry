@@ -12,12 +12,12 @@ status first, then check the supported layer:
 
 ```sh
 designer-library status --root library --json
-designer-library check --root library --layer tokens --json
+designer-library check --root library --layer themes --json
 designer-library check --root library --layer assets --json
 ```
 
 Replace `library` with the consumer's actual directory. Omitting `--layer` checks
-both supported layers. Tokens and assets are implemented. Components, sections
+both supported layers. Themes and assets are implemented. Components, sections
 and frames are unavailable: requesting those layers exits 2, so report the
 missing capability rather than claiming that layer passed. `recommend` also
 exits 2 as unavailable until the chooser is implemented.

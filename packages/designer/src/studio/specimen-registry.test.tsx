@@ -37,7 +37,8 @@ it("measures the complete actual native spacing registry and its expanded leaf D
   const context = nativeContext();
   const leaf = studioSpecimenLeaves.find(leaf => leaf.id === "sections.specimen-spacing-ladder")!;
   const expected = enumerateRegisteredDesignerSpecimenCases({ context, specimen: leaf.id, sourceLeaf: "themes.spacing" })!;
-  expect(expected.items.length).toBeGreaterThan(1);
+  // themes.spacing is the single shadcn `--spacing` base unit: one closed member.
+  expect(expected.items).toHaveLength(1);
   const cell: SpecimenCoverageCell = { agent: "designer", id: "themes.spacing", kind: "spacing", layer: "themes", ...expected };
   const props = { ...expected, context, expanded: true, need: ({ reason }: { reason: string }) => <components.SemanticContent as="p">NEED {reason}</components.SemanticContent>, labels: { showAllVariants: (count: number) => `Show all ${count}` } };
   const selection = { profile: context.profile, selectionHash: context.profile.components.selectionHash, modules: context.modules, descriptors: Object.fromEntries(Object.entries(context.profile.components.components).map(([id, chosen]) => [id, componentDescriptorHash(chosen.descriptor)])) };

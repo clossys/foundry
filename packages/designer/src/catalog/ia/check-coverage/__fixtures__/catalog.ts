@@ -13,7 +13,7 @@ export function fixture(): CoverageInput {
       { from: "frames.example", to: "sections.example", evidence: "fixture" },
       { from: "frames.example", to: "assets.example", evidence: "fixture" },
       { from: "sections.example", to: "components.example", evidence: "fixture" },
-      { from: "components.example", to: "tokens.example", evidence: "fixture" },
+      { from: "components.example", to: "themes.example", evidence: "fixture" },
     ],
     adminRoots: ["frames.example"], adminInputsComplete: true,
   };

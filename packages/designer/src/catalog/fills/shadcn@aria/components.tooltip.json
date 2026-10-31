@@ -66,7 +66,7 @@
         },
         {
           "path": "components/tooltip/tooltip.tsx",
-          "sha256": "b2d158774b4d78c462eeee316120ef9aeac6b9dd094c48f8c73d2466f9f5e958"
+          "sha256": "bb30c14808bcfb9e5473af12fde222c6f01e0a0df793fa4971e2df4d1c742fb9"
         },
         {
           "path": "notices/THIRD-PARTY.md",
@@ -117,10 +117,10 @@
         "assets": [],
         "components": [],
         "themes": [
-          "themes.radius.default",
-          "themes.spacing.default",
           "themes.background.default",
-          "themes.foreground.default"
+          "themes.foreground.default",
+          "themes.radius.default",
+          "themes.spacing.default"
         ]
       },
       "root": "rac:Tooltip",

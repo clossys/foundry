@@ -6,7 +6,7 @@ import { testMetrics, testPlacements } from "./__fixtures__/system.js";
 describe("system layout model", () => {
   const layout = systemLayout(testPlacements, testMetrics);
 
-  it("stacks five layer rows top to bottom: Frames, Sections, Components, Assets, Tokens", () => {
+  it("stacks five layer rows top to bottom: Frames, Sections, Components, Assets, Themes", () => {
     expect(SYSTEM_LAYER_ORDER).toEqual(["frames", "sections", "components", "assets", "themes"]);
     expect(layout.rows.map(row => row.layer)).toEqual(["frames", "sections", "components", "assets", "themes"]);
     for (let index = 1; index < layout.rows.length; index++) {
@@ -17,14 +17,14 @@ describe("system layout model", () => {
 
   it("holds one board per L1 in each row, left to right in placement order", () => {
     const tokens = layout.rows.find(row => row.layer === "themes")!;
-    expect(tokens.boards.map(board => board.id)).toEqual(["tokens/color", "tokens/space"]);
+    expect(tokens.boards.map(board => board.id)).toEqual(["themes/color", "themes/space"]);
     const [color, space] = tokens.boards as [typeof tokens.boards[number], typeof tokens.boards[number]];
     expect(space.rect.x).toBe(color.rect.x + color.rect.width + testMetrics.boardGap);
     expect(color.rect.y).toBe(tokens.rect.y);
   });
 
   it("lays each board out as a ragged grid: one line per L2, its L3 cells along it", () => {
-    const color = layout.boards.get("tokens/color")!;
+    const color = layout.boards.get("themes/color")!;
     expect(color.lines.map(line => [line.l2, line.cells.map(cell => cell.leaf)])).toEqual([
       ["color-engine", ["themes.chart-1"]],
       ["color-palettes", ["themes.primary", "themes.destructive", "themes.background"]],
@@ -56,7 +56,7 @@ describe("system layout model", () => {
   });
 
   it("refuses a leaf placed twice", () => {
-    const twice = [{ layer: "themes" as const, nodes: [{ id: "a", label: "A", children: [{ id: "b", label: "B", leaves: ["tokens.x", "tokens.x"] }] }] }];
+    const twice = [{ layer: "themes" as const, nodes: [{ id: "a", label: "A", children: [{ id: "b", label: "B", leaves: ["themes.x", "themes.x"] }] }] }];
     expect(() => systemLayout(twice, testMetrics)).toThrow(TypeError);
   });
 

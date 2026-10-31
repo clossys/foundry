@@ -111,10 +111,10 @@
         "assets": [],
         "components": [],
         "themes": [
-          "themes.primary.default",
-          "themes.spacing.default",
+          "themes.muted-foreground.default",
           "themes.muted.default",
-          "themes.muted-foreground.default"
+          "themes.primary.default",
+          "themes.spacing.default"
         ]
       },
       "root": "rac:ProgressBar",

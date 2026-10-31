@@ -46,7 +46,7 @@ describe("system canvas per-cell LOD", () => {
     const cells = [cell(0, "sections"), cell(1, "frames"), cell(2, "themes")];
     const tiers = allNear(cells);
     const live = liveCells(cells, tiers, { x: 0, y: 0, width: 100, height: 100 });
-    expect([...live]).toEqual(["tokens.c02"]);
+    expect([...live]).toEqual(["themes.c02"]);
     expect(renderedTier("sections.c00", tiers, live)).toBe("mid");
   });
 

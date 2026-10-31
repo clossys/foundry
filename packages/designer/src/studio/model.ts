@@ -3,6 +3,7 @@ import {
   type CatalogData, type ChangeSet, type Finding, type FillDoc, type FillMeta, type LibraryData, type Placement, type PlacementNode, type Resolved, type ResolvedMember,
 } from "../catalog-core/index.js";
 import { identityRuleDefinition } from "../catalog-assets/index.js";
+import { TOKENS } from "../tokens/tokens.js";
 import { studioEngine, type StudioEngine } from "./engine.js";
 import { evaluationFor, type StudioEvaluation } from "./evaluation.js";
 
@@ -245,7 +246,8 @@ export function describePreview(member: ResolvedMember, unboundIndex: number): P
   // escaped data until the existing strict visual renderer supports it.
   if (member.$type === "color" && [css, member.css.dark].some(value => value !== undefined && /\boklch\([^()]*\bnone\b[^()]*\)/i.test(value))) return { kind: "text", css, dark: member.css.dark ?? css, visualUnsupported: true };
   if (member.$type === "duration" || member.$type === "cubicBezier") return { kind: "text", css };
-  if (member.emit !== undefined) return { kind: "token", property: member.emit };
+  // Only a Foundry registry property has a token application; a theme var (--background) previews by its type.
+  if (member.emit !== undefined && Object.hasOwn(TOKENS, member.emit)) return { kind: "token", property: member.emit };
   if (member.$type === "color") return { kind: "swatch", variable, css };
   if (member.$type === "fontFamily") return { kind: "font", variable, css };
   if (member.$type === "dimension") return { kind: "ruler", variable, css };

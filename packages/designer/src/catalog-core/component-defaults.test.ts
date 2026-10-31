@@ -57,7 +57,7 @@ function ineligibleCard(overrides: Partial<ComponentDefaultsInput> = {}) {
   const result = setup(overrides);
   const target = result.input.catalog.fills.find(doc => doc.$extensions["com.clossys.fill"].id === "shadcn@aria/components.card")!;
   const fill = componentOf(target);
-  const unavailable = { ...target, components: { card: { ...fill, reads: { ...fill.reads, tokens: fill.reads.themes.map(id => id === "tokens.line-height.heading" ? "tokens.line-height.snug" : id) } } } } as typeof target;
+  const unavailable = { ...target, components: { card: { ...fill, reads: { ...fill.reads, themes: fill.reads.themes.map(id => id === "themes.radius.default" ? "themes.radius.subtle" : id) } } } } as typeof target;
   result.input.catalog = { ...result.input.catalog, fills: result.input.catalog.fills.map(doc => doc === target ? unavailable : doc) };
   result.input.bundles = result.input.bundles.map(bundle => bundle.slot === fill.slot && bundle.descriptorHash === componentDescriptorHash(fill)
     ? { ...bundle, descriptorHash: componentDescriptorHash(componentOf(unavailable)) } : bundle);
@@ -104,7 +104,7 @@ describe("component default fills", () => {
     for (const leaf of ["button", "table", "card", "menu"]) {
       expect(plan.rows.find(row => row.slot === `components.${leaf}`), leaf).toMatchObject({ status: "default", source: "shadcn@aria", fill: `shadcn@aria/components.${leaf}`, reasons: [] });
     }
-    for (const [leaf, member] of [["card", "tokens.line-height.heading"], ["menu", "themes.tracking-tight.default"]]) {
+    for (const [leaf, member] of [["card", "themes.card.default"], ["menu", "themes.tracking-tight.default"]]) {
       const fill = componentOf(input.catalog.fills.find(doc => doc.$extensions["com.clossys.fill"].id === `shadcn@aria/components.${leaf}`)!);
       expect(fill.reads.themes).toContain(member);
       expect(input.tokens[member]).toBeDefined();
@@ -193,7 +193,7 @@ describe("component default fills", () => {
     const { input } = ineligibleCard();
     const plan = planComponentDefaults(input);
     expect(plan.rows.find(row => row.slot === "components.card")).toMatchObject({ status: "default", basis: "fallback", source: "foundry", fill: "foundry/components.card" });
-    expect(reasons(plan, "card")).toMatch(/^shadcn@aria: .*K3 Token read tokens\.line-height/);
+    expect(reasons(plan, "card")).toMatch(/^shadcn@aria: .*K3 Token read themes\.radius\.subtle/);
     expect(reasons(plan, "card")).not.toContain("owner pick");
     expect(plan.decisions.find(row => row.slot === "components.card")).toMatchObject({ kind: "adopt", source: "foundry", note: "Default fill (fallback)" });
   });
@@ -319,7 +319,7 @@ describe("component default fills", () => {
     const { input } = setup({}, ["foundry", "shadcn@aria"]);
     const plan = planComponentDefaults(input);
     expect(plan.rows.find(row => row.slot === "components.tooltip")).toMatchObject({ status: "not-chosen" });
-    expect(reasons(plan, "tooltip")).toMatch(/^shadcn@aria: .*K3 Token read tokens\.radius\.subtle does not resolve.* \|\| owner pick shadcn@aria is not eligible/);
+    expect(reasons(plan, "tooltip")).toMatch(/^shadcn@aria: .*K3 Token read themes\.radius\.subtle does not resolve.* \|\| owner pick shadcn@aria is not eligible/);
     expect(plan.findings).toEqual([]);
   });
 });

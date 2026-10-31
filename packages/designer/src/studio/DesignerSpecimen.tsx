@@ -149,14 +149,14 @@ function TokenMember({ id, member, values, context, need, semantic }: MemberProp
   const css = member.css.light;
   const modes = member.css.dark === undefined ? ["light"] as const : ["light", "dark"] as const;
   if (member.$type === "color" || member.$type === "gradient") return <>{modes.map(mode => {
-    const ink = Object.entries(values.members).find(([, value]) => value.emit === "--color-ink-primary");
-    const ground = Object.entries(values.members).find(([, value]) => value.emit === "--color-surface-base");
-    const pair = member.emit?.includes("ink") ? ground : ink;
+    const ink = Object.entries(values.members).find(([, value]) => value.emit === "--foreground");
+    const ground = Object.entries(values.members).find(([, value]) => value.emit === "--background");
+    const pair = member.emit?.endsWith("foreground") ? ground : ink;
     const color = member.css[mode] ?? css;
     return <Content as="div" key={mode} data-specimen-mode={mode} className="flex flex-col gap-xs">
       <Content as="span" role="img" aria-label={`${id} ${mode}`} style={{ display: "inline-block", inlineSize: "6rem", blockSize: "4rem", background: color }} />
       <Content as="span">{color}</Content>
-      {pair && valid(pair[1]) ? <Content as="span" data-contrast-pair={pair[0]} style={{ background: member.emit?.includes("ink") ? pair[1].css[mode] ?? pair[1].css.light : color, color: member.emit?.includes("ink") ? color : pair[1].css[mode] ?? pair[1].css.light }}>{specimenDataset.tokens.sampleText}</Content> : need({ leaf: member.slot, reason: "The consumer has no resolved contrast pair." })}
+      {pair && valid(pair[1]) ? <Content as="span" data-contrast-pair={pair[0]} style={{ background: member.emit?.endsWith("foreground") ? pair[1].css[mode] ?? pair[1].css.light : color, color: member.emit?.endsWith("foreground") ? color : pair[1].css[mode] ?? pair[1].css.light }}>{specimenDataset.tokens.sampleText}</Content> : need({ leaf: member.slot, reason: "The consumer has no resolved contrast pair." })}
     </Content>;
   })}</>;
   if (member.$type === "duration" || member.$type === "cubicBezier") {

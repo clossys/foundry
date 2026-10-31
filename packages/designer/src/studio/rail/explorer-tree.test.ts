@@ -5,12 +5,12 @@ import { labels, smallCatalog } from "../__fixtures__/studio.js";
 import { loadBuildCatalog } from "../../catalog-core/index.js";
 
 describe("explorer tree", () => {
-  it("orders the five layers as D5g rows: Frames top, Tokens bottom", () => {
+  it("orders the five layers as D5g rows: Frames top, Themes bottom", () => {
     expect(EXPLORER_LAYER_ORDER).toEqual(["frames", "sections", "components", "assets", "themes"]);
     const contracts = loadBuildCatalog();
     const nodes = explorerNodes(contracts.placements, labels.layers);
     expect(nodes.map(node => node.id)).toEqual(["frames", "sections", "components", "assets", "themes"]);
-    expect(nodes.map(node => node.label)).toEqual(["Frames", "Sections", "Components", "Assets", "Tokens"]);
+    expect(nodes.map(node => node.label)).toEqual(["Frames", "Sections", "Components", "Assets", "Themes"]);
   });
   it("shows only the layers a catalog places, still in D5g order", () => {
     expect(explorerNodes(smallCatalog.placements, labels.layers).map(node => node.id)).toEqual(["assets", "themes"]);

@@ -41,7 +41,7 @@ describe("Foundry section package descriptors", () => {
       expect(meta.evidence).toEqual([]);
       expect(descriptor).not.toHaveProperty("observations");
       expect(descriptor).not.toHaveProperty("measurements");
-      expect(descriptor.reads).toEqual({ tokens: descriptor.consumption.scannedReads.themes, assets: descriptor.consumption.scannedReads.assets });
+      expect(descriptor.reads).toEqual({ themes: descriptor.consumption.scannedReads.themes, assets: descriptor.consumption.scannedReads.assets });
       expect(descriptor.composes).toEqual(descriptor.consumption.scannedComposes);
       expect(descriptor.consumption.scanStatus).toBe("lower-bound");
       expect(descriptor).not.toHaveProperty("files");

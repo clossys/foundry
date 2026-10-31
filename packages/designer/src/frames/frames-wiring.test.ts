@@ -47,7 +47,7 @@ const sources: WiringInput["sources"] = [...walk("src/frames"), ...walk("src/she
 
 const run = (input: Partial<WiringInput> = {}) => checkWiring({
   sources,
-  tokens: JSON.parse(read("src/catalog/slots/themes.json")) as WiringInput["themes"],
+  themes: JSON.parse(read("src/catalog/slots/themes.json")) as WiringInput["themes"],
   // `styles/theme.css` imports `theme-keys.css`; its `@theme inline` keys are what expand utilities into token reads.
   themeCss: read("styles/theme-keys.css"),
   exceptions: foundryWiringExceptions(),
@@ -62,30 +62,30 @@ const errors = (findings: readonly WiringFinding[], code: string) => findings.fi
  * still go through inline styles, because `compiled-css/class-scan.ts` drops `(--var)` utility
  * shorthand and a named `@utility` lives in `styles/theme-keys.css`, outside this unit.
  */
-const LAYOUT_READ = /^themes\.(?:spacing|region-width|z-index|breakpoint|content-size|gutter|touch-target|border-width)\./;
+const LAYOUT_READ = /^themes\.spacing\./;
 const WL2_RESIDUAL_READS: Record<string, string[]> = {
   // NEED-c frame chrome text/surface component
-  "src/frames/AppFrame.specimen.tsx": ["tokens.body-size.default", "tokens.body-size.s", "themes.border.default", "tokens.caption-size.default", "themes.radius.default", "themes.card.default", "themes.muted-foreground.default", "themes.muted-foreground.default"],
+  "src/frames/AppFrame.specimen.tsx": ["themes.border.default", "themes.card.default", "themes.muted-foreground.default", "themes.muted-foreground.default", "themes.radius.default"],
   // NEED-c frame chrome text/surface component
-  "src/frames/AppFrame.tsx": ["themes.primary.default", "tokens.body-size.default", "themes.border.default", "themes.radius.default", "themes.ring.default", "themes.background.default", "themes.foreground.default"],
+  "src/frames/AppFrame.tsx": ["themes.background.default", "themes.border.default", "themes.foreground.default", "themes.primary.default", "themes.radius.default", "themes.ring.default"],
   // NEED-c frame chrome text/surface component
-  "src/frames/FrameDock.tsx": ["themes.border.default", "themes.radius.default", "themes.card.default"],
+  "src/frames/FrameDock.tsx": ["themes.border.default", "themes.card.default", "themes.radius.default"],
   // NEED-c frame chrome text/surface component
   "src/frames/InspectorFrame.tsx": ["themes.border.default"],
   // NEED-c frame chrome text/surface component
-  "src/frames/app-frame-layout.ts": ["tokens.blur.glass", "themes.background.default", "themes.card.default"],
+  "src/frames/app-frame-layout.ts": ["themes.background.default", "themes.card.default"],
   // NEED-c frame chrome text/surface component
-  "src/shell/NavDisclosure.tsx": ["themes.primary.default", "tokens.brandmark-size.height-lg", "themes.input.default", "tokens.duration.fast", "tokens.easing.default", "themes.muted.default", "themes.foreground.default", "themes.foreground.default"],
+  "src/shell/NavDisclosure.tsx": ["themes.foreground.default", "themes.foreground.default", "themes.input.default", "themes.muted.default", "themes.primary.default"],
   // NEED-c frame chrome text/surface component
   "src/shell/Shell.tsx": ["themes.border.default", "themes.sidebar.default"],
   // NEED-c frame chrome text/surface component
-  "src/shell/SiteFooter.tsx": ["tokens.body-size.s", "themes.border.default", "themes.background.default", "themes.foreground.default", "themes.font-sans.default"],
+  "src/shell/SiteFooter.tsx": ["themes.background.default", "themes.border.default", "themes.font-sans.default", "themes.foreground.default"],
   // NEED-c frame chrome text/surface component
   "src/shell/SiteHeader.tsx": ["themes.foreground.default", "themes.foreground.default"],
   // NEED-c frame chrome text/surface component
-  "src/shell/SkipLink.tsx": ["themes.primary.default", "tokens.body-size.default", "themes.radius.default", "themes.accent-foreground.default"],
+  "src/shell/SkipLink.tsx": ["themes.accent-foreground.default", "themes.primary.default", "themes.radius.default"],
   // NEED-c surface-ground: the packet admits only layout-geometry rows
-  "src/shell/internal/shell-ground.ts": ["themes.border.default", "themes.border.default", "themes.background.default", "themes.card.default", "themes.foreground.default", "themes.foreground.default", "themes.foreground.default", "themes.muted-foreground.default"],
+  "src/shell/internal/shell-ground.ts": ["themes.background.default", "themes.border.default", "themes.border.default", "themes.card.default", "themes.foreground.default", "themes.foreground.default", "themes.foreground.default", "themes.muted-foreground.default"],
 };
 const WL3_RESIDUAL = [
   // NEED-c direction provider component: AppFrame passes `dir` through ModalContext/PopoverContext.

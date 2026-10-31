@@ -28,20 +28,20 @@ describe("fresh check invocation context", () => {
     const supplied = structuredClone(resolve({ catalog, library: complete }));
     if (damage === "light-value") supplied.members["themes.foreground.default"]!.value.light = "#123456";
     else if (damage === "dark-css") supplied.members["themes.foreground.default"]!.css.dark = "#123456";
-    else supplied.members["themes.foreground.default"] = structuredClone(supplied.members["themes.foreground.default"]!);
+    else supplied.members["themes.foreground.forged"] = structuredClone(supplied.members["themes.foreground.default"]!);
     expect(check({ catalog, library: complete, resolved: supplied }).findings.some(finding => finding.code === "C5" && finding.severity === "error")).toBe(true);
   });
 
   it("recomputes provenance and upstream drift after the same objects are mutated", () => {
     const c = structuredClone(catalog), library = structuredClone(complete);
     expect(errors(c, library)).toEqual([]);
-    const adopted = tokenAt(library, "tokens.blur.sm");
+    const adopted = tokenAt(library, "themes.radius.default");
     const original = adopted.$value;
     adopted.$value = { value: 99, unit: "px" };
     expect(check({ catalog: c, library }).findings.some(finding => finding.code === "C10" && finding.message.includes("adopted content differs"))).toBe(true);
     adopted.$value = original;
     const origin = adopted.$extensions!["com.clossys.origin"]!;
-    if (origin.kind !== "adopted") throw new Error("expected adopted blur");
+    if (origin.kind !== "adopted") throw new Error("expected adopted radius");
     const upstream = flatten(c.fills.find(fill => metaOf(fill).id === origin.fill)!)[origin.member]!;
     upstream.$value = { value: 98, unit: "px" };
     expect(check({ catalog: c, library }).findings.some(finding => finding.code === "C10" && finding.severity === "notice" && finding.message.includes("upstream drift"))).toBe(true);

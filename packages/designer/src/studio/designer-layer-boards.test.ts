@@ -27,7 +27,7 @@ it.each(['themes','assets','components','sections','frames'] as const)('designer
   expect(result.body.boards.map(board => board.groups?.domain)).toEqual(domains);
   expect(result.body.boards.map(board => board.section)).toEqual(input.projection.boards.map((_, index) => ({ slot: 'sections.comparison', index })));
   expect(result.body.source).toEqual({ kind: 'derived', query: DESIGNER_LAYER_BOARDS_QUERY });
-  expect(result.body.collapseBelow).toBe('tokens.breakpoint.tablet');
+  expect(result.body.collapseBelow).toBe('md');
   expect(runtimeHash(input)).toBe(before);
   expect(result.fills['sections.comparison']).toHaveLength(input.records.length);
 });

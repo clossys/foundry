@@ -135,17 +135,18 @@
           "components.icon"
         ],
         "themes": [
-          "themes.border.default",
-          "themes.radius.default",
-          "themes.shadow.lg",
-          "themes.ring.default",
-          "themes.tracking-tight.default",
-          "themes.spacing.default",
-          "themes.destructive.default",
-          "themes.popover.default",
           "themes.accent.default",
+          "themes.border.default",
+          "themes.destructive.default",
+          "themes.foreground.default",
           "themes.muted-foreground.default",
-          "themes.foreground.default"
+          "themes.popover.default",
+          "themes.radius.default",
+          "themes.ring.default",
+          "themes.shadow.lg",
+          "themes.shadow.md",
+          "themes.spacing.default",
+          "themes.tracking-tight.default"
         ]
       },
       "root": "rac:Menu",

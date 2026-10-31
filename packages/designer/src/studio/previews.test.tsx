@@ -1,11 +1,10 @@
 import { afterEach, expect, it } from "vitest";
-import { cleanup, fireEvent, render } from "@testing-library/react";
+import { cleanup, render } from "@testing-library/react";
 import { buildCandidates, type Candidate } from "./model.js";
 import { CandidateCell } from "./CandidateCell.js";
 import { completedTokenLibrary } from "../importers/__fixtures__/completed-token-library.js";
-import { TOKENS } from "../tokens/tokens.js";
 import { CompactPreview, SlotPreview, PREVIEW_LIMIT, isFontDeclared } from "./previews.js";
-import { catalog, emptyLibrary, adopt, labels } from "./__fixtures__/studio.js";
+import { catalog, adopt, labels } from "./__fixtures__/studio.js";
 afterEach(cleanup);
 it("uses actual resolved token previews and caps member rows", () => {
  const library=adopt(); const candidate=buildCandidates({catalog,library,working:library,slotId:"themes.background",scope:"slot",target:"themes.background"})[0]!;
@@ -21,30 +20,12 @@ it("renders checked SVG assets through the existing image route rather than a to
  expect(view.container.querySelector("figure")).toBeNull();
  expect(view.container.querySelector("svg")).toBeNull();
 });
-it("shows canonical Tailwind achromatic OKLCH none as a strict swatch with labelled channels and the exact source kept for copy", () => {
- const doc = catalog.fills.find(doc => doc.$extensions["com.clossys.fill"].slot.startsWith("themes.") && doc.$extensions["com.clossys.fill"].source.includes("tailwind") && JSON.stringify(doc).includes(" none)"))!;
- expect(doc).toBeDefined();
- const meta = doc.$extensions["com.clossys.fill"], library = emptyLibrary();
- const candidate = buildCandidates({ catalog, library, working: library, slotId: meta.slot, scope: "slot", target: meta.slot }).find(candidate => candidate.source === meta.source)!;
- const entries = candidate.members.filter(({ member }) => [member.css.light, member.css.dark].some(value => value?.includes("none)")));
- expect(entries.length).toBeGreaterThan(0);
- for (const entry of entries) {
-  const view = render(<CompactPreview candidate={{ ...candidate, members: [entry] }} labels={labels} />);
-  expect(view.queryByText(labels.visualPreviewUnsupported)).toBeNull();
-  expect(view.container.querySelector("[data-studio-color-swatch]")).not.toBeNull();
-  const value = view.container.querySelector<HTMLElement>("[data-member-value]")!;
-  expect(value.dataset.copyValue).toBe(entry.member.css.light);
-  expect(value.getAttribute("title")).toBe(entry.member.css.light);
-  expect([...value.querySelectorAll("[data-channel]")].map(channel => channel.getAttribute("data-channel"))).toEqual(["L", "C", "H"]);
-  expect(candidate.findings.some(finding => finding.code === "C1" && finding.severity === "error")).toBe(false);
-  view.unmount();
- }
-});
-
 it("labels the channels of oklch(97% 0 none) and keeps the exact string", () => {
- const library = emptyLibrary();
- const candidate = buildCandidates({ catalog, library, working: library, slotId: "tokens.color-ramp", scope: "slot", target: "tokens.color-ramp" }).find(candidate => candidate.members.some(({ member }) => member.css.light === "oklch(97% 0 none)"))!;
- const entry = candidate.members.find(({ member }) => member.css.light === "oklch(97% 0 none)")!;
+ // SYNTHETIC: no shipped theme fill carries a `none` channel, so one real color member carries the value.
+ const library = adopt();
+ const candidate = buildCandidates({ catalog, library, working: library, slotId: "themes.background", scope: "slot", target: "themes.background" }).find(candidate => candidate.selected)!;
+ const real = candidate.members[0]!;
+ const entry = { ...real, member: { ...real.member, css: { light: "oklch(97% 0 none)" } } };
  const view = render(<CompactPreview candidate={{ ...candidate, members: [entry] }} labels={labels} />);
  const value = view.container.querySelector<HTMLElement>("[data-member-value]")!;
  expect([...value.querySelectorAll("[data-channel]")].map(channel => `${channel.getAttribute("data-channel")}=${channel.querySelector("[data-channel-value]")?.textContent}`)).toEqual(["L=97%", "C=0", "H=none"]);
@@ -66,68 +47,7 @@ const variants = (slotId: string) => {
 const binding = (element: Element | null | undefined): string | undefined => (element as HTMLElement | null | undefined)?.style.getPropertyValue("--studio-specimen-value") || undefined;
 
 it.each([
- ["tokens.duration", "duration"], ["tokens.behavior-timing", "duration"], ["tokens.transition-duration", "duration"],
- ["tokens.easing", "easing"], ["tokens.transition-easing", "easing"],
-] as const)("motion specimens of %s bind the member's %s and Play toggles data-playing", (slotId, role) => {
- for (const { member, key, variant } of variants(slotId)) {
-  const figure = variant.querySelector<HTMLElement>('figure[data-token-specimen="motion"]');
-  expect(figure, key).not.toBeNull();
-  expect(binding(figure), key).toBe(member.css.light);
-  const mover = figure!.querySelector<HTMLElement>("[data-motion-target]")!;
-  expect(mover.className).toContain("transition-transform");
-  expect(mover.className).toContain(role === "duration" ? "duration-(--studio-specimen-value)" : "ease-(--studio-specimen-value)");
-  // Reduced motion shows the end state, never a frozen start.
-  expect(mover.className).toContain("motion-reduce:transition-none");
-  expect(mover.className).toMatch(/motion-reduce:translate-x-/);
-  expect(figure!.dataset.playing).toBe("false");
-  fireEvent.click(figure!.querySelector("button")!);
-  expect(figure!.dataset.playing, key).toBe("true");
-  fireEvent.click(figure!.querySelector("button")!);
-  expect(figure!.dataset.playing).toBe("false");
- }
- cleanup();
-});
-
-it.each(["tokens.breakpoint", "tokens.control-size", "tokens.content-size", "tokens.region-width"])("size members of %s render distinct true-px ruler bindings on one shared scale", slotId => {
- const rows = variants(slotId);
- const scales = new Set<string>();
- for (const { member, key, variant } of rows) {
-  const figure = variant.querySelector<HTMLElement>('figure[data-token-specimen="ruler"]');
-  expect(figure, key).not.toBeNull();
-  expect(binding(figure), key).toBe(member.css.light);
-  const bar = figure!.querySelector<HTMLElement>("[data-ruler-bar]")!;
-  // The bar is the member's own length at the leaf's one scale factor.
-  expect(bar.className).toContain("w-(--studio-ruler-bar)");
-  expect(figure!.style.getPropertyValue("--studio-ruler-bar"), key).toMatch(new RegExp(`^calc\\(${member.css.light.replace(/[()*+.?[\]\\^$|]/g, "\\$&")} \\* [\\d.]+\\)$`));
-  scales.add(figure!.dataset.rulerScale!);
-  expect(figure!.querySelectorAll("[data-ruler-tick]").length).toBeGreaterThanOrEqual(3);
- }
- expect(scales.size).toBe(1);
- const distinctValues = new Set(rows.map(row => row.member.css.light));
- expect(new Set(rows.map(row => binding(row.variant.querySelector('figure[data-token-specimen="ruler"]')))).size).toBe(distinctValues.size);
- cleanup();
-});
-
-it("z-index shows the 11 registered layers as a fan stack in rank order with the member raised at its own value", () => {
- const ranks = Object.values(TOKENS).filter(token => token.family === "z").sort((a, b) => Number(a.value) - Number(b.value)).map(token => token.property);
- expect(ranks).toHaveLength(11);
- for (const { member, key, variant } of variants("tokens.z-index")) {
-  const figure = variant.querySelector<HTMLElement>('figure[data-token-specimen="layer-fan"]');
-  expect(figure, key).not.toBeNull();
-  const plates = [...figure!.querySelectorAll<HTMLElement>("[data-layer-rank]")];
-  expect(plates.map(plate => plate.dataset.layerProperty)).toEqual(ranks);
-  expect(plates.map(plate => Number(plate.dataset.layerRank))).toEqual(ranks.map((_, index) => index));
-  const current = plates.filter(plate => plate.hasAttribute("data-current"));
-  expect(current.map(plate => plate.dataset.layerProperty), key).toEqual([member.emit]);
-  expect(current[0]!.style.getPropertyValue("--plate-z")).toBe(member.css.light);
- }
- cleanup();
-});
-
-it.each([
- ["themes.radius", "radius"], ["themes.shadow", "shadow"], ["tokens.blur", "blur"],
- ["tokens.font-size", "text-metric"], ["tokens.font-weight", "text-metric"], ["themes.tracking-tight", "text-metric"], ["tokens.line-height", "text-metric"],
- ["tokens.density", "density"], ["tokens.focus-outline", "focus"],
+ ["themes.radius", "radius"], ["themes.shadow", "shadow"], ["themes.tracking-tight", "text-metric"],
 ] as const)("every member of %s shows the same %s specimen bound to its own value", (slotId, kind) => {
  const shapes = new Set<string>();
  for (const { member, key, variant } of variants(slotId)) {
@@ -136,9 +56,9 @@ it.each([
   expect(binding(figure), key).toBe(member.css.light);
   const target = figure!.querySelector<HTMLElement>("[data-specimen-target]")!;
   expect(target.className, key).toContain("--studio-specimen-value");
-  if (kind !== "density" && kind !== "focus") shapes.add(target.className);
+  shapes.add(target.className);
  }
  // One shape per leaf: only the bound value differs between members.
- if (kind !== "density" && kind !== "focus") expect(shapes.size).toBe(1);
+ expect(shapes.size).toBe(1);
  cleanup();
 });

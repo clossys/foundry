@@ -18,11 +18,11 @@ import { catalog, smallCatalog, emptyLibrary } from "./__fixtures__/studio.js";
 import { catalogFixture, expectOnlyResolvedCopy, pseudoStudioCopy } from "./__fixtures__/copy-hand-roll.js";
 
 const tokenPlacement = catalogFixture<Placement>("packages/designer/src/catalog/ia/themes.json");
-const color = tokenPlacement.nodes.find(node => node.id === "color")!;
-if (!("children" in color)) throw new Error("fixture.ia.color");
-const palettes = color.children.find(node => node.id === "color-palettes")!;
+const color = tokenPlacement.nodes.find(node => node.id === "colors")!;
+if (!("children" in color)) throw new Error("fixture.ia.colors");
+const palettes = color.children.find(node => node.id === "colors-actions")!;
 const placements: Placement[] = [{ layer: "themes", nodes: [{ ...color, children: [palettes] }] }];
-const graph = buildUsageGraph({ inventory: { tokens: ["themes.primary", "themes.destructive"] }, selection: {} });
+const graph = buildUsageGraph({ inventory: { themes: ["themes.primary", "themes.destructive"] }, selection: {} });
 const findings = check({ catalog: smallCatalog, library: emptyLibrary() }).findings.filter(finding => finding.copy).slice(0, 2);
 const size = { width: 1200, height: 800 };
 
@@ -44,7 +44,7 @@ it.each(["en", "ar"])("hand-rolls a measured selected Designer page, Explorer, c
 it("hand-rolls Inspector field labels, resolved paths, history and structured check messages", () => {
   const { copy } = pseudoStudioCopy();
   const identity = identityFor(placements, "themes.primary", { root: "rac:Button", source: "foundry", origin: "adopted" });
-  expect(identity.pathIds).toEqual(["color", "color-palettes"]);
+  expect(identity.pathIds).toEqual(["colors", "colors-actions"]);
   const { container } = render(<SystemInspector copy={copy} labels={createRouteStudioLabels(copy)} identity={identity} graph={graph}
     findings={findings} onClose={() => {}} onNavigate={() => {}} canNavigate={() => false}
     writeHistory={() => [{ index: 1, command: "inspect themes.primary", contentHash: "sha256:fixture", inputs: { key: "<escaped>" } }]} />);
@@ -57,7 +57,7 @@ it("hand-rolls Inspector field labels, resolved paths, history and structured ch
 it("hand-rolls the legacy console Inspector through the same resolver and explicit data seam", () => {
   const { copy } = pseudoStudioCopy();
   const library = emptyLibrary();
-  const candidate = buildCandidates({ catalog, library, working: library, slotId: "themes.primary", scope: "slot", target: "themes.primary" }).find(row => row.source === "foundry")!;
+  const candidate = buildCandidates({ catalog, library, working: library, slotId: "themes.primary", scope: "slot", target: "themes.primary" }).find(row => row.source === "shadcn@aria")!;
   expect(candidate).toBeDefined();
   const { container } = render(<Inspector copy={copy} candidate={{ ...candidate, findings }} labels={createRouteStudioLabels(copy)} graph={graph} />);
   expect(container.querySelectorAll('[data-studio-data-value]').length).toBeGreaterThan(0);

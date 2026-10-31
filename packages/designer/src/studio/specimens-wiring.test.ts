@@ -187,7 +187,8 @@ function datasetStrings(root: unknown): string[] {
 
 describe("one dataset feeds every layer", () => {
   it("carries all five layers in the one deterministic dataset", () => {
-    for (const layer of ["themes", "assets", "sections", "frames"] as const) expect(Object.keys(specimenDataset), layer).toContain(layer);
+    // The dataset still keys the Themes layer's sample as `tokens` (specimen-dataset.ts).
+    for (const layer of ["tokens", "assets", "sections", "frames"] as const) expect(Object.keys(specimenDataset), layer).toContain(layer);
     // Components are fed from the dataset's per-component records (component-specimen-dataset.test.tsx).
     expect(specimenDataset.table.rows.length).toBeGreaterThan(0);
     expect(specimenDataset.tokens.sampleText.trim().split(/\s+/).length).toBeGreaterThan(2);
@@ -234,7 +235,7 @@ function overrideFaults(root: Element, label: string): string[] {
 }
 
 describe("specimen role and reason-coded overrides", () => {
-  it("stamps every token specimen with data-layer=\"tokens\" and applies the member only as a reason-coded override", () => {
+  it("stamps every theme specimen with data-layer=\"themes\" and applies the member only as a reason-coded override", () => {
     const faults: string[] = [], kinds = new Set<string>(), cells: ReactElement[] = [];
     for (const slotId of Object.keys(TOKEN_LEAF_SPECIMENS)) for (const { id, member } of membersOf(slotId)) {
       const kind = tokenLeafSpecimenKind(member);
@@ -251,20 +252,20 @@ describe("specimen role and reason-coded overrides", () => {
       faults.push(...overrideFaults(root, id));
     }
     unmount();
-    expect(cells.length).toBeGreaterThan(20);
+    expect(cells.length).toBeGreaterThan(10);
     expect(faults).toEqual([]);
-    expect([...kinds].sort()).toEqual(["blur", "density", "focus", "gradient", "icon", "layer-fan", "motion", "opacity", "radius", "ruler", "shadow", "text-metric"]);
+    expect([...kinds].sort()).toEqual(["motion", "radius", "ruler", "shadow", "text-metric"]);
   }, 60_000);
 
   it("draws token sample text from the dataset when the host gives none", () => {
-    const [entry] = membersOf("tokens.line-height");
+    const [entry] = membersOf("themes.tracking-tight");
     const { container } = render(createElement(TokenLeafSpecimen, { id: entry!.id, member: entry!.member }));
     expect(container.textContent).toContain(specimenDataset.tokens.sampleText);
   });
 
   it("draws the dataset sample in every Studio text-metric and focus cell, never the host's label copy", () => {
     const leaves = Object.entries(TOKEN_LEAF_SPECIMENS).filter(([, kind]) => kind === "text-metric" || kind === "focus").map(([slot]) => slot);
-    expect(leaves).toHaveLength(12);
+    expect(leaves).toHaveLength(5);
     const sample = specimenDataset.tokens.sampleText, firstWord = sample.trim().split(/\s+/)[0]!;
     const faults: string[] = [];
     let drawn = 0;

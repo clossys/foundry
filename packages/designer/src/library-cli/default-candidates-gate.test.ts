@@ -4,9 +4,9 @@ import type { CompositeCatalogData } from "../catalog-core/types.js";
 
 const head = "a".repeat(40);
 function fixture(): DefaultCandidatesInput {
-  const token = { id: "themes.spacing", layer: "themes", contract: { kind: "token", tier: "scale", $type: "dimension", members: { mode: "closed", names: ["4"] }, modes: ["light"] }, requires: [], status: "draft" };
+  const token = { id: "themes.spacing", layer: "themes", contract: { kind: "token", tier: "scale", $type: "dimension", members: { mode: "closed", names: ["default"] }, modes: ["light"] }, requires: [], status: "draft" };
   const component = { id: "components.button", layer: "components", contract: { kind: "component", root: "presentational", members: { mode: "closed", names: ["default"] }, props: [], allowedReads: { themes: ["themes.spacing"], assets: [] } }, requires: [], status: "draft" };
-  const fill = (source: string) => ({ $extensions: { "com.clossys.fill": { id: `${source}/themes.spacing`, slot: token.id, source, mode: "implementation", conforms: [], evidence: [], license: "MIT", status: "draft", author: "third-party", trust: "pinned-upstream", builtOn: [], sourceAddress: "fixture", relation: "same-contract" } }, tokens: { spacing: { "4": { $type: "dimension", $value: { value: 1, unit: "rem" } } } } });
+  const fill = (source: string) => ({ $extensions: { "com.clossys.fill": { id: `${source}/themes.spacing`, slot: token.id, source, mode: "implementation", conforms: [], evidence: [], license: "MIT", status: "draft", author: "third-party", trust: "pinned-upstream", builtOn: [], sourceAddress: "fixture", relation: "same-contract" } }, themes: { spacing: { default: { $type: "dimension", $value: { value: 1, unit: "rem" } } } } });
   const descriptor = { slot: component.id, source: "foundry", root: "presentational", members: ["default"], props: [], propMap: { default: "./components#Button.default" }, reads: { themes: ["themes.spacing.default"], assets: [], components: [] }, composes: [], impl: { kind: "package", module: "@clossys/designer/components", export: "Button" }, license: "MIT", pin: { package: "@clossys/designer", version: "0.12.0", export: "./components#Button" }, deps: [] };
   const catalog = { values: { slots: [token], fills: [fill("shadcn@aria"), fill("foundry")], sources: [], standards: [], placements: [], retired: [] }, components: { slots: [component], fills: [{ $extensions: { "com.clossys.fill": { id: "foundry/components.button", slot: component.id, source: "foundry", mode: "implementation" } }, components: { button: descriptor } }], rules: [] }, surfaces: { slots: [], fills: [], rules: [], transforms: [], materializations: [] } } as unknown as CompositeCatalogData;
   return { catalog, buildCatalog: { slots: [token, component] } as DefaultCandidatesInput["buildCatalog"], defaultSources: { "themes.spacing": "shadcn@aria", "components.button": "foundry" }, sourceHead: head, sourceHash: () => undefined };
@@ -41,8 +41,8 @@ describe("default candidates gate", () => {
     doc.$extensions["com.clossys.fill"].slot = added.id;
     const entry = Object.values(doc.components)[0]!;
     entry.slot = added.id;
-    const extra = structuredClone(input.buildCatalog.slots[0]!); extra.id = "tokens.new-spacing";
-    entry.reads.themes = ["tokens.new-spacing.4"];
+    const extra = structuredClone(input.buildCatalog.slots[0]!); extra.id = "themes.new-spacing";
+    entry.reads.themes = ["themes.new-spacing.default"];
     doc.components = { "new-surface": entry };
     input.catalog.components.slots = [...input.catalog.components.slots, added];
     input.catalog.components.fills = [...input.catalog.components.fills, doc];
@@ -53,7 +53,7 @@ describe("default candidates gate", () => {
     expect(result.exitCode).toBe(1);
     expect(result.report.missing[0]).toMatchObject({ slot: extra.id, surfaces: [added.id] });
   });
-  it.each(["tokens.unknown", "themes.spacing.default", "themes.spacing.default."])("rejects unknown or malformed read %s", read => {
+  it.each(["themes.unknown", "themes.spacing.nonexistent", "themes.spacing.default."])("rejects unknown or malformed read %s", read => {
     const input = fixture(); mutableDescriptor(input).reads.themes = [read];
     expect(checkDefaultCandidates(input).exitCode).toBe(2);
   });
@@ -97,7 +97,7 @@ describe("default candidates gate", () => {
   });
   it("does not turn permitted contract reads into observed surface reads", () => {
     const input = fixture();
-    input.catalog.components.slots[0]!.contract.allowedReads.themes = ["tokens.unread"];
+    input.catalog.components.slots[0]!.contract.allowedReads.themes = ["themes.unread"];
     expect(checkDefaultCandidates(input).exitCode).toBe(0);
   });
   it("rejects a lost registered surface descriptor unless native coverage explicitly declares it unavailable", () => {
@@ -113,17 +113,17 @@ describe("default candidates gate", () => {
   });
   it("rejects a value whose native type differs from the registered token contract", () => {
     const input = fixture(), fill = input.catalog.values.fills[0]!;
-    const group = fill.tokens!.spacing as unknown as Record<string, { $type: string; $value: unknown }>;
-    group["4"] = { $type: "color", $value: "#ffffff" };
+    const group = fill.themes!.spacing as unknown as Record<string, { $type: string; $value: unknown }>;
+    group.default = { $type: "color", $value: "#ffffff" };
     expect(checkDefaultCandidates(input).exitCode).toBe(1);
   });
   it("uses the native adoption/check path for full slot coverage, beyond the observed member", () => {
     const input = fixture();
     const slot = input.catalog.values.slots[0]!;
-    if (slot.contract.members.mode === "closed") slot.contract.members.names = ["4", "8"];
+    if (slot.contract.members.mode === "closed") slot.contract.members.names = ["default", "8"];
     const result = checkDefaultCandidates(input);
     expect(result.exitCode).toBe(1);
-    expect(result.report.missing[0]!.reasons).toContain("required native member is absent: themes.spacing.default");
+    expect(result.report.missing[0]!.reasons).toContain("required native member is absent: themes.spacing.8");
     expect(result.report.missing[0]!.reasons.some(reason => reason.startsWith("C4:"))).toBe(true);
   });
   it("accepts selectable derived value candidates under the native adoption semantics", () => {
@@ -139,7 +139,7 @@ describe("default candidates gate", () => {
   it("mutation proof: removing semantic content from its default source fails and restoration passes", () => {
     const input = fixture(), button = mutableDescriptor(input);
     const contract = structuredClone(input.catalog.components.slots[0]!); contract.id = "components.semantic-content";
-    const semantic = structuredClone(button); semantic.slot = contract.id; semantic.reads = { tokens: [], assets: [], components: [] };
+    const semantic = structuredClone(button); semantic.slot = contract.id; semantic.reads = { themes: [], assets: [], components: [] };
     semantic.impl = { kind: "package", module: "@clossys/designer/components", export: "SemanticContent" };
     semantic.pin = { package: "@clossys/designer", version: "0.12.0", export: "./components#SemanticContent" };
     const doc = (source: string) => ({ $extensions: { "com.clossys.fill": { ...input.catalog.components.fills[0]!.$extensions["com.clossys.fill"], id: `${source}/${contract.id}`, slot: contract.id, source } }, components: { "semantic-content": { ...semantic, source } } });

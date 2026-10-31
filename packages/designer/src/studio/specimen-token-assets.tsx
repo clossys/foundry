@@ -48,7 +48,7 @@ function memberOf(context: DesignerSpecimenContext, value: unknown): ResolvedMem
   return id === undefined ? undefined : context.profile.values.members[id];
 }
 function pairOf(context: DesignerSpecimenContext, member: ResolvedMember): [string, ResolvedMember] | undefined {
-  return Object.entries(context.profile.values.members).find(([, value]) => value.emit === (member.emit?.includes("ink") ? "--color-surface-base" : "--color-ink-primary") && value.$type === "color" && valid(value));
+  return Object.entries(context.profile.values.members).find(([, value]) => value.emit === (member.emit?.endsWith("foreground") ? "--background" : "--foreground") && value.$type === "color" && valid(value));
 }
 function typeStyle(member: ResolvedMember): CSSProperties | undefined {
   const css = member.css.light;
@@ -71,11 +71,10 @@ export function colorRampSpecimenItems(context: DesignerSpecimenContext, leaf: s
 type Mode = "swatch" | "color-ramp" | "type-ladder" | "spacing-ladder" | "radius-ladder" | "motion-player" | "asset-grid" | "icon-grid";
 function chromeNeeds(mode: Mode, context: DesignerSpecimenContext): readonly string[] {
   const dimensions = mode === "swatch" || mode === "color-ramp"
-    ? [["themes.spacing.default", "--spacing-5xl"], ["themes.spacing.default", "--spacing-4xl"]] as const
-    : mode === "motion-player" ? [["themes.spacing.default", "--spacing-4xl"]] as const : [];
+    ? [["themes.spacing.default", "--spacing"]] as const
+    : mode === "motion-player" ? [["themes.spacing.default", "--spacing"]] as const : [];
   const colors = mode === "asset-grid" || mode === "icon-grid" ? [
-    ["themes.card.default", "--color-surface-raised"], ["themes.foreground.default", "--color-surface-inverse"],
-    ["themes.foreground.default", "--color-ink-primary"], ["themes.background.default", "--color-ink-on-inverse"],
+    ["themes.card.default", "--card"], ["themes.foreground.default", "--foreground"], ["themes.background.default", "--background"],
   ] as const : [];
   return [...dimensions.map(([id, emit]) => ({ id, emit, type: "dimension" })), ...colors.map(([id, emit]) => ({ id, emit, type: "color" }))].flatMap(({ id, emit, type }) => {
     const member = context.profile.values.members[id];
@@ -143,7 +142,7 @@ function Swatch({ id, member, context, renderParts }: { id: string; member: Reso
     return <Content as="section" key={mode} data-specimen-mode={mode}>
       {renderParts["studio.specimen-swatch"]!({ memberId: id, mode })}
       <Content as="span">{id}</Content><Content as="span">{color}</Content>
-      {renderParts["studio.specimen-contrast"]!({ backgroundMemberId: member.emit?.includes("ink") ? pair[0] : id, colorMemberId: member.emit?.includes("ink") ? id : pair[0], pairMemberId: pair[0], mode, children: specimenDataset.tokens.sampleText })}
+      {renderParts["studio.specimen-contrast"]!({ backgroundMemberId: member.emit?.endsWith("foreground") ? pair[0] : id, colorMemberId: member.emit?.endsWith("foreground") ? id : pair[0], pairMemberId: pair[0], mode, children: specimenDataset.tokens.sampleText })}
     </Content>;
   })}</>;
 }
@@ -162,10 +161,10 @@ function MotionPlayer({ id, duration, easing }: { id: string; duration: string; 
     const reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
     setReduced(reduce);
     if (reduce) return;
-    running.current = target.current?.animate?.([{ transform: "translateX(0)" }, { transform: "translateX(var(--spacing-4xl))" }], { duration: Number.parseFloat(duration) * (duration.endsWith("ms") ? 1 : 1000), easing, fill: "forwards" });
+    running.current = target.current?.animate?.([{ transform: "translateX(0)" }, { transform: "translateX(calc(var(--spacing) * 16))" }], { duration: Number.parseFloat(duration) * (duration.endsWith("ms") ? 1 : 1000), easing, fill: "forwards" });
   };
   return <Content as="section" data-motion-specimen={id}>
-    <Content as="div" ref={target} role="img" aria-label={id} className="size-lg bg-accent" style={{ transform: reduced ? "translateX(var(--spacing-4xl))" : undefined }} data-reduced-motion={reduced ? "static-final" : undefined} />
+    <Content as="div" ref={target} role="img" aria-label={id} className="size-lg bg-accent" style={{ transform: reduced ? "translateX(calc(var(--spacing) * 16))" : undefined }} data-reduced-motion={reduced ? "static-final" : undefined} />
     <Button onPress={play}>Play motion</Button>
     {reduced ? <Content as="p" role="status">Reduced motion is enabled.</Content> : null}
   </Content>;
@@ -189,7 +188,7 @@ function renderItem(mode: Mode, item: SpecimenItem, props: SpecimenLeafProps): R
   }
   const artwork = selected(props.context, mode === "icon-grid" ? "components.icon" : "components.logo");
   if (isNeed(artwork)) return props.need(artwork);
-  return <>{(["light", "dark"] as const).map(ground => <Content as="div" key={ground} data-asset-ground={ground} style={{ background: ground === "light" ? "var(--color-surface-raised)" : "var(--color-surface-inverse)", color: ground === "light" ? "var(--color-ink-primary)" : "var(--color-ink-on-inverse)" }}>
+  return <>{(["light", "dark"] as const).map(ground => <Content as="div" key={ground} data-asset-ground={ground} style={{ background: ground === "light" ? "var(--card)" : "var(--foreground)", color: ground === "light" ? "var(--foreground)" : "var(--background)" }}>
     {mode === "icon-grid" ? <Icon glyph={member.value.light as IconNode} decorative={false} label={`${id} ${ground}`} /> : typeof member.value.light === "string" ? <Logomark src={`data:image/svg+xml,${encodeURIComponent(member.value.light)}`} size="lg" title={id} /> : null}
   </Content>)}</>;
 }

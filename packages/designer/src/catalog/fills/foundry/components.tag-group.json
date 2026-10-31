@@ -110,9 +110,7 @@
           "themes.sidebar-foreground",
           "themes.sidebar-primary-foreground",
           "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
+          "themes.font-sans"
         ]
       },
       "root": "rac:TagGroup",

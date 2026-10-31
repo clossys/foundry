@@ -111,10 +111,10 @@
         "assets": [],
         "components": [],
         "themes": [
-          "themes.spacing.default",
-          "themes.muted.default",
+          "themes.foreground.default",
           "themes.muted-foreground.default",
-          "themes.foreground.default"
+          "themes.muted.default",
+          "themes.spacing.default"
         ]
       },
       "root": "rac:Table",

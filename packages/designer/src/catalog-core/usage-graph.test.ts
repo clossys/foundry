@@ -14,28 +14,28 @@ import { main } from "../library-cli/cli.js";
 function fixture(): UsageGraphInputs {
   return {
     inventory: {
-      tokens: ["tokens.color", "tokens.region-width", "themes.spacing", "tokens.unused"],
+      themes: ["themes.color", "themes.radius", "themes.spacing", "themes.unused"],
       assets: ["assets.icon-close"],
       components: ["components.button", "components.dialog", "components.icon"],
       sections: ["sections.band", "sections.form"],
       frames: ["frames.app-shell"],
     },
     selection: {
-      "tokens.color": "foundry/tokens.color", "tokens.region-width": "foundry/tokens.region-width", "themes.spacing": "foundry/themes.spacing", "tokens.unused": "foundry/tokens.unused",
+      "themes.color": "foundry/themes.color", "themes.radius": "foundry/themes.radius", "themes.spacing": "foundry/themes.spacing", "themes.unused": "foundry/themes.unused",
       "assets.icon-close": "lucide/assets.icon-close",
       "components.button": "shadcn@aria/components.button", "components.dialog": "shadcn@aria/components.dialog", "components.icon": "foundry/components.icon",
       "sections.form": "foundry/sections.form", "frames.app-shell": "foundry/frames.app-shell",
     },
     // relationships.ts consumptionReport leaves (selected token/asset fills only).
     consumption: { leaves: [
-      { id: "assets.icon-close", tokens: ["tokens.color", "tokens.missing"], assets: [] },
-      { id: "tokens.color", tokens: ["tokens.color"], assets: [] },
+      { id: "assets.icon-close", themes: ["themes.color", "themes.missing"], assets: [] },
+      { id: "themes.color", themes: ["themes.color"], assets: [] },
     ] },
     // components-consumption.json: fills plus reverseComposes keyed by the composed leaf.
     components: {
       fills: [
-        { id: "shadcn@aria/components.button", slot: "components.button", scanStatus: "lower-bound", declaredReads: { themes: ["tokens.color", "themes.spacing"], assets: [] }, scannedReads: { themes: ["tokens.color"], assets: [] } },
-        { id: "foundry/components.button", slot: "components.button", scanStatus: "lower-bound", declaredReads: { themes: ["tokens.region-width"], assets: [] }, scannedReads: { themes: ["tokens.region-width"], assets: [] } },
+        { id: "shadcn@aria/components.button", slot: "components.button", scanStatus: "lower-bound", declaredReads: { themes: ["themes.color", "themes.spacing"], assets: [] }, scannedReads: { themes: ["themes.color"], assets: [] } },
+        { id: "foundry/components.button", slot: "components.button", scanStatus: "lower-bound", declaredReads: { themes: ["themes.radius"], assets: [] }, scannedReads: { themes: ["themes.radius"], assets: [] } },
         { id: "foundry/components.icon", slot: "components.icon", scanStatus: "unavailable", declaredReads: { themes: [], assets: ["assets.icon-close"] } },
       ],
       reverseComposes: {
@@ -46,7 +46,7 @@ function fixture(): UsageGraphInputs {
     // buildSurfaceConsumption(): fills plus reverseComposes.
     surfaces: {
       fills: [
-        { id: "foundry/sections.form", slot: "sections.form", scanStatus: "lower-bound", declaredReads: { themes: ["tokens.region-width"], assets: [] }, scannedReads: { themes: ["tokens.region-width"], assets: [] },
+        { id: "foundry/sections.form", slot: "sections.form", scanStatus: "lower-bound", declaredReads: { themes: ["themes.radius"], assets: [] }, scannedReads: { themes: ["themes.radius"], assets: [] },
           observedComposes: [{ file: "src/blocks/Form.tsx", line: 12, slotId: "components.button", tag: "Button" }, { file: "src/blocks/Form.tsx", line: 3, slotId: "components.link", tag: "Link" }] },
         { id: "foundry/frames.app-shell", slot: "frames.app-shell", scanStatus: "lower-bound", declaredReads: { themes: [], assets: [] }, scannedReads: { themes: [], assets: [] } },
       ],
@@ -71,7 +71,7 @@ describe("usage graph", () => {
     const graph = buildUsageGraph(fixture());
     expect(rows(uses(graph, "components.button"))).toEqual([
       "components.button -composes/declared-> components.icon",
-      "components.button -reads/declared+scanned-> tokens.color",
+      "components.button -reads/declared+scanned-> themes.color",
       "components.button -reads/declared-> themes.spacing",
     ]);
     expect(rows(usedBy(graph, "components.button"))).toEqual([
@@ -88,14 +88,14 @@ describe("usage graph", () => {
       "pages.home -renders/declared-> sections.form",
     ]);
     // Members resolve to their leaf; an unknown id has no edges.
-    expect(rows(usedBy(graph, "tokens.region-width.aside"))).toEqual(["sections.form -reads/declared+scanned-> tokens.region-width"]);
+    expect(rows(usedBy(graph, "themes.radius.aside"))).toEqual(["sections.form -reads/declared+scanned-> themes.radius"]);
     expect(uses(graph, "components.unknown")).toEqual([]);
-    expect(closure(graph, "tokens.color", "usedBy")).toEqual(["assets.icon-close", "components.button", "components.dialog", "components.icon", "frames.app-shell", "pages.home", "sections.form"]);
-    expect(closure(graph, "pages.home", "uses")).toEqual(["assets.icon-close", "components.button", "components.dialog", "components.icon", "frames.app-shell", "sections.band", "sections.form", "tokens.color", "tokens.missing", "tokens.region-width", "themes.spacing"]);
-    expect(closure(graph, "tokens.unused", "usedBy")).toEqual([]);
+    expect(closure(graph, "themes.color", "usedBy")).toEqual(["assets.icon-close", "components.button", "components.dialog", "components.icon", "frames.app-shell", "pages.home", "sections.form"]);
+    expect(closure(graph, "pages.home", "uses")).toEqual(["assets.icon-close", "components.button", "components.dialog", "components.icon", "frames.app-shell", "sections.band", "sections.form", "themes.color", "themes.missing", "themes.radius", "themes.spacing"]);
+    expect(closure(graph, "themes.unused", "usedBy")).toEqual([]);
     expect(graph.nodes.find(node => node.id === "components.button")).toEqual({ id: "components.button", layer: "components", leaf: "components.button", fill: { id: "shadcn@aria/components.button", source: "shadcn@aria" }, origin: "inventory", scan: "lower-bound" });
     expect(graph.nodes.find(node => node.id === "pages.home")).toEqual({ id: "pages.home", layer: "pages", leaf: "pages.home", origin: "route" });
-    expect(graph.summary).toEqual({ nodes: { assets: 1, components: 3, frames: 1, pages: 1, sections: 2, tokens: 5 }, edges: { composes: 5, hosts: 1, reads: 6, renders: 2 }, evidence: { declared: 14, runtime: 0, scanned: 5 } });
+    expect(graph.summary).toEqual({ nodes: { assets: 1, components: 3, frames: 1, pages: 1, sections: 2, themes: 5 }, edges: { composes: 5, hosts: 1, reads: 6, renders: 2 }, evidence: { declared: 14, runtime: 0, scanned: 5 } });
   });
 
   it("drops composes edges when the reverseComposes input is absent", () => {
@@ -110,17 +110,17 @@ describe("usage graph", () => {
     expect(serializeUsageGraph(reversed)).toBe(serializeUsageGraph(graph));
     expect(graph.inputsHash).toMatch(/^sha256:[a-f0-9]{64}$/);
     expect(graph.inputs).toMatchObject({ runtime: "absent", pages: expect.stringMatching(/^sha256:/) });
-    expect(buildUsageGraph({ ...input, inventory: { ...input.inventory, tokens: [...input.inventory.tokens!, "tokens.extra"] } }).inputsHash).not.toBe(graph.inputsHash);
+    expect(buildUsageGraph({ ...input, inventory: { ...input.inventory, themes: [...input.inventory.themes!, "themes.extra"] } }).inputsHash).not.toBe(graph.inputsHash);
     expect(serializeUsageGraph(graph)).not.toMatch(/"(?:generatedAt|timestamp|date)"/);
     const findings = graphFindings(graph);
     expect(findings.every(finding => finding.severity !== "error")).toBe(true);
     expect(findings.map(finding => `${finding.code} ${finding.subject}${finding.target ? ` -> ${finding.target}` : ""}`)).toEqual([
-      "dangling-endpoint assets.icon-close -> tokens.missing",
+      "dangling-endpoint assets.icon-close -> themes.missing",
       "unselected-endpoint sections.form -> sections.band",
       "unused-declaration components.button -> components.icon",
       "unused-declaration components.button -> themes.spacing",
       "unused-declaration sections.form -> sections.band",
-      "used-nowhere tokens.unused",
+      "used-nowhere themes.unused",
     ]);
   });
 

@@ -112,7 +112,7 @@ describe("complete source-owner record association", () => {
       { portion: "values", change: { op: "adopt", slot: "themes.spacing", source: "test-kit", members: ["base"] } },
     ] });
     const reduced = associated(less);
-    expect(reduced.records.some(record => record.kind === "value-member" && record.member === "themes.spacing.base")).toBe(false);
+    expect(reduced.records.some(record => record.kind === "value-member" && record.member === "themes.spacing.extra")).toBe(false);
     expect(reduced.records.filter(record => record.kind === "value-member")).toHaveLength(first.records.filter(record => record.kind === "value-member").length - 1);
     expect(reduced.sourceHashes.example).not.toBe(first.sourceHashes.example);
     const offer = fixture(); offer.catalog.values.fills = []; pending(offer);

@@ -23,7 +23,7 @@ afterEach(() => { cleanup(); window.history.replaceState(null, "", "/"); });
 const labels: UsagePanelLabels = {
   title: "U-title", using: "U-using", usedWhere: "U-used-where", reads: "U-reads", composes: "U-composes", options: "U-options", owns: "U-owns",
   exceptions: "U-exceptions", transitive: "U-transitive", back: "U-back", usedNowhere: "U-used-nowhere", notLinked: "U-not-linked", loading: "U-loading", none: "U-none",
-  layer: { tokens: "U-tokens", assets: "U-assets", components: "U-components", sections: "U-sections", frames: "U-frames", pages: "U-pages" },
+  layer: { themes: "U-themes", assets: "U-assets", components: "U-components", sections: "U-sections", frames: "U-frames", pages: "U-pages" },
   kind: { reads: "U-k-reads", composes: "U-k-composes", hosts: "U-k-hosts", renders: "U-k-renders" },
   evidence: { declared: "U-e-declared", scanned: "U-e-scanned", runtime: "U-e-runtime" },
   count: count => `U-count ${count}`,
@@ -31,10 +31,10 @@ const labels: UsagePanelLabels = {
 
 /** components.button is composed by a section and by a frame; the home page renders both. */
 const inputs: UsageGraphInputs = {
-  inventory: { tokens: ["tokens.color", "tokens.unused"], components: ["components.button", "components.icon"], sections: ["sections.hero"], frames: ["frames.app-shell"] },
-  selection: { "tokens.color": "foundry/tokens.color", "tokens.unused": "foundry/tokens.unused", "components.button": "foundry/components.button", "components.icon": "lucide/components.icon", "sections.hero": "foundry/sections.hero", "frames.app-shell": "foundry/frames.app-shell" },
+  inventory: { themes: ["themes.color", "themes.unused"], components: ["components.button", "components.icon"], sections: ["sections.hero"], frames: ["frames.app-shell"] },
+  selection: { "themes.color": "foundry/themes.color", "themes.unused": "foundry/themes.unused", "components.button": "foundry/components.button", "components.icon": "lucide/components.icon", "sections.hero": "foundry/sections.hero", "frames.app-shell": "foundry/frames.app-shell" },
   components: {
-    fills: [{ id: "foundry/components.button", slot: "components.button", scanStatus: "lower-bound", declaredReads: { themes: ["tokens.color"], assets: [] }, scannedReads: { themes: ["tokens.color"], assets: [] } }],
+    fills: [{ id: "foundry/components.button", slot: "components.button", scanStatus: "lower-bound", declaredReads: { themes: ["themes.color"], assets: [] }, scannedReads: { themes: ["themes.color"], assets: [] } }],
     reverseComposes: { "components.icon": { declared: ["foundry/components.button"], scanned: [] } },
   },
   surfaces: {
@@ -74,7 +74,7 @@ describe("UsagePanel", () => {
     for (const text of ["sections.hero", "foundry", "U-k-composes", "U-e-declared", "U-e-scanned", "U-count 2"]) expect(within(hero).getByText(text)).toBeInTheDocument();
     // Using what, below first: the token it reads, then the component it composes.
     expect(layers(list("U-using"))).toEqual(["themes", "components"]);
-    expect(rowIds(list("U-reads"))).toEqual(["tokens.color"]);
+    expect(rowIds(list("U-reads"))).toEqual(["themes.color"]);
     expect(rowIds(list("U-composes"))).toEqual(["components.icon"]);
 
     // The transitive toggle switches to closure(): the page rendering the section and the frame appears.
@@ -110,16 +110,16 @@ describe("UsagePanel", () => {
   });
 
   it("shows exception rows, not-linked findings and a used-nowhere leaf inline", () => {
-    const owned: WiringException = { name: "hero-geometry", file: "src/blocks/Hero.tsx", elementId: "hero-grid", hash: "sha256:0", reason: "layout", owner: "design", expiry: "2026-12-31", read: "tokens.unused.gap", reasonCode: "layout-geometry", status: "proposed" };
-    const other: WiringException = { ...owned, name: "elsewhere", file: "src/blocks/Other.tsx", read: "tokens.color" };
+    const owned: WiringException = { name: "hero-geometry", file: "src/blocks/Hero.tsx", elementId: "hero-grid", hash: "sha256:0", reason: "layout", owner: "design", expiry: "2026-12-31", read: "themes.unused.gap", reasonCode: "layout-geometry", status: "proposed" };
+    const other: WiringException = { ...owned, name: "elsewhere", file: "src/blocks/Other.tsx", read: "themes.color" };
     render(<UsagePanel id="sections.hero" graph={graph} labels={labels} onNavigate={vi.fn()} exceptions={[owned, other]} />);
     // Owns: the exception recorded in a file this section's scanned edges point at.
     const owns = list("U-owns").querySelector<HTMLElement>('[data-usage-exception="hero-geometry"]')!;
     for (const text of ["hero-geometry", "layout-geometry", "design", "2026-12-31", "proposed"]) expect(within(owns).getByText(text)).toBeInTheDocument();
     expect(list("U-owns").querySelector('[data-usage-exception="elsewhere"]')).toBeNull();
     cleanup();
-    render(<UsagePanel id="tokens.unused" graph={graph} labels={labels} onNavigate={vi.fn()} exceptions={[owned, other]}
-      findings={[{ code: "WL5", subject: "tokens.unused", message: "no provenance stamp" }, { code: "WL5", subject: "tokens.color", message: "other" }]} />);
+    render(<UsagePanel id="themes.unused" graph={graph} labels={labels} onNavigate={vi.fn()} exceptions={[owned, other]}
+      findings={[{ code: "WL5", subject: "themes.unused", message: "no provenance stamp" }, { code: "WL5", subject: "themes.color", message: "other" }]} />);
     expect(screen.getByText("U-used-nowhere")).toBeInTheDocument();
     // The exception whose read is one of this token's members is shown on the token.
     expect(list("U-exceptions").querySelector('[data-usage-exception="hero-geometry"]')).not.toBeNull();
@@ -132,8 +132,8 @@ describe("UsagePanel", () => {
   });
 
   it("fills the catalog computed fields from the same graph API", () => {
-    expect(usageConsumers(graph, "tokens.color")).toEqual({ consumers: ["components.button"] });
-    expect(usageBlockRelations(graph, "sections.hero")).toEqual({ components: ["components.button"], tokens: [], composedBy: ["frames.app-shell", "pages.home"] });
+    expect(usageConsumers(graph, "themes.color")).toEqual({ consumers: ["components.button"] });
+    expect(usageBlockRelations(graph, "sections.hero")).toEqual({ components: ["components.button"], themes: [], composedBy: ["frames.app-shell", "pages.home"] });
     expect(usageModel(graph, "components.button").options).toEqual([]);
   });
 

@@ -118,11 +118,11 @@
           "components.icon"
         ],
         "themes": [
+          "themes.foreground.default",
+          "themes.muted-foreground.default",
           "themes.radius.default",
           "themes.ring.default",
-          "themes.spacing.default",
-          "themes.muted-foreground.default",
-          "themes.foreground.default"
+          "themes.spacing.default"
         ]
       },
       "root": "rac:Disclosure",

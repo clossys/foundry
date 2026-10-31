@@ -7,6 +7,7 @@ import slotData from "../catalog/slots/frames.json" with { type: "json" };
 import tokenSlots from "../catalog/slots/themes.json" with { type: "json" };
 import type { FrameContract } from "./frames-contract.js";
 import { isValidId, MEMBER_ID, SLOT_ID } from "./ids.js";
+import { isTailwindBreakpoint } from "./breakpoints.js";
 import type { Placement, PlacementNode } from "./types.js";
 
 interface FrameSlot {
@@ -75,9 +76,7 @@ describe("draft frame registry", () => {
       );
       expect(slot.contract.statePorts.map(port => port.id)).not.toContain("position");
     }
-    expect(byId("site-header").layers).toContain("tokens.z-index.sticky");
     expect(byId("app-header").members.names).toEqual(["surface.glass", "fallback.opaque", "position.sticky", "position.static"]);
-    expect(byId("app-header").layers).toEqual(["tokens.z-index.sticky"]);
   });
 
   it("contains exactly the eleven independent, unfrozen leaves", () => {
@@ -115,8 +114,7 @@ describe("draft frame registry", () => {
         landmarks: [{ slot: "main", role: "main", topLevel: true, nameRequired: false, id: "main-content", tabIndex: -1 }],
         slots: [{ id: "skip-link", required: true, accepts: "host-node" }, { id: "main", required: true, accepts: "view" }],
         members: { mode: "closed", names: [] }, statePorts: [], rendering: "server", breakpoints: [],
-        layers: ["tokens.z-index.skip-link"],
-        allowedReads: { themes: ["themes.spacing", "tokens.gutter", "tokens.container-width", "themes.background", "themes.foreground", "tokens.z-index"], assets: [] },
+        allowedReads: { themes: ["themes.spacing", "themes.background", "themes.card", "themes.popover", "themes.secondary", "themes.accent", "themes.muted", "themes.sidebar", "themes.sidebar-accent", "themes.foreground", "themes.card-foreground", "themes.popover-foreground", "themes.primary-foreground", "themes.secondary-foreground", "themes.accent-foreground", "themes.muted-foreground", "themes.sidebar-foreground", "themes.sidebar-primary-foreground", "themes.sidebar-accent-foreground", "themes.primary", "themes.radius"], assets: [] },
         composes: [], skipTarget: "main-content",
       },
     });
@@ -202,13 +200,13 @@ describe("draft frame registry", () => {
     const tokenIds = new Set(tokenSlots.map(slot => slot.id));
     for (const { contract } of slots) {
       for (const token of contract.allowedReads.themes) expect(tokenIds.has(token)).toBe(true);
-      for (const member of contract.breakpoints) expect(member).toMatch(/^themes\.breakpoint\.[a-z][a-z0-9-]*$/);
-      for (const member of contract.layers) expect(member).toMatch(/^themes\.z-index\.[a-z][a-z0-9-]*$/);
+      for (const member of contract.breakpoints) expect(isTailwindBreakpoint(member), member).toBe(true);
+      // Stacking layers left the contract with the z-index leaf; frames name no layer ids.
+      expect(Object.hasOwn(contract, "layers")).toBe(false);
       expect(new Set(contract.statePorts.map(port => port.id)).size).toBe(contract.statePorts.length);
       for (const port of contract.statePorts) expect(["boolean", "number", "string"]).toContain(port.type);
     }
-    expect(byId("command").layers).toEqual(["tokens.z-index.palette"]);
-    expect(byId("sheet").layers).toEqual(["tokens.z-index.modal"]);
+    expect(byId("sheet").breakpoints).toEqual(["sm", "md", "lg", "xl", "2xl"]);
     expect(byId("app-shell").statePorts.find(port => port.id === "theme")?.values).toEqual(["system", "light", "dark"]);
   });
 

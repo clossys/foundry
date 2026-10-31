@@ -28,6 +28,6 @@ it("selects mirrored sheet motion in RTL and removes its transform under reduced
 it("anchors the development badge at inline end under an RTL document", () => {
   render(<div dir="rtl" aria-label="Development document" />);
   expect(screen.getByLabelText("Development document")).toHaveAttribute("dir", "rtl");
-  const badge = block(css("themes"), 'html:not([data-brand-bound]):not([data-suppress-brand-banner])::before');
+  const badge = block(css("tokens"), 'html:not([data-brand-bound]):not([data-suppress-brand-banner])::before');
   expect(badge).toContain('inset-inline-end: 0;'); expect(badge).not.toMatch(/\bright:/);
 });

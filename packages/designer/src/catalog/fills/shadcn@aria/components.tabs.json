@@ -116,14 +116,14 @@
         "assets": [],
         "components": [],
         "themes": [
-          "themes.radius.default",
-          "themes.shadow.sm",
-          "themes.ring.default",
-          "themes.spacing.default",
           "themes.background.default",
-          "themes.muted.default",
+          "themes.foreground.default",
           "themes.muted-foreground.default",
-          "themes.foreground.default"
+          "themes.muted.default",
+          "themes.radius.default",
+          "themes.ring.default",
+          "themes.shadow.sm",
+          "themes.spacing.default"
         ]
       },
       "root": "rac:Tabs",

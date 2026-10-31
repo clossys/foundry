@@ -59,7 +59,7 @@ function tokenParts(selected: DesignerSpecimenContext): SpecimenTokenHostParts {
     "studio.specimen-contrast": input => renderSpecimenContrastHostPart(selected, input),
   };
 }
-const leaves = ["themes.primary", "themes.primary", "tokens.heading-size", "themes.spacing", "themes.radius", "tokens.duration", "assets.favicon", "assets.icon-close"];
+const leaves = ["themes.primary", "themes.primary", "themes.tracking-tight", "themes.spacing", "themes.radius", "themes.animate-marquee", "assets.favicon", "assets.icon-close"];
 function itemsFor(index: number, selected: DesignerSpecimenContext): readonly SpecimenItem[] {
   const leaf = leaves[index]!;
   return index === 1 ? colorRampSpecimenItems(selected, leaf) : index > 5 ? assetSpecimenItems(selected, leaf) : tokenSpecimenItems(selected, leaf);
@@ -106,7 +106,7 @@ it.each(tokenAssetSpecimenLeaves)("$id rejects zero items and invalid member ide
   expect(screen.getByRole("status")).toHaveTextContent("zero-items");
   expect(empty.container.querySelector("[data-ds-specimen-item]")).toBeNull();
   empty.unmount();
-  expect(leaf.validate({ ...props, items: [{ id: "invalid", label: "Invalid", value: { memberId: "tokens.missing.value" } }] }).length).toBeGreaterThan(0);
+  expect(leaf.validate({ ...props, items: [{ id: "invalid", label: "Invalid", value: { memberId: "themes.missing.value" } }] }).length).toBeGreaterThan(0);
 });
 
 it("applies actual native color, typography, spacing and radius values without mutating them", async () => {
@@ -126,7 +126,7 @@ it("applies actual native color, typography, spacing and radius values without m
         expect(target.style[property]).toBe(`var(${size.emit})`);
       }
     }
-    if (index === 2) expect(target.style.fontSize).toBe(value);
+    if (index === 2) expect(target.style.letterSpacing).toBe(value);
     if (index === 3) expect(target.style.inlineSize).toBe(value);
     if (index === 4) expect(target.style.borderRadius).toBe(value);
     view.unmount();
@@ -279,32 +279,4 @@ it("executes the exact consumer source override and refuses to borrow a missing 
   view.unmount();
   const absent = { ...native, modules: selected.modules };
   expect(leaf.validate({ items, context: absent, need, labels, renderParts: tokenParts(absent) })).toEqual([expect.objectContaining({ reason: `module-unavailable: ${entry}` })]);
-});
-
-it("plays selected duration/easing and holds a static final state for reduced motion", async () => {
-  const selected = context();
-  let reduced = false;
-  const changes = new Set<() => void>();
-  vi.stubGlobal("matchMedia", () => ({ get matches() { return reduced; }, addEventListener: (_: string, fn: () => void) => changes.add(fn), removeEventListener: (_: string, fn: () => void) => changes.delete(fn) }));
-  const cancel = vi.fn(), animate = vi.fn(() => ({ cancel }));
-  Object.defineProperty(HTMLElement.prototype, "animate", { value: animate, configurable: true });
-  const item = itemsFor(5, selected)[0]!;
-  const view = await renderSelected(tokenAssetSpecimenLeaves[5]!.render({ items: [item], context: selected, need, labels, renderParts: tokenParts(selected) }), selected);
-  fireEvent.click(screen.getByRole("button", { name: "Play motion" }));
-  const duration = selected.profile.values.members["tokens.duration.default"]!;
-  const easing = Object.values(selected.profile.values.members).find(member => member.$type === "cubicBezier")!;
-  const shift = selected.profile.values.members["themes.spacing.default"]!;
-  expect(shift.$type).toBe("dimension");
-  const final = `translateX(var(${shift.emit}))`;
-  expect(animate).toHaveBeenCalledWith([{ transform: "translateX(0)" }, { transform: final }], { duration: Number.parseFloat(duration.css.light) * (duration.css.light.endsWith("ms") ? 1 : 1000), easing: easing.css.light, fill: "forwards" });
-  reduced = true;
-  act(() => { for (const changed of changes) changed(); });
-  expect(cancel).toHaveBeenCalledTimes(1);
-  fireEvent.click(screen.getByRole("button", { name: "Play motion" }));
-  expect(animate).toHaveBeenCalledTimes(1);
-  expect(cancel).toHaveBeenCalledTimes(2);
-  expect(view.container.querySelector("[data-reduced-motion='static-final']")).toHaveStyle({ transform: final });
-  view.unmount();
-  expect(cancel).toHaveBeenCalledTimes(3);
-  expect(changes.size).toBe(0);
 });

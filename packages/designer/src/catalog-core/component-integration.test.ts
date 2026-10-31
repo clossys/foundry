@@ -72,7 +72,7 @@ describe("SYNTHETIC components through the public composite facade", () => {
     const adopted = client.applyLibraryChange(input.catalog, input.library, { baseHash: client.libraryHash(input.library), changes: [adopt] });
     expect(() => client.applyLibraryChange(input.catalog, adopted, { baseHash: client.libraryHash(adopted), changes: [
       { portion: "components", change: { op: "remove", slot: "components.button" } },
-      { portion: "values", change: { op: "adopt", slot: "tokens.unknown", source: "foundry" } },
+      { portion: "values", change: { op: "adopt", slot: "themes.unknown", source: "foundry" } },
     ] })).toThrow();
     expect(adopted.components.fills).toHaveLength(1);
     expect(before.components.fills).toEqual([]);
@@ -108,8 +108,9 @@ describe("SYNTHETIC components through the public composite facade", () => {
       const input = adoptedComponentIntegration();
       if (item.throughLightOnly) input.catalog.values.slots = input.catalog.values.slots.map(slot => slot.id === "themes.ring" && slot.contract.kind === "token" ? { ...slot, contract: { ...slot.contract, modes: ["light"] } } : slot);
       const extra: client.CompositeLibraryOperation[] = item.throughLightOnly ? [
-        { portion: "values", change: { op: "author", slot: "themes.ring", tokens: { default: { $type: "color", $value: "{themes.background.default}" } } } },
-        { portion: "values", change: { op: "author", slot: "themes.background", tokens: { default: { $type: "color", $value: "#000000", $extensions: { "com.clossys.css": { raw: "#000000" }, "com.clossys.modes": { dark: "#eeeeee" } } } } } },
+        // The alias target is a separate color leaf, never the button's own background ground.
+        { portion: "values", change: { op: "author", slot: "themes.ring", tokens: { default: { $type: "color", $value: "{themes.border.default}" } } } },
+        { portion: "values", change: { op: "author", slot: "themes.border", tokens: { default: { $type: "color", $value: "#000000", $extensions: { "com.clossys.css": { raw: "#000000" }, "com.clossys.modes": { dark: "#eeeeee" } } } } } },
       ] : [];
       const library = client.applyLibraryChange(input.catalog, input.library, { baseHash: client.libraryHash(input.library), changes: [...extra, { portion: "values", change: { op: "author", slot: "themes.foreground", tokens: { default: item.primary } } }] });
       const { source, adoptedAt, values } = library;
@@ -131,7 +132,7 @@ describe("SYNTHETIC components through the public composite facade", () => {
       expect(checked.ok, item.name).toBe(legacy.ok);
       if (item.name === "light alias with explicit dark literal") {
         expect(checked.ok).toBe(false);
-        expect(checked.findings.filter(f => f.severity === "error").map(f => f.code)).toEqual(["C1", "C9"]);
+        expect(checked.findings.filter(f => f.severity === "error").map(f => f.code)).toEqual(["C1"]);
       }
     }
   });

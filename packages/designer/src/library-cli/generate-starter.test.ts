@@ -21,5 +21,5 @@ it("dry-runs the identity engine and writes only through its explicit stamped co
   expect(await main(["receipt", "--root", root])).toBe(0);
 });
 it("returns unavailable for a refused starter leaf", async () => {
-  expect(await main(["generate-starter", "--root", root, "--leaf", "tokens.blur"])).toBe(2);
+  expect(await main(["generate-starter", "--root", root, "--leaf", "themes.radius"])).toBe(2);
 });

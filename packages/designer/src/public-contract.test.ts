@@ -861,7 +861,7 @@ describe("compiled CatalogBrowser public contract", () => {
     const kind${index}: Kind${index}<Entry${index}> = { label: "Tokens", preview: (entry, context) => entry.tier + context.kind + String(context.config.tone), controls: () => [{ type: "toggle", id: "tone", label: "Tone", defaultValue: false }] };
     declare const labels${index}: Labels${index};
     const selection${index}: Selection${index} = { catalog: "themes", entryId: null };
-    const props${index}: Props${index}<typeof catalog${index}> = { catalogs: [catalog${index}], kinds: { tokens: kind${index} }, label: "Catalog", labels: labels${index}, defaultSelection: selection${index} };
+    const props${index}: Props${index}<typeof catalog${index}> = { catalogs: [catalog${index}], kinds: { themes: kind${index} }, label: "Catalog", labels: labels${index}, defaultSelection: selection${index} };
     const element${index} = Browser${index}(props${index});
   `;
   it("exports the block and its host-facing types from both existing barrels", () => {
@@ -1146,11 +1146,11 @@ describe("compiled usage graph public contract", () => {
       const filename = join(packageRoot, "usage-graph-consumer.check.ts");
       const consumer = `
         import { buildUsageGraph, uses, usedBy, closure, graphFindings, type UsageGraph, type UsageGraphInputs, type UsageEdge, type UsageNode, type UsageGraphFinding } from ${JSON.stringify(join(packageRoot, "dist", entry))};
-        const input: UsageGraphInputs = { inventory: { tokens: ["tokens.color"], components: ["components.button"] }, selection: { "components.button": "example/components.button" },
-          components: { fills: [{ id: "example/components.button", slot: "components.button", declaredReads: { themes: ["tokens.color"], assets: [] } }] } };
+        const input: UsageGraphInputs = { inventory: { themes: ["themes.color"], components: ["components.button"] }, selection: { "components.button": "example/components.button" },
+          components: { fills: [{ id: "example/components.button", slot: "components.button", declaredReads: { themes: ["themes.color"], assets: [] } }] } };
         const graph: UsageGraph = buildUsageGraph(input);
-        const out: readonly UsageEdge[] = uses(graph, "components.button"), into: readonly UsageEdge[] = usedBy(graph, "tokens.color");
-        const reach: readonly string[] = closure(graph, "tokens.color", "usedBy");
+        const out: readonly UsageEdge[] = uses(graph, "components.button"), into: readonly UsageEdge[] = usedBy(graph, "themes.color");
+        const reach: readonly string[] = closure(graph, "themes.color", "usedBy");
         const findings: readonly UsageGraphFinding[] = graphFindings(graph);
         const node: UsageNode | undefined = graph.nodes[0];
         void out; void into; void reach; void findings; void node;
@@ -1160,8 +1160,8 @@ describe("compiled usage graph public contract", () => {
       host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
       expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(d => ts.flattenDiagnosticMessageText(d.messageText, "\n")), entry).toEqual([]);
       const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))};
-        const graph = api.buildUsageGraph({ inventory: { tokens: ["tokens.color"], components: ["components.button"] }, selection: { "components.button": "example/components.button" }, components: { fills: [{ id: "example/components.button", slot: "components.button", declaredReads: { themes: ["tokens.color"], assets: [] } }] } });
-        process.stdout.write(JSON.stringify({ types: ["buildUsageGraph","uses","usedBy","closure","graphFindings"].map(name => typeof api[name]), usedBy: api.usedBy(graph, "tokens.color").map(edge => edge.from), closure: api.closure(graph, "tokens.color", "usedBy") }));`;
+        const graph = api.buildUsageGraph({ inventory: { themes: ["themes.color"], components: ["components.button"] }, selection: { "components.button": "example/components.button" }, components: { fills: [{ id: "example/components.button", slot: "components.button", declaredReads: { themes: ["themes.color"], assets: [] } }] } });
+        process.stdout.write(JSON.stringify({ types: ["buildUsageGraph","uses","usedBy","closure","graphFindings"].map(name => typeof api[name]), usedBy: api.usedBy(graph, "themes.color").map(edge => edge.from), closure: api.closure(graph, "themes.color", "usedBy") }));`;
       expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot })), entry).toEqual({ types: Array(5).fill("function"), usedBy: ["components.button"], closure: ["components.button"] });
     }
   }, 30_000);
@@ -1173,7 +1173,7 @@ describe("compiled wiring public contract", () => {
       const filename = join(packageRoot, "wiring-consumer.check.ts");
       const consumer = `
         import { checkWiring, readWiringExceptions, wiringScope, foundryWiringExceptions, WIRING_REASON_CODES, WIRING_HEADLESS_MODULES, type WiringInput, type WiringResult, type WiringFinding, type WiringException, type WiringCode, type WiringReasonCode } from ${JSON.stringify(join(packageRoot, "dist", entry))};
-        const input: WiringInput = { sources: [{ path: "frames/a.tsx", content: "export const A = 1;", layer: "frames" }], tokens: [], exceptions: foundryWiringExceptions(), now: "2026-10-26" };
+        const input: WiringInput = { sources: [{ path: "frames/a.tsx", content: "export const A = 1;", layer: "frames" }], themes: [], exceptions: foundryWiringExceptions(), now: "2026-10-26" };
         const result: WiringResult = checkWiring(input);
         const findings: readonly WiringFinding[] = result.findings, code: WiringCode | undefined = findings[0]?.code;
         const rows: readonly WiringException[] = readWiringExceptions([], [], "2026-10-26").exceptions.map(row => row.row);
@@ -1186,7 +1186,7 @@ describe("compiled wiring public contract", () => {
       host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
       expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(d => ts.flattenDiagnosticMessageText(d.messageText, "\n")), entry).toEqual([]);
       const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))};
-        const result = api.checkWiring({ sources: [{ path: "frames/a.tsx", content: "import { Button } from \\"react-aria-components\\";", layer: "frames" }], tokens: [], exceptions: api.foundryWiringExceptions(), now: "2026-10-26" });
+        const result = api.checkWiring({ sources: [{ path: "frames/a.tsx", content: "import { Button } from \\"react-aria-components\\";", layer: "frames" }], themes: [], exceptions: api.foundryWiringExceptions(), now: "2026-10-26" });
         process.stdout.write(JSON.stringify({ types: ["checkWiring","readWiringExceptions","wiringScope","foundryWiringExceptions"].map(name => typeof api[name]), codes: result.findings.map(row => row.code), reasons: api.WIRING_REASON_CODES }));`;
       expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot })), entry).toEqual({ types: Array(4).fill("function"), codes: ["WL3"], reasons: ["layout-geometry", "surface-ground", "document-head", "motion-orchestration"] });
     }

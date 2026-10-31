@@ -104,8 +104,8 @@
         "assets": [],
         "components": [],
         "themes": [
-          "themes.radius.default",
-          "themes.muted.default"
+          "themes.muted.default",
+          "themes.radius.default"
         ]
       },
       "root": "presentational",

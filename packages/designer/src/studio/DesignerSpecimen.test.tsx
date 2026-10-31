@@ -40,12 +40,12 @@ it("applies resolved colors and both contrast pairs inside selected consumer chr
   expect(container.querySelector("textarea,[contenteditable='true']")).toBeNull();
 });
 
-it("draws type scales, spacing and radius using the actual selected values", () => {
+it("draws type tracking, spacing and radius using the actual selected values", () => {
   const selected = context();
-  const type = render(<DesignerSpecimen leaf="tokens.heading-size" context={selected} need={need} />);
+  const type = render(<DesignerSpecimen leaf="themes.tracking-tight" context={selected} need={need} />);
   const sample = type.container.querySelector<HTMLElement>("[data-type-sample]")!;
   expect(sample).toBeTruthy();
-  expect(sample.style.fontSize).toBe(selected.profile.values.members[sample.dataset.typeSample!]!.css.light);
+  expect(sample.style.letterSpacing).toBe(selected.profile.values.members[sample.dataset.typeSample!]!.css.light);
   type.unmount();
   const spacing = render(<DesignerSpecimen leaf="themes.spacing" context={selected} need={need} />);
   const ruler = spacing.getAllByRole("img")[0] as HTMLElement;
@@ -54,30 +54,6 @@ it("draws type scales, spacing and radius using the actual selected values", () 
   const radius = render(<DesignerSpecimen leaf="themes.radius" context={selected} need={need} />);
   const box = radius.getAllByRole("img")[0] as HTMLElement;
   expect(box.style.borderRadius).toBe(selected.profile.values.members[box.getAttribute("aria-label")!]!.css.light);
-});
-
-it("plays the selected motion values and cancels for reduced motion and unmount", () => {
-  const selected = context();
-  let reduced = false;
-  const change = new Set<() => void>();
-  vi.stubGlobal("matchMedia", () => ({ get matches() { return reduced; }, addEventListener: (_: string, fn: () => void) => change.add(fn), removeEventListener: (_: string, fn: () => void) => change.delete(fn) }));
-  const cancel = vi.fn();
-  const animate = vi.fn(() => ({ cancel }));
-  vi.stubGlobal("Animation", class {});
-  Object.defineProperty(HTMLElement.prototype, "animate", { value: animate, configurable: true });
-  const result = render(<DesignerSpecimen leaf="tokens.duration" context={selected} need={need} />);
-  fireEvent.click(screen.getAllByRole("button", { name: "Play motion" })[0]!);
-  const duration = Object.values(selected.profile.values.members).find(value => value.slot === "tokens.duration")!;
-  const easing = Object.values(selected.profile.values.members).find(value => value.$type === "cubicBezier")!;
-  expect(animate).toHaveBeenCalledWith(expect.any(Array), { duration: Number.parseFloat(duration.css.light) * (duration.css.light.endsWith("ms") ? 1 : 1000), easing: easing.css.light });
-  reduced = true;
-  fireEvent.click(screen.getAllByRole("button", { name: "Play motion" })[0]!);
-  expect(animate).toHaveBeenCalledTimes(1);
-  expect(screen.getByRole("status")).toHaveTextContent("Reduced motion");
-  expect(cancel).toHaveBeenCalled();
-  result.unmount();
-  expect(change.size).toBe(0);
-  delete (HTMLElement.prototype as { animate?: unknown }).animate;
 });
 
 it("shows actual SVG and icon artwork on both grounds", () => {

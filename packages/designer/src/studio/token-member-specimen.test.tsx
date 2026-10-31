@@ -23,10 +23,8 @@ const leafTexts = (root: Element, text: string): Element[] =>
   [...root.querySelectorAll("*")].filter(element => element.children.length === 0 && visible(element) && element.textContent?.trim() === text);
 
 const cases: Array<[kind: string, slotId: string, $type: string]> = [
-  ["color", "tokens.scrim-color", "color"],
+  ["color", "themes.background", "color"],
   ["bound dimension", "themes.spacing", "dimension"],
-  ["open dimension", "tokens.region-width", "dimension"],
-  ["fontWeight", "tokens.font-weight", "fontWeight"],
   ["fontFamily", "themes.font-sans", "fontFamily"],
 ];
 

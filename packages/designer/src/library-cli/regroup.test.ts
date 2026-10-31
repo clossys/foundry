@@ -14,7 +14,7 @@ import { reselect } from "./reselect.js";
 import { catalog, temporaryLibrary } from "./__fixtures__/agent-library.js";
 it("keeps commands, changesets, capture keys and history invariant under L2 regrouping", async () => {
   const build = loadBuildCatalog(), placements = structuredClone(build.placements);
-  const leaf = "tokens.blur", component = "components.button";
+  const leaf = "themes.radius", component = "components.button";
   const { root, directory } = await temporaryLibrary();
   try {
     const receipt = JSON.parse(await fs.readFile(join(root, "designer-receipt.json"), "utf8"));

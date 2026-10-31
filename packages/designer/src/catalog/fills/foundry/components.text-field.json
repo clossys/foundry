@@ -119,8 +119,7 @@
           "themes.sidebar-primary-foreground",
           "themes.sidebar-accent-foreground",
           "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
+          "themes.ring"
         ]
       },
       "root": "rac:TextField",

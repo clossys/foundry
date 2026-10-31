@@ -111,12 +111,12 @@
         "assets": [],
         "components": [],
         "themes": [
-          "themes.radius.default",
-          "themes.spacing.default",
           "themes.background.default",
-          "themes.muted.default",
+          "themes.font-sans.default",
           "themes.muted-foreground.default",
-          "themes.font-sans.default"
+          "themes.muted.default",
+          "themes.radius.default",
+          "themes.spacing.default"
         ]
       },
       "root": "rac:Keyboard",

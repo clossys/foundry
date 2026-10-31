@@ -113,11 +113,11 @@
         "assets": [],
         "components": [],
         "themes": [
+          "themes.destructive.default",
+          "themes.primary-foreground.default",
           "themes.primary.default",
           "themes.ring.default",
-          "themes.spacing.default",
-          "themes.destructive.default",
-          "themes.primary-foreground.default"
+          "themes.spacing.default"
         ]
       },
       "root": "rac:RadioGroup",

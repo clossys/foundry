@@ -104,8 +104,8 @@ export function specimenOverride(reason: SpecimenOverrideReason, properties: Rea
 /** The member under review, bound on a token specimen root. */
 const bound = (css: string, extra?: Readonly<Record<`--${string}`, string>>): SpecimenOverride => specimenOverride("token-under-review", { "--studio-specimen-value": css, ...extra });
 
-/** A CSS `animation` shorthand: a keyframes name, a time, then plain timing words or one cubic-bezier. */
-const ANIMATION = /^[a-z][a-z0-9-]*\s+(?:\d*\.)?\d+m?s(?:\s+(?:[a-z-]+|cubic-bezier\([\d.\s,+-]+\)))*$/;
+/** A CSS `animation` shorthand: a keyframes name, a time (or one var() reference), then plain timing words or one cubic-bezier. */
+const ANIMATION = /^[a-z][a-z0-9-]*\s+(?:(?:\d*\.)?\d+m?s|var\(--[a-z][\w-]*\))(?:\s+(?:[a-z-]+|cubic-bezier\([\d.\s,+-]+\)))*$/;
 
 /** A CSS `font-style` keyword, the grammar of a display face's style member. */
 const FONT_STYLE = /^(?:normal|italic|oblique(?:\s+-?(?:\d*\.)?\d+deg)?)$/;
@@ -115,7 +115,7 @@ const fontStyleMember = (member: ResolvedMember): boolean => member.slot === "th
 /** The checked value a specimen may paint, or undefined when the member is outside its grammar. */
 function paintable(member: ResolvedMember): string | undefined {
   const css = member.css.light;
-  const checked = member.slot === "themes.animate-marquee" ? ANIMATION.test(css.trim())
+  const checked = member.slot.startsWith("themes.animate-") ? ANIMATION.test(css.trim())
     : fontStyleMember(member) ? FONT_STYLE.test(css.trim()) : checkedPreviewCss(member.$type, css);
   return typeof css === "string" && css.trim() && !unsafeText(css) && checked ? css : undefined;
 }
@@ -226,7 +226,7 @@ export function tokenLeafSpecimenKind(member: ResolvedMember): TokenSpecimenKind
   const css = kind ? paintable(member) : undefined;
   if (!kind || css === undefined) return undefined;
   if (kind === "motion" && member.$type === "cubicBezier" && !cubicBezierPoints(css)) return undefined;
-  if (kind === "motion" && member.slot !== "themes.animate-marquee" && member.$type !== "cubicBezier" && member.$type !== "duration") return undefined;
+  if (kind === "motion" && !member.slot.startsWith("themes.animate-") && member.$type !== "cubicBezier" && member.$type !== "duration") return undefined;
   return kind;
 }
 

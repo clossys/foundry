@@ -130,14 +130,14 @@
         "assets": [],
         "components": [],
         "themes": [
+          "themes.destructive.default",
+          "themes.foreground.default",
+          "themes.muted.default",
+          "themes.primary-foreground.default",
           "themes.primary.default",
           "themes.radius.default",
           "themes.ring.default",
-          "themes.spacing.default",
-          "themes.destructive.default",
-          "themes.muted.default",
-          "themes.primary-foreground.default",
-          "themes.foreground.default"
+          "themes.spacing.default"
         ]
       },
       "root": "rac:ToggleButton",

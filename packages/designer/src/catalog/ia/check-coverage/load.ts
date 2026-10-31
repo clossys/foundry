@@ -68,7 +68,7 @@ export function loadCoverageInput(options: LoadOptions = {}): CoverageInput {
     const fill: Fill = { id: meta.id, leaf: canonical(meta.slot), hash: `sha256:${createHash("sha256").update(bytes).digest("hex")}` };
     if (object(meta.signoff) && typeof meta.signoff.by === "string" && typeof meta.signoff.date === "string" && typeof meta.signoff.ref === "string") fill.signoff = { by: meta.signoff.by, date: meta.signoff.date, ref: meta.signoff.ref };
     fills.push(fill);
-    if (object(value) && object(value.tokens)) for (const token of Object.values(flatten(value as unknown as FillDoc))) for (const reference of references(token)) {
+    if (object(value) && object(value.themes)) for (const token of Object.values(flatten(value as unknown as FillDoc))) for (const reference of references(token)) {
       const target = canonical(reference);
       // A member alias within a leaf is not a leaf-level consumption cycle.
       if (target !== fill.leaf) add(fill.leaf, target, "fill-token-reference");

@@ -164,7 +164,7 @@ it("offers the exact new SemanticContent package binding as a draft without adop
   expect(fill.impl).toEqual({ kind: "package", module: "@clossys/designer/components", export: "SemanticContent" });
   expect(fill.pin).toEqual({ package: "@clossys/designer", version: "0.12.0", export: "./components#SemanticContent" });
   expect(fill.root).toBe("presentational");
-  expect(fill.reads).toEqual({ tokens: [], assets: [], components: [] });
+  expect(fill.reads).toEqual({ themes: [], assets: [], components: [] });
   expect(fill.props).toEqual(["as"]);
   if (slot.contract.members.mode !== "closed") throw new Error("closed expected");
   expect(fill.propMap).toEqual(Object.fromEntries(slot.contract.members.names.map(member => [member, `./components#SemanticContent.as=${member.slice(3)}`])));
@@ -187,7 +187,7 @@ it("stores the exact pending NativeAction draft with real exports, native states
   expect(fill.members).toEqual(["appearance.primary", "ground.base", "size.md", "state.disabled", "state.focus-visible", "state.hover", "state.pressed"]);
   expect(fill.deps.map(dep => dep.name)).toEqual(["react", "tailwind-merge"]);
   expect(fill.reads.assets).toEqual([]); expect(fill.reads.components).toEqual([]);
-  expect(fill.reads.themes).toEqual(["themes.primary", "tokens.body-size", "themes.radius", "tokens.duration", "tokens.easing", "themes.ring", "tokens.focus-outline", "themes.spacing", "tokens.state-opacity", "themes.foreground", "themes.font-sans"]);
+  expect(fill.reads.themes).toEqual(["themes.accent-foreground", "themes.card-foreground", "themes.font-heading", "themes.font-mono", "themes.font-sans", "themes.foreground", "themes.muted-foreground", "themes.popover-foreground", "themes.primary", "themes.primary-foreground", "themes.radius", "themes.ring", "themes.secondary-foreground", "themes.sidebar-accent-foreground", "themes.sidebar-foreground", "themes.sidebar-primary", "themes.sidebar-primary-foreground", "themes.sidebar-ring", "themes.spacing"]);
   expect(doc.$extensions["com.clossys.fill"]).toMatchObject({ status: "draft", conforms: [], evidence: [] });
   const files = generatedFoundryComponentFiles({ exports });
   if (process.env.UPDATE_FOUNDRY_COMPONENT_FILLS === "1") writeFileSync(resolve(fillsDirectory, "components.native-action.json"), files["components.native-action.json"]!);

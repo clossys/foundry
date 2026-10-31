@@ -43,7 +43,7 @@ it('uses explicit source association for live previews and rejects stale selecti
   expect(prepared.previews.port.render(identity)).toBeDefined();
   expect(prepared.previews.port.render({ ...identity, selectionHash: runtimeHash('SYNTHETIC-stale') })).toBeUndefined();
   expect(prepared.previews.port.render({ ...identity, sourceHash: runtimeHash('SYNTHETIC-other-source') })).toBeUndefined();
-  expect(prepared.previews.port.render({ ...identity, leaf: 'tokens.absent' })).toBeUndefined();
+  expect(prepared.previews.port.render({ ...identity, leaf: 'themes.absent' })).toBeUndefined();
 });
 
 it('never substitutes a fill hash when one source association is absent or empty', () => {

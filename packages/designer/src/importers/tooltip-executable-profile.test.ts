@@ -8,14 +8,13 @@ import { describe, expect, it } from "vitest";
 import { importShadcnAriaComponents, materializeShadcnComponent } from "./shadcn-aria-components.js";
 import { tooltipExecutableSource, tooltipExecutableReads } from "./tooltip-executable-profile.js";
 import { sha256 } from "../catalog-core/digest.js";
-import timing from "../catalog/fills/foundry/tokens.behavior-timing.json" with { type: "json" };
 
 const directory = resolve(import.meta.dirname, "__fixtures__/shadcn-aria");
 const read = (name: string) => readFileSync(resolve(directory, name), "utf8");
 const input = () => ({ items: readdirSync(directory).filter(name => name.endsWith(".json")).map(name => JSON.parse(read(name))).filter(item => item.type === "registry:ui"), styles: { path: "apps/v4/registry/styles/style-nova.css", content: read("style-nova.css") }, notice: { path: "LICENSE.md", content: read("LICENSE.md") } });
 const bindings = (delay = 725, close = 0.18) => ({
-  "tokens.behavior-timing.tooltip-delay": { value: delay, unit: "ms" as const },
-  "tokens.behavior-timing.tooltip-close": { value: close, unit: "s" as const },
+  "tooltip-delay": { value: delay, unit: "ms" as const },
+  "tooltip-close": { value: close, unit: "s" as const },
 });
 function generated() {
   const result = importShadcnAriaComponents(input());
@@ -45,20 +44,16 @@ describe("selected tooltip executable timing", () => {
     expect(exports.TooltipTrigger({ children, behaviorTiming: bindings(), delay: 0, closeDelay: 0 }).props).toMatchObject({ delay: 0, closeDelay: 0 });
     expect(exports.readTooltipTiming(bindings(0, 0))).toEqual({ delay: 0, closeDelay: 0 });
   });
-  it("reads the existing behavior-timing dataset leaves, never invented token names", () => {
-    const { exports } = generated();
-    const leaves = timing.tokens["behavior-timing"] as Record<string, { $value: { value: number; unit: "ms" | "s" } }>;
-    const resolved = Object.fromEntries(tooltipExecutableReads.map(read => {
-      const leaf = read.replace(/^themes\.behavior-timing\./, "");
-      expect(leaves[leaf], read).toBeDefined();
-      return [read, leaves[leaf]!.$value];
-    }));
-    const children = [React.createElement("button", { key: "trigger" }, "Help"), React.createElement("span", { key: "tip" }, "Details")];
-    expect(exports.TooltipTrigger({ children, behaviorTiming: resolved }).props).toMatchObject({ delay: leaves["tooltip-delay"]!.$value.value, closeDelay: leaves["tooltip-close"]!.$value.value });
+  it("adds no theme reads: tooltip timing is a caller binding, not a themes leaf", () => {
+    const { result } = generated();
+    expect(tooltipExecutableReads).toEqual([]);
+    const fill = result.fills.find(doc => doc.components.tooltip)!.components.tooltip!;
+    expect(fill.reads.themes.some(read => /behavior-timing|duration|easing/.test(read))).toBe(false);
+    expect(fill.reads.themes.every(read => read.startsWith("themes."))).toBe(true);
   });
   it("missing or invalid timing input is an explicit source binding error, never a default", () => {
     const { exports } = generated();
-    for (const value of [undefined, {}, { ...bindings(), "tokens.behavior-timing.tooltip-delay": { value: -1, unit: "ms" } }, { ...bindings(), "tokens.behavior-timing.tooltip-close": { value: Infinity, unit: "s" } }, { ...bindings(), "tokens.behavior-timing.tooltip-close": { value: 1, unit: "px" } }, { ...bindings(), "tokens.behavior-timing.tooltip-delay": { value: "500", unit: "ms" } }]) {
+    for (const value of [undefined, {}, { ...bindings(), "tooltip-delay": { value: -1, unit: "ms" } }, { ...bindings(), "tooltip-close": { value: Infinity, unit: "s" } }, { ...bindings(), "tooltip-close": { value: 1, unit: "px" } }, { ...bindings(), "tooltip-delay": { value: "500", unit: "ms" } }]) {
       expect(() => exports.readTooltipTiming(value)).toThrow(/tooltip timing binding/);
     }
     expect(() => exports.TooltipTrigger({ children: [] })).toThrow(/tooltip timing binding/);

@@ -59,17 +59,17 @@ it("caps every rendered library candidate cell at the one shared panel preset ma
   for (const node of [matrix, ...matrix.querySelectorAll<HTMLElement>("[class]")].filter(node => !node.closest("[data-asset-specimen]"))) expect(node.className, node.tagName).not.toMatch(UNBOUNDED);
 });
 
-it("gives a 1-member and a 286-member candidate the identical cap and wraps every member into view", () => {
-  // The actual selected color ramp: every family and step the signed default library ships.
+it("gives a 1-member and a 7-member candidate the identical cap and wraps every member into view", () => {
+  // The actual selected shadow scale: every step the signed default library ships (the largest themes leaf).
   const catalog = loadCatalog();
   const library = completedTokenLibrary(catalog, { id: "bounds-consumer", kind: "consumer", author: "consumer", license: "UNLICENSED" }, "2026-10-25");
-  const ramp = buildCandidates({ catalog, library, working: library, slotId: "tokens.color-ramp", scope: "slot", target: "tokens.color-ramp" }).find(candidate => candidate.selected)!;
-  expect(ramp.members).toHaveLength(286);
-  const single = { ...ramp, members: ramp.members.slice(0, 1) };
-  const cells = [single, ramp].map(candidate => {
+  const scale = buildCandidates({ catalog, library, working: library, slotId: "themes.shadow", scope: "slot", target: "themes.shadow" }).find(candidate => candidate.selected)!;
+  expect(scale.members).toHaveLength(7);
+  const single = { ...scale, members: scale.members.slice(0, 1) };
+  const cells = [single, scale].map(candidate => {
     const view = render(<CandidateCell candidate={candidate} labels={labels} />);
     const cell = view.container.querySelector<HTMLElement>("[data-candidate-cell]")!;
-    // Every member renders, in the ordinal display order CandidateCell applies since 1a4aeab8e (amber.50 before amber.100).
+    // Every member renders, in the ordinal display order CandidateCell applies since 1a4aeab8e (2xs before xs).
     expect([...cell.querySelectorAll<HTMLElement>("[data-candidate-variant]")].map(variant => variant.dataset.candidateVariant)).toEqual(orderTokenMembers(candidate.members).map(entry => entry.id));
     expect(cell).toHaveClass("flex", "flex-wrap");
     expect(cell.className).not.toMatch(UNBOUNDED);
@@ -82,7 +82,7 @@ it("gives a 1-member and a 286-member candidate the identical cap and wraps ever
     return cell;
   });
   for (const cell of cells) { expect(cell).toHaveClass(LIBRARY_COLUMN_BOUND); expect(cell.getAttribute("style")).toBeNull(); }
-  expect(cells[1]!.querySelectorAll("[data-member-key]")).toHaveLength(286);
+  expect(cells[1]!.querySelectorAll("[data-member-key]")).toHaveLength(7);
 }, 20_000);
 
 it("reads the bound from one named utility pinned to the shared preset, with no copied pixel numbers or style attributes", () => {

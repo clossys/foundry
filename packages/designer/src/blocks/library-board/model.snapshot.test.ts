@@ -13,7 +13,7 @@ function records(count = 1): LibraryBoardRecords {
         id: `example-${index}`, slot: `components.example-${index}`, source: "example", mode: "implementation", sourceAddress: "example", relation: "same-contract",
         builtOn: [], conforms: [], evidence: [], author: "consumer", trust: "consumer", license: "MIT", status: "draft",
       } } }],
-      prompt: { consumer: "example", board: { id: "components/example", label: "Example" }, slot: { id: `components.example-${index}`, label: `Example ${index}` }, variants: [], tokens: [{ id: "tokens.example", value: "value" }], siblings: [], returnStep: "Return" },
+      prompt: { consumer: "example", board: { id: "components/example", label: "Example" }, slot: { id: `components.example-${index}`, label: `Example ${index}` }, variants: [], tokens: [{ id: "themes.example", value: "value" }], siblings: [], returnStep: "Return" },
     })) },
     controls: { version: 1, mode: "view", canSave: false, pending: false },
   };

@@ -5,34 +5,35 @@ import { catalog, smallCatalog, emptyLibrary, adopt } from "./__fixtures__/studi
 
 it("never resolves or emits a catalog candidate without a consumer operation", () => {
  const library=emptyLibrary(); const cards=buildCandidates({catalog,library,working:library,slotId:"themes.background",scope:"slot",target:"themes.background"});
- expect(cards[0]?.source).toBe("example"); expect(cards[0]?.members).toEqual([]); expect(cards.find(c=>c.source==="foundry")?.members.length).toBeGreaterThan(0);
+ expect(cards[0]?.source).toBe("example"); expect(cards[0]?.members).toEqual([]); expect(cards.find(c=>c.source==="shadcn@aria")?.members.length).toBeGreaterThan(0);
  expect(resolve({catalog,library}).members).toEqual({}); expect(emit(resolve({catalog,library}),["css-brand"],{header:false})[0]?.contents).toBe("");
 });
 it("forms member, leaf and placement adoption operations, never stored tree scopes", () => {
- const library=emptyLibrary(); expect(changesFor({catalog,library,scope:"member",target:"themes.background.default",source:"foundry"})).toEqual([{op:"adopt",slot:"themes.background",source:"shadcn@aria",members:["themes.background.default"]}]);
+ const library=emptyLibrary(); expect(changesFor({catalog,library,scope:"member",target:"themes.background.default",source:"shadcn@aria"})).toEqual([{op:"adopt",slot:"themes.background",source:"shadcn@aria",members:["themes.background.default"]}]);
  const node=allNodes(smallCatalog.placements).find(n=>n.leaves.includes("themes.background"))!;
- const changes=changesFor({catalog:smallCatalog,library,scope:"node",target:node.id,source:"foundry"}); expect(changes.length).toBeGreaterThan(0); expect(changes.every(c=>c.op==="adopt"&&c.slot.includes("."))).toBe(true);
+ const changes=changesFor({catalog:smallCatalog,library,scope:"node",target:node.id,source:"shadcn@aria"}); expect(changes.length).toBeGreaterThan(0); expect(changes.every(c=>c.op==="adopt"&&c.slot.includes("."))).toBe(true);
  expect(changesFor({catalog,library,scope:"slot",target:"themes.background"})).toEqual([{op:"remove",slot:"themes.background"}]);
 });
 it("applies pending operations against libraryHash and regenerates v2 provenance", () => {
  const base=emptyLibrary(); const list=changesFor({catalog,library:base,scope:"slot",target:"themes.background",source:"shadcn@aria"}); const changes=addChanges({base,changes:emptyChanges(base),list});
  expect(changes.baseHash).toBe(libraryHash(base)); const library=workingLibrary({catalog,base,changes}); expect(library.selection).toEqual(generateSelection(library)); expect(library.selection?.version).toBe(2); expect(library.selection).not.toHaveProperty("picks"); expect(library.selection).not.toHaveProperty("defaultChain"); expect(base.fills).toEqual([]);
- expect(sourcesAt(library,"slot","themes.background")).toEqual(["foundry"]);
+ expect(sourcesAt(library,"slot","themes.background")).toEqual(["shadcn@aria"]);
  const isolated=resolve({catalog:{...catalog,fills:[]},library}); expect(isolated).toEqual(resolve({catalog,library})); expect(emit(isolated,["css-brand"])).toEqual(emit(resolve({catalog,library}),["css-brand"]));
 });
 it("supports mixed member origins, reset and last operation replacement", () => {
- const base=adopt(); let changes=emptyChanges(base);
- changes=addChanges({base,changes,list:[{op:"adopt",slot:"themes.background",source:"shadcn@aria",members:["themes.background.default"]}]});
- const working=workingLibrary({catalog,base,changes}); expect(sourcesAt(working,"member","themes.background.default")).toEqual(["shadcn@aria"]); expect(sourcesAt(working,"slot","themes.background")).toEqual(["foundry","shadcn@aria"]);
- changes=addChanges({base,changes,list:[{op:"remove",slot:"themes.background"}]}); expect(workingLibrary({catalog,base,changes}).fills.some(f=>f.$extensions["com.clossys.fill"].slot==="themes.background")).toBe(false);
+ // Every themes leaf ships one source with one member, so the open two-source ratio leaf carries the mixed-origin case.
+ const base=adopt(emptyLibrary(),"assets.image-ratio","foundry"); let changes=emptyChanges(base);
+ changes=addChanges({base,changes,list:[{op:"adopt",slot:"assets.image-ratio",source:"open-props",members:["assets.image-ratio.landscape"]}]});
+ const working=workingLibrary({catalog,base,changes}); expect(sourcesAt(working,"member","assets.image-ratio.landscape")).toEqual(["open-props"]); expect(sourcesAt(working,"slot","assets.image-ratio")).toEqual(["foundry","open-props"]);
+ changes=addChanges({base,changes,list:[{op:"remove",slot:"assets.image-ratio"}]}); expect(workingLibrary({catalog,base,changes}).fills.some(f=>f.$extensions["com.clossys.fill"].slot==="assets.image-ratio")).toBe(false);
 });
 it("does not expose reference candidates as usable or turn their content into consumer fills", () => {
  const library=emptyLibrary(); const fill=catalog.fills.find(f=>f.$extensions["com.clossys.fill"].slot==="themes.background")!;
  const reference={...fill,$extensions:{"com.clossys.fill":{...fill.$extensions["com.clossys.fill"],mode:"reference" as const}}}; const c={...catalog,fills:[reference]};
  const candidate=buildCandidates({catalog:c,library,working:library,slotId:"themes.background",scope:"slot",target:"themes.background"})[1]!; expect(candidate.usable).toBe(false); expect(candidate.reason).toBe("reference"); expect(candidate.members).toEqual([]);
 });
-it("enumerates open token and asset members and preserves placement order", () => {
- const library=emptyLibrary(); expect(scopeTargets({catalog,library,slotId:"tokens.color-ramp",scope:"member"}).length).toBeGreaterThan(10); expect(scopeTargets({catalog,library,slotId:"assets.icon-search",scope:"member"}).length).toBeGreaterThan(0);
+it("enumerates theme and asset members and preserves placement order", () => {
+ const library=emptyLibrary(); expect(scopeTargets({catalog,library,slotId:"themes.shadow",scope:"member"})).toHaveLength(7); expect(scopeTargets({catalog,library,slotId:"assets.image-ratio",scope:"member"}).length).toBeGreaterThan(5); expect(scopeTargets({catalog,library,slotId:"assets.icon-search",scope:"member"}).length).toBeGreaterThan(0);
  expect(buildSlotTree(catalog.placements).map(n=>n.id)).toEqual(["themes","assets"]);
 });
 it("keeps the consumer as the only active column after adoption", () => {

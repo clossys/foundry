@@ -32,9 +32,9 @@ describe("actual full-library runtime proof admission", () => {
     expect(findings.some(finding => finding.startsWith("whole-library value fill missing"))).toBe(true);
     expect(findings.some(finding => finding.startsWith("full graph contract missing"))).toBe(false);
     const tampered = structuredClone(input.contracts);
-    const slot = tampered.slots.find(slot => slot.id === "tokens.blur")!;
+    const slot = tampered.slots.find(slot => slot.id === "themes.radius")!;
     slot.contract = { ...slot.contract, valueKind: "fake" } as typeof slot.contract;
-    expect(fullLibraryRuntimeFindings({ ...input, contracts: tampered })).toContain("full graph contract differs: tokens.blur");
+    expect(fullLibraryRuntimeFindings({ ...input, contracts: tampered })).toContain("full graph contract differs: themes.radius");
     const broken = { ...input, contracts: { ...input.contracts, slots: input.contracts.slots.filter(slot => slot.id !== "assets.icon-close") } };
     expect(fullLibraryRuntimeFindings(broken)).toContain("full graph contract missing or duplicated: assets.icon-close");
   });

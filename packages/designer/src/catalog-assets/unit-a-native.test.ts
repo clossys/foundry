@@ -44,14 +44,14 @@ describe('H3 UNIT A native source and construction decisions',()=>{
   expect(profile.members['assets.image-ratio.square']!.value.light).toEqual({width:1,height:1});
   expect(Object.keys(profile.members).filter(id=>id.startsWith('assets.image-ratio.'))).toHaveLength(6);
   expect(Object.keys(profile.members).filter(id=>id.startsWith('assets.pattern.'))).toHaveLength(6);
-  expect(metaOf(catalog.fills.find(fill=>metaOf(fill).id==='foundry/assets.pattern')!)).toMatchObject({pin:{sha256:'5cde189c7941f787042b61fe3ac9575b9d34918fa0d20d3f7740548d10aa5852'},reads:{tokens:['themes.border.default','tokens.border-width.hairline','themes.spacing.default'],assets:[]}});
+  expect(metaOf(catalog.fills.find(fill=>metaOf(fill).id==='foundry/assets.pattern')!)).toMatchObject({pin:{sha256:'5cde189c7941f787042b61fe3ac9575b9d34918fa0d20d3f7740548d10aa5852'},reads:{themes:['themes.border.default','themes.spacing.default'],assets:[]}});
   expect(sha256(readFileSync(new URL('./image-default.svg',import.meta.url),'utf8'))).toBe('aa230bccd0af384371603a0ed1fb3fc0cf19ea3172e6793440fa21bb345151fd');
  });
  it('derives identity roles from unchanged consumer positives through the existing native adoption implementation',()=>{
   const seeds=createConsumerIdentitySeeds(catalog,start(),{name:'Example Co.',fontLicence:{family:'sans-serif',outlining:'unknown'}});
   const before=resolve({catalog,library:seeds}), value=(id:string)=>before.members[id]!.value.light as string;
   const raw=(id:string)=>cssText(before.members[id]!.$type,before.members[id]!.value.light);
-  const t:IdentityTokenInput={ink:raw('themes.foreground.default'),onInverse:raw('themes.foreground.default'),surfaceBase:raw('themes.background.default'),surfaceInverse:raw('themes.background.default'),accent:raw('themes.primary.default'),onAccent:raw('themes.accent-foreground.default'),fontFamily:raw('themes.font-heading.default')};
+  const t:IdentityTokenInput={ink:raw('themes.foreground.default'),onInverse:raw('themes.background.default'),surfaceBase:raw('themes.background.default'),surfaceInverse:raw('themes.foreground.default'),accent:raw('themes.primary.default'),onAccent:raw('themes.primary-foreground.default'),fontFamily:raw('themes.font-heading.default')};
   const derived=deriveIdentity(catalog,seeds),profile=resolve({catalog,library:derived});
   const mark=adoptSuppliedMark({brand:{name:'Example Co.'},suppliedSvg:value('assets.mark.positive'),tokens:t});
   const lockup=adoptSuppliedMark({brand:{name:'Example Co.'},suppliedSvg:value('assets.lockup.positive'),tokens:t});
@@ -66,7 +66,7 @@ describe('H3 UNIT A native source and construction decisions',()=>{
     const actual=profile.members[`${rule.slot}.${name}`]!;
     expect(actual.value.light).toBe(token.$value); expect(actual.origin).toMatchObject({kind:'derived',rule:id,inputs:[...inputs].sort()});
    }
-   expect(inputs).toEqual(expect.arrayContaining(['themes.foreground.default','themes.foreground.default','themes.background.default','themes.background.default','themes.primary.default','themes.accent-foreground.default','themes.font-heading.default']));
+   expect(inputs).toEqual(expect.arrayContaining(['themes.foreground.default','themes.background.default','themes.primary.default','themes.primary-foreground.default','themes.font-heading.default']));
   }
   expect(checkIdentityDerivations(catalog,derived)).toEqual([]);
   const decisions={...policies,'assets.lockup':'foundry','assets.mark':'foundry','assets.video':'foundry'};

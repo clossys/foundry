@@ -32,10 +32,10 @@ it.each(["themes", "assets", "components", "sections", "frames"] as const)("carr
     }
   }
   if (layer === "themes") {
-    expect(tree.map(node => node.id)).toEqual(["color", "type", "space", "shape", "depth", "motion", "interaction"].map(id => `tokens/${id}`));
+    expect(tree.map(node => node.id)).toEqual(["colors", "shape", "typography", "space", "depth", "motion"].map(id => `themes/${id}`));
     const tiers = loaded.slots.flatMap(slot => slot.contract.kind === "token" ? [slot.contract.tier] : []);
     expect(new Set(tiers)).toEqual(new Set(["scale", "role"]));
-    expect(tree.some(node => node.id === "tokens/scale" || node.id === "tokens/role")).toBe(false);
+    expect(tree.some(node => node.id === "themes/scale" || node.id === "themes/role")).toBe(false);
   }
   // Prepared rows exercise Studio board grouping without any candidate operations.
   const rowsOf = (node: SlotTreeNode, depth: number): MatrixRow[] => [{

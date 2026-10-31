@@ -6,12 +6,12 @@ import { flatten, metaOf } from './model.js';
 
 const catalog = loadCatalog();
 const complete = completedCatalogLibrary(catalog,{id:'example-raw-identity',kind:'consumer',author:'consumer',license:'MIT'},'2026-10-23');
-const adoptionInputs=['themes.foreground.default','themes.foreground.default','themes.background.default','themes.background.default','themes.primary.default','themes.accent-foreground.default','themes.font-heading.default'];
+const adoptionInputs=['themes.foreground.default','themes.background.default','themes.primary.default','themes.primary-foreground.default','themes.font-heading.default'];
 const inputs = {
   'identity-lockup@1':['assets.lockup.positive',...adoptionInputs],
   'identity-mark@1':['assets.mark.positive',...adoptionInputs],
-  'identity-favicon@1':['assets.mark.positive','themes.foreground.default','themes.foreground.default'],
-  'identity-app-icon@1':['assets.mark.positive','themes.foreground.default','themes.foreground.default'],
+  'identity-favicon@1':['assets.mark.positive','themes.foreground.default','themes.background.default'],
+  'identity-app-icon@1':['assets.mark.positive','themes.foreground.default','themes.background.default'],
 };
 const changes: ChangeSet['changes'] = Object.entries(inputs).map(([rule,inputs])=>({op:'derive',slot:'assets.'+rule.slice(9,-2),rule,inputs}));
 function raw(c:CatalogData,library:LibraryData):LibraryData { return applyLibraryChange(c,library,{baseHash:libraryHash(library),changes}); }

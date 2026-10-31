@@ -59,22 +59,14 @@ function selected(children: ReactNode) {
   return <ConsumerComponentProvider value={{ profile: context.profile, selectionHash: context.profile.components.selectionHash, modules: context.modules, descriptors }}><Suspense>{children}</Suspense></ConsumerComponentProvider>;
 }
 
-it("retains native case identities while applying the selected emitted breakpoint tokens", () => {
+it("retains native case identities while applying the fixed viewport breakpoint references", () => {
+  // The themes layer has no breakpoint leaf: viewport widths are the fixed Foundry breakpoint references.
   const section = surfaceSpecimenItems(context, "sections.content");
   expect(section.items.map(item => item.id)).toEqual(["sections.content/1280", "sections.content/375"]);
-  expect(section.items.map(item => item.value.width)).toEqual([`var(${context.profile.values.members["tokens.breakpoint.desktop"]!.emit})`, `var(${context.profile.values.members["tokens.breakpoint.mobile"]!.emit})`]);
-  expect(context.profile.values.members["tokens.breakpoint.desktop"]!.value.light).toEqual({ unit: "rem", value: 80 });
+  expect(section.items.map(item => item.value.width)).toEqual(["var(--breakpoint-desktop)", "var(--breakpoint-mobile)"]);
   const frame = surfaceSpecimenItems(context, "frames.auth-shell");
   expect(frame.items.map(item => item.id)).toEqual(["frames.auth-shell/default"]);
-  expect(frame.items[0]!.value.width).toBe(`var(${context.profile.values.members["tokens.breakpoint.desktop"]!.emit})`);
-});
-
-it("refuses unavailable or mismapped selected breakpoint emissions", () => {
-  const members = context.profile.values.members;
-  const missing = { ...context, profile: { ...context.profile, values: { ...context.profile.values, members: Object.fromEntries(Object.entries(members).filter(([id]) => id !== "tokens.breakpoint.mobile")) } } };
-  expect(surfaceSpecimenItems(missing, "sections.content")).toEqual({ items: [], axes: [] });
-  const mismapped = { ...context, profile: { ...context.profile, values: { ...context.profile.values, members: { ...members, "tokens.breakpoint.desktop": { ...members["tokens.breakpoint.desktop"]!, emit: "--other-desktop" as const } } } } };
-  expect(surfaceSpecimenItems(mismapped, "sections.content")).toEqual({ items: [], axes: [] });
+  expect(frame.items[0]!.value.width).toBe("var(--breakpoint-desktop)");
 });
 
 it("refuses missing declared parts under the authenticated selected provider without mounting an iframe", async () => {

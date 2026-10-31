@@ -120,9 +120,9 @@
           "components.icon"
         ],
         "themes": [
-          "themes.spacing.default",
+          "themes.foreground.default",
           "themes.muted-foreground.default",
-          "themes.foreground.default"
+          "themes.spacing.default"
         ]
       },
       "root": "rac:Breadcrumbs",

@@ -111,12 +111,12 @@
         "assets": [],
         "components": [],
         "themes": [
-          "themes.radius.default",
-          "themes.spacing.default",
-          "themes.destructive.default",
           "themes.card.default",
+          "themes.destructive.default",
+          "themes.foreground.default",
           "themes.muted-foreground.default",
-          "themes.foreground.default"
+          "themes.radius.default",
+          "themes.spacing.default"
         ]
       },
       "root": "presentational",
