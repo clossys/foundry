@@ -8,6 +8,11 @@ import { SPECIMEN_FRAME_CSP, specimenFramePage, specimenWidth } from "./specimen
 
 export const PREVIEW_PREFIX = "/preview/";
 export const PREVIEW_COMMAND = "clossys publish --install --page <page id>";
+/** Producer owns both preview routes for a page: the emitted page and its sized, themed frame. */
+function pageRoutes(publication: string, page: string): { previewUrl: string; frameUrl: string } {
+  const base = `${PREVIEW_PREFIX}${encodeURIComponent(publication)}`, file = `${encodeURIComponent(page)}.html`;
+  return { previewUrl: `${base}/pages/${file}`, frameUrl: `${base}/frame/${file}` };
+}
 export interface PreviewRoute { id: string; path: string; locale?: string; source: { file: string; export: string } }
 export interface PreviewEntry { id: string; title: string; kind: string; parentId?: string; path?: string; slug?: string; description?: string; [key: string]: unknown }
 /** Exact descriptor emitted by Publisher's producer-preview destination. */
@@ -18,7 +23,7 @@ export interface PublicationManifest {
 }
 export interface PublicationPage {
   id: string; cellId?: string; route: string; title?: string; description?: string; ogImage?: string;
-  indexing?: "index" | "noindex"; inSitemap?: boolean; lastPublished?: string; previewUrl: string; emitted: boolean;
+  indexing?: "index" | "noindex"; inSitemap?: boolean; lastPublished?: string; previewUrl: string; frameUrl: string; emitted: boolean;
 }
 export type PublicationResponse =
   | { state: "ready"; publication: string; manifest: PublicationManifest; pages: PublicationPage[]; publications: string[] }
@@ -71,7 +76,7 @@ export async function publication(root: string, requested?: string, installOut?:
       const cellId = object(declared?.entryIds) ? Object.entries(declared.entryIds).find(([, id]) => id === route.id)?.[0] : publisher.cells.find(cell => cell.fields.path === route.path)?.id;
       let emitted = false;
       try { await confinedPreviewFile(previewRoot(root, selected), route.source.file); emitted = true; } catch { /* Descriptor metadata does not prove source exists. */ }
-      return { id: route.id, route: route.path, emitted, previewUrl: `${PREVIEW_PREFIX}${encodeURIComponent(selected)}/pages/${encodeURIComponent(route.id)}.html`,
+      return { id: route.id, route: route.path, emitted, ...pageRoutes(selected, route.id),
         ...(cellId === undefined ? {} : { cellId }),
         ...(entry?.title === undefined ? {} : { title: entry.title }), ...(typeof entry?.description === "string" ? { description: entry.description } : {}),
         ...(typeof entry?.ogImage === "string" ? { ogImage: entry.ogImage } : {}), ...(entry?.indexing === "index" || entry?.indexing === "noindex" ? { indexing: entry.indexing } : {}),
@@ -127,7 +132,7 @@ async function readInstallPublication(root: string, installOut?: string): Promis
     const cellId = object(declared?.entryIds) ? Object.entries(declared.entryIds).find(([, entry]) => entry === install.id)?.[0] : publisher.cells.find(cell => cell.id === `page.${install.id}`)?.id;
     const path = publisher.cells.find(cell => cell.id === cellId)?.fields.path;
     return { id: install.id, route: typeof path === "string" && path.startsWith("/") ? path : install.id === "home" ? "/" : `/${install.id}`, emitted: !!install.html,
-      previewUrl: `${PREVIEW_PREFIX}${encodeURIComponent(id)}/pages/${encodeURIComponent(install.id)}.html`, title: install.id, ...(cellId === undefined ? {} : { cellId }) } as PublicationPage;
+      ...pageRoutes(id, install.id), title: install.id, ...(cellId === undefined ? {} : { cellId }) } as PublicationPage;
   });
   const manifest: PublicationManifest = {
     schemaVersion: 1, publication: id, sourceApp: typeof declared?.routePack?.app === "string" ? declared.routePack.app : "clossys publish --install", format: "web.page.responsive",

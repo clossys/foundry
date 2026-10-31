@@ -111,7 +111,7 @@ it("previews clossys publish --install output from its default out dir, with the
     await launch();
     const metadata = JSON.parse((await get("/api/publication")).text);
     expect(metadata).toMatchObject({ state: "ready", publication: "site", publications: ["site"], pages: [
-      { id: "home", route: "/", emitted: true, previewUrl: "/preview/site/pages/home.html" },
+      { id: "home", route: "/", emitted: true, previewUrl: "/preview/site/pages/home.html", frameUrl: "/preview/site/frame/home.html" },
       { id: "terms", route: "/terms", emitted: false, previewUrl: "/preview/site/pages/terms.html" },
     ] });
     const page = await get("/preview/site/pages/home.html");

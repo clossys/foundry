@@ -217,7 +217,7 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
     const previews: GalleryPreviews = new Map([...(leaves ?? [])].map(([id, leaf]) => {
       if (!leaf) return [id, null];
       const emitted = pages.find(row => row.cellId === id && row.emitted && safePreviewUrl(row.previewUrl));
-      return [id, agentGalleryPreview(leaf, links, emitted && publisherFrameUrl(emitted.previewUrl, 1280, resolved))];
+      return [id, agentGalleryPreview(leaf, links, emitted && publisherFrameUrl(emitted, 1280, resolved))];
     }));
     const input = gallery.value.agent === 'designer' ? designerGalleryInput(gallery.value.records, resolved, links, count) : agentGalleryInput(gallery.value.records, links, count, previews);
     const inputs: Inputs = {};
@@ -285,7 +285,7 @@ async function loadLeaf(agent: string, slug: string, signal: AbortSignal): Promi
   // A Publisher page's specimen is the page itself, as its last install emitted it.
   const publication = await loadPublication(signal).catch(() => undefined);
   const page = publication?.state === 'ready' ? publication.pages.find(row => row.cellId === leaf.card.id) : undefined;
-  const specimens = page && page.emitted && safePreviewUrl(page.previewUrl) ? VIEWPORTS.map(viewport => ({ viewport, light: publisherFrameUrl(page.previewUrl, viewport, 'light'), dark: publisherFrameUrl(page.previewUrl, viewport, 'dark') })) : [];
+  const specimens = page && page.emitted && safePreviewUrl(page.previewUrl) ? VIEWPORTS.map(viewport => ({ viewport, light: publisherFrameUrl(page, viewport, 'light'), dark: publisherFrameUrl(page, viewport, 'dark') })) : [];
   return { agent, leaf, previews, specimens };
 }
 

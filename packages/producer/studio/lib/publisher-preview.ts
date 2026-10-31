@@ -9,13 +9,16 @@ const object = (value: unknown): value is Record<string, any> => !!value && type
 export function safePreviewUrl(value: unknown): value is string {
   return typeof value === 'string' && /^\/preview\/[a-z][a-z0-9.-]*\/pages\/[a-z][a-z0-9.-]*\.html$/.test(value) && !value.includes('..');
 }
+export function safeFrameUrl(value: unknown): value is string {
+  return typeof value === 'string' && /^\/preview\/[a-z][a-z0-9.-]*\/frame\/[a-z][a-z0-9.-]*\.html$/.test(value) && !value.includes('..');
+}
 /**
- * The frame route for an emitted page: the page at `viewport` CSS px with its own theme CSS, scaled
- * to the card and sized to its content (the same frame page `/__specimen` serves).
+ * The frame route Producer declares for an emitted page: the page at `viewport` CSS px with its own
+ * theme CSS, scaled to the card and sized to its content (the same frame page `/__specimen` serves).
  */
-export function publisherFrameUrl(previewUrl: string, viewport: 375 | 768 | 1280, theme: 'light' | 'dark'): string {
-  if (!safePreviewUrl(previewUrl)) throw new Error('Not a Producer preview URL.');
-  return `${previewUrl.replace(/\/pages\/([^/]+)$/, '/frame/$1')}?${new URLSearchParams({ theme, width: String(viewport) })}`;
+export function publisherFrameUrl(page: Pick<PublicationPage, 'frameUrl'>, viewport: 375 | 768 | 1280, theme: 'light' | 'dark'): string {
+  if (!safeFrameUrl(page.frameUrl)) throw new Error('Not a Producer preview URL.');
+  return `${page.frameUrl}?${new URLSearchParams({ theme, width: String(viewport) })}`;
 }
 /** Keep iframe URLs closed to Producer's emitted-page route. Source stays secondary. */
 export function parsePublicationResponse(value: unknown): PublicationResponse {
@@ -27,7 +30,7 @@ export function parsePublicationResponse(value: unknown): PublicationResponse {
   if (value.state !== 'ready' || typeof value.publication !== 'string' || !object(value.manifest) || value.manifest.schemaVersion !== 1 || value.manifest.publication !== value.publication || !object(value.manifest.contentMap) || !Array.isArray(value.manifest.contentMap.entries) || !Array.isArray(value.pages) || !Array.isArray(value.publications)) throw new Error('Producer returned an invalid publication descriptor.');
   const ids = new Set<string>();
   for (const page of value.pages) {
-    if (!object(page) || typeof page.id !== 'string' || ids.has(page.id) || typeof page.route !== 'string' || !page.route.startsWith('/') || !safePreviewUrl(page.previewUrl) || typeof page.emitted !== 'boolean') throw new Error('Producer returned an invalid published page.');
+    if (!object(page) || typeof page.id !== 'string' || ids.has(page.id) || typeof page.route !== 'string' || !page.route.startsWith('/') || !safePreviewUrl(page.previewUrl) || !safeFrameUrl(page.frameUrl) || typeof page.emitted !== 'boolean') throw new Error('Producer returned an invalid published page.');
     ids.add(page.id);
     for (const field of ['cellId', 'title', 'description', 'ogImage', 'lastPublished']) if (page[field] !== undefined && typeof page[field] !== 'string') throw new Error('Producer returned invalid publication metadata.');
     if (page.indexing !== undefined && !['index', 'noindex'].includes(page.indexing) || page.inSitemap !== undefined && typeof page.inSitemap !== 'boolean') throw new Error('Producer returned invalid publication status.');
