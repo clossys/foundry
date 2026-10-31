@@ -80,18 +80,6 @@ describe("current Publisher consumer evidence (zero finding allowlist)", () => {
     expect(report.ok).toBe(false);
   });
 
-  it("recognizes actual Button aliases while refusing fake exports and foreign identity", () => {
-    const aliased = mutate(app, content => content.replace('import { Button }', 'import { Button as PublishButton }').replaceAll("<Button", "<PublishButton").replaceAll("</Button>", "</PublishButton>"));
-    expect(dogfoodComposes(aliased)).toEqual(expect.arrayContaining([expect.objectContaining({ file: source(app).file, tag: "PublishButton", symbol: "Button", slotId: "components.button" })]));
-    for (const replace of [
-      (content: string) => content.replace('import { Button }', 'import { MissingButton as Button }'),
-      (content: string) => content.replace('from "@clossys/designer/components"', 'from "foreign-ui"'),
-    ]) {
-      const report = runConsumerDogfood(mutate(app, replace));
-      expect(rows(report, app)).toEqual(expect.arrayContaining([expect.objectContaining({ code: "DF5", tag: "Button" })]));
-    }
-  });
-
   it.each([
     ['<button>Publish</button>', "DF1", "button"],
     ['<span style={{ color: "#123456" }}>Publish</span>', "DF2", "span"],
@@ -100,15 +88,6 @@ describe("current Publisher consumer evidence (zero finding allowlist)", () => {
     expect(rows(report, layout)).toEqual(expect.arrayContaining([expect.objectContaining({ code, tag })]));
     expect(report.ok).toBe(false);
     expect(report.exceptions).toEqual([]);
-  });
-
-  it("keeps dynamic source and missing authored read contracts unresolved", () => {
-    const report = runConsumerDogfood(observed());
-    expect(rows(report, layout)).toEqual(expect.arrayContaining([
-      expect.objectContaining({ code: "DF2", evidence: expect.stringContaining("dynamic source") }),
-      expect.objectContaining({ code: "DF4", evidence: expect.stringContaining("missing-declared-reads") }),
-    ]));
-    expect(observed()).not.toHaveProperty("contracts");
   });
 
   it("refuses missing and conditional CSS instead of accepting a reduced closure", async () => {

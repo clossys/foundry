@@ -1,0 +1,610 @@
+[
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.hero",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Opening band of a marketing page: one heading, an optional eyebrow and description, up to two calls to action and optional media.",
+    "inputs": [
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "actions.primary.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "actions.secondary.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "media.title",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "media.series[].name",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.image-ratio",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.image",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "actions.max": 2,
+      "actions.primary.label.maxLength.en": 120,
+      "actions.secondary.label.maxLength.en": 120,
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "media.series[].name.maxLength.en": 160,
+      "media.title.maxLength.en": 160
+    },
+    "references": [
+      {
+        "registry": "tailark-oss",
+        "item": "mist-hero-section-1",
+        "version": "8139698",
+        "hash": "sha256:315ecac252ac891e44ae37f2c2d946312c78f3998fd7ed5d7279ab0f1582ce52"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.features",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Grid of product features, each a heading with an optional description and icon, under an optional section header.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "items[].heading",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "items[].description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-*",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.image",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "items[].description.maxLength.en": 480,
+      "items[].heading.maxLength.en": 160
+    },
+    "references": [
+      {
+        "registry": "tailark-oss",
+        "item": "mist-features-1",
+        "version": "8139698",
+        "hash": "sha256:db3281ad9f475e7812837d9badf22d2d94ebd70340f18556c6f6a4ea8297418a"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.comparison",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Plan or product comparison table: rows of capabilities against columns of offers.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "columns[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "columns[].description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "rows[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "rows[].description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "rows[].cells[].text",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "highlight.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "controls[].label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.feature",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "rows[].cells[].value",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "rows[].cells[].delta",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "columns[].description.maxLength.en": 480,
+      "columns[].label.maxLength.en": 120,
+      "controls[].label.maxLength.en": 120,
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "highlight.label.maxLength.en": 120,
+      "labels.feature.maxLength.en": 120,
+      "labels.label.maxLength.en": 120,
+      "rows[].cells[].delta.maxLength.en": 160,
+      "rows[].cells[].text.maxLength.en": 120,
+      "rows[].cells[].value.maxLength.en": 160,
+      "rows[].description.maxLength.en": 480,
+      "rows[].label.maxLength.en": 120
+    },
+    "references": [
+      {
+        "registry": "tailark-oss",
+        "item": "mist-comparator-1",
+        "version": "8139698",
+        "hash": "sha256:32ac76cf078ea4021d1cbf1e6ee48c4973f044e3c764cb1112b8694d03676653"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.pricing",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Pricing tiers, each with a name, price, feature list and one call to action.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "plans[].name",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "plans[].price",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "plans[].description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "plans[].features[]",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "plans[].cta.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "plans[].badge",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "interval",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "plans[].priceByInterval[].amount",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "plans[].priceByInterval[].priceText",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "interval.maxLength.en": 120,
+      "plans[].badge.maxLength.en": 120,
+      "plans[].cta.label.maxLength.en": 120,
+      "plans[].description.maxLength.en": 480,
+      "plans[].features[].maxLength.en": 120,
+      "plans[].name.maxLength.en": 160,
+      "plans[].price.maxLength.en": 120,
+      "plans[].priceByInterval[].amount.maxLength.en": 160,
+      "plans[].priceByInterval[].priceText.maxLength.en": 160
+    },
+    "references": [
+      {
+        "registry": "tailark-oss",
+        "item": "mist-pricing-1",
+        "version": "8139698",
+        "hash": "sha256:702629fd3704dc54b3e635e8689b0d63488e4376984e7dcc36200cc5de9c3156"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.call-to-action",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Closing band that repeats the page's primary and secondary actions under one heading.",
+    "inputs": [
+      {
+        "name": "header.title",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "actions.primary.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "actions.secondary.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "actions.max": 2,
+      "actions.primary.label.maxLength.en": 120,
+      "actions.secondary.label.maxLength.en": 120,
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.title.maxLength.en": 160
+    },
+    "references": [
+      {
+        "registry": "tailark-oss",
+        "item": "mist-call-to-action-1",
+        "version": "8139698",
+        "hash": "sha256:f01e18e96040619b4b41304fbd129a7bf94601a7119745648d7a04b9a36084cb"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.steps",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Ordered process steps laid out as a horizontal timeline, each with a heading, optional description and ordinal.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "steps[].heading",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "steps[].description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "steps[].ordinal",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "orientation": "horizontal",
+      "steps[].description.maxLength.en": 480,
+      "steps[].heading.maxLength.en": 160,
+      "steps[].ordinal.maxLength.en": 120
+    },
+    "references": [
+      {
+        "registry": "diceui",
+        "item": "timeline",
+        "version": "04aad54",
+        "hash": "sha256:0b3e5d2e13f9940f69aaf723e51358844797e092fe4af2243aa979f830c2a059"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  }
+]

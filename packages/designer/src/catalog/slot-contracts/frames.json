@@ -1,0 +1,272 @@
+[
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "frames.site-header",
+    "package": "designer",
+    "layer": "frames",
+    "purpose": "Marketing site header: brand, primary navigation and header actions, collapsing to a menu on small screens.",
+    "inputs": [
+      {
+        "name": "brand",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "nav",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "actions",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.lockup",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.mark",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-close",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "tailark-oss",
+        "item": "mist-hero-section-1-header",
+        "version": "8139698",
+        "hash": "sha256:d88ac2c6f6dee57c80af744c8f30151b4d573b7621099c3da26ef24d4a2c473c"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.frames",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "frames.site-footer",
+    "package": "designer",
+    "layer": "frames",
+    "purpose": "Marketing site footer: link columns, legal line and social links.",
+    "inputs": [
+      {
+        "name": "columns",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "links",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "legal",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "social",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.mark",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.image",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "tailark-oss",
+        "item": "mist-footer-1",
+        "version": "8139698",
+        "hash": "sha256:1896969884e97bae5407bcd6f54838c22e4c608b503de954af02e4e75fdc82de"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.frames",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "frames.site-shell",
+    "package": "designer",
+    "layer": "frames",
+    "purpose": "Marketing page shell: skip link, site header, main landmark, site footer and the toast region.",
+    "inputs": [
+      {
+        "name": "skip-link",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "progress",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "consent",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "header",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "main",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "footer",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "toasts",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.shadow",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.image",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "references.blocked": "@diceui/skip-nav is not in references/",
+      "skipTarget": "main-content"
+    },
+    "references": [
+      {
+        "registry": "tailark-oss",
+        "item": "mist-hero-section-1-header",
+        "version": "8139698",
+        "hash": "sha256:d88ac2c6f6dee57c80af744c8f30151b4d573b7621099c3da26ef24d4a2c473c"
+      },
+      {
+        "registry": "tailark-oss",
+        "item": "mist-footer-1",
+        "version": "8139698",
+        "hash": "sha256:1896969884e97bae5407bcd6f54838c22e4c608b503de954af02e4e75fdc82de"
+      },
+      {
+        "registry": "shadcn",
+        "item": "sonner",
+        "version": "4.23.0",
+        "hash": "sha256:72d9868323fe1deaaef319b195daf83dc6c0367511cea992859ac0c2766c6935"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.frames",
+    "specimenKind": "visual"
+  }
+]

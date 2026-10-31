@@ -361,6 +361,7 @@
     "test:studio-page-modules": "node --test scripts/check-studio-page-modules.test.mjs",
     "test:usage-graph": "node --test scripts/usage-graph.test.mjs",
     "check:references": "node scripts/check-references.mjs",
+    "check:slot-contracts": "node scripts/slot-contracts.mjs --check",
     "test:references": "node --test scripts/check-references.test.mjs",
     "fetch:references": "node scripts/fetch-references.mjs",
     "build": "tsc -p tsconfig.json",
