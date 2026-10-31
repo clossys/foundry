@@ -1,6 +1,6 @@
 import { libraryHash, loadBuildCatalog, resolve, runtimeHash, runtimeSnapshot } from "../catalog-core/index.js";
 import type { BuildCatalogData, CompositeCatalogData, CompositeResolved, ConsumerRuntimeManifest, RuntimeContent, RuntimeFillSelection, RuntimeCell, SurfaceCatalog } from "../catalog-core/index.js";
-import type { DesignerAgentData } from "./system-canvas/inspector/types.js";
+import type { DesignerAgentData } from "./types.js";
 import type { FramePageHeader } from "../frame-page-header.js";
 import { surfaceRuntimeIdentity } from "../catalog-core/surface-check.js";
 import { checkWholeStudioInitialSession } from "./initial-session.js";

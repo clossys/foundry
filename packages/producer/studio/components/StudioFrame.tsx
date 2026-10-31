@@ -300,19 +300,28 @@ function AppFrame({ navigation, commands, breadcrumbs, actions, children }: AppF
   </SidebarProvider>;
 }
 
-/** Studio pages render through one shell; the projection owns navigation, commands and breadcrumbs. */
-export function StudioFrame({ trail, children }: { trail?: string; children: ReactNode }) {
+const NO_ACTIONS: readonly StudioPageAction[] = [];
+
+/**
+ * Studio pages render through one shell; the projection owns navigation, commands and breadcrumbs.
+ * `pageId` names the page for paths the projection does not list yet (the PROOF-2 leaf routes);
+ * `actions` overrides the page's module actions (view-only pages pass none).
+ */
+export function StudioFrame({ trail, pageId, actions, children }: { trail?: string; pageId?: string; actions?: readonly StudioPageAction[]; children: ReactNode }) {
   const pathname = usePathname();
   const route = studioRouteForPath(pathname);
-  const activeId = route?.instanceId ?? studioHome.id;
+  const activeId = pageId ?? route?.instanceId ?? studioHome.id;
   const breadcrumbs = useMemo(() => {
     const base = studioBreadcrumbs[activeId] ?? studioBreadcrumbs[studioHome.id] ?? [];
     return trail ? [...base, { id: 'studio-trail', label: trail }] : base;
   }, [activeId, trail]);
+  // The Inspector module is removed; the projection still declares its action until the content drops it.
+  const declared = studioPageActions[activeId] ?? NO_ACTIONS;
+  const pageActions = useMemo(() => declared.filter(action => action.id !== 'inspector'), [declared]);
   return <AppFrame
     navigation={studioNavigation[activeId] ?? studioNavigation[studioHome.id]!}
     commands={studioCommands}
     breadcrumbs={breadcrumbs}
-    actions={studioPageActions[activeId] ?? []}
+    actions={actions ?? pageActions}
   >{children}</AppFrame>;
 }

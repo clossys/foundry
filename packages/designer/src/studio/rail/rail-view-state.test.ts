@@ -9,14 +9,14 @@ function memoryStore(initial: Record<string, string> = {}) {
 const throwing = { getItem: (): string | null => { throw new Error("SecurityError"); }, setItem: (): void => { throw new Error("QuotaExceededError"); } };
 
 describe("rail view state", () => {
-  it("names the five cards in rail order", () => {
-    expect(RAIL_CARDS).toEqual(["explorer", "inspector", "map", "zoom", "checks"]);
+  it("names the four cards in rail order", () => {
+    expect(RAIL_CARDS).toEqual(["explorer", "map", "zoom", "checks"]);
   });
   it("round-trips hidden and collapsed state through the store", () => {
     const store = memoryStore();
-    writeRailView({ hidden: true, collapsed: ["map", "inspector"] }, store);
-    expect(JSON.parse(store.data.get(RAIL_VIEW_KEY)!)).toEqual({ version: 2, hidden: true, collapsed: ["inspector", "map"] });
-    expect(readRailView(store)).toEqual({ hidden: true, collapsed: ["inspector", "map"] });
+    writeRailView({ hidden: true, collapsed: ["zoom", "explorer"] }, store);
+    expect(JSON.parse(store.data.get(RAIL_VIEW_KEY)!)).toEqual({ version: 2, hidden: true, collapsed: ["explorer", "zoom"] });
+    expect(readRailView(store)).toEqual({ hidden: true, collapsed: ["explorer", "zoom"] });
   });
   it("defaults when nothing is stored, and tolerates malformed or foreign values", () => {
     expect(readRailView(memoryStore())).toEqual(DEFAULT_RAIL_VIEW);

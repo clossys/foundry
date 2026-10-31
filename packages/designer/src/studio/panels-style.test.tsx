@@ -1,9 +1,7 @@
 import { afterEach, expect, it } from "vitest";
 import { cleanup, render } from "@testing-library/react";
 import { TreeView } from "./TreeView.js";
-import { InspectorChange } from "./Inspector.js";
 import { StudioDataValue } from "./data-value.js";
-import { SystemInspector } from "./system-canvas/inspector/Inspector.js";
 import { ExplorerTree } from "./rail/ExplorerTree.js";
 import { createRouteStudioLabels } from "./route-labels.js";
 import { studioTestCopy } from "./__fixtures__/copy.js";
@@ -32,14 +30,12 @@ it("constrains the real RAC rows and ellipsizes labels; the ellipsis-removal mut
     assertRowEllipsis(label);
   }
 });
-it("wraps helper and long data values, uses mono for hashes and muted inspector labels", () => {
-  const view = render(<><InspectorChange labels={{ ...labels, howToChange: long }}/><StudioDataValue kind="hash" value={long}/><StudioDataValue kind="path" value={long}/><SystemInspector copy={studioTestCopy} labels={labels} identity={{id:"components.fixture",layer:"components",path:[],status:"ready",fill:{pin:long}}} onNavigate={()=>{}} onClose={()=>{}} canNavigate={()=>false}/></>);
-  expect(view.container.querySelector("[data-studio-inspector-change] p")).toHaveClass("min-w-0", "wrap-anywhere");
+it("wraps long data values and uses mono for hashes", () => {
+  const view = render(<><StudioDataValue kind="hash" value={long}/><StudioDataValue kind="path" value={long}/></>);
   for (const value of view.container.querySelectorAll("[data-studio-data-value]")) expect(value).toHaveClass("min-w-0", "wrap-anywhere");
   for (const hash of view.container.querySelectorAll('[data-studio-data-kind="hash"]')) expect(hash).toHaveClass("font-mono");
-  for (const label of view.container.querySelectorAll('[data-studio-panel="inspector"] dt')) expect(label).toHaveClass("text-ink-muted");
 });
-it("uses the registered EmptyState for unselected inspector, empty tree and zero search results", () => {
-  const view = render(<><SystemInspector copy={studioTestCopy} labels={labels} onNavigate={()=>{}} onClose={()=>{}} canNavigate={()=>false}/><ExplorerTree copy={studioTestCopy} labels={labels} placements={[]} onNavigate={()=>{}}/><ExplorerTree copy={studioTestCopy} labels={labels} placements={testPlacements} query="no-leaf-matches-this-query" onNavigate={()=>{}}/></>);
-  expect(view.container.querySelectorAll('[data-ds-leaf="sections.empty-state"]')).toHaveLength(3);
+it("uses the registered EmptyState for an empty tree and zero search results", () => {
+  const view = render(<><ExplorerTree copy={studioTestCopy} labels={labels} placements={[]} onNavigate={()=>{}}/><ExplorerTree copy={studioTestCopy} labels={labels} placements={testPlacements} query="no-leaf-matches-this-query" onNavigate={()=>{}}/></>);
+  expect(view.container.querySelectorAll('[data-ds-leaf="sections.empty-state"]')).toHaveLength(2);
 });

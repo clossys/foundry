@@ -20,7 +20,6 @@ interface ExplorerProps {
   readonly query?: string; readonly placements?: readonly Placement[]; readonly labels?: StudioLabels;
   readonly activeLayer?: LayerId; readonly selectedLeaf?: string;
   readonly onNavigate?: (target: StudioNavigateTarget) => void;
-  readonly onCloseInspector?: () => void;
 }
 /** Same tree on every layer. A branch is a camera target, never a filter. */
 export function ExplorerTree(props: ExplorerProps & { readonly copy: StudioCopyBinding }) {
@@ -47,12 +46,7 @@ export function ExplorerTree(props: ExplorerProps & { readonly copy: StudioCopyB
     visit(nodes, []);
     setExpanded(current => { const next = new Set([...current].filter(id => !EXPLORER_LAYER_ORDER.includes(id as LayerId) || id === layer)); if (layer) next.add(layer); ancestors.forEach(id=>next.add(id)); return next.size === current.size && [...next].every(id=>current.has(id)) ? current : next; });
   }, [nodes, layer, expansionLeaf]);
-  return <SemanticContent as="div" onKeyDownCapture={event => {
-    if (event.key === "Escape" && selected !== undefined) {
-      if (props.onCloseInspector) props.onCloseInspector();
-      else session?.select(undefined);
-    }
-  }}>{nodes.length === 0 ? <EmptyState title={labels.canvas.noCandidatesInBoard} className="min-w-0 wrap-anywhere"/> : <TreeView nodes={nodes} aria-label={labels.treeLabel} currentId={selected} expandedIds={expanded}
+  return <SemanticContent as="div">{nodes.length === 0 ? <EmptyState title={labels.canvas.noCandidatesInBoard} className="min-w-0 wrap-anywhere"/> : <TreeView nodes={nodes} aria-label={labels.treeLabel} currentId={selected} expandedIds={expanded}
     onNavigate={id => { const entry=index.get(id); if(entry) navigate(entry.target); }}
     onExpandedChange={next => { const changed=[...new Set([...expanded,...next])].filter(id=>expanded.has(id)!==next.has(id)); setExpanded(next); const entry=changed.length===1 ? index.get(changed[0]!) : undefined; if(entry)navigate(entry.target); }} />}</SemanticContent>;
 }

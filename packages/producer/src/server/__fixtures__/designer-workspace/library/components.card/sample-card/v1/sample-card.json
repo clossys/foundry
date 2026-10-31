@@ -1,0 +1,15 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "sample-card",
+  "type": "registry:block",
+  "registryDependencies": [
+    "sample-button"
+  ],
+  "files": [
+    {
+      "path": "registry/blocks/sample-card.tsx",
+      "type": "registry:block",
+      "content": "import * as React from \"react\";\nimport { cn } from \"@/lib/utils\";\nimport { SampleButton } from \"@/components/ui/sample-button\";\n\nexport function SampleCard({ title, body, action, className }: { title: string; body: string; action: string; className?: string }) {\n  return (\n    <div data-slot=\"card\" className={cn(\"flex flex-col gap-4 rounded-xl border bg-card p-6 text-card-foreground shadow-sm\", className)}>\n      <div className=\"flex flex-col gap-1.5\">\n        <h3 className=\"text-lg leading-none font-semibold\">{title}</h3>\n        <p className=\"text-sm text-muted-foreground\">{body}</p>\n      </div>\n      <div className=\"flex justify-end gap-2\">\n        <SampleButton variant=\"outline\" size=\"sm\">Later</SampleButton>\n        <SampleButton size=\"sm\">{action}</SampleButton>\n      </div>\n    </div>\n  );\n}\n"
+    }
+  ]
+}

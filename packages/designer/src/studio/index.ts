@@ -76,7 +76,6 @@ export { SpecimenSwatch, SpecimenColorRamp, SpecimenTypeLadder, SpecimenSpacingL
 
 // The complete-page constructor is private; hosts compose Studio through their route.
 export type { DesignerPageProps } from "./system-canvas/DesignerPage.js";
-export type { DesignerHistoryRow } from "./system-canvas/inspector/types.js";
 export { createRouteStudioLabels } from "./route-labels.js";
 export { createStudioUsageLabels } from "./usage/copy-labels.js";
 export { StudioCopyNeedsError, readStudioCopy, readStudioMessage } from "./copy-binding.js";

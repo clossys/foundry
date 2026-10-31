@@ -13,7 +13,7 @@ it("mounts only the system page canvas and its right rail on the existing Studio
   expect(host.querySelectorAll("main")).toHaveLength(1);
   expect(host.querySelectorAll("section[data-designer-region=canvas]")).toHaveLength(1);
   expect(host.querySelectorAll("[data-system-canvas]")).toHaveLength(1);
-  expect([...host.querySelectorAll<HTMLElement>("[data-studio-rail-card]")].map(card=>card.dataset.studioRailCard)).toEqual(["explorer","inspector","map","zoom","checks"]);
+  expect([...host.querySelectorAll<HTMLElement>("[data-studio-rail-card]")].map(card=>card.dataset.studioRailCard)).toEqual(["explorer","map","zoom","checks"]);
   expect(host.querySelector('[data-studio-rail-card=checks] [aria-expanded]')).toHaveAttribute("aria-expanded","false");
   expect(host.querySelector("[data-frame-module]")).toBeNull();
   expect(host.querySelectorAll("[data-studio-rail]")).toHaveLength(1);
@@ -24,7 +24,7 @@ it("checks the complete system-canvas source closure for WL1, WL6, WL10 and raw 
   const root=resolve(process.cwd(),"src/studio/system-canvas");
   const files=(dir:string):string[]=>readdirSync(dir,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?entry.name==="__fixtures__"||entry.name==="thumbnails"?[]:files(resolve(dir,entry.name)):/\.tsx?$/.test(entry.name)&&!entry.name.includes(".test.")?[resolve(dir,entry.name)]:[]);
   const sources:WiringSource[]=files(root).map(path=>({path,content:readFileSync(path,"utf8"),layer:"sections"}));
-  expect(sources.some(s=>s.path.endsWith("inspector/Inspector.tsx"))).toBe(true);
+  expect(sources.some(s=>s.path.endsWith("DesignerPage.tsx"))).toBe(true);
   const report=checkWiring({sources});
   // WL1/WL6 are runtime codes: this source proof claims no captured DOM evidence.
   expect(report.findings.filter(f=>["WL1","WL6","WL10","WL4"].includes(f.code))).toEqual([]);
