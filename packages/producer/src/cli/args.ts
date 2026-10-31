@@ -35,7 +35,7 @@ export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check>
   + "Page check: clossys check --pages <generated-manifest.json> --report <report.json> [--json]\n"
   + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root)\n"
   + "Specimens: clossys publish --target preview [--records <library dir>]... (default <root>/clossys/library)\n"
-  + "Install: clossys publish --install --page <page record.json> [--out <dir>] [--records <library dir>]...";
+  + "Install: clossys publish --install --page <page id | page record.json> [--out <dir>] [--records <library dir>]...";
 
 export function parseArgs(argv: readonly string[]): CliArgs {
   const args: CliArgs = { help: false, check: false, json: false, once: false, noOpen: false, suites: false, strict: false, records: [], install: false };
@@ -83,7 +83,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   if ((args.suites || args.strict) && args.verb !== "check") throw new CliUsageError("--suites and --strict require check");
   if (args.records.length && args.verb !== "publish") throw new CliUsageError("--records requires publish");
   if ((args.install || args.page !== undefined) && args.verb !== "publish") throw new CliUsageError("--install and --page require publish");
-  if (args.install && args.page === undefined && !args.help) throw new CliUsageError("publish --install requires --page <page record.json>");
+  if (args.install && args.page === undefined && !args.help) throw new CliUsageError("publish --install requires --page <page id | page record.json>");
   if (args.page !== undefined && !args.install) throw new CliUsageError("--page requires --install");
   if (args.install && args.target !== undefined) throw new CliUsageError("publish takes --install or --target, not both");
   if (!args.verb && !args.help) throw new CliUsageError("A verb is required");

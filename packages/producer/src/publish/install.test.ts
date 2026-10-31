@@ -49,6 +49,16 @@ describe("clossys publish --install", () => {
     expect(again.message.match(/ unchanged: /g)).toHaveLength(2);
   }, 120_000);
 
+  it("reads a page id's active Publisher cell, binding `slot = key` bullets and leaving an unbound slot empty", async () => {
+    const out = join(temp("producer-install-cell-"), "out");
+    const result = await runCli(["publish", "--install", "--page", "about", "--root", fixture, "--out", out]);
+    expect(result.message).toContain("Findings: 0 (+1 info)");
+    expect(result.message).toContain("unbound-copy-slot");
+    expect(result.exitCode).toBe(0);
+    const html = readFileSync(join(out, "site", "about", "index.html"), "utf8");
+    for (const text of ["About Example Studio", "Read straight from the page cell", '<p data-copy="hero.body"></p>']) expect(html).toContain(text);
+  }, 120_000);
+
   it("exits 1 with a finding when the page references an unpinned slot", async () => {
     const consumer = temp("producer-install-consumer-");
     cpSync(fixture, consumer, { recursive: true });
