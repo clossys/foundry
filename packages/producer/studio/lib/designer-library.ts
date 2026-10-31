@@ -12,7 +12,7 @@ import type { ReferencesInput } from '../sections/studio-references';
 import type { SpecimenInput } from '../sections/studio-specimen';
 import type { PageNoticeData } from '../frames/studio-shell/PageNotice';
 import type { StudioLinks } from './agent-library';
-import { LEAF_STATUS_LABEL, LEAF_STATUS_TONE, pendingOptionsBadge, specimenDescription } from './leaf-status';
+import { LEAF_STATUS_LABEL, LEAF_STATUS_TONE, LEAF_UNIT, leafCountLabel, specimenDescription } from './leaf-status';
 
 /** `pending`: nothing pinned, options recorded. `missing`: no version exists at all. */
 export type DesignerStatus = 'pinned' | 'pending' | 'missing' | 'failing' | 'stale' | 'unreleased';
@@ -68,10 +68,10 @@ export async function loadDesignerLeaf(slug: string, signal: AbortSignal): Promi
 
 /* Designer adapter: records -> the Studio section inputs. */
 
-/** A component is a small part of a page: frame it at a phone viewport so it reads at thumbnail scale; pages and themes frame at desktop. */
-const THUMBNAIL_WIDTH: Record<string, number> = { components: 375 };
+/** A gallery card frames every item at desktop width, the width the site renders it at. */
+const GALLERY_WIDTH = 1280;
 const SPECIMEN_VIEWPORTS = [375, 768, 1280] as const;
-export const DESIGNER_UNIT = ['leaf', 'leaves'] as const;
+export const DESIGNER_UNIT = LEAF_UNIT;
 
 export function designerNotice(state: 'missing' | 'error', message?: string): PageNoticeData {
   return state === 'missing'
@@ -90,13 +90,16 @@ export function designerGalleryLayers(records: DesignerGallery, theme: 'light' |
       cards: section.cards.flatMap(card => {
         const href = links.leaf('designer', card.slug);
         if (!href) return [];
-        const src = specimenHref(card, theme, THUMBNAIL_WIDTH[card.layer] ?? 1280);
-        // A pending card's status already says its versions wait; the badge counts options beside a pin.
-        const badges = card.pinned && card.options.length ? [pendingOptionsBadge(card.options.length)] : [];
+        // The full live preview: the active state framed view-only at desktop width in the page's theme.
+        const src = specimenHref(card, theme, GALLERY_WIDTH);
+        const specimen: SpecimenInput | undefined = src ? {
+          kind: 'viewports', name: card.name, title: 'Specimen', description: specimenDescription(card.status),
+          specimens: [{ viewport: GALLERY_WIDTH, light: src, interactive: false }], empty: 'No specimen recorded for this leaf yet.',
+        } : undefined;
         return [{
           key: card.slot, name: card.name, ...(card.version !== undefined ? { version: card.version } : {}),
           statusLabel: LEAF_STATUS_LABEL[card.status], statusTone: LEAF_STATUS_TONE[card.status],
-          href, ...(src ? { specimenSrc: src } : {}), ...(badges.length ? { badges } : {}),
+          href, ...(specimen ? { specimen } : { specimenStatus: { label: 'Nothing to preview yet', tone: 'outline' as const } }),
         }];
       }),
     });
@@ -105,13 +108,13 @@ export function designerGalleryLayers(records: DesignerGallery, theme: 'light' |
 }
 
 /** The `gallery` input for the Designer library, or a notice when it has nothing to show. */
-export function designerGalleryInput(records: DesignerGallery, theme: 'light' | 'dark', links: StudioLinks): AgentGalleryInput | PageNoticeData {
+export function designerGalleryInput(records: DesignerGallery, theme: 'light' | 'dark', links: StudioLinks, count: number): AgentGalleryInput | PageNoticeData {
   const layers = designerGalleryLayers(records, theme, links);
   if (records.state === 'missing' || !layers.length) return designerNotice('missing');
   return {
     header: {
       title: 'Designer library',
-      description: `${records.count === 1 ? '1 leaf' : `${records.count} leaves`} from the record store. Open a leaf for its contract, lineage and versions.`,
+      description: `${leafCountLabel(count)} from the record store. Open a leaf for its contract, lineage and versions.`,
     },
     unit: DESIGNER_UNIT, layers,
   };

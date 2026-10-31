@@ -193,6 +193,27 @@ function productionFiles(root) {
   return [...reached].filter(file => !MAP_OWNERS.includes(path.relative(root, file).split(path.sep).join('/'))).sort();
 }
 
+/** Every Studio source module (outside app/, checks/, tests and configs), relative to `root`. */
+function studioModules(root) {
+  const out = [];
+  (function visit(directory) {
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      if (['node_modules', '.next', 'checks', 'app', 'public'].includes(entry.name)) continue;
+      const file = path.join(directory, entry.name);
+      if (entry.isDirectory()) visit(file);
+      else if (/\.[jt]sx?$/.test(entry.name) && !/\.(?:test|spec)\./.test(entry.name) && !entry.name.endsWith('.d.ts') && path.dirname(file) !== root) out.push(file);
+    }
+  })(root);
+  return out.sort();
+}
+
+/** Studio modules no App Router entry reaches: dead page or module code that must be deleted, not kept beside the renderer. */
+function orphanModules(root) {
+  const reached = new Set(productionFiles(root));
+  for (const owner of MAP_OWNERS) reached.add(path.join(root, owner));
+  return studioModules(root).filter(file => !reached.has(file)).map(file => path.relative(root, file).split(path.sep).join('/'));
+}
+
 async function checkStudioMap({ studioRoot = STUDIO_ROOT, clossysRoot, outputDir } = {}) {
   const findings = [];
   const generator = path.resolve(STUDIO_ROOT, '../scripts/generate-studio-map.mjs');
@@ -202,6 +223,7 @@ async function checkStudioMap({ studioRoot = STUDIO_ROOT, clossysRoot, outputDir
   } catch (error) {
     findings.push({ rule: 'publisher-projection-drift', message: error.message });
   }
+  for (const file of orphanModules(studioRoot)) findings.push({ rule: 'orphan-module', file });
   for (const file of productionFiles(studioRoot)) findings.push(...findRouteLiterals(fs.readFileSync(file, 'utf8'), path.relative(studioRoot, file)));
   const renderer = path.join(studioRoot, 'components/StudioPage.tsx');
   if (fs.existsSync(renderer)) findings.push(...inspectFrameProjection(fs.readFileSync(renderer, 'utf8')));
@@ -212,7 +234,7 @@ async function checkStudioMap({ studioRoot = STUDIO_ROOT, clossysRoot, outputDir
   return findings;
 }
 
-module.exports = { findRouteLiterals, inspectFrameProjection, inspectShellProjection, productionFiles, checkStudioMap };
+module.exports = { findRouteLiterals, inspectFrameProjection, inspectShellProjection, productionFiles, orphanModules, checkStudioMap };
 if (require.main === module) checkStudioMap().then(findings => {
   if (findings.length) {
     console.error(JSON.stringify({ check: 'Studio Publisher map', findings }, null, 2));

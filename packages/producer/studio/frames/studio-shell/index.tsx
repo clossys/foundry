@@ -2,12 +2,12 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { ArrowUpIcon, ChevronsUpDownIcon, MessageSquareIcon, MonitorIcon, MoonIcon, SearchIcon, SparklesIcon, SunIcon, TriangleAlertIcon } from 'lucide-react';
+import { ArrowUpIcon, ChevronsUpDownIcon, MessageSquareIcon, MoonIcon, SearchIcon, SparklesIcon, SunIcon, TriangleAlertIcon } from 'lucide-react';
 import type { ContentMapCommandGroup, ContentMapNavigation } from '@clossys/publisher/content-map';
 import {
-  Avatar, AvatarFallback, Badge, Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, Button,
+  Avatar, AvatarFallback, AvatarImage, Badge, Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, Button,
   Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, CommandDialog, Command, CommandEmpty, CommandGroup,
-  CommandInput, CommandItem, CommandList, CommandShortcut, Popover, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger,
+  CommandInput, CommandItem, CommandList, CommandShortcut, Field, FieldContent, FieldDescription, FieldGroup, FieldTitle, Popover, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger,
   ScrollArea, Separator, Sheet, SheetDescription, SheetHeader, SheetTitle, Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
   SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
   SidebarProvider, SidebarRail, SidebarTrigger, Skeleton, Textarea, useSidebar, Tooltip, TooltipTrigger,
@@ -15,7 +15,7 @@ import {
 import type { ContentMapPageAction } from '@clossys/publisher/content-map';
 import { studioIcon } from '../../lib/studio-icons';
 import type { StudioReport } from '../../lib/studio-report';
-import { useStudioData, useThemeMode, type ThemeMode } from '../../components/StudioProviders';
+import { useStudioData, useThemeMode } from '../../components/StudioProviders';
 
 export { PageNotice, type PageNoticeData } from './PageNotice';
 export type StudioPageAction = ContentMapPageAction;
@@ -41,16 +41,13 @@ const sentence = (value: string) => value ? value.charAt(0).toUpperCase() + valu
 const SEVERITY_BADGE = { error: 'destructive', warning: 'secondary', info: 'outline' } as const;
 
 export function ReportList({ reports, empty = 'Nothing needs attention.' }: { reports: readonly StudioReport[]; empty?: string }) {
-  if (!reports.length) return <p className="text-sm text-muted-foreground">{empty}</p>;
-  return <ul className="flex flex-col gap-3">
-    {reports.map(report => <li key={report.id} className="flex flex-col gap-1">
-      <div className="flex items-center gap-2">
-        <Badge variant={SEVERITY_BADGE[report.severity]}>{sentence(report.severity)}</Badge>
-        <span className="text-sm font-medium">{report.title}</span>
-      </div>
-      <p className="text-xs leading-relaxed text-muted-foreground">{report.detail}</p>
-    </li>)}
-  </ul>;
+  if (!reports.length) return <FieldDescription>{empty}</FieldDescription>;
+  return <FieldGroup className="gap-3">
+    {reports.map(report => <Field key={report.id} className="gap-1">
+      <FieldTitle><Badge variant={SEVERITY_BADGE[report.severity]}>{sentence(report.severity)}</Badge>{report.title}</FieldTitle>
+      <FieldDescription className="text-xs leading-relaxed">{report.detail}</FieldDescription>
+    </Field>)}
+  </FieldGroup>;
 }
 
 function ReportsPopover() {
@@ -61,7 +58,7 @@ function ReportsPopover() {
     <TooltipTrigger>
       <Button variant="ghost" size="icon-sm" aria-label={`Reports, ${list.length} open`} className="relative">
         <TriangleAlertIcon />
-        {attention > 0 && <span aria-hidden className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">{attention}</span>}
+        {attention > 0 && <Badge aria-hidden className="absolute -top-1 -right-1 h-4 min-w-4 px-1 text-[10px] tabular-nums">{attention}</Badge>}
       </Button>
       <Tooltip>Reports</Tooltip>
     </TooltipTrigger>
@@ -71,44 +68,45 @@ function ReportsPopover() {
         <PopoverDescription>Producer facts that do not block Studio.</PopoverDescription>
       </PopoverHeader>
       <Separator />
-      {reports.state === 'error' ? <p className="text-sm text-destructive">{reports.message}</p> : <ReportList reports={list} />}
+      {reports.state === 'error' ? <FieldDescription className="text-destructive">{reports.message}</FieldDescription> : <ReportList reports={list} />}
     </Popover>
   </PopoverTrigger>;
+}
+
+/**
+ * The consumer's mark for one ground. The shadcn avatar shows its fallback until the served SVG
+ * has loaded and again if it fails, so the rail never shows an empty mark in either theme.
+ */
+function BrandMark({ ground, initial }: { ground: 'light' | 'dark'; initial: string }) {
+  return <Avatar data-brand-mark={ground} className={`rounded-md after:hidden ${ground === 'light' ? 'dark:hidden' : 'hidden dark:flex'}`}>
+    <AvatarImage src={`/api/brand/mark.svg?ground=${ground}`} alt="" className="rounded-none object-contain" />
+    <AvatarFallback className="rounded-md bg-sidebar-primary font-heading text-sidebar-primary-foreground">{initial}</AvatarFallback>
+  </Avatar>;
 }
 
 /** The consumer's own mark and name from its Designer output; Studio is the product beneath it. */
 function BrandButton({ homeHref }: { homeHref: string }) {
   const { brand } = useStudioData();
   const name = brand.state === 'ready' ? brand.value.name : undefined;
+  const initial = (name ?? 'Studio').charAt(0).toUpperCase();
   return <SidebarMenuButton size="lg" href={homeHref} tooltip={name ? `${name} Studio` : 'Studio'}>
-    <span aria-hidden className="flex size-8 shrink-0 items-center justify-center">
-      {/* eslint-disable-next-line @next/next/no-img-element -- Producer serves the consumer's SVG mark. */}
-      <img src="/api/brand/mark.svg?ground=light" alt="" className="size-7 dark:hidden" />
-      {/* eslint-disable-next-line @next/next/no-img-element -- Producer serves the consumer's SVG mark. */}
-      <img src="/api/brand/mark.svg?ground=dark" alt="" className="hidden size-7 dark:block" />
-    </span>
-    <span className="grid flex-1 text-left leading-tight">
-      {brand.state === 'loading' ? <Skeleton className="h-4 w-20" /> : <span className="truncate font-heading text-[15px] font-semibold tracking-tight">{name ?? 'Studio'}</span>}
-      <span className="truncate text-xs text-muted-foreground">{name ? 'Studio' : 'Local workspace'}</span>
-    </span>
+    <BrandMark ground="light" initial={initial} />
+    <BrandMark ground="dark" initial={initial} />
+    <FieldContent className="min-w-0 gap-0 leading-tight">
+      {brand.state === 'loading' ? <Skeleton className="h-4 w-20" /> : <FieldTitle className="w-full truncate font-heading text-[15px] font-semibold tracking-tight">{name ?? 'Studio'}</FieldTitle>}
+      <FieldDescription className="truncate text-xs">{name ? 'Studio' : 'Local workspace'}</FieldDescription>
+    </FieldContent>
   </SidebarMenuButton>;
 }
 
-const THEME_OPTIONS:{ mode: ThemeMode; label: string; Icon: typeof SunIcon }[] = [
-  { mode: 'light', label: 'Light', Icon: SunIcon },
-  { mode: 'dark', label: 'Dark', Icon: MoonIcon },
-  { mode: 'system', label: 'System', Icon: MonitorIcon },
-];
-
 function AccountMenu() {
-  const { mode, setMode } = useThemeMode();
   return <PopoverTrigger>
-    <SidebarMenuButton size="lg" aria-label="Account and theme">
+    <SidebarMenuButton size="lg" aria-label="Account">
       <Avatar size="sm"><AvatarFallback>LW</AvatarFallback></Avatar>
-      <span className="grid flex-1 text-left text-sm leading-tight">
-        <span className="truncate font-medium">Local workspace</span>
-        <span className="truncate text-xs text-muted-foreground">Producer on this machine</span>
-      </span>
+      <FieldContent className="min-w-0 gap-0 leading-tight">
+        <FieldTitle className="w-full truncate">Local workspace</FieldTitle>
+        <FieldDescription className="truncate text-xs">Producer on this machine</FieldDescription>
+      </FieldContent>
       <ChevronsUpDownIcon className="ml-auto" />
     </SidebarMenuButton>
     <Popover placement="top start" className="w-64">
@@ -116,17 +114,20 @@ function AccountMenu() {
         <PopoverTitle>Local workspace</PopoverTitle>
         <PopoverDescription>Studio reads cells from the Producer running on this machine.</PopoverDescription>
       </PopoverHeader>
-      <Separator />
-      <div className="flex flex-col gap-2">
-        <span className="text-xs font-medium text-muted-foreground">Theme</span>
-        <div className="grid grid-cols-3 gap-1" role="group" aria-label="Theme">
-          {THEME_OPTIONS.map(({ mode: option, label, Icon }) => <Button key={option} size="sm" variant={mode === option ? 'secondary' : 'ghost'} aria-pressed={mode === option} onPress={() => setMode(option)}>
-            <Icon data-icon="inline-start" />{label}
-          </Button>)}
-        </div>
-      </div>
     </Popover>
   </PopoverTrigger>;
+}
+
+/** One binary light/dark icon beside the account button (shadcn sidebar footer pattern). */
+function ThemeToggle() {
+  const { resolved, setMode } = useThemeMode();
+  const next = resolved === 'dark' ? 'light' : 'dark';
+  return <TooltipTrigger>
+    <Button variant="ghost" size="icon-sm" aria-label={`Switch to ${next} theme`} data-theme-toggle={resolved} className="shrink-0 group-data-[collapsible=icon]:hidden" onPress={() => setMode(next)}>
+      {resolved === 'dark' ? <SunIcon /> : <MoonIcon />}
+    </Button>
+    <Tooltip>{next === 'dark' ? 'Dark theme' : 'Light theme'}</Tooltip>
+  </TooltipTrigger>;
 }
 
 function ChatPanel() {
@@ -137,17 +138,15 @@ function ChatPanel() {
     </CardHeader>
     <CardContent className="min-h-0 flex-1 px-0">
       <ScrollArea className="h-full px-4 py-4">
-        <div className="flex flex-col gap-3">
-          <div className="max-w-[85%] rounded-lg bg-muted px-3 py-2 text-sm">Conversations with Director, Designer, Writer and Publisher will appear here.</div>
-          <p className="text-xs text-muted-foreground">Chat is not connected in this build. Agents work through the CLI for now.</p>
-        </div>
+        <CardContent className="flex flex-col gap-3 px-0">
+          <CardDescription className="max-w-[85%] rounded-lg bg-muted px-3 py-2 text-foreground">Conversations with Director, Designer, Writer and Publisher will appear here.</CardDescription>
+          <CardDescription className="text-xs">Chat is not connected in this build. Agents work through the CLI for now.</CardDescription>
+        </CardContent>
       </ScrollArea>
     </CardContent>
-    <CardFooter className="border-t p-3">
-      <div className="flex w-full items-end gap-2">
-        <Textarea aria-label="Message" placeholder="Message an agent" rows={2} className="min-h-0 resize-none" disabled />
-        <Button size="icon" aria-label="Send message" isDisabled><ArrowUpIcon /></Button>
-      </div>
+    <CardFooter className="items-end gap-2 border-t p-3">
+      <Textarea aria-label="Message" placeholder="Message an agent" rows={2} className="min-h-0 flex-1 resize-none" disabled />
+      <Button size="icon" aria-label="Send message" isDisabled><ArrowUpIcon /></Button>
     </CardFooter>
   </Card>;
 }
@@ -190,8 +189,8 @@ function CloseMobileNavigation() {
 /**
  * The inputs of `frames.studio-shell`, all projected by Publisher from the one Studio map:
  * the rail navigation, the command menu, the breadcrumbs and the page's module actions.
- * `body` is the assembly's layout: `plain` stacks its sections; `detail` puts them in one card,
- * the first section as its head.
+ * `body` is the assembly's layout: both stack the sections in the padded page column with no
+ * outer card (`detail` keeps the first section as the head).
  */
 export interface StudioShellProps {
   homeHref: string;
@@ -270,7 +269,7 @@ export default function StudioShellFrame({ homeHref, navigation, commands, bread
         })}
       </SidebarContent>
       <SidebarFooter>
-        <SidebarMenu><SidebarMenuItem><AccountMenu /></SidebarMenuItem></SidebarMenu>
+        <SidebarMenu><SidebarMenuItem className="flex items-center gap-1"><AccountMenu /><ThemeToggle /></SidebarMenuItem></SidebarMenu>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
@@ -285,7 +284,6 @@ export default function StudioShellFrame({ homeHref, navigation, commands, bread
             </BreadcrumbItem>)}
           </BreadcrumbList>
         </Breadcrumb>
-        <div className="flex shrink-0 items-center gap-0.5" role="toolbar" aria-label="Page actions">
           {actions.map(action => {
             const Icon = studioIcon(action.icon, action.id);
             const pressed = open.has(action.id);
@@ -300,17 +298,12 @@ export default function StudioShellFrame({ homeHref, navigation, commands, bread
             <Button variant={wide && chatOpen ? 'secondary' : 'ghost'} size="icon-sm" aria-label="Chat" aria-pressed={wide && chatOpen} onPress={toggleChat}><MessageSquareIcon /></Button>
             <Tooltip>Chat</Tooltip>
           </TooltipTrigger>
-        </div>
       </header>
-      <div className="flex min-h-0 flex-1">
-        <main id="studio-main" className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
-          <PageModulesContext.Provider value={modules}>{body === 'detail'
-            ? <Card className="m-4 md:m-6">{head}<CardContent className="flex min-w-0 flex-col gap-6">{children}</CardContent></Card>
-            : <>{head}{children}</>}</PageModulesContext.Provider>
-        </main>
-        {wide && chatOpen && <aside aria-label="Chat" className="h-full min-h-0 w-80 shrink-0 border-l bg-background"><ChatPanel /></aside>}
-      </div>
+      <main id="studio-main" data-body={body} className="flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-x-hidden overflow-y-auto overscroll-contain p-4 md:p-6 *:shrink-0">
+        <PageModulesContext.Provider value={modules}>{head}{children}</PageModulesContext.Provider>
+      </main>
     </SidebarInset>
+    {wide && chatOpen && <aside aria-label="Chat" className="h-svh min-h-0 w-80 shrink-0 border-l bg-background"><ChatPanel /></aside>}
     <CommandMenu commands={commands} open={searchOpen} onOpenChange={setSearchOpen} />
     {!wide && <Sheet isOpen={chatSheet} onOpenChange={setChatSheet} side="right" className="w-[22rem] max-w-[90vw] p-0">
       <SheetHeader className="sr-only"><SheetTitle>Chat</SheetTitle><SheetDescription>Ask an agent about the open page.</SheetDescription></SheetHeader>

@@ -6,7 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { test } = require('node:test');
-const { findRouteLiterals, inspectFrameProjection, inspectShellProjection, productionFiles, checkStudioMap } = require('./check-studio-map.cjs');
+const { findRouteLiterals, inspectFrameProjection, inspectShellProjection, productionFiles, orphanModules, checkStudioMap } = require('./check-studio-map.cjs');
 
 const studioRoot = path.resolve(__dirname, '..');
 const repositoryRoot = path.resolve(studioRoot, '../../..');
@@ -57,6 +57,19 @@ test('only code the App Router entries reach is production: orphan modules are n
   assert.ok(files.includes('components/StudioPage.tsx') && files.includes('frames/studio-shell/index.tsx'));
   assert.ok(!files.includes('lib/studio-route-map.ts') && !files.includes('generated/studio-map.ts'));
   assert.ok(files.every(file => !file.startsWith('checks/')));
+});
+
+test('every Studio module is reached from app/: an unreached module is an orphan finding', () => {
+  assert.deepEqual(orphanModules(studioRoot), []);
+  const probe = fs.mkdtempSync(path.join(os.tmpdir(), 'studio-orphans-'));
+  try {
+    for (const dir of ['app', 'components', 'lib']) fs.mkdirSync(path.join(probe, dir));
+    fs.writeFileSync(path.join(probe, 'app/page.tsx'), "import { A } from '../components/A';\nexport default A;\n");
+    fs.writeFileSync(path.join(probe, 'components/A.tsx'), "import { b } from '../lib/b';\nexport const A = () => b;\n");
+    fs.writeFileSync(path.join(probe, 'lib/b.ts'), "export const b = 1;\n");
+    fs.writeFileSync(path.join(probe, 'components/Orphan.tsx'), "export const Orphan = () => null;\n");
+    assert.deepEqual(orphanModules(probe), ['components/Orphan.tsx']);
+  } finally { fs.rmSync(probe, { recursive: true, force: true }); }
 });
 
 test('literal and constructed route destinations fail in executable AST nodes', () => {

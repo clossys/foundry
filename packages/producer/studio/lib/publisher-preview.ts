@@ -64,3 +64,11 @@ export function publicationNavigation(entries: PreviewEntry[], pages: Publicatio
 export function publicationStatus(page: PublicationPage) {
   return { route: page.route, indexing: page.indexing ?? 'Not provided', sitemap: page.inSitemap === undefined ? 'Not provided' : page.inSitemap ? 'Included' : 'Excluded', published: page.lastPublished ?? 'Not provided' };
 }
+
+/** The site's root: the route pack's deployment origin when the publication carries one (SITE-ROUTE),
+ * otherwise the local preview; the public origin is set at release promotion. */
+export function siteRoot(publication: object): { root: string; rootNote: string } {
+  const origin = (publication as { origin?: unknown }).origin;
+  if (typeof origin === 'string' && /^https?:\/\/[^/]+\/?$/.test(origin)) return { root: origin.replace(/\/$/, ''), rootNote: 'From the route pack origin.' };
+  return { root: 'local preview', rootNote: 'clossys.com is set at release promotion.' };
+}

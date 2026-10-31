@@ -12,6 +12,20 @@
  *   - a leaf shows Options, History and References whenever its records hold them.
  * On Home it opens the command menu and requires one command per map entry.
  *
+ * Class-wide layout rules (LAYOUT), on every page, in light and again in dark:
+ *   - card-grid: cards in one grid row are equal height; a card footer ends at the card bottom and
+ *     spans its edges; no card description sits beside a card action (it would wrap in a narrow column);
+ *   - card-in-card: the page body (#studio-main) never nests a card inside a card;
+ *   - card-clipped: no card in the page body is shorter than its content (the column scrolls, cards never shrink);
+ *   - jump-chips, tabs: no in-page anchor chip row and no tab list in the page body (one vertical scroll);
+ *   - leaf-list: an agent gallery shows one leaf card per row, full width;
+ *   - leaf-preview: every gallery leaf card carries the full preview of its active state (a lazily
+ *     loaded view-only frame, or the record's content table) or a status saying why there is none;
+ *   - image: every visible image has loaded (the rail brand mark in both themes);
+ *   - theme-toggle: the rail footer carries one binary light/dark icon button;
+ *   - leaf-count: Home and every gallery state the same leaf count, the map's L3 pages per agent;
+ *   - publication-root: the Publisher page names a root for every publication.
+ *
  * Chrome is driven over the DevTools protocol (no Playwright). CHROME_PATH overrides the binary.
  */
 import { spawn } from 'node:child_process';
@@ -119,11 +133,79 @@ const PROBE = `(() => {
   };
 })()`;
 
+/** The class-wide layout probe; returns one finding per broken rule instance. */
+const LAYOUT = `(() => {
+  const out = [];
+  const main = document.querySelector('#studio-main');
+  const box = element => element.getBoundingClientRect();
+  const visible = element => { const r = box(element); return r.width > 0 && r.height > 0 && getComputedStyle(element).visibility !== 'hidden'; };
+  for (const grid of document.querySelectorAll('[data-slot="card-grid"]')) {
+    const cards = [...grid.children].filter(child => child.getAttribute('data-slot') === 'card' && visible(child));
+    const rows = new Map();
+    for (const card of cards) { const top = Math.round(box(card).top); rows.set(top, [...(rows.get(top) ?? []), card]); }
+    for (const row of rows.values()) {
+      const heights = row.map(card => Math.round(box(card).height));
+      if (Math.max(...heights) - Math.min(...heights) > 1) out.push({ rule: 'card-grid-height', heights });
+    }
+    for (const card of cards) {
+      const c = box(card);
+      const footer = card.querySelector(':scope > [data-slot="card-footer"]');
+      if (footer) {
+        const f = box(footer);
+        if (Math.abs(f.bottom - c.bottom) > 1.5 || Math.abs(f.left - c.left) > 1.5 || Math.abs(f.right - c.right) > 1.5) out.push({ rule: 'card-footer-bleed', gap: { bottom: Math.round(c.bottom - f.bottom), left: Math.round(f.left - c.left), right: Math.round(c.right - f.right) } });
+      }
+      for (const action of card.querySelectorAll('[data-slot="card-action"]')) {
+        const a = box(action);
+        for (const description of action.parentElement.querySelectorAll(':scope > [data-slot="card-description"]')) {
+          const d = box(description);
+          if (d.top < a.bottom - 1 && d.bottom > a.top + 1) out.push({ rule: 'card-description-beside-action', text: description.textContent.trim().slice(0, 40) });
+        }
+      }
+    }
+    if (grid.closest('[data-studio-section="agent-gallery"]')) {
+      const g = box(grid);
+      for (const card of cards) if (Math.abs(box(card).width - g.width) > 1.5) { out.push({ rule: 'leaf-list', card: Math.round(box(card).width), grid: Math.round(g.width) }); break; }
+    }
+  }
+  for (const card of document.querySelectorAll('[data-gallery-leaf]')) {
+    const frames = [...card.querySelectorAll('iframe')];
+    const preview = frames.length || card.querySelector('[role="grid"], table') || card.querySelector('[data-preview-status]');
+    if (!preview) out.push({ rule: 'leaf-preview', leaf: card.getAttribute('data-gallery-leaf') });
+    for (const frame of frames) if (frame.getAttribute('loading') !== 'lazy' || !frame.hasAttribute('inert')) { out.push({ rule: 'leaf-preview', leaf: card.getAttribute('data-gallery-leaf'), frame: 'not lazy and view-only' }); break; }
+  }
+  if (main) {
+    for (const card of main.querySelectorAll('[data-slot="card"] [data-slot="card"]')) out.push({ rule: 'card-in-card', text: card.textContent.trim().slice(0, 40) });
+    for (const card of main.querySelectorAll('[data-slot="card"]')) if (visible(card) && card.scrollHeight > card.clientHeight + 2) out.push({ rule: 'card-clipped', text: card.textContent.trim().slice(0, 40), hidden: card.scrollHeight - card.clientHeight });
+    const chips = [...main.querySelectorAll('a[href^="#"]')].filter(visible);
+    if (chips.length) out.push({ rule: 'jump-chips', count: chips.length });
+    const tabs = main.querySelectorAll('[role="tablist"]');
+    if (tabs.length) out.push({ rule: 'tabs', count: tabs.length });
+  }
+  for (const image of document.querySelectorAll('img')) if (visible(image) && !(image.complete && image.naturalWidth > 0)) out.push({ rule: 'image', src: image.getAttribute('src') });
+  for (const mark of document.querySelectorAll('[data-brand-mark]')) if (visible(mark) && !mark.querySelector('img[data-state="loaded"], img[data-state="loading"]')) out.push({ rule: 'image', src: 'brand mark ' + mark.getAttribute('data-brand-mark') + ' fell back' });
+  const toggles = document.querySelectorAll('[data-slot="sidebar-footer"] [data-theme-toggle]');
+  if (toggles.length !== 1) out.push({ rule: 'theme-toggle', count: toggles.length });
+  return out;
+})()`;
+
+/** Leaf counts each page states: Home's per-agent badge, a gallery's header description. */
+const COUNTS = `(() => {
+  const home = [...document.querySelectorAll('[data-studio-section="home"] [data-slot="card-grid"] > [data-slot="card"]')].map(card => ({
+    href: new URL(card.querySelector('a[href]')?.href ?? location.href).pathname,
+    label: card.querySelector('[data-slot="card-action"]')?.textContent.trim() ?? '',
+  }));
+  const gallery = document.querySelector('[data-studio-section="agent-gallery"] [data-slot="card-header"] [data-slot="card-description"]')?.textContent.trim() ?? '';
+  const roots = [...document.querySelectorAll('[data-studio-section="publications"] [id^="publication-"]')].map(card => card.textContent);
+  return { home, gallery, roots };
+})()`;
+
+const DARK = `new Promise(resolve => { const root = document.documentElement; root.classList.add('dark'); root.dataset.theme = 'dark'; setTimeout(resolve, 1500); })`;
+
 const resource = pathname => /^\/(?:api|__[a-z-]+|preview|_next)(?:\/|$)/.test(pathname) || /\.[a-z0-9]+$/i.test(pathname);
 
 export async function runDomCheck(origin, { only } = {}) {
   origin = new URL(origin).origin;
-  const { entries, expect } = await loadStudioMap(origin);
+  const { map, entries, expect } = await loadStudioMap(origin);
   const paths = new Set(entries.map(entry => entry.path));
   const findings = [], checked = [];
   const browser = await chrome();
@@ -152,6 +234,19 @@ export async function runDomCheck(origin, { only } = {}) {
       }
       const required = leaf ? expect(entry.id) : (entry.source?.sectionIds ?? []).map(slot => slot.replace(/^sections\.studio\./, ''));
       for (const section of required) if (!page.sections.includes(section)) add('missing-section', { section });
+      for (const theme of ['light', 'dark']) {
+        if (theme === 'dark') await browser.evaluate(DARK);
+        for (const { rule, ...extra } of await browser.evaluate(LAYOUT) ?? []) add(rule, { theme, ...extra });
+      }
+      const counts = await browser.evaluate(COUNTS);
+      const leafCount = id => map.entries.filter(row => row.kind === 'page' && row.parentId === id && row.id.startsWith(`${id}:`)).length;
+      const label = n => `${n} ${n === 1 ? 'leaf' : 'leaves'}`;
+      for (const card of counts?.home ?? []) {
+        const agent = entries.find(row => row.path === card.href);
+        if (agent && card.label !== 'Unavailable' && card.label !== label(leafCount(agent.id))) add('leaf-count', { agent: agent.id, home: card.label, map: label(leafCount(agent.id)) });
+      }
+      if (counts?.gallery && !leaf && !counts.gallery.startsWith(label(leafCount(entry.id)))) add('leaf-count', { gallery: counts.gallery.slice(0, 30), map: label(leafCount(entry.id)) });
+      for (const text of counts?.roots ?? []) if (/No root configured|Unavailable/.test(text)) add('publication-root', { text: text.slice(0, 60) });
       for (const error of browser.errors.slice(errorsBefore)) add('page-error', { message: error });
       checked.push({ path: entry.path, sections: page.sections, links: page.links.length });
     }

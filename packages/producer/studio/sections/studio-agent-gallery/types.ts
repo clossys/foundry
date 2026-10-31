@@ -1,3 +1,5 @@
+import type { SpecimenInput } from '../studio-specimen';
+
 /** View data for any agent's gallery. Every field is display-ready; the blocks only lay it out. */
 export type GalleryTone = 'secondary' | 'outline' | 'destructive';
 
@@ -8,13 +10,13 @@ export interface GalleryCardData {
   statusLabel: string;
   statusTone: GalleryTone;
   href: string;
-  /** A rendered specimen (`/__specimen`) thumbnail; agents without one show `excerpt` lines. */
-  specimenSrc?: string;
-  excerpt?: readonly string[];
-  /** Set when there is nothing to preview: the card shows this shared leaf status (label and tone) instead. */
-  specimenStatus?: { label: string; tone: GalleryTone };
-  /** Extra outline marks beside the status, such as options pending approval. */
-  badges?: readonly string[];
+  /**
+   * The full live preview of the active state, in the shape the leaf page's specimen section takes:
+   * a Designer item or a Publisher page framed at desktop width, a Writer or Director record's content.
+   */
+  specimen?: SpecimenInput;
+  /** Set while the preview loads (`loading`) or when there is nothing to preview (the shared leaf status). */
+  specimenStatus?: { label: string; tone: GalleryTone; loading?: boolean };
 }
 
 export interface GalleryGroupData { id: string; label: string; level: 1 | 2; cards: readonly GalleryCardData[] }

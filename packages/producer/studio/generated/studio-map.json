@@ -328,17 +328,17 @@
     {
       "slot": "frames.studio-shell",
       "element": "studio-shell",
-      "version": 1
+      "version": 3
     },
     {
       "slot": "sections.studio.home",
       "element": "studio-home",
-      "version": 1
+      "version": 2
     },
     {
       "slot": "sections.studio.agent-gallery",
       "element": "studio-agent-gallery",
-      "version": 1
+      "version": 3
     },
     {
       "slot": "sections.studio.leaf-header",
@@ -348,7 +348,7 @@
     {
       "slot": "sections.studio.specimen",
       "element": "studio-specimen",
-      "version": 1
+      "version": 2
     },
     {
       "slot": "sections.studio.options",
@@ -378,7 +378,7 @@
     {
       "slot": "sections.studio.publications",
       "element": "studio-publications",
-      "version": 1
+      "version": 2
     }
   ],
   "pageActions": {

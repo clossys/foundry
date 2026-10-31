@@ -15,24 +15,28 @@ export interface HomeInput {
   needs?: { title: string; description: string; empty: string; rows: readonly HomeNeed[]; closeLabel: string; closeIcon?: React.ReactNode; onClose: () => void };
 }
 
-/** `sections.studio.home`: the workspace's agents, and the owner's open requests when Needs is open. */
+/**
+ * `sections.studio.home`: the workspace's agents, and the owner's open requests when Needs is open.
+ * The page body is the frame's column, so the section adds no outer card. Each agent card follows the
+ * shadcn card anatomy: title and action badge in the header, purpose in the content, and the footer
+ * pinned to the card bottom so every card in a row ends on one line.
+ */
 export default function HomeSection({ home }: { home: HomeInput }) {
-  return <Card className="m-4 md:m-6" data-studio-section="home">
-    <CardHeader>
-      <CardTitle role="heading" aria-level={1} className="text-xl">{home.title}</CardTitle>
+  return <section data-studio-section="home" aria-labelledby="home-heading">
+    <CardHeader className="px-0">
+      <CardTitle id="home-heading" role="heading" aria-level={1} className="text-xl">{home.title}</CardTitle>
       <CardDescription className="max-w-(--measure)">{home.description}</CardDescription>
     </CardHeader>
-    <CardContent className="flex flex-col gap-4">
+    <CardContent className="flex flex-col gap-4 px-0 pt-6">
       <CardTitle role="heading" aria-level={2} className="text-base">{home.agentsLabel}</CardTitle>
       <CardGrid>
         {home.agents.map(agent => <Card key={agent.id}>
           <CardHeader>
-            <Avatar><AvatarFallback>{agent.icon}</AvatarFallback></Avatar>
-            <CardTitle>{agent.label}</CardTitle>
-            <CardDescription>{agent.purpose}</CardDescription>
+            <CardTitle className="flex items-center gap-3"><Avatar size="sm"><AvatarFallback>{agent.icon}</AvatarFallback></Avatar>{agent.label}</CardTitle>
             <CardAction>{agent.count ? <Badge variant={agent.count.tone} className="tabular-nums">{agent.count.label}</Badge> : <Skeleton className="h-5 w-14" />}</CardAction>
           </CardHeader>
-          <CardFooter><LinkButton variant="outline" size="sm" href={agent.href}>{agent.openLabel}{agent.openIcon}</LinkButton></CardFooter>
+          <CardContent><CardDescription>{agent.purpose}</CardDescription></CardContent>
+          <CardFooter className="mt-auto"><LinkButton variant="outline" size="sm" href={agent.href}>{agent.openLabel}{agent.openIcon}</LinkButton></CardFooter>
         </Card>)}
       </CardGrid>
       {home.needs && <Card size="sm">
@@ -52,5 +56,5 @@ export default function HomeSection({ home }: { home: HomeInput }) {
         </CardContent>
       </Card>}
     </CardContent>
-  </Card>;
+  </section>;
 }

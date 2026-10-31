@@ -102,6 +102,11 @@ export function studioHref(map: ContentMap, id: string): string | undefined {
 /** The served path of a leaf, through the map. */
 export const studioLeafHref = (map: ContentMap, pageId: string, slug: string) => studioHref(map, leafId(pageId, slug));
 
+/** How many leaf entries the map holds under a gallery page: the one count Home and the gallery both show. */
+export function studioLeafCount(map: ContentMap, pageId: string): number {
+  return map.entries.filter(row => row.kind === 'page' && row.parentId === pageId && row.id.startsWith(`${pageId}:`)).length;
+}
+
 /** Every page entry the map holds, in map order: the routes a publication table lists. */
 export function studioPageEntries(map: ContentMap): (ContentMapEntry & { path: string })[] {
   return map.entries.filter((row): row is ContentMapEntry & { path: string } => row.kind === 'page' && 'path' in row && typeof row.path === 'string');

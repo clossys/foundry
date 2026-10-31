@@ -18,17 +18,18 @@ import type { OptionRow } from '../sections/studio-options';
 import type { Publication, PublicationsInput } from '../sections/studio-publications';
 import type { ViewportSpecimen } from '../sections/studio-specimen';
 import {
-  agentGalleryInput, agentLeafInputs, agentNotice, agentOptionsInput, agentOptionVersions, agentRecordSpecimen, isLibraryAgent, loadAgentGallery, loadAgentLeaf,
-  viewportSpecimen, type AgentLeafRecords, type LibraryAgent, type StudioLinks,
+  agentGalleryInput, agentGalleryPreview, agentLeafInputs, agentNotice, agentOptionsInput, agentOptionVersions, agentRecordSpecimen, isLibraryAgent, loadAgentLeaf,
+  viewportSpecimen, type AgentLeafRecords, type GalleryPreviews, type LibraryAgent, type StudioLinks,
 } from '../lib/agent-library';
 import { stringChanges } from '../lib/agent-options';
 import { AGENT_LABELS, AGENTS, type Agent } from '../lib/agents';
 import { loadCell } from '../lib/cells-client';
 import { designerGalleryInput, designerLeafInputs, designerNotice, loadDesignerLeaf, type DesignerLeaf } from '../lib/designer-library';
-import { loadPublication, safePreviewUrl, type PublicationResponse } from '../lib/publisher-preview';
+import { loadPublication, safePreviewUrl, siteRoot, type PublicationResponse } from '../lib/publisher-preview';
 import { studioIcon } from '../lib/studio-icons';
 import type { StudioReport } from '../lib/studio-report';
-import { resolveStudioRoute, studioHref, studioLeafHref, studioPageEntries, studioShellProjection, type StudioRoute } from '../lib/studio-route-map';
+import { resolveStudioRoute, studioHref, studioLeafCount, studioLeafHref, studioPageEntries, studioShellProjection, type StudioRoute } from '../lib/studio-route-map';
+import { leafCountLabel } from '../lib/leaf-status';
 import { useStudioData, useThemeMode, type Resource } from './StudioProviders';
 import { useStudioRoutes } from './StudioRouteMap';
 
@@ -55,20 +56,19 @@ function mapLinks(map: ContentMap): StudioLinks {
 /* Loaders: Producer data -> section inputs, one per page record loader. */
 
 function useHomeInputs(): Loaded {
-  const { cells, reports } = useStudioData();
-  const { map } = useStudioRoutes();
+  const { reports } = useStudioData();
+  const { map, galleries } = useStudioRoutes();
   return useMemo(() => {
-    const indexes = cells.state === 'ready' ? cells.value : [];
     const list: readonly StudioReport[] = reports.state === 'ready' ? reports.value : [];
     const agents = AGENTS.flatMap(agent => {
       const href = studioHref(map, agent);
       if (!href) return [];
-      const index = indexes.find(entry => entry.agent === agent);
+      const gallery = galleries[agent];
       const Icon = studioIcon(undefined, agent);
-      const count = index?.cells.length ?? 0;
+      // Leaves are the one count unit: the gallery's leaf entries in the map, as its own header counts them.
       return [{
         id: agent, label: AGENT_LABELS[agent], purpose: AGENT_PURPOSE[agent] ?? '', icon: <Icon className="size-4" />,
-        ...(cells.state === 'loading' ? {} : { count: index?.state === 'ready' ? { label: count === 1 ? '1 cell' : `${count} cells`, tone: 'secondary' as const } : { label: 'Unavailable', tone: 'outline' as const } }),
+        ...(!gallery || gallery.state === 'loading' ? {} : { count: gallery.state === 'ready' ? { label: leafCountLabel(studioLeafCount(map, agent)), tone: 'secondary' as const } : { label: 'Unavailable', tone: 'outline' as const } }),
         href, openLabel: `Open ${AGENT_LABELS[agent]}`, openIcon: <ArrowRightIcon data-icon="inline-end" />,
       }];
     });
@@ -82,7 +82,7 @@ function useHomeInputs(): Loaded {
       } } : {}),
     });
     return { state: 'ready', inputs: { home } };
-  }, [cells, reports, map]);
+  }, [reports, map, galleries]);
 }
 
 /** Every route the Studio publication serves: the compiled pages and the leaves the record stores add. */
@@ -107,8 +107,7 @@ function sitePublication(publication: PublicationResponse | undefined, error: st
   if (!publication) return undefined;
   if (publication.state !== 'ready') return { id: 'site', title: 'Site', root: 'Unavailable', rootNote: '', routes: [], notice: publication.message };
   return {
-    id: publication.publication, title: publication.publication, root: 'No root configured',
-    rootNote: 'The publication config names no root yet, so only the paths after it are listed.',
+    id: publication.publication, title: publication.publication, ...siteRoot(publication),
     routes: publication.pages.map(page => {
       const href = page.cellId ? links.leaf('publisher', page.cellId) : undefined;
       return {
@@ -126,7 +125,7 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
   const gallery = galleries[page.id];
   const withPublications = page.sectionIds.includes('sections.studio.publications');
   const [publication, setPublication] = useState<Resource<PublicationResponse> | undefined>(undefined);
-  const [leaves, setLeaves] = useState<ReadonlyMap<string, AgentLeafRecords>>(new Map());
+  const [leaves, setLeaves] = useState<ReadonlyMap<string, AgentLeafRecords | null> | undefined>(undefined);
   const [origin, setOrigin] = useState('');
   useEffect(() => setOrigin(window.location.origin), []);
   useEffect(() => {
@@ -135,22 +134,31 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
     loadPublication(controller.signal).then(value => setPublication({ state: 'ready', value }), error => { if (!controller.signal.aborted) setPublication({ state: 'error', message: message(error, 'The publication could not load.') }); });
     return () => controller.abort();
   }, [withPublications]);
-  // The site's page records name each page's frame and sections.
+  // Every leaf's records, for its full card preview (and, on Publisher, each page's frame and sections).
+  const libraryAgent = gallery?.state === 'ready' && gallery.value.agent !== 'designer' ? gallery.value.agent : undefined;
+  const libraryRecords = gallery?.state === 'ready' && gallery.value.agent !== 'designer' ? gallery.value.records : undefined;
   useEffect(() => {
-    if (!withPublications || publication?.state !== 'ready' || publication.value.state !== 'ready') return;
+    if (!libraryAgent || !libraryRecords) return;
     const controller = new AbortController();
-    const ids = publication.value.pages.map(page => page.cellId).filter((id): id is string => Boolean(id));
-    Promise.all(ids.map(id => loadAgentLeaf('publisher', id, controller.signal).catch(() => undefined))).then(rows => {
-      if (!controller.signal.aborted) setLeaves(new Map(rows.filter((row): row is AgentLeafRecords => Boolean(row)).map(row => [row.card.id, row])));
+    const cards = libraryRecords.sections.flatMap(section => section.cards).filter(card => card.records !== 0);
+    loadLeaves(libraryAgent, cards.map(card => card.slug), controller.signal).then(rows => {
+      if (!controller.signal.aborted) setLeaves(new Map(cards.map((card, index) => [card.id, rows[index] ?? null])));
     });
     return () => controller.abort();
-  }, [withPublications, publication]);
+  }, [libraryAgent, libraryRecords]);
   return useMemo((): Loaded => {
     const links = mapLinks(map);
     const agent = page.data.agent ?? page.id;
     if (!gallery || gallery.state === 'loading') return { state: 'loading' };
     if (gallery.state === 'error') return { state: 'notice', notice: agent === 'designer' ? designerNotice('error', gallery.message) : agentNotice(agent as LibraryAgent, 'error', gallery.message) };
-    const input = gallery.value.agent === 'designer' ? designerGalleryInput(gallery.value.records, resolved, links) : agentGalleryInput(gallery.value.records, links);
+    const count = studioLeafCount(map, page.id);
+    const pages = publication?.state === 'ready' && publication.value.state === 'ready' ? publication.value.pages : [];
+    const previews: GalleryPreviews = new Map([...(leaves ?? [])].map(([id, leaf]) => {
+      if (!leaf) return [id, null];
+      const emitted = pages.find(row => row.cellId === id && row.emitted && safePreviewUrl(row.previewUrl));
+      return [id, agentGalleryPreview(leaf, links, emitted?.previewUrl)];
+    }));
+    const input = gallery.value.agent === 'designer' ? designerGalleryInput(gallery.value.records, resolved, links, count) : agentGalleryInput(gallery.value.records, links, count, previews);
     const inputs: Inputs = {};
     if ('layers' in input) inputs.gallery = input;
     else if (!withPublications) return { state: 'notice', notice: input };
@@ -159,7 +167,7 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
       const withSite = site && publication?.state === 'ready' && publication.value.state === 'ready' ? {
         ...site, routes: site.routes.map(route => {
           const cell = publication.value.state === 'ready' ? publication.value.pages.find(row => row.id === route.pageId)?.cellId : undefined;
-          const leaf = cell ? leaves.get(cell) : undefined;
+          const leaf = cell ? leaves?.get(cell) : undefined;
           if (!leaf) return route;
           return { ...route, frame: leaf.contract.facts.find(fact => fact.label === 'Frame')?.value ?? route.frame, sections: leaf.contract.lists.find(list => list.label === 'Sections')?.items ?? route.sections };
         }),
@@ -173,6 +181,20 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
     }
     return { state: 'ready', inputs };
   }, [map, gallery, resolved, page, withPublications, publication, leaves, origin]);
+}
+
+/** Every leaf of one agent, a few requests at a time; a leaf that cannot load is `undefined`. */
+async function loadLeaves(agent: LibraryAgent, slugs: readonly string[], signal: AbortSignal): Promise<(AgentLeafRecords | undefined)[]> {
+  const rows: (AgentLeafRecords | undefined)[] = new Array(slugs.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < slugs.length && !signal.aborted) {
+      const index = next++;
+      rows[index] = await loadAgentLeaf(agent, slugs[index]!, signal).catch(() => undefined);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(6, slugs.length) }, worker));
+  return rows;
 }
 
 type LeafRecord = { agent: 'designer'; leaf: DesignerLeaf } | { agent: LibraryAgent; leaf: AgentLeafRecords; previews: ReadonlyMap<number, OptionRow['preview']>; specimens?: readonly ViewportSpecimen[] };

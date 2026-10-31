@@ -1,9 +1,13 @@
-import { Badge, Card, CardContent, CardDescription, CardGrid, CardHeader, CardTitle, LinkButton, SpecimenFrame, Tabs, TabsContent, TabsList, TabsTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';
+import { Badge, Card, CardContent, CardDescription, CardGrid, CardHeader, CardTitle, LinkButton, SpecimenFrame, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';
 
 export type SpecimenTone = 'secondary' | 'outline' | 'destructive';
 
 /** One viewport's specimen URLs; the frame renders the page at `viewport` CSS px and scales it to fit. */
-export interface ViewportSpecimen { viewport: 375 | 768 | 1280; light: string; dark?: string }
+export interface ViewportSpecimen {
+  viewport: 375 | 768 | 1280; light: string; dark?: string;
+  /** False for a preview in a list (a gallery card): the frame is view-only so the page scrolls past it. */
+  interactive?: boolean;
+}
 
 /** A structured record kind (Writer voice, claims, names; Director direction): one titled table. */
 export interface SpecimenTable {
@@ -27,20 +31,21 @@ export type SpecimenInput = { name: string; title: string; description: string }
 
 const RATIO = { 375: 'mobile', 768: 'tablet', 1280: 'desktop' } as const;
 
+/**
+ * Every viewport in one vertical run, widest first, each a headed row of its light and dark frames
+ * (no tabs). A single viewport, as a gallery card shows it, is the frame alone at full width.
+ */
 function Viewports({ name, specimens, empty }: { name: string; specimens: readonly ViewportSpecimen[]; empty: string }) {
-  if (!specimens.length) return <CardContent><Badge variant="outline">{empty}</Badge></CardContent>;
-  return <CardContent>
-    <Tabs defaultSelectedKey={String(specimens.at(-1)!.viewport)}>
-      <TabsList aria-label="Viewport">
-        {specimens.map(row => <TabsTrigger key={row.viewport} id={String(row.viewport)}>{row.viewport} px</TabsTrigger>)}
-      </TabsList>
-      {specimens.map(row => <TabsContent key={row.viewport} id={String(row.viewport)}>
-        <CardGrid density="specimens">
-          <SpecimenFrame interactive ratio={RATIO[row.viewport]} title={`${name} at ${row.viewport} px, light`} src={row.light} />
-          {row.dark && <SpecimenFrame interactive ratio={RATIO[row.viewport]} title={`${name} at ${row.viewport} px, dark`} src={row.dark} />}
-        </CardGrid>
-      </TabsContent>)}
-    </Tabs>
+  if (!specimens.length) return <CardContent><Badge variant="outline" data-preview-status="empty">{empty}</Badge></CardContent>;
+  const rows = [...specimens].sort((a, b) => b.viewport - a.viewport);
+  return <CardContent className="flex flex-col gap-4">
+    {rows.map(row => <CardContent key={row.viewport} className="flex flex-col gap-2 px-0" data-specimen-viewport={row.viewport}>
+      {rows.length > 1 && <CardDescription role="heading" aria-level={3} className="font-medium text-foreground">{row.viewport} px</CardDescription>}
+      <CardGrid density={row.dark ? 'specimens' : undefined} className={row.dark ? undefined : 'grid-cols-1'}>
+        <SpecimenFrame interactive={row.interactive ?? true} ratio={RATIO[row.viewport]} title={`${name} at ${row.viewport} px${row.dark ? ', light' : ''}`} src={row.light} />
+        {row.dark && <SpecimenFrame interactive={row.interactive ?? true} ratio={RATIO[row.viewport]} title={`${name} at ${row.viewport} px, dark`} src={row.dark} />}
+      </CardGrid>
+    </CardContent>)}
   </CardContent>;
 }
 
@@ -63,6 +68,33 @@ function RecordTable({ name, table, titled }: { name: string; table: SpecimenTab
   </CardContent>;
 }
 
+/** The specimen body without its card: what the leaf produces. A gallery card places it under its own header. */
+export function SpecimenContent({ specimen }: { specimen: SpecimenInput }) {
+  if (specimen.kind === 'viewports') return <Viewports name={specimen.name} specimens={specimen.specimens} empty={specimen.empty} />;
+  if (specimen.tables?.length) return <>{specimen.tables.map(table => <RecordTable key={table.id} name={specimen.name} table={table} titled={specimen.tables!.length > 1} />)}</>;
+  if (specimen.rows?.length) return <CardContent>
+    <Table aria-label={`${specimen.name} specimen`}>
+      <TableHeader>
+        <TableHead isRowHeader>Key</TableHead>
+        <TableHead>Content</TableHead>
+      </TableHeader>
+      <TableBody>
+        {specimen.rows.map(row => <TableRow key={row.key} id={row.key}>
+          <TableCell>{row.label}</TableCell>
+          <TableCell className="whitespace-normal">
+            {row.href ? <LinkButton href={row.href} variant="link" size="sm" className="h-auto px-0">{row.text}</LinkButton> : row.text}
+          </TableCell>
+        </TableRow>)}
+      </TableBody>
+    </Table>
+  </CardContent>;
+  if (specimen.status) return <CardContent className="flex flex-col items-start gap-2">
+    <Badge variant={specimen.status.tone} data-preview-status="status">{specimen.status.label}</Badge>
+    <CardDescription>{specimen.status.description}</CardDescription>
+  </CardContent>;
+  return <CardContent><Badge variant="outline" data-preview-status="empty">{specimen.empty}</Badge></CardContent>;
+}
+
 /** `sections.studio.specimen`: what the leaf produces, framed at every viewport or laid out as its record content. */
 export default function SpecimenSection({ specimen }: { specimen: SpecimenInput }) {
   return <Card size="sm" data-studio-section="specimen">
@@ -70,32 +102,6 @@ export default function SpecimenSection({ specimen }: { specimen: SpecimenInput 
       <CardTitle role="heading" aria-level={2}>{specimen.title}</CardTitle>
       <CardDescription className="max-w-(--measure)">{specimen.description}</CardDescription>
     </CardHeader>
-    {specimen.kind === 'viewports'
-      ? <Viewports name={specimen.name} specimens={specimen.specimens} empty={specimen.empty} />
-      : specimen.tables?.length
-        ? specimen.tables.map(table => <RecordTable key={table.id} name={specimen.name} table={table} titled={specimen.tables!.length > 1} />)
-        : specimen.rows?.length
-          ? <CardContent>
-            <Table aria-label={`${specimen.name} specimen`}>
-              <TableHeader>
-                <TableHead isRowHeader>Key</TableHead>
-                <TableHead>Content</TableHead>
-              </TableHeader>
-              <TableBody>
-                {specimen.rows.map(row => <TableRow key={row.key} id={row.key}>
-                  <TableCell>{row.label}</TableCell>
-                  <TableCell className="whitespace-normal">
-                    {row.href ? <LinkButton href={row.href} variant="link" size="sm" className="h-auto px-0">{row.text}</LinkButton> : row.text}
-                  </TableCell>
-                </TableRow>)}
-              </TableBody>
-            </Table>
-          </CardContent>
-          : specimen.status
-            ? <CardContent className="flex flex-col items-start gap-2">
-              <Badge variant={specimen.status.tone}>{specimen.status.label}</Badge>
-              <CardDescription>{specimen.status.description}</CardDescription>
-            </CardContent>
-            : <CardContent><Badge variant="outline">{specimen.empty}</Badge></CardContent>}
+    <SpecimenContent specimen={specimen} />
   </Card>;
 }

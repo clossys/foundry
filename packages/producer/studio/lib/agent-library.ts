@@ -4,7 +4,7 @@
  * adapter per agent turns it into the inputs of the Studio sections the page records place.
  * Every link resolves through the Studio map (`StudioLinks`); no route string is built here.
  */
-import type { AgentGalleryInput, GalleryLayerData } from '../sections/studio-agent-gallery/types';
+import type { AgentGalleryInput, GalleryCardData, GalleryLayerData } from '../sections/studio-agent-gallery/types';
 import type { CheckRow } from '../sections/studio-checks';
 import type { ContractInput } from '../sections/studio-contract';
 import type { HistoryInput } from '../sections/studio-history';
@@ -14,7 +14,7 @@ import type { ReferenceLink, ReferencesInput } from '../sections/studio-referenc
 import type { SpecimenInput, ViewportSpecimen } from '../sections/studio-specimen';
 import type { PageNoticeData } from '../frames/studio-shell/PageNotice';
 import { optionsDescription } from './designer-library';
-import { LEAF_STATUS_LABEL as STATUS_LABEL, LEAF_STATUS_TONE as STATUS_TONE, type LeafStatus } from './leaf-status';
+import { LEAF_STATUS_LABEL as STATUS_LABEL, LEAF_STATUS_TONE as STATUS_TONE, LEAF_UNIT, leafCountLabel, type LeafStatus } from './leaf-status';
 
 export const LIBRARY_AGENTS = ['director', 'writer', 'publisher'] as const;
 export type LibraryAgent = typeof LIBRARY_AGENTS[number];
@@ -40,11 +40,11 @@ export interface AgentLeafRecords {
 }
 
 /** Per-agent copy: the only thing that differs between the agents' galleries and leaves. */
-interface AgentAdapter { label: string; unit: readonly [string, string]; description: string; specimenTitle: string }
+interface AgentAdapter { label: string; description: string; specimenTitle: string }
 const ADAPTERS: Record<LibraryAgent, AgentAdapter> = {
-  director: { label: 'Director', unit: ['brief', 'briefs'], description: 'Strategy records, grouped by the strategy catalog. Open one for its direction, checks and lineage.', specimenTitle: 'Direction' },
-  writer: { label: 'Writer', unit: ['copy cell', 'copy cells'], description: 'Copy cells and their keys. Open one for its strings, bindings and history.', specimenTitle: 'Strings' },
-  publisher: { label: 'Publisher', unit: ['page', 'pages'], description: 'Page records. Open one for the sections it assembles and the copy it binds.', specimenTitle: 'Sections' },
+  director: { label: 'Director', description: 'Strategy records, grouped by the strategy catalog. Open one for its direction, checks and lineage.', specimenTitle: 'Direction' },
+  writer: { label: 'Writer', description: 'Copy cells and their keys. Open one for its strings, bindings and history.', specimenTitle: 'Strings' },
+  publisher: { label: 'Publisher', description: 'Page records. Open one for the sections it assembles and the copy it binds.', specimenTitle: 'Sections' },
 };
 export const agentLabel = (agent: LibraryAgent) => ADAPTERS[agent].label;
 
@@ -84,8 +84,25 @@ export function agentNotice(agent: LibraryAgent, state: 'missing' | 'error', mes
     : { title: `The ${label} library could not load`, description: message ?? 'Producer returned an error.' };
 }
 
+/**
+ * Each leaf's gallery preview, keyed by card id: its full specimen once the loader has it, `null`
+ * when its leaf could not load. A card missing from the map is still loading.
+ */
+export type GalleryPreviews = ReadonlyMap<string, SpecimenInput | null>;
+const LOADING = { label: 'Loading preview', tone: 'outline' as const, loading: true };
+const UNAVAILABLE = { label: 'Preview unavailable', tone: 'outline' as const };
+
+/**
+ * A leaf's full gallery preview: a Publisher page as its last install emitted it, framed view-only
+ * at desktop width, else the record's own content (a Director brief, a Writer leaf's strings).
+ */
+export function agentGalleryPreview(leaf: AgentLeafRecords, links: StudioLinks, pageUrl?: string): SpecimenInput {
+  if (pageUrl) return { kind: 'viewports', name: leaf.card.name, title: 'Rendered page', description: '', specimens: [{ viewport: 1280, light: pageUrl, interactive: false }], empty: 'Publish this page to preview it.' };
+  return agentRecordSpecimen(leaf, links);
+}
+
 /** Records -> display data: L0 sections open a layer; L1/L2 sections become its groups. */
-export function agentGalleryLayers(records: AgentGalleryRecords, links: StudioLinks): GalleryLayerData[] {
+export function agentGalleryLayers(records: AgentGalleryRecords, links: StudioLinks, previews: GalleryPreviews = new Map()): GalleryLayerData[] {
   const layers: { id: string; label: string; groups: GalleryLayerData['groups'][number][] }[] = [];
   for (const section of records.sections) {
     if (section.level === 0) { layers.push({ id: section.id, label: section.label, groups: [] }); continue; }
@@ -99,7 +116,7 @@ export function agentGalleryLayers(records: AgentGalleryRecords, links: StudioLi
         return [{
           key: card.id, name: card.name, version: card.version,
           statusLabel: STATUS_LABEL[card.status], statusTone: STATUS_TONE[card.status],
-          href, excerpt: card.excerpt, ...(empty ? { specimenStatus: status(empty) } : {}),
+          href, ...previewFields(card, empty, previews),
         }];
       }),
     });
@@ -107,18 +124,25 @@ export function agentGalleryLayers(records: AgentGalleryRecords, links: StudioLi
   return layers.filter(layer => layer.groups.length);
 }
 
-/** The `gallery` input for one agent, or a notice when it has nothing to show. */
-export function agentGalleryInput(records: AgentGalleryRecords, links: StudioLinks): AgentGalleryInput | PageNoticeData {
+function previewFields(card: AgentCard, empty: LeafStatus | undefined, previews: GalleryPreviews): Pick<GalleryCardData, 'specimen' | 'specimenStatus'> {
+  if (empty) return { specimenStatus: status(empty) };
+  const preview = previews.get(card.id);
+  if (preview) return { specimen: preview };
+  return { specimenStatus: preview === null ? UNAVAILABLE : LOADING };
+}
+
+/** The `gallery` input for one agent, or a notice when it has nothing to show. `count` is the gallery's leaf entries in the Studio map. */
+export function agentGalleryInput(records: AgentGalleryRecords, links: StudioLinks, count: number, previews: GalleryPreviews = new Map()): AgentGalleryInput | PageNoticeData {
   const adapter = ADAPTERS[records.agent];
-  const layers = agentGalleryLayers(records, links);
+  const layers = agentGalleryLayers(records, links, previews);
   if (records.state === 'missing' || !layers.length) return agentNotice(records.agent, 'missing');
   return {
     header: {
       title: `${adapter.label} library`,
-      description: `${records.count} ${records.count === 1 ? adapter.unit[0] : adapter.unit[1]} from the record store. ${adapter.description}`,
+      description: `${leafCountLabel(count)} from the record store. ${adapter.description}`,
       ...(records.grouping === 'kind' ? { notice: 'Grouped by record kind: this agent has no IA data.' } : {}),
     },
-    unit: adapter.unit, layers,
+    unit: LEAF_UNIT, layers,
   };
 }
 

@@ -11,14 +11,14 @@ export interface Publication { id: string; title: string; root: string; rootNote
 /** The `publications` input of `sections.studio.publications`. */
 export interface PublicationsInput { title: string; description: string; publications: readonly Publication[] }
 
-/** `sections.studio.publications`: each publication's root and its full route table. */
+/** `sections.studio.publications`: each publication's root and its full route table, one card per publication in the page column (no outer card). */
 export default function PublicationsSection({ publications }: { publications: PublicationsInput }) {
-  return <Card className="m-4 md:m-6" data-studio-section="publications">
-    <CardHeader>
-      <CardTitle role="heading" aria-level={2} className="text-xl">{publications.title}</CardTitle>
+  return <section data-studio-section="publications" aria-labelledby="publications-heading">
+    <CardHeader className="px-0">
+      <CardTitle id="publications-heading" role="heading" aria-level={2} className="text-xl">{publications.title}</CardTitle>
       <CardDescription className="max-w-(--measure)">{publications.description}</CardDescription>
     </CardHeader>
-    <CardContent className="flex flex-col gap-6">
+    <CardContent className="flex flex-col gap-6 px-0 pt-4">
       {publications.publications.map(publication => <Card key={publication.id} size="sm" id={`publication-${publication.id}`}>
         <CardHeader>
           <CardTitle role="heading" aria-level={3} className="flex flex-wrap items-center gap-2">
@@ -52,5 +52,5 @@ export default function PublicationsSection({ publications }: { publications: Pu
         </CardContent>
       </Card>)}
     </CardContent>
-  </Card>;
+  </section>;
 }

@@ -1,27 +1,27 @@
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, LinkButton, SpecimenFrame } from '@clossys/designer-ui';
+import { Badge, Card, CardAction, CardContent, CardHeader, CardTitle, LinkButton, Skeleton } from '@clossys/designer-ui';
+import { SpecimenContent } from '../studio-specimen';
 import type { GalleryCardData } from './types';
 
-/** One L3 leaf: a view-only specimen (fixed-ratio thumbnail or text excerpt), name, version and status. The whole card is the link. */
-export function LeafCard({ card }: { card: GalleryCardData }) {
-  return <Card size="sm" className="relative">
-    <CardContent className="flex flex-col gap-1">
-      {card.specimenSrc
-        ? <SpecimenFrame title={`${card.name} specimen`} src={card.specimenSrc} />
-        : card.excerpt?.length
-          ? card.excerpt.map((line, index) => <CardDescription key={index} className="line-clamp-3 break-words">{line}</CardDescription>)
-          : card.specimenStatus
-            ? <Badge variant={card.specimenStatus.tone}>{card.specimenStatus.label}</Badge>
-            : <Badge variant="outline">No specimen</Badge>}
-    </CardContent>
+/**
+ * One L3 leaf as a full-width card: the header names it (a link to its L3 page) with the pinned
+ * version and one status signal; the body is the full live preview of its active state, the same
+ * specimen body the leaf page places. Options, history and contract stay on the leaf page.
+ */
+export function LeafCard({ card, level }: { card: GalleryCardData; level: number }) {
+  return <Card size="sm" data-gallery-leaf={card.key}>
     <CardHeader>
-      <CardTitle>
-        <LinkButton href={card.href} variant="link" className="h-auto p-0 text-base whitespace-normal after:absolute after:inset-0">{card.name}</LinkButton>
+      <CardTitle role="heading" aria-level={level}>
+        <LinkButton href={card.href} variant="link" className="h-auto p-0 text-left text-base whitespace-normal">{card.name}</LinkButton>
       </CardTitle>
+      <CardAction className="flex items-center gap-2">
+        {card.version !== undefined && <Badge variant="ghost">v{card.version}</Badge>}
+        <Badge variant={card.statusTone}>{card.statusLabel}</Badge>
+      </CardAction>
     </CardHeader>
-    <CardContent className="flex flex-wrap items-center gap-2">
-      {card.version !== undefined && <Badge variant="ghost">v{card.version}</Badge>}
-      <Badge variant={card.statusTone}>{card.statusLabel}</Badge>
-      {card.badges?.map(badge => <Badge key={badge} variant="outline">{badge}</Badge>)}
-    </CardContent>
+    {card.specimen
+      ? <SpecimenContent specimen={card.specimen} />
+      : card.specimenStatus?.loading
+        ? <CardContent><Skeleton className="aspect-(--specimen-ratio-desktop) w-full" aria-label={card.specimenStatus.label} /></CardContent>
+        : <CardContent><Badge variant={card.specimenStatus?.tone ?? 'outline'} data-preview-status="status">{card.specimenStatus?.label}</Badge></CardContent>}
   </Card>;
 }
