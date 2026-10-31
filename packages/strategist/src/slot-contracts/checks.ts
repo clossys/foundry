@@ -69,6 +69,18 @@ export function filledValue(text: string, minWords: number, spec: Specificity = 
   return undefined;
 }
 
+/**
+ * Whether every occurrence of `phrase` is written as a Title Case proper name
+ * (for example the Lighthouse category "Best Practices"), which names a
+ * specific thing rather than generic filler. Single-word phrases never qualify.
+ */
+export function onlyAsProperName(text: string, phrase: string): boolean {
+  if (!/\s/.test(phrase.trim())) return false;
+  const re = new RegExp(`(?<![\\p{L}\\p{N}])${phrase.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "giu");
+  const hits = [...text.matchAll(re)].map(m => m[0]);
+  return hits.length > 0 && hits.every(h => h.split(/\s+/).every(w => /^\p{Lu}/u.test(w)));
+}
+
 export function checkDirectorCell(cell: Pick<Cell, "id" | "direction" | "path">, contract: DirectorSlotContract, spec: Specificity = loadSpecificity()): DirectorFinding[] {
   const findings: DirectorFinding[] = [];
   const path = cell.path;
@@ -84,7 +96,7 @@ export function checkDirectorCell(cell: Pick<Cell, "id" | "direction" | "path">,
   for (const bullet of cell.direction) {
     if (bullet.key && spec.negativeKeys.includes(bullet.key)) continue;
     for (const phrase of spec.filler) {
-      if (containsPhrase(bullet.text, phrase)) findings.push({ check: "D-SPEC", slot: contract.id, path, line: bullet.line, ...(bullet.key ? { key: bullet.key } : {}), message: `Generic phrase "${phrase}"; say what is specific to this business` });
+      if (containsPhrase(bullet.text, phrase) && !onlyAsProperName(bullet.text, phrase)) findings.push({ check: "D-SPEC", slot: contract.id, path, line: bullet.line, ...(bullet.key ? { key: bullet.key } : {}), message: `Generic phrase "${phrase}"; say what is specific to this business` });
     }
   }
   return findings;

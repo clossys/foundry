@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadCatalog } from "../catalog.js";
 import { parseCell } from "../format/cell.js";
-import { checkDirectorCell, checkDirectorCoverage, DIRECTOR_CHECKS, parseDownstream, runDirectorSuite } from "./checks.js";
+import { checkDirectorCell, checkDirectorCoverage, DIRECTOR_CHECKS, onlyAsProperName, parseDownstream, runDirectorSuite } from "./checks.js";
 import { runSlotCheckCli } from "./cli.js";
 import { adaptDirectorContract, loadDirectorContracts } from "./format.js";
 
@@ -69,6 +69,16 @@ describe("Director slot contracts", () => {
     const mutated = good.map((b, i) => i === 0 ? `${b} with a seamless, next-generation experience` : b);
     const findings = checkDirectorCell(cell(slot.id, mutated), slot);
     expect(findings.map(f => f.check)).toEqual(["D-SPEC", "D-SPEC"]);
+  });
+
+  it("does not flag a filler phrase used as a Title Case proper name", () => {
+    const slot = contracts.slots.find(s => s.id === "advantage.proposition.promise")!;
+    const good = slot.references[0]!.good;
+    const named = good.map((b, i) => i === 0 ? `${b}; Lighthouse Performance, Best Practices and SEO each at least 90` : b);
+    expect(checkDirectorCell(cell(slot.id, named), slot).filter(f => f.check === "D-SPEC")).toEqual([]);
+    const generic = good.map((b, i) => i === 0 ? `${b}; follow best practices` : b);
+    expect(checkDirectorCell(cell(slot.id, generic), slot).map(f => f.check)).toEqual(["D-SPEC"]);
+    expect(onlyAsProperName("Best Practices, then best practices", "best practices")).toBe(false);
   });
 
   it("computes D-COVER from downstream Writer and Designer citations", () => {

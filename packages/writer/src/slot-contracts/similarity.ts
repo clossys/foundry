@@ -3,7 +3,8 @@
  * normalized (case, punctuation, ICU placeholders), then compared by
  * containment and by word-trigram Jaccard similarity.
  */
-export const MIN_EXEMPLAR_WORDS = 4;
+/** Exemplars under five words (stock labels such as "See how it works") are common phrasing. */
+export const MIN_EXEMPLAR_WORDS = 5;
 export const JACCARD_THRESHOLD = 0.6;
 
 export function stripIcu(text: string): string {
