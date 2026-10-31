@@ -3,7 +3,6 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-// @ts-expect-error plain ESM check script, no type declarations
 import { elementFindings, loadManifest, loadRule, provenanceFindings, scanFindings } from "../../scripts/check-provenance.mjs";
 
 const json = (path: string) => JSON.parse(readFileSync(fileURLToPath(new URL(path, import.meta.url)), "utf8"));

@@ -22,7 +22,7 @@
  * passing pending option is reported as pending replacement, not failed: the owner
  * approves the pin. Exit 1 on any violation, 2 on a usage error.
  */
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -178,7 +178,10 @@ export function scanFindings(dir, { rule = loadRule(), manifest = loadManifest()
   return { violations, exempt, checked };
 }
 
+const USAGE = "usage: check-provenance.mjs --root <consumer>/clossys [--all | --element <slot>/<element>/v<N>] | --scan <dir> [--manifest <references/manifest.json>]";
+
 function main(argv) {
+  if (argv.includes("--help")) { console.log(USAGE); return 0; }
   const value = flag => {
     const at = argv.indexOf(flag);
     return at < 0 ? undefined : argv[at + 1];
@@ -187,7 +190,7 @@ function main(argv) {
   const scan = value("--scan");
   const manifestPath = value("--manifest");
   if (!root && !scan) {
-    console.error("usage: check-provenance.mjs --root <consumer>/clossys [--all | --element <slot>/<element>/v<N>] | --scan <dir> [--manifest <references/manifest.json>]");
+    console.error(USAGE);
     return 2;
   }
   const options = { rule: loadRule(), manifest: loadManifest(manifestPath ? resolve(manifestPath) : undefined) };
@@ -220,6 +223,7 @@ function main(argv) {
   return 0;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+// Resolve argv[1] so a node_modules/.bin symlink launch still runs the CLI.
+if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   process.exitCode = main(process.argv.slice(2));
 }

@@ -1,6 +1,5 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-// @ts-expect-error Generator is dependency-free JavaScript, not package runtime.
 import { emitCopyPortTypes } from "../../../scripts/generate-copy-ports.mjs";
 
 const local = (path: string) => new URL(path, import.meta.url);

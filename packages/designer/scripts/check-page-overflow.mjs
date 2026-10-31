@@ -17,9 +17,10 @@
  * CHROME_BIN overrides the Chrome path. Exit 1 on any finding.
  */
 import { spawn } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 /** Runs in the page: raw measurements only; `pageFindings` turns them into findings. */
 export const MEASURE = `(() => {
@@ -70,10 +71,13 @@ export function pageFindings(view, measure) {
 const list = (args, flag, fallback) => { const at = args.indexOf(flag); return at < 0 ? fallback : args[at + 1].split(",").filter(Boolean); };
 const sleep = ms => new Promise(done => setTimeout(done, ms));
 
+const USAGE = "usage: check-page-overflow.mjs --url <base> --pages <id,...> [--widths 375,768,1280] [--themes light,dark] [--shots <dir>]";
+
 async function main(args) {
+  if (args.includes("--help")) { console.log(USAGE); return 0; }
   const url = list(args, "--url", [])[0];
   const pages = list(args, "--pages", []);
-  if (!url || !pages.length) { console.error("usage: check-page-overflow.mjs --url <base> --pages <id,...> [--widths 375,768,1280] [--themes light,dark] [--shots <dir>]"); return 2; }
+  if (!url || !pages.length) { console.error(USAGE); return 2; }
   const widths = list(args, "--widths", ["375", "768", "1280"]).map(Number);
   const themes = list(args, "--themes", ["light"]);
   const shots = list(args, "--shots", [])[0];
@@ -129,4 +133,5 @@ async function main(args) {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) process.exit(await main(process.argv.slice(2)));
+// Resolve argv[1] so a node_modules/.bin symlink launch still runs the CLI.
+if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) process.exit(await main(process.argv.slice(2)));
