@@ -1,10 +1,13 @@
 import { createHash } from "node:crypto";
-import { constants } from "node:fs";
+import { constants, existsSync, readFileSync } from "node:fs";
 import { open, readFile, realpath } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, extname, isAbsolute, join, relative, sep } from "node:path";
 import { compile } from "tailwindcss";
+import { SELECTION_FILE } from "../records/selection.js";
+import { loadSelection } from "../records/validate.js";
 import { agentRoot, readCells } from "./cells.js";
+import { specimenSubstrate } from "./specimen-substrate.js";
 
 /**
  * The consumer's Designer output (`clossys/agents/designer/globals.css`) is a stock
@@ -12,6 +15,12 @@ import { agentRoot, readCells } from "./cells.js";
  * with Tailwind, keeping its variables, base layer and the font/radius utilities its
  * theme redefines, and serves the font files its imports name from the consumer's
  * own installed packages. No consumer value is copied into Producer.
+ *
+ * Fonts follow the theme pipeline: each pinned `registry:font` item (`themes.font-*`) adds
+ * its font package's stylesheet and sets its own variable (`font.variable`) in the theme,
+ * so `font-heading` and everything that applies it render the pinned family. The package
+ * resolves from the consumer's install, else from the specimen substrate where the install
+ * pipeline put it. Nothing names a family by hand.
  */
 export interface ConsumerGlobals { css: string; hash: string; fonts: ReadonlyMap<string, string>; missing: string[] }
 
@@ -42,17 +51,58 @@ function themedCandidates(css: string): string[] {
   return [...candidates].sort();
 }
 
+export interface PinnedFont { slot: string; element: string; version: number; family: string; variable: string; dependency: string }
+
+const CSS_VARIABLE = /^--[a-z][a-z0-9-]*$/;
+const FONT_FAMILY = /^[\w\s'",.-]+$/;
+const PACKAGE = /^(?:@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*$/;
+
+/** The workspace's pinned font items, read from selection.json and their registry items. */
+export function pinnedFonts(root: string): PinnedFont[] {
+  const library = join(root, "clossys");
+  const selectionPath = join(library, SELECTION_FILE);
+  if (!existsSync(selectionPath)) return [];
+  const pins = loadSelection(selectionPath).pins;
+  const fonts: PinnedFont[] = [];
+  for (const slot of Object.keys(pins).filter(name => name.startsWith("themes.font")).sort()) {
+    const pin = pins[slot]!;
+    let font: Record<string, unknown> | undefined;
+    try { font = JSON.parse(readFileSync(join(library, "library", slot, pin.element, `v${pin.version}`, "registry-item.json"), "utf8")).font; } catch { continue; }
+    const { family, variable, dependency } = font ?? {};
+    if (typeof family !== "string" || !FONT_FAMILY.test(family) || typeof variable !== "string" || !CSS_VARIABLE.test(variable) || typeof dependency !== "string" || !PACKAGE.test(dependency)) continue;
+    fonts.push({ slot, element: pin.element, version: pin.version, family, variable, dependency });
+  }
+  return fonts;
+}
+
+/** Source text added around the consumer globals: the pinned font packages first, their theme variables last. */
+function withPinnedFonts(source: string, fonts: readonly PinnedFont[]): string {
+  if (!fonts.length) return source;
+  const imports = fonts.map(font => `@import "${font.dependency}"; /* ${font.slot} -> ${font.element} v${font.version} */`).join("\n");
+  const theme = fonts.map(font => `  ${font.variable}: ${font.family};`).join("\n");
+  return `${imports}\n${source}\n\n/* Pinned theme fonts (the theme pipeline's own variables). */\n@theme inline {\n${theme}\n}\n`;
+}
+
 let cached: { key: string; value: ConsumerGlobals } | undefined;
 
 /** Compile the consumer's Designer globals. Undefined when the consumer has none. */
 export async function consumerGlobals(root: string): Promise<ConsumerGlobals | undefined> {
   const designer = agentRoot(root, "designer");
-  const source = await readNoFollow(join(designer, "globals.css"));
-  if (source === undefined) return undefined;
+  const authored = await readNoFollow(join(designer, "globals.css"));
+  if (authored === undefined) return undefined;
+  const pinned = pinnedFonts(root);
+  // Packages resolve from the consumer workspace that owns the Designer output, then from the specimen substrate.
+  const consumerRequire = createRequire(join(root, "clossys", "package.json"));
+  const substrate = specimenSubstrate(root);
+  const substrateRequire = createRequire(join(substrate, "package.json"));
+  const resolvePackage = (id: string): string => {
+    try { return consumerRequire.resolve(id); } catch { return substrateRequire.resolve(id); }
+  };
+  // A pinned font only joins once its package resolves somewhere, so the cache key tracks that too.
+  const available = pinned.filter(font => { try { resolvePackage(font.dependency); return true; } catch { return false; } });
+  const source = withPinnedFonts(authored, available);
   const key = createHash("sha256").update(root).update("\0").update(source).digest("hex");
   if (cached?.key === key) return cached.value;
-  // Packages resolve from the consumer workspace that owns the Designer output.
-  const consumerRequire = createRequire(join(root, "clossys", "package.json"));
   const fonts = new Map<string, string>();
   const missing: string[] = [];
   const compiled = await compile(source, {
@@ -66,7 +116,7 @@ export async function consumerGlobals(root: string): Promise<ConsumerGlobals | u
         return { path, base: dirname(path), content: await readFile(path, "utf8") };
       }
       let path: string;
-      try { path = consumerRequire.resolve(id); }
+      try { path = resolvePackage(id); }
       catch { missing.push(id); return { path: id, base, content: "" }; }
       const name = packageName(id);
       if (!name || !path.endsWith(".css")) { missing.push(id); return { path: id, base, content: "" }; }
@@ -82,6 +132,7 @@ export async function consumerGlobals(root: string): Promise<ConsumerGlobals | u
     },
   });
   const css = compiled.build(themedCandidates(source));
+  for (const font of pinned) if (!available.includes(font)) missing.push(font.dependency);
   const value: ConsumerGlobals = { css, hash: `sha256:${createHash("sha256").update(css).digest("hex")}`, fonts, missing };
   cached = { key, value };
   return value;

@@ -18,8 +18,8 @@ import { createHash } from "node:crypto";
 import { existsSync, readdirSync } from "node:fs";
 import { mkdir, readFile, realpath, rm, stat, writeFile } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { tmpdir } from "node:os";
-import { extname, join, relative, resolve, sep, isAbsolute } from "node:path";
+import { dirname, extname, join, relative, resolve, sep, isAbsolute } from "node:path";
+import { specimenSubstrate } from "./specimen-substrate.js";
 import { installAndBind, isBlocking, substrateDependencies, type InstallFinding, type InstallPageRecord, type InstallPins } from "@clossys/publisher/install";
 import { listVersions, loadSelection, SELECTION_FILE } from "../records/index.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
@@ -213,8 +213,7 @@ async function buildSite(root: string, library: string): Promise<InstalledSpecim
   const copy = await writerCopy(root).catch(() => ({} as Record<string, string>));
   const records = await pageRecords(root, pins);
   const key = hash(SPECIMEN_FORMAT, root, await readFile(selectionPath, "utf8"), JSON.stringify([...options]), JSON.stringify(unpinned), JSON.stringify(copy), JSON.stringify(records)).slice(0, 16);
-  const base = join(tmpdir(), "clossys-studio-specimens", hash(root).slice(0, 12));
-  const substrate = join(base, "substrate"), manifest = join(base, `site-${key}.json`);
+  const substrate = specimenSubstrate(root), base = dirname(substrate), manifest = join(base, `site-${key}.json`);
   if (existsSync(manifest)) {
     const saved = await readJson(manifest);
     if ((saved.builds as SpecimenBuild[]).every(build => existsSync(join(build.dist, "index.html")))) return { key, builds: saved.builds, pages: new Map(Object.entries(saved.pages)), findings: saved.findings };
