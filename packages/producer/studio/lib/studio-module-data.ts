@@ -3,7 +3,8 @@ import { type AgentCells, type CellDetail, type CellSummary } from './cells-clie
 import { cellContentHref } from './cell-content';
 import { isAgent, type Agent } from './agents';
 import type { StudioSelection } from './selection-client';
-import { agentPageHref } from './proof-routes';
+import { studioMap } from '../generated/studio-map';
+import { studioHref } from './studio-route-map';
 
 export type StudioModulePayload = Record<string, unknown>;
 export type StudioModulePayloads = Readonly<Record<string, StudioModulePayload>>;
@@ -18,7 +19,7 @@ function cellRef(reference: string, agent: Agent) {
   return { agent: owner, id: match[2]!, version: Number(match[3]), reference };
 }
 function linkedCell(cell: CellSummary, agent: Agent) {
-  return { agent, id: cell.id, version: cell.version, status: cell.status, title: typeof cell.fields?.title === 'string' ? cell.fields.title : cell.id.split('.').at(-1), href: `${agentPageHref(agent)}${studioIAHref(cell.id)}`, contentHref: cellContentHref(agent, cell.id), contentTarget: '_blank', contentRel: 'noopener noreferrer' };
+  return { agent, id: cell.id, version: cell.version, status: cell.status, title: typeof cell.fields?.title === 'string' ? cell.fields.title : cell.id.split('.').at(-1), href: `${studioHref(studioMap, agent) ?? '/'}${studioIAHref(cell.id)}`, contentHref: cellContentHref(agent, cell.id), contentTarget: '_blank', contentRel: 'noopener noreferrer' };
 }
 
 /** Only stored facts and resolvable cell references become module data. */
@@ -52,8 +53,4 @@ export function studioModulePayloads(input: { indexes: readonly AgentCells[]; ag
 export function selectionNeedData(selection: StudioSelection): StudioModulePayload { return { gaps: selection.leaves.filter(leaf => leaf.source !== 'consumer') }; }
 
 export { cellContentHref as studioCellContentHref } from './cell-content';
-export function studioCellChange(value: unknown): boolean {
-  if (!value || typeof value !== 'object' || !('reload' in value) || value.reload !== true) return false;
-  const row = value as Record<string, unknown>;
-  return (row.agent === null || typeof row.agent === 'string' && isAgent(row.agent)) && (row.id === null || typeof row.id === 'string');
-}
+export { studioCellChange } from './cell-events';

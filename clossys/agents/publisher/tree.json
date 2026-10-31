@@ -38,11 +38,11 @@
     }
   ],
   "active": {
-    "page.home": 1,
-    "page.director": 1,
-    "page.designer": 1,
-    "page.writer": 1,
-    "page.publisher": 1
+    "page.home": 2,
+    "page.director": 2,
+    "page.designer": 2,
+    "page.writer": 2,
+    "page.publisher": 2
   },
   "retired": [],
   "meta": {
@@ -98,7 +98,11 @@
         },
         "routePack": {
           "packId": "studio",
-          "homeRouteId": "home"
+          "homeRouteId": "home",
+          "root": {
+            "kind": "local-origin",
+            "note": "Producer serves Studio on this machine, so the root is the origin it runs on."
+          }
         }
       }
     ]

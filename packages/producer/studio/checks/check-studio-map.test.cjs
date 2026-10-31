@@ -6,44 +6,57 @@ const os = require('node:os');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { test } = require('node:test');
-const { findRouteLiterals, inspectFrameProjection, checkStudioMap } = require('./check-studio-map.cjs');
+const { findRouteLiterals, inspectFrameProjection, inspectShellProjection, productionFiles, checkStudioMap } = require('./check-studio-map.cjs');
 
 const studioRoot = path.resolve(__dirname, '..');
 const repositoryRoot = path.resolve(studioRoot, '../../..');
 
-test('production navigation and command inputs follow the same generated Publisher projection', () => {
+test('the renderer feeds the pinned frame only by spreading the map projection', () => {
   const source = `
-    import { studioNavigation as nav, studioCommands as cmd } from '../generated/studio-map';
-    function navigation() { return nav[page]; }
-    const commands = cmd.map(group => group);
-    const view = <AppFrame navigation={{ tree: navigation() }} commands={{ groups: commands }} />;
-  `;
+    import { studioFrames } from '../generated/assembly-bindings';
+    function Frame({ entry, page }) {
+      const Shell = studioFrames[page.frameId];
+      const projection = useMemo(() => studioShellProjection(map, entry.id), [map, entry.id]);
+      return <Shell {...projection} actions={[]} />;
+    }`;
   assert.deepEqual(inspectFrameProjection(source), []);
 });
 
-test('a redundant route list inserted into StudioFrame fails even when it is unused', () => {
-  const source = fs.readFileSync(path.join(studioRoot, 'components/StudioFrame.tsx'), 'utf8');
+test('a redundant route list inserted into the renderer fails even when it is unused', () => {
+  const source = fs.readFileSync(path.join(studioRoot, 'components/StudioPage.tsx'), 'utf8');
   const mutation = source + `\nconst redundantDestinations = [{ id: 'fixture', label: 'Fixture', href: '/fixture-page' }];\n`;
-  assert.ok(findRouteLiterals(mutation).some(row => row.value === '/fixture-page'));
+  assert.ok(findRouteLiterals(mutation, 'components/StudioPage.tsx').some(row => row.value === '/fixture-page'));
 });
 
-test('replacing projected navigation or commands with a hand-authored list fails', () => {
-  const source = `import { studioNavigation } from '../generated/studio-map';
-    const view = <AppFrame navigation={{ tree: studioNavigation[page] }} commands={{ groups: [{id: 'pages', items: []}] }} />;`;
+test('overriding a projected frame input with a hand-written attribute fails', () => {
+  const source = `const Shell = studioFrames[id]; const projection = studioShellProjection(map, id);
+    const view = <Shell {...projection} commands={[{ id: 'pages', items: [] }]} />;`;
   assert.ok(inspectFrameProjection(source).some(row => row.input === 'commands' && row.rule === 'frame-input-outside-projection'));
 });
 
-test('referencing generated data does not conceal an added hand-authored navigation node', () => {
-  const source = `import { studioNavigation, studioCommands } from '../generated/studio-map';
-    const tree = [...studioNavigation[page], { id: 'fixture', label: 'Fixture', href: studioNavigation[page][0].href }];
-    const view = <AppFrame navigation={{ tree }} commands={{ groups: studioCommands }} />;`;
+test('spreading the projection does not conceal an added hand-authored navigation node', () => {
+  const source = `const Shell = studioFrames[id]; const base = studioShellProjection(map, id);
+    const projection = { ...base, navigation: { tree: [{ id: 'fixture', label: 'Fixture' }] } };
+    const view = <Shell {...projection} />;`;
   assert.deepEqual(inspectFrameProjection(source).map(row => row.rule), ['hand-authored-frame-map-node']);
 });
 
-test('a similarly named foreign generated module cannot supply the authoritative frame inputs', () => {
-  const source = `import { studioNavigation, studioCommands } from '../foreign/generated/studio-map';
-    const view = <AppFrame navigation={{ tree: studioNavigation[page] }} commands={{ groups: studioCommands }} />;`;
-  assert.deepEqual(inspectFrameProjection(source).map(row => row.input), ['navigation', 'commands']);
+test('a frame fed by anything but studioShellProjection fails', () => {
+  const source = `const Shell = studioFrames[id]; const projection = { navigation, commands };
+    const view = <Shell {...projection} />;`;
+  assert.deepEqual(inspectFrameProjection(source).map(row => row.required), ['studioShellProjection']);
+});
+
+test('the shell projection must be the Publisher content-map projections', () => {
+  assert.deepEqual(inspectShellProjection('const nav = projectNavigation(map, id); const cmd = projectCommands(map); const crumbs = projectBreadcrumbs(map, id);'), []);
+  assert.deepEqual(inspectShellProjection('const nav = projectNavigation(map, id); const cmd = [];').map(row => row.projector), ['projectCommands', 'projectBreadcrumbs']);
+});
+
+test('only code the App Router entries reach is production: orphan modules are not scanned, the map module owns its strings', () => {
+  const files = productionFiles(studioRoot).map(file => path.relative(studioRoot, file).split(path.sep).join('/'));
+  assert.ok(files.includes('components/StudioPage.tsx') && files.includes('frames/studio-shell/index.tsx'));
+  assert.ok(!files.includes('lib/studio-route-map.ts') && !files.includes('generated/studio-map.ts'));
+  assert.ok(files.every(file => !file.startsWith('checks/')));
 });
 
 test('literal and constructed route destinations fail in executable AST nodes', () => {
@@ -67,6 +80,8 @@ test('data requests, asset URLs, URL shape checks and cell/Source query state ar
     // href: '/comment-is-not-code'
     const prose = "Example href='/not-a-route-literal'";
     const pattern = /\\/fixture\\//;
+    const sheet = <link rel="stylesheet" href="/api/designer/globals.css" />;
+    const specimen = \`/__specimen?\${params}\`;
   `;
   assert.deepEqual(findRouteLiterals(source), []);
 });
@@ -76,25 +91,29 @@ test('the checked-in Studio projection matches its ordinary Publisher cells and 
 });
 
 test('changing a Publisher page cell without regenerating fails projection drift', async t => {
-  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'studio-map-check-'));
+  const temporary = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'studio-map-check-')));
   t.after(() => fs.rmSync(temporary, { recursive: true, force: true }));
-  const cellRoot = path.join(temporary, 'publisher');
+  const clossysRoot = path.join(temporary, 'clossys');
   const outputDir = path.join(temporary, 'generated');
-  fs.cpSync(path.join(repositoryRoot, 'clossys/agents/publisher'), cellRoot, { recursive: true });
+  const source = path.join(repositoryRoot, 'clossys');
+  fs.mkdirSync(path.join(clossysRoot, 'agents', 'designer'), { recursive: true });
+  fs.cpSync(path.join(source, 'agents/publisher'), path.join(clossysRoot, 'agents/publisher'), { recursive: true });
+  fs.cpSync(path.join(source, 'agents/designer/slot-contracts'), path.join(clossysRoot, 'agents/designer/slot-contracts'), { recursive: true });
+  fs.cpSync(path.join(source, 'library'), path.join(clossysRoot, 'library'), { recursive: true });
+  fs.cpSync(path.join(source, 'selection.json'), path.join(clossysRoot, 'selection.json'));
   fs.cpSync(path.join(studioRoot, 'generated'), outputDir, { recursive: true });
   const generator = await import(pathToFileURL(path.resolve(studioRoot, '../scripts/generate-studio-map.mjs')).href);
-  await generator.generateStudioMap({ cellRoot, outputDir, check: true });
-  const cells = fs.readdirSync(path.join(cellRoot, 'cells')).filter(name => name.startsWith('page.'));
-  assert.ok(cells.length, 'the proof uses an actual ordinary Publisher page cell');
-  const page = path.join(cellRoot, 'cells', cells[0], 'v1.md');
-  const source = fs.readFileSync(page, 'utf8');
+  await generator.generateStudioMap({ clossysRoot, outputDir, check: true });
+  const cellRoot = path.join(clossysRoot, 'agents/publisher');
+  const page = path.join(cellRoot, 'cells', 'page.designer', 'v2.md');
+  const text = fs.readFileSync(page, 'utf8');
   // A published page title is map input, so changing it must change projected bytes.
-  assert.match(source, /^title:\s*.+$/m);
-  fs.writeFileSync(page, source.replace(/^(title:\s*)(.+)$/m, '$1Fixture changed title'));
-  const findings = await checkStudioMap({ cellRoot, outputDir });
+  assert.match(text, /^title:\s*.+$/m);
+  fs.writeFileSync(page, text.replace(/^(title:\s*)(.+)$/m, '$1Fixture changed title'));
+  const findings = await checkStudioMap({ clossysRoot, outputDir });
   assert.ok(findings.some(row => row.rule === 'publisher-projection-drift'), JSON.stringify(findings));
   const { compileContentMaps } = await import('@clossys/publisher/content-map/cells');
   await compileContentMaps(cellRoot);
-  const staleStudio = await checkStudioMap({ cellRoot, outputDir });
+  const staleStudio = await checkStudioMap({ clossysRoot, outputDir });
   assert.ok(staleStudio.some(row => row.rule === 'publisher-projection-drift' && /Generated Studio projection drift/.test(row.message)), JSON.stringify(staleStudio));
 });

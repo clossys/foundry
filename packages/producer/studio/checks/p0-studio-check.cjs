@@ -97,7 +97,7 @@ function discoverRoutePlan(options = {}) {
   for (const page of pages) {
     const source = fs.readFileSync(page.file, 'utf8');
     if (page.template === '/[[...route]]') {
-      assert.match(source, /studioRouteForSegments/, 'The publication catchall no longer uses the discovered route projection');
+      assert.match(source, /resolveStudioRoute/, 'The publication catchall no longer resolves through the Studio route map');
       for (const route of routes) represented.add(route);
     } else if (page.template === '/content/[agent]/[id]') {
       assert.match(source, /(?:cellContentHref|StandaloneCellContent)/, 'The content route no longer uses the known content port');

@@ -50,11 +50,9 @@ describe('existing closed module section APIs', () => {
     const needs = studioModuleProps(action('sections.task-list'), { gaps: [], coverageIssues: [...specimenCoverage.issues, ...specimenCoverage.issues] }, {});
     expect(needs?.items).toEqual([{ id: 'specimen:page.home:missing-specimen-body', title: 'page.home', description: 'missing-specimen-body', status: 'blocked' }]);
   });
-  it('uses the actual five module entries and Home only Needs, initially closed', () => {
-    for (const page of ['director', 'designer', 'writer', 'publisher']) {
-      expect(studioPageActions[page]?.map(entry => entry.module?.section)).toEqual(['sections.explorer', 'sections.record-detail', 'sections.content', 'sections.status-list', 'sections.task-list']);
-      expect(studioPageActions[page]?.filter(entry => entry.defaultOpen).map(entry => entry.module?.section)).toEqual(['sections.explorer']);
-    }
+  it('gives assembled agent pages no module entries and Home only Needs, initially closed', () => {
+    // Agent galleries and leaves are frame + section assemblies; their content is sections, not modules.
+    for (const page of ['director', 'designer', 'writer', 'publisher']) expect(studioPageActions[page]).toEqual([]);
     expect(studioPageActions.home).toMatchObject([{ module: { section: 'sections.task-list', source: 'home.open-requests' }, defaultOpen: false }]);
     expect(studioPageActions.home).toHaveLength(1);
   });

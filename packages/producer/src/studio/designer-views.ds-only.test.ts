@@ -6,14 +6,13 @@ import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
 /**
- * AMEND-1 ds-only check for the PROOF-2 Designer views and the shared agent gallery and
- * detail templates: each view folder imports
+ * AMEND-1 ds-only check for every Studio section the page records place: each section folder imports
  * components only from Designer's component layer (`@clossys/designer-ui`) or
  * from inside its own folder, and renders no raw styled markup (a lowercase
  * element carrying `className` or `style`).
  */
-const VIEWS = resolve(dirname(fileURLToPath(import.meta.url)), '../../studio/views');
-const FOLDERS = ['agent-gallery', 'agent-detail', 'designer-slots'];
+const VIEWS = resolve(dirname(fileURLToPath(import.meta.url)), '../../studio/sections');
+const FOLDERS = readdirSync(VIEWS, { withFileTypes: true }).filter(entry => entry.isDirectory()).map(entry => entry.name).sort();
 const COMPONENT_LAYER = '@clossys/designer-ui';
 
 export function dsOnlyViolations(folder: string): string[] {
@@ -43,7 +42,11 @@ export function dsOnlyViolations(folder: string): string[] {
   return violations;
 }
 
-describe('PROOF-2 Designer views and agent templates are ds-only', () => {
+describe('Studio sections are ds-only', () => {
+  it('covers every placed Studio section', () => {
+    expect(FOLDERS).toEqual(['studio-agent-gallery', 'studio-checks', 'studio-contract', 'studio-history', 'studio-home', 'studio-leaf-header', 'studio-options', 'studio-publications', 'studio-references', 'studio-specimen']);
+  });
+
   it.each(FOLDERS)('%s imports only the Designer component layer and carries no raw styled markup', folder => {
     expect(dsOnlyViolations(join(VIEWS, folder))).toEqual([]);
   });

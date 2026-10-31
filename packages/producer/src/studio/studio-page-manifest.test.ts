@@ -5,7 +5,10 @@ import type { StudioModuleAction } from '../../studio/lib/studio-module-host';
 
 describe('published native PageFrame manifest port', () => {
   it('passes actual actions, labels, icons and all closed module bodies to the native frame', () => {
-    const actions = studioPageActions.publisher!.filter((action): action is StudioModuleAction => Boolean(action.module));
+    const actions: StudioModuleAction[] = [
+      { id: 'explorer', label: 'Explorer', icon: 'assets.icon-explorer', defaultOpen: true, module: { section: 'sections.explorer' } },
+      { id: 'source', label: 'Source', icon: 'assets.icon-source', defaultOpen: false, module: { section: 'sections.content' } },
+    ];
     const modules = actions.map(action => ({ action, content: `content:${action.id}` }));
     const manifest = studioPageManifest({ pageId: 'publisher', breadcrumbs: [{ id: 'publisher', label: 'Publisher', href: '#publisher' }], modules, icon: asset => asset, need: section => `NEED:${section}` });
     expect(manifest.actions.map(action => action.id)).toEqual(actions.map(action => action.id));

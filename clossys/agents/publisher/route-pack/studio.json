@@ -1,50 +1,178 @@
 {
   "packId": "studio",
   "homeRouteId": "home",
+  "root": {
+    "kind": "local-origin",
+    "note": "Producer serves Studio on this machine, so the root is the origin it runs on."
+  },
   "routes": [
     {
-      "entry": {
-        "file": "studio/views/HomeView.tsx",
-        "export": "default"
+      "body": "plain",
+      "data": {
+        "loader": "home"
+      },
+      "inputs": {
+        "sections.studio.home": "home"
       },
       "instanceId": "home",
       "path": "/",
       "label": "Home"
     },
     {
-      "entry": {
-        "file": "studio/views/DirectorView.tsx",
-        "export": "default"
+      "body": "plain",
+      "data": {
+        "loader": "gallery",
+        "agent": "director"
+      },
+      "inputs": {
+        "sections.studio.agent-gallery": "gallery"
+      },
+      "leaf": {
+        "param": "slug",
+        "body": "detail",
+        "data": {
+          "loader": "leaf",
+          "agent": "director"
+        },
+        "sections": [
+          "sections.studio.leaf-header",
+          "sections.studio.specimen",
+          "sections.studio.options",
+          "sections.studio.checks",
+          "sections.studio.contract",
+          "sections.studio.history",
+          "sections.studio.references"
+        ],
+        "inputs": {
+          "sections.studio.leaf-header": "header",
+          "sections.studio.specimen": "specimen",
+          "sections.studio.options": "options",
+          "sections.studio.checks": "checks",
+          "sections.studio.contract": "contract",
+          "sections.studio.history": "history",
+          "sections.studio.references": "references"
+        }
       },
       "instanceId": "director",
-      "path": "/agents/director",
+      "path": "/director",
       "label": "Director"
     },
     {
-      "entry": {
-        "file": "studio/views/DesignerView.tsx",
-        "export": "default"
+      "body": "plain",
+      "data": {
+        "loader": "gallery",
+        "agent": "designer"
+      },
+      "inputs": {
+        "sections.studio.agent-gallery": "gallery"
+      },
+      "leaf": {
+        "param": "slug",
+        "body": "detail",
+        "data": {
+          "loader": "leaf",
+          "agent": "designer"
+        },
+        "sections": [
+          "sections.studio.leaf-header",
+          "sections.studio.specimen",
+          "sections.studio.options",
+          "sections.studio.checks",
+          "sections.studio.contract",
+          "sections.studio.history",
+          "sections.studio.references"
+        ],
+        "inputs": {
+          "sections.studio.leaf-header": "header",
+          "sections.studio.specimen": "specimen",
+          "sections.studio.options": "options",
+          "sections.studio.checks": "checks",
+          "sections.studio.contract": "contract",
+          "sections.studio.history": "history",
+          "sections.studio.references": "references"
+        }
       },
       "instanceId": "designer",
-      "path": "/agents/designer",
+      "path": "/designer",
       "label": "Designer"
     },
     {
-      "entry": {
-        "file": "studio/views/WriterView.tsx",
-        "export": "default"
+      "body": "plain",
+      "data": {
+        "loader": "gallery",
+        "agent": "writer"
+      },
+      "inputs": {
+        "sections.studio.agent-gallery": "gallery"
+      },
+      "leaf": {
+        "param": "slug",
+        "body": "detail",
+        "data": {
+          "loader": "leaf",
+          "agent": "writer"
+        },
+        "sections": [
+          "sections.studio.leaf-header",
+          "sections.studio.specimen",
+          "sections.studio.options",
+          "sections.studio.checks",
+          "sections.studio.contract",
+          "sections.studio.history",
+          "sections.studio.references"
+        ],
+        "inputs": {
+          "sections.studio.leaf-header": "header",
+          "sections.studio.specimen": "specimen",
+          "sections.studio.options": "options",
+          "sections.studio.checks": "checks",
+          "sections.studio.contract": "contract",
+          "sections.studio.history": "history",
+          "sections.studio.references": "references"
+        }
       },
       "instanceId": "writer",
-      "path": "/agents/writer",
+      "path": "/writer",
       "label": "Writer"
     },
     {
-      "entry": {
-        "file": "studio/views/PublisherView.tsx",
-        "export": "default"
+      "body": "plain",
+      "data": {
+        "loader": "gallery",
+        "agent": "publisher"
+      },
+      "inputs": {
+        "sections.studio.agent-gallery": "gallery",
+        "sections.studio.publications": "publications"
+      },
+      "leaf": {
+        "param": "slug",
+        "body": "detail",
+        "data": {
+          "loader": "leaf",
+          "agent": "publisher"
+        },
+        "sections": [
+          "sections.studio.leaf-header",
+          "sections.studio.specimen",
+          "sections.studio.options",
+          "sections.studio.checks",
+          "sections.studio.contract",
+          "sections.studio.history",
+          "sections.studio.references"
+        ],
+        "inputs": {
+          "sections.studio.leaf-header": "header",
+          "sections.studio.specimen": "specimen",
+          "sections.studio.options": "options",
+          "sections.studio.checks": "checks",
+          "sections.studio.contract": "contract",
+          "sections.studio.history": "history",
+          "sections.studio.references": "references"
+        }
       },
       "instanceId": "publisher",
-      "path": "/agents/publisher",
+      "path": "/publisher",
       "label": "Publisher"
     }
   ]

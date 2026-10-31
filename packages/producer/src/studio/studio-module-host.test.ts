@@ -9,12 +9,11 @@ const actions = [
   { id: 'raw', module: { section: 'sections.content' }, icon: 'assets.icon-document', label: 'Source from manifest', defaultOpen: false },
 ];
 describe('manifest module host', () => {
-  it('opens only the manifest Explorer by default on every actual agent page', () => {
-    for (const page of ['director', 'designer', 'writer', 'publisher']) {
-      const actions = studioPageActions[page]!.filter((action): action is typeof action & { module: { section: string } } => Boolean(action.module));
-      const state = moduleStates(actions);
-      expect(actions.filter(action => state[action.id]?.open).map(action => action.module.section)).toEqual(['sections.explorer']);
-    }
+  it('opens no module by default on Home, the only page that declares one', () => {
+    const home = studioPageActions.home!.filter((action): action is typeof action & { module: { section: string } } => Boolean(action.module));
+    const state = moduleStates(home);
+    expect(home.map(action => action.module.section)).toEqual(['sections.task-list']);
+    expect(home.filter(action => state[action.id]?.open)).toEqual([]);
   });
   it('takes initial open state from the manifest and keeps collapse independent of action toggles', () => {
     let state = moduleStates(actions);

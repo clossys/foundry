@@ -1,15 +1,18 @@
-// Generated from Foundry Publisher cells. Run npm run generate:studio-map.
-import type { ContentMap, ContentMapNavigation, ContentMapCommandGroup, ContentMapBreadcrumb, ContentMapPageAction } from '@clossys/publisher/content-map';
+// Generated from Foundry Publisher cells and the Studio library selection. Run npm run generate:studio-map.
+import type { ContentMap, ContentMapPageAction } from '@clossys/publisher/content-map';
 import projection from './studio-map.json';
-export type StudioPageAction = ContentMapPageAction;
+
+/** How one assembly is laid out and fed: a data loader, and per section the data field its contract input reads. */
+export interface StudioAssemblySpec { body: 'plain' | 'detail'; data: { loader: string; agent?: string }; inputs: Record<string, string>; sectionIds: readonly string[] }
+/** A Publisher page record: frame + ordered sections + bindings; `leaf` assembles every leaf beneath the page. */
+export interface StudioPageRecord extends StudioAssemblySpec { id: string; path: string; title: string; frameId: string; leaf?: StudioAssemblySpec & { param: 'slug' } }
+
 export const studioMap = projection.map as ContentMap;
-export const studioPageActions = projection.pageActions as Record<string, readonly StudioPageAction[]>;
-export const studioRoutes = projection.routes;
-export const studioNavigation = projection.navigation as Record<string, ContentMapNavigation>;
-export const studioCommands = projection.commands as readonly ContentMapCommandGroup[];
-export const studioBreadcrumbs = projection.breadcrumbs as Record<string, readonly ContentMapBreadcrumb[]>;
-export const studioHome = (() => { const route = studioRoutes.find(row => row.instanceId === "home")!; return { id: route.instanceId, label: route.label, href: route.path }; })();
-export const studioAgents = studioMap.entries.filter(row => row.kind === 'page' && row.parentId === 'agents').sort((a,b) => a.order-b.order).map(row => ({ id: row.id, label: row.title }));
-export function studioRouteForPath(path: string) { return studioRoutes.find(row => row.path === path); }
-export function studioRouteForSegments(segments: readonly string[]) { return studioRouteForPath('/' + segments.join('/')); }
-export function studioAgentHref(agent: string) { return studioRoutes.find(row => row.instanceId === agent)?.path ?? studioHome.href; }
+export const studioPages = projection.pages as unknown as readonly StudioPageRecord[];
+export const studioHomeId: string = projection.homeId;
+export const studioPublicationRoot = projection.root as { kind: string; note: string };
+export const studioItems = projection.items as readonly { slot: string; element: string; version: number }[];
+/** A page module action, as the Publisher content map declares it. */
+export type StudioPageAction = ContentMapPageAction;
+export const studioPageActions = projection.pageActions as unknown as Readonly<Record<string, readonly ContentMapPageAction[]>>;
+export const studioAgents = studioMap.entries.filter(row => row.kind === 'page' && row.parentId === 'agents').sort((a, b) => a.order - b.order).map(row => ({ id: row.id, label: row.title }));
