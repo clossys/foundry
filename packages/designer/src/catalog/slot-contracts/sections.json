@@ -521,6 +521,230 @@
   },
   {
     "schema": "clossys.slot-contract/1",
+    "slot": "sections.form",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Contact-style form band: labelled fields with descriptions and errors, one submit action, and optional error summary, success and anti-spam regions.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "fields[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "fields[].description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "fields[].placeholder",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "fields[].options[].label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "fields[].error",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "submit.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "error-summary.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "error-summary.items[].message",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "success.message",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "error.message",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "error-summary.heading.maxLength.en": 160,
+      "error-summary.items[].message.maxLength.en": 120,
+      "error.message.maxLength.en": 480,
+      "fields[].description.maxLength.en": 480,
+      "fields[].error.maxLength.en": 120,
+      "fields[].label.maxLength.en": 120,
+      "fields[].options[].label.maxLength.en": 120,
+      "fields[].placeholder.maxLength.en": 120,
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "references.blocked": "@shadcn/form is served empty by the radix-nova registry; @shadcn/field is its successor",
+      "submit.label.maxLength.en": 120,
+      "success.message.maxLength.en": 480
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "field",
+        "version": "4.23.0",
+        "hash": "sha256:baaf0edbc3aa1799ab21ffc550ba83b49fbc4b990b1ad439417bea3512809f26"
+      },
+      {
+        "registry": "shadcn",
+        "item": "label",
+        "version": "4.23.0",
+        "hash": "sha256:729b89ba8d82fe77f7ede91cfcc2a66851fcf643d90b1689204967bac1a53092"
+      },
+      {
+        "registry": "shadcn",
+        "item": "input",
+        "version": "4.23.0",
+        "hash": "sha256:fcb9a932c624fa0abe30e940c76d656323a66ed1304bb2b2d1e83c517f719169"
+      },
+      {
+        "registry": "shadcn",
+        "item": "textarea",
+        "version": "4.23.0",
+        "hash": "sha256:4b911ef746396cdc419d1d6844341d94241042dcf2cea64a3b1c431e49cc835b"
+      },
+      {
+        "registry": "shadcn",
+        "item": "button",
+        "version": "4.23.0",
+        "hash": "sha256:9e41c76cf882fc46d3518f621c87ac7e58ec381ea546fda891de2cabe95fc350"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.legal-prose",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Long-form legal document (privacy, terms): one heading, an optional revision line and a typographic prose body.",
+    "inputs": [
+      {
+        "name": "heading",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "revision.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "revision.value",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "body",
+        "kind": "copy",
+        "required": true
+      }
+    ],
+    "limits": {
+      "body.maxLength.en": 48000,
+      "heading.maxLength.en": 160,
+      "revision.label.maxLength.en": 120,
+      "revision.value.maxLength.en": 160
+    },
+    "references": [
+      {
+        "registry": "tailwindcss-typography",
+        "item": "typography",
+        "version": "0.5.20",
+        "hash": "sha256:3db9d6b777a0e6d630effed7b9b13eed549194a559eaa0f50ed31347022d2cd5"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
     "slot": "sections.steps",
     "package": "designer",
     "layer": "sections",

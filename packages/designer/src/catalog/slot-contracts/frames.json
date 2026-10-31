@@ -207,6 +207,11 @@
         "required": true
       },
       {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
         "name": "themes.muted",
         "kind": "theme",
         "required": true
@@ -227,6 +232,11 @@
         "required": true
       },
       {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": true
+      },
+      {
         "name": "themes.shadow",
         "kind": "theme",
         "required": true
@@ -243,7 +253,6 @@
       }
     ],
     "limits": {
-      "references.blocked": "@diceui/skip-nav is not in references/",
       "skipTarget": "main-content"
     },
     "references": [
@@ -264,6 +273,12 @@
         "item": "sonner",
         "version": "4.23.0",
         "hash": "sha256:72d9868323fe1deaaef319b195daf83dc6c0367511cea992859ac0c2766c6935"
+      },
+      {
+        "registry": "diceui",
+        "item": "skip-nav",
+        "version": "04aad54",
+        "hash": "sha256:984a8afc0a8a84c180377b9c01c3c3b062510597480fe001367226e592c2e212"
       }
     ],
     "checkSuite": "designer.slot-contracts.frames",

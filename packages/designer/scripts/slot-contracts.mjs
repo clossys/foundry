@@ -35,12 +35,14 @@ const SEED = {
     { slot: "sections.comparison", purpose: "Plan or product comparison table: rows of capabilities against columns of offers.", references: [mist("mist-comparator-1")] },
     { slot: "sections.pricing", purpose: "Pricing tiers, each with a name, price, feature list and one call to action.", references: [mist("mist-pricing-1")] },
     { slot: "sections.call-to-action", purpose: "Closing band that repeats the page's primary and secondary actions under one heading.", references: [mist("mist-call-to-action-1")] },
+    { slot: "sections.form", purpose: "Contact-style form band: labelled fields with descriptions and errors, one submit action, and optional error summary, success and anti-spam regions.", references: [ref("shadcn", "field"), ref("shadcn", "label"), ref("shadcn", "input"), ref("shadcn", "textarea"), ref("shadcn", "button")], limits: { "references.blocked": "@shadcn/form is served empty by the radix-nova registry; @shadcn/field is its successor" } },
+    { slot: "sections.legal-prose", purpose: "Long-form legal document (privacy, terms): one heading, an optional revision line and a typographic prose body.", references: [ref("tailwindcss-typography", "typography")] },
     { slot: "sections.steps", purpose: "Ordered process steps laid out as a horizontal timeline, each with a heading, optional description and ordinal.", references: [ref("diceui", "timeline")], limits: { orientation: "horizontal" } },
   ],
   frames: [
     { slot: "frames.site-header", purpose: "Marketing site header: brand, primary navigation and header actions, collapsing to a menu on small screens.", references: [mist("mist-hero-section-1-header")] },
     { slot: "frames.site-footer", purpose: "Marketing site footer: link columns, legal line and social links.", references: [mist("mist-footer-1")] },
-    { slot: "frames.site-shell", purpose: "Marketing page shell: skip link, site header, main landmark, site footer and the toast region.", references: [mist("mist-hero-section-1-header"), mist("mist-footer-1"), ref("shadcn", "sonner")], limits: { skipTarget: "main-content", "references.blocked": "@diceui/skip-nav is not in references/" } },
+    { slot: "frames.site-shell", purpose: "Marketing page shell: skip link, site header, main landmark, site footer and the toast region.", references: [mist("mist-hero-section-1-header"), mist("mist-footer-1"), ref("shadcn", "sonner"), ref("diceui", "skip-nav")], limits: { skipTarget: "main-content" } },
   ],
 };
 

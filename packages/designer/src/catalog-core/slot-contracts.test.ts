@@ -16,7 +16,7 @@ const committed = { sections: sections as unknown as SlotContractRecord[], frame
 
 describe("section and frame slot contracts", () => {
   it("covers exactly the Home page section and frame L3 slots", () => {
-    expect(committed.sections.map(row => row.slot)).toEqual(["sections.hero", "sections.features", "sections.comparison", "sections.pricing", "sections.call-to-action", "sections.steps"]);
+    expect(committed.sections.map(row => row.slot)).toEqual(["sections.hero", "sections.features", "sections.comparison", "sections.pricing", "sections.call-to-action", "sections.form", "sections.legal-prose", "sections.steps"]);
     expect(committed.frames.map(row => row.slot)).toEqual(["frames.site-header", "frames.site-footer", "frames.site-shell"]);
   });
 
@@ -33,7 +33,12 @@ describe("section and frame slot contracts", () => {
     ]));
     expect(hero.references).toEqual([expect.objectContaining({ registry: "tailark-oss", item: "mist-hero-section-1" })]);
     const shell = committed.frames.find(row => row.slot === "frames.site-shell")!;
-    expect(shell.references.map(row => `${row.registry}/${row.item}`)).toEqual(["tailark-oss/mist-hero-section-1-header", "tailark-oss/mist-footer-1", "shadcn/sonner"]);
+    expect(shell.references.map(row => `${row.registry}/${row.item}`)).toEqual(["tailark-oss/mist-hero-section-1-header", "tailark-oss/mist-footer-1", "shadcn/sonner", "diceui/skip-nav"]);
+    expect(shell.limits["references.blocked"]).toBeUndefined();
+    const form = committed.sections.find(row => row.slot === "sections.form")!;
+    expect(form.references.map(row => `${row.registry}/${row.item}`)).toContain("shadcn/field");
+    const legal = committed.sections.find(row => row.slot === "sections.legal-prose")!;
+    expect(legal.references).toEqual([expect.objectContaining({ registry: "tailwindcss-typography", item: "typography" })]);
     expect(shell.inputs.some(row => row.kind === "cell")).toBe(true);
   });
 
