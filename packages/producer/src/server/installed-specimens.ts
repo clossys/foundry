@@ -11,7 +11,8 @@
  *
  * `/__specimen?element=<slot>/<element>&theme=&width=&v=` answers with a small frame page that
  * loads the built page at `width` CSS px and scales it to the frame, so breakpoints follow the
- * specimen's own viewport rather than the thumbnail's size.
+ * specimen's own viewport rather than the thumbnail's size, and reports the page's natural height
+ * (see specimen-frame.ts).
  */
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -20,6 +21,7 @@ import { mkdir, readFile, realpath, rm, stat, writeFile } from "node:fs/promises
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { dirname, extname, join, relative, resolve, sep, isAbsolute } from "node:path";
 import { specimenSubstrate } from "./specimen-substrate.js";
+import { SPECIMEN_FRAME_CSP, specimenFramePage, specimenWidth } from "./specimen-frame.js";
 import { resolveSampleCopy, specimenStateOf, VISIBLE_STATE_CSS, type SpecimenState } from "./specimen-state.js";
 import { installAndBind, isBlocking, substrateDependencies, type InstallFinding, type InstallPageRecord, type InstallPins } from "@clossys/publisher/install";
 import { listVersions, loadSelection, SELECTION_FILE } from "../records/index.js";
@@ -29,7 +31,6 @@ import { ensureSubstrate, ensureSubstrateDependencies, npmRunner, pageModule, pa
 /** Bumped when the generated specimen pages change shape. */
 const SPECIMEN_FORMAT = "studio-specimens/4";
 const SITE_PREFIX = "/__specimen-site/";
-const WIDTHS = new Set([375, 768, 1280]);
 const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
   ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp", ".ico": "image/x-icon",
@@ -254,17 +255,6 @@ async function buildSite(root: string, library: string): Promise<InstalledSpecim
   return { key, builds, pages, findings };
 }
 
-const escapeHtml = (value: string) => value.replace(/[&<>"']/g, char => `&#${char.charCodeAt(0)};`);
-
-/** The frame page: the built page at `width` CSS px, scaled to this frame's width. */
-function framePage(src: string, width: number, title: string): string {
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(title)}</title>`
-    + "<style>html,body{margin:0;height:100%;overflow:hidden;background:transparent}iframe{display:block;border:0;transform-origin:0 0}</style></head>"
-    + `<body><iframe id="page" title="${escapeHtml(title)}" src="${escapeHtml(src)}"></iframe><script>(function(){var w=${width},f=document.getElementById("page");`
-    + "function fit(){var s=Math.min(1,innerWidth/w);f.style.width=w+'px';f.style.height=Math.ceil(innerHeight/s)+'px';f.style.transform='scale('+s+')';f.style.marginLeft=Math.max(0,(innerWidth-w*s)/2)+'px';}"
-    + "addEventListener('resize',fit);fit();})();</script></body></html>\n";
-}
-
 export function installedSpecimens(options: { root: string; library: string }): InstalledSpecimens {
   const ready = buildSite(resolve(options.root), resolve(options.library)).catch(error => {
     console.warn("Producer specimens could not be built:", error instanceof Error ? error.message.split("\n")[0] : String(error));
@@ -285,8 +275,8 @@ export function installedSpecimens(options: { root: string; library: string }): 
         const width = Number(params.get("width"));
         const theme = params.get("theme") === "dark" ? "dark" : "light";
         const src = `${SITE_PREFIX}${entry.build}/index.html?${new URLSearchParams({ page: entry.page, ...(theme === "dark" ? { theme } : {}) })}`;
-        response.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" });
-        response.end(request.method === "HEAD" ? undefined : framePage(src, WIDTHS.has(width) ? width : 1280, `${slot} specimen`));
+        response.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": SPECIMEN_FRAME_CSP });
+        response.end(request.method === "HEAD" ? undefined : specimenFramePage({ src, width: specimenWidth(width), title: `${slot} specimen` }));
         return true;
       }
       if (!pathname.startsWith(SITE_PREFIX)) return false;

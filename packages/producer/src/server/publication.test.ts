@@ -7,7 +7,8 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { agentModule, agentRoot } from "./cells.js";
 import { startProducerServer, type ProducerServer } from "./index.js";
-import { previewRoot } from "./publication.js";
+import { previewRoot, themePage } from "./publication.js";
+import { SPECIMEN_FRAME_SCRIPT_HASH } from "./specimen-frame.js";
 import { INSTALL_MARKER, installOutRoot } from "../publish/install-out.js";
 import { renderNativePreview } from "./publisher-preview-render.js";
 
@@ -44,9 +45,13 @@ it("serves only emitted preview HTML and known assets with the existing loopback
   expect(metadata).toMatchObject({ state: "ready", publication: "example", pages: [{ id: "home", route: "/", title: "Published home", description: "Actual descriptor description", emitted: true, previewUrl: "/preview/example/pages/home.html" }] });
   expect(metadata.pages[0].indexing).toBeUndefined(); expect(metadata.pages[0].lastPublished).toBeUndefined();
   const page = await get(metadata.pages[0].previewUrl);
-  expect(page.status).toBe(200); expect(page.text).toBe(html);
-  expect(page.headers["content-type"]).toContain("text/html"); expect(page.headers["content-security-policy"]).toContain("sandbox;");
-  expect(page.headers["content-security-policy"]).not.toContain("allow-scripts"); expect(page.headers["content-security-policy"]).not.toContain("allow-same-origin");
+  expect(page.status).toBe(200); expect(page.text).toBe(`<html style="color-scheme:light">${html}</html>`);
+  // Same origin so the page's own CSS loads; never scripts (no sandbox flag, no script-src).
+  const csp = page.headers["content-security-policy"] as string;
+  expect(page.headers["content-type"]).toContain("text/html"); expect(csp.startsWith("sandbox allow-same-origin;")).toBe(true);
+  expect(csp).not.toContain("allow-scripts"); expect(csp).not.toContain("script-src"); expect(csp).toContain("default-src 'none'");
+  expect(page.headers["cross-origin-resource-policy"]).toBe("same-origin");
+  expect((await get(`${metadata.pages[0].previewUrl}?theme=dark`)).text).toBe(`<html class="dark" style="color-scheme:dark">${html}</html>`);
   expect((await get("/preview/example/assets/theme.css")).text).toBe("body { color: rebeccapurple; }");
   expect((await get("/preview/example/assets/assets/mark.svg")).headers["content-type"]).toBe("image/svg+xml");
   expect((await get(metadata.pages[0].previewUrl, "HEAD")).text).toBe("");
@@ -112,7 +117,19 @@ it("previews clossys publish --install output from its default out dir, with the
     const page = await get("/preview/site/pages/home.html");
     expect(page.status).toBe(200); expect(page.text).toContain("<h1>Installed home</h1>");
     expect(page.text).toContain('<link rel="stylesheet" href="/preview/site/assets/install-home/substrate/dist/assets/index-abc.css"></head>');
-    expect(page.headers["content-security-policy"]).toContain("sandbox;");
+    expect(page.headers["content-security-policy"]).toContain("sandbox allow-same-origin;");
+    expect(page.text).toContain('<html style="color-scheme:light"><head>');
+    expect((await get("/preview/site/pages/home.html?theme=dark")).text).toContain('<html class="dark" style="color-scheme:dark"><head>');
+    // The frame page: the page at the specimen width, sandboxed same-origin without scripts, measured by a hashed script.
+    const frame = await get("/preview/site/frame/home.html?theme=dark&width=375");
+    expect(frame.status).toBe(200);
+    expect(frame.text).toContain('data-width="375" sandbox="allow-same-origin" src="/preview/site/pages/home.html?theme=dark"');
+    expect(frame.headers["content-security-policy"]).toContain(`script-src '${SPECIMEN_FRAME_SCRIPT_HASH}'`);
+    expect(frame.headers["content-security-policy"]).not.toContain("sandbox");
+    const script = /<script>([\s\S]*)<\/script>/.exec(frame.text)![1]!;
+    expect(`sha256-${createHash("sha256").update(script).digest("base64")}`).toBe(SPECIMEN_FRAME_SCRIPT_HASH);
+    expect((await get("/preview/site/frame/home.html?width=9999")).text).toContain('data-width="1280" sandbox="allow-same-origin" src="/preview/site/pages/home.html"');
+    expect((await get("/preview/site/frame/..%2fhome.html")).status).toBeOneOf([400, 404]);
     const css = await get("/preview/site/assets/install-home/substrate/dist/assets/index-abc.css");
     expect(css.status).toBe(200); expect(css.headers["content-type"]).toContain("text/css"); expect(css.text).toBe("h1 { color: rebeccapurple; }");
     expect((await get("/preview/site/pages/terms.html")).status).toBe(404);
@@ -135,4 +152,10 @@ it("reads installs written with --out from the folder produce --out names, under
   expect(metadata).toMatchObject({ state: "ready", publication: "example-site", pages: [{ id: "contact", route: "/contact-us", cellId: "page.contact", emitted: true, previewUrl: "/preview/example-site/pages/contact.html" }] });
   expect(metadata.pages).toHaveLength(1);
   expect((await get("/preview/example-site/pages/contact.html")).text).toContain("<h1>Installed contact</h1>");
+});
+
+it("applies the preview theme on <html> without dropping the page's own classes", () => {
+  expect(themePage('<!doctype html><html lang="en" class="font-sans dark"><body></body></html>', "light")).toBe('<!doctype html><html lang="en" class="font-sans" style="color-scheme:light"><body></body></html>');
+  expect(themePage("<html class='font-sans' style=\"--x:1\"><body></body></html>", "dark")).toBe('<html class="font-sans dark" style="color-scheme:dark;--x:1"><body></body></html>');
+  expect(themePage("<HTML><body></body></HTML>", "dark")).toBe('<html class="dark" style="color-scheme:dark"><body></body></HTML>');
 });

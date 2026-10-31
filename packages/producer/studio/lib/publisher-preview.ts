@@ -9,6 +9,14 @@ const object = (value: unknown): value is Record<string, any> => !!value && type
 export function safePreviewUrl(value: unknown): value is string {
   return typeof value === 'string' && /^\/preview\/[a-z][a-z0-9.-]*\/pages\/[a-z][a-z0-9.-]*\.html$/.test(value) && !value.includes('..');
 }
+/**
+ * The frame route for an emitted page: the page at `viewport` CSS px with its own theme CSS, scaled
+ * to the card and sized to its content (the same frame page `/__specimen` serves).
+ */
+export function publisherFrameUrl(previewUrl: string, viewport: 375 | 768 | 1280, theme: 'light' | 'dark'): string {
+  if (!safePreviewUrl(previewUrl)) throw new Error('Not a Producer preview URL.');
+  return `${previewUrl.replace(/\/pages\/([^/]+)$/, '/frame/$1')}?${new URLSearchParams({ theme, width: String(viewport) })}`;
+}
 /** Keep iframe URLs closed to Producer's emitted-page route. Source stays secondary. */
 export function parsePublicationResponse(value: unknown): PublicationResponse {
   if (!object(value)) throw new Error('Producer returned an invalid publication response.');

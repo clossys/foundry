@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { parsePublicationResponse, publicationNavigation, publicationStatus, selectedPublicationId, selectedPublishedPage } from '../../studio/lib/publisher-preview.js';
+import { parsePublicationResponse, publicationNavigation, publisherFrameUrl, publicationStatus, selectedPublicationId, selectedPublishedPage } from '../../studio/lib/publisher-preview.js';
 import type { AgentCells } from '../../studio/lib/cells-client.js';
 
 const response = () => ({ state: 'ready', publication: 'example', publications: ['example'], manifest: { schemaVersion: 1, publication: 'example', sourceApp: 'apps/web', format: 'web.page.responsive', routes: [{ id: 'home', path: '/', source: { file: 'site/app/page.tsx', export: 'default' } }], contentMap: { version: 1, publicationId: 'example', entries: [{ id: 'pages', title: 'Pages', kind: 'group' }, { id: 'home', title: 'Home', parentId: 'pages', kind: 'page', path: '/' }] } }, pages: [{ id: 'home', cellId: 'page.home', route: '/', title: 'Home', previewUrl: '/preview/example/pages/home.html', emitted: true }] });
@@ -10,6 +10,11 @@ it('keeps iframe destinations inside the guarded publication route', () => {
     const value = response(); value.pages[0]!.previewUrl = url;
     expect(() => parsePublicationResponse(value)).toThrow('published page');
   }
+});
+it('frames an emitted page through the sized, themed frame route only', () => {
+  expect(publisherFrameUrl('/preview/example/pages/home.html', 375, 'dark')).toBe('/preview/example/frame/home.html?theme=dark&width=375');
+  expect(publisherFrameUrl('/preview/example/pages/home.html', 1280, 'light')).toBe('/preview/example/frame/home.html?theme=light&width=1280');
+  expect(() => publisherFrameUrl('https://example.test/preview/example/pages/home.html', 1280, 'light')).toThrow('Not a Producer preview URL.');
 });
 it('joins actual emitted cell identity when generic fields omit a path, without fabricating missing status fields', () => {
   const index: AgentCells = { agent: 'publisher', state: 'ready', cells: [{ id: 'page.home', title: 'Home', fields: { id: 'page.home' } }], tree: { meta: { publications: [{ id: 'example', entryIds: { 'page.home': 'home' } }] } } };

@@ -34,6 +34,9 @@ const RATIO = { 375: 'mobile', 768: 'tablet', 1280: 'desktop' } as const;
 /**
  * Every viewport in one vertical run, widest first, each a headed row of its light and dark frames
  * (no tabs). A single viewport, as a gallery card shows it, is the frame alone at full width.
+ * Each frame fits its content (`data-specimen-fit`): the specimen frame page sets the frame's
+ * height to the rendered item's own height, capped at the viewport ratio, so a short item (a
+ * logo, a toast) is not left in a tall empty box.
  */
 function Viewports({ name, specimens, empty }: { name: string; specimens: readonly ViewportSpecimen[]; empty: string }) {
   if (!specimens.length) return <CardContent><Badge variant="outline" data-preview-status="empty">{empty}</Badge></CardContent>;
@@ -42,8 +45,8 @@ function Viewports({ name, specimens, empty }: { name: string; specimens: readon
     {rows.map(row => <CardContent key={row.viewport} className="flex flex-col gap-2 px-0" data-specimen-viewport={row.viewport}>
       {rows.length > 1 && <CardDescription role="heading" aria-level={3} className="font-medium text-foreground">{row.viewport} px</CardDescription>}
       <CardGrid density={row.dark ? 'specimens' : undefined} className={row.dark ? undefined : 'grid-cols-1'}>
-        <SpecimenFrame interactive={row.interactive ?? true} ratio={RATIO[row.viewport]} title={`${name} at ${row.viewport} px${row.dark ? ', light' : ''}`} src={row.light} />
-        {row.dark && <SpecimenFrame interactive={row.interactive ?? true} ratio={RATIO[row.viewport]} title={`${name} at ${row.viewport} px, dark`} src={row.dark} />}
+        <SpecimenFrame data-specimen-fit="content" interactive={row.interactive ?? true} ratio={RATIO[row.viewport]} title={`${name} at ${row.viewport} px${row.dark ? ', light' : ''}`} src={row.light} />
+        {row.dark && <SpecimenFrame data-specimen-fit="content" interactive={row.interactive ?? true} ratio={RATIO[row.viewport]} title={`${name} at ${row.viewport} px, dark`} src={row.dark} />}
       </CardGrid>
     </CardContent>)}
   </CardContent>;

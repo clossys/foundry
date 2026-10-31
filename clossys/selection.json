@@ -5,7 +5,7 @@
       "element": "studio-shell",
       "version": 5,
       "hash": "sha256:b5484448374b9371a86c7e2e536f4c6158f184423372d25c5af78257c598eb3f",
-      "event": "e24"
+      "event": "e26"
     },
     "sections.studio.home": {
       "element": "studio-home",
@@ -15,9 +15,9 @@
     },
     "sections.studio.agent-gallery": {
       "element": "studio-agent-gallery",
-      "version": 3,
+      "version": 4,
       "hash": "sha256:d2eeb96c478da13e2a14bb9e4b0e4304ccaaea52121115279d921b10df5e899d",
-      "event": "e17"
+      "event": "e25"
     },
     "sections.studio.leaf-header": {
       "element": "studio-leaf-header",
@@ -27,9 +27,9 @@
     },
     "sections.studio.specimen": {
       "element": "studio-specimen",
-      "version": 2,
-      "hash": "sha256:55b39a4888d8ba1da2e925dc93317b2c3f8b14322e3647247d7789f4db75c61b",
-      "event": "e16"
+      "version": 3,
+      "hash": "sha256:9778983b1ea63e1c1d655a767bdb2e21589d06540b707d51ef6fb5acd87a2fab",
+      "event": "e24"
     },
     "sections.studio.options": {
       "element": "studio-options",
@@ -371,6 +371,28 @@
     },
     {
       "id": "e24",
+      "at": "2026-10-31T22:00:00Z",
+      "by": "designer/PREVIEW-FIX",
+      "action": "pin",
+      "slot": "sections.studio.specimen",
+      "element": "studio-specimen",
+      "version": 3,
+      "hash": "sha256:9778983b1ea63e1c1d655a767bdb2e21589d06540b707d51ef6fb5acd87a2fab",
+      "from": "option"
+    },
+    {
+      "id": "e25",
+      "at": "2026-10-31T22:00:00Z",
+      "by": "designer/PREVIEW-FIX",
+      "action": "pin",
+      "slot": "sections.studio.agent-gallery",
+      "element": "studio-agent-gallery",
+      "version": 4,
+      "hash": "sha256:d2eeb96c478da13e2a14bb9e4b0e4304ccaaea52121115279d921b10df5e899d",
+      "from": "option"
+    },
+    {
+      "id": "e26",
       "at": "2026-10-31T23:30:00Z",
       "by": "NAV-RESET",
       "action": "pin",
