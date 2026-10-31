@@ -18,9 +18,9 @@
     },
     "magicui": {
       "namespace": "@magicui",
-      "source": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/{name}.json",
+      "source": "https://magicui.design/r/{name}.json",
       "version": "efe76fc",
-      "versionBasis": "built registry JSON committed upstream; byte-identical to https://magicui.design/r/{name}.json at fetchedAt",
+      "versionBasis": "registry endpoint served at fetchedAt; byte-identical to the built registry JSON committed upstream at the commit recorded in upstream",
       "upstream": "github.com/magicuidesign/magicui@efe76fc5755eca1142dd4f74c1d6f0ace2887e3c",
       "license": "MIT",
       "licenseFiles": [
@@ -1453,7 +1453,7 @@
       "version": "efe76fc",
       "dir": "magicui/animated-shiny-text@efe76fc",
       "type": "registry:ui",
-      "sourceUrl": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/animated-shiny-text.json",
+      "sourceUrl": "https://magicui.design/r/animated-shiny-text.json",
       "license": "MIT",
       "direct": true,
       "slots": [
@@ -1465,7 +1465,7 @@
           "path": "animated-shiny-text.json",
           "sha256": "f8f3bf18fc6a4e18dd28c301e9706a2791407f4ae7e236ea53aa9852aa635e91",
           "bytes": 1799,
-          "origin": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/animated-shiny-text.json"
+          "origin": "https://magicui.design/r/animated-shiny-text.json"
         },
         {
           "path": "registry/magicui/animated-shiny-text.tsx",
@@ -1481,7 +1481,7 @@
       "version": "efe76fc",
       "dir": "magicui/file-tree@efe76fc",
       "type": "registry:ui",
-      "sourceUrl": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/file-tree.json",
+      "sourceUrl": "https://magicui.design/r/file-tree.json",
       "license": "MIT",
       "direct": true,
       "slots": [
@@ -1493,7 +1493,7 @@
           "path": "file-tree.json",
           "sha256": "a4b8c998d7a3d7f42db01976970b4b52cc7526edd5de466e6a202b3a767ac5b5",
           "bytes": 13548,
-          "origin": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/file-tree.json"
+          "origin": "https://magicui.design/r/file-tree.json"
         },
         {
           "path": "registry/magicui/file-tree.tsx",
@@ -1509,7 +1509,7 @@
       "version": "efe76fc",
       "dir": "magicui/grid-pattern@efe76fc",
       "type": "registry:ui",
-      "sourceUrl": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/grid-pattern.json",
+      "sourceUrl": "https://magicui.design/r/grid-pattern.json",
       "license": "MIT",
       "direct": true,
       "slots": [
@@ -1521,7 +1521,7 @@
           "path": "grid-pattern.json",
           "sha256": "87b67223033ca97ee464f34cf4bafe12ee699ec583616b42f9249de1d8b7b0aa",
           "bytes": 2004,
-          "origin": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/grid-pattern.json"
+          "origin": "https://magicui.design/r/grid-pattern.json"
         },
         {
           "path": "registry/magicui/grid-pattern.tsx",
@@ -1537,7 +1537,7 @@
       "version": "efe76fc",
       "dir": "magicui/marquee@efe76fc",
       "type": "registry:ui",
-      "sourceUrl": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/marquee.json",
+      "sourceUrl": "https://magicui.design/r/marquee.json",
       "license": "MIT",
       "direct": true,
       "slots": [
@@ -1550,7 +1550,7 @@
           "path": "marquee.json",
           "sha256": "6378d12f6ac7b383bcbe25cbfcd21ad567d4726ff9979bf07991598a7bdef1ce",
           "bytes": 2694,
-          "origin": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/marquee.json"
+          "origin": "https://magicui.design/r/marquee.json"
         },
         {
           "path": "registry/magicui/marquee.tsx",
@@ -1566,7 +1566,7 @@
       "version": "efe76fc",
       "dir": "magicui/safari@efe76fc",
       "type": "registry:ui",
-      "sourceUrl": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/safari.json",
+      "sourceUrl": "https://magicui.design/r/safari.json",
       "license": "MIT",
       "direct": true,
       "slots": [
@@ -1584,7 +1584,7 @@
           "path": "safari.json",
           "sha256": "8e50e929a19b82cc70930b1572d37179ffc2516174892e12b56bc39b15d801aa",
           "bytes": 13864,
-          "origin": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/safari.json"
+          "origin": "https://magicui.design/r/safari.json"
         }
       ]
     },
