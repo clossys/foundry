@@ -1,3 +1,4 @@
+import { checkCollections } from "./collections.js";
 import { FORMAT_IDS } from "../formats/contract.js";
 import { isRegisteredContentRef } from "../core/instance-binding.js";
 import { projectPageOutline } from "../content/taxonomy.js";
@@ -90,8 +91,8 @@ export function checkContentMap(input: unknown): readonly ContentMapFinding[] {
     const planSource = record(source) && fields(source, ["planItemId"]) && text(source.planItemId);
     const frameSource = record(source) && fields(source, ["frameId", "sectionIds"]) && text(source.frameId) && Array.isArray(source.sectionIds) && source.sectionIds.every(text) && new Set(source.sectionIds).size === source.sectionIds.length;
     const external = entry.kind === "external";
-    if (!fields(entry, ["id", "parentId", "order", "title", "path", "slug", "kind", "pin", "source", "icon", "description", "keywords", "manifest", "constructs", "pageConfig", "href", "indexing", "lastModified", "actions"]) || !text(entry.id) || !text(entry.title) || !Number.isSafeInteger(entry.order) || entry.order < 0
-      || !["page", "slide", "section", "group", "external"].includes(entry.kind) || (entry.parentId !== undefined && !text(entry.parentId)) || (!external && !planSource && !frameSource)
+    if (!fields(entry, ["id", "parentId", "order", "title", "path", "slug", "kind", "pin", "source", "icon", "description", "keywords", "manifest", "constructs", "pageConfig", "href", "indexing", "lastModified", "actions", "collection"]) || !text(entry.id) || !text(entry.title) || !Number.isSafeInteger(entry.order) || entry.order < 0
+      || !["page", "slide", "section", "group", "external", "collection"].includes(entry.kind) || (entry.parentId !== undefined && !text(entry.parentId)) || (!external && !planSource && !frameSource)
       || (external ? entry.source !== undefined || !text(entry.path) || !isContentMapExternalHref(entry.href) || entry.manifest !== undefined || entry.constructs !== undefined : Object.hasOwn(entry, "href"))
       || (entry.path === undefined) === (entry.slug === undefined) || !(text(entry.path) || text(entry.slug))
       || (entry.icon !== undefined && !text(entry.icon)) || (entry.description !== undefined && !text(entry.description)) || (entry.keywords !== undefined && (!Array.isArray(entry.keywords) || !entry.keywords.every(text)))) add("contract", at, "Invalid entry identity, content reference or metadata", entry.id);
@@ -127,7 +128,7 @@ export function checkContentMap(input: unknown): readonly ContentMapFinding[] {
     if (input.format === "web.page.responsive" && (typeof path !== "string" || !path.startsWith("/") || path.startsWith("//") || path.includes("\\") || /[\u0000-\u0020]/.test(path)
       || ((entry.kind === "page" || external) && !canonicalPagePath(path)))) add("web-path", at, "Web targets must stay local; pages and external redirect identities require canonical paths", entry.id);
     if (entry.pageConfig !== undefined && (entry.kind !== "page" || !text(entry.pageConfig))) add("contract", `${at}.pageConfig`, "Only pages may reference a nonempty consumer config", entry.id);
-    if (entry.pin !== undefined && (!record(entry.pin) || !fields(entry.pin, ["nav", "group"]) || entry.pin.nav !== true || !["page", "group", "section", "external"].includes(entry.kind) || !text(entry.id) || (entry.pin.group !== undefined && !text(entry.pin.group)))) add("pin", `${at}.pin`, "Only an existing page, group, section or external destination can be pinned", entry.id);
+    if (entry.pin !== undefined && (!record(entry.pin) || !fields(entry.pin, ["nav", "group"]) || entry.pin.nav !== true || !["page", "group", "section", "external", "collection"].includes(entry.kind) || !text(entry.id) || (entry.pin.group !== undefined && !text(entry.pin.group)))) add("pin", `${at}.pin`, "Only an existing page, group, section or external destination can be pinned", entry.id);
     if (entry.manifest !== undefined || entry.constructs !== undefined) {
       try {
         if (!record(entry.constructs) || !Object.entries(entry.constructs).every(([slot, fills]) => text(slot) && Array.isArray(fills) && fills.every(fill => construct(fill)))) throw new TypeError("Slot-addressed Section constructs are required");
@@ -174,6 +175,7 @@ export function checkContentMap(input: unknown): readonly ContentMapFinding[] {
     if (ids.has(action.id as string) || actionIds.has(action.id as string)) add("action-id", `actions.${index}.id`, "Action identity collides with an entry or action");
     actionIds.add(action.id as string);
   }
+  findings.push(...checkCollections(input as unknown as ContentMap));
   findings.push(...checkContentMapRedirects(input));
   return findings;
 }

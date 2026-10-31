@@ -21,12 +21,20 @@ export type ContentMapPageAction = {
   readonly icon: string;
 } & ({ readonly module: { readonly section: string; readonly source?: string }; readonly defaultOpen: boolean; readonly intent?: never }
   | { readonly intent: string; readonly defaultOpen: false; readonly module?: never });
+/** One agent gallery and its current slot IA. Group levels are anchors;
+ * stable leaf slugs alone determine detail URLs. */
+export interface ContentMapCollection {
+  readonly agent: string;
+  readonly groups: readonly { readonly id: string; readonly title: string; readonly anchor: string; readonly parentId?: string; readonly order: number }[];
+  readonly leaves: readonly { readonly id: string; readonly title: string; readonly slug: string; readonly parentId?: string; readonly order: number }[];
+}
 export type ContentMapEntry = {
   readonly id: string;
   readonly parentId?: string;
   readonly order: number;
   readonly title: string;
-  readonly kind: "page" | "slide" | "section" | "group";
+  readonly kind: "page" | "slide" | "section" | "group" | "collection";
+  readonly collection?: ContentMapCollection;
   /** Groups and sections are pinnable as well as pages. A named group must be
    * an ancestor group, and pinned descendants require pinned ancestors. */
   readonly pin?: { readonly nav: true; readonly group?: string };
