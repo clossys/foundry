@@ -5,6 +5,7 @@
  * content-map projection when it lands.
  */
 import { isLibraryAgent, type LibraryAgent } from './agent-library';
+import { studioAgentHref } from '../generated/studio-map';
 
 export type ProofRoute =
   | { view: 'designer-gallery' } | { view: 'designer-leaf'; slug: string }
@@ -27,6 +28,14 @@ export function proofRouteForSegments(segments: readonly string[]): ProofRoute |
  */
 export function libraryRouteHref(pageId: string): string | undefined {
   return pageId === 'designer' || isLibraryAgent(pageId) ? `/${pageId}` : undefined;
+}
+
+/**
+ * An agent's Studio page href for cells and cards: the library route when the agent has one,
+ * else the projection's path. Cells link through this, never through the projection directly.
+ */
+export function agentPageHref(agent: string): string {
+  return libraryRouteHref(agent) ?? studioAgentHref(agent);
 }
 
 /** The Studio page the Designer proof routes belong to, for navigation and breadcrumbs. */

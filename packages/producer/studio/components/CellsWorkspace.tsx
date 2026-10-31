@@ -12,7 +12,7 @@ import { designerLayer } from '../lib/designer-fill';
 import { studioIcon } from '../lib/studio-icons';
 import type { StudioReport } from '../lib/studio-report';
 import { cellTitle, humanize, presentText, titleMap } from '../lib/studio-text';
-import { studioAgentHref } from '../generated/studio-map';
+import { agentPageHref } from '../lib/proof-routes';
 import { AgentDetail } from './AgentDetails';
 import { ReportList, StudioFrame, usePageModules } from './StudioFrame';
 import { useStudioData, type Resource } from './StudioProviders';
@@ -198,7 +198,7 @@ function HomeOverview({ indexes, reports }: { indexes: Resource<AgentCells[]>; r
                 <CardDescription>{AGENT_PURPOSE[agent]}</CardDescription>
                 <CardAction>{indexes.state === 'loading' ? <Skeleton className="h-5 w-14" /> : <Badge variant={index?.state === 'ready' ? 'secondary' : 'outline'} className="tabular-nums">{index?.state === 'ready' ? (count === 1 ? '1 cell' : `${count} cells`) : 'Unavailable'}</Badge>}</CardAction>
               </CardHeader>
-              <CardFooter><LinkButton variant="outline" size="sm" href={studioAgentHref(agent)}>Open {AGENT_LABELS[agent]}<ArrowRightIcon data-icon="inline-end" /></LinkButton></CardFooter>
+              <CardFooter><LinkButton variant="outline" size="sm" href={agentPageHref(agent)}>Open {AGENT_LABELS[agent]}<ArrowRightIcon data-icon="inline-end" /></LinkButton></CardFooter>
             </Card>;
           })}
         </div>

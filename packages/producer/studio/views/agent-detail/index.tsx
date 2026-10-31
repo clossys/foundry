@@ -7,7 +7,7 @@ import { SpecimenBlock } from './SpecimenBlock';
 import { UsesBlock } from './UsesBlock';
 import type { DetailCheckRow, DetailContractData, DetailHeaderData, DetailHistoryData, DetailSlots, DetailSpecimenData, DetailUsesData } from './types';
 
-export type { DetailCheckRow, DetailContractData, DetailHeaderData, DetailHistoryData, DetailHistoryRow, DetailRef, DetailSlots, DetailSpecimenData, DetailTone, DetailUsesData } from './types';
+export type { DetailCheckRow, DetailContractData, DetailHeaderData, DetailHistoryData, DetailHistoryRow, DetailLineage, DetailRef, DetailSlots, DetailSpecimenData, DetailTone, DetailUsesData } from './types';
 
 /**
  * Any agent's leaf, Designer included: its specimen, then checks, contract, history and uses as

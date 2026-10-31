@@ -31,11 +31,17 @@ export interface DetailContractData {
   lists: readonly { label: string; items: readonly string[] }[];
 }
 
-/** One recorded version; `extra` holds one value per `DetailHistoryData.columns` entry. */
-export interface DetailHistoryRow { version: number; date: string; note: string; marks: readonly string[]; extra?: readonly string[] }
+/** How a version came to be: its mode (`verbatim`, `customized`, ...) and, when it has one, its source. */
+export interface DetailLineage { mode: string; source?: string }
 
-/** The history table: rows newest first, plus any agent-specific columns after Note. */
-export interface DetailHistoryData { rows: readonly DetailHistoryRow[]; columns?: readonly string[] }
+/**
+ * One recorded version. `lineage` and `hash` are optional columns: the table shows each only
+ * when some row carries it. `hash` is the full value (`sha256:...`); the table shortens it.
+ */
+export interface DetailHistoryRow { version: number; date: string; note: string; marks: readonly string[]; lineage?: DetailLineage; hash?: string }
+
+/** The history table: rows newest first. */
+export interface DetailHistoryData { rows: readonly DetailHistoryRow[] }
 
 export interface DetailUsesData { uses: readonly DetailRef[]; usedBy: readonly DetailRef[] }
 

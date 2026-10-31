@@ -3,12 +3,12 @@ import type { ViewportSpecimenData } from './types';
 
 const RATIO = { 375: 'mobile', 768: 'tablet', 1280: 'desktop' } as const;
 
-/** The pinned version, installed and bound the way the site renders it, at each viewport in light and dark. */
-export function ViewportSpecimens({ name, specimens }: { name: string; specimens: readonly ViewportSpecimenData[] }) {
+/** The leaf's specimen at each viewport in light and dark; `description` follows the shared leaf status. */
+export function ViewportSpecimens({ name, description, specimens }: { name: string; description: string; specimens: readonly ViewportSpecimenData[] }) {
   return <Card size="sm">
     <CardHeader>
       <CardTitle role="heading" aria-level={2}>Specimen</CardTitle>
-      <CardDescription>The pinned version, installed and bound the way the site renders it.</CardDescription>
+      <CardDescription>{description}</CardDescription>
     </CardHeader>
     <CardContent>
       {specimens.length

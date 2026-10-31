@@ -32,11 +32,11 @@ export default function DesignerLeafView({ slug }: { slug: string }) {
       : load.state === 'error' ? <GalleryNotice notice={designerNotice('error', load.message)} />
       : data && <AgentDetail
         header={data.header}
-        specimen={{ title: 'Specimen', description: 'The pinned version, installed and bound the way the site renders it.' }}
+        specimen={{ title: 'Specimen', description: data.specimenDescription }}
         contract={data.contract}
         history={data.history}
         slots={{
-          specimen: <ViewportSpecimens name={data.header.name} specimens={data.specimens} />,
+          specimen: <ViewportSpecimens name={data.header.name} description={data.specimenDescription} specimens={data.specimens} />,
           ...(data.options.some(row => !row.pinned) ? { afterSpecimen: <OptionsBlock name={data.header.name} rows={data.options} /> } : {}),
         }}
       />}

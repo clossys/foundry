@@ -6,7 +6,7 @@
 import type { GalleryHeaderData, GalleryLayerData, GalleryNoticeData } from '../views/agent-gallery/types';
 import type { DetailContractData, DetailHeaderData, DetailHistoryData } from '../views/agent-detail/types';
 import type { DetailOptionData, ViewportSpecimenData } from '../views/designer-slots/types';
-import { LEAF_STATUS_LABEL, LEAF_STATUS_TONE, pendingOptionsBadge } from './leaf-status';
+import { LEAF_STATUS_LABEL, LEAF_STATUS_TONE, pendingOptionsBadge, specimenDescription } from './leaf-status';
 
 /** `pending`: nothing pinned, options recorded. `missing`: no version exists at all. */
 export type DesignerStatus = 'pinned' | 'pending' | 'missing' | 'failing' | 'stale' | 'unreleased';
@@ -109,6 +109,8 @@ const versionFlags = (row: DesignerVersionRow) => [row.pinned && 'Pinned', row.r
 
 export interface DesignerDetailData {
   header: DetailHeaderData; contract: DetailContractData; history: DetailHistoryData;
+  /** The specimen block's description, from the shared leaf status. */
+  specimenDescription: string;
   specimens: ViewportSpecimenData[]; options: DetailOptionData[];
 }
 
@@ -137,13 +139,16 @@ export function designerDetailData(leaf: DesignerLeaf, theme: 'light' | 'dark'):
       ],
     },
     history: {
-      columns: ['Lineage', 'Hash'],
       rows: leaf.versions.map(row => {
         const step = lineage.get(row.version);
-        const origin = step ? [step.mode, step.parent !== undefined && `from v${step.parent}`, step.source].filter(Boolean).join(', ') : row.lineage;
-        return { version: row.version, date: row.createdAt, note: row.reason || '—', marks: versionFlags(row), extra: [origin, row.hash.slice(0, 19)] };
+        const mode = step ? [step.mode, step.parent !== undefined && `from v${step.parent}`].filter(Boolean).join(' ') : row.lineage;
+        return {
+          version: row.version, date: row.createdAt, note: row.reason || '—', marks: versionFlags(row),
+          lineage: { mode, ...(step?.source ? { source: step.source } : {}) }, ...(row.hash ? { hash: row.hash } : {}),
+        };
       }),
     },
+    specimenDescription: specimenDescription(card.status),
     specimens: card.specimen ? SPECIMEN_VIEWPORTS.map(viewport => ({ viewport, light: specimenHref(card, 'light', viewport)!, dark: specimenHref(card, 'dark', viewport)! })) : [],
     options: card.specimen ? optionVersions.map(version => ({
       version, pinned: card.pinned && version === card.version,
