@@ -1,0 +1,34 @@
+{
+  "schema": "clossys.element/1",
+  "id": "neutral",
+  "package": "designer",
+  "layer": "tokens",
+  "slot": "tokens.theme",
+  "kind": "registry:theme",
+  "lineage": {
+    "mode": "original"
+  },
+  "license": {
+    "spdx": "MIT"
+  },
+  "creator": {
+    "agent": "designer",
+    "model": "fixture"
+  },
+  "reason": "fixture: a neutral theme",
+  "createdAt": "2026-10-30T00:00:00Z",
+  "checks": [],
+  "deps": {
+    "npm": {},
+    "elements": []
+  },
+  "reads": {
+    "copyKeys": [],
+    "themeVars": []
+  },
+  "version": 1,
+  "hash": "sha256:38dd26375fc8fa60eb8792df1b31c64601a352f8c216a133e69a9013ef093d63",
+  "payload": [
+    "theme.json"
+  ]
+}

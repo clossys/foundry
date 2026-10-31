@@ -10,16 +10,17 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import {
-  captureSpecimen, createSpecimenBuilder, directoryRecordSource, parseThemeParam, specimenUrl, startSpecimenServer, SPECIMEN_RENDERER_VERSION,
+  captureSpecimen, createSpecimenBuilder, parseThemeParam, specimenUrl, startSpecimenServer, SPECIMEN_RENDERER_VERSION,
   type SpecimenEsbuild,
 } from "@clossys/publisher/specimen";
 import { parseSpecimenHealthMessage, type SpecimenHealthMessage } from "./health-contract.js";
+import { libraryRecordSource } from "./library-source.js";
 
 export const DEFAULT_THUMBNAIL_CACHE = join("node_modules", ".cache", "clossys", "specimen-thumbs");
 export const DEFAULT_THUMBNAIL_WIDTHS = [480] as const;
 
 export interface SnapshotOptions {
-  /** Record roots (`<root>/<id>/v<n>/`). */
+  /** Library roots (`<root>/<slot>/<element>/v<n>/`), read through the slot engine loaders. */
   readonly records: readonly string[];
   readonly element: string;
   readonly version?: number;
@@ -76,7 +77,7 @@ export async function snapshotSpecimen(options: SnapshotOptions): Promise<Snapsh
   const widths = [...new Set(options.widths?.length ? options.widths : DEFAULT_THUMBNAIL_WIDTHS)];
   const request = parseThemeParam(options.theme);
   if (!request) throw new Error(`theme must be light, dark, <id> or <id>:<light|dark>`);
-  const source = directoryRecordSource({ roots: options.records.map(root => resolve(cwd, root)), ...(options.defaultTheme ? { defaultTheme: options.defaultTheme } : {}) });
+  const source = libraryRecordSource({ roots: options.records.map(root => resolve(cwd, root)), ...(options.defaultTheme ? { defaultTheme: options.defaultTheme } : {}) });
   const record = await source.read(options.element, options.version);
   if (!record) throw new Error(`element ${options.element}${options.version ? `@v${options.version}` : ""} not found`);
   const theme = await source.theme(request.id ?? record.preview.theme);

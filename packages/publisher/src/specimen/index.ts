@@ -4,8 +4,8 @@
  */
 export { SPECIMEN_CONTAINERS, SPECIMEN_KINDS, SPECIMEN_TEXT_ROLES } from "./types.js";
 export type { SpecimenContainer, SpecimenCopy, SpecimenFile, SpecimenKind, SpecimenPreview, SpecimenQuery, SpecimenRecord, SpecimenRecordSource, SpecimenTextRole, SpecimenTheme } from "./types.js";
-export { adaptElementRecord, adaptPreview, adaptTheme, directoryRecordSource, specimenKindOf, validSpecimenId } from "./source.js";
-export type { DirectorySourceOptions } from "./source.js";
+export { adaptPreview, adaptTheme, directoryRecordSource, recordStoreSource, specimenKindOf, specimenRecordFrom, validSpecimenId } from "./source.js";
+export type { DirectorySourceOptions, SpecimenElementVersion, SpecimenRecordStore } from "./source.js";
 export { parseThemeParam, themeCss } from "./theme.js";
 export type { SpecimenMode, ThemeRequest } from "./theme.js";
 export { createSpecimenBuilder, specimenEntry, SPECIMEN_RENDERER_VERSION } from "./build.js";

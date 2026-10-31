@@ -12,7 +12,7 @@ import {
 } from "./health-contract.js";
 import { snapshotSpecimen, thumbnailKey } from "./thumbnails.js";
 
-const records = fileURLToPath(new URL("../../../publisher/src/specimen/__fixtures__/records/", import.meta.url));
+const records = fileURLToPath(new URL("./__fixtures__/library/", import.meta.url));
 const workspace = fileURLToPath(new URL("../../../../", import.meta.url));
 const chrome = publisher.findChrome();
 const temps: string[] = [];
@@ -76,7 +76,7 @@ describe.skipIf(!chrome)("snapshot thumbnails in Chrome", () => {
     const second = await snapshotSpecimen(options);
     expect(second.thumbnails.map(thumb => thumb.cached)).toEqual([true, true]);
     expect(second.thumbnails[0]!.key).toBe(first.thumbnails[0]!.key);
-    expect(second.thumbnails[0]!.health?.element).toBe("sample-card");
+    expect(second.thumbnails[0]!.health?.element).toBe("components.card/sample-card");
     expect((await stat(second.thumbnails[0]!.path)).mtimeMs).toBe(before);
     const dark = await snapshotSpecimen({ ...options, theme: "neutral:dark", widths: [320] });
     expect(dark.thumbnails[0]).toMatchObject({ cached: false });

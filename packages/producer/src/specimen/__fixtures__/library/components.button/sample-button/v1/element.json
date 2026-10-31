@@ -1,0 +1,36 @@
+{
+  "schema": "clossys.element/1",
+  "id": "sample-button",
+  "package": "designer",
+  "layer": "components",
+  "slot": "components.button",
+  "kind": "registry:ui",
+  "lineage": {
+    "mode": "original"
+  },
+  "license": {
+    "spdx": "MIT"
+  },
+  "creator": {
+    "agent": "designer",
+    "model": "fixture"
+  },
+  "reason": "fixture: a button component",
+  "createdAt": "2026-10-30T00:00:00Z",
+  "checks": [],
+  "deps": {
+    "npm": {
+      "class-variance-authority": "^0.7.0"
+    },
+    "elements": []
+  },
+  "reads": {
+    "copyKeys": [],
+    "themeVars": []
+  },
+  "version": 1,
+  "hash": "sha256:8177fc6c4d6dba3e6af863ad3177a06d96b8e9bca147fad86e62a75d4839ff39",
+  "payload": [
+    "sample-button.json"
+  ]
+}

@@ -1,12 +1,15 @@
 /**
- * Record store adapter for the specimen renderer.
+ * Record store seam for the specimen renderer.
  *
- * `adaptElementRecord` is the only place that knows the on-disk record shape. It reads the
- * minimal fields (id, version, kind, payload path, preview.json) and tolerates a fuller
- * schema around them, so the record schema can grow without touching the renderer.
+ * The renderer never parses a record store's on-disk schema. A store hands it one already
+ * validated version (`SpecimenElementVersion`: id, version, kind, payload files, preview,
+ * content hash) and `specimenRecordFrom` maps that onto the renderer's minimal record.
+ * Producer owns the element record schema, its loaders and validators, and supplies the
+ * store for real consumer libraries (`libraryRecordSource` in `@clossys/producer`), so
+ * Publisher keeps no dependency on Producer.
  *
- * On disk a record is an immutable directory `<root>/<id>/v<n>/` holding `element.json`,
- * `preview.json` and the payload file `element.json` names.
+ * `directoryRecordSource` reads the renderer's own minimal fixture layout
+ * (`<root>/<id>/v<n>/element.json` naming one payload file) for renderer tests.
  */
 import { createHash } from "node:crypto";
 import { readdir, readFile, realpath, stat } from "node:fs/promises";
@@ -30,6 +33,8 @@ const KIND_ALIASES: Readonly<Record<string, SpecimenKind>> = {
   table: "data", chart: "data", dataset: "data", theme: "data", "registry:theme": "data", tokens: "data",
   asset: "media", assets: "media", image: "media", icon: "media", logo: "media", video: "media",
   director: "flow", route: "flow", journey: "flow",
+  // Library record kinds and layers (the element record schema's `kind` and `layer`).
+  "cell:md": "text", passages: "text", strings: "text", lexicon: "text", patterns: "text", narratives: "text", strategy: "text",
 };
 
 export function specimenKindOf(element: Record<string, any>): SpecimenKind {
@@ -65,7 +70,9 @@ export function adaptPreview(value: unknown): SpecimenPreview {
   const container = (SPECIMEN_CONTAINERS as readonly string[]).includes(value.container) ? value.container
     : isRecord(value.container) && (SPECIMEN_CONTAINERS as readonly string[]).includes(value.container.kind) ? value.container.kind : undefined;
   const width = positiveInt(value.width, 3840) ?? positiveInt(value.defaults?.width, 3840);
-  const theme = typeof value.theme === "string" ? value.theme : typeof value.defaults?.theme === "string" ? value.defaults.theme : undefined;
+  // A bare `light` or `dark` is a mode (the library preview record), not a theme id.
+  const themeId = (raw: unknown) => typeof raw === "string" && raw !== "light" && raw !== "dark" ? raw : undefined;
+  const theme = themeId(value.theme) ?? themeId(value.defaults?.theme);
   const fixtures = isRecord(value.fixtures) ? value.fixtures : isRecord(value.props) ? value.props : undefined;
   const copy = adaptCopy(value.copy);
   return {
@@ -102,23 +109,75 @@ async function readInside(dir: string, name: string): Promise<string> {
   return readFile(target, "utf8");
 }
 
-/** Adapt one record directory (`<id>/v<n>/`) into the renderer's minimal record. */
-export async function adaptElementRecord(dir: string): Promise<SpecimenRecord> {
+/** One validated element version, as a record store hands it to the renderer. */
+export interface SpecimenElementVersion {
+  /** Specimen id (`<slot>/<element>` for a library record). */
+  readonly id: string;
+  readonly version: number;
+  /** Record kind and layer, mapped onto a specimen kind by `specimenKindOf`. */
+  readonly kind: string;
+  readonly layer?: string;
+  /** Payload files in record order; the first is the primary payload. */
+  readonly files: readonly { readonly path: string; readonly content: string }[];
+  /** The record's preview (`preview.json`), any supported shape. */
+  readonly preview: unknown;
+  /** Hash of the record's own files (element, preview and payload). */
+  readonly contentHash: string;
+}
+
+/** A record store: one version of an id (the highest when `version` is omitted), or undefined. */
+export interface SpecimenRecordStore {
+  load(id: string, version?: number): Promise<SpecimenElementVersion | undefined>;
+}
+
+/** Map one validated element version onto the renderer's minimal record. Pure. */
+export function specimenRecordFrom(input: SpecimenElementVersion): SpecimenRecord {
+  const primary = input.files[0];
+  if (!primary) throw new Error(`${input.id}: the record has no payload file`);
+  const kind = specimenKindOf({ id: input.id, kind: input.kind, ...(input.layer ? { layer: input.layer } : {}) });
+  const files = input.files.flatMap(file => payloadFiles(file.path, file.content));
+  return {
+    id: input.id, version: input.version, kind,
+    payload: { path: primary.path, raw: primary.content, files },
+    preview: adaptPreview(input.preview),
+    contentHash: input.contentHash,
+  };
+}
+
+/** A specimen source over any record store; themes are records whose payload carries `cssVars`. */
+export function recordStoreSource(store: SpecimenRecordStore, options: { readonly defaultTheme?: string } = {}): SpecimenRecordSource {
+  async function read(id: string, version?: number): Promise<SpecimenRecord | undefined> {
+    if (!validSpecimenId(id)) return undefined;
+    const row = await store.load(id, version);
+    return row ? specimenRecordFrom(row) : undefined;
+  }
+  return {
+    read,
+    async theme(id = options.defaultTheme) {
+      if (!id) return undefined;
+      const record = await read(id);
+      return record ? adaptTheme(record.id, record.payload.raw, record.contentHash) : undefined;
+    },
+  };
+}
+
+/** Read one fixture record directory (`<id>/v<n>/`) into an element version. */
+async function readFixtureVersion(dir: string): Promise<SpecimenElementVersion> {
   const elementRaw = await readFile(join(dir, "element.json"), "utf8");
   const element = JSON.parse(elementRaw);
   if (!isRecord(element) || typeof element.id !== "string" || !validSpecimenId(element.id)) throw new Error(`${dir}: element.json needs a valid id`);
   const version = positiveInt(element.version, 999_999);
   if (!version) throw new Error(`${element.id}: element.json needs a positive integer version`);
-  const kind = specimenKindOf(element);
   const payloadPath = typeof element.payload === "string" ? element.payload : isRecord(element.payload) && typeof element.payload.path === "string" ? element.payload.path : undefined;
   if (!payloadPath) throw new Error(`${element.id}: element.json names no payload`);
   let previewRaw = "";
   try { previewRaw = await readFile(join(dir, "preview.json"), "utf8"); } catch { /* preview.json is optional */ }
   const raw = await readInside(dir, payloadPath);
+  const kind = [element.specimen, element.kind].find((value): value is string => typeof value === "string") ?? "";
+  const layer = [element.layer, element.type].find((value): value is string => typeof value === "string");
   return {
-    id: element.id, version, kind,
-    payload: { path: payloadPath, raw, files: payloadFiles(payloadPath, raw) },
-    preview: adaptPreview(previewRaw ? JSON.parse(previewRaw) : {}),
+    id: element.id, version, kind, ...(layer ? { layer } : {}), files: [{ path: payloadPath, content: raw }],
+    preview: previewRaw ? JSON.parse(previewRaw) : {},
     contentHash: hashFiles([{ name: "element.json", bytes: elementRaw }, { name: "preview.json", bytes: previewRaw }, { name: payloadPath, bytes: raw }]),
   };
 }
@@ -156,7 +215,7 @@ export interface DirectorySourceOptions {
   readonly defaultTheme?: string;
 }
 
-/** A read-only source over record directories on disk. */
+/** A read-only source over fixture record directories on disk (the renderer's own test layout). */
 export function directoryRecordSource(options: DirectorySourceOptions): SpecimenRecordSource {
   const roots = options.roots.map(root => resolve(root));
   async function versionsOf(id: string): Promise<{ dir: string; version: number }[]> {
@@ -169,21 +228,15 @@ export function directoryRecordSource(options: DirectorySourceOptions): Specimen
     }
     return [];
   }
-  async function read(id: string, version?: number): Promise<SpecimenRecord | undefined> {
-    if (!validSpecimenId(id)) return undefined;
-    const versions = await versionsOf(id);
-    const row = version === undefined ? versions[0] : versions.find(candidate => candidate.version === version);
-    if (!row || !await isDir(row.dir)) return undefined;
-    const record = await adaptElementRecord(row.dir);
-    if (record.id !== id || record.version !== row.version) throw new Error(`${row.dir}: element.json says ${record.id}@${record.version}`);
-    return record;
-  }
-  return {
-    read,
-    async theme(id = options.defaultTheme) {
-      if (!id) return undefined;
-      const record = await read(id);
-      return record ? adaptTheme(record.id, record.payload.raw, record.contentHash) : undefined;
+  const store: SpecimenRecordStore = {
+    async load(id, version) {
+      const versions = await versionsOf(id);
+      const row = version === undefined ? versions[0] : versions.find(candidate => candidate.version === version);
+      if (!row || !await isDir(row.dir)) return undefined;
+      const record = await readFixtureVersion(row.dir);
+      if (record.id !== id || record.version !== row.version) throw new Error(`${row.dir}: element.json says ${record.id}@${record.version}`);
+      return record;
     },
   };
+  return recordStoreSource(store, options.defaultTheme ? { defaultTheme: options.defaultTheme } : {});
 }

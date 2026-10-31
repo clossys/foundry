@@ -1,9 +1,11 @@
 /**
  * `clossys specimen serve|snapshot`: the one preview URL for element records, and headless
- * thumbnails of it. Publisher renders; this verb only wires record roots to it.
+ * thumbnails of it. Publisher renders; this verb only wires library roots
+ * (`<root>/<slot>/<element>/v<n>/`, read through the slot engine loaders) to it.
  */
 import { resolve } from "node:path";
-import { directoryRecordSource, specimenUrl, startSpecimenServer } from "@clossys/publisher/specimen";
+import { specimenUrl, startSpecimenServer } from "@clossys/publisher/specimen";
+import { libraryRecordSource } from "../specimen/library-source.js";
 import { snapshotSpecimen, type SnapshotResult } from "../specimen/thumbnails.js";
 import { CliUsageError } from "./args.js";
 
@@ -77,7 +79,7 @@ export async function runSpecimenCli(argv: readonly string[], cwd = process.cwd(
     if (args.help || !args.command) return { exitCode: args.help ? 0 : 2, message: SPECIMEN_USAGE };
     if (!args.records.length) throw new CliUsageError("--records is required");
     if (args.command === "serve") {
-      const source = directoryRecordSource({ roots: args.records.map(root => resolve(cwd, root)), ...(args.defaultTheme ?? args.theme ? { defaultTheme: (args.defaultTheme ?? args.theme)! } : {}) });
+      const source = libraryRecordSource({ roots: args.records.map(root => resolve(cwd, root)), ...(args.defaultTheme ?? args.theme ? { defaultTheme: (args.defaultTheme ?? args.theme)! } : {}) });
       const { url } = await startSpecimenServer({ source, workspace: resolve(cwd, args.workspace ?? "."), ...(args.port !== undefined ? { port: args.port } : {}) });
       return { exitCode: 0, message: `specimens at ${specimenUrl(url, { element: "<id>" }).replace("%3Cid%3E", "<id>")}`, url };
     }
