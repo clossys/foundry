@@ -44,7 +44,7 @@ export function lineageOf(dir) {
   const element = join(dir, "element.json");
   if (existsSync(element)) {
     const record = json(element);
-    return { slot: record.slot, mode: record.lineage?.mode, source: record.lineage?.source };
+    return { slot: record.slot, mode: record.lineage?.mode, source: record.lineage?.source, parts: record.lineage?.parts };
   }
   const item = join(dir, "registry-item.json");
   if (existsSync(item)) {
@@ -52,6 +52,18 @@ export function lineageOf(dir) {
     return { slot: meta.leaf, mode: meta.lineage, source: meta.reference };
   }
   return null;
+}
+
+/** One reference (the source, or a part) against the manifest: trusted registry, listed item, same hash. Returns the manifest row. */
+function referenceFindings(label, at, ref, manifest, findings) {
+  const missing = ["registry", "item", "version", "hash"].filter(field => typeof ref?.[field] !== "string" || ref[field] === "");
+  if (missing.length) { findings.push(...missing.map(field => `${label}: ${at} has no ${field}`)); return undefined; }
+  const key = `${ref.registry}/${ref.item}@${ref.version}`;
+  if (!manifest.registries?.[ref.registry]) { findings.push(`${label}: ${key} is from ${ref.registry}, which is not a trusted registry (references/manifest.json)`); return undefined; }
+  const found = (manifest.items ?? []).find(row => row.registry === ref.registry && row.name === ref.item && row.version === ref.version);
+  if (!found) { findings.push(`${label}: ${key} is not in the references manifest`); return undefined; }
+  if (found.hash !== ref.hash) findings.push(`${label}: ${key} hash ${ref.hash} != manifest ${found.hash}`);
+  return found;
 }
 
 /** Findings for one item version's lineage against the rule and the manifest. */
@@ -65,20 +77,14 @@ export function lineageFindings(label, lineage, { rule = loadRule(), manifest = 
   }
   if (mode !== "verbatim" && mode !== "customized") return [`${label}: lineage.mode ${JSON.stringify(mode)} is not verbatim, customized or original`];
   if (!source) return [`${label}: ${mode} item has no lineage.source`];
-  for (const field of ["registry", "item", "version", "hash"]) {
-    if (typeof source[field] !== "string" || source[field] === "") findings.push(`${label}: lineage.source has no ${field}`);
-  }
-  if (findings.length) return findings;
-  const key = `${source.registry}/${source.item}@${source.version}`;
-  if (!manifest.registries?.[source.registry]) return [`${label}: ${key} is from ${source.registry}, which is not a trusted registry (references/manifest.json)`];
-  const found = (manifest.items ?? []).find(row => row.registry === source.registry && row.name === source.item && row.version === source.version);
-  if (!found) return [`${label}: ${key} is not in the references manifest`];
-  if (found.hash !== source.hash) findings.push(`${label}: ${key} hash ${source.hash} != manifest ${found.hash}`);
+  const found = referenceFindings(label, "lineage.source", source, manifest, findings);
+  if (!found) return findings;
+  for (const [index, part] of (lineage.parts ?? []).entries()) referenceFindings(label, `lineage.parts[${index}]`, part, manifest, findings);
   const cls = (rule.classes ?? []).find(row => globMatch(row.slots, slot ?? ""));
   if (cls) {
     const typed = (cls.sourceTypes ?? []).includes(found.type);
     const named = (cls.sourceItems ?? []).includes(`${source.registry}/${source.item}`);
-    if (!typed && !named) findings.push(`${label}: ${slot} must come from ${[...(cls.sourceTypes ?? []), ...(cls.sourceItems ?? [])].join(" or ")}; ${key} is ${found.type}`);
+    if (!typed && !named) findings.push(`${label}: ${slot} must come from ${[...(cls.sourceTypes ?? []), ...(cls.sourceItems ?? [])].join(" or ")}; ${source.registry}/${source.item}@${source.version} is ${found.type}`);
   }
   return findings;
 }
@@ -170,7 +176,7 @@ export function scanFindings(dir, { rule = loadRule(), manifest = loadManifest()
         const rel = relative(dir, full).split(sep).join("/");
         if (rel.split("/").includes("__fixtures__")) { exempt.push(rel); continue; }
         checked++;
-        violations.push(...lineageFindings(rel, { slot: record.slot, mode: record.lineage?.mode, source: record.lineage?.source }, { rule, manifest }));
+        violations.push(...lineageFindings(rel, { slot: record.slot, mode: record.lineage?.mode, source: record.lineage?.source, parts: record.lineage?.parts }, { rule, manifest }));
       }
     }
   };

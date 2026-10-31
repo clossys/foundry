@@ -22,9 +22,11 @@ function BrandMark({ ground }: { ground: "light" | "dark" }) {
 }
 
 /**
- * shadcn sidebar-07 `AppSidebar`. Its sample data is replaced by Studio's: the consumer brand as the
- * one team, the Studio map's navigation tree as `navMain`, the local workspace as the user. The
- * block's `NavProjects` group is left out: the Studio map has no projects.
+ * The left sidebar: shadcn sidebar-15's `SidebarLeft` (off-canvas, full height, toggled from the
+ * header) holding the N1 navigation, shadcn sidebar-07 `AppSidebar` content. Its sample data is
+ * replaced by Studio's: the consumer brand as the one team, the Studio map's navigation tree as
+ * `navMain`, the local workspace as the user. The block's `NavProjects` group is left out: the
+ * Studio map has no projects.
  */
 export function AppSidebar({
   navigation,
@@ -58,7 +60,7 @@ export function AppSidebar({
     }),
   }
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar className="border-r-0" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>

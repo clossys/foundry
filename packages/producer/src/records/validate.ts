@@ -47,6 +47,7 @@ export function validateElement(value: unknown): Validation<ElementRecord> {
     const { mode, source, parent } = record.lineage;
     if (mode !== "original" && !source) issues.push({ path: "$.lineage.source", message: `is required when mode is ${mode}` });
     if (mode === "original" && source) issues.push({ path: "$.lineage.source", message: "must be absent when mode is original" });
+    if (mode === "original" && record.lineage.parts) issues.push({ path: "$.lineage.parts", message: "must be absent when mode is original" });
     if (parent && parent.version >= record.version) issues.push({ path: "$.lineage.parent.version", message: "must be lower than version" });
     return issues;
   });

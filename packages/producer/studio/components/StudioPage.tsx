@@ -10,13 +10,13 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { notFound } from 'next/navigation';
 import { ArrowRightIcon } from 'lucide-react';
 import type { ContentMap, ContentMapEntry } from '@clossys/publisher/content-map';
-import { studioFrames, studioModuleFrames, studioSections } from '../generated/assembly-bindings';
+import { studioFrames, studioSections } from '../generated/assembly-bindings';
 import { studioPublicationRoot, type StudioAssemblySpec, type StudioPageRecord } from '../generated/studio-map';
-import { PageNotice, type PageNoticeData } from '../frames/studio-shell';
-import type { ActionSpec, ModuleSpec } from '../frames/studio-module';
+import { PageNotice, type PageNoticeData, type PopoverSpec } from '../frames/studio-shell';
 import type { AgentGalleryInput } from '../sections/studio-agent-gallery';
 import type { CheckRow } from '../sections/studio-checks';
 import type { ExplorerGroup } from '../sections/module-explorer';
+import type { HistoryInput } from '../sections/studio-history';
 import type { ModuleCheckGroup, ModuleCheckRow, ModuleChecksInput } from '../sections/module-checks';
 import type { OptionsInput } from '../sections/studio-options';
 import type { HomeInput } from '../sections/studio-home';
@@ -332,8 +332,20 @@ function Placed({ slot, spec, inputs }: { slot: string; spec: StudioAssemblySpec
   return <Section {...{ [name]: value }} />;
 }
 
-/** The module specs a page manifest declares, each placing its pinned module section over the loaded module data. */
-function useManifestModules(entry: ContentMapEntry, spec: StudioAssemblySpec, loaded: Loaded): { modules: ModuleSpec[]; actions: ActionSpec[] } {
+/** The outline of the recorded versions: one item per history row, pointing at that row of the history section. */
+function versionsOutline(history: HistoryInput | undefined) {
+  return (history?.rows ?? []).map(row => ({
+    id: `v${row.version}`,
+    label: [`v${row.version}`, row.date, ...row.marks].filter(Boolean).join(' · '),
+    target: `${sectionTarget('history')} [data-key=${JSON.stringify(String(row.version))}]`,
+  }));
+}
+
+/**
+ * The header popovers a page manifest declares, in order: each module places its pinned module
+ * section over the loaded module data; each action shows the link or prompt it copies.
+ */
+function useManifestPopovers(entry: ContentMapEntry, spec: StudioAssemblySpec, loaded: Loaded): PopoverSpec[] {
   return useMemo(() => {
     const inputs = loaded.state === 'ready' ? loaded.inputs : {};
     const data = loaded.state === 'ready' ? loaded.modules ?? {} : {};
@@ -341,41 +353,42 @@ function useManifestModules(entry: ContentMapEntry, spec: StudioAssemblySpec, lo
       const name = shortName(slot);
       return { id: name, label: OUTLINE_LABEL[name] ?? sentence(name), target: sectionTarget(name) };
     });
+    const versions = versionsOutline(inputs.history as HistoryInput | undefined);
     const pending = loaded.state === 'loading';
-    const modules = spec.manifest.modules.map((module): ModuleSpec => {
+    const modules = spec.manifest.modules.map((module): PopoverSpec => {
       const Section = studioSections[module.section];
       const explorer = data.explorer ?? [];
       const content = module.source === 'page.explorer'
         ? { label: `${entry.title} explorer`, searchLabel: `Search ${entry.title}`, empty: pending ? 'Loading…' : 'Nothing matches.', groups: explorer }
         : module.source === 'page.outline'
           ? { label: `${entry.title} outline`, heading: 'On this page', items: outline }
-          : data.checks ?? checksInput([], [], []);
+          : module.source === 'page.versions'
+            ? { label: `${entry.title} versions`, heading: 'Recorded versions', items: versions }
+            : data.checks ?? checksInput([], [], []);
       const targets = module.source === 'page.explorer' ? explorer.flatMap(group => group.items.map(item => item.target))
-        : module.source === 'page.outline' ? outline.map(item => item.target) : [];
+        : module.source === 'page.outline' ? outline.map(item => item.target)
+          : module.source === 'page.versions' ? versions.map(item => item.target) : [];
       return {
-        id: module.id, label: module.label, icon: module.icon, targets, defaultOpen: module.defaultOpen, ...(module.shortcut ? { shortcut: module.shortcut } : {}),
+        id: module.id, label: module.label, icon: module.icon, shortcut: module.shortcut, targets,
         render: context => Section ? <Section {...{ [module.input]: { ...content, ...(context.active ? { active: context.active } : {}), onSelect: context.select } }} /> : null,
       };
     });
     const agent = spec.data.agent ? (AGENT_LABELS[spec.data.agent as Agent] ?? spec.data.agent) : 'an agent';
-    const actions = spec.manifest.actions.map((action): ActionSpec => ({
-      ...action,
-      handler: action.handler.kind === 'copy-prompt' ? { kind: 'copy-prompt', prompt: action.handler.prompt.replaceAll('{agent}', agent).replaceAll('{title}', entry.title) } : action.handler,
+    const actions = spec.manifest.actions.map((action): PopoverSpec => ({
+      id: action.id, label: action.label, icon: action.icon, shortcut: action.shortcut,
+      copy: action.handler.kind === 'copy-prompt' ? { kind: 'prompt', prompt: action.handler.prompt.replaceAll('{agent}', agent).replaceAll('{title}', entry.title) } : { kind: 'link' },
     }));
-    return { modules, actions };
+    return [...modules, ...actions];
   }, [entry.title, spec, loaded]);
 }
 
 function Frame({ entry, page, spec, loaded = { state: 'loading' }, children, head }: { entry: ContentMapEntry; page: StudioPageRecord; spec: StudioAssemblySpec; loaded?: Loaded; children?: ReactNode; head?: ReactNode }) {
   const { map } = useStudioRoutes();
   const Shell = studioFrames[page.frameId];
-  const Modules = studioModuleFrames[spec.manifest.frame];
   const projection = useMemo(() => studioShellProjection(map, entry.id), [map, entry.id]);
-  const { modules, actions } = useManifestModules(entry, spec, loaded);
-  if (!Shell || !Modules) return <PageNotice notice={{ title: 'This page has no frame', description: `Nothing is pinned for ${Shell ? spec.manifest.frame : page.frameId}.` }} />;
-  return <Modules modules={modules} actions={actions}>
-    {chrome => <Shell {...projection} toolbar={chrome.toolbar} modules={chrome.column} pageCommands={chrome.commands} open={chrome.open} body={spec.body} head={head}>{children}</Shell>}
-  </Modules>;
+  const popovers = useManifestPopovers(entry, spec, loaded);
+  if (!Shell) return <PageNotice notice={{ title: 'This page has no frame', description: `Nothing is pinned for ${page.frameId}.` }} />;
+  return <Shell {...projection} popovers={popovers} body={spec.body} head={head}>{children}</Shell>;
 }
 
 function Body({ spec, loaded }: { spec: StudioAssemblySpec; loaded: Loaded }): { head?: ReactNode; children: ReactNode } {

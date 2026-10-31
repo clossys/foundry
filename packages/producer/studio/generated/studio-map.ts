@@ -2,12 +2,12 @@
 import type { ContentMap, ContentMapPageAction } from '@clossys/publisher/content-map';
 import projection from './studio-map.json';
 
-/** One page module: a header toggle that opens a pinned module section, fed from a named source. */
-export interface StudioManifestModule { id: string; icon: string; label: string; section: string; input: string; source: string; shortcut?: string; defaultOpen: boolean }
-/** One header action; its handler is data the module frame runs. */
-export interface StudioManifestAction { id: string; icon: string; label: string; shortcut?: string; cmdk: boolean; handler: { kind: 'copy-link' } | { kind: 'copy-prompt'; prompt: string } | { kind: 'scroll'; target: string } }
+/** One page module: a header icon whose popover places a pinned module section, fed from a named source. */
+export interface StudioManifestModule { id: string; icon: string; label: string; section: string; input: string; source: string; shortcut: string }
+/** One header action: a header icon whose popover copies the page link or a prompt naming it. */
+export interface StudioManifestAction { id: string; icon: string; label: string; shortcut: string; handler: { kind: 'copy-link' } | { kind: 'copy-prompt'; prompt: string } }
 /** The page manifest: navigator, modules, header actions and one wiring line per interaction. */
-export interface StudioPageManifest { frame: string; navigator: 'explorer' | 'outline'; modules: readonly StudioManifestModule[]; actions: readonly StudioManifestAction[]; wiring: readonly { do: string; expect: string }[] }
+export interface StudioPageManifest { navigator: 'explorer' | 'outline'; modules: readonly StudioManifestModule[]; actions: readonly StudioManifestAction[]; wiring: readonly { do: string; expect: string }[] }
 /** How one assembly is laid out and fed: a data loader, and per section the data field its contract input reads. */
 export interface StudioAssemblySpec { body: 'plain' | 'detail'; data: { loader: string; agent?: string }; inputs: Record<string, string>; sectionIds: readonly string[]; manifest: StudioPageManifest }
 /** A Publisher page record: frame + ordered sections + bindings; `leaf` assembles every leaf beneath the page. */

@@ -149,7 +149,6 @@
         "sections.studio.home": "home"
       },
       "manifest": {
-        "frame": "frames.module",
         "navigator": "outline",
         "modules": [
           {
@@ -159,7 +158,6 @@
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
-            "defaultOpen": false,
             "input": "outline"
           },
           {
@@ -169,7 +167,6 @@
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
-            "defaultOpen": false,
             "input": "checks"
           }
         ],
@@ -181,30 +178,33 @@
             "handler": {
               "kind": "copy-link"
             },
-            "shortcut": "l",
-            "cmdk": true
+            "shortcut": "l"
           }
         ],
         "wiring": [
           {
-            "do": "toggle outline",
-            "expect": "outline open, then closed"
+            "do": "open outline",
+            "expect": "outline open"
           },
           {
-            "do": "toggle checks",
-            "expect": "checks open, then closed"
+            "do": "open checks",
+            "expect": "checks open"
+          },
+          {
+            "do": "open copy-link",
+            "expect": "copy-link open"
           },
           {
             "do": "select outline",
             "expect": "target in view and highlighted"
           },
           {
-            "do": "action copy-link",
+            "do": "copy copy-link",
             "expect": "clipboard link"
           },
           {
             "do": "cmdk",
-            "expect": "page commands listed with shortcuts"
+            "expect": "every popover listed with its shortcut"
           },
           {
             "do": "key o",
@@ -212,7 +212,11 @@
           },
           {
             "do": "key escape",
-            "expect": "top module closed"
+            "expect": "popover closed"
+          },
+          {
+            "do": "click outside",
+            "expect": "popover closed"
           }
         ]
       }
@@ -234,7 +238,6 @@
         "sections.studio.agent-gallery": "gallery"
       },
       "manifest": {
-        "frame": "frames.module",
         "navigator": "explorer",
         "modules": [
           {
@@ -244,7 +247,6 @@
             "section": "sections.module.explorer",
             "source": "page.explorer",
             "shortcut": "e",
-            "defaultOpen": false,
             "input": "explorer"
           },
           {
@@ -254,7 +256,6 @@
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
-            "defaultOpen": false,
             "input": "checks"
           }
         ],
@@ -266,18 +267,21 @@
             "handler": {
               "kind": "copy-link"
             },
-            "shortcut": "l",
-            "cmdk": true
+            "shortcut": "l"
           }
         ],
         "wiring": [
           {
-            "do": "toggle explorer",
-            "expect": "explorer open, then closed"
+            "do": "open explorer",
+            "expect": "explorer open"
           },
           {
-            "do": "toggle checks",
-            "expect": "checks open, then closed"
+            "do": "open checks",
+            "expect": "checks open"
+          },
+          {
+            "do": "open copy-link",
+            "expect": "copy-link open"
           },
           {
             "do": "select explorer",
@@ -285,15 +289,15 @@
           },
           {
             "do": "search explorer",
-            "expect": "items filtered"
+            "expect": "tree filtered to the match"
           },
           {
-            "do": "action copy-link",
+            "do": "copy copy-link",
             "expect": "clipboard link"
           },
           {
             "do": "cmdk",
-            "expect": "page commands listed with shortcuts"
+            "expect": "every popover listed with its shortcut"
           },
           {
             "do": "key e",
@@ -301,7 +305,11 @@
           },
           {
             "do": "key escape",
-            "expect": "top module closed"
+            "expect": "popover closed"
+          },
+          {
+            "do": "click outside",
+            "expect": "popover closed"
           }
         ]
       },
@@ -331,7 +339,6 @@
           "sections.studio.references": "references"
         },
         "manifest": {
-          "frame": "frames.module",
           "navigator": "outline",
           "modules": [
             {
@@ -341,7 +348,6 @@
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
-              "defaultOpen": false,
               "input": "outline"
             },
             {
@@ -351,8 +357,16 @@
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
-              "defaultOpen": false,
               "input": "checks"
+            },
+            {
+              "id": "versions",
+              "icon": "assets.icon-versions",
+              "label": "Versions",
+              "section": "sections.module.outline",
+              "source": "page.versions",
+              "shortcut": "v",
+              "input": "outline"
             }
           ],
           "actions": [
@@ -364,19 +378,7 @@
                 "kind": "copy-prompt",
                 "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
               },
-              "shortcut": "r",
-              "cmdk": true
-            },
-            {
-              "id": "versions",
-              "icon": "assets.icon-versions",
-              "label": "Versions",
-              "handler": {
-                "kind": "scroll",
-                "target": "[data-studio-section=\"history\"]"
-              },
-              "shortcut": "v",
-              "cmdk": true
+              "shortcut": "r"
             },
             {
               "id": "copy-link",
@@ -385,38 +387,49 @@
               "handler": {
                 "kind": "copy-link"
               },
-              "shortcut": "l",
-              "cmdk": true
+              "shortcut": "l"
             }
           ],
           "wiring": [
             {
-              "do": "toggle outline",
-              "expect": "outline open, then closed"
+              "do": "open outline",
+              "expect": "outline open"
             },
             {
-              "do": "toggle checks",
-              "expect": "checks open, then closed"
+              "do": "open checks",
+              "expect": "checks open"
+            },
+            {
+              "do": "open versions",
+              "expect": "versions open"
+            },
+            {
+              "do": "open request-change",
+              "expect": "request-change open"
+            },
+            {
+              "do": "open copy-link",
+              "expect": "copy-link open"
             },
             {
               "do": "select outline",
               "expect": "target in view and highlighted"
             },
             {
-              "do": "action request-change",
+              "do": "select versions",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "copy request-change",
               "expect": "clipboard prompt"
             },
             {
-              "do": "action versions",
-              "expect": "target in view"
-            },
-            {
-              "do": "action copy-link",
+              "do": "copy copy-link",
               "expect": "clipboard link"
             },
             {
               "do": "cmdk",
-              "expect": "page commands listed with shortcuts"
+              "expect": "every popover listed with its shortcut"
             },
             {
               "do": "key o",
@@ -424,7 +437,11 @@
             },
             {
               "do": "key escape",
-              "expect": "top module closed"
+              "expect": "popover closed"
+            },
+            {
+              "do": "click outside",
+              "expect": "popover closed"
             }
           ]
         }
@@ -447,7 +464,6 @@
         "sections.studio.agent-gallery": "gallery"
       },
       "manifest": {
-        "frame": "frames.module",
         "navigator": "explorer",
         "modules": [
           {
@@ -457,7 +473,6 @@
             "section": "sections.module.explorer",
             "source": "page.explorer",
             "shortcut": "e",
-            "defaultOpen": false,
             "input": "explorer"
           },
           {
@@ -467,7 +482,6 @@
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
-            "defaultOpen": false,
             "input": "checks"
           }
         ],
@@ -479,18 +493,21 @@
             "handler": {
               "kind": "copy-link"
             },
-            "shortcut": "l",
-            "cmdk": true
+            "shortcut": "l"
           }
         ],
         "wiring": [
           {
-            "do": "toggle explorer",
-            "expect": "explorer open, then closed"
+            "do": "open explorer",
+            "expect": "explorer open"
           },
           {
-            "do": "toggle checks",
-            "expect": "checks open, then closed"
+            "do": "open checks",
+            "expect": "checks open"
+          },
+          {
+            "do": "open copy-link",
+            "expect": "copy-link open"
           },
           {
             "do": "select explorer",
@@ -498,15 +515,15 @@
           },
           {
             "do": "search explorer",
-            "expect": "items filtered"
+            "expect": "tree filtered to the match"
           },
           {
-            "do": "action copy-link",
+            "do": "copy copy-link",
             "expect": "clipboard link"
           },
           {
             "do": "cmdk",
-            "expect": "page commands listed with shortcuts"
+            "expect": "every popover listed with its shortcut"
           },
           {
             "do": "key e",
@@ -514,7 +531,11 @@
           },
           {
             "do": "key escape",
-            "expect": "top module closed"
+            "expect": "popover closed"
+          },
+          {
+            "do": "click outside",
+            "expect": "popover closed"
           }
         ]
       },
@@ -544,7 +565,6 @@
           "sections.studio.references": "references"
         },
         "manifest": {
-          "frame": "frames.module",
           "navigator": "outline",
           "modules": [
             {
@@ -554,7 +574,6 @@
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
-              "defaultOpen": false,
               "input": "outline"
             },
             {
@@ -564,8 +583,16 @@
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
-              "defaultOpen": false,
               "input": "checks"
+            },
+            {
+              "id": "versions",
+              "icon": "assets.icon-versions",
+              "label": "Versions",
+              "section": "sections.module.outline",
+              "source": "page.versions",
+              "shortcut": "v",
+              "input": "outline"
             }
           ],
           "actions": [
@@ -577,19 +604,7 @@
                 "kind": "copy-prompt",
                 "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
               },
-              "shortcut": "r",
-              "cmdk": true
-            },
-            {
-              "id": "versions",
-              "icon": "assets.icon-versions",
-              "label": "Versions",
-              "handler": {
-                "kind": "scroll",
-                "target": "[data-studio-section=\"history\"]"
-              },
-              "shortcut": "v",
-              "cmdk": true
+              "shortcut": "r"
             },
             {
               "id": "copy-link",
@@ -598,38 +613,49 @@
               "handler": {
                 "kind": "copy-link"
               },
-              "shortcut": "l",
-              "cmdk": true
+              "shortcut": "l"
             }
           ],
           "wiring": [
             {
-              "do": "toggle outline",
-              "expect": "outline open, then closed"
+              "do": "open outline",
+              "expect": "outline open"
             },
             {
-              "do": "toggle checks",
-              "expect": "checks open, then closed"
+              "do": "open checks",
+              "expect": "checks open"
+            },
+            {
+              "do": "open versions",
+              "expect": "versions open"
+            },
+            {
+              "do": "open request-change",
+              "expect": "request-change open"
+            },
+            {
+              "do": "open copy-link",
+              "expect": "copy-link open"
             },
             {
               "do": "select outline",
               "expect": "target in view and highlighted"
             },
             {
-              "do": "action request-change",
+              "do": "select versions",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "copy request-change",
               "expect": "clipboard prompt"
             },
             {
-              "do": "action versions",
-              "expect": "target in view"
-            },
-            {
-              "do": "action copy-link",
+              "do": "copy copy-link",
               "expect": "clipboard link"
             },
             {
               "do": "cmdk",
-              "expect": "page commands listed with shortcuts"
+              "expect": "every popover listed with its shortcut"
             },
             {
               "do": "key o",
@@ -637,7 +663,11 @@
             },
             {
               "do": "key escape",
-              "expect": "top module closed"
+              "expect": "popover closed"
+            },
+            {
+              "do": "click outside",
+              "expect": "popover closed"
             }
           ]
         }
@@ -660,7 +690,6 @@
         "sections.studio.agent-gallery": "gallery"
       },
       "manifest": {
-        "frame": "frames.module",
         "navigator": "explorer",
         "modules": [
           {
@@ -670,7 +699,6 @@
             "section": "sections.module.explorer",
             "source": "page.explorer",
             "shortcut": "e",
-            "defaultOpen": false,
             "input": "explorer"
           },
           {
@@ -680,7 +708,6 @@
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
-            "defaultOpen": false,
             "input": "checks"
           }
         ],
@@ -692,18 +719,21 @@
             "handler": {
               "kind": "copy-link"
             },
-            "shortcut": "l",
-            "cmdk": true
+            "shortcut": "l"
           }
         ],
         "wiring": [
           {
-            "do": "toggle explorer",
-            "expect": "explorer open, then closed"
+            "do": "open explorer",
+            "expect": "explorer open"
           },
           {
-            "do": "toggle checks",
-            "expect": "checks open, then closed"
+            "do": "open checks",
+            "expect": "checks open"
+          },
+          {
+            "do": "open copy-link",
+            "expect": "copy-link open"
           },
           {
             "do": "select explorer",
@@ -711,15 +741,15 @@
           },
           {
             "do": "search explorer",
-            "expect": "items filtered"
+            "expect": "tree filtered to the match"
           },
           {
-            "do": "action copy-link",
+            "do": "copy copy-link",
             "expect": "clipboard link"
           },
           {
             "do": "cmdk",
-            "expect": "page commands listed with shortcuts"
+            "expect": "every popover listed with its shortcut"
           },
           {
             "do": "key e",
@@ -727,7 +757,11 @@
           },
           {
             "do": "key escape",
-            "expect": "top module closed"
+            "expect": "popover closed"
+          },
+          {
+            "do": "click outside",
+            "expect": "popover closed"
           }
         ]
       },
@@ -757,7 +791,6 @@
           "sections.studio.references": "references"
         },
         "manifest": {
-          "frame": "frames.module",
           "navigator": "outline",
           "modules": [
             {
@@ -767,7 +800,6 @@
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
-              "defaultOpen": false,
               "input": "outline"
             },
             {
@@ -777,8 +809,16 @@
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
-              "defaultOpen": false,
               "input": "checks"
+            },
+            {
+              "id": "versions",
+              "icon": "assets.icon-versions",
+              "label": "Versions",
+              "section": "sections.module.outline",
+              "source": "page.versions",
+              "shortcut": "v",
+              "input": "outline"
             }
           ],
           "actions": [
@@ -790,19 +830,7 @@
                 "kind": "copy-prompt",
                 "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
               },
-              "shortcut": "r",
-              "cmdk": true
-            },
-            {
-              "id": "versions",
-              "icon": "assets.icon-versions",
-              "label": "Versions",
-              "handler": {
-                "kind": "scroll",
-                "target": "[data-studio-section=\"history\"]"
-              },
-              "shortcut": "v",
-              "cmdk": true
+              "shortcut": "r"
             },
             {
               "id": "copy-link",
@@ -811,38 +839,49 @@
               "handler": {
                 "kind": "copy-link"
               },
-              "shortcut": "l",
-              "cmdk": true
+              "shortcut": "l"
             }
           ],
           "wiring": [
             {
-              "do": "toggle outline",
-              "expect": "outline open, then closed"
+              "do": "open outline",
+              "expect": "outline open"
             },
             {
-              "do": "toggle checks",
-              "expect": "checks open, then closed"
+              "do": "open checks",
+              "expect": "checks open"
+            },
+            {
+              "do": "open versions",
+              "expect": "versions open"
+            },
+            {
+              "do": "open request-change",
+              "expect": "request-change open"
+            },
+            {
+              "do": "open copy-link",
+              "expect": "copy-link open"
             },
             {
               "do": "select outline",
               "expect": "target in view and highlighted"
             },
             {
-              "do": "action request-change",
+              "do": "select versions",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "copy request-change",
               "expect": "clipboard prompt"
             },
             {
-              "do": "action versions",
-              "expect": "target in view"
-            },
-            {
-              "do": "action copy-link",
+              "do": "copy copy-link",
               "expect": "clipboard link"
             },
             {
               "do": "cmdk",
-              "expect": "page commands listed with shortcuts"
+              "expect": "every popover listed with its shortcut"
             },
             {
               "do": "key o",
@@ -850,7 +889,11 @@
             },
             {
               "do": "key escape",
-              "expect": "top module closed"
+              "expect": "popover closed"
+            },
+            {
+              "do": "click outside",
+              "expect": "popover closed"
             }
           ]
         }
@@ -875,7 +918,6 @@
         "sections.studio.publications": "publications"
       },
       "manifest": {
-        "frame": "frames.module",
         "navigator": "explorer",
         "modules": [
           {
@@ -885,7 +927,6 @@
             "section": "sections.module.explorer",
             "source": "page.explorer",
             "shortcut": "e",
-            "defaultOpen": false,
             "input": "explorer"
           },
           {
@@ -895,7 +936,6 @@
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
-            "defaultOpen": false,
             "input": "checks"
           }
         ],
@@ -907,18 +947,21 @@
             "handler": {
               "kind": "copy-link"
             },
-            "shortcut": "l",
-            "cmdk": true
+            "shortcut": "l"
           }
         ],
         "wiring": [
           {
-            "do": "toggle explorer",
-            "expect": "explorer open, then closed"
+            "do": "open explorer",
+            "expect": "explorer open"
           },
           {
-            "do": "toggle checks",
-            "expect": "checks open, then closed"
+            "do": "open checks",
+            "expect": "checks open"
+          },
+          {
+            "do": "open copy-link",
+            "expect": "copy-link open"
           },
           {
             "do": "select explorer",
@@ -926,15 +969,15 @@
           },
           {
             "do": "search explorer",
-            "expect": "items filtered"
+            "expect": "tree filtered to the match"
           },
           {
-            "do": "action copy-link",
+            "do": "copy copy-link",
             "expect": "clipboard link"
           },
           {
             "do": "cmdk",
-            "expect": "page commands listed with shortcuts"
+            "expect": "every popover listed with its shortcut"
           },
           {
             "do": "key e",
@@ -942,7 +985,11 @@
           },
           {
             "do": "key escape",
-            "expect": "top module closed"
+            "expect": "popover closed"
+          },
+          {
+            "do": "click outside",
+            "expect": "popover closed"
           }
         ]
       },
@@ -972,7 +1019,6 @@
           "sections.studio.references": "references"
         },
         "manifest": {
-          "frame": "frames.module",
           "navigator": "outline",
           "modules": [
             {
@@ -982,7 +1028,6 @@
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
-              "defaultOpen": false,
               "input": "outline"
             },
             {
@@ -992,8 +1037,16 @@
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
-              "defaultOpen": false,
               "input": "checks"
+            },
+            {
+              "id": "versions",
+              "icon": "assets.icon-versions",
+              "label": "Versions",
+              "section": "sections.module.outline",
+              "source": "page.versions",
+              "shortcut": "v",
+              "input": "outline"
             }
           ],
           "actions": [
@@ -1005,19 +1058,7 @@
                 "kind": "copy-prompt",
                 "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
               },
-              "shortcut": "r",
-              "cmdk": true
-            },
-            {
-              "id": "versions",
-              "icon": "assets.icon-versions",
-              "label": "Versions",
-              "handler": {
-                "kind": "scroll",
-                "target": "[data-studio-section=\"history\"]"
-              },
-              "shortcut": "v",
-              "cmdk": true
+              "shortcut": "r"
             },
             {
               "id": "copy-link",
@@ -1026,38 +1067,49 @@
               "handler": {
                 "kind": "copy-link"
               },
-              "shortcut": "l",
-              "cmdk": true
+              "shortcut": "l"
             }
           ],
           "wiring": [
             {
-              "do": "toggle outline",
-              "expect": "outline open, then closed"
+              "do": "open outline",
+              "expect": "outline open"
             },
             {
-              "do": "toggle checks",
-              "expect": "checks open, then closed"
+              "do": "open checks",
+              "expect": "checks open"
+            },
+            {
+              "do": "open versions",
+              "expect": "versions open"
+            },
+            {
+              "do": "open request-change",
+              "expect": "request-change open"
+            },
+            {
+              "do": "open copy-link",
+              "expect": "copy-link open"
             },
             {
               "do": "select outline",
               "expect": "target in view and highlighted"
             },
             {
-              "do": "action request-change",
+              "do": "select versions",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "copy request-change",
               "expect": "clipboard prompt"
             },
             {
-              "do": "action versions",
-              "expect": "target in view"
-            },
-            {
-              "do": "action copy-link",
+              "do": "copy copy-link",
               "expect": "clipboard link"
             },
             {
               "do": "cmdk",
-              "expect": "page commands listed with shortcuts"
+              "expect": "every popover listed with its shortcut"
             },
             {
               "do": "key o",
@@ -1065,7 +1117,11 @@
             },
             {
               "do": "key escape",
-              "expect": "top module closed"
+              "expect": "popover closed"
+            },
+            {
+              "do": "click outside",
+              "expect": "popover closed"
             }
           ]
         }
@@ -1076,17 +1132,12 @@
     {
       "slot": "frames.studio-shell",
       "element": "studio-shell",
-      "version": 5
+      "version": 6
     },
     {
       "slot": "sections.studio.home",
       "element": "studio-home",
       "version": 2
-    },
-    {
-      "slot": "frames.module",
-      "element": "studio-module",
-      "version": 1
     },
     {
       "slot": "sections.module.outline",

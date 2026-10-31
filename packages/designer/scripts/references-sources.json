@@ -1135,6 +1135,13 @@
       ]
     },
     {
+      "registry": "shadcn",
+      "name": "sidebar-15",
+      "slots": [
+        "frames.studio-shell"
+      ]
+    },
+    {
       "registry": "tailark-oss",
       "name": "mist-hero-section-1-header",
       "slots": [

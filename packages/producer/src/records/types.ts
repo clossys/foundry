@@ -41,6 +41,8 @@ export type ElementRecord = {
   readonly lineage: {
     readonly mode: LineageMode;
     readonly source?: ReferenceRef;
+    /** Further trusted references the payload takes verbatim parts from, beside the source block. */
+    readonly parts?: readonly ReferenceRef[];
     readonly parent?: { readonly version: number; readonly hash: Hash };
   };
   readonly license: { readonly spdx: string; readonly attribution?: string; readonly file?: string };

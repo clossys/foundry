@@ -3,9 +3,9 @@
   "pins": {
     "frames.studio-shell": {
       "element": "studio-shell",
-      "version": 5,
-      "hash": "sha256:b5484448374b9371a86c7e2e536f4c6158f184423372d25c5af78257c598eb3f",
-      "event": "e26"
+      "version": 6,
+      "hash": "sha256:51dea7b4ee0bf6c0a6738b3678271e9a0d1fc14c0e2c7e7ed18b60c998cd82d3",
+      "event": "e27"
     },
     "sections.studio.home": {
       "element": "studio-home",
@@ -66,12 +66,6 @@
       "version": 2,
       "hash": "sha256:c2945681ba2ebbee6af2ec9d4b0d50ae07311d13ddf56b9cfad792f96c7f5948",
       "event": "e15"
-    },
-    "frames.module": {
-      "element": "studio-module",
-      "version": 1,
-      "hash": "sha256:fd088e6336f8d3b03fd0fc3c3ebdab6e00cfaf9f120e90fd2232b0879ebc7872",
-      "event": "e19"
     },
     "sections.module.explorer": {
       "element": "module-explorer",
@@ -401,6 +395,26 @@
       "version": 5,
       "hash": "sha256:b5484448374b9371a86c7e2e536f4c6158f184423372d25c5af78257c598eb3f",
       "from": "option"
+    },
+    {
+      "id": "e27",
+      "at": "2026-10-31T23:59:00Z",
+      "by": "FRAME-PANELS",
+      "action": "pin",
+      "slot": "frames.studio-shell",
+      "element": "studio-shell",
+      "version": 6,
+      "hash": "sha256:51dea7b4ee0bf6c0a6738b3678271e9a0d1fc14c0e2c7e7ed18b60c998cd82d3",
+      "from": "option",
+      "reason": "FRAME-PANELS (foundry#2553 L6): sidebar-15 shell with header popovers."
+    },
+    {
+      "id": "e28",
+      "at": "2026-10-31T23:59:00Z",
+      "by": "FRAME-PANELS",
+      "action": "unpin",
+      "slot": "frames.module",
+      "reason": "FRAME-PANELS (foundry#2553 L6): the module column and accordion are removed; header popovers replace them."
     }
   ]
 }

@@ -10,12 +10,12 @@ import { describe, expect, it } from 'vitest';
  * imports components only from Designer's component layer (`@clossys/designer-ui`) or from inside
  * its own folder, and renders no raw styled markup (a lowercase element carrying `className` or `style`).
  *
- * A frame is the page shell of a shadcn block (sidebar-07), so it also runs the app: it may import
+ * A frame is the page shell of a shadcn block (sidebar-15), so it also runs the app: it may import
  * React, the Next router, lucide icons, type-only modules and Studio's runtime hooks, and its three
  * page landmarks (`header`, `main`, `aside`) carry the layout classes the block's shell carries.
  * Every other element a frame renders is a Designer component, exactly as in a section, or the
  * block's own markup: a raw element whose tag and literal `className` appear verbatim in the
- * reference block its pinned record's `lineage.source` names (the shadcn snapshot under
+ * reference blocks its pinned record's `lineage.source` and `lineage.parts` name (the shadcn snapshots under
  * `packages/designer/references/shadcn/<item>@<version>/registry/`).
  *
  * A section may also place another pinned Studio section's export (`../<folder>`) when, and only
@@ -55,17 +55,22 @@ export function referenceMarkup(root: string): Set<string> {
   return pairs;
 }
 
-/** The raw markup of the reference block a placed frame's pinned record names in `lineage.source`. */
+type Ref = { registry: string; item: string; version: string };
+
+/** The raw markup of the reference blocks a placed frame's pinned record names in `lineage.source` and `lineage.parts`. */
 export function frameBlockMarkup(folder: string, clossys = CLOSSYS, references = REFERENCES): Set<string> {
   const pins = (JSON.parse(readFileSync(join(clossys, 'selection.json'), 'utf8')) as { pins: Record<string, { element: string; version: number }> }).pins;
   const slot = Object.keys(pins).find(key => key.startsWith('frames.') && pins[key]!.element === folder);
   if (!slot) return new Set();
   const pin = pins[slot]!;
-  const record = JSON.parse(readFileSync(join(clossys, 'library', slot, pin.element, `v${pin.version}`, 'element.json'), 'utf8')) as { lineage?: { source?: { registry: string; item: string; version: string } } };
-  const source = record.lineage?.source;
-  if (source?.registry !== 'shadcn') return new Set();
-  const root = join(references, `${source.item}@${source.version}`, 'registry');
-  return existsSync(root) ? referenceMarkup(root) : new Set();
+  const record = JSON.parse(readFileSync(join(clossys, 'library', slot, pin.element, `v${pin.version}`, 'element.json'), 'utf8')) as { lineage?: { source?: Ref; parts?: readonly Ref[] } };
+  const markup = new Set<string>();
+  for (const ref of [record.lineage?.source, ...(record.lineage?.parts ?? [])]) {
+    if (ref?.registry !== 'shadcn') continue;
+    const root = join(references, `${ref.item}@${ref.version}`, 'registry');
+    if (existsSync(root)) for (const line of referenceMarkup(root)) markup.add(line);
+  }
+  return markup;
 }
 
 /** Sibling section folders a placed section's pinned record declares it composes (`deps.elements`). */
@@ -130,7 +135,7 @@ describe('Studio sections are ds-only', () => {
   });
 
   it('covers every placed Studio frame', () => {
-    expect(FRAME_FOLDERS).toEqual(['studio-module', 'studio-shell']);
+    expect(FRAME_FOLDERS).toEqual(['studio-shell']);
   });
 
   it.each(FRAME_FOLDERS)('frame %s renders only Designer components inside its page landmarks', folder => {
@@ -147,7 +152,9 @@ describe('Studio sections are ds-only', () => {
       const block = new Set(['span truncate', 'div grid flex-1']);
       expect(dsOnlyViolations(probe, 'frame', new Set(), block).map(line => line.split(': ').at(-1))).toEqual(['imports other-ui', '<img className>']);
       expect(dsOnlyViolations(probe, 'section', new Set(), block).map(line => line.split(': ').at(-1))).toContain('<span className>');
+      // The shell's markup comes from sidebar-15 (the header) and its sidebar-07 part (the nav).
       expect(frameBlockMarkup('studio-shell').has('div flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground')).toBe(true);
+      expect(frameBlockMarkup('studio-shell').has('div flex flex-1 items-center gap-2 px-3')).toBe(true);
     } finally { rmSync(probe, { recursive: true, force: true }); }
   });
 

@@ -19,6 +19,7 @@ import * as collapsible from "./foundry/collapsible"
 import * as command from "./foundry/command"
 import * as dialog from "./foundry/dialog"
 import * as dropdownMenu from "./foundry/dropdown-menu"
+import * as empty from "./foundry/empty"
 import * as field from "./foundry/field"
 import * as input from "./foundry/input"
 import * as inputGroup from "./foundry/input-group"
@@ -48,6 +49,7 @@ export const FOUNDRY_COMPONENT_SLOTS = [
   "command",
   "dialog",
   "dropdown-menu",
+  "empty",
   "field",
   "input",
   "input-group",
@@ -81,6 +83,7 @@ export const foundryComponents = {
   command: { Command: command.Command, CommandDialog: command.CommandDialog, CommandInput: command.CommandInput, CommandList: command.CommandList, CommandItem: command.CommandItem },
   dialog: { Dialog: dialog.Dialog, DialogTrigger: dialog.DialogTrigger, DialogTitle: dialog.DialogTitle },
   "dropdown-menu": { DropdownMenu: dropdownMenu.DropdownMenu, DropdownMenuTrigger: dropdownMenu.DropdownMenuTrigger, DropdownMenuItem: dropdownMenu.DropdownMenuItem },
+  empty: { Empty: empty.Empty, EmptyHeader: empty.EmptyHeader, EmptyMedia: empty.EmptyMedia, EmptyTitle: empty.EmptyTitle, EmptyDescription: empty.EmptyDescription },
   field: { Field: field.Field, FieldLabel: field.FieldLabel },
   input: { Input: input.Input },
   "input-group": { InputGroup: inputGroup.InputGroup, InputGroupAddon: inputGroup.InputGroupAddon },
@@ -110,6 +113,7 @@ export * from "./foundry/collapsible"
 export * from "./foundry/command"
 export * from "./foundry/dialog"
 export * from "./foundry/dropdown-menu"
+export * from "./foundry/empty"
 export * from "./foundry/field"
 export * from "./foundry/input"
 export * from "./foundry/input-group"

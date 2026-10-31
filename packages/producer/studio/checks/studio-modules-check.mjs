@@ -1,26 +1,27 @@
 #!/usr/bin/env node
 /**
- * studio:modules — the browser wiring check of every page manifest, against a running Studio.
+ * studio:modules — the header popover check of every page manifest, against a running Studio.
  *
  *   node studio/checks/studio-modules-check.mjs <origin> [--out report.json] [--only <path>...]
  *
- * For every entry of the runtime map (Home, the agent galleries and every L3 leaf) it reads the
- * page's manifest from the generated Publisher projection and runs each wiring line in a real
- * Chrome, judging only the rendered DOM:
- *   - toggle <module>: the header icon button presses, the module panel opens and `?m=` names it;
- *     a second press closes it;
- *   - select <explorer|outline>: every item, clicked, brings its target into the page column's
- *     view and is the highlighted (selected) item;
+ * First, without a browser, every page manifest of the generated Publisher projection must carry
+ * its required popovers: the navigator (explorer or outline), checks and copy link on every page,
+ * plus versions and request change on every L3 leaf. A manifest missing one fails (rc 1).
+ *
+ * Then, for every entry of the runtime map (Home, the agent galleries and every L3 leaf), it runs
+ * each wiring line in a real Chrome, judging only the rendered DOM:
+ *   - open <id>: the header icon opens its popover anchored to it and `?p=` names it;
+ *   - select <explorer|outline|versions>: every item, clicked, brings its target into the page
+ *     column's view and is the highlighted (selected) item;
  *   - search explorer: typing an item's name filters the tree down to fewer items, that one kept;
- *   - action <id>: copy-link and copy-prompt write the page URL (and the prompt) to the clipboard;
- *     a scroll action brings its target into view (or is disabled when the page has no target);
- *   - cmdk: the command menu lists every module toggle and page action with its shortcut, and
- *     running a toggle from it opens that module;
- *   - key <letter>: the shortcut opens its module; key escape: with two modules open (stacked in
- *     icon order) Esc closes the top one.
- * Every page also keeps the frame rules: the rail toggle in the top-left corner, the chat toggle
- * in the top-right corner, a header of breadcrumb and icon buttons only, and no form, text area
- * or save control anywhere (Studio is read-only).
+ *   - copy <action>: the popover's copy button writes the page link (and the prompt) to the
+ *     clipboard, exactly the text it shows;
+ *   - cmdk: the command menu lists every popover with its shortcut, and running one opens it;
+ *   - key <letter>: the shortcut opens its popover; key escape and click outside close it.
+ * Every page also keeps the frame rules: the left sidebar toggle first in the header before the
+ * breadcrumb, the chat toggle last in the top-right corner after a vertical separator, one header
+ * icon per manifest popover in manifest order, a header of breadcrumb and icon buttons only, and
+ * no form, text area or save control anywhere (Studio is read-only).
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -40,6 +41,36 @@ function manifestOf(entry) {
 }
 
 const js = value => JSON.stringify(value);
+
+/** The popovers every page carries, and the ones every L3 leaf adds. */
+const REQUIRED = [
+  { what: 'navigator', has: manifest => manifest.modules.some(module => module.id === manifest.navigator) },
+  { what: 'checks', has: manifest => manifest.modules.some(module => module.id === 'checks' && module.source === 'page.checks') },
+  { what: 'copy-link', has: manifest => manifest.actions.some(action => action.id === 'copy-link' && action.handler?.kind === 'copy-link') },
+];
+const REQUIRED_LEAF = [
+  { what: 'versions', has: manifest => manifest.modules.some(module => module.id === 'versions' && module.source === 'page.versions') },
+  { what: 'request-change', has: manifest => manifest.actions.some(action => action.id === 'request-change' && action.handler?.kind === 'copy-prompt') },
+];
+
+/** Required popovers missing from a page manifest of the projection, and wiring lines naming no popover. */
+export function manifestFindings(pages = projection.pages) {
+  const out = [];
+  const visit = (owner, manifest, leaf) => {
+    if (!manifest) { out.push({ rule: 'no-manifest', owner }); return; }
+    for (const rule of [...REQUIRED, ...(leaf ? REQUIRED_LEAF : [])]) if (!rule.has(manifest)) out.push({ rule: 'required-popover', owner, missing: rule.what });
+    const ids = new Set([...manifest.modules, ...manifest.actions].map(row => row.id));
+    for (const line of manifest.wiring) {
+      const [verb, arg] = line.do.split(' ');
+      if ((verb === 'open' || verb === 'copy' || verb === 'select' || verb === 'search') && !ids.has(arg)) out.push({ rule: 'wiring-unknown-popover', owner, do: line.do });
+    }
+  };
+  for (const page of pages) {
+    visit(page.id, page.manifest, false);
+    if (page.leaf) visit(`${page.id}:leaf`, page.leaf.manifest, true);
+  }
+  return out;
+}
 
 /** Wait for a DOM condition (an expression) for up to `ms`. */
 const until = (condition, ms = 8000) => `new Promise(resolve => {
@@ -70,38 +101,46 @@ const IN_VIEW = selector => `(() => {
 })()`;
 
 const STATE = `(() => ({
-  pressed: Object.fromEntries([...document.querySelectorAll('[data-module-toggle]')].map(button => [button.getAttribute('data-module-toggle'), button.getAttribute('aria-pressed') === 'true'])),
-  column: [...document.querySelectorAll('[data-module-column] [data-module]')].map(panel => panel.getAttribute('data-module')),
-  url: new URLSearchParams(location.search).get('m'),
+  open: [...document.querySelectorAll('[data-popover]')].filter(element => element.getBoundingClientRect().width > 0).map(element => element.getAttribute('data-popover')),
+  expanded: [...document.querySelectorAll('header [data-popover-trigger]')].filter(button => button.getAttribute('aria-expanded') === 'true').map(button => button.getAttribute('data-popover-trigger')),
+  url: new URLSearchParams(location.search).get('p'),
 }))()`;
 
-const FRAME = `(() => {
+const FRAME = ids => `(() => {
   const out = [];
   const width = innerWidth;
-  const rail = [...document.querySelectorAll('[data-panel-toggle="rail"]')].find(element => element.getBoundingClientRect().width > 0);
-  const chat = [...document.querySelectorAll('[data-panel-toggle="chat"]')].find(element => element.getBoundingClientRect().width > 0);
-  if (!rail) out.push({ rule: 'rail-toggle-missing' });
-  else {
-    // shadcn sidebar-07: the sidebar trigger opens the page header, before the breadcrumb.
-    const header = rail.closest('header'), crumbs = header?.querySelector('nav[aria-label="breadcrumb" i], [data-slot="breadcrumb"]');
-    if (!header || !crumbs || !(rail.compareDocumentPosition(crumbs) & Node.DOCUMENT_POSITION_FOLLOWING)) out.push({ rule: 'rail-toggle-header', inHeader: !!header });
-  }
-  if (!chat) out.push({ rule: 'chat-toggle-missing' });
-  else { const r = chat.getBoundingClientRect(); if (width - r.right > 64 || r.top > 56) out.push({ rule: 'chat-toggle-corner', right: Math.round(width - r.right), top: Math.round(r.top) }); }
+  const visible = element => element.getBoundingClientRect().width > 0;
   const header = document.querySelector('header');
-  if (!header) out.push({ rule: 'header-missing' });
+  if (!header) return [{ rule: 'header-missing' }];
+  const buttons = [...header.querySelectorAll('button, a[role="button"]')].filter(visible).filter(control => !control.closest('[data-slot="breadcrumb"], nav[aria-label="breadcrumb" i]'));
+  const left = [...document.querySelectorAll('[data-panel-toggle="left"]')].find(visible);
+  const chat = [...document.querySelectorAll('[data-panel-toggle="chat"]')].find(visible);
+  const crumbs = header.querySelector('nav[aria-label="breadcrumb" i], [data-slot="breadcrumb"]');
+  if (!crumbs) out.push({ rule: 'header-breadcrumb' });
+  // shadcn sidebar-15: the left sidebar trigger opens the header, before the breadcrumb.
+  if (!left) out.push({ rule: 'left-toggle-missing' });
+  else if (left.closest('header') !== header || buttons[0] !== left || (crumbs && !(left.compareDocumentPosition(crumbs) & Node.DOCUMENT_POSITION_FOLLOWING))) out.push({ rule: 'left-toggle-first' });
+  // The chat toggle closes the header, after a vertical separator, in the top-right corner.
+  if (!chat) out.push({ rule: 'chat-toggle-missing' });
   else {
-    if (!header.querySelector('nav[aria-label="breadcrumb" i], [data-slot="breadcrumb"]')) out.push({ rule: 'header-breadcrumb' });
-    for (const control of header.querySelectorAll('button, a[role="button"], input, select, textarea')) {
-      if (control.closest('[data-slot="breadcrumb"], nav[aria-label="breadcrumb" i]')) continue;
-      if (control.matches('input, select, textarea')) { out.push({ rule: 'header-field' }); continue; }
-      const text = [...control.childNodes].filter(node => node.nodeType === 3).map(node => node.textContent.trim()).join('');
-      const named = control.getAttribute('aria-label') || control.querySelector(':scope > .sr-only')?.textContent.trim();
-      if (text || !named || !control.querySelector('svg')) out.push({ rule: 'header-not-icon-button', label: (control.getAttribute('aria-label') || control.textContent).trim().slice(0, 40) });
-    }
+    const r = chat.getBoundingClientRect();
+    if (chat.closest('header') !== header || buttons.at(-1) !== chat) out.push({ rule: 'chat-toggle-last' });
+    const before = chat.previousElementSibling;
+    if (!before || !(before.matches('[data-slot="separator"], [role="separator"]') && (before.getAttribute('data-orientation') === 'vertical' || before.hasAttribute('data-vertical') || before.getAttribute('aria-orientation') === 'vertical'))) out.push({ rule: 'chat-toggle-separator' });
+    if (width - r.right > 64 || r.top > 56) out.push({ rule: 'chat-toggle-corner', right: Math.round(width - r.right), top: Math.round(r.top) });
+  }
+  // One header icon per manifest popover, in manifest order, between the two toggles.
+  const triggers = [...header.querySelectorAll('[data-popover-trigger]')].filter(visible).map(button => button.getAttribute('data-popover-trigger'));
+  if (JSON.stringify(triggers) !== JSON.stringify(${'${js(ids)}'})) out.push({ rule: 'popover-triggers', found: triggers, want: ${'${js(ids)}'} });
+  for (const control of header.querySelectorAll('button, a[role="button"], input, select, textarea')) {
+    if (control.closest('[data-slot="breadcrumb"], nav[aria-label="breadcrumb" i]')) continue;
+    if (control.matches('input, select, textarea')) { out.push({ rule: 'header-field' }); continue; }
+    const text = [...control.childNodes].filter(node => node.nodeType === 3).map(node => node.textContent.trim()).join('');
+    const named = control.getAttribute('aria-label') || control.querySelector(':scope > .sr-only')?.textContent.trim();
+    if (text || !named || !control.querySelector('svg')) out.push({ rule: 'header-not-icon-button', label: (control.getAttribute('aria-label') || control.textContent).trim().slice(0, 40) });
   }
   if (document.querySelector('form, textarea, [contenteditable="true"]')) out.push({ rule: 'read-only', found: 'form or text area' });
-  for (const input of document.querySelectorAll('input:not([type="hidden"])')) if (!input.closest('[data-studio-section="module-explorer"], [role="dialog"]')) out.push({ rule: 'read-only', found: 'input ' + (input.getAttribute('aria-label') || input.name || input.type) });
+  for (const input of document.querySelectorAll('input:not([type="hidden"])')) if (!input.closest('[role="dialog"]')) out.push({ rule: 'read-only', found: 'input ' + (input.getAttribute('aria-label') || input.name || input.type) });
   for (const button of document.querySelectorAll('button')) if (/^(save|submit|apply|publish|delete)\\b/i.test(button.textContent.trim())) out.push({ rule: 'read-only', found: 'button ' + button.textContent.trim().slice(0, 30) });
   return out;
 })()`;
@@ -121,55 +160,66 @@ export async function runModulesCheck(origin, { only } = {}) {
   };
   const blur = () => evaluate(`(() => { document.activeElement?.blur?.(); return true; })()`);
   const state = () => evaluate(STATE);
+  const popover = id => `[data-popover=${js(id)}]`;
+  const shown = id => `(() => { const element = document.querySelector(${js(popover(id))}); return Boolean(element && element.getBoundingClientRect().width > 0); })()`;
+  const escape = () => key('Escape', { code: 'Escape', keyCode: 27 });
   const closeAll = async () => {
-    for (const [id, pressed] of Object.entries((await state())?.pressed ?? {})) if (pressed) await press(`[data-module-toggle=${js(id)}]`);
-    await evaluate(until(`!document.querySelector('[data-module-column]')`, 2000));
+    for (let i = 0; i < 3 && (await state())?.open?.length; i++) { await escape(); await sleep(200); }
+    await evaluate(until(`!document.querySelector('[data-popover]') && !new URLSearchParams(location.search).get('p')`, 2000));
     await evaluate(`(() => { const main = document.getElementById('studio-main'); if (main) main.scrollTop = 0; return true; })()`);
   };
   const open = async id => {
-    if (!(await state())?.pressed?.[id]) await press(`[data-module-toggle=${js(id)}]`);
-    return evaluate(until(`document.querySelector('[data-module-column] [data-module=${js(id)}]')`, 3000));
+    if (!(await state())?.open?.includes(id)) await press(`header [data-popover-trigger=${js(id)}]`);
+    return evaluate(until(shown(id), 3000));
+  };
+  const clickAt = async (x, y) => {
+    await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
+    await send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 });
+    await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 });
   };
   await send('Browser.grantPermissions', { origin, permissions: ['clipboardReadWrite', 'clipboardSanitizedWrite'] });
   await send('Emulation.setFocusEmulationEnabled', { enabled: true });
   const clipboard = () => gesture(`navigator.clipboard.readText().catch(error => 'ERROR ' + error.message)`);
   const resetClipboard = () => gesture(`navigator.clipboard.writeText('').then(() => true, () => false)`);
 
+  for (const finding of manifestFindings()) findings.push({ path: '(manifest)', ...finding });
   try {
     const targets = only?.length ? entries.filter(entry => only.includes(entry.path)) : entries;
     for (const entry of targets) {
       const add = (rule, extra = {}) => findings.push({ rule, path: entry.path, ...extra });
       const manifest = manifestOf(entry);
       if (!manifest) { add('no-manifest'); continue; }
+      const popovers = [...manifest.modules, ...manifest.actions];
+      const ids = popovers.map(row => row.id);
       const errorsBefore = browser.errors.length;
       await send('Page.navigate', { url: new URL(entry.path, origin).href });
       await sleep(300);
       if (!(await evaluate(SETTLED))) add('render-timeout');
-      for (const { rule, ...extra } of await evaluate(FRAME) ?? []) add(rule, extra);
+      for (const { rule, ...extra } of await evaluate(FRAME(ids)) ?? []) add(rule, extra);
       const lines = [];
       const result = (line, ok, extra = {}) => { lines.push({ do: line.do, ok }); if (!ok) add('wiring', { do: line.do, expect: line.expect, ...extra }); };
-      const modules = manifest.modules;
       for (const line of manifest.wiring) {
         await closeAll();
         await blur();
         const [verb, ...rest] = line.do.split(' ');
         const arg = rest.join(' ');
-        if (verb === 'toggle') {
-          await press(`[data-module-toggle=${js(arg)}]`);
-          const opened = await evaluate(until(`document.querySelector('[data-module-column] [data-module=${js(arg)}]')`, 3000));
+        if (verb === 'open') {
+          await press(`header [data-popover-trigger=${js(arg)}]`);
+          const opened = await evaluate(until(shown(arg), 3000));
           const on = await state();
-          await press(`[data-module-toggle=${js(arg)}]`);
-          const closed = await evaluate(until(`!document.querySelector('[data-module=${js(arg)}]')`, 3000));
-          const off = await state();
-          result(line, opened && on.pressed[arg] && (on.url ?? '').split(',').includes(arg) && closed && !off.pressed[arg] && !(off.url ?? '').split(',').includes(arg), { on, off });
+          // Anchored to its header icon: the popover's top sits just below the icon.
+          const anchored = await evaluate(`(() => { const p = document.querySelector(${js(popover(arg))})?.getBoundingClientRect(), t = document.querySelector(${js(`header [data-popover-trigger=${js(arg)}]`)})?.getBoundingClientRect(); return Boolean(p && t && p.top >= t.bottom - 1 && p.top - t.bottom < 24); })()`);
+          result(line, opened && anchored && on.url === arg && js(on.open) === js([arg]) && on.expanded.includes(arg), { on, anchored });
         } else if (verb === 'select') {
           await open(arg);
-          const attribute = arg === 'explorer' ? 'data-explorer-target' : 'data-outline-target';
-          await evaluate(until(`document.querySelectorAll('[data-module=${js(arg)}] [${attribute}]').length`, 10000));
-          const items = await evaluate(`[...document.querySelectorAll('[data-module=${js(arg)}] [${attribute}]')].map(item => item.getAttribute(${js(attribute)}))`) ?? [];
+          const module = manifest.modules.find(row => row.id === arg);
+          const attribute = module?.source === 'page.explorer' ? 'data-explorer-target' : 'data-outline-target';
+          await evaluate(until(`document.querySelectorAll(${js(`${popover(arg)} [${attribute}]`)}).length`, 10000));
+          const items = await evaluate(`[...document.querySelectorAll(${js(`${popover(arg)} [${attribute}]`)})].map(item => item.getAttribute(${js(attribute)}))`) ?? [];
           const failed = [];
           for (const [index, selector] of items.entries()) {
-            const item = `[data-module=${js(arg)}] [${attribute}=${js(selector)}]`;
+            const item = `${popover(arg)} [${attribute}=${js(selector)}]`;
+            if (!(await evaluate(shown(arg)))) await open(arg);
             await press(item);
             await sleep(120);
             const inView = await evaluate(until(IN_VIEW(selector), 2500));
@@ -179,61 +229,59 @@ export async function runModulesCheck(origin, { only } = {}) {
           result(line, items.length > 0 && !failed.length, { items: items.length, failed: failed.slice(0, 5) });
         } else if (verb === 'search') {
           await open(arg);
-          await evaluate(until(`document.querySelectorAll('[data-module=${js(arg)}] [data-explorer-target]').length`, 10000));
-          const before = await evaluate(`[...document.querySelectorAll('[data-module=${js(arg)}] [data-explorer-target]')].map(item => item.textContent.trim())`) ?? [];
+          const items = `${popover(arg)} [data-explorer-target]`;
+          await evaluate(until(`document.querySelectorAll(${js(items)}).length`, 10000));
+          const before = await evaluate(`[...document.querySelectorAll(${js(items)})].map(item => item.textContent.trim())`) ?? [];
           const query = before.at(-1) ?? '';
-          await evaluate(`(() => { const input = document.querySelector('[data-module=${js(arg)}] input'); input?.focus(); return Boolean(input); })()`);
+          await evaluate(`(() => { const input = document.querySelector(${js(`${popover(arg)} input`)}); input?.focus(); return Boolean(input); })()`);
           await send('Input.insertText', { text: query });
           await sleep(400);
-          const after = await evaluate(`[...document.querySelectorAll('[data-module=${js(arg)}] [data-explorer-target]')].map(item => item.textContent.trim())`) ?? [];
+          const after = await evaluate(`[...document.querySelectorAll(${js(items)})].map(item => item.textContent.trim())`) ?? [];
           result(line, before.length > 1 && after.length > 0 && after.length < before.length && after.includes(query), { before: before.length, after: after.length, query });
-        } else if (verb === 'action') {
+        } else if (verb === 'copy') {
           const action = manifest.actions.find(row => row.id === arg);
-          const button = `[data-page-action=${js(arg)}]`;
           if (!action) { result(line, false, { reason: 'no such action' }); continue; }
-          if (action.handler.kind === 'scroll') {
-            const present = await evaluate(`Boolean(document.getElementById('studio-main')?.querySelector(${js(action.handler.target)}))`);
-            const disabled = await evaluate(`document.querySelector(${js(button)})?.disabled === true || document.querySelector(${js(button)})?.getAttribute('data-disabled') === 'true'`);
-            if (!present) { result(line, disabled, { reason: 'no target on this page; the action must be disabled', disabled }); lines.at(-1).na = true; continue; }
-            await press(button);
-            result(line, await evaluate(until(IN_VIEW(action.handler.target), 2500)), { target: action.handler.target });
-          } else {
-            await resetClipboard();
-            await gesture(`(() => { document.querySelector(${js(button)})?.click(); return true; })()`);
-            await sleep(400);
-            const text = await clipboard();
-            const href = await evaluate('location.href');
-            const ok = action.handler.kind === 'copy-link' ? text === href : typeof text === 'string' && text.includes(href) && text.includes('What should change') && !/\{(agent|title|url)\}/.test(text);
-            result(line, ok, { clipboard: String(text).slice(0, 120), href });
-          }
+          await open(arg);
+          await resetClipboard();
+          const shownText = await evaluate(`document.querySelector(${js(`[data-popover-text=${js(arg)}]`)})?.textContent ?? ''`);
+          await gesture(`(() => { document.querySelector(${js(`[data-popover-copy=${js(arg)}]`)})?.click(); return true; })()`);
+          await sleep(400);
+          const text = await clipboard();
+          // The page link, without the popover state.
+          const href = await evaluate(`(() => { const url = new URL(location.href); url.searchParams.delete('p'); return url.href; })()`);
+          const ok = text === shownText && (action.handler.kind === 'copy-link' ? text === href : typeof text === 'string' && text.includes(href) && text.includes('What should change') && !/\{(agent|title|url)\}/.test(text));
+          result(line, ok, { clipboard: String(text).slice(0, 120), shown: String(shownText).slice(0, 120), href });
         } else if (verb === 'cmdk') {
           await key('k', { code: 'KeyK', modifiers: 4, keyCode: 75 });
           await evaluate(until(`document.querySelector('[role="dialog"] [data-page-command]')`, 3000));
-          const listed = await evaluate(`[...document.querySelectorAll('[role="dialog"] [data-page-command]')].map(item => ({ id: item.getAttribute('data-page-command'), label: (item.getAttribute('aria-label') || item.textContent).trim(), shortcut: item.querySelector('[data-slot="command-shortcut"]')?.textContent.trim() ?? '' }))`) ?? [];
-          const wanted = [
-            ...modules.map(module => ({ id: `module:${module.id}`, shortcut: module.shortcut })),
-            ...manifest.actions.filter(action => action.cmdk).map(action => ({ id: `action:${action.id}`, shortcut: action.shortcut })),
-          ];
-          const missing = wanted.filter(row => !listed.some(item => item.id === row.id && (!row.shortcut || item.shortcut.toLowerCase() === row.shortcut)));
-          // Run the last module toggle from the menu: it must open that module.
-          const last = modules.at(-1);
-          await press(`[role="dialog"] [data-page-command=${js(`module:${last.id}`)}]`);
-          const ran = await evaluate(until(`document.querySelector('[data-module-column] [data-module=${js(last.id)}]') && !document.querySelector('[role="dialog"]')`, 3000));
-          if (!ran) { await key('Escape', { code: 'Escape', keyCode: 27 }); await sleep(300); }
-          result(line, wanted.length > 0 && !missing.length && ran, { missing, ran });
-        } else if (verb === 'key' && arg !== 'escape') {
-          const module = modules.find(row => row.shortcut === arg);
-          await key(arg, { code: `Key${arg.toUpperCase()}`, keyCode: arg.toUpperCase().charCodeAt(0) });
-          result(line, Boolean(module) && await evaluate(until(`document.querySelector('[data-module-column] [data-module=${js(module?.id ?? '')}]')`, 3000)), { module: module?.id });
+          const listed = await evaluate(`[...document.querySelectorAll('[role="dialog"] [data-page-command]')].map(item => ({ id: item.getAttribute('data-page-command'), shortcut: item.querySelector('[data-slot="command-shortcut"]')?.textContent.trim() ?? '' }))`) ?? [];
+          const missing = popovers.filter(row => !listed.some(item => item.id === `popover:${row.id}` && item.shortcut.toLowerCase() === row.shortcut));
+          // Run the last popover from the menu: it must open that popover.
+          const last = popovers.at(-1);
+          await press(`[role="dialog"] [data-page-command=${js(`popover:${last.id}`)}]`);
+          const ran = await evaluate(until(`${shown(last.id)} && !document.querySelector('[role="dialog"] [data-page-command]')`, 3000));
+          result(line, popovers.length > 0 && !missing.length && listed.length === popovers.length && ran, { missing: missing.map(row => row.id), listed: listed.length, ran });
         } else if (verb === 'key' && arg === 'escape') {
-          for (const module of [...modules].reverse()) await open(module.id);
-          const stacked = await state();
-          const order = modules.map(module => module.id);
-          await blur();
-          await key('Escape', { code: 'Escape', keyCode: 27 });
-          await evaluate(until(`!document.querySelector('[data-module-column] [data-module=${js(order[0])}]')`, 3000));
+          const first = ids[0];
+          const opened = await open(first);
+          await escape();
+          const closed = await evaluate(until(`!document.querySelector('[data-popover]')`, 3000));
           const after = await state();
-          result(line, js(stacked.column) === js(order) && js(after.column) === js(order.slice(1)), { stacked: stacked.column, after: after.column });
+          result(line, opened && closed && !after.url, { opened, after });
+        } else if (verb === 'key') {
+          const row = popovers.find(item => item.shortcut === arg);
+          await key(arg, { code: `Key${arg.toUpperCase()}`, keyCode: arg.toUpperCase().charCodeAt(0) });
+          const opened = Boolean(row) && await evaluate(until(shown(row.id), 3000));
+          result(line, opened && (await state()).url === row?.id, { popover: row?.id });
+        } else if (verb === 'click' && arg === 'outside') {
+          const first = ids[0];
+          const opened = await open(first);
+          // A point in the page column, clear of the popover.
+          const point = await evaluate(`(() => { const m = document.getElementById('studio-main').getBoundingClientRect(), p = document.querySelector(${js(popover(first))})?.getBoundingClientRect(); const x = Math.round(m.left + 24), y = Math.round(m.bottom - 24); return p && x >= p.left && x <= p.right && y >= p.top && y <= p.bottom ? null : { x, y }; })()`);
+          if (point) await clickAt(point.x, point.y);
+          const closed = Boolean(point) && await evaluate(until(`!document.querySelector('[data-popover]')`, 3000));
+          const after = await state();
+          result(line, opened && closed && !after.url, { opened, point, after });
         } else result(line, false, { reason: 'unknown wiring verb' });
       }
       for (const error of browser.errors.slice(errorsBefore)) add('page-error', { message: error });

@@ -48,7 +48,7 @@ test('every Studio page is a Publisher assembly: frame + ordered sections + bind
   for (const route of projection.routes) assert.deepEqual(route.entry, GENERIC_PAGE);
   for (const page of map.entries.filter(row => row.kind === 'page')) assert.deepEqual(projection.pageActions[page.id], page.actions ?? []);
   assert.deepEqual(projection.items.map(item => item.slot).sort(), [
-    'frames.module', 'frames.studio-shell', 'sections.module.checks', 'sections.module.explorer', 'sections.module.outline', 'sections.studio.agent-gallery', 'sections.studio.checks', 'sections.studio.contract', 'sections.studio.history', 'sections.studio.home',
+    'frames.studio-shell', 'sections.module.checks', 'sections.module.explorer', 'sections.module.outline', 'sections.studio.agent-gallery', 'sections.studio.checks', 'sections.studio.contract', 'sections.studio.history', 'sections.studio.home',
     'sections.studio.leaf-header', 'sections.studio.options', 'sections.studio.publications', 'sections.studio.references', 'sections.studio.specimen',
   ]);
   const bindings = await readFile(join(options.outputDir, 'assembly-bindings.ts'), 'utf8');
@@ -119,7 +119,11 @@ test('a page manifest missing its explorer, modules or actions fails closed (mut
     ['explorer module removed', route => { route.manifest.modules = route.manifest.modules.filter(module => module.id !== 'explorer'); }, /explorer/],
     ['no modules', route => { route.manifest.modules = []; }, /declares no modules/],
     ['no actions', route => { route.manifest.actions = []; }, /declares no actions/],
-    ['an action with no wiring line', route => { route.manifest.wiring = route.manifest.wiring.filter(line => !line.do.startsWith('action ')); }, /wiring/],
+    ['an action with no wiring line', route => { route.manifest.wiring = route.manifest.wiring.filter(line => !line.do.startsWith('copy ')); }, /wiring/],
+    ['a popover with no open line', route => { route.manifest.wiring = route.manifest.wiring.filter(line => line.do !== 'open checks'); }, /checks popover/],
+    ['no escape close line', route => { route.manifest.wiring = route.manifest.wiring.filter(line => line.do !== 'key escape'); }, /closing a popover/],
+    ['a shared shortcut', route => { route.manifest.actions[0].shortcut = route.manifest.modules[0].shortcut; }, /reuses the shortcut/],
+    ['a retired module frame', route => { route.manifest.frame = 'frames.module'; }, /names frame/],
     ['a leaf with no outline', route => { delete route.leaf.manifest.navigator; }, /needs an explorer or an outline/],
   ];
   const clean = await fixture(t);
@@ -133,7 +137,7 @@ test('a page manifest missing its explorer, modules or actions fails closed (mut
 
 test('checkManifest names what a manifest lacks', () => {
   assert.throws(() => checkManifest('page.x', undefined, {}), /declares no page manifest/);
-  assert.throws(() => checkManifest('page.x', { frame: 'frames.module', navigator: 'explorer', modules: [], actions: [], wiring: [] }, {}), /declares no modules/);
+  assert.throws(() => checkManifest('page.x', { navigator: 'explorer', modules: [], actions: [], wiring: [] }, {}), /declares no modules/);
 });
 
 test('Studio runs exactly the pinned payload: code that drifts from the library record fails', async t => {

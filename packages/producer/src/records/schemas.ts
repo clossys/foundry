@@ -88,6 +88,12 @@ export const ELEMENT_SCHEMA: JsonSchema = {
       properties: {
         mode: { enum: ["verbatim", "customized", "original"] },
         source: { $ref: "#/$defs/referenceRef" },
+        parts: {
+          type: "array",
+          minItems: 1,
+          items: { $ref: "#/$defs/referenceRef" },
+          description: "Further trusted references the payload takes verbatim parts from, beside the source block.",
+        },
         parent: {
           type: "object",
           required: ["version", "hash"],

@@ -1,0 +1,335 @@
+'use client';
+
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { MessageSquareIcon, PanelRightIcon, SparklesIcon } from 'lucide-react';
+import type { ContentMapCommandGroup, ContentMapNavigation } from '@clossys/publisher/content-map';
+import {
+  Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, Button,
+  CommandDialog, Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut,
+  Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
+  Popover, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger, ScrollArea, Separator,
+  Sheet, SheetDescription, SheetHeader, SheetTitle, Sidebar, SidebarContent, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarProvider, SidebarTrigger,
+  useSidebar, Tooltip, TooltipTrigger,
+} from '@clossys/designer-ui';
+import { studioIcon } from '../../lib/studio-icons';
+import { AppSidebar } from './app-sidebar';
+
+export { PageNotice, type PageNoticeData } from './PageNotice';
+
+/** What a navigator popover's section is told: the target in view (scroll-spy) and how to bring one into view. */
+export interface PopoverContext { active?: string; select: (target: string) => void }
+
+/**
+ * One header popover, as the page manifest declares it. A module popover places its pinned module
+ * section (`render`) and names the page parts it points at (`targets`, followed by the scroll-spy);
+ * an action popover shows the text it copies (`copy`: the page link, or a prompt naming it).
+ */
+export interface PopoverSpec {
+  id: string;
+  label: string;
+  icon: string;
+  shortcut?: string;
+  description?: string;
+  targets?: readonly string[];
+  render?: (context: PopoverContext) => ReactNode;
+  copy?: { kind: 'link' } | { kind: 'prompt'; prompt: string };
+}
+
+/** One page command for the command menu: opening one header popover, with its shortcut. */
+export interface PageCommand { id: string; label: string; icon: string; shortcut?: string; run: () => void }
+
+const POPOVER_PARAM = 'p';
+const LEFT_COOKIE = 'sidebar_state';
+const CHAT_COOKIE = 'chat_state';
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
+const SPY_OFFSET = 96;
+
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    const update = () => setMatches(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, [query]);
+  return matches;
+}
+
+const readCookie = (name: string): boolean | undefined => {
+  const row = document.cookie.split('; ').find(part => part.startsWith(`${name}=`));
+  return row ? row.slice(name.length + 1) === 'true' : undefined;
+};
+const writeCookie = (name: string, value: boolean) => { document.cookie = `${name}=${value}; path=/; max-age=${COOKIE_MAX_AGE}`; };
+
+/** The open popover from the URL (`?p=<id>`), when the page declares it. */
+function readPopover(ids: readonly string[]): string | undefined {
+  const id = new URLSearchParams(window.location.search).get(POPOVER_PARAM) ?? undefined;
+  return id && ids.includes(id) ? id : undefined;
+}
+function writePopover(id: string | undefined) {
+  const url = new URL(window.location.href);
+  if (id) url.searchParams.set(POPOVER_PARAM, id);
+  else url.searchParams.delete(POPOVER_PARAM);
+  window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
+const mainColumn = () => document.getElementById('studio-main');
+const target = (selector: string) => {
+  try { return mainColumn()?.querySelector<HTMLElement>(selector) ?? null; } catch { return null; }
+};
+async function copyText(text: string): Promise<boolean> {
+  try { await navigator.clipboard.writeText(text); return true; } catch { return false; }
+}
+const typing = (element: EventTarget | null) => element instanceof HTMLElement && (element.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(element.tagName));
+const sentence = (value: string) => value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
+
+/** The right sidebar is chat only. Chat is not connected yet, so it shows its empty state. */
+function ChatContent() {
+  return <>
+    <SidebarHeader className="h-16 justify-center border-b border-sidebar-border">
+      <SidebarGroupLabel><SparklesIcon />Chat</SidebarGroupLabel>
+    </SidebarHeader>
+    <SidebarContent>
+      <Empty data-chat-empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon"><MessageSquareIcon /></EmptyMedia>
+          <EmptyTitle>No conversation yet</EmptyTitle>
+          <EmptyDescription>Chat with Director, Designer, Writer and Publisher will open here. Agents work through the CLI for now.</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    </SidebarContent>
+  </>;
+}
+
+/** An action popover's body: the text it copies, then the copy button. */
+function CopyBody({ spec }: { spec: PopoverSpec }) {
+  const [copied, setCopied] = useState(false);
+  // The page link, without the popover state (it renders only once opened, in the browser).
+  const [href] = useState(() => { const url = new URL(window.location.href); url.searchParams.delete(POPOVER_PARAM); return url.href; });
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const text = spec.copy?.kind === 'prompt' ? spec.copy.prompt.replaceAll('{url}', href) : href;
+  const label = spec.copy?.kind === 'prompt' ? 'Copy prompt' : 'Copy link';
+  return <>
+    <PopoverDescription data-popover-text={spec.id} className="max-h-48 overflow-y-auto rounded-md bg-muted px-2 py-1.5 font-mono text-xs break-all whitespace-pre-wrap">{text}</PopoverDescription>
+    <Button size="sm" data-popover-copy={spec.id} onPress={() => { void copyText(text).then(ok => { if (!ok) return; setCopied(true); clearTimeout(timer.current); timer.current = setTimeout(() => setCopied(false), 1600); }); }}>
+      {copied ? 'Copied' : label}
+    </Button>
+  </>;
+}
+
+function CommandMenu({ commands, pageCommands, open, onOpenChange }: { commands: readonly ContentMapCommandGroup[]; pageCommands: readonly PageCommand[]; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const router = useRouter();
+  return <CommandDialog open={open} onOpenChange={onOpenChange} title="Find a page" description="Search Studio pages and this page's commands">
+    <Command>
+      <CommandInput placeholder="Search pages and commands" />
+      <CommandList aria-label="Pages" renderEmptyState={() => <CommandEmpty>No matching pages</CommandEmpty>}>
+        {pageCommands.length > 0 && <CommandGroup id="page" heading="This page">
+          {pageCommands.map(command => {
+            const Icon = studioIcon(command.icon, command.id);
+            return <CommandItem key={command.id} id={`page:${command.id}`} textValue={command.label} data-page-command={command.id} onAction={() => { onOpenChange(false); command.run(); }}>
+              <Icon />{command.label}{command.shortcut && <CommandShortcut>{command.shortcut.toUpperCase()}</CommandShortcut>}
+            </CommandItem>;
+          })}
+        </CommandGroup>}
+        {commands.map(group => <CommandGroup key={group.id} id={group.id} heading={sentence(group.label)}>
+          {group.items.flatMap(item => {
+            if (!item.href) return [];
+            const Icon = studioIcon(item.icon, item.id);
+            const href = item.href;
+            return [<CommandItem key={item.id} id={`${group.id}:${item.id}`} textValue={item.label} onAction={() => { onOpenChange(false); router.push(href); }}>
+              <Icon />{item.label}
+            </CommandItem>];
+          })}
+        </CommandGroup>)}
+      </CommandList>
+    </Command>
+  </CommandDialog>;
+}
+
+/** The mobile navigation sheet closes once a destination is chosen. */
+function CloseMobileNavigation() {
+  const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
+  useEffect(() => {
+    setOpenMobile(false);
+    // The content column is the scroller, so a new page starts at its top.
+    document.getElementById('studio-main')?.scrollTo({ top: 0 });
+  }, [pathname, setOpenMobile]);
+  return null;
+}
+
+/** The scroll-spy over the open popover's targets: the part at the top of the page column is active. */
+function useScrollSpy(targets: readonly string[]) {
+  const [active, setActive] = useState<string | undefined>(undefined);
+  const chosen = useRef<string | undefined>(undefined);
+  const spy = useCallback(() => {
+    const main = mainColumn();
+    if (!main) return;
+    // A part chosen in a popover stays highlighted while it is in view (a short part, or one at
+    // the end of the column, may never reach the top).
+    const bounds = main.getBoundingClientRect();
+    const kept = chosen.current ? target(chosen.current)?.getBoundingClientRect() : undefined;
+    if (kept && kept.top < bounds.bottom && kept.bottom > bounds.top) { setActive(chosen.current); return; }
+    chosen.current = undefined;
+    const top = bounds.top + SPY_OFFSET;
+    let current: string | undefined;
+    for (const selector of targets) { const element = target(selector); if (element && element.getBoundingClientRect().top <= top) current = selector; }
+    setActive(current ?? targets.find(selector => target(selector)));
+  }, [targets]);
+  useEffect(() => {
+    const main = mainColumn();
+    if (!main || !targets.length) return;
+    let frame = 0;
+    const onScroll = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(spy); };
+    onScroll();
+    main.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => { cancelAnimationFrame(frame); main.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); };
+  }, [targets, spy]);
+  const select = useCallback((selector: string) => {
+    const element = target(selector);
+    if (!element) return;
+    chosen.current = selector;
+    element.scrollIntoView({ block: 'start' });
+    setActive(selector);
+  }, []);
+  return { active, select };
+}
+
+/**
+ * The inputs of `frames.studio-shell`. Navigation, commands and breadcrumbs are projected by
+ * Publisher from the one Studio map; `popovers` are the page manifest's modules and actions, one
+ * header icon each. `body` is the assembly's layout: both stack the sections in the padded page
+ * column with no outer card (`detail` keeps the first section as the head).
+ */
+export interface StudioShellProps {
+  homeHref: string;
+  navigation: ContentMapNavigation;
+  commands: readonly ContentMapCommandGroup[];
+  breadcrumbs: readonly { id: string; label: string; href?: string }[];
+  popovers?: readonly PopoverSpec[];
+  body?: 'plain' | 'detail';
+  head?: ReactNode;
+  children?: ReactNode;
+}
+
+/**
+ * `frames.studio-shell`: the shadcn sidebar-15 block (a left and a right sidebar) as Studio's app
+ * shell. The left sidebar is the N1 navigation (sidebar-07 content); the right sidebar is chat.
+ * The header's far-left icon toggles the left sidebar, its far-right icon (after a divider) the
+ * chat; every other header icon opens its module or action as a popover anchored to it. Open
+ * states persist: the sidebars in cookies, the popover in the URL (`?p=`). Below `md` the left
+ * sidebar is a sheet, below `lg` the chat is.
+ */
+export default function StudioShellFrame({ navigation, commands, breadcrumbs, popovers = [], body = 'plain', head, children }: StudioShellProps) {
+  const pathname = usePathname();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const wide = useMediaQuery('(min-width: 1024px)');
+  const [leftOpen, setLeftOpen] = useState(true);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatSheet, setChatSheet] = useState(false);
+  const ids = useMemo(() => popovers.map(spec => spec.id), [popovers]);
+  const [open, setOpen] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    setLeftOpen(readCookie(LEFT_COOKIE) ?? true);
+    setChatOpen(readCookie(CHAT_COOKIE) ?? false);
+  }, []);
+  useEffect(() => { setOpen(readPopover(ids)); }, [ids.join(','), pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  const show = useCallback((id: string | undefined) => {
+    writePopover(id);
+    setOpen(id);
+  }, []);
+  const toggleChat = () => {
+    if (!wide) { setChatSheet(value => !value); return; }
+    setChatOpen(value => { writeCookie(CHAT_COOKIE, !value); return !value; });
+  };
+
+  const current = popovers.find(spec => spec.id === open);
+  const spy = useScrollSpy(useMemo(() => current?.targets ?? [], [current]));
+  const pageCommands = useMemo((): PageCommand[] => popovers.map(spec => ({
+    id: `popover:${spec.id}`, label: spec.label, icon: spec.icon, ...(spec.shortcut ? { shortcut: spec.shortcut } : {}),
+    // The menu returns focus to the page as it closes; the popover opens after that.
+    run: () => { setTimeout(() => show(spec.id), 0); },
+  })), [popovers, show]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() === 'k' && (event.metaKey || event.ctrlKey)) { event.preventDefault(); setSearchOpen(value => !value); return; }
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || typing(event.target) || document.querySelector('[role="dialog"]')) return;
+      const spec = popovers.find(row => row.shortcut && row.shortcut === event.key.toLowerCase());
+      if (spec) { event.preventDefault(); show(spec.id); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [popovers, show]);
+
+  const context: PopoverContext = { ...(spy.active ? { active: spy.active } : {}), select: spy.select };
+  return <SidebarProvider open={leftOpen} onOpenChange={setLeftOpen} className="h-svh overflow-hidden">
+    <CloseMobileNavigation />
+    <AppSidebar navigation={navigation} />
+    <SidebarInset className="min-h-0 min-w-0 overflow-hidden">
+      <header className="sticky top-0 flex h-14 shrink-0 items-center gap-2 bg-background pr-3">
+        <div className="flex flex-1 items-center gap-2 px-3">
+          <SidebarTrigger data-panel-toggle="left" />
+          <Separator
+            orientation="vertical"
+            className="mr-2 data-vertical:h-4 data-vertical:self-auto"
+          />
+          <Breadcrumb>
+            <BreadcrumbList>
+              {breadcrumbs.map((crumb, index) => index < breadcrumbs.length - 1
+                ? <BreadcrumbItem key={crumb.id} id={crumb.id} className="hidden md:inline-flex">
+                  {crumb.href ? <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink> : <BreadcrumbPage>{crumb.label}</BreadcrumbPage>}
+                </BreadcrumbItem>
+                : <BreadcrumbItem key={crumb.id} id={crumb.id}>
+                  <BreadcrumbPage className="line-clamp-1">{crumb.label}</BreadcrumbPage>
+                </BreadcrumbItem>)}
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+        {popovers.map(spec => {
+          const Icon = studioIcon(spec.icon, spec.id);
+          const pressed = open === spec.id;
+          return <PopoverTrigger key={spec.id} isOpen={pressed} onOpenChange={value => show(value ? spec.id : undefined)}>
+            <TooltipTrigger>
+              <Button variant={pressed ? 'secondary' : 'ghost'} size="icon-sm" aria-label={spec.label} data-popover-trigger={spec.id} aria-keyshortcuts={spec.shortcut}><Icon /></Button>
+              <Tooltip>{spec.label}{spec.shortcut ? ` (${spec.shortcut.toUpperCase()})` : ''}</Tooltip>
+            </TooltipTrigger>
+            <Popover placement="bottom end" data-popover={spec.id} className="w-80 max-w-[calc(100vw-2rem)]">
+              <PopoverHeader>
+                <PopoverTitle>{spec.label}</PopoverTitle>
+                {spec.description && <PopoverDescription>{spec.description}</PopoverDescription>}
+              </PopoverHeader>
+              {spec.copy ? <CopyBody spec={spec} /> : <ScrollArea data-popover-body={spec.id} className="max-h-[60svh]">{spec.render?.(context)}</ScrollArea>}
+            </Popover>
+          </PopoverTrigger>;
+        })}
+        <Separator
+          orientation="vertical"
+          className="mx-1 data-vertical:h-4 data-vertical:self-auto"
+        />
+        <Button variant={(wide ? chatOpen : chatSheet) ? 'secondary' : 'ghost'} size="icon-sm" aria-label="Toggle chat" aria-pressed={wide ? chatOpen : chatSheet} data-panel-toggle="chat" onPress={toggleChat}><PanelRightIcon /></Button>
+      </header>
+      <main id="studio-main" data-body={body} className="flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-x-hidden overflow-y-auto overscroll-contain p-4 md:p-6 *:shrink-0">
+        {head}{children}
+      </main>
+    </SidebarInset>
+    {wide && chatOpen && <Sidebar
+      collapsible="none"
+      className="sticky top-0 hidden h-svh border-l lg:flex"
+      aria-label="Chat"
+      data-panel="chat"
+    >
+      <ChatContent />
+    </Sidebar>}
+    <CommandMenu commands={commands} pageCommands={pageCommands} open={searchOpen} onOpenChange={setSearchOpen} />
+    {!wide && <Sheet isOpen={chatSheet} onOpenChange={setChatSheet} side="right" data-panel="chat" className="w-72 max-w-[90vw] bg-sidebar p-0 text-sidebar-foreground">
+      <SheetHeader className="sr-only"><SheetTitle>Chat</SheetTitle><SheetDescription>Ask an agent about the open page.</SheetDescription></SheetHeader>
+      <ChatContent />
+    </Sheet>}
+  </SidebarProvider>;
+}
+

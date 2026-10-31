@@ -3090,6 +3090,104 @@
     },
     {
       "registry": "shadcn",
+      "name": "sidebar-15",
+      "version": "4.23.0",
+      "dir": "shadcn/sidebar-15@4.23.0",
+      "type": "registry:block",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/sidebar-15.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "frames.studio-shell"
+      ],
+      "registryDependencies": [
+        "sidebar",
+        "breadcrumb",
+        "separator",
+        "popover",
+        "collapsible",
+        "dropdown-menu",
+        "calendar",
+        "avatar"
+      ],
+      "hash": "sha256:de94990d0f3ca773db4084e0adda5b96cde677015625c313285a79df960e93e4",
+      "files": [
+        {
+          "path": "registry/radix-nova/blocks/sidebar-15/components/calendars.tsx",
+          "sha256": "942e80514efe0b54496fd9d16cd48f66e50c428975708f8deebf9951565b6a15",
+          "bytes": 3083,
+          "origin": "sidebar-15.json#files[1].content"
+        },
+        {
+          "path": "registry/radix-nova/blocks/sidebar-15/components/date-picker.tsx",
+          "sha256": "7a138445d0a38fed5d557388dfcf2c801a1d88b0f0718fa4283fcf6a95e14cfe",
+          "bytes": 676,
+          "origin": "sidebar-15.json#files[2].content"
+        },
+        {
+          "path": "registry/radix-nova/blocks/sidebar-15/components/nav-favorites.tsx",
+          "sha256": "a885f1d4ac82f67927178ea4e89540972fa30902f50e2be0df8885b742f8b532",
+          "bytes": 4332,
+          "origin": "sidebar-15.json#files[3].content"
+        },
+        {
+          "path": "registry/radix-nova/blocks/sidebar-15/components/nav-main.tsx",
+          "sha256": "200c84e5a998e3689f596f511f1e1191d628f9064f9060ddac99678727997cf9",
+          "bytes": 638,
+          "origin": "sidebar-15.json#files[4].content"
+        },
+        {
+          "path": "registry/radix-nova/blocks/sidebar-15/components/nav-secondary.tsx",
+          "sha256": "13a7136def7c29cc1404554d20d906a8d687753671c7bffce5d694e8ba517d21",
+          "bytes": 1009,
+          "origin": "sidebar-15.json#files[5].content"
+        },
+        {
+          "path": "registry/radix-nova/blocks/sidebar-15/components/nav-user.tsx",
+          "sha256": "6b109502a7a6b8021264ce8317f1d74dc20898e10a594d47aaa5fa2a3d4ad9ee",
+          "bytes": 4830,
+          "origin": "sidebar-15.json#files[6].content"
+        },
+        {
+          "path": "registry/radix-nova/blocks/sidebar-15/components/nav-workspaces.tsx",
+          "sha256": "f4a6d7568116fada954e1849449c8ea9e76d4bbd97b5bdc1f91ce8d4810b9af8",
+          "bytes": 3339,
+          "origin": "sidebar-15.json#files[7].content"
+        },
+        {
+          "path": "registry/radix-nova/blocks/sidebar-15/components/sidebar-left.tsx",
+          "sha256": "33cc5e9b09954cc98db49fc2287dd4d4da03c4c63e6e5a834e92c4c5cb6e698d",
+          "bytes": 8025,
+          "origin": "sidebar-15.json#files[8].content"
+        },
+        {
+          "path": "registry/radix-nova/blocks/sidebar-15/components/sidebar-right.tsx",
+          "sha256": "73f5ef91c8872a5385430c9c330d6c875933a37b4e288283d6431b828c925e3a",
+          "bytes": 2021,
+          "origin": "sidebar-15.json#files[9].content"
+        },
+        {
+          "path": "registry/radix-nova/blocks/sidebar-15/components/team-switcher.tsx",
+          "sha256": "b639162bb6ffa268e89a98e78b691c062b17b0c9cda2d53c3eaf9afea3dbfe4e",
+          "bytes": 3008,
+          "origin": "sidebar-15.json#files[10].content"
+        },
+        {
+          "path": "registry/radix-nova/blocks/sidebar-15/page.tsx",
+          "sha256": "426545317e9d9790a52a6a7f9455d49fc1c4c45b4a0b5c6e5d1b73ed62e0ccfb",
+          "bytes": 1609,
+          "origin": "sidebar-15.json#files[0].content"
+        },
+        {
+          "path": "sidebar-15.json",
+          "sha256": "d458bfe2da1c8d65b10814e4d354710c0b12b1afea217a9f809e1ea5353546af",
+          "bytes": 36655,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/sidebar-15.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
       "name": "sidebar",
       "version": "4.23.0",
       "dir": "shadcn/sidebar@4.23.0",

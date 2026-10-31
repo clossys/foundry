@@ -83,16 +83,16 @@ test('frame navigation, commands and breadcrumbs are the Publisher projections o
   for (const entry of entries) assert.ok(commandHrefs.has(entry.path), `the command menu lists ${entry.path}`);
 });
 
-test('every page manifest declares its navigator, modules and header actions (agent pages: explorer; L3 pages: outline)', () => {
+test('every page manifest declares its navigator, popovers and header actions (agent pages: explorer; L3 pages: outline and versions)', () => {
   for (const page of studioPages) {
     const specs = [['page', page, page.id === 'home' ? 'outline' : 'explorer'], ...(page.leaf ? [['leaf', page.leaf, 'outline']] : [])];
     for (const [where, spec, navigator] of specs) {
       const manifest = spec.manifest;
       assert.ok(manifest, `${page.id} ${where} has a manifest`);
       assert.equal(manifest.navigator, navigator, `${page.id} ${where} navigator`);
-      assert.deepEqual(manifest.modules.map(module => module.id), [navigator, 'checks'], `${page.id} ${where} modules`);
-      assert.ok(manifest.actions.some(action => action.id === 'copy-link'), `${page.id} ${where} copies its link`);
-      if (where === 'leaf') assert.deepEqual(manifest.actions.map(action => action.id), ['request-change', 'versions', 'copy-link']);
+      assert.deepEqual(manifest.modules.map(module => module.id), where === 'leaf' ? [navigator, 'checks', 'versions'] : [navigator, 'checks'], `${page.id} ${where} modules`);
+      assert.deepEqual(manifest.actions.map(action => action.id), where === 'leaf' ? ['request-change', 'copy-link'] : ['copy-link'], `${page.id} ${where} actions`);
+      assert.ok(!('frame' in manifest) && manifest.modules.every(module => !('defaultOpen' in module)), `${page.id} ${where} names no module frame`);
     }
   }
 });

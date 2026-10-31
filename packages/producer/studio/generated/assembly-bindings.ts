@@ -1,9 +1,7 @@
 // Generated from Foundry Publisher cells and the Studio library selection. Run npm run generate:studio-map.
 import type { ComponentType } from 'react';
 import type { StudioShellProps } from '../frames/studio-shell';
-import type { ModuleFrameProps } from '../frames/studio-module';
 import Frame0 from "../frames/studio-shell";
-import ModuleFrame0 from "../frames/studio-module";
 import Section0 from "../sections/studio-home";
 import Section1 from "../sections/module-outline";
 import Section2 from "../sections/module-checks";
@@ -21,10 +19,6 @@ import Section12 from "../sections/studio-publications";
 /** Pinned page frame per frame slot. */
 export const studioFrames: Record<string, ComponentType<StudioShellProps>> = {
   "frames.studio-shell": Frame0,
-};
-/** Pinned module frame per module frame slot: the column and chrome a page manifest's modules open in. */
-export const studioModuleFrames: Record<string, ComponentType<ModuleFrameProps>> = {
-  "frames.module": ModuleFrame0,
 };
 /** Pinned section per section slot; each takes one prop, named by its contract input. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- each section types its own input; the assembly binds it by name.
