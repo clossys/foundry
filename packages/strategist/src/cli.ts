@@ -3,6 +3,7 @@
 import { runReviewCli, REVIEW_USAGE } from "./cli/review.js";
 import { runCitationIndex } from "./citations/cli.js";
 import { runWriteCli } from "./write/cli.js";
+import { runSlotCheckCli } from "./slot-contracts/cli.js";
 import { existsSync, realpathSync, statSync } from "node:fs";
 import { relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -301,6 +302,7 @@ function runWontClaim(argv: string[]): number {
  * `process.argv`.
  */
 export function main(argv: string[]): number {
+  if (argv[0] === "slots") return runSlotCheckCli(argv.slice(1));
   if (argv[0] === "review") return runReviewCli(argv.slice(1));
   const writeResult = runWriteCli(argv);
   if (writeResult !== undefined) return writeResult;

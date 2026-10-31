@@ -1,0 +1,2411 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/strategist",
+  "checkSuiteId": "director.cell.v1",
+  "framework": {
+    "id": "director.framework.brand-platform",
+    "kind": "framework",
+    "meaning": "The brand platform is read in seven layers, each answering one question: context (what is true today), aspiration (where we are going), focus (who and what we serve), advantage (why we win), identity (how we look and sound), capability (what we must be able to do) and execution (what we ship, when, and how we measure it). Every cell states a direction, the evidence behind it, and the signal that would change it. Downstream Writer and Designer cells cite the cells they rely on, so a change upstream shows which copy and design must be revisited.",
+    "layers": [
+      "context",
+      "aspiration",
+      "focus",
+      "advantage",
+      "identity",
+      "capability",
+      "execution"
+    ],
+    "good": [
+      "Direction bullets are specific enough that a stranger could act on them and disagree with them.",
+      "Because bullets cite a finding, a message or another cell.",
+      "Watch bullets name a measurable signal and the threshold that triggers a review."
+    ],
+    "bad": [
+      "Placeholder values such as TBD or <value>.",
+      "Filler such as world-class, seamless or for everyone.",
+      "Evidence that only restates the direction."
+    ]
+  },
+  "slots": [
+    {
+      "id": "context.market.size",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "How big is the reachable market, counted in a unit you can check?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Unit",
+          "Reachable",
+          "Method"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "context.market.size.framework",
+          "kind": "framework",
+          "meaning": "The reachable market counted in a unit someone else could recount, with the method that produced the number.",
+          "good": [
+            "Unit: independent physiotherapy clinics with 2 to 10 practitioners",
+            "Reachable: about 4,800 clinics in the two launch regions by 2028",
+            "Method: regional registry counts filtered by practitioner headcount (finding:clinic-registry-2026)"
+          ],
+          "bad": [
+            "Unit: the healthcare market",
+            "Reachable: huge and growing",
+            "Method: TBD"
+          ],
+          "whyBad": "No countable unit, no number and no method; a filler value stands in for the source."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "context.market.trend",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "Which shift in the market makes now the right moment?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Shift",
+          "Effect",
+          "Timing"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "context.market.trend.framework",
+          "kind": "framework",
+          "meaning": "One concrete shift outside the company that makes the next two years different from the last two.",
+          "good": [
+            "Shift: two regional insurers now require digital treatment notes for reimbursement from 2027",
+            "Effect: paper and spreadsheet clinics must change tools to keep insurer income",
+            "Timing: the rule applies to claims filed after 2027-01-01"
+          ],
+          "bad": [
+            "Shift: digital transformation",
+            "Effect: things are changing fast",
+            "Timing: soon"
+          ],
+          "whyBad": "The shift is a slogan, the effect is not tied to the need, and the timing has no date."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "context.customer.need",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What job is the core customer trying to get done, and what hurts today?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Job",
+          "Pain",
+          "Trigger"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "context.customer.need.framework",
+          "kind": "framework",
+          "meaning": "The job the core customer is trying to get done, in their words, with the observable pain and the trigger that makes them look now.",
+          "good": [
+            "Job: fill every practitioner's diary without double bookings",
+            "Pain: front desks re-key bookings from phone, email and a paper book, and lose about 3 hours a week",
+            "Trigger: a practitioner leaves and the diary gaps show up in the monthly revenue"
+          ],
+          "bad": [
+            "Job: be more efficient",
+            "Pain: various problems",
+            "Trigger: when they need it"
+          ],
+          "whyBad": "Efficiency is not a job, the pain is not observable, and the trigger cannot be recognised."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "context.customer.buying",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "Who decides, how do they buy, and from which budget?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Decider",
+          "Process",
+          "Budget"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "context.customer.buying.framework",
+          "kind": "framework",
+          "meaning": "Who says yes, the steps from interest to payment, and the budget line the money comes from.",
+          "good": [
+            "Decider: the clinic owner, who is usually also a practising physiotherapist",
+            "Process: free trial, one call with the front desk lead, card payment after 14 days",
+            "Budget: the clinic's software line, alongside the phone system"
+          ],
+          "bad": [
+            "Decider: stakeholders",
+            "Process: a seamless journey",
+            "Budget: <budget>"
+          ],
+          "whyBad": "No role is named, the process is filler, and the budget is an unfilled placeholder."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "passages.faq"
+      ]
+    },
+    {
+      "id": "context.competition.alternative",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What does the customer use today instead of us, and why does it appeal?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Default",
+          "Appeal",
+          "Switching"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "context.competition.alternative.framework",
+          "kind": "framework",
+          "meaning": "What the customer uses today instead of us, why it appeals, and what it costs them to switch.",
+          "good": [
+            "Default: a paper diary plus a shared spreadsheet for notes",
+            "Appeal: free, familiar, and works when the internet is down",
+            "Switching: about 2 days to move 12 months of bookings; staff fear losing notes"
+          ],
+          "bad": [
+            "Default: competitors",
+            "Appeal: they are popular",
+            "Switching: easy"
+          ],
+          "whyBad": "Names no actual alternative and gives no reason a customer would stay with it."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "lexicon.comparison-claims",
+        "passages.comparison"
+      ]
+    },
+    {
+      "id": "context.competition.gap",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What do current alternatives leave unsolved, and why is it still open?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Gap",
+          "Evidence",
+          "Why-open"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "context.competition.gap.framework",
+          "kind": "framework",
+          "meaning": "What every current alternative leaves unsolved, the evidence that it matters, and why nobody has closed it yet.",
+          "good": [
+            "Gap: no tool links the booking to the treatment note, so notes go missing for insurer claims",
+            "Evidence: 9 of 12 interviewed owners had a claim rejected for a missing note in 2026 (finding:owner-interviews-2026)",
+            "Why-open: large practice suites target hospital groups and price small clinics out"
+          ],
+          "bad": [
+            "Gap: a better experience",
+            "Evidence: everyone says so",
+            "Why-open: nobody has tried"
+          ],
+          "whyBad": "The gap is generic, the evidence is hearsay, and the reason is a guess."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "context.company.strength",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What can we do today that is hard for others to copy?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Edge",
+          "Evidence",
+          "Rarity"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "context.company.strength.framework",
+          "kind": "framework",
+          "meaning": "What the company can do today that others would find hard to copy, with evidence and why it is rare.",
+          "good": [
+            "Edge: the founders ran a 6-practitioner clinic for 8 years and know the insurer note rules",
+            "Evidence: their own clinic passed 3 insurer audits with zero rejected claims",
+            "Rarity: few software teams include practising physiotherapists"
+          ],
+          "bad": [
+            "Edge: passionate team",
+            "Evidence: we work hard",
+            "Rarity: high"
+          ],
+          "whyBad": "Passion and effort are not capabilities, and rarity is asserted rather than shown."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "context.company.constraint",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "Which limits shape every choice we make?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Limit",
+          "Bound",
+          "Effect"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "context.company.constraint.framework",
+          "kind": "framework",
+          "meaning": "The limits that bound every choice, stated as numbers or rules, and what they rule out.",
+          "good": [
+            "Limit: 2 engineers and 1 clinic specialist until the next funding round",
+            "Bound: no hospital or multi-site group deals before 2028",
+            "Effect: every feature must ship without a dedicated onboarding team"
+          ],
+          "bad": [
+            "Limit: resources",
+            "Bound: as needed",
+            "Effect: we will be careful"
+          ],
+          "whyBad": "No limit is quantified, so nothing is actually ruled out."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "aspiration.purpose.mission",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What do we do, for whom, and why does it matter?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Do",
+          "For",
+          "Why"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "aspiration.purpose.mission.framework",
+          "kind": "framework",
+          "meaning": "What we do, for whom, and why it matters, in one plain sentence per key.",
+          "good": [
+            "Do: keep a small clinic's diary full and its treatment notes claim-ready",
+            "For: independent physiotherapy clinics with 2 to 10 practitioners",
+            "Why: owners should spend their week treating patients, not chasing paperwork"
+          ],
+          "bad": [
+            "Do: provide innovative solutions",
+            "For: everyone",
+            "Why: to make the world better"
+          ],
+          "whyBad": "Banned filler, no audience and no stake that a reader could disagree with."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "patterns.messaging-kit",
+        "strings.page-titles"
+      ]
+    },
+    {
+      "id": "aspiration.purpose.vision",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What does the world look like when we have succeeded, and by when?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Picture",
+          "Horizon",
+          "Role"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": [
+          "Horizon"
+        ]
+      },
+      "references": [
+        {
+          "id": "aspiration.purpose.vision.framework",
+          "kind": "framework",
+          "meaning": "The picture of the world once we have succeeded, the horizon, and the role we play in it.",
+          "good": [
+            "Picture: a clinic owner closes the books on Friday with every note filed and no claim waiting",
+            "Horizon: 2030",
+            "Role: the default diary and notes tool for small clinics in our regions"
+          ],
+          "bad": [
+            "Picture: a world-class future",
+            "Horizon: long term",
+            "Role: leader"
+          ],
+          "whyBad": "No observable picture, no date and a role nobody could check."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "aspiration.culture.belief",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "Which beliefs guide us even when they cost something?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Belief",
+          "Contrast",
+          "Cost"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "aspiration.culture.belief.framework",
+          "kind": "framework",
+          "meaning": "A belief that guides decisions even when it costs something, what it is in contrast to, and the cost.",
+          "good": [
+            "Belief: the front desk is the real user, even though the owner pays",
+            "Contrast: rather than designing for the buyer's demo",
+            "Cost: slower sales demos, because the first screen is the desk view"
+          ],
+          "bad": [
+            "Belief: customers first",
+            "Contrast: n/a",
+            "Cost: none"
+          ],
+          "whyBad": "A belief that costs nothing does not guide any decision."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "aspiration.culture.behavior",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "Which behaviors do we expect, and which do we refuse?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Do",
+          "Refuse",
+          "Signal"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "aspiration.culture.behavior.framework",
+          "kind": "framework",
+          "meaning": "The behaviours expected inside the team, the ones refused, and the signal that shows them.",
+          "good": [
+            "Do: every engineer sits at a clinic front desk for one day each quarter",
+            "Refuse: shipping a change to notes without a clinician review",
+            "Signal: the release checklist names the reviewing clinician"
+          ],
+          "bad": [
+            "Do: be excellent",
+            "Refuse: bad behaviour",
+            "Signal: good vibes"
+          ],
+          "whyBad": "Neither behaviour can be observed, so neither can be expected or refused."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "aspiration.goal.long-term",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What measurable position do we aim to hold, and by when?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Target",
+          "Date",
+          "Scope"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": [
+          "Date"
+        ]
+      },
+      "references": [
+        {
+          "id": "aspiration.goal.long-term.framework",
+          "kind": "framework",
+          "meaning": "The measurable position the company aims to hold, by when, and in what scope.",
+          "good": [
+            "Target: 1,200 paying clinics",
+            "Date: 2029-12-31",
+            "Scope: the two launch regions only"
+          ],
+          "bad": [
+            "Target: be the market-leading platform",
+            "Date: eventually",
+            "Scope: global"
+          ],
+          "whyBad": "No number, no date and an unbounded scope."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "aspiration.goal.annual",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What must be true at the end of this year to stay on the long-term path?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Target",
+          "Date",
+          "Path"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": [
+          "Date"
+        ]
+      },
+      "references": [
+        {
+          "id": "aspiration.goal.annual.framework",
+          "kind": "framework",
+          "meaning": "What must be true at the end of this year to stay on the long-term path, and how it gets there.",
+          "good": [
+            "Target: 180 paying clinics with at least 3 practitioners each",
+            "Date: 2027-12-31",
+            "Path: insurer-note rule drives trials; front desk referrals drive the rest"
+          ],
+          "bad": [
+            "Target: grow a lot",
+            "Date: this year",
+            "Path: hard work"
+          ],
+          "whyBad": "The target cannot be measured and the path is not a path."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "focus.category.definition",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "Which category do we tell buyers we belong to?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Category",
+          "Frame",
+          "Adjacent"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "focus.category.definition.framework",
+          "kind": "framework",
+          "meaning": "The category we tell buyers we belong to, the frame it puts us in, and the adjacent categories we are not.",
+          "good": [
+            "Category: clinic diary and notes software",
+            "Frame: compared with booking apps, not with hospital records systems",
+            "Adjacent: not a payment terminal and not a patient marketing tool"
+          ],
+          "bad": [
+            "Category: all-in-one platform",
+            "Frame: unique",
+            "Adjacent: <adjacent>"
+          ],
+          "whyBad": "An all-in-one claim places us nowhere and the adjacent field is a placeholder."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "lexicon.preferred-terms"
+      ]
+    },
+    {
+      "id": "focus.category.stance",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What do we stand against inside that category?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Stance",
+          "Against",
+          "Risk"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "focus.category.stance.framework",
+          "kind": "framework",
+          "meaning": "What we stand against inside our category, and the risk of saying it out loud.",
+          "good": [
+            "Stance: a booking without its treatment note is unfinished work",
+            "Against: booking apps that treat notes as an optional add-on",
+            "Risk: clinics that only want online booking will see us as heavier"
+          ],
+          "bad": [
+            "Stance: we are different",
+            "Against: the status quo",
+            "Risk: none"
+          ],
+          "whyBad": "Different from what? A stance without an opponent and a risk is not a stance."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "focus.segment.core",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "Who exactly do we serve first, and who do we turn away?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Who",
+          "Situation",
+          "Not"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "focus.segment.core.framework",
+          "kind": "framework",
+          "meaning": "Exactly who we serve first, the situation they are in, and who we turn away.",
+          "good": [
+            "Who: owners of independent physiotherapy clinics with 2 to 10 practitioners",
+            "Situation: bookings in a paper diary, notes in a spreadsheet, insurer claims every month",
+            "Not: solo practitioners and hospital physiotherapy departments"
+          ],
+          "bad": [
+            "Who: all businesses",
+            "Situation: anyone who needs scheduling",
+            "Not: nobody"
+          ],
+          "whyBad": "Serving everyone means no segment was chosen."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "lexicon.reading-level",
+        "passages.hero",
+        "patterns.headline-subhead",
+        "strings.descriptions"
+      ]
+    },
+    {
+      "id": "focus.segment.next",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "Which segment comes next, and what triggers the move?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Who",
+          "Trigger",
+          "Change"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "focus.segment.next.framework",
+          "kind": "framework",
+          "meaning": "The segment we move to next, what triggers the move, and what changes in the offer.",
+          "good": [
+            "Who: sports-massage clinics with the same insurer claims",
+            "Trigger: 150 paying physiotherapy clinics and a churn rate below 2% a month",
+            "Change: add a treatment-note template set for massage"
+          ],
+          "bad": [
+            "Who: more customers",
+            "Trigger: when ready",
+            "Change: some features"
+          ],
+          "whyBad": "No segment, no measurable trigger and no change to plan."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "focus.offer.included",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What exactly do customers get, and what outcome does it produce?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Offer",
+          "Outcome",
+          "Form"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "focus.offer.included.framework",
+          "kind": "framework",
+          "meaning": "What customers actually get, the outcome it produces, and the form it comes in.",
+          "good": [
+            "Offer: shared diary, treatment notes linked to each booking, insurer claim export",
+            "Outcome: every claim leaves the clinic with its note attached",
+            "Form: web app for the desk, phone app for practitioners"
+          ],
+          "bad": [
+            "Offer: a robust suite of tools and more",
+            "Outcome: success",
+            "Form: software"
+          ],
+          "whyBad": "The offer is a filler list and the outcome cannot be checked."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "narratives.guide",
+        "narratives.screen",
+        "passages.cards",
+        "passages.comparison",
+        "passages.empty-state",
+        "passages.features",
+        "passages.pricing",
+        "passages.status-list",
+        "passages.steps",
+        "passages.task-list",
+        "patterns.empty-state",
+        "patterns.feature-bullet",
+        "patterns.pricing-item",
+        "strings.empty"
+      ]
+    },
+    {
+      "id": "focus.offer.excluded",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What do we deliberately not offer, and where do we send people who want it?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Not",
+          "Why",
+          "Redirect"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "focus.offer.excluded.framework",
+          "kind": "framework",
+          "meaning": "What we deliberately do not offer, why, and where we send people who want it.",
+          "good": [
+            "Not: card payments and patient marketing emails",
+            "Why: both need partners we cannot support with 2 engineers",
+            "Redirect: the claim export works with the clinic's existing payment terminal"
+          ],
+          "bad": [
+            "Not: nothing",
+            "Why: we do everything",
+            "Redirect: n/a"
+          ],
+          "whyBad": "Excluding nothing means the offer has no edge."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "focus.reach.geography",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "Where do we sell first, and where not yet?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Where",
+          "Not-yet",
+          "Why"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "focus.reach.geography.framework",
+          "kind": "framework",
+          "meaning": "Where we sell first, where not yet, and why.",
+          "good": [
+            "Where: the two regions whose insurers adopt the 2027 note rule",
+            "Not-yet: regions without a digital-note rule",
+            "Why: the rule creates the buying trigger"
+          ],
+          "bad": [
+            "Where: worldwide",
+            "Not-yet: none",
+            "Why: bigger is better"
+          ],
+          "whyBad": "Selling everywhere first ignores the buying trigger."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "lexicon.compliance-statements",
+        "lexicon.currency-format",
+        "lexicon.date-format",
+        "lexicon.direction",
+        "lexicon.expansion-budget",
+        "lexicon.number-format",
+        "lexicon.plural-rules",
+        "lexicon.spelling-variant",
+        "lexicon.time-format",
+        "lexicon.unit-format",
+        "narratives.legal-document",
+        "passages.legal-prose"
+      ]
+    },
+    {
+      "id": "focus.reach.channel",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "Through which channels does the core segment find and buy from us?",
+      "inputs": [
+        "director:focus.segment.core"
+      ],
+      "limits": {
+        "requiredKeys": [
+          "Primary",
+          "Secondary",
+          "Not"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "focus.reach.channel.framework",
+          "kind": "framework",
+          "meaning": "The channels through which the core segment finds and buys from us, and which channels we skip.",
+          "good": [
+            "Primary: regional physiotherapy association newsletters and conference stands",
+            "Secondary: referrals from front desk staff, paid per activated clinic",
+            "Not: paid search on generic scheduling terms"
+          ],
+          "bad": [
+            "Primary: social media",
+            "Secondary: marketing",
+            "Not: TBD"
+          ],
+          "whyBad": "The channels are categories, not choices, and nothing is ruled out."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "focus.lifecycle.acquisition",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "How does a stranger become a customer, and at what cost?",
+      "inputs": [
+        "director:focus.reach.channel"
+      ],
+      "limits": {
+        "requiredKeys": [
+          "Path",
+          "Hook",
+          "Cost"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "focus.lifecycle.acquisition.framework",
+          "kind": "framework",
+          "meaning": "How a stranger becomes a customer, the hook that starts it, and what one customer costs to win.",
+          "good": [
+            "Path: association newsletter, 14-day trial, desk-lead call, paid",
+            "Hook: a free check of last month's rejected claims",
+            "Cost: under 400 per activated clinic in year one"
+          ],
+          "bad": [
+            "Path: funnel",
+            "Hook: great product",
+            "Cost: low"
+          ],
+          "whyBad": "Funnel is not a path and low is not a cost."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "narratives.email",
+        "narratives.page-story",
+        "passages.call-to-action",
+        "passages.hero",
+        "passages.newsletter",
+        "passages.pricing",
+        "patterns.primary-action",
+        "patterns.secondary-action"
+      ]
+    },
+    {
+      "id": "focus.lifecycle.retention",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "Why do customers stay and grow with us?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Reason",
+          "Moment",
+          "Expansion"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "focus.lifecycle.retention.framework",
+          "kind": "framework",
+          "meaning": "Why customers stay and grow, the moment that proves value, and how accounts expand.",
+          "good": [
+            "Reason: switching away means exporting a year of linked notes",
+            "Moment: the first month-end with no claim sent back",
+            "Expansion: price grows with each practitioner seat"
+          ],
+          "bad": [
+            "Reason: they love us",
+            "Moment: always",
+            "Expansion: upsell"
+          ],
+          "whyBad": "Love is not a mechanism and there is no observable moment."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "strings.email-subjects"
+      ]
+    },
+    {
+      "id": "advantage.proposition.promise",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What do we promise the core segment that the alternative does not deliver?",
+      "inputs": [
+        "director:context.customer.need"
+      ],
+      "limits": {
+        "requiredKeys": [
+          "Promise",
+          "For",
+          "Versus"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "advantage.proposition.promise.framework",
+          "kind": "framework",
+          "meaning": "What we promise the core segment that the alternative does not deliver.",
+          "good": [
+            "Promise: every booking closes with a claim-ready note",
+            "For: small physiotherapy clinics",
+            "Versus: paper diaries and booking apps that keep notes elsewhere"
+          ],
+          "bad": [
+            "Promise: seamless, best-in-class experience",
+            "For: everyone",
+            "Versus: the rest"
+          ],
+          "whyBad": "Banned filler, no segment and no named alternative."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "lexicon.product-claims",
+        "narratives.deck-script",
+        "narratives.page-story",
+        "narratives.video-script",
+        "passages.call-to-action",
+        "passages.features",
+        "passages.hero",
+        "patterns.eyebrow-headline",
+        "patterns.headline",
+        "patterns.headline-subhead",
+        "patterns.messaging-kit",
+        "strings.descriptions",
+        "strings.share-text",
+        "strings.taglines"
+      ]
+    },
+    {
+      "id": "advantage.proposition.proof",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What evidence backs the promise, what is still missing, and what must we never claim?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Proof",
+          "Gap",
+          "Never-claim"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "advantage.proposition.proof.framework",
+          "kind": "framework",
+          "meaning": "The evidence that backs the promise, what is still missing, and what we must never claim.",
+          "good": [
+            "Proof: zero rejected claims in 3 insurer audits at the founders' clinic (finding:audit-history)",
+            "Gap: no data yet from clinics we do not run ourselves",
+            "Never-claim: \"guaranteed claim approval\" or \"insurer approved\""
+          ],
+          "bad": [
+            "Proof: customers are happy",
+            "Gap: none",
+            "Never-claim: <phrases>"
+          ],
+          "whyBad": "Unsupported proof, a denied gap and an unfilled never-claim list."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "lexicon.comparison-claims",
+        "lexicon.compliance-statements",
+        "lexicon.metric-claims",
+        "lexicon.product-claims",
+        "narratives.deck-script",
+        "narratives.page-story",
+        "narratives.release-notes",
+        "passages.consent",
+        "passages.faq",
+        "passages.logo-cloud",
+        "passages.people",
+        "passages.stats",
+        "passages.testimonials",
+        "patterns.consent-line",
+        "patterns.quote",
+        "patterns.stat",
+        "patterns.table-caption",
+        "patterns.testimonial",
+        "strings.captions",
+        "strings.legal-lines"
+      ]
+    },
+    {
+      "id": "advantage.defensibility.differentiator",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What makes our way different, and why is it hard to copy?",
+      "inputs": [
+        "director:advantage.proposition.promise"
+      ],
+      "limits": {
+        "requiredKeys": [
+          "Difference",
+          "Versus",
+          "Why-hard"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "advantage.defensibility.differentiator.framework",
+          "kind": "framework",
+          "meaning": "What makes our way different and why it is hard to copy.",
+          "good": [
+            "Difference: the note form is generated from the insurer's own rule list for that treatment",
+            "Versus: generic note templates in booking apps",
+            "Why-hard: maintaining the rule lists needs clinicians on the team"
+          ],
+          "bad": [
+            "Difference: cutting-edge technology",
+            "Versus: competitors",
+            "Why-hard: innovation"
+          ],
+          "whyBad": "Technology is not a difference and innovation is not a barrier."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "passages.features",
+        "patterns.feature-bullet"
+      ]
+    },
+    {
+      "id": "advantage.defensibility.moat",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What advantage compounds over time, and by what mechanism?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Moat",
+          "Mechanism",
+          "Milestone"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "advantage.defensibility.moat.framework",
+          "kind": "framework",
+          "meaning": "The advantage that compounds over time and the mechanism that compounds it, with a milestone.",
+          "good": [
+            "Moat: the largest library of insurer note rules for small clinics",
+            "Mechanism: every rejected claim a customer reports adds or fixes a rule",
+            "Milestone: rules for 20 insurers by 2028-06-30"
+          ],
+          "bad": [
+            "Moat: brand",
+            "Mechanism: network effects",
+            "Milestone: soon"
+          ],
+          "whyBad": "Named moats without a mechanism specific to this business do not compound."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "advantage.model.pricing",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What do we charge for, how much, and against which anchor?",
+      "inputs": [
+        "director:advantage.defensibility.differentiator"
+      ],
+      "limits": {
+        "requiredKeys": [
+          "Metric",
+          "Price",
+          "Anchor"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "advantage.model.pricing.framework",
+          "kind": "framework",
+          "meaning": "What we charge for, how much, and the anchor buyers compare it with.",
+          "good": [
+            "Metric: per practitioner seat per month",
+            "Price: 39 per seat, front desk seats free",
+            "Anchor: one rejected claim costs a clinic more than a month of one seat"
+          ],
+          "bad": [
+            "Metric: flexible",
+            "Price: competitive",
+            "Anchor: market rate"
+          ],
+          "whyBad": "No unit, no price and an anchor nobody can look up."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "lexicon.currency-format",
+        "passages.comparison",
+        "passages.pricing",
+        "passages.usage",
+        "patterns.pricing-item"
+      ]
+    },
+    {
+      "id": "advantage.model.margin",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What does one unit earn, and which lever moves it?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Unit",
+          "Target",
+          "Lever"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "advantage.model.margin.framework",
+          "kind": "framework",
+          "meaning": "What one unit earns, the target, and the lever that moves it most.",
+          "good": [
+            "Unit: one clinic of 4 seats",
+            "Target: 80% gross margin after hosting and support",
+            "Lever: support minutes per clinic in the first month"
+          ],
+          "bad": [
+            "Unit: customers",
+            "Target: profitable",
+            "Lever: scale"
+          ],
+          "whyBad": "No unit of account and no lever someone could pull."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "identity.brand.essence",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What single idea should people remember us by?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Essence",
+          "Meaning",
+          "Not"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "identity.brand.essence.framework",
+          "kind": "framework",
+          "meaning": "The single idea people should remember us by, what it means, and what it is not.",
+          "good": [
+            "Essence: finished work",
+            "Meaning: nothing in the clinic's day is left half-done: booked, treated, noted, claimed",
+            "Not: speed for its own sake"
+          ],
+          "bad": [
+            "Essence: innovation, quality and trust",
+            "Meaning: we are the best",
+            "Not: <not>"
+          ],
+          "whyBad": "Three ideas are none, and the meaning is a superlative."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "patterns.messaging-kit",
+        "strings.taglines"
+      ]
+    },
+    {
+      "id": "identity.brand.personality",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "How would people describe us as a person, and what are we not?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Traits",
+          "Not",
+          "Example"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "identity.brand.personality.framework",
+          "kind": "framework",
+          "meaning": "How people would describe us as a person, what we are not, and an example of us in action.",
+          "good": [
+            "Traits: calm, exact, quietly practical",
+            "Not: chirpy, salesy or clinical-cold",
+            "Example: an error tells the desk which field is missing and how to fix it, in one line"
+          ],
+          "bad": [
+            "Traits: friendly and professional",
+            "Not: unprofessional",
+            "Example: great service"
+          ],
+          "whyBad": "Generic traits with an empty opposite give the writer nothing to work with."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "lexicon.energy",
+        "lexicon.formality",
+        "lexicon.warmth",
+        "narratives.video-script",
+        "passages.boundary-message",
+        "passages.chat",
+        "passages.error-state",
+        "patterns.error-message",
+        "strings.errors"
+      ]
+    },
+    {
+      "id": "identity.naming.name",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What are we called, how is it written, and what does it mean?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Name",
+          "Casing",
+          "Meaning"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": [
+          "Name"
+        ]
+      },
+      "references": [
+        {
+          "id": "identity.naming.name.framework",
+          "kind": "framework",
+          "meaning": "What we are called, exactly how it is written, and what the name means.",
+          "good": [
+            "Name: \"Stridewell\"",
+            "Casing: one word, capital S only; never STRIDEWELL or StrideWell",
+            "Meaning: a stride taken well, the goal of every treatment plan"
+          ],
+          "bad": [
+            "Name: our product",
+            "Casing: any",
+            "Meaning: TBD"
+          ],
+          "whyBad": "No name, no spelling rule and no meaning to protect."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "lexicon.brand-names",
+        "lexicon.pronunciation",
+        "passages.logo-hero",
+        "passages.logo-mark",
+        "strings.names",
+        "strings.page-titles"
+      ]
+    },
+    {
+      "id": "identity.naming.architecture",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "How are products, plans and features named against the master name?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Model",
+          "Rule",
+          "Example"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "identity.naming.architecture.framework",
+          "kind": "framework",
+          "meaning": "How products, plans and features are named against the master name.",
+          "good": [
+            "Model: one master name with descriptive feature names",
+            "Rule: features are plain nouns (Diary, Notes, Claims), never sub-brands",
+            "Example: \"Stridewell Notes\" in docs, \"Notes\" inside the app"
+          ],
+          "bad": [
+            "Model: flexible",
+            "Rule: name things well",
+            "Example: various"
+          ],
+          "whyBad": "No rule, so every team names things its own way."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "lexicon.brand-names",
+        "narratives.app-chrome",
+        "narratives.site-chrome",
+        "strings.names",
+        "strings.navigation"
+      ]
+    },
+    {
+      "id": "identity.verbal.narrative",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What change in the world do we describe, what is at stake, and what is our way through?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Change",
+          "Stakes",
+          "Way"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "identity.verbal.narrative.framework",
+          "kind": "framework",
+          "meaning": "The change in the world we describe, what is at stake for the customer, and our way through.",
+          "good": [
+            "Change: insurers now want the note before they pay",
+            "Stakes: a missing note turns a treated patient into unpaid work",
+            "Way: close each booking with its note while the patient is still in the room"
+          ],
+          "bad": [
+            "Change: the world is changing",
+            "Stakes: high",
+            "Way: our platform"
+          ],
+          "whyBad": "No change anyone can see, no stake, and the way is just the product name."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "narratives.article",
+        "narratives.deck-script",
+        "narratives.page-story",
+        "narratives.video-script",
+        "passages.article",
+        "passages.content",
+        "patterns.messaging-kit",
+        "strings.transcripts"
+      ]
+    },
+    {
+      "id": "identity.verbal.voice",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "How do we sound, and which words do we never use?",
+      "inputs": [
+        "director:identity.brand.essence"
+      ],
+      "limits": {
+        "requiredKeys": [
+          "Sound",
+          "Do",
+          "Never"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "identity.verbal.voice.framework",
+          "kind": "framework",
+          "meaning": "How we sound, what we always do in copy, and the words we never use.",
+          "good": [
+            "Sound: calm, exact, plain; short sentences, second person",
+            "Do: name the next action; use the clinic's words (diary, note, claim)",
+            "Never: \"seamless\", \"revolutionary\", \"effortless\" or exclamation marks"
+          ],
+          "bad": [
+            "Sound: friendly",
+            "Do: write well",
+            "Never: bad words"
+          ],
+          "whyBad": "Nothing here can be checked against a sentence."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "lexicon.avoid-patterns",
+        "lexicon.avoid-terms",
+        "lexicon.capitalization",
+        "lexicon.energy",
+        "lexicon.formality",
+        "lexicon.mood",
+        "lexicon.person",
+        "lexicon.preferred-terms",
+        "lexicon.punctuation",
+        "lexicon.reading-level",
+        "lexicon.sentence-length",
+        "lexicon.warmth",
+        "narratives.app-chrome",
+        "narratives.article",
+        "narratives.email",
+        "narratives.guide",
+        "narratives.legal-document",
+        "narratives.notification",
+        "narratives.release-notes",
+        "narratives.screen",
+        "narratives.site-chrome",
+        "passages.access-matrix",
+        "passages.account-summary",
+        "passages.activity-feed",
+        "passages.article",
+        "passages.audit-log",
+        "passages.boundary-message",
+        "passages.call-to-action",
+        "passages.cards",
+        "passages.chat",
+        "passages.column-mapper",
+        "passages.consent",
+        "passages.content",
+        "passages.data-grid",
+        "passages.data-table",
+        "passages.empty-state",
+        "passages.error-state",
+        "passages.explorer",
+        "passages.faq",
+        "passages.filter-builder",
+        "passages.form",
+        "passages.gallery",
+        "passages.hero",
+        "passages.legal-prose",
+        "passages.link-index",
+        "passages.media",
+        "passages.newsletter",
+        "passages.notices",
+        "passages.page-header",
+        "passages.pagination",
+        "passages.people",
+        "passages.record-detail",
+        "passages.resource-list",
+        "passages.section-header",
+        "passages.settings",
+        "passages.sign-in-form",
+        "passages.status-list",
+        "passages.steps",
+        "passages.table-of-contents",
+        "passages.task-list",
+        "passages.timeline",
+        "passages.usage",
+        "passages.wizard",
+        "patterns.confirmation",
+        "patterns.consent-line",
+        "patterns.empty-state",
+        "patterns.error-message",
+        "patterns.eyebrow-headline",
+        "patterns.form-field",
+        "patterns.headline",
+        "patterns.headline-subhead",
+        "patterns.hint",
+        "patterns.inline-link",
+        "patterns.primary-action",
+        "patterns.secondary-action",
+        "patterns.section-title",
+        "patterns.table-caption",
+        "patterns.table-header",
+        "patterns.tooltip",
+        "patterns.warning-message",
+        "strings.actions",
+        "strings.common",
+        "strings.confirmations",
+        "strings.counters",
+        "strings.email-preheaders",
+        "strings.email-subjects",
+        "strings.empty",
+        "strings.errors",
+        "strings.field-labels",
+        "strings.loading",
+        "strings.navigation",
+        "strings.share-text",
+        "strings.statuses",
+        "strings.warnings"
+      ]
+    },
+    {
+      "id": "identity.visual.style",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What should our look feel like, what is its signature, and what do we avoid?",
+      "inputs": [
+        "director:identity.brand.essence",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "requiredKeys": [
+          "Feel",
+          "Signature",
+          "Avoid"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "identity.visual.style.framework",
+          "kind": "framework",
+          "meaning": "What the look should feel like, its one signature, and what it avoids; no hex values or font pairs.",
+          "good": [
+            "Feel: a tidy treatment room: light, ordered, quiet",
+            "Signature: the diary grid, used as a motif across marketing pages",
+            "Avoid: stock photos of smiling doctors and medical-cross icons"
+          ],
+          "bad": [
+            "Feel: modern and clean",
+            "Signature: #2F6FEB with a sans-serif",
+            "Avoid: ugly things"
+          ],
+          "whyBad": "Modern and clean says nothing, and hex colours belong to Designer."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "passages.logo-mark"
+      ]
+    },
+    {
+      "id": "identity.visual.imagery",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "Which images do we use, which never, and where do they come from?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Use",
+          "Never",
+          "Source"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "identity.visual.imagery.framework",
+          "kind": "framework",
+          "meaning": "Which images we use, which we never use, and where they come from.",
+          "good": [
+            "Use: real clinic rooms and hands at work, photographed in daylight",
+            "Never: x-ray imagery, before-and-after bodies, stock handshake photos",
+            "Source: commissioned shoots at 3 customer clinics with signed releases"
+          ],
+          "bad": [
+            "Use: nice pictures",
+            "Never: n/a",
+            "Source: the internet"
+          ],
+          "whyBad": "No selection rule and an unlicensed source."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "passages.band",
+        "passages.gallery",
+        "passages.media",
+        "patterns.figure-caption",
+        "strings.alt-text",
+        "strings.captions"
+      ]
+    },
+    {
+      "id": "capability.competency.critical",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "Which capabilities must be world class for the strategy to work?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Capability",
+          "Why",
+          "Bar"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "capability.competency.critical.framework",
+          "kind": "framework",
+          "meaning": "The capabilities that must be excellent for the strategy to work, why, and the bar.",
+          "good": [
+            "Capability: keeping insurer note rules current",
+            "Why: one outdated rule means rejected claims and a broken promise",
+            "Bar: rule changes live within 10 working days of an insurer notice"
+          ],
+          "bad": [
+            "Capability: execution",
+            "Why: important",
+            "Bar: high quality"
+          ],
+          "whyBad": "Execution is not a capability and the bar is filler."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "capability.competency.gap",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "Which critical capability is missing, how big is the gap, and when do we close it?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Gap",
+          "Size",
+          "Close-by"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "capability.competency.gap.framework",
+          "kind": "framework",
+          "meaning": "The critical capability that is missing, how big the gap is, and when it closes.",
+          "good": [
+            "Gap: no one on the team reads insurer policy updates full time",
+            "Size: about 6 hours a week of reading across 8 insurers",
+            "Close-by: hire a part-time clinic policy specialist by 2027-03-31"
+          ],
+          "bad": [
+            "Gap: some skills",
+            "Size: medium",
+            "Close-by: later"
+          ],
+          "whyBad": "The gap is not named and cannot be closed by a date."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "capability.sourcing.build",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What do we build ourselves, and why?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Build",
+          "Why",
+          "Cost"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "capability.sourcing.build.framework",
+          "kind": "framework",
+          "meaning": "What we build ourselves and why it must be ours, with the cost.",
+          "good": [
+            "Build: the note-rule engine and the diary",
+            "Why: they carry the differentiator and the promise",
+            "Cost: about 70% of engineering time through 2027"
+          ],
+          "bad": [
+            "Build: everything",
+            "Why: control",
+            "Cost: unknown"
+          ],
+          "whyBad": "Building everything means no sourcing choice was made."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "capability.sourcing.partner",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "Who do we rely on, what do they give us, and what is the risk?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Partner",
+          "Gives",
+          "Risk"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "capability.sourcing.partner.framework",
+          "kind": "framework",
+          "meaning": "Who we rely on, what they give us, and the risk if they leave.",
+          "good": [
+            "Partner: one regional claims clearing house",
+            "Gives: direct claim submission to 6 insurers",
+            "Risk: a price change would cut the margin per clinic by about 4 points"
+          ],
+          "bad": [
+            "Partner: best-of-breed vendors",
+            "Gives: synergies",
+            "Risk: low"
+          ],
+          "whyBad": "No partner is named and the risk is waved away."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "capability.sourcing.acquire",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "Would we buy a capability, what would trigger it, and what is the limit?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Target",
+          "Trigger",
+          "Limit"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "capability.sourcing.acquire.framework",
+          "kind": "framework",
+          "meaning": "Whether we would buy a capability, what would trigger it, and the limit.",
+          "good": [
+            "Target: a small note-template publisher with clinician authors",
+            "Trigger: rule coverage stalls below 15 insurers for two quarters",
+            "Limit: no deal above 6 months of runway"
+          ],
+          "bad": [
+            "Target: opportunities",
+            "Trigger: when it makes sense",
+            "Limit: none"
+          ],
+          "whyBad": "Without a trigger or a limit, acquisition is a mood, not a choice."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "capability.operation.delivery",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "How do we deliver the offer, to what standard, and who owns it?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Steps",
+          "Standard",
+          "Owner"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "capability.operation.delivery.framework",
+          "kind": "framework",
+          "meaning": "How the offer is delivered, to what standard, and who owns it.",
+          "good": [
+            "Steps: import last 12 months of bookings, set up note forms, train the desk in one 45-minute call",
+            "Standard: a clinic books and notes on day 2 without help",
+            "Owner: the clinic specialist"
+          ],
+          "bad": [
+            "Steps: onboarding",
+            "Standard: excellent",
+            "Owner: the team"
+          ],
+          "whyBad": "No steps, no measurable standard and nobody accountable."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "capability.operation.technology",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "Which technology is strategic, and which is commodity?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Strategic",
+          "Commodity",
+          "Rule"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "capability.operation.technology.framework",
+          "kind": "framework",
+          "meaning": "Which technology is strategic and which is commodity, and the rule for telling them apart.",
+          "good": [
+            "Strategic: the rule engine and offline diary sync",
+            "Commodity: hosting, email delivery, card billing",
+            "Rule: if a clinic would notice it failing during a session, it is strategic"
+          ],
+          "bad": [
+            "Strategic: AI",
+            "Commodity: other stuff",
+            "Rule: use the latest tech"
+          ],
+          "whyBad": "A buzzword is not a strategic choice and the rule cannot be applied."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "capability.team.role",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "Which roles exist, who holds them, and who do we hire next?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Roles",
+          "Who",
+          "Next-hire"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "capability.team.role.framework",
+          "kind": "framework",
+          "meaning": "Which roles exist, who holds them, and the next hire.",
+          "good": [
+            "Roles: 2 engineers, 1 clinic specialist, 1 founder on sales",
+            "Who: the founders cover sales and support until 100 clinics",
+            "Next-hire: part-time clinic policy specialist"
+          ],
+          "bad": [
+            "Roles: various",
+            "Who: the team",
+            "Next-hire: rockstars"
+          ],
+          "whyBad": "No roles, no names and no hiring choice."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "capability.team.structure",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "How is the team shaped, who decides what, and on what rhythm?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Shape",
+          "Decides",
+          "Rhythm"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "capability.team.structure.framework",
+          "kind": "framework",
+          "meaning": "How the team is shaped, who decides what, and the rhythm it runs on.",
+          "good": [
+            "Shape: one product team of 4",
+            "Decides: the clinic specialist has the final say on note forms; engineers on architecture",
+            "Rhythm: two-week cycles with a clinic review on the last Friday"
+          ],
+          "bad": [
+            "Shape: flat",
+            "Decides: everyone",
+            "Rhythm: agile"
+          ],
+          "whyBad": "When everyone decides, nobody is accountable for a call."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "capability.resource.funding",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "How is the company funded, how long does it last, and what comes next?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Source",
+          "Runway",
+          "Next"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "capability.resource.funding.framework",
+          "kind": "framework",
+          "meaning": "How the company is funded, how long it lasts, and what comes next.",
+          "good": [
+            "Source: founder savings plus one angel cheque",
+            "Runway: 20 months at the current burn",
+            "Next: raise a seed round after 120 paying clinics"
+          ],
+          "bad": [
+            "Source: investors",
+            "Runway: enough",
+            "Next: grow"
+          ],
+          "whyBad": "No source, no number of months and no next step."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "capability.resource.allocation",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "How do we split time and money across the bets?",
+      "inputs": [
+        "director:execution.priority.bet"
+      ],
+      "limits": {
+        "requiredKeys": [
+          "Split",
+          "Rule",
+          "Reserve"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "capability.resource.allocation.framework",
+          "kind": "framework",
+          "meaning": "How time and money split across the current bets, and the reserve held back.",
+          "good": [
+            "Split: 70% insurer-note bet, 20% diary reliability, 10% support tooling",
+            "Rule: no new bet starts until the current one hits its kill date",
+            "Reserve: 3 months of runway never committed"
+          ],
+          "bad": [
+            "Split: balanced",
+            "Rule: prioritise",
+            "Reserve: some"
+          ],
+          "whyBad": "Balanced is not a split and the rule decides nothing."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "execution.priority.bet",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What is the one bet we are making now, what should it produce, and when do we kill it?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Bet",
+          "Outcome",
+          "Kill"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "execution.priority.bet.framework",
+          "kind": "framework",
+          "meaning": "The one bet we are making now, what it should produce, and when we stop.",
+          "good": [
+            "Bet: become the easiest way to meet the 2027 insurer note rule",
+            "Outcome: 100 paying clinics from the two launch regions by 2027-09-30",
+            "Kill: fewer than 30 paying clinics by 2027-04-30"
+          ],
+          "bad": [
+            "Bet: growth",
+            "Outcome: success",
+            "Kill: never"
+          ],
+          "whyBad": "A bet that cannot fail is not a bet."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "execution.priority.parked",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What are we deliberately not doing now, and when do we look again?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Parked",
+          "Why",
+          "Revisit"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "execution.priority.parked.framework",
+          "kind": "framework",
+          "meaning": "What we deliberately do not do now, why, and when we look again.",
+          "good": [
+            "Parked: patient self-booking online",
+            "Why: clinics in our segment book by phone; it does not move the note rule bet",
+            "Revisit: 2027-10-01 or when 30% of trials ask for it"
+          ],
+          "bad": [
+            "Parked: nothing",
+            "Why: everything matters",
+            "Revisit: TBD"
+          ],
+          "whyBad": "Parking nothing means nothing was prioritised."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "execution.roadmap.milestone",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "Which milestones mark progress, by when, and with what evidence?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Milestone",
+          "Date",
+          "Evidence"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": [
+          "Date"
+        ]
+      },
+      "references": [
+        {
+          "id": "execution.roadmap.milestone.framework",
+          "kind": "framework",
+          "meaning": "The milestones that mark progress, by when, and the evidence that proves each one.",
+          "good": [
+            "Milestone: first 25 clinics filing claims with linked notes",
+            "Date: 2027-03-31",
+            "Evidence: claim export logs from 25 distinct clinics"
+          ],
+          "bad": [
+            "Milestone: launch",
+            "Date: Q-something",
+            "Evidence: we will know"
+          ],
+          "whyBad": "Launch is an event, not progress, and there is no evidence."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": [
+        "passages.timeline"
+      ]
+    },
+    {
+      "id": "execution.roadmap.release",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What do we release next, to whom, and through which channel?",
+      "inputs": [
+        "director:focus.lifecycle.acquisition"
+      ],
+      "limits": {
+        "requiredKeys": [
+          "Release",
+          "Audience",
+          "Channel"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "execution.roadmap.release.framework",
+          "kind": "framework",
+          "meaning": "What we release next, to whom, and through which channel.",
+          "good": [
+            "Release: claim export for the 6 clearing-house insurers",
+            "Audience: trial clinics in the two launch regions",
+            "Channel: association newsletter and an in-app notice"
+          ],
+          "bad": [
+            "Release: new features",
+            "Audience: users",
+            "Channel: everywhere"
+          ],
+          "whyBad": "No release, no audience and no channel to plan against."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "execution.measure.north-star",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "Which one number shows we deliver value, and what is the target?",
+      "inputs": [
+        "director:aspiration.goal.long-term"
+      ],
+      "limits": {
+        "requiredKeys": [
+          "Metric",
+          "Target",
+          "Why"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "execution.measure.north-star.framework",
+          "kind": "framework",
+          "meaning": "The one number that shows we deliver value, its target, and why it is the right number.",
+          "good": [
+            "Metric: claims filed with a linked note per active clinic per month",
+            "Target: 120 by 2027-12-31",
+            "Why: it moves only when bookings close as finished work"
+          ],
+          "bad": [
+            "Metric: engagement",
+            "Target: up and to the right",
+            "Why: investors like it"
+          ],
+          "whyBad": "Engagement is not one number and the target is not a value."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "execution.measure.driver",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "Which inputs move the north star, with which targets and owners?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Drivers",
+          "Targets",
+          "Owner"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "execution.measure.driver.framework",
+          "kind": "framework",
+          "meaning": "The inputs that move the north star, with targets and owners.",
+          "good": [
+            "Drivers: trial-to-paid rate; practitioners using the phone app weekly",
+            "Targets: 35% trial-to-paid; 80% weekly practitioner use",
+            "Owner: founder for trials, clinic specialist for app use"
+          ],
+          "bad": [
+            "Drivers: marketing and product",
+            "Targets: better",
+            "Owner: everyone"
+          ],
+          "whyBad": "Departments are not drivers and nobody owns the numbers."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "execution.risk.threat",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What could kill the strategy, how likely is it, and how bad would it be?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Threat",
+          "Likelihood",
+          "Impact"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "execution.risk.threat.framework",
+          "kind": "framework",
+          "meaning": "What could kill the strategy, how likely it is, and how bad it would be.",
+          "good": [
+            "Threat: the insurers delay the 2027 note rule by a year",
+            "Likelihood: about 1 in 4, based on the consultation timetable",
+            "Impact: the buying trigger disappears and trials fall by about half"
+          ],
+          "bad": [
+            "Threat: competition",
+            "Likelihood: possible",
+            "Impact: bad"
+          ],
+          "whyBad": "A generic threat with unscored likelihood and impact cannot be managed."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    },
+    {
+      "id": "execution.risk.mitigation",
+      "package": "director",
+      "layer": "strategy",
+      "purpose": "What do we do about each top threat, and who owns it?",
+      "inputs": [],
+      "limits": {
+        "requiredKeys": [
+          "Threat",
+          "Action",
+          "Owner"
+        ],
+        "minWordsPerKey": 2,
+        "singleTokenKeys": []
+      },
+      "references": [
+        {
+          "id": "execution.risk.mitigation.framework",
+          "kind": "framework",
+          "meaning": "What we do about each top threat and who owns the response.",
+          "good": [
+            "Threat: the 2027 note rule is delayed",
+            "Action: lead with the rejected-claims check, which works without the rule",
+            "Owner: the founder on sales"
+          ],
+          "bad": [
+            "Threat: risks",
+            "Action: monitor closely",
+            "Owner: management"
+          ],
+          "whyBad": "Monitoring is not an action and management is not an owner."
+        }
+      ],
+      "checkSuiteId": "director.cell.v1",
+      "specimenKind": "text",
+      "feeds": []
+    }
+  ]
+}

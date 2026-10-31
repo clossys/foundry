@@ -1,0 +1,1032 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/writer",
+  "layer": "lexicon",
+  "checkSuiteId": "writer.copy.v1",
+  "slots": [
+    {
+      "id": "lexicon.formality",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Sets how formal the copy is, from conversational to ceremonial.",
+      "inputs": [
+        "director:identity.brand.personality",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "voice-rule",
+        "requiredProperties": [
+          "rule",
+          "value"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.formality.guide",
+          "kind": "guide",
+          "guide": "Pick one level and state it as a rule a reviewer can apply to a sentence; name what is allowed and what is not.",
+          "exemplars": [
+            {
+              "note": "Plain and conversational: contractions are fine, slang and in-jokes are not."
+            },
+            {
+              "note": "Measured and formal: no contractions, no exclamation marks, full sentences in every message."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.warmth",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Sets how much personal warmth the copy carries.",
+      "inputs": [
+        "director:identity.brand.personality",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "voice-rule",
+        "requiredProperties": [
+          "rule",
+          "value"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.warmth.guide",
+          "kind": "guide",
+          "guide": "Describe warmth as behaviour in copy, such as whether it thanks, reassures or stays neutral.",
+          "exemplars": [
+            {
+              "note": "Warm but brief: thank people once, at the end of a task, never in every message."
+            },
+            {
+              "note": "Neutral: state facts and next steps; leave reassurance to support conversations."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.energy",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Sets the energy level of the copy, from calm to high-spirited.",
+      "inputs": [
+        "director:identity.brand.personality",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "voice-rule",
+        "requiredProperties": [
+          "rule",
+          "value"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.energy.guide",
+          "kind": "guide",
+          "guide": "Tie energy to punctuation and verb choice so it can be checked.",
+          "exemplars": [
+            {
+              "note": "Calm: no exclamation marks, no all-caps, verbs in the present tense."
+            },
+            {
+              "note": "Lively on marketing pages only: one exclamation mark per page at most, none inside the product."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.person",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Sets the grammatical person the copy speaks in.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "voice-rule",
+        "requiredProperties": [
+          "rule",
+          "value"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.person.guide",
+          "kind": "guide",
+          "guide": "Say who 'we' and 'you' are, and when either may appear.",
+          "exemplars": [
+            {
+              "note": "Second person: address the reader as you; the company speaks as we only in legal and about pages."
+            },
+            {
+              "note": "First person plural for the team, second person for the reader, never third person for the reader."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.mood",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Sets the grammatical mood used for instructions and statements.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "voice-rule",
+        "requiredProperties": [
+          "rule",
+          "value"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.mood.guide",
+          "kind": "guide",
+          "guide": "State the mood for actions and the mood for explanations separately.",
+          "exemplars": [
+            {
+              "note": "Imperative for actions (Save draft), indicative for explanations (Drafts are kept for 30 days)."
+            },
+            {
+              "note": "Indicative everywhere except buttons, which start with a verb in the imperative."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.sentence-length",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Sets the target sentence length range in words.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "voice-rule",
+        "requiredProperties": [
+          "rule",
+          "value"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.sentence-length.guide",
+          "kind": "guide",
+          "guide": "Give a range and the exception, such as legal prose.",
+          "exemplars": [
+            {
+              "note": "Interface sentences stay between 4 and 14 words; marketing body copy may reach 22."
+            },
+            {
+              "note": "Average 12 words per sentence; split anything over 25 words, except in legal documents."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.reading-level",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Sets the target reading level for the copy.",
+      "inputs": [
+        "director:focus.segment.core",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "voice-rule",
+        "requiredProperties": [
+          "rule",
+          "value"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.reading-level.guide",
+          "kind": "guide",
+          "guide": "Name a grade range and which surfaces may exceed it.",
+          "exemplars": [
+            {
+              "note": "Grade 6 to 8 for product and marketing copy; legal documents are exempt but get a plain summary."
+            },
+            {
+              "note": "Grade 8 at most everywhere; technical terms are allowed when the glossary defines them."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.brand-names",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Lists every brand and product name with its exact spelling and casing.",
+      "inputs": [
+        "director:identity.naming.architecture",
+        "director:identity.naming.name"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "term",
+        "requiredProperties": [
+          "term",
+          "forms",
+          "termStatus",
+          "reason"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.brand-names.guide",
+          "kind": "guide",
+          "guide": "One record per name; list accepted forms and the forms that are always wrong.",
+          "exemplars": [
+            {
+              "note": "Tidewell: one word, capital T only; never TideWell or TIDEWELL."
+            },
+            {
+              "note": "Tidewell Planner: the master name plus a plain noun; inside the app, just Planner."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.preferred-terms",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Lists the terms the copy prefers over common alternatives.",
+      "inputs": [
+        "director:focus.category.definition",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "term",
+        "requiredProperties": [
+          "term",
+          "forms",
+          "termStatus",
+          "reason"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.preferred-terms.guide",
+          "kind": "guide",
+          "guide": "Pair each preferred term with the term it replaces and the reason.",
+          "exemplars": [
+            {
+              "note": "Say workspace, not account, when you mean the shared place a team works in."
+            },
+            {
+              "note": "Say sign in, not log in or login, for the action and the button."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.avoid-terms",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Lists words the copy must not use, each with an alternative.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "term",
+        "requiredProperties": [
+          "term",
+          "forms",
+          "termStatus",
+          "reason"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.avoid-terms.guide",
+          "kind": "guide",
+          "guide": "Every avoided term needs a reason and a replacement, so the check can suggest a fix.",
+          "exemplars": [
+            {
+              "note": "Avoid simply and just in instructions; they make a hard step sound like the reader's fault."
+            },
+            {
+              "note": "Avoid users when talking to the reader; say you or name the role."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.avoid-patterns",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Lists sentence patterns the copy must not use, as checkable rules.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "pattern-rule",
+        "requiredProperties": [
+          "pattern",
+          "severity",
+          "reason"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.avoid-patterns.guide",
+          "kind": "guide",
+          "guide": "Write each pattern as a regular expression with a severity and a better alternative.",
+          "exemplars": [
+            {
+              "note": "No sentences that start with Please note; state the fact directly."
+            },
+            {
+              "note": "No click here link text; the link label names where it goes."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.spelling-variant",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Sets the spelling variant per locale.",
+      "inputs": [
+        "director:focus.reach.geography"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "term",
+        "requiredProperties": [
+          "term",
+          "forms",
+          "termStatus",
+          "reason"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.spelling-variant.guide",
+          "kind": "guide",
+          "guide": "Name the locale tag and two or three words that show the variant.",
+          "exemplars": [
+            {
+              "note": "en-GB spelling: colour, organise, centre."
+            },
+            {
+              "note": "en-US spelling: color, organize, center; dates still follow the date-format rule."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.pronunciation",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Records how brand and product names are pronounced, for audio and video.",
+      "inputs": [
+        "director:identity.naming.name"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "term",
+        "requiredProperties": [
+          "term",
+          "forms",
+          "termStatus",
+          "reason"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.pronunciation.guide",
+          "kind": "guide",
+          "guide": "Give a simple respelling and stress, not a phonetic alphabet, unless audio vendors need it.",
+          "exemplars": [
+            {
+              "note": "Tidewell is said TIDE-well, two syllables, stress on the first."
+            },
+            {
+              "note": "Planner is said as the common word; never spell it out letter by letter."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.product-claims",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Lists the approved product claims and the Director proof each one cites.",
+      "inputs": [
+        "director:advantage.proposition.promise",
+        "director:advantage.proposition.proof"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "claim",
+        "requiredProperties": [
+          "strategy",
+          "phrasings",
+          "requiresCitation"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.product-claims.guide",
+          "kind": "guide",
+          "guide": "Each claim cites the proof cell; write two or three approved phrasings and nothing stronger.",
+          "exemplars": [
+            {
+              "note": "Approved: Plans sync to every device within a minute (cites the proof cell)."
+            },
+            {
+              "note": "Approved: Works offline and catches up when you reconnect."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.metric-claims",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Lists the approved numeric claims with their evidence and date.",
+      "inputs": [
+        "director:advantage.proposition.proof"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "claim",
+        "requiredProperties": [
+          "strategy",
+          "phrasings",
+          "requiresCitation"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.metric-claims.guide",
+          "kind": "guide",
+          "guide": "Every number names its source, unit and the date it was measured.",
+          "exemplars": [
+            {
+              "note": "Approved: Teams save about 3 hours a week, from a 2026 survey of 40 customers."
+            },
+            {
+              "note": "Approved: Median setup takes 12 minutes, measured across trials in the last quarter."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.compliance-statements",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Lists the approved compliance and regulatory statements, word for word.",
+      "inputs": [
+        "director:advantage.proposition.proof",
+        "director:focus.reach.geography"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "claim",
+        "requiredProperties": [
+          "strategy",
+          "phrasings",
+          "requiresCitation"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.compliance-statements.guide",
+          "kind": "guide",
+          "guide": "Copy compliance wording exactly as approved; record who approved it and where it may appear.",
+          "exemplars": [
+            {
+              "note": "Approved for footers: Payments are processed by a licensed payment provider."
+            },
+            {
+              "note": "Approved for sign-up: We store your data in the region you choose at sign-up."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.comparison-claims",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Lists the approved comparisons with alternatives, and their evidence.",
+      "inputs": [
+        "director:advantage.proposition.proof",
+        "director:context.competition.alternative"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "claim",
+        "requiredProperties": [
+          "strategy",
+          "phrasings",
+          "requiresCitation"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.comparison-claims.guide",
+          "kind": "guide",
+          "guide": "Compare with a named category, not a named competitor, unless legal has approved it.",
+          "exemplars": [
+            {
+              "note": "Approved: Unlike shared spreadsheets, every change keeps its author and time."
+            },
+            {
+              "note": "Approved: Fewer steps than a paper planner for moving a shift: two taps instead of a rewrite."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.number-format",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Sets how numbers are written per locale.",
+      "inputs": [
+        "director:focus.reach.geography"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "format",
+        "requiredProperties": [
+          "format",
+          "value"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.number-format.guide",
+          "kind": "guide",
+          "guide": "Cover grouping, decimals and when to spell numbers out.",
+          "exemplars": [
+            {
+              "note": "en: 1,250 and 3.5; spell out one to nine in prose, digits in the interface."
+            },
+            {
+              "note": "de: 1.250 und 3,5; always digits in the interface."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.plural-rules",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Sets the plural categories each locale's messages must cover.",
+      "inputs": [
+        "director:focus.reach.geography"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "format",
+        "requiredProperties": [
+          "format",
+          "value"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.plural-rules.guide",
+          "kind": "guide",
+          "guide": "List the ICU plural categories per locale and a sample message.",
+          "exemplars": [
+            {
+              "note": "en needs one and other: {count, plural, one {# task} other {# tasks}}."
+            },
+            {
+              "note": "pl needs one, few, many and other; never reuse the English pair."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.date-format",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Sets how dates are written per locale and surface.",
+      "inputs": [
+        "director:focus.reach.geography"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "format",
+        "requiredProperties": [
+          "format",
+          "value"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.date-format.guide",
+          "kind": "guide",
+          "guide": "Give the short and long form and the rule for relative dates.",
+          "exemplars": [
+            {
+              "note": "Short form 30 Oct 2026, long form Friday 30 October 2026; relative dates only within 7 days."
+            },
+            {
+              "note": "Tables use ISO dates (2026-10-30); prose uses the long form."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.time-format",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Sets how times and time zones are written.",
+      "inputs": [
+        "director:focus.reach.geography"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "format",
+        "requiredProperties": [
+          "format",
+          "value"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.time-format.guide",
+          "kind": "guide",
+          "guide": "Say 12- or 24-hour, and when the zone is shown.",
+          "exemplars": [
+            {
+              "note": "24-hour clock (14:30); show the time zone only when it differs from the reader's."
+            },
+            {
+              "note": "12-hour clock with lowercase am and pm (2:30 pm); never 2:30PM."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.currency-format",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Sets how prices and amounts are written.",
+      "inputs": [
+        "director:advantage.model.pricing",
+        "director:focus.reach.geography"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "format",
+        "requiredProperties": [
+          "format",
+          "value"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.currency-format.guide",
+          "kind": "guide",
+          "guide": "Cover symbol position, decimals and when to show the currency code.",
+          "exemplars": [
+            {
+              "note": "Symbol before the amount, no decimals for whole amounts: 39 a month, 39.50 when needed."
+            },
+            {
+              "note": "Show the ISO code after the amount on invoices: 39.00 EUR."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.unit-format",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Sets how units of measure are written.",
+      "inputs": [
+        "director:focus.reach.geography"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "format",
+        "requiredProperties": [
+          "format",
+          "value"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.unit-format.guide",
+          "kind": "guide",
+          "guide": "Name the unit system per locale and the spacing rule.",
+          "exemplars": [
+            {
+              "note": "Metric, with a space before the unit: 5 km, 20 kg."
+            },
+            {
+              "note": "Storage in GB with no space in the interface (10GB), with a space in prose (10 GB)."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.capitalization",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Sets the capitalization style for headings, buttons and labels.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "format",
+        "requiredProperties": [
+          "format",
+          "value"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.capitalization.guide",
+          "kind": "guide",
+          "guide": "Pick sentence case or title case per element and list exceptions such as brand names.",
+          "exemplars": [
+            {
+              "note": "Sentence case for headings, buttons and labels; brand names keep their own casing."
+            },
+            {
+              "note": "Title case for navigation only; everything else in sentence case."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.punctuation",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Sets punctuation rules: end marks, lists, quotes and dashes.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "format",
+        "requiredProperties": [
+          "format",
+          "value"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.punctuation.guide",
+          "kind": "guide",
+          "guide": "Cover full stops in buttons and labels, the serial comma and dash style.",
+          "exemplars": [
+            {
+              "note": "No full stop on buttons, labels or headings; use the serial comma; en dash for ranges."
+            },
+            {
+              "note": "Curly quotes in prose, straight quotes in code; no exclamation marks in error messages."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.direction",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Sets text direction per locale and how mixed-direction text is handled.",
+      "inputs": [
+        "director:focus.reach.geography"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "format",
+        "requiredProperties": [
+          "format",
+          "value"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.direction.guide",
+          "kind": "guide",
+          "guide": "Name the right-to-left locales and the isolation rule for names and numbers.",
+          "exemplars": [
+            {
+              "note": "ar and he are right to left; wrap names and numbers in direction isolates."
+            },
+            {
+              "note": "Every locale is left to right today; new locales must declare their direction first."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "lexicon.expansion-budget",
+      "package": "writer",
+      "layer": "lexicon",
+      "purpose": "Sets how much room translations may need beyond the source copy.",
+      "inputs": [
+        "director:focus.reach.geography"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "recordKind": "format",
+        "requiredProperties": [
+          "format",
+          "value"
+        ]
+      },
+      "references": [
+        {
+          "id": "lexicon.expansion-budget.guide",
+          "kind": "guide",
+          "guide": "State the expansion ratio the source copy must leave free and where it is measured.",
+          "exemplars": [
+            {
+              "note": "Source copy must leave 30% room: a 40-character button holds at most 30 English characters."
+            },
+            {
+              "note": "German and French get 35% room on navigation labels; other surfaces keep the default 30%."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    }
+  ]
+}
