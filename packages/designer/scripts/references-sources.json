@@ -20,9 +20,9 @@
     "magicui": {
       "namespace": "@magicui",
       "kind": "registry-json",
-      "source": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/{name}.json",
+      "source": "https://magicui.design/r/{name}.json",
       "version": "efe76fc",
-      "versionBasis": "built registry JSON committed upstream; byte-identical to https://magicui.design/r/{name}.json at fetchedAt",
+      "versionBasis": "registry endpoint served at fetchedAt; byte-identical to the built registry JSON committed upstream at the commit recorded in upstream",
       "upstream": "github.com/magicuidesign/magicui@efe76fc5755eca1142dd4f74c1d6f0ace2887e3c",
       "license": "MIT",
       "licenseFiles": {
