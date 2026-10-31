@@ -1,16 +1,24 @@
 /**
- * PROOF-2 route table: the two Designer library paths Studio serves before the
- * generated map. REPLACE with the Publisher content-map projection when it lands.
+ * PROOF-2 route table: the agent library paths Studio serves before the generated map.
+ * `/designer[/<leaf>]` keeps its FM-2 views; `/director`, `/writer` and `/publisher`
+ * share the agent gallery and detail templates. REPLACE with the Publisher
+ * content-map projection when it lands.
  */
-export type ProofRoute = { view: 'designer-gallery' } | { view: 'designer-leaf'; slug: string };
+import { isLibraryAgent, type LibraryAgent } from './agent-library';
+
+export type ProofRoute =
+  | { view: 'designer-gallery' } | { view: 'designer-leaf'; slug: string }
+  | { view: 'agent-gallery'; agent: LibraryAgent } | { view: 'agent-leaf'; agent: LibraryAgent; slug: string };
 
 const SLUG = /^[a-z0-9][a-z0-9.-]*$/;
 
 export function proofRouteForSegments(segments: readonly string[]): ProofRoute | undefined {
-  if (segments.length === 1 && segments[0] === 'designer') return { view: 'designer-gallery' };
-  if (segments.length === 2 && segments[0] === 'designer' && SLUG.test(segments[1]!)) return { view: 'designer-leaf', slug: segments[1]! };
-  return undefined;
+  const [agent, slug] = segments;
+  if (!agent || segments.length > 2 || (slug !== undefined && !SLUG.test(slug))) return undefined;
+  if (agent === 'designer') return slug === undefined ? { view: 'designer-gallery' } : { view: 'designer-leaf', slug };
+  if (!isLibraryAgent(agent)) return undefined;
+  return slug === undefined ? { view: 'agent-gallery', agent } : { view: 'agent-leaf', agent, slug };
 }
 
-/** The Studio page the proof routes belong to, for navigation and breadcrumbs. */
+/** The Studio page the Designer proof routes belong to, for navigation and breadcrumbs. */
 export const PROOF_PAGE_ID = 'designer';

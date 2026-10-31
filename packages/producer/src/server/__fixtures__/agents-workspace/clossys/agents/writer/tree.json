@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "tree": [
+    { "id": "surface-site", "name": "Site drafts", "children": [
+      { "id": "group-site-pages", "name": "Pages", "cells": ["site.about"] }
+    ] }
+  ],
+  "active": { "site.about": 1 },
+  "retired": []
+}

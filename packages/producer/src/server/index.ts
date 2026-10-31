@@ -16,6 +16,7 @@ import { consumerApps } from "./publications.js";
 import { DESIGNER_FONT_PREFIX, consumerBrand, consumerFontFile, consumerGlobals } from "./designer-globals.js";
 import { installedSpecimens } from "./installed-specimens.js";
 import { designerDefaultTheme, designerGallery, designerLeaf } from "./designer-library.js";
+import { agentGallery, agentLeaf, isLibraryAgent } from "./agent-library.js";
 import { specimenMount } from "../publish/site-server.js";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -134,6 +135,19 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
       if (leafMatch) {
         const leaf = hasLibrary ? designerLeaf(library, leafMatch[1]!) : undefined;
         if (!leaf) { json(response, 404, { state: "missing", error: "No Designer leaf with that name" }); return; }
+        json(response, 200, { state: "ready", leaf }); return;
+      }
+      // REPLACE with the Publisher content-map projection, as for the Designer library routes.
+      const agentMatch = /^\/api\/agents\/([a-z]+)\/library(?:\/([a-z0-9][a-z0-9.-]*))?$/.exec(pathname);
+      if (agentMatch) {
+        const agent = agentMatch[1]!;
+        if (!isLibraryAgent(agent)) { json(response, 404, { state: "missing", error: "No agent library with that name" }); return; }
+        if (agentMatch[2] === undefined) {
+          const gallery = await agentGallery(options.root, agent);
+          json(response, 200, gallery ? { state: "ready", ...gallery } : { state: "missing", agent, sections: [], count: 0 }); return;
+        }
+        const leaf = await agentLeaf(options.root, agent, agentMatch[2]);
+        if (!leaf) { json(response, 404, { state: "missing", error: "No leaf with that name" }); return; }
         json(response, 200, { state: "ready", leaf }); return;
       }
       if (pathname === "/api/brand") {
