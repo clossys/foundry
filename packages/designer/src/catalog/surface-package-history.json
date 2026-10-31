@@ -9,29 +9,16 @@
                 "assets.icon-search",
                 "assets.icon-close"
               ],
-              "themes": [
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.shadow",
-                "themes.spacing",
-                "themes.foreground",
-                "themes.card-foreground",
-                "themes.popover-foreground",
-                "themes.primary-foreground",
-                "themes.secondary-foreground",
-                "themes.accent-foreground",
-                "themes.muted-foreground",
-                "themes.sidebar-foreground",
-                "themes.sidebar-primary-foreground",
-                "themes.sidebar-accent-foreground",
-                "themes.ring",
-                "themes.sidebar-ring"
+              "tokens": [
+                "tokens.scrim-color",
+                "tokens.surface-color",
+                "tokens.elevation",
+                "tokens.z-index",
+                "tokens.spacing",
+                "tokens.text-color",
+                "tokens.focus-color",
+                "tokens.focus-outline",
+                "tokens.focus-shadow"
               ]
             },
             "breakpoints": [],
@@ -44,7 +31,9 @@
             ],
             "kind": "frame",
             "landmarks": [],
-            "layers": [],
+            "layers": [
+              "tokens.z-index.palette"
+            ],
             "members": {
               "mode": "closed",
               "names": [
@@ -154,19 +143,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -396,30 +381,27 @@
                 "assets.icon-list-view",
                 "assets.icon-search"
               ],
-              "themes": [
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.foreground",
-                "themes.card-foreground",
-                "themes.popover-foreground",
-                "themes.primary-foreground",
-                "themes.secondary-foreground",
-                "themes.accent-foreground",
-                "themes.muted-foreground",
-                "themes.sidebar-foreground",
-                "themes.sidebar-primary-foreground",
-                "themes.sidebar-accent-foreground",
-                "themes.ring",
-                "themes.sidebar-ring"
+              "tokens": [
+                "tokens.breakpoint",
+                "tokens.region-width",
+                "tokens.content-size",
+                "tokens.gutter",
+                "tokens.touch-target",
+                "tokens.z-index",
+                "tokens.surface-color",
+                "tokens.text-color",
+                "tokens.focus-color",
+                "tokens.focus-outline"
               ]
             },
-            "breakpoints": [],
+            "breakpoints": [
+              "tokens.breakpoint.mobile",
+              "tokens.breakpoint.mobile-lg",
+              "tokens.breakpoint.tablet",
+              "tokens.breakpoint.tablet-lg",
+              "tokens.breakpoint.desktop",
+              "tokens.breakpoint.wide"
+            ],
             "composes": [
               "frames.app-header",
               "frames.app-sidebar",
@@ -469,7 +451,16 @@
                 "topLevel": true
               }
             ],
-            "layers": [],
+            "layers": [
+              "tokens.z-index.sticky",
+              "tokens.z-index.shell",
+              "tokens.z-index.aside",
+              "tokens.z-index.modal",
+              "tokens.z-index.palette",
+              "tokens.z-index.toast",
+              "tokens.z-index.progress",
+              "tokens.z-index.skip-link"
+            ],
             "members": {
               "mode": "closed",
               "names": [
@@ -675,19 +666,15 @@
               "assets": [
                 "assets.icon-*"
               ],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -852,19 +839,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -1108,19 +1091,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -1279,19 +1258,15 @@
               "assets": [
                 "assets.image-ratio"
               ],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -1449,19 +1424,16 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.heading-size",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -1691,19 +1663,16 @@
               "assets": [
                 "assets.image-ratio"
               ],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.display-size",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -1901,19 +1870,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -2237,27 +2202,37 @@
               "assets": [
                 "assets.icon-close"
               ],
-              "themes": [
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.shadow",
-                "themes.spacing"
+              "tokens": [
+                "tokens.breakpoint",
+                "tokens.scrim-color",
+                "tokens.surface-color",
+                "tokens.elevation",
+                "tokens.z-index",
+                "tokens.region-width",
+                "tokens.heading-size",
+                "tokens.spacing",
+                "tokens.duration",
+                "tokens.easing",
+                "tokens.shift-distance"
               ]
             },
-            "breakpoints": [],
+            "breakpoints": [
+              "tokens.breakpoint.mobile",
+              "tokens.breakpoint.mobile-lg",
+              "tokens.breakpoint.tablet",
+              "tokens.breakpoint.tablet-lg",
+              "tokens.breakpoint.desktop",
+              "tokens.breakpoint.wide"
+            ],
             "composes": [
               "components.dialog",
               "components.button"
             ],
             "kind": "frame",
             "landmarks": [],
-            "layers": [],
+            "layers": [
+              "tokens.z-index.modal"
+            ],
             "members": {
               "mode": "closed",
               "names": [
@@ -2369,19 +2344,15 @@
               "assets": [
                 "assets.image-ratio"
               ],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -2597,18 +2568,9 @@
                   "components": [
                     "components.semantic-content"
                   ],
-                  "themes": [
-                    "themes.spacing",
-                    "themes.foreground",
-                    "themes.card-foreground",
-                    "themes.popover-foreground",
-                    "themes.primary-foreground",
-                    "themes.secondary-foreground",
-                    "themes.accent-foreground",
-                    "themes.muted-foreground",
-                    "themes.sidebar-foreground",
-                    "themes.sidebar-primary-foreground",
-                    "themes.sidebar-accent-foreground"
+                  "tokens": [
+                    "tokens.spacing",
+                    "tokens.text-color"
                   ]
                 },
                 "sourceFiles": [
@@ -2659,18 +2621,9 @@
               "propMap": {},
               "reads": {
                 "assets": [],
-                "themes": [
-                  "themes.spacing",
-                  "themes.foreground",
-                  "themes.card-foreground",
-                  "themes.popover-foreground",
-                  "themes.primary-foreground",
-                  "themes.secondary-foreground",
-                  "themes.accent-foreground",
-                  "themes.muted-foreground",
-                  "themes.sidebar-foreground",
-                  "themes.sidebar-primary-foreground",
-                  "themes.sidebar-accent-foreground"
+                "tokens": [
+                  "tokens.spacing",
+                  "tokens.text-color"
                 ]
               },
               "slot": "sections.empty-state",
@@ -2726,29 +2679,16 @@
               "sections.section-header"
             ],
             "allowedReads": {
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text",
-                "themes.foreground",
-                "themes.card-foreground",
-                "themes.popover-foreground",
-                "themes.primary-foreground",
-                "themes.secondary-foreground",
-                "themes.accent-foreground",
-                "themes.muted-foreground",
-                "themes.sidebar-foreground",
-                "themes.sidebar-primary-foreground",
-                "themes.sidebar-accent-foreground"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance",
+                "tokens.text-color"
               ],
               "assets": []
             },
@@ -2832,20 +2772,16 @@
               "assets": [
                 "assets.icon-*"
               ],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.destructive",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.status-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -3140,20 +3076,16 @@
               "assets": [
                 "assets.image-ratio"
               ],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.radius",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.surface-radius",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -3311,19 +3243,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -3461,26 +3389,13 @@
           "contract": {
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.foreground",
-                "themes.card-foreground",
-                "themes.popover-foreground",
-                "themes.primary-foreground",
-                "themes.secondary-foreground",
-                "themes.accent-foreground",
-                "themes.muted-foreground",
-                "themes.sidebar-foreground",
-                "themes.sidebar-primary-foreground",
-                "themes.sidebar-accent-foreground"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.container-width",
+                "tokens.surface-color",
+                "tokens.text-color",
+                "tokens.z-index"
               ]
             },
             "breakpoints": [],
@@ -3496,7 +3411,9 @@
                 "topLevel": true
               }
             ],
-            "layers": [],
+            "layers": [
+              "tokens.z-index.skip-link"
+            ],
             "members": {
               "mode": "closed",
               "names": []
@@ -3582,19 +3499,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -3763,19 +3676,17 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.density",
+                "tokens.control-size",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -4183,31 +4094,22 @@
                     "components.tabs",
                     "components.tooltip"
                   ],
-                  "themes": [
-                    "themes.primary",
-                    "themes.border",
-                    "themes.input",
-                    "themes.sidebar-border",
-                    "themes.radius",
-                    "themes.spacing",
-                    "themes.background",
-                    "themes.card",
-                    "themes.popover",
-                    "themes.secondary",
-                    "themes.accent",
-                    "themes.muted",
-                    "themes.sidebar",
-                    "themes.sidebar-accent",
-                    "themes.foreground",
-                    "themes.card-foreground",
-                    "themes.popover-foreground",
-                    "themes.primary-foreground",
-                    "themes.secondary-foreground",
-                    "themes.accent-foreground",
-                    "themes.muted-foreground",
-                    "themes.sidebar-foreground",
-                    "themes.sidebar-primary-foreground",
-                    "themes.sidebar-accent-foreground"
+                  "tokens": [
+                    "tokens.accent-color",
+                    "tokens.blur",
+                    "tokens.body-size",
+                    "tokens.border-color",
+                    "tokens.border-width",
+                    "tokens.breakpoint",
+                    "tokens.caption-size",
+                    "tokens.content-size",
+                    "tokens.control-radius",
+                    "tokens.region-width",
+                    "tokens.spacing",
+                    "tokens.surface-color",
+                    "tokens.text-color",
+                    "tokens.touch-target",
+                    "tokens.z-index"
                   ]
                 },
                 "sourceFiles": [
@@ -4430,31 +4332,22 @@
               },
               "reads": {
                 "assets": [],
-                "themes": [
-                  "themes.primary",
-                  "themes.border",
-                  "themes.input",
-                  "themes.sidebar-border",
-                  "themes.radius",
-                  "themes.spacing",
-                  "themes.background",
-                  "themes.card",
-                  "themes.popover",
-                  "themes.secondary",
-                  "themes.accent",
-                  "themes.muted",
-                  "themes.sidebar",
-                  "themes.sidebar-accent",
-                  "themes.foreground",
-                  "themes.card-foreground",
-                  "themes.popover-foreground",
-                  "themes.primary-foreground",
-                  "themes.secondary-foreground",
-                  "themes.accent-foreground",
-                  "themes.muted-foreground",
-                  "themes.sidebar-foreground",
-                  "themes.sidebar-primary-foreground",
-                  "themes.sidebar-accent-foreground"
+                "tokens": [
+                  "tokens.accent-color",
+                  "tokens.blur",
+                  "tokens.body-size",
+                  "tokens.border-color",
+                  "tokens.border-width",
+                  "tokens.breakpoint",
+                  "tokens.caption-size",
+                  "tokens.content-size",
+                  "tokens.control-radius",
+                  "tokens.region-width",
+                  "tokens.spacing",
+                  "tokens.surface-color",
+                  "tokens.text-color",
+                  "tokens.touch-target",
+                  "tokens.z-index"
                 ]
               },
               "slot": "frames.app-shell",
@@ -4624,39 +4517,45 @@
               }
             ],
             "rendering": "client",
-            "breakpoints": [],
-            "layers": [],
+            "breakpoints": [
+              "tokens.breakpoint.mobile",
+              "tokens.breakpoint.mobile-lg",
+              "tokens.breakpoint.tablet",
+              "tokens.breakpoint.tablet-lg",
+              "tokens.breakpoint.desktop",
+              "tokens.breakpoint.wide"
+            ],
+            "layers": [
+              "tokens.z-index.sticky",
+              "tokens.z-index.shell",
+              "tokens.z-index.aside",
+              "tokens.z-index.modal",
+              "tokens.z-index.palette",
+              "tokens.z-index.toast",
+              "tokens.z-index.progress",
+              "tokens.z-index.skip-link"
+            ],
             "allowedReads": {
-              "themes": [
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.foreground",
-                "themes.card-foreground",
-                "themes.popover-foreground",
-                "themes.primary-foreground",
-                "themes.secondary-foreground",
-                "themes.accent-foreground",
-                "themes.muted-foreground",
-                "themes.sidebar-foreground",
-                "themes.sidebar-primary-foreground",
-                "themes.sidebar-accent-foreground",
-                "themes.ring",
-                "themes.sidebar-ring",
-                "themes.primary",
-                "themes.border",
-                "themes.input",
-                "themes.sidebar-border",
-                "themes.radius",
-                "themes.spacing",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.breakpoint",
+                "tokens.region-width",
+                "tokens.content-size",
+                "tokens.gutter",
+                "tokens.touch-target",
+                "tokens.z-index",
+                "tokens.surface-color",
+                "tokens.text-color",
+                "tokens.focus-color",
+                "tokens.focus-outline",
+                "tokens.accent-color",
+                "tokens.blur",
+                "tokens.body-size",
+                "tokens.border-color",
+                "tokens.border-width",
+                "tokens.caption-size",
+                "tokens.control-radius",
+                "tokens.spacing",
+                "tokens.animation"
               ],
               "assets": [
                 "assets.icon-layers",
@@ -4720,19 +4619,15 @@
               "assets": [
                 "assets.icon-*"
               ],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -4896,19 +4791,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -5178,29 +5069,15 @@
                 "assets.icon-chevron-down",
                 "assets.icon-external-link"
               ],
-              "themes": [
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.border",
-                "themes.input",
-                "themes.sidebar-border",
-                "themes.spacing",
-                "themes.foreground",
-                "themes.card-foreground",
-                "themes.popover-foreground",
-                "themes.primary-foreground",
-                "themes.secondary-foreground",
-                "themes.accent-foreground",
-                "themes.muted-foreground",
-                "themes.sidebar-foreground",
-                "themes.sidebar-primary-foreground",
-                "themes.sidebar-accent-foreground"
+              "tokens": [
+                "tokens.surface-color",
+                "tokens.blur",
+                "tokens.border-color",
+                "tokens.z-index",
+                "tokens.heading-size",
+                "tokens.spacing",
+                "tokens.text-color",
+                "tokens.touch-target"
               ]
             },
             "breakpoints": [],
@@ -5215,7 +5092,9 @@
             ],
             "kind": "frame",
             "landmarks": [],
-            "layers": [],
+            "layers": [
+              "tokens.z-index.sticky"
+            ],
             "members": {
               "mode": "closed",
               "names": [
@@ -5323,19 +5202,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -5536,31 +5411,27 @@
                 "assets.icon-theme-dark",
                 "assets.icon-theme-system"
               ],
-              "themes": [
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.spacing",
-                "themes.foreground",
-                "themes.card-foreground",
-                "themes.popover-foreground",
-                "themes.primary-foreground",
-                "themes.secondary-foreground",
-                "themes.accent-foreground",
-                "themes.muted-foreground",
-                "themes.sidebar-foreground",
-                "themes.sidebar-primary-foreground",
-                "themes.sidebar-accent-foreground",
-                "themes.ring",
-                "themes.sidebar-ring"
+              "tokens": [
+                "tokens.breakpoint",
+                "tokens.region-width",
+                "tokens.surface-color",
+                "tokens.spacing",
+                "tokens.text-color",
+                "tokens.focus-color",
+                "tokens.focus-outline",
+                "tokens.focus-shadow",
+                "tokens.touch-target",
+                "tokens.z-index"
               ]
             },
-            "breakpoints": [],
+            "breakpoints": [
+              "tokens.breakpoint.mobile",
+              "tokens.breakpoint.mobile-lg",
+              "tokens.breakpoint.tablet",
+              "tokens.breakpoint.tablet-lg",
+              "tokens.breakpoint.desktop",
+              "tokens.breakpoint.wide"
+            ],
             "composes": [
               "components.navigation-tree",
               "components.link",
@@ -5579,7 +5450,10 @@
                 "topLevel": true
               }
             ],
-            "layers": [],
+            "layers": [
+              "tokens.z-index.shell",
+              "tokens.z-index.modal"
+            ],
             "members": {
               "mode": "closed",
               "names": [
@@ -5691,19 +5565,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -5902,20 +5772,16 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.destructive",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.status-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -6185,21 +6051,22 @@
               "assets": [
                 "assets.icon-layers"
               ],
-              "themes": [
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.border",
-                "themes.input",
-                "themes.sidebar-border"
+              "tokens": [
+                "tokens.breakpoint",
+                "tokens.region-width",
+                "tokens.surface-color",
+                "tokens.border-color",
+                "tokens.z-index"
               ]
             },
-            "breakpoints": [],
+            "breakpoints": [
+              "tokens.breakpoint.mobile",
+              "tokens.breakpoint.mobile-lg",
+              "tokens.breakpoint.tablet",
+              "tokens.breakpoint.tablet-lg",
+              "tokens.breakpoint.desktop",
+              "tokens.breakpoint.wide"
+            ],
             "composes": [
               "components.resize-handle",
               "components.button",
@@ -6214,7 +6081,10 @@
                 "topLevel": true
               }
             ],
-            "layers": [],
+            "layers": [
+              "tokens.z-index.aside",
+              "tokens.z-index.modal"
+            ],
             "members": {
               "mode": "closed",
               "names": [
@@ -6330,19 +6200,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -6524,19 +6390,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -6812,29 +6674,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.foreground",
-                "themes.card-foreground",
-                "themes.popover-foreground",
-                "themes.primary-foreground",
-                "themes.secondary-foreground",
-                "themes.accent-foreground",
-                "themes.muted-foreground",
-                "themes.sidebar-foreground",
-                "themes.sidebar-primary-foreground",
-                "themes.sidebar-accent-foreground",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.content-size",
+                "tokens.body-size",
+                "tokens.line-height",
+                "tokens.text-color",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -7029,19 +6877,16 @@
               "assets": [
                 "assets.mark"
               ],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.display-size",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -7148,31 +6993,21 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.font-heading",
-                "themes.foreground",
-                "themes.card-foreground",
-                "themes.popover-foreground",
-                "themes.primary-foreground",
-                "themes.secondary-foreground",
-                "themes.accent-foreground",
-                "themes.muted-foreground",
-                "themes.sidebar-foreground",
-                "themes.sidebar-primary-foreground",
-                "themes.sidebar-accent-foreground",
-                "themes.primary",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.heading-size",
+                "tokens.display-size",
+                "tokens.display-face",
+                "tokens.body-size",
+                "tokens.text-color",
+                "tokens.accent-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -7354,20 +7189,16 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.destructive",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.status-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -7550,19 +7381,16 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.density",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -7812,19 +7640,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -8058,19 +7882,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -8249,19 +8069,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -8466,35 +8282,20 @@
                   "components": [
                     "components.semantic-content"
                   ],
-                  "themes": [
-                    "themes.primary",
-                    "themes.border",
-                    "themes.input",
-                    "themes.sidebar-border",
-                    "themes.tracking-tight",
-                    "themes.spacing",
-                    "themes.destructive",
-                    "themes.background",
-                    "themes.card",
-                    "themes.popover",
-                    "themes.secondary",
-                    "themes.accent",
-                    "themes.muted",
-                    "themes.sidebar",
-                    "themes.sidebar-accent",
-                    "themes.foreground",
-                    "themes.card-foreground",
-                    "themes.popover-foreground",
-                    "themes.primary-foreground",
-                    "themes.secondary-foreground",
-                    "themes.accent-foreground",
-                    "themes.muted-foreground",
-                    "themes.sidebar-foreground",
-                    "themes.sidebar-primary-foreground",
-                    "themes.sidebar-accent-foreground",
-                    "themes.font-sans",
-                    "themes.font-heading",
-                    "themes.font-mono"
+                  "tokens": [
+                    "tokens.accent-color",
+                    "tokens.body-size",
+                    "tokens.border-color",
+                    "tokens.caption-size",
+                    "tokens.display-size",
+                    "tokens.heading-size",
+                    "tokens.letter-spacing",
+                    "tokens.line-height",
+                    "tokens.spacing",
+                    "tokens.status-color",
+                    "tokens.surface-color",
+                    "tokens.text-color",
+                    "tokens.typeface"
                   ]
                 },
                 "sourceFiles": [
@@ -8555,35 +8356,20 @@
               },
               "reads": {
                 "assets": [],
-                "themes": [
-                  "themes.primary",
-                  "themes.border",
-                  "themes.input",
-                  "themes.sidebar-border",
-                  "themes.tracking-tight",
-                  "themes.spacing",
-                  "themes.destructive",
-                  "themes.background",
-                  "themes.card",
-                  "themes.popover",
-                  "themes.secondary",
-                  "themes.accent",
-                  "themes.muted",
-                  "themes.sidebar",
-                  "themes.sidebar-accent",
-                  "themes.foreground",
-                  "themes.card-foreground",
-                  "themes.popover-foreground",
-                  "themes.primary-foreground",
-                  "themes.secondary-foreground",
-                  "themes.accent-foreground",
-                  "themes.muted-foreground",
-                  "themes.sidebar-foreground",
-                  "themes.sidebar-primary-foreground",
-                  "themes.sidebar-accent-foreground",
-                  "themes.font-sans",
-                  "themes.font-heading",
-                  "themes.font-mono"
+                "tokens": [
+                  "tokens.accent-color",
+                  "tokens.body-size",
+                  "tokens.border-color",
+                  "tokens.caption-size",
+                  "tokens.display-size",
+                  "tokens.heading-size",
+                  "tokens.letter-spacing",
+                  "tokens.line-height",
+                  "tokens.spacing",
+                  "tokens.status-color",
+                  "tokens.surface-color",
+                  "tokens.text-color",
+                  "tokens.typeface"
                 ]
               },
               "slot": "sections.section-header",
@@ -8658,38 +8444,27 @@
               "sections.band"
             ],
             "allowedReads": {
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.font-heading",
-                "themes.foreground",
-                "themes.card-foreground",
-                "themes.popover-foreground",
-                "themes.primary-foreground",
-                "themes.secondary-foreground",
-                "themes.accent-foreground",
-                "themes.muted-foreground",
-                "themes.sidebar-foreground",
-                "themes.sidebar-primary-foreground",
-                "themes.sidebar-accent-foreground",
-                "themes.primary",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text",
-                "themes.border",
-                "themes.input",
-                "themes.sidebar-border",
-                "themes.tracking-tight",
-                "themes.destructive",
-                "themes.font-sans",
-                "themes.font-mono"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.heading-size",
+                "tokens.display-size",
+                "tokens.display-face",
+                "tokens.body-size",
+                "tokens.text-color",
+                "tokens.accent-color",
+                "tokens.animation",
+                "tokens.shift-distance",
+                "tokens.border-color",
+                "tokens.caption-size",
+                "tokens.letter-spacing",
+                "tokens.line-height",
+                "tokens.status-color",
+                "tokens.typeface"
               ],
               "assets": []
             },
@@ -8754,19 +8529,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -9090,7 +8861,7 @@
           "contract": {
             "allowedReads": {
               "assets": [],
-              "themes": []
+              "tokens": []
             },
             "breakpoints": [],
             "composes": [
@@ -9193,19 +8964,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -9418,19 +9185,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -9654,20 +9417,16 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.destructive",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.status-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -9900,20 +9659,16 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.destructive",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.status-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -10097,19 +9852,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -10342,30 +10093,27 @@
                 "assets.icon-list-view",
                 "assets.icon-search"
               ],
-              "themes": [
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.foreground",
-                "themes.card-foreground",
-                "themes.popover-foreground",
-                "themes.primary-foreground",
-                "themes.secondary-foreground",
-                "themes.accent-foreground",
-                "themes.muted-foreground",
-                "themes.sidebar-foreground",
-                "themes.sidebar-primary-foreground",
-                "themes.sidebar-accent-foreground",
-                "themes.ring",
-                "themes.sidebar-ring"
+              "tokens": [
+                "tokens.breakpoint",
+                "tokens.region-width",
+                "tokens.content-size",
+                "tokens.gutter",
+                "tokens.touch-target",
+                "tokens.z-index",
+                "tokens.surface-color",
+                "tokens.text-color",
+                "tokens.focus-color",
+                "tokens.focus-outline"
               ]
             },
-            "breakpoints": [],
+            "breakpoints": [
+              "tokens.breakpoint.mobile",
+              "tokens.breakpoint.mobile-lg",
+              "tokens.breakpoint.tablet",
+              "tokens.breakpoint.tablet-lg",
+              "tokens.breakpoint.desktop",
+              "tokens.breakpoint.wide"
+            ],
             "composes": [
               "frames.app-header",
               "frames.app-sidebar",
@@ -10413,7 +10161,16 @@
                 "topLevel": true
               }
             ],
-            "layers": [],
+            "layers": [
+              "tokens.z-index.sticky",
+              "tokens.z-index.shell",
+              "tokens.z-index.aside",
+              "tokens.z-index.modal",
+              "tokens.z-index.palette",
+              "tokens.z-index.toast",
+              "tokens.z-index.progress",
+              "tokens.z-index.skip-link"
+            ],
             "members": {
               "mode": "closed",
               "names": [
@@ -10589,19 +10346,18 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.body-size",
+                "tokens.line-height",
+                "tokens.code-size",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -10770,28 +10526,22 @@
           "contract": {
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.foreground",
-                "themes.card-foreground",
-                "themes.popover-foreground",
-                "themes.primary-foreground",
-                "themes.secondary-foreground",
-                "themes.accent-foreground",
-                "themes.muted-foreground",
-                "themes.sidebar-foreground",
-                "themes.sidebar-primary-foreground",
-                "themes.sidebar-accent-foreground"
+              "tokens": [
+                "tokens.breakpoint",
+                "tokens.gutter",
+                "tokens.z-index",
+                "tokens.surface-color",
+                "tokens.text-color"
               ]
             },
-            "breakpoints": [],
+            "breakpoints": [
+              "tokens.breakpoint.mobile",
+              "tokens.breakpoint.mobile-lg",
+              "tokens.breakpoint.tablet",
+              "tokens.breakpoint.tablet-lg",
+              "tokens.breakpoint.desktop",
+              "tokens.breakpoint.wide"
+            ],
             "composes": [
               "frames.site-header",
               "frames.site-footer",
@@ -10827,7 +10577,12 @@
                 "topLevel": true
               }
             ],
-            "layers": [],
+            "layers": [
+              "tokens.z-index.sticky",
+              "tokens.z-index.skip-link",
+              "tokens.z-index.progress",
+              "tokens.z-index.toast"
+            ],
             "members": {
               "mode": "closed",
               "names": [
@@ -10951,19 +10706,15 @@
             "allowedComposes": [],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -11078,19 +10829,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -11286,19 +11033,17 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.body-size",
+                "tokens.line-height",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -11460,19 +11205,16 @@
               "assets": [
                 "assets.mark"
               ],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.display-size",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -11597,19 +11339,16 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.density",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -11899,20 +11638,16 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.destructive",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.status-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -12166,19 +11901,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -12385,21 +12116,17 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.radius",
-                "themes.shadow",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.surface-radius",
+                "tokens.elevation",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -12636,19 +12363,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -12876,35 +12599,22 @@
                     "assets.backdrop-graphic"
                   ],
                   "components": [],
-                  "themes": [
-                    "themes.primary",
-                    "themes.border",
-                    "themes.input",
-                    "themes.sidebar-border",
-                    "themes.tracking-tight",
-                    "themes.spacing",
-                    "themes.destructive",
-                    "themes.background",
-                    "themes.card",
-                    "themes.popover",
-                    "themes.secondary",
-                    "themes.accent",
-                    "themes.muted",
-                    "themes.sidebar",
-                    "themes.sidebar-accent",
-                    "themes.foreground",
-                    "themes.card-foreground",
-                    "themes.popover-foreground",
-                    "themes.primary-foreground",
-                    "themes.secondary-foreground",
-                    "themes.accent-foreground",
-                    "themes.muted-foreground",
-                    "themes.sidebar-foreground",
-                    "themes.sidebar-primary-foreground",
-                    "themes.sidebar-accent-foreground",
-                    "themes.font-sans",
-                    "themes.font-heading",
-                    "themes.font-mono"
+                  "tokens": [
+                    "tokens.accent-color",
+                    "tokens.body-size",
+                    "tokens.border-color",
+                    "tokens.color-ramp",
+                    "tokens.content-size",
+                    "tokens.display-size",
+                    "tokens.heading-size",
+                    "tokens.letter-spacing",
+                    "tokens.line-height",
+                    "tokens.scrim-color",
+                    "tokens.spacing",
+                    "tokens.status-color",
+                    "tokens.surface-color",
+                    "tokens.text-color",
+                    "tokens.typeface"
                   ]
                 },
                 "sourceFiles": [
@@ -13049,35 +12759,22 @@
                 "assets": [
                   "assets.backdrop-graphic"
                 ],
-                "themes": [
-                  "themes.primary",
-                  "themes.border",
-                  "themes.input",
-                  "themes.sidebar-border",
-                  "themes.tracking-tight",
-                  "themes.spacing",
-                  "themes.destructive",
-                  "themes.background",
-                  "themes.card",
-                  "themes.popover",
-                  "themes.secondary",
-                  "themes.accent",
-                  "themes.muted",
-                  "themes.sidebar",
-                  "themes.sidebar-accent",
-                  "themes.foreground",
-                  "themes.card-foreground",
-                  "themes.popover-foreground",
-                  "themes.primary-foreground",
-                  "themes.secondary-foreground",
-                  "themes.accent-foreground",
-                  "themes.muted-foreground",
-                  "themes.sidebar-foreground",
-                  "themes.sidebar-primary-foreground",
-                  "themes.sidebar-accent-foreground",
-                  "themes.font-sans",
-                  "themes.font-heading",
-                  "themes.font-mono"
+                "tokens": [
+                  "tokens.accent-color",
+                  "tokens.body-size",
+                  "tokens.border-color",
+                  "tokens.color-ramp",
+                  "tokens.content-size",
+                  "tokens.display-size",
+                  "tokens.heading-size",
+                  "tokens.letter-spacing",
+                  "tokens.line-height",
+                  "tokens.scrim-color",
+                  "tokens.spacing",
+                  "tokens.status-color",
+                  "tokens.surface-color",
+                  "tokens.text-color",
+                  "tokens.typeface"
                 ]
               },
               "slot": "sections.hero",
@@ -13149,38 +12846,28 @@
               "sections.section-header"
             ],
             "allowedReads": {
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text",
-                "themes.primary",
-                "themes.border",
-                "themes.input",
-                "themes.sidebar-border",
-                "themes.tracking-tight",
-                "themes.destructive",
-                "themes.foreground",
-                "themes.card-foreground",
-                "themes.popover-foreground",
-                "themes.primary-foreground",
-                "themes.secondary-foreground",
-                "themes.accent-foreground",
-                "themes.muted-foreground",
-                "themes.sidebar-foreground",
-                "themes.sidebar-primary-foreground",
-                "themes.sidebar-accent-foreground",
-                "themes.font-sans",
-                "themes.font-heading",
-                "themes.font-mono"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.display-size",
+                "tokens.animation",
+                "tokens.shift-distance",
+                "tokens.accent-color",
+                "tokens.body-size",
+                "tokens.border-color",
+                "tokens.heading-size",
+                "tokens.letter-spacing",
+                "tokens.line-height",
+                "tokens.status-color",
+                "tokens.text-color",
+                "tokens.typeface",
+                "tokens.gradient",
+                "tokens.color-ramp",
+                "tokens.scrim-color"
               ],
               "assets": [
                 "assets.image-ratio",
@@ -13275,29 +12962,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.foreground",
-                "themes.card-foreground",
-                "themes.popover-foreground",
-                "themes.primary-foreground",
-                "themes.secondary-foreground",
-                "themes.accent-foreground",
-                "themes.muted-foreground",
-                "themes.sidebar-foreground",
-                "themes.sidebar-primary-foreground",
-                "themes.sidebar-accent-foreground",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.content-size",
+                "tokens.body-size",
+                "tokens.line-height",
+                "tokens.text-color",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -13485,31 +13158,26 @@
                 "assets.mark",
                 "assets.icon-close"
               ],
-              "themes": [
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.border",
-                "themes.input",
-                "themes.sidebar-border",
-                "themes.foreground",
-                "themes.card-foreground",
-                "themes.popover-foreground",
-                "themes.primary-foreground",
-                "themes.secondary-foreground",
-                "themes.accent-foreground",
-                "themes.muted-foreground",
-                "themes.sidebar-foreground",
-                "themes.sidebar-primary-foreground",
-                "themes.sidebar-accent-foreground"
+              "tokens": [
+                "tokens.surface-color",
+                "tokens.blur",
+                "tokens.border-color",
+                "tokens.text-color",
+                "tokens.z-index",
+                "tokens.touch-target",
+                "tokens.breakpoint",
+                "tokens.transition-duration",
+                "tokens.transition-easing"
               ]
             },
-            "breakpoints": [],
+            "breakpoints": [
+              "tokens.breakpoint.mobile",
+              "tokens.breakpoint.mobile-lg",
+              "tokens.breakpoint.tablet",
+              "tokens.breakpoint.tablet-lg",
+              "tokens.breakpoint.desktop",
+              "tokens.breakpoint.wide"
+            ],
             "composes": [
               "components.logo",
               "components.link",
@@ -13534,7 +13202,10 @@
                 "topLevel": false
               }
             ],
-            "layers": [],
+            "layers": [
+              "tokens.z-index.shell",
+              "tokens.z-index.sticky"
+            ],
             "members": {
               "mode": "closed",
               "names": [
@@ -13647,35 +13318,27 @@
               "assets": [
                 "assets.mark"
               ],
-              "themes": [
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.foreground",
-                "themes.card-foreground",
-                "themes.popover-foreground",
-                "themes.primary-foreground",
-                "themes.secondary-foreground",
-                "themes.accent-foreground",
-                "themes.muted-foreground",
-                "themes.sidebar-foreground",
-                "themes.sidebar-primary-foreground",
-                "themes.sidebar-accent-foreground",
-                "themes.border",
-                "themes.input",
-                "themes.sidebar-border",
-                "themes.spacing",
-                "themes.font-sans",
-                "themes.font-heading",
-                "themes.font-mono"
+              "tokens": [
+                "tokens.surface-color",
+                "tokens.text-color",
+                "tokens.border-color",
+                "tokens.border-width",
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.caption-size",
+                "tokens.typeface",
+                "tokens.breakpoint"
               ]
             },
-            "breakpoints": [],
+            "breakpoints": [
+              "tokens.breakpoint.mobile",
+              "tokens.breakpoint.mobile-lg",
+              "tokens.breakpoint.tablet",
+              "tokens.breakpoint.tablet-lg",
+              "tokens.breakpoint.desktop",
+              "tokens.breakpoint.wide"
+            ],
             "composes": [
               "components.link",
               "components.icon",
@@ -13837,35 +13500,22 @@
                   "components": [
                     "components.semantic-content"
                   ],
-                  "themes": [
-                    "themes.primary",
-                    "themes.border",
-                    "themes.input",
-                    "themes.sidebar-border",
-                    "themes.tracking-tight",
-                    "themes.spacing",
-                    "themes.destructive",
-                    "themes.background",
-                    "themes.card",
-                    "themes.popover",
-                    "themes.secondary",
-                    "themes.accent",
-                    "themes.muted",
-                    "themes.sidebar",
-                    "themes.sidebar-accent",
-                    "themes.foreground",
-                    "themes.card-foreground",
-                    "themes.popover-foreground",
-                    "themes.primary-foreground",
-                    "themes.secondary-foreground",
-                    "themes.accent-foreground",
-                    "themes.muted-foreground",
-                    "themes.sidebar-foreground",
-                    "themes.sidebar-primary-foreground",
-                    "themes.sidebar-accent-foreground",
-                    "themes.font-sans",
-                    "themes.font-heading",
-                    "themes.font-mono"
+                  "tokens": [
+                    "tokens.accent-color",
+                    "tokens.body-size",
+                    "tokens.border-color",
+                    "tokens.border-width",
+                    "tokens.caption-size",
+                    "tokens.content-size",
+                    "tokens.display-size",
+                    "tokens.heading-size",
+                    "tokens.letter-spacing",
+                    "tokens.line-height",
+                    "tokens.spacing",
+                    "tokens.status-color",
+                    "tokens.surface-color",
+                    "tokens.text-color",
+                    "tokens.typeface"
                   ]
                 },
                 "sourceFiles": [
@@ -13936,35 +13586,22 @@
               },
               "reads": {
                 "assets": [],
-                "themes": [
-                  "themes.primary",
-                  "themes.border",
-                  "themes.input",
-                  "themes.sidebar-border",
-                  "themes.tracking-tight",
-                  "themes.spacing",
-                  "themes.destructive",
-                  "themes.background",
-                  "themes.card",
-                  "themes.popover",
-                  "themes.secondary",
-                  "themes.accent",
-                  "themes.muted",
-                  "themes.sidebar",
-                  "themes.sidebar-accent",
-                  "themes.foreground",
-                  "themes.card-foreground",
-                  "themes.popover-foreground",
-                  "themes.primary-foreground",
-                  "themes.secondary-foreground",
-                  "themes.accent-foreground",
-                  "themes.muted-foreground",
-                  "themes.sidebar-foreground",
-                  "themes.sidebar-primary-foreground",
-                  "themes.sidebar-accent-foreground",
-                  "themes.font-sans",
-                  "themes.font-heading",
-                  "themes.font-mono"
+                "tokens": [
+                  "tokens.accent-color",
+                  "tokens.body-size",
+                  "tokens.border-color",
+                  "tokens.border-width",
+                  "tokens.caption-size",
+                  "tokens.content-size",
+                  "tokens.display-size",
+                  "tokens.heading-size",
+                  "tokens.letter-spacing",
+                  "tokens.line-height",
+                  "tokens.spacing",
+                  "tokens.status-color",
+                  "tokens.surface-color",
+                  "tokens.text-color",
+                  "tokens.typeface"
                 ]
               },
               "slot": "sections.content",
@@ -14027,38 +13664,27 @@
               "sections.section-header"
             ],
             "allowedReads": {
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text",
-                "themes.primary",
-                "themes.border",
-                "themes.input",
-                "themes.sidebar-border",
-                "themes.tracking-tight",
-                "themes.destructive",
-                "themes.foreground",
-                "themes.card-foreground",
-                "themes.popover-foreground",
-                "themes.primary-foreground",
-                "themes.secondary-foreground",
-                "themes.accent-foreground",
-                "themes.muted-foreground",
-                "themes.sidebar-foreground",
-                "themes.sidebar-primary-foreground",
-                "themes.sidebar-accent-foreground",
-                "themes.font-sans",
-                "themes.font-heading",
-                "themes.font-mono"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance",
+                "tokens.accent-color",
+                "tokens.body-size",
+                "tokens.border-color",
+                "tokens.border-width",
+                "tokens.caption-size",
+                "tokens.display-size",
+                "tokens.heading-size",
+                "tokens.letter-spacing",
+                "tokens.line-height",
+                "tokens.status-color",
+                "tokens.text-color",
+                "tokens.typeface"
               ],
               "assets": []
             },
@@ -14166,19 +13792,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -14336,19 +13958,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -14507,19 +14125,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -14678,19 +14292,17 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.body-size",
+                "tokens.line-height",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -14887,19 +14499,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {
@@ -15109,19 +14717,15 @@
             ],
             "allowedReads": {
               "assets": [],
-              "themes": [
-                "themes.spacing",
-                "themes.background",
-                "themes.card",
-                "themes.popover",
-                "themes.secondary",
-                "themes.accent",
-                "themes.muted",
-                "themes.sidebar",
-                "themes.sidebar-accent",
-                "themes.animate-marquee",
-                "themes.animate-marquee-vertical",
-                "themes.animate-shiny-text"
+              "tokens": [
+                "tokens.spacing",
+                "tokens.gutter",
+                "tokens.content-size",
+                "tokens.region-width",
+                "tokens.breakpoint",
+                "tokens.surface-color",
+                "tokens.animation",
+                "tokens.shift-distance"
               ]
             },
             "anatomy": {

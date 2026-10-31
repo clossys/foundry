@@ -1,7 +1,7 @@
 {
   "schema": "clossys.references-manifest/1",
   "package": "designer",
-  "fetchedAt": "2026-10-31T03:39:46Z",
+  "fetchedAt": "2026-10-31T05:41:01Z",
   "fetchedWith": "shadcn CLI 4.23.0 registry endpoints and GitHub raw at pinned commits",
   "hashAlgorithm": "sha256-tree/1",
   "registries": {
@@ -59,6 +59,17 @@
       "licenseFiles": [
         "lucide/LICENSE"
       ]
+    },
+    "tailwindcss-typography": {
+      "namespace": "@tailwindcss",
+      "source": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss-typography/e3714a3fe55551ce9d51eec4721183ed6b1d5cd1/{path}",
+      "version": "0.5.20",
+      "versionBasis": "@tailwindcss/typography release tag v0.5.20; plugin source files from the MIT GitHub repository at the tagged commit",
+      "upstream": "github.com/tailwindlabs/tailwindcss-typography@e3714a3fe55551ce9d51eec4721183ed6b1d5cd1",
+      "license": "MIT",
+      "licenseFiles": [
+        "tailwindcss-typography/LICENSE"
+      ]
     }
   },
   "licenses": [
@@ -91,6 +102,12 @@
       "sha256": "9ceb2565db4149b699df9fb53b16963f59675f5308de1143679639b2c561410c",
       "bytes": 1061,
       "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/LICENCE.md"
+    },
+    {
+      "path": "tailwindcss-typography/LICENSE",
+      "sha256": "60e0b68c0f35c078eef3a5d29419d0b03ff84ec1df9c3f9d6e39a519a5ae7985",
+      "bytes": 1071,
+      "sourceUrl": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss-typography/e3714a3fe55551ce9d51eec4721183ed6b1d5cd1/LICENSE"
     }
   ],
   "items": [
@@ -288,6 +305,38 @@
           "sha256": "d0c3052c17dd469f6c87a048bb3bf65753ca0a22ada93a88999d1125fe86e75a",
           "bytes": 12408,
           "origin": "scroll-spy.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "diceui",
+      "name": "skip-nav",
+      "version": "04aad54",
+      "dir": "diceui/skip-nav@04aad54",
+      "type": "registry:component",
+      "sourceUrl": "https://diceui.com/r/new-york/skip-nav.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "frames.site-shell"
+      ],
+      "dependencies": [
+        "cn",
+        "radix-ui"
+      ],
+      "hash": "sha256:984a8afc0a8a84c180377b9c01c3c3b062510597480fe001367226e592c2e212",
+      "files": [
+        {
+          "path": "components/skip-nav.tsx",
+          "sha256": "b5e9c4c679ac3cd7cc1e4cbb88b66fb7812d496ee74dcb4ff73e5877a8ab3a6f",
+          "bytes": 1902,
+          "origin": "skip-nav.json#files[0].content"
+        },
+        {
+          "path": "skip-nav.json",
+          "sha256": "69172623464fb4a49bc3fa1c01dc81cd938280aad0352d21e67abcb6d542581f",
+          "bytes": 2254,
+          "origin": "https://diceui.com/r/new-york/skip-nav.json"
         }
       ]
     },
@@ -2208,7 +2257,8 @@
       "direct": true,
       "slots": [
         "components.field",
-        "components.form"
+        "components.form",
+        "sections.form"
       ],
       "registryDependencies": [
         "label",
@@ -4063,6 +4113,40 @@
       "requiredBy": [
         "@tailark-oss/mist-toggle-group"
       ]
+    },
+    {
+      "registry": "tailwindcss-typography",
+      "name": "typography",
+      "version": "0.5.20",
+      "dir": "tailwindcss-typography/typography@0.5.20",
+      "type": "registry:lib",
+      "sourceUrl": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss-typography/e3714a3fe55551ce9d51eec4721183ed6b1d5cd1/src/index.js",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.legal-prose"
+      ],
+      "hash": "sha256:3db9d6b777a0e6d630effed7b9b13eed549194a559eaa0f50ed31347022d2cd5",
+      "files": [
+        {
+          "path": "src/index.js",
+          "sha256": "0650b9739a9ae52731159a8bc53fb07de020412b413071fa701fc9ecc8ffbace",
+          "bytes": 3687,
+          "origin": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss-typography/e3714a3fe55551ce9d51eec4721183ed6b1d5cd1/src/index.js"
+        },
+        {
+          "path": "src/styles.js",
+          "sha256": "45c9b9c89339b29a0e414bb80267c2b697e82f87e5b8f0641d9442b1b4f5e359",
+          "bytes": 45863,
+          "origin": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss-typography/e3714a3fe55551ce9d51eec4721183ed6b1d5cd1/src/styles.js"
+        },
+        {
+          "path": "src/utils.js",
+          "sha256": "d6eef872ef76e56bdff51ebd0350818040d7bd53ad0ea96431f08d02cb2ea295",
+          "bytes": 3124,
+          "origin": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss-typography/e3714a3fe55551ce9d51eec4721183ed6b1d5cd1/src/utils.js"
+        }
+      ]
     }
   ],
   "skipped": [
@@ -4114,9 +4198,7 @@
         "assets.video",
         "components.logo",
         "frames.document",
-        "frames.site-shell",
         "sections.article",
-        "sections.legal-prose",
         "themes.font-heading"
       ],
       "reason": "consumer-owned: authored in the consumer's own registry, not a Foundry reference"

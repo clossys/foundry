@@ -288,6 +288,28 @@
         "building-2": "building-complex"
       },
       "aliasNote": "lucide-react exports Building2 as a deprecated alias of building-complex; the alias target's SVG is stored under the mapped name"
+    },
+    "tailwindcss-typography": {
+      "namespace": "@tailwindcss",
+      "kind": "github-files",
+      "source": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss-typography/e3714a3fe55551ce9d51eec4721183ed6b1d5cd1/{path}",
+      "version": "0.5.20",
+      "versionBasis": "@tailwindcss/typography release tag v0.5.20; plugin source files from the MIT GitHub repository at the tagged commit",
+      "upstream": "github.com/tailwindlabs/tailwindcss-typography@e3714a3fe55551ce9d51eec4721183ed6b1d5cd1",
+      "license": "MIT",
+      "licenseFiles": {
+        "LICENSE": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss-typography/e3714a3fe55551ce9d51eec4721183ed6b1d5cd1/LICENSE"
+      },
+      "items": {
+        "typography": {
+          "type": "registry:lib",
+          "files": [
+            "src/index.js",
+            "src/styles.js",
+            "src/utils.js"
+          ]
+        }
+      }
     }
   },
   "direct": [
@@ -634,7 +656,8 @@
       "name": "field",
       "slots": [
         "components.field",
-        "components.form"
+        "components.form",
+        "sections.form"
       ]
     },
     {
@@ -1191,6 +1214,20 @@
       "slots": [
         "components.navigation-menu"
       ]
+    },
+    {
+      "registry": "diceui",
+      "name": "skip-nav",
+      "slots": [
+        "frames.site-shell"
+      ]
+    },
+    {
+      "registry": "tailwindcss-typography",
+      "name": "typography",
+      "slots": [
+        "sections.legal-prose"
+      ]
     }
   ],
   "skipped": [
@@ -1205,8 +1242,6 @@
         "assets.video",
         "components.logo",
         "sections.article",
-        "sections.legal-prose",
-        "frames.site-shell",
         "frames.document",
         "themes.font-heading"
       ],

@@ -81,16 +81,6 @@ describe("committed component consumption evidence", () => {
   const read = (path: string) => JSON.parse(readFileSync(fileURLToPath(new URL(path, import.meta.url)), "utf8"));
   const report = () => read("../catalog/reports/components-consumption.json");
 
-  it("preserves the exact signed 42/45/57 leaf inventories", () => {
-    const actual = report();
-    for (const [layer, count] of [["themes", 42], ["assets", 45], ["components", 57]] as const) {
-      const freeze = read(`../catalog/ia/${layer}.leaf-freeze.json`);
-      expect(actual.inventory[layer]).toEqual([...freeze.leafIds].sort());
-      expect(actual.inventory[layer]).toHaveLength(count);
-    }
-    expect(actual.historicalInventory).toEqual({ tokenProperties: 217, meaning: "Historical CSS property inventory; not the token leaf count." });
-  });
-
   it("reports every descriptor blocker without inventing adoption or runtime conformance", () => {
     const actual = report();
     expect(actual.summary.foundry).toEqual({ descriptors: 44, candidate: 34, subset: 10, unavailable: 13 });

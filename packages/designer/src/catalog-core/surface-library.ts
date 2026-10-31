@@ -5,6 +5,7 @@ import { stableStringify } from "./stable.js";
 import { runtimeSnapshot } from "./runtime-ports.js";
 import type { CompositeCatalogData, CompositeLibraryData, CompositeResolved } from "./types.js";
 import type { SurfaceAnyDocument, SurfaceEntry, SurfacePackageDocument, SurfacePackageEntry, SurfacePackageOrigin, SurfacePackagePin, SurfacePackageRegistration, SurfaceContractDiff, SurfaceBase, SurfaceCandidate, SurfaceCandidateDocument, SurfaceDocument, SurfaceFile, SurfaceFileHash, SurfaceInputIdentity, SurfaceInputRef, SurfaceLibraryPortion, SurfaceOperation, SurfaceOrigin, SurfaceRuleIdentity, SurfaceSourceBundle, SurfaceSelection, SurfaceResolutionOptions } from "./surface-types.js";
+import { migrateHistorical, migrateThemeIds } from "./themes-migration.js";
 export const surfaceDigest = (value: unknown): string => `sha256:${sha256(stableStringify(value))}`;
 export function surfaceFault(message: string): never { throw new CatalogError(`surfaces: ${message}`); }
 const safeKey = (key: string): boolean => !["__proto__", "constructor", "prototype"].includes(key);
@@ -221,6 +222,23 @@ function packageOrigin(value: unknown): asserts value is SurfacePackageOrigin {
 }
 const pointers = (value: unknown): void => map(value, entry => string(entry));
 /** Closed schema of a package-pointer descriptor, exactly the importer shape. `pin` is the fill-meta pin (catalog) or origin pin (installed). */
+/**
+ * Reads of a package descriptor. Descriptors pinned before the themes layer name
+ * their theme reads under the retired `tokens` key; their bytes stay authentic
+ * (the pin is their hash), so that key is accepted only when it replaces
+ * `themes` and every id still resolves through themes.id-migration.json.
+ */
+function packageReads(value: unknown, layers: readonly string[]): void {
+    const legacy = !!value && typeof value === "object" && Object.hasOwn(value, "tokens") && !Object.hasOwn(value, "themes");
+    const keys = legacy ? layers.map(layer => layer === "themes" ? "tokens" : layer) : layers;
+    object(value, keys);
+    for (const key of keys) strings(value[key]);
+    if (!legacy) return;
+    const ids = value.tokens as string[];
+    if (ids.some(id => !id.startsWith("tokens."))) surfaceFault("S1 retired theme read differs");
+    try { migrateThemeIds(ids); }
+    catch { surfaceFault("S1 retired theme read differs"); }
+}
 export function assertSurfacePackageEntry(value: unknown, pin: unknown, installed = false): asserts value is SurfacePackageEntry {
     const section = value && typeof value === "object" && typeof (value as Node).slot === "string" && ((value as Node).slot as string).startsWith("sections.");
     const fields = section ? ["slot", "source", "slotMap", "propMap", "configs", "parts", "impl", "license", "pin", "notes"] : ["slot", "members", "propMap", "slots", "statePorts", "impl"];
@@ -247,15 +265,14 @@ export function assertSurfacePackageEntry(value: unknown, pin: unknown, installe
         pointers(value.slots);
         pointers(value.statePorts);
     }
-    if (value.reads !== undefined) { object(value.reads, ["themes", "assets"]); strings(value.reads.themes); strings(value.reads.assets); }
+    if (value.reads !== undefined) packageReads(value.reads, ["themes", "assets"]);
     if (value.composes !== undefined) strings(value.composes);
     if (value.consumption !== undefined) {
         const measured = value.consumption;
         object(measured, ["scanStatus", "sourceFiles", "scannedReads", "scannedComposes"], ["unresolved", "rawScannedReads", "privateInternalReads"]);
         choice(measured.scanStatus, ["lower-bound", "unavailable"]);
         list(measured.sourceFiles, row => { object(row, ["path", "sha256"]); string(row.path); surfacePath(row.path); hash(row.sha256); });
-        object(measured.scannedReads, ["themes", "assets", "components"]);
-        strings(measured.scannedReads.themes); strings(measured.scannedReads.assets); strings(measured.scannedReads.components);
+        packageReads(measured.scannedReads, ["themes", "assets", "components"]);
         if (measured.privateInternalReads !== undefined || measured.rawScannedReads !== undefined) {
             object(measured.rawScannedReads, ["themes", "assets", "components"]);
             strings(measured.rawScannedReads.themes); strings(measured.rawScannedReads.assets); strings(measured.rawScannedReads.components);
@@ -273,7 +290,7 @@ export function assertSurfacePackageEntry(value: unknown, pin: unknown, installe
                 strings(row.rawAssets);
                 if (!(row.rawAssets as string[]).length || (row.rawAssets as string[]).some(id => !/^assets\.[a-z][a-z0-9-]*$/.test(id) || !(row.specifier as string).includes(id) || !(measured.rawScannedReads as Node).assets || !((measured.rawScannedReads as Node).assets as string[]).includes(id))) surfaceFault("S2 private internal raw reads differ");
             }, true);
-            const raw = measured.rawScannedReads, observed = measured.scannedReads;
+            const raw = measured.rawScannedReads, observed = measured.scannedReads as Node;
             if (["themes", "components"].some(layer => stableStringify(raw[layer]) !== stableStringify(observed[layer])) || (observed.assets as string[]).some(id => !(raw.assets as string[]).includes(id)) || (raw.assets as string[]).some(id => !(observed.assets as string[]).includes(id) && !(measured.privateInternalReads as Node[]).some(row => (row.rawAssets as string[]).includes(id)))) surfaceFault("S2 private internal read partition differs");
         }
         strings(measured.scannedComposes);
@@ -385,8 +402,11 @@ function historicalPackageDescriptors(catalog: CompositeCatalogData, descriptorH
         const entry = surfaceEntryOf(row.document);
         if (!isSurfacePackageEntry(entry) || entry.origin || surfacePackageDescriptorHash(entry) !== descriptorHash)
             surfaceFault("S2 historical descriptor registration differs");
-        assertPackageContract(row.contract, entry.slot);
-        return row;
+        // History keeps authentic bytes (the pin is their hash); only the contract is
+        // read through the themes id migration so old `tokens.*` reads stay resolvable.
+        const contract = migrateHistorical(row.contract);
+        assertPackageContract(contract, entry.slot);
+        return { document: row.document, contract };
     });
 }
 /** Resolve authentic upstream bytes by hash AND full metadata identity, including version-only pins. */
