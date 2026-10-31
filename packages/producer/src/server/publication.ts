@@ -4,6 +4,7 @@ import { extname, join } from "node:path";
 import { confinedPreviewFile, generatedBody, previewSource, renderNativePreview } from "./publisher-preview-render.js";
 import { inventory } from "./cells.js";
 import { INSTALL_MARKER, installOutRoot } from "../publish/install-out.js";
+import { SPECIMEN_FRAME_CSP, specimenFramePage, specimenWidth } from "./specimen-frame.js";
 
 export const PREVIEW_PREFIX = "/preview/";
 export const PREVIEW_COMMAND = "clossys publish --install --page <page id>";
@@ -141,29 +142,68 @@ async function installPublication(root: string, requested?: string, installOut?:
   if (!found || (requested !== undefined && requested !== found.manifest.publication)) return { state: "missing", message: "Not published yet", command: PREVIEW_COMMAND };
   return { state: "ready", publication: found.manifest.publication, manifest: found.manifest, pages: found.pages, publications: [found.manifest.publication] };
 }
+/**
+ * Page sandbox without an opaque origin. `allow-same-origin` keeps the page on Studio's origin so
+ * its own stylesheets and fonts pass `Cross-Origin-Resource-Policy: same-origin`; scripts stay
+ * off twice over (no `allow-scripts` sandbox flag and no `script-src`, so `default-src 'none'`
+ * blocks them), as do forms, popups and top navigation. A page that cannot run script cannot use
+ * the shared origin, so the pair that would defeat the sandbox (`allow-same-origin` with
+ * `allow-scripts`) never occurs.
+ */
+export const PREVIEW_PAGE_CSP = "sandbox allow-same-origin; default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'self'; base-uri 'none'; form-action 'none'; connect-src 'none'";
 const SECURITY = {
   "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff",
-  "Content-Security-Policy": "sandbox; default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; frame-ancestors 'self'; base-uri 'none'; form-action 'none'; connect-src 'none'",
+  "Content-Security-Policy": PREVIEW_PAGE_CSP,
   "Referrer-Policy": "no-referrer", "Cross-Origin-Resource-Policy": "same-origin",
 };
+export type PreviewTheme = "light" | "dark";
+export const previewTheme = (value: string | null | undefined): PreviewTheme => value === "dark" ? "dark" : "light";
+/**
+ * Apply the theme the way the substrate does (`.dark` on <html>), server side, since the page runs
+ * no script. Existing classes on <html> are kept; a stale `dark`/`light` class is replaced.
+ */
+export function themePage(html: string, theme: PreviewTheme): string {
+  const tag = /<html\b[^>]*>/i.exec(html);
+  if (!tag) return `<html${theme === "dark" ? ' class="dark"' : ""} style="color-scheme:${theme}">${html}</html>`;
+  let open = tag[0];
+  const classes = /\sclass\s*=\s*("([^"]*)"|'([^']*)')/i.exec(open);
+  const kept = (classes ? (classes[2] ?? classes[3] ?? "") : "").split(/\s+/).filter(name => /^[^"'<>&]+$/.test(name) && name !== "dark" && name !== "light");
+  const value = [...kept, ...(theme === "dark" ? ["dark"] : [])].join(" ");
+  const attribute = value ? ` class="${value}"` : "";
+  open = classes ? open.replace(classes[0], attribute) : open.replace(/^<html\b/i, `<html${attribute}`);
+  open = /\sstyle\s*=/i.test(open) ? open.replace(/\sstyle\s*=\s*("([^"]*)"|'([^']*)')/i, (_all, _q, a, b) => ` style="color-scheme:${theme};${a ?? b ?? ""}"`) : open.replace(/>$/, ` style="color-scheme:${theme}">`);
+  return html.slice(0, tag.index) + open + html.slice(tag.index + tag[0].length);
+}
+const FRAME_HEADERS = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": SPECIMEN_FRAME_CSP, "Referrer-Policy": "no-referrer", "Cross-Origin-Resource-Policy": "same-origin" };
 /** Called after the server's existing Host, Origin and run-token guards. */
-export async function servePreview(root: string, pathname: string, method: string, response: ServerResponse, installOut?: string): Promise<void> {
+export async function servePreview(root: string, pathname: string, method: string, response: ServerResponse, installOut?: string, query: URLSearchParams = new URLSearchParams()): Promise<void> {
   const fail = (status: number, message: string) => { response.writeHead(status, { ...SECURITY, "Content-Type": "text/plain; charset=utf-8" }); response.end(message); };
   if (method !== "GET" && method !== "HEAD") { fail(405, "Publication preview is read-only"); return; }
-  const match = /^\/preview\/([^/]+)\/(pages|assets)\/(.+)$/.exec(pathname);
+  const match = /^\/preview\/([^/]+)\/(pages|assets|frame)\/(.+)$/.exec(pathname);
   if (!match || !identity(match[1]!)) { fail(404, "Publication preview is unavailable"); return; }
   const selected = match[1]!, kind = match[2]!, file = match[3]!;
+  const theme = previewTheme(query.get("theme"));
+  if (kind === "frame") {
+    // The frame page loads the page itself (sandboxed, same origin) at the specimen width.
+    const page = /^([a-z][a-z0-9.-]*)\.html$/.exec(file)?.[1];
+    if (!page || page.includes("..")) { fail(404, "Publication page is unavailable"); return; }
+    const src = `${PREVIEW_PREFIX}${encodeURIComponent(selected)}/pages/${encodeURIComponent(page)}.html${theme === "dark" ? "?theme=dark" : ""}`;
+    const html = Buffer.from(specimenFramePage({ src, width: specimenWidth(query.get("width")), title: `${page} page preview`, sandbox: "allow-same-origin" }));
+    response.writeHead(200, { ...FRAME_HEADERS, "Content-Type": TYPES[".html"]!, "Content-Length": html.length });
+    response.end(method === "HEAD" ? undefined : html); return;
+  }
   try {
     let type: string, bytes: Buffer;
     const base = previewRoot(root, selected);
-    if (!await stat(base).then(() => true, () => false)) { await serveInstall(root, selected, kind, file, method, response, fail, installOut); return; }
+    if (!await stat(base).then(() => true, () => false)) { await serveInstall(root, selected, kind, file, method, response, fail, installOut, theme); return; }
     if (kind === "pages") {
       const manifest = await descriptor(root, selected);
       const route = manifest.routes.find(route => `${route.id}.html` === file);
       if (!route) { fail(404, "Publication page is unavailable"); return; }
       const entry = manifest.contentMap.entries.find(entry => entry.id === route.id);
       type = TYPES[".html"]!;
-      bytes = /\.html?$/.test(route.source.file) ? await previewSource(base, route.source.file) : await renderNativePreview({ root: base, entry: route.source.file, exportName: route.source.export, title: entry?.title, description: entry?.description });
+      const page = /\.html?$/.test(route.source.file) ? await previewSource(base, route.source.file) : await renderNativePreview({ root: base, entry: route.source.file, exportName: route.source.export, title: entry?.title, description: entry?.description });
+      bytes = Buffer.from(themePage(page.toString("utf8"), theme));
     } else {
       type = TYPES[extname(file).toLowerCase()] ?? "";
       if (!type || file.split("/").some(part => part.startsWith("."))) { fail(415, "Unsupported preview content type"); return; }
@@ -176,7 +216,7 @@ export async function servePreview(root: string, pathname: string, method: strin
 }
 
 /** Install output: the page's static HTML with its own substrate build's stylesheets, and those build assets. */
-async function serveInstall(root: string, selected: string, kind: string, file: string, method: string, response: ServerResponse, fail: (status: number, message: string) => void, installOut?: string): Promise<void> {
+async function serveInstall(root: string, selected: string, kind: string, file: string, method: string, response: ServerResponse, fail: (status: number, message: string) => void, installOut?: string, theme: PreviewTheme = "light"): Promise<void> {
   const found = await readInstallPublication(root, installOut);
   if (!found || found.manifest.publication !== selected) { fail(404, "Publication preview is unavailable"); return; }
   let type: string, bytes: Buffer;
@@ -186,7 +226,7 @@ async function serveInstall(root: string, selected: string, kind: string, file: 
     const links = install.css.map(css => `<link rel="stylesheet" href="${PREVIEW_PREFIX}${encodeURIComponent(selected)}/assets/${css.split("/").map(encodeURIComponent).join("/")}">`).join("");
     const html = (await previewSource(found.base, install.html)).toString("utf8");
     type = TYPES[".html"]!;
-    bytes = Buffer.from(links && html.includes("</head>") ? html.replace("</head>", `${links}</head>`) : html);
+    bytes = Buffer.from(themePage(links && html.includes("</head>") ? html.replace("</head>", `${links}</head>`) : html, theme));
   } else {
     type = TYPES[extname(file).toLowerCase()] ?? "";
     if (!type || file.split("/").some(part => part.startsWith("."))) { fail(415, "Unsupported preview content type"); return; }

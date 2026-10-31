@@ -15,9 +15,9 @@
     },
     "sections.studio.agent-gallery": {
       "element": "studio-agent-gallery",
-      "version": 3,
+      "version": 4,
       "hash": "sha256:d2eeb96c478da13e2a14bb9e4b0e4304ccaaea52121115279d921b10df5e899d",
-      "event": "e17"
+      "event": "e20"
     },
     "sections.studio.leaf-header": {
       "element": "studio-leaf-header",
@@ -27,9 +27,9 @@
     },
     "sections.studio.specimen": {
       "element": "studio-specimen",
-      "version": 2,
-      "hash": "sha256:55b39a4888d8ba1da2e925dc93317b2c3f8b14322e3647247d7789f4db75c61b",
-      "event": "e16"
+      "version": 3,
+      "hash": "sha256:9778983b1ea63e1c1d655a767bdb2e21589d06540b707d51ef6fb5acd87a2fab",
+      "event": "e19"
     },
     "sections.studio.options": {
       "element": "studio-options",
@@ -284,6 +284,28 @@
       "hash": "sha256:6fc5a12b517db3b167215e51972593c3a4a392df1e66fa2aa59f1049a7373fbf",
       "from": "option",
       "reason": "Round-2 A2 option v3 for frames.studio-shell."
+    },
+    {
+      "id": "e19",
+      "at": "2026-10-31T22:00:00Z",
+      "by": "designer/PREVIEW-FIX",
+      "action": "pin",
+      "slot": "sections.studio.specimen",
+      "element": "studio-specimen",
+      "version": 3,
+      "hash": "sha256:9778983b1ea63e1c1d655a767bdb2e21589d06540b707d51ef6fb5acd87a2fab",
+      "from": "option"
+    },
+    {
+      "id": "e20",
+      "at": "2026-10-31T22:00:00Z",
+      "by": "designer/PREVIEW-FIX",
+      "action": "pin",
+      "slot": "sections.studio.agent-gallery",
+      "element": "studio-agent-gallery",
+      "version": 4,
+      "hash": "sha256:d2eeb96c478da13e2a14bb9e4b0e4304ccaaea52121115279d921b10df5e899d",
+      "from": "option"
     }
   ]
 }

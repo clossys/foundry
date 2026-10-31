@@ -1,5 +1,5 @@
 import { studioChecks } from './studio-checks.js';
-import { randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { once } from "node:events";
 import { createServer, request as httpRequest, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AgentKind } from "../agents.js";
@@ -21,6 +21,8 @@ import { specimenMount } from "../publish/site-server.js";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+const BRAND_MARK_CACHE = "private, max-age=60, stale-while-revalidate=300";
 
 export type { AgentCells, CellSummary, CellsResponse, ChangeEvent } from "./contract.js";
 export { TOKEN_HEADER } from "./contract.js";
@@ -160,9 +162,14 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
         const brand = await consumerBrand(options.root);
         const ground = new URL(raw, origin).searchParams.get("ground") === "dark" ? "dark" : "light";
         // Without a consumer mark, Studio's own shipped mark stands in.
-        if (!brand.mark) { response.writeHead(302, { Location: "/studio-mark.svg", "Cache-Control": "no-store" }); response.end(); return; }
-        response.writeHead(200, { "Content-Type": "image/svg+xml; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'" });
-        response.end(brand.mark[ground]); return;
+        if (!brand.mark) { response.writeHead(302, { Location: "/studio-mark.svg", "Cache-Control": BRAND_MARK_CACHE }); response.end(); return; }
+        // Revalidated by content hash: a changed mark shows within a minute, an unchanged one is a 304.
+        const svg = brand.mark[ground];
+        const etag = `"${createHash("sha256").update(svg).digest("base64url")}"`;
+        const headers = { "Cache-Control": BRAND_MARK_CACHE, ETag: etag, "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'" };
+        if ((request.headers["if-none-match"] ?? "").split(",").map(value => value.trim().replace(/^W\//, "")).includes(etag)) { response.writeHead(304, headers); response.end(); return; }
+        response.writeHead(200, { ...headers, "Content-Type": "image/svg+xml; charset=utf-8" });
+        response.end(svg); return;
       }
       if (pathname === "/api/selection/runtime.js") {
         const hash = new URL(raw, origin).searchParams.get("hash") ?? "";
@@ -221,7 +228,7 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
       if (request.method !== "GET" && request.method !== "HEAD") { json(response, 405, { error: "Specimens are read-only" }); return; }
       if (await specimen(request, response)) return;
     }
-    if (pathname === "/preview" || pathname.startsWith("/preview/")) { await servePreview(options.root, pathname, request.method ?? "", response, options.installOut); return; }
+    if (pathname === "/preview" || pathname.startsWith("/preview/")) { await servePreview(options.root, pathname, request.method ?? "", response, options.installOut, new URL(raw, origin).searchParams); return; }
     if (!child) { json(response, 503, { error: "Studio child is not ready" }); return; }
     const headers = cleanHeaders(request.headers); headers.host = `127.0.0.1:${child.port}`;
     const upstream = httpRequest({ hostname: "127.0.0.1", port: child.port, path: raw, method: request.method, headers }, upstreamResponse => {

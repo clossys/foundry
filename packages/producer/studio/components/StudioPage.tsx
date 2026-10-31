@@ -25,7 +25,7 @@ import { stringChanges } from '../lib/agent-options';
 import { AGENT_LABELS, AGENTS, type Agent } from '../lib/agents';
 import { loadCell } from '../lib/cells-client';
 import { designerGalleryInput, designerLeafInputs, designerNotice, loadDesignerLeaf, type DesignerLeaf } from '../lib/designer-library';
-import { loadPublication, safePreviewUrl, siteRoot, type PublicationResponse } from '../lib/publisher-preview';
+import { loadPublication, publisherFrameUrl, safePreviewUrl, siteRoot, type PublicationResponse } from '../lib/publisher-preview';
 import { studioIcon } from '../lib/studio-icons';
 import type { StudioReport } from '../lib/studio-report';
 import { resolveStudioRoute, studioHref, studioLeafCount, studioLeafHref, studioPageEntries, studioShellProjection, type StudioRoute } from '../lib/studio-route-map';
@@ -156,7 +156,7 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
     const previews: GalleryPreviews = new Map([...(leaves ?? [])].map(([id, leaf]) => {
       if (!leaf) return [id, null];
       const emitted = pages.find(row => row.cellId === id && row.emitted && safePreviewUrl(row.previewUrl));
-      return [id, agentGalleryPreview(leaf, links, emitted?.previewUrl)];
+      return [id, agentGalleryPreview(leaf, links, emitted && publisherFrameUrl(emitted.previewUrl, 1280, resolved))];
     }));
     const input = gallery.value.agent === 'designer' ? designerGalleryInput(gallery.value.records, resolved, links, count) : agentGalleryInput(gallery.value.records, links, count, previews);
     const inputs: Inputs = {};
@@ -220,7 +220,7 @@ async function loadLeaf(agent: string, slug: string, signal: AbortSignal): Promi
   // A Publisher page's specimen is the page itself, as its last install emitted it.
   const publication = await loadPublication(signal).catch(() => undefined);
   const page = publication?.state === 'ready' ? publication.pages.find(row => row.cellId === leaf.card.id) : undefined;
-  const specimens = page && page.emitted && safePreviewUrl(page.previewUrl) ? VIEWPORTS.map(viewport => ({ viewport, light: page.previewUrl })) : [];
+  const specimens = page && page.emitted && safePreviewUrl(page.previewUrl) ? VIEWPORTS.map(viewport => ({ viewport, light: publisherFrameUrl(page.previewUrl, viewport, 'light'), dark: publisherFrameUrl(page.previewUrl, viewport, 'dark') })) : [];
   return { agent, leaf, previews, specimens };
 }
 

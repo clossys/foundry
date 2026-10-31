@@ -338,7 +338,7 @@
     {
       "slot": "sections.studio.agent-gallery",
       "element": "studio-agent-gallery",
-      "version": 3
+      "version": 4
     },
     {
       "slot": "sections.studio.leaf-header",
@@ -348,7 +348,7 @@
     {
       "slot": "sections.studio.specimen",
       "element": "studio-specimen",
-      "version": 2
+      "version": 3
     },
     {
       "slot": "sections.studio.options",
