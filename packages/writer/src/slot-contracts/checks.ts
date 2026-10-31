@@ -129,12 +129,28 @@ function lengthFindings(text: string, limit: WriterFieldLimit, headroom: number,
   return out;
 }
 
+const MONTH = "(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)";
+const DATE_RES = [
+  new RegExp(`(?<![\\p{L}\\p{N}])\\d{1,2}(?:st|nd|rd|th)?\\s+${MONTH}\\.?,?\\s+\\d{4}(?![\\p{L}\\p{N}])`, "giu"),
+  new RegExp(`(?<![\\p{L}\\p{N}])${MONTH}\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?,?\\s+\\d{4}(?![\\p{L}\\p{N}])`, "giu"),
+  /(?<![\p{L}\p{N}])\d{4}-\d{2}-\d{2}(?![\p{L}\p{N}])/gu,
+];
+/** Calendar dates (a draft or revision date) state when, not how much; they are not claims. */
+export function stripDates(text: string): string {
+  return DATE_RES.reduce((t, re) => t.replace(re, " "), text);
+}
+/**
+ * "first" is a claim only in superlative use (world's first, first-ever, the
+ * first tool to do X); ordinal use (the first version, the first step) is not.
+ */
+const FIRST_CLAIM = /(?<![\p{L}\p{N}])(?:(?:world|industry|market|country|nation|sector|category)['’]s\s+first|first[-\s]ever|first\s+of\s+its\s+kind|first\s+(?:[\p{L}-]+\s+){0,2}to\s+(?!the\b|a\b|an\b)\p{L}+)(?![\p{L}\p{N}])/iu;
+
 function claimHits(text: string): string[] {
-  const bare = stripIcu(text); const hits: string[] = [];
+  const bare = stripDates(stripIcu(text)); const hits: string[] = [];
   if (/\p{N}/u.test(bare)) hits.push("number");
   if (/%/.test(bare)) hits.push("percentage");
   if (/[$€£¥₹]/u.test(bare)) hits.push("currency");
-  for (const s of SUPERLATIVES) if (phraseRe(s).test(bare)) hits.push(`"${s}"`);
+  for (const s of SUPERLATIVES) if (s === "first" ? FIRST_CLAIM.test(bare) : phraseRe(s).test(bare)) hits.push(`"${s}"`);
   return [...new Set(hits)];
 }
 

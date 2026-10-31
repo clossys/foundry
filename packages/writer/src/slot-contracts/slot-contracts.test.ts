@@ -157,6 +157,22 @@ describe("writer.copy.v1", () => {
     expect(run(writerCell("projects.delete", [{ context: "projects.delete.warning", leaf: "strings.warnings", text: "Deleting this project removes its 9 notes." }]))).toEqual([]);
   });
 
+  it("treats dates and ordinal first as facts, not claims", () => {
+    expect(run(tagline("Preview draft · 30 October 2026, legal review pending"))).toEqual([]);
+    expect(run(tagline("Revised October 30, 2026 for the physio launch"))).toEqual([]);
+    expect(run(tagline("Updated 2026-10-30 for physio clinics"))).toEqual([]);
+    expect(run(tagline("The first version is in English"))).toEqual([]);
+    expect(run(tagline("From the first decision to the next change"))).toEqual([]);
+    expect(checksOf(run(tagline("The world's first diary for physio clinics")))).toEqual(["W-CLAIM"]);
+    expect(checksOf(run(tagline("The first diary to rebook missed visits")))).toEqual(["W-CLAIM"]);
+    expect(checksOf(run(tagline("Draft 30 October 2026 for 40 clinics")))).toEqual(["W-CLAIM"]);
+  });
+
+  it("exempts four-word stock labels from the originality check", () => {
+    expect(copiedExemplar("See how it works", [{ slot: "passages.hero", text: "See how it works" }])).toBeUndefined();
+    expect(copiedExemplar("See how the rota works", [{ slot: "x", text: "See how the rota works" }])).toBeDefined();
+  });
+
   it("flags unique copy repeated on another page", () => {
     const text = "Physio diaries that rebook missed visits for you";
     const findings = run(tagline(text, "home"), tagline(text, "pricing"));
