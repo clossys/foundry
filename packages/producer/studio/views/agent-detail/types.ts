@@ -21,6 +21,19 @@ export interface DetailSpecimenData {
   description: string;
   src?: string;
   rows?: readonly { key: string; label: string; text: string; href?: string }[];
+  /** A structured specimen kind (Writer voice, claims, names): titled tables of the record content. */
+  tables?: readonly DetailSpecimenTable[];
+  /** Set when there is nothing to preview; the block shows this shared leaf status and its description. */
+  status?: import('../../lib/leaf-status').LeafStatus;
+}
+
+export interface DetailSpecimenTable {
+  id: string;
+  label: string;
+  columns: readonly string[];
+  /** The prose column, given a readable minimum width. */
+  prose?: number;
+  rows: readonly { key: string; cells: readonly { text: string; href?: string; statusLabel?: string; statusTone?: DetailTone }[] }[];
 }
 
 export interface DetailCheckRow { key: string; label: string; ok: boolean; detail: string }

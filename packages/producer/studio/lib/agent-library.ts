@@ -6,7 +6,7 @@
  */
 import type { GalleryHeaderData, GalleryLayerData, GalleryNoticeData } from '../views/agent-gallery/types';
 import type { DetailCheckRow, DetailContractData, DetailHeaderData, DetailHistoryData, DetailRef, DetailSpecimenData, DetailUsesData } from '../views/agent-detail/types';
-import { LEAF_STATUS_LABEL as STATUS_LABEL, LEAF_STATUS_TONE as STATUS_TONE } from './leaf-status';
+import { LEAF_STATUS_LABEL as STATUS_LABEL, LEAF_STATUS_TONE as STATUS_TONE, type LeafStatus } from './leaf-status';
 
 export const LIBRARY_AGENTS = ['director', 'writer', 'publisher'] as const;
 export type LibraryAgent = typeof LIBRARY_AGENTS[number];
@@ -14,12 +14,13 @@ export const isLibraryAgent = (value: string): value is LibraryAgent => (LIBRARY
 
 export type AgentLeafStatus = 'active' | 'draft' | 'retired';
 export interface AgentRef { label: string; agent?: string; slug?: string }
-export interface AgentCard { id: string; slug: string; name: string; version: number; status: AgentLeafStatus; excerpt: string[] }
+export interface AgentCard { id: string; slug: string; name: string; version: number; status: AgentLeafStatus; excerpt: string[]; records?: number }
+export interface AgentSpecimenTable { id: string; label: string; columns: string[]; prose?: number; rows: { key: string; cells: { text: string; ref?: AgentRef; status?: string }[] }[] }
 export interface AgentSection { id: string; label: string; level: 0 | 1 | 2; cards: AgentCard[] }
 export interface AgentGalleryRecords { state: 'ready' | 'missing'; agent: LibraryAgent; grouping?: 'ia' | 'kind'; sections: AgentSection[]; count: number }
 export interface AgentLeafRecords {
   agent: LibraryAgent; card: AgentCard; trail: string[]; statusDetail: string[];
-  specimen: { summary: string; rows: { label: string; text: string; ref?: AgentRef }[] };
+  specimen: { summary: string; rows: { label: string; text: string; ref?: AgentRef }[]; kind?: string; tables?: AgentSpecimenTable[] };
   checks: { label: string; ok: boolean; detail?: string }[];
   contract: { facts: { label: string; value: string }[]; lists: { label: string; items: string[] }[] };
   history: { version: number; status: AgentLeafStatus; updated: string; note: string; active: boolean }[];
@@ -42,6 +43,10 @@ const ADAPTERS: Record<LibraryAgent, AgentAdapter> = {
 
 export const agentGalleryHref = (agent: string) => `/${agent}`;
 export const agentLeafHref = (agent: string, slug: string) => `/${agent}/${encodeURIComponent(slug)}`;
+const KIND_TITLE: Record<string, string> = { voice: 'Voice', claims: 'Claims', naming: 'Names' };
+const isLeafStatus = (value: string | undefined): value is LeafStatus => value !== undefined && value in STATUS_LABEL;
+/** A cell with no records has nothing to preview: the shared `missing` status says so. */
+const emptyStatus = (card: AgentCard): LeafStatus | undefined => card.records === 0 ? 'missing' : undefined;
 const refHref = (ref: AgentRef) => ref.agent && ref.slug ? agentLeafHref(ref.agent, ref.slug) : undefined;
 const toRef = (ref: AgentRef): DetailRef => { const href = refHref(ref); return { label: ref.label, ...(href ? { href } : {}) }; };
 
@@ -96,6 +101,7 @@ export function agentGalleryLayers(records: AgentGalleryRecords): GalleryLayerDa
         key: card.id, name: card.name, version: card.version,
         statusLabel: STATUS_LABEL[card.status], statusTone: STATUS_TONE[card.status],
         href: agentLeafHref(records.agent, card.slug), excerpt: card.excerpt,
+        ...(emptyStatus(card) ? { specimenStatus: emptyStatus(card)! } : {}),
       })),
     });
   }
@@ -115,11 +121,19 @@ export function agentDetailData(leaf: AgentLeafRecords): AgentDetailData {
       statusDetail: leaf.statusDetail, trail: leaf.trail, galleryHref: agentGalleryHref(leaf.agent), galleryLabel: `${adapter.label} library`,
     },
     specimen: {
-      title: adapter.specimenTitle, description: leaf.specimen.summary,
+      title: KIND_TITLE[leaf.specimen.kind ?? ''] ?? adapter.specimenTitle, description: leaf.specimen.summary,
       rows: leaf.specimen.rows.map((row, index) => {
         const href = row.ref ? refHref(row.ref) : undefined;
         return { key: `${index}`, label: row.label, text: row.text, ...(href ? { href } : {}) };
       }),
+      ...(leaf.specimen.tables?.length ? { tables: leaf.specimen.tables.map(table => ({
+        id: table.id, label: table.label, columns: table.columns, ...(table.prose === undefined ? {} : { prose: table.prose }),
+        rows: table.rows.map(row => ({ key: row.key, cells: row.cells.map(cell => {
+          const href = cell.ref ? refHref(cell.ref) : undefined;
+          return { text: cell.text, ...(href ? { href } : {}), ...(isLeafStatus(cell.status) ? { statusLabel: STATUS_LABEL[cell.status], statusTone: STATUS_TONE[cell.status] } : {}) };
+        }) })),
+      })) } : {}),
+      ...(emptyStatus(leaf.card) ? { status: emptyStatus(leaf.card)! } : {}),
     },
     checks: leaf.checks.map((check, index) => ({ key: `${index}`, label: check.label, ok: check.ok, detail: check.detail ?? '' })),
     contract: { facts: leaf.contract.facts, lists: leaf.contract.lists },

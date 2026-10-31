@@ -11,6 +11,7 @@ import { join } from "node:path";
 import type { AgentKind } from "../agents.js";
 import { agentModule, agentRoot, hasCellTree, readStudioCells } from "./cells.js";
 import { designerGallery } from "./designer-library.js";
+import { writerKindSpecimen, type SpecimenTable, type WriterSpecimenKind } from "./writer-specimen-kinds.js";
 
 export const LIBRARY_AGENTS = ["director", "writer", "publisher"] as const;
 export type LibraryAgent = typeof LIBRARY_AGENTS[number];
@@ -26,6 +27,8 @@ export interface AgentCard {
   readonly status: AgentLeafStatus;
   /** One or two short lines of the specimen for the gallery card. */
   readonly excerpt: readonly string[];
+  /** Records the shown version holds, when the agent counts them; 0 means there is nothing to preview. */
+  readonly records?: number;
 }
 export interface AgentSection { readonly id: string; readonly label: string; readonly level: 0 | 1 | 2; readonly cards: readonly AgentCard[] }
 export interface AgentGallery {
@@ -43,7 +46,7 @@ export interface AgentLeaf {
   readonly card: AgentCard;
   readonly trail: readonly string[];
   readonly statusDetail: readonly string[];
-  readonly specimen: { readonly summary: string; readonly rows: readonly AgentSpecimenRow[] };
+  readonly specimen: { readonly summary: string; readonly rows: readonly AgentSpecimenRow[]; readonly kind?: WriterSpecimenKind; readonly tables?: readonly SpecimenTable[] };
   readonly checks: readonly AgentCheck[];
   readonly contract: { readonly facts: readonly { readonly label: string; readonly value: string }[]; readonly lists: readonly { readonly label: string; readonly items: readonly string[] }[] };
   readonly history: readonly AgentHistoryRow[];
@@ -129,14 +132,19 @@ const writer: Adapter = {
       return { label: context.startsWith(prefix) ? context.slice(prefix.length) : context, text: text(row.record.text) };
     });
     const empty = textRows.filter(row => !text(row.record.text).trim()).length;
-    checks.push({ label: "Every string has text", ok: empty === 0, ...(empty ? { detail: `${empty} empty ${empty === 1 ? "string" : "strings"}` } : {}) });
+    if (textRows.length || !local.length) checks.push({ label: "Every string has text", ok: empty === 0, ...(empty ? { detail: `${empty} empty ${empty === 1 ? "string" : "strings"}` } : {}) });
     const targets = [...new Set(local.flatMap(row => row.bindings.map(binding => text(binding.target)).filter(Boolean)))].sort();
     const kinds = [...new Set(local.map(row => text(row.record.leaf)).filter(Boolean))].sort();
     const frames = [...new Set(local.map(row => text((row.record.frame as Fields | undefined)?.frameId)).filter(Boolean))];
+    // Lexicon cells (voice rules, claims, names) produce no strings: they get their own specimen kind.
+    const lexicon = writerKindSpecimen(cell.id, local.map(row => row.record));
+    const specimen = lexicon
+      ? { summary: lexicon.summary, rows: [], kind: lexicon.kind, tables: lexicon.tables }
+      : { summary: `${textRows.length} ${textRows.length === 1 ? "string" : "strings"}${structural ? ` and ${structural} structural ${structural === 1 ? "record" : "records"}` : ""} in ${locale}.`, rows, kind: "strings" as const };
     return {
-      cards: { id: cell.id, slug: cell.id, name: humanize(tail(cell.id)), version: cell.version, status: cell.status, excerpt: rows.slice(0, 2).map(row => row.text) },
+      cards: { id: cell.id, slug: cell.id, name: humanize(tail(cell.id)), version: cell.version, status: cell.status, excerpt: lexicon?.excerpt ?? rows.slice(0, 2).map(row => row.text), records: local.length },
       leaf: {
-        specimen: { summary: `${textRows.length} ${textRows.length === 1 ? "string" : "strings"}${structural ? ` and ${structural} structural ${structural === 1 ? "record" : "records"}` : ""} in ${locale}.`, rows },
+        specimen,
         checks,
         contract: {
           facts: [
