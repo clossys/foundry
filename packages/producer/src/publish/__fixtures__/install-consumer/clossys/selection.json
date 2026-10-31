@@ -1,0 +1,39 @@
+{
+  "schema": "clossys.selection/1",
+  "pins": {
+    "frames.plain": {
+      "element": "plain-frame",
+      "version": 1,
+      "hash": "sha256:bc8a11f930287d436c012a68e0da0d1128ec2a5523f933b37ffcca0cb549f27b",
+      "event": "e1"
+    },
+    "sections.hero": {
+      "element": "simple-hero",
+      "version": 1,
+      "hash": "sha256:2d539177db39a16205ed4b039ebd8f8c4bd795c8a664575b7995060fdaa4b285",
+      "event": "e2"
+    }
+  },
+  "history": [
+    {
+      "id": "e1",
+      "at": "2026-10-31T00:00:00Z",
+      "by": "fixture",
+      "action": "pin",
+      "slot": "frames.plain",
+      "element": "plain-frame",
+      "version": 1,
+      "hash": "sha256:bc8a11f930287d436c012a68e0da0d1128ec2a5523f933b37ffcca0cb549f27b"
+    },
+    {
+      "id": "e2",
+      "at": "2026-10-31T00:00:00Z",
+      "by": "fixture",
+      "action": "pin",
+      "slot": "sections.hero",
+      "element": "simple-hero",
+      "version": 1,
+      "hash": "sha256:2d539177db39a16205ed4b039ebd8f8c4bd795c8a664575b7995060fdaa4b285"
+    }
+  ]
+}

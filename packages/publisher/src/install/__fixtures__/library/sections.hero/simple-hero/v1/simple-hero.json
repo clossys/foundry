@@ -1,0 +1,13 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "simple-hero",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "registry/sections/simple-hero.tsx",
+      "type": "registry:component",
+      "target": "components/sections/simple-hero.tsx",
+      "content": "export function SimpleHero({ heading, body }: { heading: string; body: string }) {\n  return (\n    <section data-section=\"hero\">\n      <h1 data-copy=\"hero.heading\">{heading}</h1>\n      <p data-copy=\"hero.body\">{body}</p>\n    </section>\n  );\n}\n"
+    }
+  ]
+}

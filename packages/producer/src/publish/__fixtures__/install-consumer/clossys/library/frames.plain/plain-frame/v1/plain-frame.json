@@ -1,0 +1,13 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "plain-frame",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "registry/frames/plain-frame.tsx",
+      "type": "registry:component",
+      "target": "components/frames/plain-frame.tsx",
+      "content": "import type * as React from \"react\";\n\nexport function PlainFrame({ title, children }: { title: string; children?: React.ReactNode }) {\n  return (\n    <main data-frame=\"plain\">\n      <header><p data-copy=\"frame.title\">{title}</p></header>\n      {children}\n    </main>\n  );\n}\n"
+    }
+  ]
+}

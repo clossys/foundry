@@ -1,0 +1,15 @@
+{
+  "fixtures": {
+    "heading": {
+      "$copy": "hero.heading"
+    },
+    "body": {
+      "$copy": "hero.body"
+    }
+  },
+  "copy": {
+    "hero.heading": "Sample heading",
+    "hero.body": "Sample body."
+  },
+  "container": "section-in-frame"
+}

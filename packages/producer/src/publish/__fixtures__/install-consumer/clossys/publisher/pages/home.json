@@ -1,0 +1,20 @@
+{
+  "id": "home",
+  "frame": "frames.plain",
+  "sections": [
+    "sections.hero"
+  ],
+  "bindings": {
+    "frames.plain": {
+      "copy": {
+        "frame.title": "site.name"
+      }
+    },
+    "sections.hero": {
+      "copy": {
+        "hero.heading": "home.hero.heading",
+        "hero.body": "home.hero.body"
+      }
+    }
+  }
+}

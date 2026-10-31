@@ -20,6 +20,10 @@ export interface CliArgs {
   strict: boolean;
   /** publish: library roots served at `/__specimen`. */
   records: string[];
+  /** publish: install the page's pinned registry items, bind its copy, and render it. */
+  install: boolean;
+  /** publish --install: the page record file. */
+  page?: string;
 }
 
 export class CliUsageError extends Error {
@@ -30,10 +34,11 @@ export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check>
   + "Options: --help; produce --once --port <0-65535> --no-open; publish --target preview [--port <0-65535>] [--out <dir>]\n"
   + "Page check: clossys check --pages <generated-manifest.json> --report <report.json> [--json]\n"
   + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root)\n"
-  + "Specimens: clossys publish --target preview [--records <library dir>]... (default <root>/clossys/library)";
+  + "Specimens: clossys publish --target preview [--records <library dir>]... (default <root>/clossys/library)\n"
+  + "Install: clossys publish --install --page <page record.json> [--out <dir>] [--records <library dir>]...";
 
 export function parseArgs(argv: readonly string[]): CliArgs {
-  const args: CliArgs = { help: false, check: false, json: false, once: false, noOpen: false, suites: false, strict: false, records: [] };
+  const args: CliArgs = { help: false, check: false, json: false, once: false, noOpen: false, suites: false, strict: false, records: [], install: false };
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index]!;
     const value = (): string => {
@@ -55,6 +60,8 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       case "--suites": args.suites = true; break;
       case "--strict": args.strict = true; break;
       case "--records": args.records.push(value()); break;
+      case "--install": args.install = true; break;
+      case "--page": args.page = value(); break;
       case "--port": {
         const port = value();
         if (!/^\d+$/.test(port) || Number(port) > 65535) throw new CliUsageError("--port must be an integer from 0 to 65535");
@@ -75,6 +82,10 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   }
   if ((args.suites || args.strict) && args.verb !== "check") throw new CliUsageError("--suites and --strict require check");
   if (args.records.length && args.verb !== "publish") throw new CliUsageError("--records requires publish");
+  if ((args.install || args.page !== undefined) && args.verb !== "publish") throw new CliUsageError("--install and --page require publish");
+  if (args.install && args.page === undefined && !args.help) throw new CliUsageError("publish --install requires --page <page record.json>");
+  if (args.page !== undefined && !args.install) throw new CliUsageError("--page requires --install");
+  if (args.install && args.target !== undefined) throw new CliUsageError("publish takes --install or --target, not both");
   if (!args.verb && !args.help) throw new CliUsageError("A verb is required");
   if (args.verb === "check" && !args.help) {
     const page = args.pages !== undefined || args.report !== undefined;

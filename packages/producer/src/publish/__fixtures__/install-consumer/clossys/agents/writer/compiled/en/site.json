@@ -1,0 +1,16 @@
+{
+  "records": [
+    {
+      "id": "site.name",
+      "text": "Example Studio"
+    },
+    {
+      "id": "home.hero.heading",
+      "text": "Pages assembled from records"
+    },
+    {
+      "id": "home.hero.body",
+      "text": "Every word here comes from a Writer key."
+    }
+  ]
+}

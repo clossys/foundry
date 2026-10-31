@@ -1,0 +1,36 @@
+{
+  "schema": "clossys.element/1",
+  "id": "plain-frame",
+  "package": "designer",
+  "layer": "frames",
+  "slot": "frames.plain",
+  "kind": "registry:block",
+  "lineage": {
+    "mode": "original"
+  },
+  "license": {
+    "spdx": "MIT"
+  },
+  "creator": {
+    "agent": "designer",
+    "model": "fixture"
+  },
+  "reason": "fixture: install-and-bind",
+  "createdAt": "2026-10-31T00:00:00Z",
+  "checks": [],
+  "deps": {
+    "npm": {},
+    "elements": []
+  },
+  "reads": {
+    "copyKeys": [
+      "frame.title"
+    ],
+    "themeVars": []
+  },
+  "version": 1,
+  "hash": "sha256:bc8a11f930287d436c012a68e0da0d1128ec2a5523f933b37ffcca0cb549f27b",
+  "payload": [
+    "plain-frame.json"
+  ]
+}

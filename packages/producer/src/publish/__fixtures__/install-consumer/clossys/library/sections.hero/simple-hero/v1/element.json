@@ -1,0 +1,37 @@
+{
+  "schema": "clossys.element/1",
+  "id": "simple-hero",
+  "package": "designer",
+  "layer": "sections",
+  "slot": "sections.hero",
+  "kind": "registry:block",
+  "lineage": {
+    "mode": "original"
+  },
+  "license": {
+    "spdx": "MIT"
+  },
+  "creator": {
+    "agent": "designer",
+    "model": "fixture"
+  },
+  "reason": "fixture: install-and-bind",
+  "createdAt": "2026-10-31T00:00:00Z",
+  "checks": [],
+  "deps": {
+    "npm": {},
+    "elements": []
+  },
+  "reads": {
+    "copyKeys": [
+      "hero.heading",
+      "hero.body"
+    ],
+    "themeVars": []
+  },
+  "version": 1,
+  "hash": "sha256:2d539177db39a16205ed4b039ebd8f8c4bd795c8a664575b7995060fdaa4b285",
+  "payload": [
+    "simple-hero.json"
+  ]
+}

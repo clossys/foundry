@@ -28,6 +28,15 @@ the static site and `report.json` (empty slots, unbound keys, agent requests)
 outside the consumer root and serves the site on `127.0.0.1`, leaving the
 server running. `--check` renders and reports without serving.
 
+`clossys publish --install --page <page record.json> [--out <dir>]` installs the
+registry items the consumer pinned (`clossys/selection.json`) for each slot of
+one page record (a frame plus ordered section slots) into a publishing
+substrate with `shadcn add`, binds every copy slot to a Writer key, and renders
+the bound page to `site/<page>/index.html` outside the consumer root. A repeat
+install of the same pinned items is a no-op. An unpinned slot, an unbound copy
+slot, a missing Writer key or an edited installed file is a finding (exit `1`),
+never a fallback.
+
 `clossys produce [--port 4300] [--no-open]` compiles Designer and Writer cells,
 then serves the read-only Studio on `127.0.0.1`. The browser opens by default.
 `--once` compiles and exits: `0` when both agents compiled, `2` when a required

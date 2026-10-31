@@ -1,0 +1,6 @@
+{
+  "id": "frames.plain/plain-frame",
+  "version": 1,
+  "kind": "registry:block",
+  "payload": "plain-frame.json"
+}

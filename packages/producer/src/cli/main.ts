@@ -40,7 +40,7 @@ export async function runCli(argv: readonly string[], cwd = process.cwd()): Prom
     if (verb === "check") return await runCheck(args, cwd);
     const root = discoverRoot(resolve(cwd, args.root ?? "."));
     if (verb === "produce") return await runProduce(args, root);
-    if (verb === "publish" && args.target !== undefined) return await runPublish(args, root, cwd);
+    if (verb === "publish" && (args.target !== undefined || args.install)) return await runPublish(args, root, cwd);
     for (const kind of VERB_AGENTS[verb]) resolveAgent(kind);
     return { exitCode: 2, message: `${verb}: not implemented in this build`, verb, root, check: args.check };
   } catch (error) {

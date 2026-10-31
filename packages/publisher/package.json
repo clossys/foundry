@@ -64,6 +64,10 @@
       "types": "./dist/specimen/index.d.ts",
       "node": "./dist/specimen/index.js"
     },
+    "./install": {
+      "types": "./dist/install/index.d.ts",
+      "node": "./dist/install/index.js"
+    },
     "./web/preview": {
       "types": "./dist/web/preview/index.d.ts",
       "import": "./dist/web/preview/index.js"

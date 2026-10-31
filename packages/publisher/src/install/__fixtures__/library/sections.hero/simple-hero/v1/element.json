@@ -1,0 +1,6 @@
+{
+  "id": "sections.hero/simple-hero",
+  "version": 1,
+  "kind": "registry:block",
+  "payload": "simple-hero.json"
+}
