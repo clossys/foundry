@@ -79,7 +79,7 @@ describe("clossys bin", () => {
   });
 
   it.each([
-    ["publish", "--json"],
+    ["publish", "--out", "site"],
     ["write", "--check", "--root", "."],
   ])("parses supported flags without implementing behavior: %j", (...args) => {
     const result = run(args);
