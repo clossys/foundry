@@ -14,7 +14,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { directoryRecordSource } from "../specimen/source.js";
-import { bindPage, installAndBind, installPage, resolvePage, type BoundPage, type InstallPageRecord, type InstallPins, type ShadcnRunner } from "./index.js";
+import { bindPage, installAndBind, installPage, isBlocking, resolvePage, substrateDependencies, type BoundPage, type ResolvedSlot, type InstallPageRecord, type InstallPins, type ShadcnRunner } from "./index.js";
 
 const fixtures = join(import.meta.dirname, "__fixtures__");
 const json = async (name: string) => JSON.parse(await readFile(join(fixtures, name), "utf8"));
@@ -141,10 +141,21 @@ describe("unpinned and unbound slots", () => {
     expect(bound.findings).toEqual([expect.objectContaining({ code: "missing-copy-key", slot: "sections.hero" })]);
   });
 
-  it("reports a copy slot the page binds to no Writer key", async () => {
+  it("renders a copy slot the page binds to no Writer key empty, with an info finding", async () => {
     const { slots } = await resolvePage(page, pins, source);
     const unbound: InstallPageRecord = { ...page, bindings: { ...page.bindings, "frames.plain": {} } };
     const bound = bindPage({ page: unbound, slots, copy });
-    expect(bound.findings).toEqual([expect.objectContaining({ code: "unbound-copy-slot", slot: "frames.plain" })]);
+    expect(bound.findings).toEqual([expect.objectContaining({ code: "unbound-copy-slot", slot: "frames.plain", severity: "info" })]);
+    expect(bound.findings.some(isBlocking)).toBe(false);
+    expect(bound.page).toBeDefined();
+    expect(Object.values(bound.page!.frame.text)).toEqual([""]);
+  });
+});
+
+describe("substrate dependencies", () => {
+  it("unions every slot's npm dependencies, splitting a version range from the name", () => {
+    const slot = (dependencies: string[]) => ({ dependencies }) as unknown as ResolvedSlot;
+    expect(substrateDependencies([slot(["lucide-react", "@base-ui/react@^1.2.0"]), slot(["lucide-react", "sonner"])]))
+      .toEqual({ "@base-ui/react": "^1.2.0", "lucide-react": "latest", sonner: "latest" });
   });
 });

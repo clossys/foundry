@@ -9,7 +9,9 @@
  * array, no shell, cwd set to the substrate). An install is recorded with the sha256 of
  * every file it wrote, so a repeat install of the same pinned item is a no-op and an edited
  * file is a finding. Binding maps each section's copy slots to Writer keys and its asset
- * slots to consumer asset ids. Anything unresolved is a finding; nothing falls back.
+ * slots to consumer asset ids. A copy slot the page leaves unbound binds to the Writer key of
+ * the same name when Writer has one; otherwise it renders empty and is an info finding. Every
+ * other unresolved slot or key is a finding that stops the page; nothing falls back to sample copy.
  */
 import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
@@ -43,8 +45,11 @@ export type InstallPins = Readonly<Record<string, InstallPin>>;
 export type InstallFindingCode =
   | "invalid-page" | "unpinned-slot" | "unpinned-dependency" | "missing-record" | "not-a-registry-item" | "no-entry"
   | "install-failed" | "hash-mismatch" | "unbound-copy-slot" | "missing-copy-key"
-  | "unbound-asset-slot" | "missing-asset";
-export interface InstallFinding { readonly code: InstallFindingCode; readonly slot?: string; readonly detail: string }
+  | "unbound-asset-slot" | "missing-asset" | "render-failed";
+/** `info` findings are reported but never stop a page; every other finding does. */
+export interface InstallFinding { readonly code: InstallFindingCode; readonly slot?: string; readonly detail: string; readonly severity?: "info" }
+/** Whether a finding stops the page (everything but `info`). */
+export const isBlocking = (finding: InstallFinding): boolean => finding.severity !== "info";
 
 /** Runs the shadcn CLI: `args` follow the binary (`["add", ...]`); never through a shell. */
 export type ShadcnRunner = (args: readonly string[], options: { readonly cwd: string }) => Promise<{ readonly code: number; readonly stdout: string; readonly stderr: string }>;
@@ -82,6 +87,8 @@ export interface ResolvedSlot {
   readonly props: Readonly<Record<string, unknown>>;
   readonly copySlots: readonly string[];
   readonly assetSlots: readonly string[];
+  /** The item's npm `dependencies`, as shadcn lists them (`name` or `name@range`). */
+  readonly dependencies: readonly string[];
 }
 
 const isRecord = (value: unknown): value is Record<string, any> => !!value && typeof value === "object" && !Array.isArray(value);
@@ -227,6 +234,7 @@ export async function resolvePage(page: InstallPageRecord, pins: InstallPins, so
         ...(entryIndex >= 0 ? { entry: { file: files[entryIndex]!, ...(mount.export ? { export: mount.export } : {}) } } : {}),
         ...(mount.copyKeys ? { copyKeys: mount.copyKeys } : {}),
         props: mount.props, copySlots: copy, assetSlots: assets,
+        dependencies: (Array.isArray(found.item.dependencies) ? found.item.dependencies : []).filter((dependency: unknown): dependency is string => typeof dependency === "string" && !!dependency),
       };
       slots.push(resolved); done.set(slot, resolved);
     } finally {
@@ -238,6 +246,21 @@ export async function resolvePage(page: InstallPageRecord, pins: InstallPins, so
   await visit(page.frame, "frame");
   for (const slot of page.sections) await visit(slot, "section");
   return { slots, findings };
+}
+
+/**
+ * The union of every resolved item's npm dependencies, as a package.json `dependencies` map
+ * (`name@range` keeps its range, a bare name is `latest`). The substrate needs all of them,
+ * not only the ones shadcn happened to install for the last item.
+ */
+export function substrateDependencies(slots: readonly ResolvedSlot[]): Record<string, string> {
+  const union: Record<string, string> = {};
+  for (const slot of slots) for (const dependency of slot.dependencies) {
+    const at = dependency.indexOf("@", dependency.startsWith("@") ? 1 : 0);
+    const name = at > 0 ? dependency.slice(0, at) : dependency, range = at > 0 ? dependency.slice(at + 1) : "latest";
+    if (!union[name] || union[name] === "latest") union[name] = range || "latest";
+  }
+  return Object.fromEntries(Object.entries(union).sort(([a], [b]) => a.localeCompare(b)));
 }
 
 interface ManifestEntry { readonly id: string; readonly version: number; readonly itemHash: string; readonly files: Readonly<Record<string, string>> }
@@ -358,7 +381,12 @@ function resolveProps(value: unknown, texts: Readonly<Record<string, string>>, v
   return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, resolveProps(item, texts, values)]));
 }
 
-/** Bind every copy and asset slot of every mounted slot. Any unbound slot or unknown key is a finding, and then no page is emitted. */
+/**
+ * Bind every copy and asset slot of every mounted slot. A copy slot binds to the slot binding,
+ * then the page-wide binding, then the Writer key of the same name; a copy slot with none of
+ * these renders empty and is an `info` finding. An unknown Writer key or an unbound asset is a
+ * blocking finding, and then no page is emitted.
+ */
 export function bindPage(options: BindOptions): { page?: BoundPage; findings: InstallFinding[] } {
   const findings: InstallFinding[] = [];
   const bound: BoundSlot[] = [];
@@ -367,8 +395,8 @@ export function bindPage(options: BindOptions): { page?: BoundPage; findings: In
     const binding = options.page.bindings?.[slot.slot] ?? {};
     const copy: Record<string, string> = {}, assets: Record<string, string> = {}, texts: Record<string, string> = {}, values: Record<string, unknown> = {};
     for (const name of slot.copySlots) {
-      const key = binding.copy?.[name] ?? options.page.copy?.[name];
-      if (!key) { findings.push({ code: "unbound-copy-slot", slot: slot.slot, detail: `${options.page.id}: ${slot.record.id} copy slot ${name} is bound to no Writer key` }); continue; }
+      const key = binding.copy?.[name] ?? options.page.copy?.[name] ?? (Object.hasOwn(options.copy, name) ? name : undefined);
+      if (!key) { texts[name] = ""; findings.push({ code: "unbound-copy-slot", slot: slot.slot, severity: "info", detail: `${options.page.id}: ${slot.record.id} copy slot ${name} is bound to no Writer key; it renders empty` }); continue; }
       if (!Object.hasOwn(options.copy, key)) { findings.push({ code: "missing-copy-key", slot: slot.slot, detail: `${options.page.id}: Writer has no key ${key} (for ${slot.record.id} ${name})` }); continue; }
       copy[name] = key; texts[name] = options.copy[key]!;
     }
@@ -386,7 +414,7 @@ export function bindPage(options: BindOptions): { page?: BoundPage; findings: In
     });
   }
   const frame = bound.find(slot => slot.role === "frame");
-  if (findings.length || !frame) return { findings };
+  if (findings.some(isBlocking) || !frame) return { findings };
   const sections = options.page.sections.map(name => bound.find(slot => slot.slot === name)).filter((slot): slot is BoundSlot => !!slot);
   return { page: { schema: "clossys.bound-page/1", id: options.page.id, frame, sections, parts: bound.filter(slot => slot.role === "part") }, findings };
 }
@@ -394,7 +422,7 @@ export function bindPage(options: BindOptions): { page?: BoundPage; findings: In
 /** Install and bind in one step: what `clossys publish --install` runs per page. */
 export async function installAndBind(options: InstallOptions & Omit<BindOptions, "slots">): Promise<InstallResult & { page?: BoundPage }> {
   const result = await installPage(options);
-  if (result.findings.length) return result;
+  if (result.findings.some(isBlocking)) return result;
   const { page, findings } = bindPage({ page: options.page, slots: result.slots, copy: options.copy, ...(options.assets ? { assets: options.assets } : {}) });
   return { ...result, findings, ...(page ? { page } : {}) };
 }
