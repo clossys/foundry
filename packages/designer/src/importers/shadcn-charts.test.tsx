@@ -82,11 +82,11 @@ describe("shadcn charts source (charts-core on Recharts)", () => {
       expect(committed, slotId).toBe(generated[`${slotId}.json`]);
       for (const doc of [JSON.parse(committed), result.fills.find(fill => fill.$extensions["com.clossys.fill"].slot === slotId)!]) {
         const meta = doc.$extensions["com.clossys.fill"];
-        const descriptor = Object.values(doc.components)[0] as { members: string[]; propMap: Record<string, string>; reads: { tokens: string[] } };
+        const descriptor = Object.values(doc.components)[0] as { members: string[]; propMap: Record<string, string>; reads: { themes: string[] } };
         expect(meta).toMatchObject({ source: "shadcn-charts", relation: "same-contract", unmapped: [] });
         expect([...descriptor.members].sort(), slotId).toEqual([...required].sort());
         expect(Object.keys(descriptor.propMap).sort(), slotId).toEqual([...required].sort());
-        for (const read of descriptor.reads.tokens) expect(slot.contract.allowedReads.tokens).toContain(read);
+        for (const read of descriptor.reads.themes) expect(slot.contract.allowedReads.themes).toContain(read);
       }
     }
   });

@@ -1,6 +1,6 @@
 import type { Finding } from "./types.js";
 
-export const LAYERS = ["tokens", "assets", "components", "sections", "frames"] as const;
+export const LAYERS = ["themes", "assets", "components", "sections", "frames"] as const;
 const SEG = "[a-z][a-z0-9]*(?:-[a-z0-9]+)*";
 const MSEG = "[a-z0-9]+(?:-[a-z0-9]+)*";
 export const SLOT_ID = new RegExp(`^(?:${LAYERS.join("|")})\\.${SEG}$`);

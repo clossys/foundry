@@ -226,32 +226,6 @@
     },
     {
       "parent": "designer.boardName",
-      "id": "designer.ia.tokens.color-controls",
-      "role": "label",
-      "cellId": "designer.boardName.designer.ia.tokens.color-controls",
-      "recordId": "st.hfsb4xz44v",
-      "file": "admin-studio.r1.en.json",
-      "text": "Control colors",
-      "source": {
-        "path": "packages/designer/src/catalog/ia/tokens.json",
-        "line": 1
-      }
-    },
-    {
-      "parent": "designer.boardName",
-      "id": "designer.ia.tokens.interaction-controls",
-      "role": "label",
-      "cellId": "designer.boardName.designer.ia.tokens.interaction-controls",
-      "recordId": "st.9wy8met97b",
-      "file": "admin-studio.r1.en.json",
-      "text": "Control sizes",
-      "source": {
-        "path": "packages/designer/src/catalog/ia/tokens.json",
-        "line": 1
-      }
-    },
-    {
-      "parent": "designer.boardName",
       "id": "designer.ia.frames.panels",
       "role": "label",
       "cellId": "designer.boardName.designer.ia.frames.panels",
@@ -1096,19 +1070,6 @@
       }
     },
     {
-      "parent": "publisher.breakpoint",
-      "id": "tokens.breakpoint.mobile",
-      "role": "label",
-      "cellId": "publisher.breakpoint.tokens.breakpoint.mobile",
-      "recordId": "st.txzn8z1qg7",
-      "file": "admin-meta.r1.en.json",
-      "text": "Phone",
-      "source": {
-        "path": "packages/publisher/src/formats/slots/formats.ts",
-        "line": 7
-      }
-    },
-    {
       "parent": "publisher.screenSize",
       "id": "mobile-lg",
       "role": "label",
@@ -1123,9 +1084,9 @@
     },
     {
       "parent": "publisher.breakpoint",
-      "id": "tokens.breakpoint.mobile-lg",
+      "id": "sm",
       "role": "label",
-      "cellId": "publisher.breakpoint.tokens.breakpoint.mobile-lg",
+      "cellId": "publisher.breakpoint.sm",
       "recordId": "st.xp5eskkvj3",
       "file": "admin-meta.r1.en.json",
       "text": "Large phone",
@@ -1149,9 +1110,9 @@
     },
     {
       "parent": "publisher.breakpoint",
-      "id": "tokens.breakpoint.tablet",
+      "id": "md",
       "role": "label",
-      "cellId": "publisher.breakpoint.tokens.breakpoint.tablet",
+      "cellId": "publisher.breakpoint.md",
       "recordId": "st.j57xeagqqc",
       "file": "admin-meta.r1.en.json",
       "text": "Tablet",
@@ -1175,9 +1136,9 @@
     },
     {
       "parent": "publisher.breakpoint",
-      "id": "tokens.breakpoint.tablet-lg",
+      "id": "lg",
       "role": "label",
-      "cellId": "publisher.breakpoint.tokens.breakpoint.tablet-lg",
+      "cellId": "publisher.breakpoint.lg",
       "recordId": "st.psm20y3g29",
       "file": "admin-meta.r1.en.json",
       "text": "Large tablet",
@@ -1201,9 +1162,9 @@
     },
     {
       "parent": "publisher.breakpoint",
-      "id": "tokens.breakpoint.desktop",
+      "id": "xl",
       "role": "label",
-      "cellId": "publisher.breakpoint.tokens.breakpoint.desktop",
+      "cellId": "publisher.breakpoint.xl",
       "recordId": "st.646wxbsgag",
       "file": "admin-meta.r1.en.json",
       "text": "Desktop",
@@ -1227,9 +1188,9 @@
     },
     {
       "parent": "publisher.breakpoint",
-      "id": "tokens.breakpoint.wide",
+      "id": "2xl",
       "role": "label",
-      "cellId": "publisher.breakpoint.tokens.breakpoint.wide",
+      "cellId": "publisher.breakpoint.2xl",
       "recordId": "st.m8rb9g7ftb",
       "file": "admin-meta.r1.en.json",
       "text": "Wide screen",
@@ -1552,9 +1513,9 @@
     },
     {
       "parent": "publisher.layoutOption.layouts.sidebar-content.breakpoint",
-      "id": "tablet",
+      "id": "md",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.breakpoint.tablet",
+      "cellId": "publisher.layoutOption.layouts.sidebar-content.breakpoint.md",
       "recordId": "st.j57xeagqqc",
       "file": "admin-meta.r1.en.json",
       "text": "Tablet",
@@ -1565,9 +1526,9 @@
     },
     {
       "parent": "publisher.layoutOption.layouts.sidebar-content.breakpoint",
-      "id": "tablet-lg",
+      "id": "lg",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.breakpoint.tablet-lg",
+      "cellId": "publisher.layoutOption.layouts.sidebar-content.breakpoint.lg",
       "recordId": "st.psm20y3g29",
       "file": "admin-meta.r1.en.json",
       "text": "Large tablet",
@@ -5564,22 +5525,6 @@
       "before": "Command menu",
       "after": "Command menu",
       "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
-    },
-    {
-      "file": "admin-studio.r1.en.json",
-      "recordId": "st.hfsb4xz44v",
-      "cellId": "designer.ia.tokens.color-controls",
-      "before": "Controls",
-      "after": "Control colors",
-      "reason": "Disambiguate this group from another group with the same short name on the layer board, without changing its id or placement."
-    },
-    {
-      "file": "admin-studio.r1.en.json",
-      "recordId": "st.9wy8met97b",
-      "cellId": "designer.ia.tokens.interaction-controls",
-      "before": "Controls",
-      "after": "Control sizes",
-      "reason": "Disambiguate this group from another group with the same short name on the layer board, without changing its id or placement."
     },
     {
       "file": "admin-studio.r1.en.json",

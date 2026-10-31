@@ -38,11 +38,18 @@
         "scannedReads": {
           "assets": [],
           "components": [],
-          "tokens": [
-            "tokens.body-size",
-            "tokens.breakpoint",
-            "tokens.spacing",
-            "tokens.text-color"
+          "themes": [
+            "themes.spacing",
+            "themes.foreground",
+            "themes.card-foreground",
+            "themes.popover-foreground",
+            "themes.primary-foreground",
+            "themes.secondary-foreground",
+            "themes.accent-foreground",
+            "themes.muted-foreground",
+            "themes.sidebar-foreground",
+            "themes.sidebar-primary-foreground",
+            "themes.sidebar-accent-foreground"
           ]
         },
         "sourceFiles": [
@@ -112,11 +119,18 @@
       "propMap": {},
       "reads": {
         "assets": [],
-        "tokens": [
-          "tokens.body-size",
-          "tokens.breakpoint",
-          "tokens.spacing",
-          "tokens.text-color"
+        "themes": [
+          "themes.spacing",
+          "themes.foreground",
+          "themes.card-foreground",
+          "themes.popover-foreground",
+          "themes.primary-foreground",
+          "themes.secondary-foreground",
+          "themes.accent-foreground",
+          "themes.muted-foreground",
+          "themes.sidebar-foreground",
+          "themes.sidebar-primary-foreground",
+          "themes.sidebar-accent-foreground"
         ]
       },
       "slot": "sections.account-summary",

@@ -119,18 +119,10 @@
         "components": [
           "components.icon"
         ],
-        "tokens": [
-          "tokens.control-size.switch-thumb",
-          "tokens.duration.default",
-          "tokens.easing.default",
-          "tokens.font-size.sm",
-          "tokens.font-weight.normal",
-          "tokens.spacing.lg",
-          "tokens.spacing.sm",
-          "tokens.spacing.xl",
-          "tokens.spacing.xs",
-          "tokens.text-color.muted",
-          "tokens.text-color.primary"
+        "themes": [
+          "themes.foreground.default",
+          "themes.muted-foreground.default",
+          "themes.spacing.default"
         ]
       },
       "root": "rac:Breadcrumbs",

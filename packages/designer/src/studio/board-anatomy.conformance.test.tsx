@@ -18,7 +18,7 @@ import type { CompositeStudioAdapter, CompositeStudioLabels } from "./types.js";
 afterEach(cleanup);
 
 const wholeLabels: CompositeStudioLabels = { ...labels, whole: { signoff: "W-signoff", proposed: "W-proposed", contract: "W-contract", contentSlots: "W-slots", configurations: "W-config", unresolved: "W-unresolved", unassessed: "W-unassessed" } };
-const LAYERS: readonly LayerId[] = ["tokens", "assets", "components", "sections", "frames"];
+const LAYERS: readonly LayerId[] = ["themes", "assets", "components", "sections", "frames"];
 
 /** Every way a board header or a leaf cell departs from the one anatomy; empty means it conforms. */
 function headerFaults(board: HTMLElement, title: string): string[] {
@@ -67,7 +67,7 @@ function fullStudio() {
   const input = componentIntegration();
   const catalog = { values: loadCatalog(), components: { ...loadComponentRegistry(), fills: [] } };
   // One adopted token and one adopted icon, so filled cells sit beside unchosen ones.
-  const values = adopt(adopt(emptyLibrary(), "tokens.surface-color", "foundry"), "assets.icon-search", "lucide");
+  const values = adopt(adopt(emptyLibrary(), "themes.background", "shadcn@aria"), "assets.icon-search", "lucide");
   let library = { ...input.library, values: { fills: values.fills } };
   const adapter: CompositeStudioAdapter = { kind: "composite", catalog, load: vi.fn(async () => ({ library, componentOptions: input.componentOptions })),
     save: vi.fn(async (changes: Parameters<CompositeStudioAdapter["save"]>[0]) => { library = applyLibraryChange(catalog, library, changes); return { ok: true as const, library: structuredClone(library) }; }) };

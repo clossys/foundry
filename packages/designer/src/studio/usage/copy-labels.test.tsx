@@ -24,11 +24,11 @@ it("hand-rolls the real empty usage panel with only resolver-wrapped text and ar
 it("hand-roll keeps dependency identifiers in the data seam and all copy resolver-wrapped", () => {
   const copy: StudioCopyBinding = { locale: "en", resolver: ref => ({ ref, text: `[[${ref.id}]]`, servedLocale: "en", chain: ["en"] }) };
   const labels = createStudioUsageLabels(copy);
-  const graph = buildUsageGraph({ inventory: { components: ["components.example"], tokens: ["tokens.example"] }, selection: {},
-    runtime: [{ from: "components.example", to: "tokens.example", kind: "reads", route: "fixture", selector: "button" }] });
+  const graph = buildUsageGraph({ inventory: { components: ["components.example"], themes: ["themes.example"] }, selection: {},
+    runtime: [{ from: "components.example", to: "themes.example", kind: "reads", route: "fixture", selector: "button" }] });
   const { container } = render(<UsagePanel copy={copy} id="components.example" graph={graph} labels={labels} onNavigate={() => {}} />);
   const data = [...container.querySelectorAll("[data-studio-data-value]")];
-  expect(data.some(node => node.textContent === "tokens.example")).toBe(true);
+  expect(data.some(node => node.textContent === "themes.example")).toBe(true);
   const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
   let node: Node | null; const text: string[] = [];
   while ((node = walker.nextNode())) if (node.textContent?.trim() && !node.parentElement?.closest("[data-studio-data-value]")) text.push(node.textContent.trim());

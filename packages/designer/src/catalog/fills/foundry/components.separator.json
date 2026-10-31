@@ -73,9 +73,10 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.border-color",
-          "tokens.border-width"
+        "themes": [
+          "themes.border",
+          "themes.input",
+          "themes.sidebar-border"
         ]
       },
       "root": "rac:Separator",

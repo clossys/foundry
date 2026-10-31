@@ -38,10 +38,10 @@ For example, an authored value row is:
 ```json
 [
   {
-    "slot": "tokens.body-size",
+    "slot": "themes.spacing",
     "kind": "author",
-    "value": { "default": { "$type": "dimension", "$value": { "value": 14, "unit": "px" } } },
-    "note": "Approved body size"
+    "value": { "default": { "$type": "dimension", "$value": { "value": 0.25, "unit": "rem" } } },
+    "note": "Approved spacing unit"
   }
 ]
 ```

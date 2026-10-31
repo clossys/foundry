@@ -10,14 +10,14 @@ import type { StudioLabels } from "./types.js";
 
 const labels = { resetToDefault: "Reset", inspector: { source: "Source", representedLeaf: "Represented leaf", trust: "Trust", usedBy: "Used by", none: "None", mode: "Mode", relation: "Relation", licence: "License", pin: "Pin", status: "Status", builtOn: "Built on", evidence: "Evidence", members: "Members", light: "Light", dark: "Dark", via: "Via", alias: "Alias", findings: "Findings" } } as StudioLabels;
 afterEach(cleanup);
-/** Used by is read from the usage graph (B5): one component reads the accent token. */
+/** Used by is read from the usage graph (B5): one component reads the primary theme leaf. */
 const graph = buildUsageGraph({
-  inventory: { tokens: ["tokens.accent-color"], components: ["components.button"] },
-  selection: { "tokens.accent-color": "foundry/tokens.accent-color", "components.button": "foundry/components.button" },
-  components: { fills: [{ id: "foundry/components.button", slot: "components.button", scanStatus: "lower-bound", declaredReads: { tokens: ["tokens.accent-color"], assets: [] }, scannedReads: { tokens: [], assets: [] } }], reverseComposes: {} },
+  inventory: { themes: ["themes.primary"], components: ["components.button"] },
+  selection: { "themes.primary": "shadcn@aria/themes.primary", "components.button": "foundry/components.button" },
+  components: { fills: [{ id: "foundry/components.button", slot: "components.button", scanStatus: "lower-bound", declaredReads: { themes: ["themes.primary"], assets: [] }, scannedReads: { themes: [], assets: [] } }], reverseComposes: {} },
 });
 it("shows plain definitions, actual metadata and only the graph's consumers for role members", async () => {
-  const candidate = buildCandidates({ catalog: DEMO_CATALOG, library: DEMO_LIBRARY, working: DEMO_SELECTION, slotId: "tokens.accent-color", scope: "slot", target: "tokens.accent-color" }).find(candidate => candidate.source === "foundry")!;
+  const candidate = buildCandidates({ catalog: DEMO_CATALOG, library: DEMO_LIBRARY, working: DEMO_SELECTION, slotId: "themes.primary", scope: "slot", target: "themes.primary" }).find(candidate => candidate.source === "shadcn@aria")!;
   const view = render(<Inspector candidate={candidate} labels={labels} tier="role" graph={graph} />);
   expect(view.container.querySelector("table")).toBeNull();
   expect(screen.getByText("Represented leaf")).toBeInTheDocument();
@@ -32,13 +32,13 @@ it("shows plain definitions, actual metadata and only the graph's consumers for 
 });
 
 it("preserves distinct actual light and dark aliases instead of choosing one mode", () => {
-  const original = buildCandidates({ catalog: DEMO_CATALOG, library: DEMO_LIBRARY, working: DEMO_SELECTION, slotId: "tokens.accent-color", scope: "slot", target: "tokens.accent-color" }).find(candidate => candidate.source === "foundry")!;
+  const original = buildCandidates({ catalog: DEMO_CATALOG, library: DEMO_LIBRARY, working: DEMO_SELECTION, slotId: "themes.primary", scope: "slot", target: "themes.primary" }).find(candidate => candidate.source === "shadcn@aria")!;
   const member = original.members[0]!;
-  const candidate = { ...original, members: [{ ...member, member: { ...member.member, alias: { light: "tokens.color-ramp.slate.500", dark: "tokens.color-ramp.violet.400" } } }] };
+  const candidate = { ...original, members: [{ ...member, member: { ...member.member, alias: { light: "themes.foreground.default", dark: "themes.background.default" } } }] };
   const view = render(<Inspector candidate={candidate} labels={labels} tier="role" />);
   const definitions = view.container.querySelectorAll("dt");
   const light = [...definitions].find(node => node.textContent === "Alias Light");
   const dark = [...definitions].find(node => node.textContent === "Alias Dark");
-  expect(light?.nextElementSibling).toHaveTextContent("tokens.color-ramp.slate.500");
-  expect(dark?.nextElementSibling).toHaveTextContent("tokens.color-ramp.violet.400");
+  expect(light?.nextElementSibling).toHaveTextContent("themes.foreground.default");
+  expect(dark?.nextElementSibling).toHaveTextContent("themes.background.default");
 });

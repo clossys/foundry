@@ -39,7 +39,7 @@ function chosen(descriptor: ComponentCandidate): ResolvedComponent {
   return { slot: descriptor.slot, originKind: "adopted", origin: { kind: "adopted", source: descriptor.source,
     fill: `${descriptor.source}/${descriptor.slot}`, pin: descriptor.pin, license: descriptor.license,
     sha256: componentDescriptorHash(descriptor), adoptedAt: "2026-10-30" },
-    descriptor, impl: descriptor.impl, propMap: descriptor.propMap, reads: { tokens: {}, assets: [], components: [] } };
+    descriptor, impl: descriptor.impl, propMap: descriptor.propMap, reads: { themes: {}, assets: [], components: [] } };
 }
 
 /** The selected bridge checks real descriptor identities, source receipts and native CardContent. */

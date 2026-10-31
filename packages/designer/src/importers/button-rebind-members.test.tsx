@@ -47,7 +47,7 @@ function persist(docs: readonly ComponentCandidateDocument[]): ComponentFile[] {
       slot: descriptor.slot, originKind: "adopted",
       origin: { kind: "adopted", source: descriptor.source, fill: fillId(doc), pin: descriptor.pin, license: descriptor.license ?? "MIT", sha256: componentDescriptorHash(descriptor), adoptedAt: "2026-01-01T00:00:00.000Z" },
       impl: descriptor.impl as ResolvedComponent["impl"], propMap: structuredClone(descriptor.propMap),
-      reads: { tokens: {}, assets: [...descriptor.reads.assets], components: [...descriptor.reads.components] }, descriptor,
+      reads: { themes: {}, assets: [...descriptor.reads.assets], components: [...descriptor.reads.components] }, descriptor,
     };
   };
   const profile: ResolvedComponents = {

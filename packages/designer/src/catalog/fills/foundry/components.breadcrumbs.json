@@ -74,16 +74,21 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.body-size",
-          "tokens.control-size",
-          "tokens.duration",
-          "tokens.easing",
-          "tokens.font-size",
-          "tokens.font-weight",
-          "tokens.spacing",
-          "tokens.text-color",
-          "tokens.typeface"
+        "themes": [
+          "themes.spacing",
+          "themes.foreground",
+          "themes.card-foreground",
+          "themes.popover-foreground",
+          "themes.primary-foreground",
+          "themes.secondary-foreground",
+          "themes.accent-foreground",
+          "themes.muted-foreground",
+          "themes.sidebar-foreground",
+          "themes.sidebar-primary-foreground",
+          "themes.sidebar-accent-foreground",
+          "themes.font-sans",
+          "themes.font-heading",
+          "themes.font-mono"
         ]
       },
       "root": "rac:Breadcrumbs",

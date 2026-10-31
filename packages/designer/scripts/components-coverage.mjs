@@ -29,8 +29,8 @@ registerHooks({
 const { buildComponentsConsumption } = await import(pathToFileURL(resolve(src, "catalog-core/consumption.ts")).href);
 const { stableStringify } = await import(pathToFileURL(resolve(src, "catalog-core/stable.ts")).href);
 const { importShadcnAriaComponents } = await import(pathToFileURL(resolve(src, "importers/shadcn-aria-components.ts")).href);
-const inventory = Object.fromEntries(["tokens", "assets", "components"].map(layer => [layer, json(`src/catalog/slots/${layer}.json`)]));
-for (const [layer, count] of [["tokens", 53], ["assets", 45], ["components", 57]]) {
+const inventory = Object.fromEntries(["themes", "assets", "components"].map(layer => [layer, json(`src/catalog/slots/${layer}.json`)]));
+for (const [layer, count] of [["themes", 42], ["assets", 45], ["components", 57]]) {
   const ids = inventory[layer].map(slot => slot.id).sort();
   assert.equal(ids.length, count, `${layer} leaf count changed`);
   assert.equal(new Set(ids).size, count, `${layer} duplicate leaf`);
@@ -163,4 +163,4 @@ assert.equal(bytes, stableStringify(buildComponentsConsumption({ ...input, fills
 const target = resolve(src, "catalog/reports/components-consumption.json");
 if (args[0] === "--write") { mkdirSync(dirname(target), { recursive: true }); writeFileSync(target, bytes); }
 else assert.equal(readFileSync(target, "utf8"), bytes, "Component report is stale; run components-coverage.mjs --write");
-console.log(JSON.stringify({ mode: args[0], freshness: "current", inventory: { tokens: inventory.tokens.length, assets: inventory.assets.length, components: inventory.components.length }, ...report.summary, conformance: "unmeasured" }));
+console.log(JSON.stringify({ mode: args[0], freshness: "current", inventory: { themes: inventory.themes.length, assets: inventory.assets.length, components: inventory.components.length }, ...report.summary, conformance: "unmeasured" }));

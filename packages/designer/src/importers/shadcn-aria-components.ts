@@ -70,7 +70,7 @@ function composedTemplate(row: ShadcnComposeReceipt, slot: ComponentSlot): Shadc
     $extensions: { "com.clossys.fill": { author: "foundry", builtOn: inputs, conforms: [], evidence: [], id: `${SOURCE}/${row.slot}`, license: "MIT", mode: "implementation", originKinds: ["composed"], relation: "same-contract", slot: row.slot, source: SOURCE, sourceAddress: `rules/components.${row.leaf}.json#${rule.id}`, status: "draft", trust: "foundry" } as FillMeta & { originKinds: readonly ["composed"] } },
     components: { [row.leaf]: {
       slot: row.slot, source: SOURCE, root: slot.contract.root, members, props: [...template.props], propMap: Object.fromEntries(members.map(member => [member, template.members[member]!])),
-      reads: { tokens: [], assets: [], components: inputs }, composes: inputs,
+      reads: { themes: [], assets: [], components: inputs }, composes: inputs,
       impl: { kind: "source", entry: `components/${row.leaf}/${row.leaf}.tsx`, export: template.export }, license: "MIT", notice: `notices/${row.leaf}.md`,
       deps: [{ name: "react", version: ">=18", license: "MIT" }, { name: "react-aria-components", version: "^1.19.0", license: "Apache-2.0" }],
       outputSha256: rule.files.map(file => ({ path: file.path, sha256: sha256(file.content) })).sort((a, b) => a.path.localeCompare(b.path)),
@@ -432,8 +432,7 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
     if (command) verifyShadcnSource(command);
     const selected = name === "dialog" ? dialogExecutableSource(original) : name === "dropdown-menu" ? menuExecutableSource(original, command!) : name === "toggle" || name === "toggle-group" ? toggleExecutableSource(name, original) : original;
     const aria = rewriteShadcnAria({ item: name, leaf, files: [selected, ...privateFiles], styles: input.styles.content, leafByItem: SHADCN_COMPONENT_ITEMS, styleDefaults: true });
-    // The selected tooltip profile binds its delay and close timing to these behavior-timing leaves.
-    const result: RewriteResult = name === "tooltip" ? { ...aria, reads: { ...aria.reads, tokens: sorted([...aria.reads.tokens, ...tooltipExecutableReads]) } } : aria;
+    const result: RewriteResult = name === "tooltip" ? { ...aria, reads: { ...aria.reads, themes: sorted([...aria.reads.themes, ...tooltipExecutableReads]) } } : aria;
     const files: SourceFile[] = result.files.map(file => {
       const normalized = normalizeSelectedSource(name === "calendar" && file.path === "components/calendar/calendar.tsx" ? { ...file, content: calendarContextSource(file.content) } : file);
       const received = name === "tooltip" && file.path === "components/tooltip/tooltip.tsx" ? tooltipExecutableSource(normalized) : ["select", "calendar"].includes(name) ? selectedCaptionSource(normalized) : normalized;
@@ -464,11 +463,11 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
     const members = Object.keys(propMap), required = slot.contract.members.mode === "closed" ? slot.contract.members.names : slot.contract.members.required ?? [];
     const pin = { url: SHADCN_ARIA_COMPONENT_PIN.url, commit: SHADCN_ARIA_COMPONENT_PIN.commit, files: [...closure.values(), ...(command ? [command] : []), input.styles, input.notice].map(file => ({ path: file.path, sha256: pinDigest(file.content) })).sort((a, b) => a.path.localeCompare(b.path)) };
     const composes = result.reads.components;
-    // A composed leaf's variants call renders that leaf's control height and focus outline on this item's own elements.
+    // A composed leaf's variants call renders that leaf's focus ring on this item's own elements.
     const primary = rewritten.files.find(file => file.path === `components/${leaf}/${name}.tsx`)?.content ?? "";
     const inherited = sorted(dependencies(original.content).filter(dep => SHADCN_COMPONENT_ITEMS[dep] && new RegExp(`\\b${dep.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase())}Variants\\(`).test(primary))
-      .flatMap(dep => (rewrites[dep]?.reads.tokens ?? []).filter(read => /^tokens\.(?:control-size|focus-outline|focus-color)\./.test(read))));
-    const reads = inherited.length ? { ...result.reads, tokens: sorted([...result.reads.tokens, ...inherited]) } : result.reads;
+      .flatMap(dep => (rewrites[dep]?.reads.themes ?? []).filter(read => /^themes\.ring\./.test(read))));
+    const reads = inherited.length ? { ...result.reads, themes: sorted([...result.reads.themes, ...inherited]) } : result.reads;
     const descriptor: ShadcnComponentFillDoc["components"][string] = {
       slot: slot.id, source: SOURCE, root: slot.contract.root, members, props: name === "calendar" ? ["id", "className", "style", "children", "aria-label", "aria-labelledby", "value", "defaultValue", "onChange", "isDisabled", "isReadOnly", "isInvalid", "minValue", "maxValue", "defaultFocusedValue", "focusedValue", "onFocusChange", "isDateUnavailable", "firstDayOfWeek", "numberOfMonths", "buttonVariant", "captionLayout", "showWeekNumber", "headerFormat", "renderCell"] : name === "tooltip" ? [...tooltipExecutableProps] : [], propMap, reads, composes,
       impl,

@@ -272,16 +272,10 @@
         "components": [
           "components.icon"
         ],
-        "tokens": [
-          "tokens.border-width.hairline",
-          "tokens.control-radius.default",
-          "tokens.font-size.sm",
-          "tokens.font-weight.semibold",
-          "tokens.spacing.lg",
-          "tokens.spacing.sm",
-          "tokens.spacing.xl",
-          "tokens.spacing.xs",
-          "tokens.typeface.body"
+        "themes": [
+          "themes.font-sans.default",
+          "themes.radius.default",
+          "themes.spacing.default"
         ]
       },
       "root": "rac:NavigationTree",

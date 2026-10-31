@@ -29,7 +29,7 @@ const SOURCE_EXTENSIONS = [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs",
 const BARREL_EXTRA: Record<string, RegExp> = { "blocks/index.ts": /^react-aria-components\/package\.json$/ };
 /** Every other directory: React, react-aria-components (shell), Node built-ins (CLIs), Tailwind (stylesheet compilers). */
 const OTHER_BARE = /^(?:react|react-aria-components(?:\/package\.json)?|node:[a-z_/]+)$/;
-const TAILWIND_DIRS = ["compiled-css", "hero-css"];
+const TAILWIND_DIRS = ["compiled-css"];
 /** The one computed `import()`: the conformance CLI loads a consumer's declaration file by path. */
 const COMPUTED_IMPORT_FILES = ["environment-conformance-worker.ts"];
 /** The admitted browser-compatible CSS AST parser has exactly two source owners. */

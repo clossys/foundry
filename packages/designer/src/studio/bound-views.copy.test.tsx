@@ -17,12 +17,12 @@ import { buildCandidates } from "./model.js";
 import { catalog, smallCatalog, emptyLibrary } from "./__fixtures__/studio.js";
 import { catalogFixture, expectOnlyResolvedCopy, pseudoStudioCopy } from "./__fixtures__/copy-hand-roll.js";
 
-const tokenPlacement = catalogFixture<Placement>("packages/designer/src/catalog/ia/tokens.json");
-const color = tokenPlacement.nodes.find(node => node.id === "color")!;
-if (!("children" in color)) throw new Error("fixture.ia.color");
-const palettes = color.children.find(node => node.id === "color-palettes")!;
-const placements: Placement[] = [{ layer: "tokens", nodes: [{ ...color, children: [palettes] }] }];
-const graph = buildUsageGraph({ inventory: { tokens: ["tokens.accent-color", "tokens.status-color"] }, selection: {} });
+const tokenPlacement = catalogFixture<Placement>("packages/designer/src/catalog/ia/themes.json");
+const color = tokenPlacement.nodes.find(node => node.id === "colors")!;
+if (!("children" in color)) throw new Error("fixture.ia.colors");
+const palettes = color.children.find(node => node.id === "colors-actions")!;
+const placements: Placement[] = [{ layer: "themes", nodes: [{ ...color, children: [palettes] }] }];
+const graph = buildUsageGraph({ inventory: { themes: ["themes.primary", "themes.destructive"] }, selection: {} });
 const findings = check({ catalog: smallCatalog, library: emptyLibrary() }).findings.filter(finding => finding.copy).slice(0, 2);
 const size = { width: 1200, height: 800 };
 
@@ -31,9 +31,9 @@ afterEach(() => { cleanup(); localStorage.clear(); window.history.replaceState(n
 it.each(["en", "ar"])("hand-rolls a measured selected Designer page, Explorer, canvas, minimap and zoom in %s", async locale => {
   const { copy, requests } = pseudoStudioCopy(locale);
   const { container } = render(<DesignerPage copy={copy} data={{ placements }} viewSize={size} graph={graph}
-    initialUrl={{ search: "?layer=tokens&node=tokens.accent-color", hash: "" }} />);
+    initialUrl={{ search: "?layer=themes&node=themes.primary", hash: "" }} />);
   await waitFor(() => expect(container.querySelector('[data-studio-control="zoom-reset"]')).not.toBeNull());
-  expect(container.querySelector('[data-selected-leaf="tokens.accent-color"]')).not.toBeNull();
+  expect(container.querySelector('[data-selected-leaf="themes.primary"]')).not.toBeNull();
   expect(container.querySelector('[data-studio-panel="minimap"]')).not.toBeNull();
   expect(container.querySelector('input[type="range"]')).toHaveAttribute("aria-valuetext", "[[st.zhgkbpn8eq]]");
   expect(requests.some(ref => ref.id === "st.gcf87s42d5")).toBe(true);
@@ -43,11 +43,11 @@ it.each(["en", "ar"])("hand-rolls a measured selected Designer page, Explorer, c
 
 it("hand-rolls Inspector field labels, resolved paths, history and structured check messages", () => {
   const { copy } = pseudoStudioCopy();
-  const identity = identityFor(placements, "tokens.accent-color", { root: "rac:Button", source: "foundry", origin: "adopted" });
-  expect(identity.pathIds).toEqual(["color", "color-palettes"]);
+  const identity = identityFor(placements, "themes.primary", { root: "rac:Button", source: "foundry", origin: "adopted" });
+  expect(identity.pathIds).toEqual(["colors", "colors-actions"]);
   const { container } = render(<SystemInspector copy={copy} labels={createRouteStudioLabels(copy)} identity={identity} graph={graph}
     findings={findings} onClose={() => {}} onNavigate={() => {}} canNavigate={() => false}
-    writeHistory={() => [{ index: 1, command: "inspect tokens.accent-color", contentHash: "sha256:fixture", inputs: { key: "<escaped>" } }]} />);
+    writeHistory={() => [{ index: 1, command: "inspect themes.primary", contentHash: "sha256:fixture", inputs: { key: "<escaped>" } }]} />);
   for (const id of ["st.bjwkdahzwm", "st.0t22p7nhjk", "st.1spt59jm79", "st.fzx21xp831", "st.m26wcrg3h2", "st.twm75vj4by", "st.k9eny24qbx", "st.mybqmnwk5s", "st.ehnm0c7e08"]) expect(container).toHaveTextContent(`[[${id}]]`);
   expect(container.querySelectorAll('[data-studio-data-value]').length).toBeGreaterThan(6);
   expect(container.querySelector("escaped")).toBeNull();
@@ -57,7 +57,7 @@ it("hand-rolls Inspector field labels, resolved paths, history and structured ch
 it("hand-rolls the legacy console Inspector through the same resolver and explicit data seam", () => {
   const { copy } = pseudoStudioCopy();
   const library = emptyLibrary();
-  const candidate = buildCandidates({ catalog, library, working: library, slotId: "tokens.accent-color", scope: "slot", target: "tokens.accent-color" }).find(row => row.source === "foundry")!;
+  const candidate = buildCandidates({ catalog, library, working: library, slotId: "themes.primary", scope: "slot", target: "themes.primary" }).find(row => row.source === "shadcn@aria")!;
   expect(candidate).toBeDefined();
   const { container } = render(<Inspector copy={copy} candidate={{ ...candidate, findings }} labels={createRouteStudioLabels(copy)} graph={graph} />);
   expect(container.querySelectorAll('[data-studio-data-value]').length).toBeGreaterThan(0);
@@ -66,10 +66,10 @@ it("hand-rolls the legacy console Inspector through the same resolver and explic
 
 it("hand-rolls Usage labels and retains an exact Need for the unrecorded WL5 producer", () => {
   const { copy } = pseudoStudioCopy();
-  const props = { copy, id: "tokens.accent-color", graph, labels: createRouteStudioLabels(copy).usage!, onNavigate: () => {} };
+  const props = { copy, id: "themes.primary", graph, labels: createRouteStudioLabels(copy).usage!, onNavigate: () => {} };
   const { container } = render(<UsagePanel {...props} />);
   expectOnlyResolvedCopy(container);
-  expect(() => render(<UsagePanel {...props} findings={[{ code: "WL5", subject: "tokens.accent-color", message: "untranslated host diagnostic" }]} />)).toThrow("studio.usage.finding.WL5");
+  expect(() => render(<UsagePanel {...props} findings={[{ code: "WL5", subject: "themes.primary", message: "untranslated host diagnostic" }]} />)).toThrow("studio.usage.finding.WL5");
 });
 
 it("hand-rolls zoom output, reset and Slider spoken values through the existing Writer formatter", () => {

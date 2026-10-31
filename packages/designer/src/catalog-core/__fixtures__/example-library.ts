@@ -1,9 +1,9 @@
 import type { FillDoc, FillMeta, LibraryData, Resolved, LegacySelection, Source } from "../types.js";
 
 /**
- * Hand-written fixture for the consumer id `example`: one colour ramp (violet 400 and 600),
- * two role colours (accent-color.default aliasing the ramp, surface-color.base as a literal with a dark value)
- * and one typeface (body). Used by tests and by Studio previews. Not a real brand.
+ * Hand-written fixture for the consumer id `example`: two theme colours (primary violet 600 with a
+ * violet 400 dark value, background as a literal with a dark value) and one sans font.
+ * Used by tests and by Studio previews. Not a real brand.
  */
 export const EXAMPLE_SOURCE: Source = { id: "example", kind: "consumer", author: "consumer", license: "UNLICENSED", extends: "foundry" };
 
@@ -23,23 +23,16 @@ const ink900 = { colorSpace: "srgb", components: [0.05098, 0.066667, 0.090196], 
 
 export const EXAMPLE_FILLS: readonly FillDoc[] = [
   {
-    $extensions: { "com.clossys.fill": meta("tokens.color-ramp", BASE, "library/fills/tokens.color-ramp.json") },
-    tokens: { "color-ramp": { violet: { "400": { $type: "color", $value: violet400 }, "600": { $type: "color", $value: violet600 } } } },
+    $extensions: { "com.clossys.fill": meta("themes.primary", ROLE, "library/fills/themes.primary.json") },
+    themes: { primary: { default: { $type: "color", $value: violet600, $extensions: { "com.clossys.modes": { dark: violet400 } } } } },
   },
   {
-    $extensions: { "com.clossys.fill": meta("tokens.accent-color", ROLE, "library/fills/tokens.accent-color.json") },
-    tokens: { "accent-color": { default: {
-      $type: "color", $value: "{tokens.color-ramp.violet.600}",
-      $extensions: { "com.clossys.modes": { dark: "{tokens.color-ramp.violet.400}" } },
-    } } },
+    $extensions: { "com.clossys.fill": meta("themes.background", ROLE, "library/fills/themes.background.json") },
+    themes: { background: { default: { $type: "color", $value: white, $extensions: { "com.clossys.modes": { dark: ink900 } } } } },
   },
   {
-    $extensions: { "com.clossys.fill": meta("tokens.surface-color", ROLE, "library/fills/tokens.surface-color.json") },
-    tokens: { "surface-color": { base: { $type: "color", $value: white, $extensions: { "com.clossys.modes": { dark: ink900 } } } } },
-  },
-  {
-    $extensions: { "com.clossys.fill": meta("tokens.typeface", BASE, "library/fills/tokens.typeface.json") },
-    tokens: { typeface: { body: {
+    $extensions: { "com.clossys.fill": meta("themes.font-sans", BASE, "library/fills/themes.font-sans.json") },
+    themes: { "font-sans": { default: {
       $type: "fontFamily", $value: ["Inter", "sans-serif"],
       $extensions: { "com.clossys.font": { kind: "fontsource", package: "example-fonts-inter", version: "5.3.0", weights: [400, 600], styles: ["normal"], license: "OFL-1.1" } },
     } } },
@@ -54,27 +47,19 @@ export const EXAMPLE_SELECTION: LegacySelection = { version: 1, consumer: "examp
 export const EXAMPLE_RESOLVED: Resolved = {
   version: 1, consumer: "example", selectionHash: "fnv1a64:03524439ea8d0b8f",
   members: {
-    "tokens.accent-color.default": {
-      slot: "tokens.accent-color", source: "example", fill: "example/tokens.accent-color", via: "default", $type: "color",
-      value: { light: violet600, dark: violet400 }, css: { light: "#8250DF", dark: "#A371F7" },
-      alias: { light: "tokens.color-ramp.violet.600", dark: "tokens.color-ramp.violet.400" }, emit: "--color-accent",
+    "themes.background.default": {
+      slot: "themes.background", source: "example", fill: "example/themes.background", via: "default", $type: "color",
+      value: { light: white, dark: ink900 }, css: { light: "#FFFFFF", dark: "#0D1117" }, alias: {}, emit: "--background",
     },
-    "tokens.color-ramp.violet.400": {
-      slot: "tokens.color-ramp", source: "example", fill: "example/tokens.color-ramp", via: "default", $type: "color",
-      value: { light: violet400 }, css: { light: "#A371F7" }, alias: {},
-    },
-    "tokens.color-ramp.violet.600": {
-      slot: "tokens.color-ramp", source: "example", fill: "example/tokens.color-ramp", via: "default", $type: "color",
-      value: { light: violet600 }, css: { light: "#8250DF" }, alias: {},
-    },
-    "tokens.surface-color.base": {
-      slot: "tokens.surface-color", source: "example", fill: "example/tokens.surface-color", via: "default", $type: "color",
-      value: { light: white, dark: ink900 }, css: { light: "#FFFFFF", dark: "#0D1117" }, alias: {}, emit: "--color-surface-base",
-    },
-    "tokens.typeface.body": {
-      slot: "tokens.typeface", source: "example", fill: "example/tokens.typeface", via: "default", $type: "fontFamily",
-      value: { light: ["Inter", "sans-serif"] }, css: { light: "\"Inter\", sans-serif" }, alias: {}, emit: "--font-body",
+    "themes.font-sans.default": {
+      slot: "themes.font-sans", source: "example", fill: "example/themes.font-sans", via: "default", $type: "fontFamily",
+      value: { light: ["Inter", "sans-serif"] }, css: { light: "\"Inter\", sans-serif" }, alias: {}, emit: "--font-sans",
       font: { kind: "fontsource", package: "example-fonts-inter", version: "5.3.0", weights: [400, 600], styles: ["normal"], license: "OFL-1.1" },
+    },
+    "themes.primary.default": {
+      slot: "themes.primary", source: "example", fill: "example/themes.primary", via: "default", $type: "color",
+      value: { light: violet600, dark: violet400 }, css: { light: "#8250DF", dark: "#A371F7" },
+      alias: {}, emit: "--primary",
     },
   },
   notices: [],

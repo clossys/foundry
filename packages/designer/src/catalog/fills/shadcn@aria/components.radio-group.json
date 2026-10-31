@@ -112,19 +112,12 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.action-color.default",
-          "tokens.border-color.strong",
-          "tokens.border-width.hairline",
-          "tokens.control-size.mark",
-          "tokens.focus-color.default",
-          "tokens.focus-outline.offset",
-          "tokens.focus-outline.width",
-          "tokens.spacing.lg",
-          "tokens.spacing.sm",
-          "tokens.state-opacity.disabled",
-          "tokens.status-color.danger",
-          "tokens.text-color.on-action"
+        "themes": [
+          "themes.destructive.default",
+          "themes.primary-foreground.default",
+          "themes.primary.default",
+          "themes.ring.default",
+          "themes.spacing.default"
         ]
       },
       "root": "rac:RadioGroup",

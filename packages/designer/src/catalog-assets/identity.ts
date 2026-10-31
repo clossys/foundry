@@ -7,12 +7,12 @@ import type { CatalogData, CatalogRule, DtcgToken, LibraryData, Resolved } from 
 import { AssetValidationError, escapeXml, inspectSvg, safeColor, svgBody, svgViewBox } from './svg.js';
 export const IDENTITY_RULES = ['identity-lockup@1','identity-mark@1','identity-favicon@1','identity-app-icon@1'] as const;
 export type IdentityRuleId = typeof IDENTITY_RULES[number];
-const ADOPT_INPUTS = ['tokens.text-color.primary','tokens.text-color.on-inverse','tokens.surface-color.base','tokens.surface-color.inverse','tokens.accent-color.default','tokens.text-color.on-accent','tokens.typeface.display'] as const;
+const ADOPT_INPUTS = ['themes.foreground.default','themes.background.default','themes.primary.default','themes.primary-foreground.default','themes.font-heading.default'] as const;
 const INPUTS: Record<IdentityRuleId,readonly string[]> = {
  'identity-lockup@1':['assets.lockup.positive',...ADOPT_INPUTS],
  'identity-mark@1':['assets.mark.positive',...ADOPT_INPUTS],
- 'identity-favicon@1':['assets.mark.positive','tokens.text-color.primary','tokens.text-color.on-inverse'],
- 'identity-app-icon@1':['assets.mark.positive','tokens.text-color.primary','tokens.text-color.on-inverse'],
+ 'identity-favicon@1':['assets.mark.positive','themes.foreground.default','themes.background.default'],
+ 'identity-app-icon@1':['assets.mark.positive','themes.foreground.default','themes.background.default'],
 };
 /** Public serializable registration; concrete values are instantiated only during explicit derive. */
 export function identityRuleDefinition(id: string): CatalogRule | undefined {
@@ -21,7 +21,7 @@ export function identityRuleDefinition(id: string): CatalogRule | undefined {
 }
 const string = (profile: Resolved,id: string): string => { const value=profile.members[id]?.value.light; if(typeof value!=='string') throw new AssetValidationError(`missing string library input ${id}`); return value; };
 function ink(profile: Resolved,id: string, dark=false): string { const member=profile.members[id]; if(!member) throw new AssetValidationError(`missing token input ${id}`); return safeColor(cssText(member.$type,(dark ? member.value.dark : member.value.light)??member.value.light)); }
-function tokens(profile: Resolved): IdentityTokenInput { const font=profile.members['tokens.typeface.display']; return {ink:ink(profile,'tokens.text-color.primary'),onInverse:ink(profile,'tokens.text-color.on-inverse'),surfaceBase:ink(profile,'tokens.surface-color.base'),surfaceInverse:ink(profile,'tokens.surface-color.inverse'),accent:ink(profile,'tokens.accent-color.default'),onAccent:ink(profile,'tokens.text-color.on-accent'),fontFamily:font ? cssText(font.$type,font.value.light) : ''}; }
+function tokens(profile: Resolved): IdentityTokenInput { const font=profile.members['themes.font-heading.default']; return {ink:ink(profile,'themes.foreground.default'),onInverse:ink(profile,'themes.background.default'),surfaceBase:ink(profile,'themes.background.default'),surfaceInverse:ink(profile,'themes.foreground.default'),accent:ink(profile,'themes.primary.default'),onAccent:ink(profile,'themes.primary-foreground.default'),fontFamily:font ? cssText(font.$type,font.value.light) : ''}; }
 function normalizeGenerated(svg: string): string { const result=svg.replace(/style="color:([^";]+)"/g,(_,color:string)=>`color="${escapeXml(safeColor(color))}"`); inspectSvg(result); return result; }
 function named(svg: string,name: string,favicon=false): string { const elements=inspectSvg(svg,{favicon}); const attrs=elements[0]!.attrs; const existing=attrs['aria-label']; if(existing) return svg.replace(/\saria-label=(?:"[^"]*"|'[^']*')/,` aria-label="${escapeXml(name)}"`); return svg.replace(/^\s*<svg\b/,`<svg aria-label="${escapeXml(name)}"`); }
 /** Explicit consumer creation. Name and artwork become authored seed members, never direction fields. */
@@ -40,8 +40,8 @@ export function createConsumerIdentitySeeds(catalog: CatalogData, library: Libra
 function starterTokens(profile: Resolved): IdentityTokenInput {
  const preset=defaultPreset(sourceRoster);
  const pick=(id: string): string => { if(profile.members[id]) return ink(profile,id); const [layer,leaf,...member]=id.split('.'); const value=presetValues(tokenContract,preset,`${layer}.${leaf}`)[member.join('.')]?.light; if(value===undefined) throw new AssetValidationError(`missing token input ${id}`); return safeColor(value); };
- const font=profile.members['tokens.typeface.display'];
- return {ink:pick('tokens.text-color.primary'),onInverse:pick('tokens.text-color.on-inverse'),surfaceBase:pick('tokens.surface-color.base'),surfaceInverse:pick('tokens.surface-color.inverse'),accent:pick('tokens.accent-color.default'),onAccent:pick('tokens.text-color.on-accent'),fontFamily:font ? cssText(font.$type,font.value.light) : 'sans-serif'};
+ const font=profile.members['themes.font-heading.default'];
+ return {ink:pick('themes.foreground.default'),onInverse:pick('themes.background.default'),surfaceBase:pick('themes.background.default'),surfaceInverse:pick('themes.foreground.default'),accent:pick('themes.primary.default'),onAccent:pick('themes.primary-foreground.default'),fontFamily:font ? cssText(font.$type,font.value.light) : 'sans-serif'};
 }
 /** The brand name a starter writes: the label an existing brand member carries, else the library id. */
 function brandName(library: LibraryData): string {
@@ -136,8 +136,8 @@ export function instantiateIdentityRuleFromResolved(profile: Resolved, id: Ident
  else {
   const seed=string(profile,'assets.mark.positive'); inspectSvg(seed);
   if(id==='identity-mark@1') { const variants=adopted(seed,profile).variants; put('reversed',variants.dark); put('mono',variants.mono); }
-  if(id==='identity-favicon@1') put('vector',identityPlateSvg(seed,ink(profile,'tokens.text-color.primary'),ink(profile,'tokens.text-color.on-inverse'),true));
-  if(id==='identity-app-icon@1') { const bg=ink(profile,'tokens.text-color.primary'),fg=ink(profile,'tokens.text-color.on-inverse'); put('standard',badge(seed,bg,fg,false));put('maskable',badge(seed,bg,fg,true)); }
+  if(id==='identity-favicon@1') put('vector',identityPlateSvg(seed,ink(profile,'themes.foreground.default'),ink(profile,'themes.background.default'),true));
+  if(id==='identity-app-icon@1') { const bg=ink(profile,'themes.foreground.default'),fg=ink(profile,'themes.background.default'); put('standard',badge(seed,bg,fg,false));put('maskable',badge(seed,bg,fg,true)); }
  }
  return {rule:{...identityRuleDefinition(id)!,values},inputs:[...inputs]};
 }

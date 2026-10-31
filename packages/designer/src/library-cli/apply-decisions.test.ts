@@ -17,14 +17,14 @@ import type { CompositeCatalogData, CompositeLibraryData } from "../catalog-core
 /** Existing synthetic observations only; this corpus proves plumbing, never runtime conformance. */
 function sixRows() {
   const input = componentIntegration();
-  const valueRows = ["tokens.text-color", "tokens.surface-color", "tokens.focus-color"].map(slot => {
+  const valueRows = ["themes.foreground", "themes.background", "themes.ring"].map(slot => {
     const fill = input.library.values.fills.find(doc => doc.$extensions["com.clossys.fill"].slot === slot)!;
     return { slot, kind: "author" as const, value: Object.fromEntries(Object.entries(flatten(fill)).map(([id, token]) => [id.slice(slot.length + 1), tokenContent(token)])), note: "Synthetic fixture literal" };
   });
-  input.catalog.values = { ...input.catalog.values, rules: [{ id: "synthetic-body@1", slot: "tokens.body-size", inputs: ["tokens.control-size.mark"], values: { default: tokenContent(flatten(input.library.values.fills.find(doc => doc.$extensions["com.clossys.fill"].slot === "tokens.body-size")!)["tokens.body-size.default"]!) } }] };
+  input.catalog.values = { ...input.catalog.values, rules: [{ id: "synthetic-body@1", slot: "themes.font-sans", inputs: ["themes.spacing.default"], values: { default: tokenContent(flatten(input.library.values.fills.find(doc => doc.$extensions["com.clossys.fill"].slot === "themes.font-sans")!)["themes.font-sans.default"]!) } }] };
   const rows: LibraryDecision[] = [...valueRows,
-    { slot: "tokens.control-size", kind: "adopt", source: "foundry", note: "Synthetic candidate" },
-    { slot: "tokens.body-size", kind: "derive", rule: "synthetic-body@1", reads: ["tokens.control-size.mark"], note: "Synthetic registered rule" },
+    { slot: "themes.spacing", kind: "adopt", source: "tailwind-default", note: "Synthetic candidate" },
+    { slot: "themes.font-sans", kind: "derive", rule: "synthetic-body@1", reads: ["themes.spacing.default"], note: "Synthetic registered rule" },
     { slot: "components.button", kind: "adopt", source: "test-kit", fill: "test-kit/components.button", note: "Synthetic package pointer" },
   ];
   return { ...input, rows };
@@ -42,7 +42,7 @@ describe("offline library decisions", () => {
   it("validates closed rows, layer kinds, unique slots and safe member/file names", () => {
     const { rows } = sixRows();
     expect(isLibraryDecisions(rows)).toBe(true);
-    for (const bad of [[...rows, rows[0]], [{ ...rows[0], typo: true }], [{ ...rows[0], note: "" }], [{ slot: "tokens.body-size", kind: "compose", rule: "x", reads: [], note: "x" }], [{ slot: "tokens.body-size", kind: "author", value: { constructor: { $type: "number", $value: 1 } }, note: "x" }]]) expect(isLibraryDecisions(bad)).toBe(false);
+    for (const bad of [[...rows, rows[0]], [{ ...rows[0], typo: true }], [{ ...rows[0], note: "" }], [{ slot: "themes.font-sans", kind: "compose", rule: "x", reads: [], note: "x" }], [{ slot: "themes.font-sans", kind: "author", value: { constructor: { $type: "number", $value: 1 } }, note: "x" }]]) expect(isLibraryDecisions(bad)).toBe(false);
     expect(isLibraryDecisions([{ ...rows[0], kind: "remove" }])).toBe(false);
   });
   it("builds one six-operation changeset, checks the synthetic result, and reapplies with an identical hash", () => {
@@ -92,7 +92,7 @@ describe("offline library decisions", () => {
     const duplicate = { ...catalog, components: { ...catalog.components, fills: [...catalog.components.fills, ...catalog.components.fills] } };
     expect(() => applyDecisions(duplicate, library, rows)).toThrow(/candidate/);
     expect(library.components.fills).toEqual([]);
-    expect(() => applyDecisions(catalog, library, [{ slot: "tokens.unknown", kind: "adopt", source: "foundry", note: "Missing slot" }])).toThrow(/unknown slot/);
+    expect(() => applyDecisions(catalog, library, [{ slot: "themes.unknown", kind: "adopt", source: "foundry", note: "Missing slot" }])).toThrow(/unknown slot/);
   });
   it("persists via L-2, round trips six decisions, rejects stale CAS and invalid checks without writes", async () => {
     const { catalog, library, rows, componentOptions } = sixRows();
@@ -107,7 +107,7 @@ describe("offline library decisions", () => {
       const result = await writeCompositeLibrary(root, catalog, change, componentOptions);
       expect(compositeLibraryHash(await readLibrary(root, catalog))).toBe(compositeLibraryHash(result));
       await expect(writeCompositeLibrary(root, catalog, change, componentOptions)).rejects.toThrow(/baseHash/);
-      const invalid = decisionChangeSet(catalog, result, [{ slot: "tokens.text-color", kind: "author", value: { primary: { $type: "color", $value: "#ffffff" } }, note: "Synthetic failing contrast" }]);
+      const invalid = decisionChangeSet(catalog, result, [{ slot: "themes.foreground", kind: "author", value: { primary: { $type: "color", $value: "#ffffff" } }, note: "Synthetic failing contrast" }]);
       await expect(writeCompositeLibrary(root, catalog, invalid, componentOptions)).rejects.toThrow(/check failed/);
       expect(compositeLibraryHash(await readLibrary(root, catalog))).toBe(compositeLibraryHash(result));
       const inode = (await fs.stat(root)).ino;

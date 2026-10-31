@@ -118,7 +118,7 @@
       "context": "admin.writer.sections.pagination.rangeSummaryMessage",
       "status": "draft",
       "origin": "authored",
-      "text": "Showing {start, number, integer}\u2013{end, number, integer} of {total, number, integer}",
+      "text": "Showing {start, number, integer}–{end, number, integer} of {total, number, integer}",
       "args": [
         {
           "name": "start",
@@ -816,7 +816,7 @@
       "context": "admin.writer.sections.dataTable.pivotColumnMessage",
       "status": "draft",
       "origin": "authored",
-      "text": "{axis} \u00b7 {measure}",
+      "text": "{axis} · {measure}",
       "args": [
         {
           "name": "axis",
@@ -834,7 +834,7 @@
       "context": "admin.writer.sections.dataTable.pivotValueMessage",
       "status": "draft",
       "origin": "authored",
-      "text": "{empty, select, true {\u2014} other {{value}}}",
+      "text": "{empty, select, true {—} other {{value}}}",
       "args": [
         {
           "name": "empty",
@@ -1022,7 +1022,7 @@
       "context": "admin.writer.sections.dataTable.filter.text",
       "status": "draft",
       "origin": "authored",
-      "text": "{operation} \u201c{value}\u201d",
+      "text": "{operation} “{value}”",
       "args": [
         {
           "name": "operation",
@@ -1040,7 +1040,7 @@
       "context": "admin.writer.sections.dataTable.filter.range",
       "status": "draft",
       "origin": "authored",
-      "text": "{minimum} \u2013 {maximum}",
+      "text": "{minimum} – {maximum}",
       "args": [
         {
           "name": "minimum",
@@ -1916,7 +1916,7 @@
     {
       "recordId": "st.sm9bq8fv8f",
       "source": "common-labels.r1.en.json",
-      "sourceContext": "designer.item.tokens.density"
+      "sourceContext": "admin.writer.sections.dataTable.densityLabel"
     },
     {
       "recordId": "st.t029hg04zc",

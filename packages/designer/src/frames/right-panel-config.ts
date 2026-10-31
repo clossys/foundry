@@ -13,7 +13,7 @@ const inspectorLength = (property: "--ui-layout-inspector-w" | "--ui-layout-insp
 /**
  * The AppFrame right panel's shipped size preset: the bounds the frame specimen
  * passes as `rightPanel.min`, `rightPanel.max` and `rightPanel.defaultValue`.
- * The values are the `tokens.region-width` inspector members, read from the
+ * The values are the `--ui-layout-inspector-*` style variables, read from the
  * token source rather than restated here. Designer library columns read their
  * maximum width from this one object rather than copying its numbers.
  */

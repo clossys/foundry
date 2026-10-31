@@ -16,7 +16,7 @@ it("hand-rolls the actual resolved count, all check names and real structured fi
   expect(findings.length).toBeGreaterThan(0);
   const summary: MatrixSummary = { total: 5, resolved: 2, errors: findings.length, notices: 0,
     categories: [{ id: "contract", supported: true, codes: Array.from({ length: 10 }, (_, index) => `C${index + 1}`), errors: findings.length, notices: 0 }],
-    issues: findings.slice(0, 3).map(finding => ({ finding, slotId: "tokens.surface-color" })) };
+    issues: findings.slice(0, 3).map(finding => ({ finding, slotId: "themes.background" })) };
   const { container } = render(<Scorecard copy={copy} labels={createRouteStudioLabels(copy)} summary={summary} onClose={() => {}} onIssue={() => {}} />);
   expect(container).toHaveTextContent("[[st.aqdaz871km]]");
   expect(requests).toContainEqual({ id: "st.aqdaz871km", locale: "en", values: { resolved: 2, total: 5 } });

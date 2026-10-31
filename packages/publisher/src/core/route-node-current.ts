@@ -64,8 +64,7 @@ function inspect<Node>(input: NodeCurrentInput<Node>) {
     materialization: materialization?.digest ?? null, query: query ?? null, snapshot: prepared.assembly.snapshot,
     original: { profile: resolve(original.engine), manifest: original.ports.manifest, identity: original.identity, stage: original.stage ?? null,
       stageMeasurements: original.stageMeasurements ?? null, query: original.query ?? null, css: original.css, assets: original.assets,
-      themes: original.themes, states: original.states, runner: original.runner ?? null,
-      breakpointPixels: original.breakpointPixels ?? null, breakpointBasis: original.breakpointBasis ?? null } });
+      themes: original.themes, states: original.states, runner: original.runner ?? null } });
   return { digest, snapshot: prepared.assembly.snapshot.hash };
 }
 

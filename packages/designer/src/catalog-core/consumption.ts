@@ -1,5 +1,5 @@
 /** Static consumption evidence. Descriptor inventories and source observations remain distinct. */
-export interface ConsumptionReads { tokens: readonly string[]; assets: readonly string[]; components: readonly string[] }
+export interface ConsumptionReads { themes: readonly string[]; assets: readonly string[]; components: readonly string[] }
 export interface ConsumptionToken { id: string; contract: { emit?: Readonly<Record<string, string>> } }
 export interface ConsumptionBlocker { code: string; value?: string; message: string }
 export interface ConsumptionFill {
@@ -22,7 +22,7 @@ export interface ConsumptionReceipt {
   issues: readonly ConsumptionBlocker[];
 }
 export interface ConsumptionInput {
-  tokens: readonly ConsumptionToken[]; assets: readonly { id: string }[]; components: readonly { id: string }[];
+  themes: readonly ConsumptionToken[]; assets: readonly { id: string }[]; components: readonly { id: string }[];
   fills: ConsumptionFill[]; sourceScans: ConsumptionSourceScan[];
   themeCss: string; foundryCoverage: readonly ConsumptionCoverage[]; shadcnReceipt: readonly ConsumptionReceipt[];
 }
@@ -31,14 +31,14 @@ export interface ConsumptionFinding {
   fill: string; layer?: keyof ConsumptionReads; reads?: readonly string[];
 }
 const sorted = (values: readonly string[]): string[] => [...new Set(values)].sort();
-const empty = (): ConsumptionReads => ({ tokens: [], assets: [], components: [] });
-const layers = ["tokens", "assets", "components"] as const;
-const union = (a: ConsumptionReads, b: ConsumptionReads): ConsumptionReads => ({ tokens: sorted([...a.tokens, ...b.tokens]), assets: sorted([...a.assets, ...b.assets]), components: sorted([...a.components, ...b.components]) });
+const empty = (): ConsumptionReads => ({ themes: [], assets: [], components: [] });
+const layers = ["themes", "assets", "components"] as const;
+const union = (a: ConsumptionReads, b: ConsumptionReads): ConsumptionReads => ({ themes: sorted([...a.themes, ...b.themes]), assets: sorted([...a.assets, ...b.assets]), components: sorted([...a.components, ...b.components]) });
 
 /** Theme aliases are followed transitively; self references retain their underlying consumer property. */
-export function scanComponentReads(content: string, tokens: readonly ConsumptionToken[], themeCss: string) {
+export function scanComponentReads(content: string, themes: readonly ConsumptionToken[], themeCss: string) {
   const memberByProperty = new Map<string, string[]>();
-  for (const token of tokens) for (const [member, property] of Object.entries(token.contract.emit ?? {})) {
+  for (const token of themes) for (const [member, property] of Object.entries(token.contract.emit ?? {})) {
     memberByProperty.set(property, [...(memberByProperty.get(property) ?? []), `${token.id}.${member}`]);
   }
   const aliases = new Map<string, string[]>();
@@ -84,7 +84,7 @@ export function scanComponentReads(content: string, tokens: readonly Consumption
   }
   const tokenMembers = sorted([...properties].flatMap(property => memberByProperty.get(property) ?? []));
   return {
-    tokens: sorted(tokens.filter(token => tokenMembers.some(member => member.startsWith(`${token.id}.`))).map(token => token.id)),
+    themes: sorted(themes.filter(token => tokenMembers.some(member => member.startsWith(`${token.id}.`))).map(token => token.id)),
     assets: sorted([...content.matchAll(/\bassets\.[a-z][a-z0-9-]*/g)].map(match => match[0])),
     tokenMembers, properties: sorted([...properties]), utilities: sorted([...utilities]),
   };
@@ -107,14 +107,14 @@ export function componentCandidateIntent(slot: string) {
 }
 
 export function buildComponentsConsumption(input: ConsumptionInput) {
-  const inventory = { tokens: sorted(input.tokens.map(row => row.id)), assets: sorted(input.assets.map(row => row.id)), components: sorted(input.components.map(row => row.id)) };
+  const inventory = { themes: sorted(input.themes.map(row => row.id)), assets: sorted(input.assets.map(row => row.id)), components: sorted(input.components.map(row => row.id)) };
   const findings: ConsumptionFinding[] = [];
   const scans = new Map(input.sourceScans.map(scan => [scan.fill, scan]));
   const fills = [...input.fills].sort((a, b) => a.id.localeCompare(b.id)).map(fill => {
     const source = scans.get(fill.id);
-    const scanned = scanComponentReads(source?.files.map(file => file.content).join("\n") ?? "", input.tokens, input.themeCss);
-    const declaredReads: ConsumptionReads = { tokens: sorted(fill.reads.tokens), assets: sorted(fill.reads.assets), components: sorted([...fill.reads.components, ...fill.composes]) };
-    const scannedReads: ConsumptionReads = { tokens: scanned.tokens, assets: scanned.assets, components: sorted(source?.components ?? []) };
+    const scanned = scanComponentReads(source?.files.map(file => file.content).join("\n") ?? "", input.themes, input.themeCss);
+    const declaredReads: ConsumptionReads = { themes: sorted(fill.reads.themes), assets: sorted(fill.reads.assets), components: sorted([...fill.reads.components, ...fill.composes]) };
+    const scannedReads: ConsumptionReads = { themes: scanned.themes, assets: scanned.assets, components: sorted(source?.components ?? []) };
     const effectiveReads = union(declaredReads, scannedReads);
     const missingDeclaredReads = empty();
     for (const layer of layers) {
@@ -133,7 +133,7 @@ export function buildComponentsConsumption(input: ConsumptionInput) {
       blockers: [...(fill.blockers ?? [])], conforms: [...fill.conforms], evidence: [...fill.evidence],
     };
   });
-  const unread = (kind: "declaredReads" | "scannedReads" | "effectiveReads") => inventory.tokens.filter(token => !fills.some(fill => fill[kind].tokens.includes(token)));
+  const unread = (kind: "declaredReads" | "scannedReads" | "effectiveReads") => inventory.themes.filter(token => !fills.some(fill => fill[kind].themes.includes(token)));
   const reverseComposes = Object.fromEntries(inventory.components.map(slot => [slot, {
     declared: fills.filter(fill => fill.declaredReads.components.includes(slot)).map(fill => fill.id),
     scanned: fills.filter(fill => fill.scannedReads.components.includes(slot)).map(fill => fill.id),
@@ -169,10 +169,10 @@ export function buildComponentsConsumption(input: ConsumptionInput) {
 
 /** Surface contracts are authored once per slot, never per rendered element. */
 export interface SurfaceReadContract { id: string; allowedReads: Partial<ConsumptionReads>; allowedComposes?: readonly string[] }
-export function scanSurfaceReads(files: readonly { path: string; content: string }[], slot: SurfaceReadContract, tokens: readonly ConsumptionToken[], themeCss: string) {
+export function scanSurfaceReads(files: readonly { path: string; content: string }[], slot: SurfaceReadContract, themes: readonly ConsumptionToken[], themeCss: string) {
   return files.map(file => {
-    const scanned = scanComponentReads(file.content, tokens, themeCss);
-    const missing = scanned.tokens.filter(id => !(slot.allowedReads.tokens ?? []).includes(id));
+    const scanned = scanComponentReads(file.content, themes, themeCss);
+    const missing = scanned.themes.filter(id => !(slot.allowedReads.themes ?? []).includes(id));
     const unknown = [...file.content.matchAll(/var\(\s*(--[a-zA-Z0-9-]+)/g)].map(match => match[1]!).filter(property => !scanned.properties.includes(property));
     return { file: file.path, slot: slot.id, ...scanned, findings: [
       ...(missing.length ? [{ code: "missing-declared-reads", reads: missing }] : []),

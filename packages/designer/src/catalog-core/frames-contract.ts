@@ -1,4 +1,5 @@
 import type { FrameStageContract } from "./body-substrate.js";
+import type { TailwindBreakpoint } from "./breakpoints.js";
 /** A frame owns page chrome or an unanchored overlay, never section content. */
 export interface LandmarkSpec {
   slot: string;
@@ -31,10 +32,10 @@ export interface FrameContract {
     values?: readonly string[];
   }[];
   rendering: "server" | "client";
-  breakpoints: readonly `tokens.breakpoint.${string}`[];
-  layers: readonly `tokens.z-index.${string}`[];
+  /** Tailwind screens the frame adapts at; fixed, never themes leaves. */
+  breakpoints: readonly TailwindBreakpoint[];
   allowedReads: {
-    tokens: readonly `tokens.${string}`[];
+    themes: readonly `themes.${string}`[];
     assets: readonly `assets.${string}`[];
     /** Canonical repository source paths of permitted package-private modules; never consumer assets. */
     privateInternal?: readonly string[];

@@ -12,9 +12,9 @@ const leaves = (node: PlacementNode): readonly string[] => "leaves" in node ? no
  * query, provider descriptors and records exercise joins only; nothing here is a
  * captured provider, selected runtime or rendered qualification. */
 export function syntheticDerivedRoute(compiled: CompiledRegisteredRoute) {
-  const engine = compiled.input, profile = resolve(engine), catalog = loadBuildCatalog(), layer = "tokens" as const;
+  const engine = compiled.input, profile = resolve(engine), catalog = loadBuildCatalog(), layer = "themes" as const;
   const base = syntheticRoute();
-  const { layout: _layout, ...registered } = { ...base.composition.binding, context: { consumer: profile.consumer, medium: "web" as const }, body: { kind: "canvas" as const, source: { kind: "derived" as const, query: DESIGNER_LAYER_BOARDS_QUERY }, boards: [], arrangement: { kind: "grid" as const, columns: 1, gap: { x: 0, y: 0 } }, collapseBelow: "tokens.breakpoint.tablet" as const } };
+  const { layout: _layout, ...registered } = { ...base.composition.binding, context: { consumer: profile.consumer, medium: "web" as const }, body: { kind: "canvas" as const, source: { kind: "derived" as const, query: DESIGNER_LAYER_BOARDS_QUERY }, boards: [], arrangement: { kind: "grid" as const, columns: 1, gap: { x: 0, y: 0 } }, collapseBelow: "md" as const } };
   const route: RouteRegistration = { ...base, composition: { ...base.composition, binding: registered } };
   const registry: RouteRegistry = { version: 1, consumer: profile.consumer, routes: [route] };
   const placement = catalog.placements.find(value => value.layer === layer)!;

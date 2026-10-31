@@ -2,7 +2,7 @@ import type { InstanceFinding, InstanceRegistries } from "../../../core/instance
 import { getEffectiveLayoutContract } from "../../../layouts/resolve.js";
 import type { PublisherPipelineItem, PublishStageStatus } from "../pipeline.js";
 
-export const ASSEMBLY_OWNERS = ["Tokens", "Components", "Sections", "Frames", "Layouts", "Content", "Format"] as const;
+export const ASSEMBLY_OWNERS = ["Themes", "Components", "Sections", "Frames", "Layouts", "Content", "Format"] as const;
 export type AssemblyOwner = typeof ASSEMBLY_OWNERS[number];
 /** The host resolves its own Designer routes; Publisher never constructs query routes. */
 export interface AssemblyOwnerTarget {
@@ -31,12 +31,12 @@ export function deriveItemAssembly(item: PublisherPipelineItem, registries: Inst
     const leaf = registries.layouts.find(leaf => leaf.id === binding.layout.leaf);
     if (leaf) {
       const contract = getEffectiveLayoutContract(leaf, binding.layout.config, binding.layout.members);
-      // These are concrete references. allowedReads is only permission, not dependency evidence.
-      tokenRefs = [...new Set(contract.reflow.map(step => step.at))];
+      // Breakpoints are Tailwind's fixed screens, not theme leaves; the theme reads are the permitted leaves.
+      tokenRefs = [...new Set(contract.allowedReads)];
       layoutResolved = true;
     }
   } catch { /* LK2 retains the refusal; do not recover a different layout config. */ }
-  const missingTokens = tokenRefs.filter(id => !registries.tokens.some(token => token.id === id));
+  const missingTokens = tokenRefs.filter(id => !registries.themes.some(token => token.id.startsWith(`${id}.`)));
   const stage = (name: string) => item.stages.find(stage => stage.name === name);
   const node = (owner: AssemblyOwner, references: readonly string[], status: PublishStageStatus, summary: string, detail: string, related: readonly InstanceFinding[] = []): AssemblyNode =>
     ({ owner, references, status, summary, detail, findings: related, instanceId: binding.instanceId });
@@ -58,9 +58,9 @@ export function deriveItemAssembly(item: PublisherPipelineItem, registries: Inst
     "Typed reference bindings only; placeholder references do not qualify audience content" +
     (hostContent.length ? " · Frame host content required-slot, value and hash verification pending" : ""));
   return [
-    node("Tokens", tokenRefs, missingTokens.length ? "failed" : layoutResolved && tokenRefs.length ? "passed" : "pending",
-      missingTokens.length ? `${missingTokens.length} missing token references` : `${tokenRefs.length} referenced breakpoint tokens`,
-      !layoutResolved ? "Effective layout unavailable; token references cannot be derived" : missingTokens.length ? missingTokens.join(", ") : "Registration only; renderer reads are checked by LK11, rendered values remain unverified"),
+    node("Themes", tokenRefs, missingTokens.length ? "failed" : layoutResolved && tokenRefs.length ? "passed" : "pending",
+      missingTokens.length ? `${missingTokens.length} missing theme references` : `${tokenRefs.length} referenced theme leaves`,
+      !layoutResolved ? "Effective layout unavailable; theme references cannot be derived" : missingTokens.length ? missingTokens.join(", ") : "Registration only; renderer reads are checked by LK11, rendered values remain unverified"),
     node("Components", [], "pending", "Component inputs not supplied", "The instance contract supplies no component dependency graph; no component edges or qualification are inferred"),
     fromStage("Sections", "Fills", sections, `${fills.length} section fills`, "Consumer fill checks only; section runtime qualification is not supplied"),
     fromStage("Frames", "Frame", [binding.frame.leaf, ...(binding.frame.config ? [binding.frame.config] : [])], binding.frame.leaf, "Consumer frame binding; runtime qualification is not supplied"),

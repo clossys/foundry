@@ -37,7 +37,7 @@ describe("document frame catalog registration", () => {
       rendering: "server",
       breakpoints: [],
       layers: [],
-      allowedReads: { tokens: [], assets: [] },
+      allowedReads: { themes: [], assets: [] },
       composes: ["frames.site-shell", "frames.app-shell", "frames.auth-shell"],
     });
   });

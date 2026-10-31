@@ -78,8 +78,8 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.spacing"
+        "themes": [
+          "themes.spacing"
         ]
       },
       "root": "rac:Form",

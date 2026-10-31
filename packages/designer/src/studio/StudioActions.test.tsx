@@ -12,7 +12,7 @@ const copyLabels = { openIn: "Open in", chooseTarget: "Choose target", copyPromp
 afterEach(() => { cleanup(); vi.restoreAllMocks(); localStorage.clear(); });
 function mount(props: Partial<StudioActionsProps> = {}) {
   const notice = vi.fn(); const launch = vi.fn<NonNullable<StudioActionsProps["launch"]>>(() => "dispatched" as const);
-  render(<StudioProvider catalog={smallCatalog} adapter={adapter} labels={labels} initialSlotId="tokens.surface-color"><StudioTitle title="Designer" /><StudioActions projectPath="/workspace/example" taskPrompt="Explain this item" viewHref="https://example.test/designer#studio-layer=tokens" openWithTargets={targets} labels={copyLabels} onNotice={notice} launch={launch} {...props} /></StudioProvider>);
+  render(<StudioProvider catalog={smallCatalog} adapter={adapter} labels={labels} initialSlotId="themes.background"><StudioTitle title="Designer" /><StudioActions projectPath="/workspace/example" taskPrompt="Explain this item" viewHref="https://example.test/designer#studio-layer=themes" openWithTargets={targets} labels={copyLabels} onNotice={notice} launch={launch} {...props} /></StudioProvider>);
   return { notice, launch };
 }
 it("renders a title and split action with no launch or copy before activation", () => {
@@ -23,7 +23,7 @@ it("launches only on activation using the latest selected context and remembers 
   const user = userEvent.setup(), { launch } = mount(); await user.click(screen.getByRole("button", { name: "Choose target" }));
   await user.click(screen.getByRole("menuitem", { name: "Codex" }));
   expect(launch).toHaveBeenCalledTimes(1); const url = new URL(launch.mock.calls[0]![0]);
-  expect(url.protocol).toBe("codex:"); expect(url.searchParams.get("path")).toBe("/workspace/example"); expect(url.searchParams.get("prompt")).toContain("Selected item: tokens.surface-color");
+  expect(url.protocol).toBe("codex:"); expect(url.searchParams.get("path")).toBe("/workspace/example"); expect(url.searchParams.get("prompt")).toContain("Selected item: themes.background");
   expect(localStorage.getItem("foundry.studio.open-target")).toBe("codex"); expect(screen.getByRole("button", { name: "Open in Codex" })).toBeVisible();
 });
 it.each(["unavailable", "failed"] as const)("copies and submits a frame notice only when the configured launcher reports %s", async result => {
@@ -35,7 +35,7 @@ it("does not claim an unknown browser dispatch opened the app, and keeps explici
   const user = userEvent.setup(), copy = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(); const { notice } = mount();
   await user.click(screen.getByRole("button", { name: "Open in Claude Code" })); expect(notice).not.toHaveBeenCalled(); expect(copy).not.toHaveBeenCalled();
   await user.click(screen.getByRole("button", { name: "Choose target" })); await user.click(screen.getByRole("menuitem", { name: "Copy link to this view" }));
-  expect(copy).toHaveBeenCalledWith("https://example.test/designer#studio-layer=tokens"); await waitFor(() => expect(notice).toHaveBeenCalledWith({ kind: "link-copied" }));
+  expect(copy).toHaveBeenCalledWith("https://example.test/designer#studio-layer=themes"); await waitFor(() => expect(notice).toHaveBeenCalledWith({ kind: "link-copied" }));
 });
 it("supports the compact keyboard menu and reports clipboard rejection honestly", async () => {
   const user = userEvent.setup(); vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(new Error("denied")); const { notice } = mount({ compact: true });
@@ -52,8 +52,8 @@ it("handles unavailable localStorage, unknown saved IDs and copy-only targets", 
 });
 it("uses an exact candidate prompt override for target dispatch and fallback copy without routing text", async () => {
   const user = userEvent.setup(); const copy = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
-  const prompt = 'Create a candidate\n{"consumer":"sample","slot":"tokens.surface-color"}';
-  const context = { projectPath: "/workspace/private-route", taskPrompt: prompt, prompt, layer: "tokens" as const, selectedId: "tokens.surface-color" };
+  const prompt = 'Create a candidate\n{"consumer":"sample","slot":"themes.background"}';
+  const context = { projectPath: "/workspace/private-route", taskPrompt: prompt, prompt, layer: "themes" as const, selectedId: "themes.background" };
   const href = vi.fn(() => "editor:open");
   mount({ promptContext: context, openWithTargets: [{ id: "editor", label: "Editor", href }], launch: () => "unavailable" });
   await user.click(screen.getByRole("button", { name: "Open in Editor" }));

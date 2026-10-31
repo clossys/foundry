@@ -6,7 +6,7 @@ import { checkBoardColumns, rosterOffers, sourceRoster } from "./token-contract.
 describe("library roster presentation contract", () => {
   it("offers only Custom token proposals, preserving historical source data", () => {
     const catalog = loadCatalog();
-    for (const slot of catalog.slots.filter(slot => slot.layer === "tokens")) {
+    for (const slot of catalog.slots.filter(slot => slot.layer === "themes")) {
       expect(libraryRoster(slot.layer, slot.id).map(entry => entry.id)).toEqual(["custom"]);
     }
     expect(catalog.sources.some(source => source.id === "tailwind-default")).toBe(true);
@@ -32,8 +32,8 @@ describe("library roster presentation contract", () => {
       expect(roster.filter(id => never.has(id)), slot.id).toEqual([]);
       expect(libraryRoster(slot.layer, slot.id).some(entry => entry.role === "reference"), slot.id).toBe(false);
     }
-    expect(libraryColumns("tokens", ["tokens.color-ramp"], ["tailwind-default", "foundry", "example"], "example").map(column => column.source)).toEqual(["example"]);
-    expect(libraryColumns("tokens", ["tokens.color-ramp"], ["tailwind-default"], "example")).toEqual([]);
+    expect(libraryColumns("themes", ["themes.background"], ["tailwind-default", "foundry", "example"], "example").map(column => column.source)).toEqual(["example"]);
+    expect(libraryColumns("themes", ["themes.background"], ["tailwind-default"], "example")).toEqual([]);
     expect(libraryColumns("assets", ["assets.icon-home", "assets.icon-check"], ["lucide", "phosphor", "example"], "example").map(column => column.source)).toEqual(["lucide", "phosphor", "example"]);
     expect(libraryColumns("components", ["components.button"], ["base-ui", "rac-starter", "heroui-v3"], "example")).toEqual([]);
     expect(libraryColumns("components", ["components.button"], [], "example")).toEqual([]);
@@ -64,17 +64,17 @@ describe("library roster presentation contract", () => {
 
   it("compares and resets exact catalog baseline tokens without mutating input", () => {
     const catalog = loadCatalog();
-    const baseline = tokenBaseline(catalog, "tokens.font-weight", "normal");
+    const baseline = tokenBaseline(catalog, "themes.shadow", "md");
     expect(baseline?.source).toBe("tailwind-default");
     expect(baseline?.pin?.version).toBe("4.3.3");
-    expect(baseline?.token.$value).toBe(400);
-    expect(tokenBaseline(catalog, "tokens.font-weight", "normal", baseline?.token)?.differs).toBe(false);
-    expect(tokenBaseline(catalog, "tokens.font-weight", "normal", { $type: "fontWeight", $value: 401 })?.differs).toBe(true);
+    expect(baseline?.token.$value).toBe("0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)");
+    expect(tokenBaseline(catalog, "themes.shadow", "md", baseline?.token)?.differs).toBe(false);
+    expect(tokenBaseline(catalog, "themes.shadow", "md", { $type: "shadow", $value: "none" })?.differs).toBe(true);
     const before = structuredClone(catalog);
-    const reset = tokenBaselineReset(catalog, "tokens.font-weight", "normal");
-    expect(reset).toEqual({ op: "adopt", slot: "tokens.font-weight", source: "tailwind-default", members: ["tokens.font-weight.normal"] });
+    const reset = tokenBaselineReset(catalog, "themes.shadow", "md");
+    expect(reset).toEqual({ op: "adopt", slot: "themes.shadow", source: "tailwind-default", members: ["themes.shadow.md"] });
     expect(catalog).toEqual(before);
-    expect(tokenBaseline(catalog, "tokens.action-color", "made-up")).toBeUndefined();
-    expect(tokenBaselineReset(catalog, "tokens.action-color", "made-up")).toBeUndefined();
+    expect(tokenBaseline(catalog, "themes.primary", "made-up")).toBeUndefined();
+    expect(tokenBaselineReset(catalog, "themes.primary", "made-up")).toBeUndefined();
   });
 });

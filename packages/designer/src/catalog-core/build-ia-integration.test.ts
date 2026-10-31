@@ -11,7 +11,7 @@ describe("combined five-layer build IA", () => {
     const build = loadBuildCatalog();
     expect(build.registryStatus).toBe("build-unfrozen");
     expect(build.slots.filter(slot => !["assets.icon-panel-left", ...["command", "dropdown-menu", "empty", "item", "scroll-area", "sheet", "sidebar"].map(leaf => `components.${leaf}`)].includes(slot.id))).toHaveLength(217);
-    expect(Object.fromEntries(["tokens", "assets", "components", "sections", "frames"].map(layer => [layer, build.slots.filter(slot => slot.layer === layer).length]))).toEqual({ tokens: 55, assets: 48, components: 59, sections: 46, frames: 9 });
+    expect(Object.fromEntries(["themes", "assets", "components", "sections", "frames"].map(layer => [layer, build.slots.filter(slot => slot.layer === layer).length]))).toEqual({ themes: 42, assets: 48, components: 59, sections: 46, frames: 9 });
     expect(build.slots.filter(slot => slot.layer === "sections")).toEqual(loadSectionRegistry().slots);
     expect(build.placements.find(placement => placement.layer === "sections")).toEqual(loadSectionRegistry().placement);
     expect(build.slots.filter(slot => slot.layer === "frames")).toEqual(frameSlots);

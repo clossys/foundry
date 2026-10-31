@@ -5,10 +5,10 @@ import { buildSurfaceConsumption, type SurfaceConsumptionInput } from "./surface
 import { dogfoodComposes, runDogfood } from "./dogfood.js";
 
 const fixture = (): SurfaceConsumptionInput => ({
-  tokens: [{ id: "tokens.ink", contract: { emit: { primary: "--color-ink" } } }], assets: [],
+  themes: [{ id: "themes.ink", contract: { emit: { primary: "--color-ink" } } }], assets: [],
   components: [{ id: "components.button" }],
-  sections: [{ id: "sections.example", contract: { allowedReads: { tokens: [], assets: [] }, allowedComposes: [], parts: [] } }],
-  frames: [{ id: "frames.example", contract: { allowedReads: { tokens: [], assets: [] }, composes: [] } }],
+  sections: [{ id: "sections.example", contract: { allowedReads: { themes: [], assets: [] }, allowedComposes: [], parts: [] } }],
+  frames: [{ id: "frames.example", contract: { allowedReads: { themes: [], assets: [] }, composes: [] } }],
   fills: [{ id: "foundry/sections.example", slot: "sections.example", source: "foundry" }],
   sourceScans: [{ fill: "foundry/sections.example", files: [{ path: "src/Section.tsx", content: 'import { Button as Action } from "./Button.js"; const style = "text-ink"; export const Example = () => <section className={style}><Action/><button/><svg/></section>;' }], resolvedImports: { "src/Section.tsx:./Button.js#Button": "components.button" } }],
   themeCss: "@theme { --color-ink: var(--color-ink); }",
@@ -17,15 +17,15 @@ const fixture = (): SurfaceConsumptionInput => ({
 describe("sections and frames observed consumption", () => {
   it("derives aliased source edges and token reads independently of declarations", () => {
     const report = buildSurfaceConsumption(fixture()), row = report.fills[0]!;
-    expect(row.scannedReads.tokens).toEqual(["tokens.ink"]);
-    expect(row.missingDeclaredReads.tokens).toEqual(["tokens.ink"]);
+    expect(row.scannedReads.themes).toEqual(["themes.ink"]);
+    expect(row.missingDeclaredReads.themes).toEqual(["themes.ink"]);
     expect(row.scannedComposes).toEqual(["components.button"]);
     expect(row.missingDeclaredComposes).toEqual(["components.button"]);
-    expect(report.findings.some(f => f.code === "DF4" && f.evidence.includes("tokens.ink"))).toBe(true);
+    expect(report.findings.some(f => f.code === "DF4" && f.evidence.includes("themes.ink"))).toBe(true);
     expect(report.findings.some(f => f.code === "DF4" && f.evidence.includes("components.button"))).toBe(true);
     expect(report.findings.map(f => f.code)).toEqual(expect.arrayContaining(["DF1", "DF2", "DF3", "DF4"]));
     expect(report.reverseComposes["components.button"]).toMatchObject({ declared: [], scanned: [row.id], effective: [row.id] });
-    expect(report.reverseReads["tokens.ink"]).toMatchObject({ declared: [], scanned: [row.id] });
+    expect(report.reverseReads["themes.ink"]).toMatchObject({ declared: [], scanned: [row.id] });
   });
 
   it("uses authored section parts and frame composes without widening either contract", () => {
@@ -61,7 +61,7 @@ describe("sections and frames observed consumption", () => {
     const input = fixture(), baseline = buildSurfaceConsumption(input);
     expect(buildSurfaceConsumption({ ...input, sections: [...input.sections].reverse(), frames: [...input.frames].reverse(), sourceScans: [...input.sourceScans].reverse() })).toEqual(baseline);
     // These positive observations are the assertions exercised by the implementation mutation harness.
-    expect(baseline.fills[0]!.scannedReads.tokens).toContain("tokens.ink");
+    expect(baseline.fills[0]!.scannedReads.themes).toContain("themes.ink");
     expect(baseline.fills[0]!.scannedComposes).toContain("components.button");
     expect(baseline.claims.descriptorConformance).toBe("unmeasured");
   });
@@ -105,7 +105,7 @@ describe("committed section/frame scan evidence", () => {
     const chat = report.fills.find((row: { slot: string }) => row.slot === "sections.chat");
     expect(chat.scannedComposes).toContain("components.button");
     expect(chat.sourceFiles.some((file: string) => /components\/Button\.tsx$/.test(file))).toBe(false);
-    expect(report.findings.some((row: { code: string; evidence: string }) => row.code === "DF4" && row.evidence.includes("tokens."))).toBe(true);
+    expect(report.findings.some((row: { code: string; evidence: string }) => row.code === "DF4" && row.evidence.includes("themes."))).toBe(true);
     expect(report.inventory.sections).toHaveLength(45);
     expect(report.inventory.frames).toHaveLength(9);
     expect(report.claims.consumerAdoption).toBe("unmeasured");
@@ -140,7 +140,8 @@ it.each(["frames.site-header", "frames.app-header"])("S7 records the real header
   const row = actual.fills.find((fill: { slot: string }) => fill.slot === slot);
   expect(row.sourceFiles).toContain("packages/designer/src/catalog-core/frame-header-options.ts");
   expect(row.scanStatus).toBe("lower-bound");
-  expect(row.scannedReads.tokens).toContain("tokens.z-index");
+  expect(row.scannedReads.themes).toEqual(expect.arrayContaining(["themes.background", "themes.foreground", "themes.border"]));
+  expect(row.scannedReads.themes.every((id: string) => id.startsWith("themes."))).toBe(true);
   // A source scan sees all branches; runtime tests separately prove lazy reads for static instances.
   expect(actual.claims.runtimeAccessibility).toBe("unmeasured");
   expect(actual.claims.consumerAdoption).toBe("unmeasured");

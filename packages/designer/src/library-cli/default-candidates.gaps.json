@@ -216,7 +216,7 @@
       ]
     },
     {
-      "slot": "tokens.accent-color",
+      "slot": "themes.primary",
       "source": "shadcn@aria",
       "surfaces": [
         "assets.app-icon",
@@ -275,29 +275,28 @@
         "sections.table-of-contents",
         "sections.task-list",
         "sections.timeline",
-        "tokens.focus-color",
-        "tokens.focus-shadow",
-        "tokens.gradient"
+        "themes.ring",
+        "themes.sidebar-ring"
       ],
       "reads": [
-        "tokens.accent-color",
-        "tokens.accent-color.default",
-        "tokens.accent-color.text",
-        "tokens.accent-color.tint"
+        "themes.primary",
+        "themes.primary.default",
+        "themes.accent-foreground.default",
+        "themes.accent.default"
       ],
       "reasons": [
-        "C4: coverage: tokens.accent-color.hover (emits --color-accent-hover) has no value in profile default-candidate-check",
-        "C4: coverage: tokens.accent-color.on-inverse (emits --color-accent-on-inverse) has no value in profile default-candidate-check",
-        "C4: coverage: tokens.accent-color.text (emits --color-accent-text) has no value in profile default-candidate-check",
-        "C4: coverage: tokens.accent-color.tint (emits --color-accent-tint) has no value in profile default-candidate-check",
-        "required native member is absent: tokens.accent-color.hover",
-        "required native member is absent: tokens.accent-color.on-inverse",
-        "required native member is absent: tokens.accent-color.text",
-        "required native member is absent: tokens.accent-color.tint"
+        "C4: coverage: themes.primary.default (emits --color-accent-hover) has no value in profile default-candidate-check",
+        "C4: coverage: themes.primary.default (emits --color-accent-on-inverse) has no value in profile default-candidate-check",
+        "C4: coverage: themes.accent-foreground.default (emits --color-accent-text) has no value in profile default-candidate-check",
+        "C4: coverage: themes.accent.default (emits --color-accent-tint) has no value in profile default-candidate-check",
+        "required native member is absent: themes.primary.default",
+        "required native member is absent: themes.primary.default",
+        "required native member is absent: themes.accent-foreground.default",
+        "required native member is absent: themes.accent.default"
       ]
     },
     {
-      "slot": "tokens.action-color",
+      "slot": "themes.primary",
       "source": "shadcn@aria",
       "surfaces": [
         "components.avatar",
@@ -319,45 +318,16 @@
         "components.toggle-button"
       ],
       "reads": [
-        "tokens.action-color",
-        "tokens.action-color.default"
+        "themes.primary",
+        "themes.sidebar-primary",
+        "themes.primary.default"
       ],
       "reasons": [
         "no implementation candidate in the default source"
       ]
     },
     {
-      "slot": "tokens.behavior-timing",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "components.tooltip"
-      ],
-      "reads": [
-        "tokens.behavior-timing",
-        "tokens.behavior-timing.tooltip-close",
-        "tokens.behavior-timing.tooltip-delay"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.brandmark-size",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "components.logo",
-        "frames.site-footer",
-        "sections.table-of-contents"
-      ],
-      "reads": [
-        "tokens.brandmark-size"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.categorical-color",
+      "slot": "themes.chart-1",
       "source": "shadcn@aria",
       "surfaces": [
         "components.chart-area",
@@ -371,71 +341,23 @@
         "components.chart-waterfall"
       ],
       "reads": [
-        "tokens.categorical-color"
+        "themes.chart-1",
+        "themes.chart-2",
+        "themes.chart-3",
+        "themes.chart-4",
+        "themes.chart-5"
       ],
       "reasons": [
-        "C4: coverage: tokens.categorical-color.6 (emits --color-chart-categorical-6) has no value in profile default-candidate-check",
-        "C4: coverage: tokens.categorical-color.7 (emits --color-chart-categorical-7) has no value in profile default-candidate-check",
-        "C4: coverage: tokens.categorical-color.8 (emits --color-chart-categorical-8) has no value in profile default-candidate-check",
-        "required native member is absent: tokens.categorical-color.6",
-        "required native member is absent: tokens.categorical-color.7",
-        "required native member is absent: tokens.categorical-color.8"
+        "C4: coverage: themes.chart-1.default (emits --color-chart-categorical-6) has no value in profile default-candidate-check",
+        "C4: coverage: themes.chart-1.default (emits --color-chart-categorical-7) has no value in profile default-candidate-check",
+        "C4: coverage: themes.chart-1.default (emits --color-chart-categorical-8) has no value in profile default-candidate-check",
+        "required native member is absent: themes.chart-1.default",
+        "required native member is absent: themes.chart-1.default",
+        "required native member is absent: themes.chart-1.default"
       ]
     },
     {
-      "slot": "tokens.chart-color",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "components.chart-area",
-        "components.chart-bar",
-        "components.chart-heatmap",
-        "components.chart-line",
-        "components.chart-range",
-        "components.chart-scatter",
-        "components.chart-sparkline",
-        "components.chart-status-strip",
-        "components.chart-waterfall"
-      ],
-      "reads": [
-        "tokens.chart-color"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.code-size",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "components.keyboard",
-        "components.rich-text",
-        "sections.article",
-        "sections.chat",
-        "sections.comparison"
-      ],
-      "reads": [
-        "tokens.code-size",
-        "tokens.code-size.block"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.color-ramp",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "sections.hero"
-      ],
-      "reads": [
-        "tokens.color-ramp"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.control-color",
+      "slot": "themes.input",
       "source": "shadcn@aria",
       "surfaces": [
         "components.badge",
@@ -450,194 +372,22 @@
         "frames.site-shell"
       ],
       "reads": [
-        "tokens.control-color",
-        "tokens.control-color.tonal"
+        "themes.input",
+        "themes.secondary.default"
       ],
       "reasons": [
-        "C4: coverage: tokens.control-color.quiet (emits --color-control-quiet) has no value in profile default-candidate-check",
-        "C4: coverage: tokens.control-color.tonal-hover (emits --color-control-tonal-hover) has no value in profile default-candidate-check",
-        "C4: coverage: tokens.control-color.tonal-inverse (emits --color-control-tonal-inverse) has no value in profile default-candidate-check",
-        "C4: coverage: tokens.control-color.tonal-inverse-hover (emits --color-control-tonal-inverse-hover) has no value in profile default-candidate-check",
-        "required native member is absent: tokens.control-color.quiet",
-        "required native member is absent: tokens.control-color.tonal-hover",
-        "required native member is absent: tokens.control-color.tonal-inverse",
-        "required native member is absent: tokens.control-color.tonal-inverse-hover"
+        "C4: coverage: themes.accent.default (emits --color-control-quiet) has no value in profile default-candidate-check",
+        "C4: coverage: themes.input.default (emits --color-control-tonal-hover) has no value in profile default-candidate-check",
+        "C4: coverage: themes.input.default (emits --color-control-tonal-inverse) has no value in profile default-candidate-check",
+        "C4: coverage: themes.input.default (emits --color-control-tonal-inverse-hover) has no value in profile default-candidate-check",
+        "required native member is absent: themes.accent.default",
+        "required native member is absent: themes.input.default",
+        "required native member is absent: themes.input.default",
+        "required native member is absent: themes.input.default"
       ]
     },
     {
-      "slot": "tokens.control-size",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "components.breadcrumbs",
-        "components.button",
-        "components.calendar",
-        "components.checkbox",
-        "components.color-picker",
-        "components.combo-box",
-        "components.command",
-        "components.date-field",
-        "components.number-field",
-        "components.radio-group",
-        "components.search-field",
-        "components.select",
-        "components.sheet",
-        "components.sidebar",
-        "components.slider",
-        "components.switch",
-        "components.tag-group",
-        "components.text-field",
-        "components.toggle-button",
-        "components.toggle-group",
-        "sections.data-grid",
-        "sections.data-table"
-      ],
-      "reads": [
-        "tokens.control-size",
-        "tokens.control-size.h-lg",
-        "tokens.control-size.h-md",
-        "tokens.control-size.h-sm",
-        "tokens.control-size.mark",
-        "tokens.control-size.switch-thumb"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.density",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "sections.chat"
-      ],
-      "reads": [
-        "tokens.density"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.display-size",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "sections.content",
-        "sections.hero",
-        "sections.section-header"
-      ],
-      "reads": [
-        "tokens.display-size"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.diverging-color",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "components.chart-area",
-        "components.chart-bar",
-        "components.chart-heatmap",
-        "components.chart-line",
-        "components.chart-range",
-        "components.chart-scatter",
-        "components.chart-sparkline",
-        "components.chart-status-strip",
-        "components.chart-waterfall"
-      ],
-      "reads": [
-        "tokens.diverging-color"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.duration",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "components.badge",
-        "components.breadcrumbs",
-        "components.button",
-        "components.checkbox",
-        "components.color-picker",
-        "components.combo-box",
-        "components.command",
-        "components.dialog",
-        "components.disclosure",
-        "components.dropdown-menu",
-        "components.item",
-        "components.menu",
-        "components.native-action",
-        "components.number-field",
-        "components.popover",
-        "components.progress-bar",
-        "components.select",
-        "components.sheet",
-        "components.sidebar",
-        "components.slider",
-        "components.switch",
-        "components.table",
-        "components.tabs",
-        "components.tag-group",
-        "components.toggle-button",
-        "components.tooltip",
-        "components.tree",
-        "frames.app-sidebar",
-        "sections.link-index",
-        "sections.stats",
-        "tokens.transition-duration"
-      ],
-      "reads": [
-        "tokens.duration",
-        "tokens.duration.default",
-        "tokens.duration.fast"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.easing",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "components.badge",
-        "components.breadcrumbs",
-        "components.button",
-        "components.checkbox",
-        "components.color-picker",
-        "components.combo-box",
-        "components.command",
-        "components.disclosure",
-        "components.item",
-        "components.link",
-        "components.native-action",
-        "components.number-field",
-        "components.progress-bar",
-        "components.select",
-        "components.sheet",
-        "components.sidebar",
-        "components.slider",
-        "components.switch",
-        "components.table",
-        "components.tabs",
-        "components.tag-group",
-        "components.toggle-button",
-        "components.toggle-group",
-        "components.tree",
-        "frames.app-sidebar",
-        "sections.link-index"
-      ],
-      "reads": [
-        "tokens.easing",
-        "tokens.easing.default"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.elevation",
+      "slot": "themes.shadow",
       "source": "shadcn@aria",
       "surfaces": [
         "components.card",
@@ -652,62 +402,19 @@
         "components.sidebar",
         "components.tabs",
         "components.tooltip",
-        "tokens.elevation"
+        "themes.shadow"
       ],
       "reads": [
-        "tokens.elevation",
-        "tokens.elevation.floating",
-        "tokens.elevation.none",
-        "tokens.elevation.raised"
+        "themes.shadow",
+        "themes.shadow.lg",
+        "themes.shadow.sm"
       ],
       "reasons": [
         "no implementation candidate in the default source"
       ]
     },
     {
-      "slot": "tokens.focus-color",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "components.badge",
-        "components.button",
-        "components.calendar",
-        "components.checkbox",
-        "components.combo-box",
-        "components.command",
-        "components.dialog",
-        "components.disclosure",
-        "components.dropdown-menu",
-        "components.item",
-        "components.link",
-        "components.media-player",
-        "components.menu",
-        "components.native-action",
-        "components.popover",
-        "components.radio-group",
-        "components.scroll-area",
-        "components.select",
-        "components.sheet",
-        "components.sidebar",
-        "components.slider",
-        "components.switch",
-        "components.tabs",
-        "components.tag-group",
-        "components.toggle-button",
-        "components.toggle-group",
-        "tokens.focus-shadow"
-      ],
-      "reads": [
-        "tokens.focus-color",
-        "tokens.focus-color.default",
-        "tokens.focus-color.on-inverse"
-      ],
-      "reasons": [
-        "C4: coverage: tokens.focus-color.on-inverse (emits --color-focus-ring-on-inverse) has no value in profile default-candidate-check",
-        "required native member is absent: tokens.focus-color.on-inverse"
-      ]
-    },
-    {
-      "slot": "tokens.focus-outline",
+      "slot": "themes.ring",
       "source": "shadcn@aria",
       "surfaces": [
         "components.badge",
@@ -738,213 +445,17 @@
         "components.toggle-group"
       ],
       "reads": [
-        "tokens.focus-outline",
-        "tokens.focus-outline.offset",
-        "tokens.focus-outline.width"
+        "themes.ring",
+        "themes.sidebar-ring",
+        "themes.ring.default"
       ],
       "reasons": [
-        "no implementation candidate in the default source"
+        "C4: coverage: themes.ring.default (emits --color-focus-ring-on-inverse) has no value in profile default-candidate-check",
+        "required native member is absent: themes.ring.default"
       ]
     },
     {
-      "slot": "tokens.focus-shadow",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "components.button",
-        "components.calendar",
-        "components.checkbox",
-        "components.color-picker",
-        "components.combo-box",
-        "components.date-field",
-        "components.grid-list",
-        "components.link",
-        "components.navigation-tree",
-        "components.number-field",
-        "components.radio-group",
-        "components.search-field",
-        "components.select",
-        "components.slider",
-        "components.switch",
-        "components.table",
-        "components.tabs",
-        "components.tag-group",
-        "components.text-field",
-        "components.toggle-button",
-        "components.toggle-group",
-        "components.tree",
-        "sections.form",
-        "sections.sign-in-form"
-      ],
-      "reads": [
-        "tokens.focus-shadow"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.font-size",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "components.avatar",
-        "components.badge",
-        "components.banner",
-        "components.breadcrumbs",
-        "components.button",
-        "components.calendar",
-        "components.card",
-        "components.color-picker",
-        "components.command",
-        "components.dialog",
-        "components.disclosure",
-        "components.dropdown-menu",
-        "components.empty",
-        "components.item",
-        "components.menu",
-        "components.navigation-tree",
-        "components.number-field",
-        "components.popover",
-        "components.progress-bar",
-        "components.rich-text",
-        "components.sheet",
-        "components.sidebar",
-        "components.table",
-        "components.tabs",
-        "components.tag-group",
-        "components.toggle-button",
-        "components.tooltip",
-        "components.tree"
-      ],
-      "reads": [
-        "tokens.font-size",
-        "tokens.font-size.base",
-        "tokens.font-size.sm",
-        "tokens.font-size.xs"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.font-weight",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "components.badge",
-        "components.banner",
-        "components.breadcrumbs",
-        "components.button",
-        "components.calendar",
-        "components.card",
-        "components.color-picker",
-        "components.combo-box",
-        "components.command",
-        "components.dialog",
-        "components.disclosure",
-        "components.dropdown-menu",
-        "components.empty",
-        "components.item",
-        "components.keyboard",
-        "components.menu",
-        "components.navigation-tree",
-        "components.number-field",
-        "components.popover",
-        "components.progress-bar",
-        "components.rich-text",
-        "components.select",
-        "components.sheet",
-        "components.sidebar",
-        "components.table",
-        "components.tabs",
-        "components.tag-group",
-        "components.toggle-button",
-        "components.tree"
-      ],
-      "reads": [
-        "tokens.font-weight",
-        "tokens.font-weight.medium",
-        "tokens.font-weight.normal",
-        "tokens.font-weight.semibold"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.gutter",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "frames.auth-shell",
-        "frames.site-footer",
-        "sections.band",
-        "sections.logo-mark"
-      ],
-      "reads": [
-        "tokens.gutter"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.heading-size",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "components.dialog",
-        "components.meter",
-        "components.rich-text",
-        "sections.article",
-        "sections.call-to-action",
-        "sections.cards",
-        "sections.comparison",
-        "sections.consent",
-        "sections.content",
-        "sections.form",
-        "sections.hero",
-        "sections.link-index",
-        "sections.page-header",
-        "sections.pricing",
-        "sections.section-header",
-        "sections.settings",
-        "sections.sign-in-form",
-        "sections.stats",
-        "sections.status-list"
-      ],
-      "reads": [
-        "tokens.heading-size"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.icon-size",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "components.icon",
-        "frames.app-sidebar"
-      ],
-      "reads": [
-        "tokens.icon-size"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.icon-stroke",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "components.icon"
-      ],
-      "reads": [
-        "tokens.icon-stroke"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.radius",
+      "slot": "themes.radius",
       "source": "shadcn@aria",
       "surfaces": [
         "components.avatar",
@@ -1004,140 +515,20 @@
         "sections.wizard"
       ],
       "reads": [
-        "tokens.radius",
-        "tokens.radius.default",
-        "tokens.radius.subtle"
+        "themes.radius",
+        "themes.radius.default"
       ],
       "reasons": [
-        "C4: coverage: tokens.radius.pill (emits --radius-pill) has no value in profile default-candidate-check",
-        "C4: coverage: tokens.radius.sharp (emits --radius-sharp) has no value in profile default-candidate-check",
-        "C4: coverage: tokens.radius.subtle (emits --radius-subtle) has no value in profile default-candidate-check",
-        "required native member is absent: tokens.radius.pill",
-        "required native member is absent: tokens.radius.sharp",
-        "required native member is absent: tokens.radius.subtle"
+        "C4: coverage: themes.radius.default (emits --radius-pill) has no value in profile default-candidate-check",
+        "C4: coverage: themes.radius.default (emits --radius-sharp) has no value in profile default-candidate-check",
+        "C4: coverage: themes.radius.default (emits --radius-subtle) has no value in profile default-candidate-check",
+        "required native member is absent: themes.radius.default",
+        "required native member is absent: themes.radius.default",
+        "required native member is absent: themes.radius.default"
       ]
     },
     {
-      "slot": "tokens.region-width",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "components.sidebar",
-        "frames.app-shell",
-        "frames.app-sidebar",
-        "sections.comparison"
-      ],
-      "reads": [
-        "tokens.region-width",
-        "tokens.region-width.sidebar",
-        "tokens.region-width.sidebar-rail"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.scrim-color",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "components.command",
-        "components.dialog",
-        "components.sheet",
-        "sections.hero"
-      ],
-      "reads": [
-        "tokens.scrim-color",
-        "tokens.scrim-color.default"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.sequential-color",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "components.chart-area",
-        "components.chart-bar",
-        "components.chart-heatmap",
-        "components.chart-line",
-        "components.chart-range",
-        "components.chart-scatter",
-        "components.chart-sparkline",
-        "components.chart-status-strip",
-        "components.chart-waterfall"
-      ],
-      "reads": [
-        "tokens.sequential-color"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.shift-distance",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "components.combo-box",
-        "components.dropdown-menu",
-        "components.menu",
-        "components.popover",
-        "components.select",
-        "components.sidebar",
-        "components.tooltip"
-      ],
-      "reads": [
-        "tokens.shift-distance",
-        "tokens.shift-distance.default"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.state-opacity",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "components.button",
-        "components.calendar",
-        "components.checkbox",
-        "components.color-picker",
-        "components.combo-box",
-        "components.command",
-        "components.date-field",
-        "components.disclosure",
-        "components.dropdown-menu",
-        "components.field",
-        "components.grid-list",
-        "components.link",
-        "components.menu",
-        "components.native-action",
-        "components.navigation-tree",
-        "components.number-field",
-        "components.radio-group",
-        "components.search-field",
-        "components.select",
-        "components.sheet",
-        "components.sidebar",
-        "components.slider",
-        "components.switch",
-        "components.tabs",
-        "components.tag-group",
-        "components.text-field",
-        "components.toggle-button",
-        "components.toggle-group",
-        "components.tree"
-      ],
-      "reads": [
-        "tokens.state-opacity",
-        "tokens.state-opacity.disabled",
-        "tokens.state-opacity.stale"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
-      "slot": "tokens.surface-radius",
+      "slot": "themes.radius",
       "source": "shadcn@aria",
       "surfaces": [
         "components.card",
@@ -1155,18 +546,18 @@
         "sections.task-list",
         "sections.testimonials",
         "sections.wizard",
-        "tokens.surface-radius"
+        "themes.radius"
       ],
       "reads": [
-        "tokens.surface-radius",
-        "tokens.surface-radius.default"
+        "themes.radius",
+        "themes.radius.default"
       ],
       "reasons": [
         "no implementation candidate in the default source"
       ]
     },
     {
-      "slot": "tokens.text-color",
+      "slot": "themes.foreground",
       "source": "shadcn@aria",
       "surfaces": [
         "assets.app-icon",
@@ -1283,53 +674,46 @@
         "sections.timeline",
         "sections.usage",
         "sections.wizard",
-        "tokens.chart-color",
-        "tokens.control-color",
-        "tokens.focus-color",
-        "tokens.text-color"
+        "themes.input",
+        "themes.ring",
+        "themes.sidebar-ring",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
       ],
       "reads": [
-        "tokens.text-color",
-        "tokens.text-color.muted",
-        "tokens.text-color.on-action",
-        "tokens.text-color.on-inverse",
-        "tokens.text-color.primary"
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.muted-foreground.default",
+        "themes.primary-foreground.default",
+        "themes.foreground.default"
       ],
       "reasons": [
-        "C4: coverage: tokens.text-color.link (emits --color-ink-link) has no value in profile default-candidate-check",
-        "C4: coverage: tokens.text-color.on-action (emits --color-ink-on-action) has no value in profile default-candidate-check",
-        "C4: coverage: tokens.text-color.on-inverse (emits --color-ink-on-inverse) has no value in profile default-candidate-check",
-        "C4: coverage: tokens.text-color.on-inverse-muted (emits --color-ink-on-inverse-muted) has no value in profile default-candidate-check",
-        "C4: coverage: tokens.text-color.secondary (emits --color-ink-secondary) has no value in profile default-candidate-check",
-        "required native member is absent: tokens.text-color.link",
-        "required native member is absent: tokens.text-color.on-action",
-        "required native member is absent: tokens.text-color.on-inverse",
-        "required native member is absent: tokens.text-color.on-inverse-muted",
-        "required native member is absent: tokens.text-color.secondary"
-      ]
-    },
-    {
-      "slot": "tokens.transition-easing",
-      "source": "shadcn@aria",
-      "surfaces": [
-        "components.combo-box",
-        "components.command",
-        "components.dialog",
-        "components.disclosure",
-        "components.dropdown-menu",
-        "components.menu",
-        "components.popover",
-        "components.select",
-        "components.sidebar",
-        "components.tooltip"
-      ],
-      "reads": [
-        "tokens.transition-easing",
-        "tokens.transition-easing.enter",
-        "tokens.transition-easing.exit"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
+        "C4: coverage: themes.primary.default (emits --color-ink-link) has no value in profile default-candidate-check",
+        "C4: coverage: themes.primary-foreground.default (emits --color-ink-on-action) has no value in profile default-candidate-check",
+        "C4: coverage: themes.foreground.default (emits --color-ink-on-inverse) has no value in profile default-candidate-check",
+        "C4: coverage: themes.foreground.default (emits --color-ink-on-inverse-muted) has no value in profile default-candidate-check",
+        "C4: coverage: themes.muted-foreground.default (emits --color-ink-secondary) has no value in profile default-candidate-check",
+        "required native member is absent: themes.primary.default",
+        "required native member is absent: themes.primary-foreground.default",
+        "required native member is absent: themes.foreground.default",
+        "required native member is absent: themes.foreground.default",
+        "required native member is absent: themes.muted-foreground.default"
       ]
     }
   ],

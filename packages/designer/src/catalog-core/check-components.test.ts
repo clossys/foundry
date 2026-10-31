@@ -14,7 +14,7 @@ function source(profile: Mutable<ComponentCheckInput>, text: string): void {
   observation.files[0]!.content = text; observation.sourceHash = componentSourceHash(observation.files);
 }
 function exactReads(profile: Mutable<ComponentCheckInput>, index = 0): void {
-  profile.fills[index]!.reads.tokens = profile.fills[index]!.reads.tokens.flatMap(leaf => Object.keys(profile.tokens).filter(member => member.startsWith(`${leaf}.`)));
+  profile.fills[index]!.reads.themes = profile.fills[index]!.reads.themes.flatMap(leaf => Object.keys(profile.tokens).filter(member => member.startsWith(`${leaf}.`)));
 }
 function refreshTokens(profile: Mutable<ComponentCheckInput>): void {
   for (const observation of Object.values(profile.observations)) if (observation) observation.tokensHash = componentTokensHash(profile.tokens);
@@ -44,49 +44,49 @@ describe("component consumer checks K1-K12", () => {
     const profile = fixture(); source(profile, '// import {Button} from "react-aria-components";\nexport const X = () => <button>Continue</button>;'); code(profile, "K2");
   });
   it("K3 rejects missing, undeclared and upward leaf reads", () => {
-    const profile = fixture(); profile.fills[0]!.reads.tokens.push("sections.hero"); profile.fills[0]!.reads.assets.push("assets.icon-missing"); profile.fills[0]!.composes.push("components.missing"); code(profile, "K3");
+    const profile = fixture(); profile.fills[0]!.reads.themes.push("sections.hero"); profile.fills[0]!.reads.assets.push("assets.icon-missing"); profile.fills[0]!.composes.push("components.missing"); code(profile, "K3");
   });
   it("K3 resolves leaves and exact registered members only", () => {
     const valid = fixture(); exactReads(valid);
     expect(checkComponentProfile(valid).findings.filter(f => f.code === "K3")).toEqual([]);
-    for (const read of ["tokens", "tokens.", "tokens..primary", "tokens.text-color.", "tokens.text-color.unknown", "tokens.text-color.primary.extra", "assets.text-color.primary", "tokens.text-color.ancestor"]) {
+    for (const read of ["themes", "themes.", "themes..default", "themes.foreground.", "themes.foreground.unknown", "themes.foreground.default.extra", "assets.foreground.default", "themes.foreground.ancestor"]) {
       const profile = fixture();
-      profile.tokens["tokens.text-color.ancestor.child"] = { property: "--impostor", light: "#000000" };
-      profile.fills[0]!.reads.tokens = [read]; refreshTokens(profile);
+      profile.tokens["themes.foreground.ancestor.child"] = { property: "--impostor", light: "#000000" };
+      profile.fills[0]!.reads.themes = [read]; refreshTokens(profile);
       expect(checkComponentProfile(profile).findings, read).toContainEqual(expect.objectContaining({ code: "K3", message: `Token read ${read} does not resolve` }));
     }
-    const emptyLeaf = fixture(); emptyLeaf.tokens = { "tokens.empty.extra.child": { property: "--impostor", light: "#000000" } }; emptyLeaf.fills[0]!.reads.tokens = ["tokens.empty"];
-    expect(checkComponentProfile(emptyLeaf).findings).toContainEqual(expect.objectContaining({ code: "K3", message: "Token read tokens.empty does not resolve" }));
+    const emptyLeaf = fixture(); emptyLeaf.tokens = { "themes.empty.extra.child": { property: "--impostor", light: "#000000" } }; emptyLeaf.fills[0]!.reads.themes = ["themes.empty"];
+    expect(checkComponentProfile(emptyLeaf).findings).toContainEqual(expect.objectContaining({ code: "K3", message: "Token read themes.empty does not resolve" }));
   });
   it("K3 checks the exact owning leaf", () => {
     const valid = fixture(); exactReads(valid);
     expect(checkComponentProfile(valid).findings.filter(f => f.code === "K3")).toEqual([]);
-    for (const permission of ["tokens.focus", "tokens.focus-outline", "tokens.focus-color-extra", "tokens.focus-color.default"]) {
+    for (const permission of ["themes.rin", "themes.ring-outline", "themes.ring-extra", "themes.ring.default"]) {
       const profile = fixture(); exactReads(profile);
-      profile.slots[0]!.contract.allowedReads.tokens = profile.slots[0]!.contract.allowedReads.tokens.filter(leaf => leaf !== "tokens.focus-color").concat(permission);
-      expect(checkComponentProfile(profile).findings, permission).toContainEqual(expect.objectContaining({ code: "K3", message: "Read tokens.focus-color.default is outside the contract" }));
+      profile.slots[0]!.contract.allowedReads.themes = profile.slots[0]!.contract.allowedReads.themes.filter(leaf => leaf !== "themes.ring").concat(permission);
+      expect(checkComponentProfile(profile).findings, permission).toContainEqual(expect.objectContaining({ code: "K3", message: "Read themes.ring.default is outside the contract" }));
     }
-    const spacing = fixture(); spacing.tokens["tokens.spacing.sm"] = { property: "--space", light: "8px" }; spacing.fills[0]!.reads.tokens.push("tokens.spacing.sm");
-    spacing.slots[0]!.contract.allowedReads.tokens.push("tokens.spacing-extra");
-    expect(checkComponentProfile(spacing).findings).toContainEqual(expect.objectContaining({ code: "K3", message: "Read tokens.spacing.sm is outside the contract" }));
+    const spacing = fixture(); spacing.tokens["themes.radius.default"] = { property: "--space", light: "8px" }; spacing.fills[0]!.reads.themes.push("themes.radius.default");
+    spacing.slots[0]!.contract.allowedReads.themes.push("themes.radius-extra");
+    expect(checkComponentProfile(spacing).findings).toContainEqual(expect.objectContaining({ code: "K3", message: "Read themes.radius.default is outside the contract" }));
     const asset = fixture(); asset.slots[0]!.contract.allowedReads.assets = ["assets.icon"]; code(asset, "K3");
     const missing = fixture(); missing.fills[0]!.reads.components = ["components.missing"]; code(missing, "K3");
   });
   it("K4 accepts exact declared member without granting siblings", () => {
-    for (const declaration of ["tokens.spacing", "tokens.spacing.sm"]) {
+    for (const declaration of ["themes.shadow", "themes.shadow.sm"]) {
       const profile = fixture();
-      Object.assign(profile.tokens, { "tokens.spacing.sm": { property: "--space-sm", light: "8px" }, "tokens.spacing.md": { property: "--space-md", light: "8px" } });
-      profile.slots[0]!.contract.allowedReads.tokens.push("tokens.spacing");
-      profile.fills[0]!.reads.tokens.push(declaration); refreshTokens(profile);
+      Object.assign(profile.tokens, { "themes.shadow.sm": { property: "--space-sm", light: "8px" }, "themes.shadow.md": { property: "--space-md", light: "8px" } });
+      profile.slots[0]!.contract.allowedReads.themes.push("themes.shadow");
+      profile.fills[0]!.reads.themes.push(declaration); refreshTokens(profile);
       const original = profile.observations["components.button"]!.files[0]!.content;
-      profile.classBindings = { "p-sm": "tokens.spacing.sm", "p-md": "tokens.spacing.md" };
+      profile.classBindings = { "p-sm": "themes.shadow.sm", "p-md": "themes.shadow.md" };
       source(profile, original + ' const cls = "p-sm"; const space = "var(--space-sm)";');
       expect(checkComponentProfile(profile).ok, declaration).toBe(true);
       for (const usage of [' const cls = "p-md";', ' const space = "var(--space-md)";']) {
         source(profile, original + usage);
-        expect(checkComponentProfile(profile).findings.some(f => f.code === "K4"), declaration + usage).toBe(declaration !== "tokens.spacing");
+        expect(checkComponentProfile(profile).findings.some(f => f.code === "K4"), declaration + usage).toBe(declaration !== "themes.shadow");
       }
-      source(profile, original + ' const cls = "p-sm";'); profile.classBindings = { "p-sm": "tokens.spacing.unknown" }; code(profile, "K4");
+      source(profile, original + ' const cls = "p-sm";'); profile.classBindings = { "p-sm": "themes.shadow.unknown" }; code(profile, "K4");
       delete profile.classBindings; code(profile, "K4");
     }
   });
@@ -94,7 +94,7 @@ describe("component consumer checks K1-K12", () => {
     const valid = fixture(); exactReads(valid); expect(checkComponentProfile(valid).ok).toBe(true);
     for (const role of ["focus", "foreground", "background"] as const) {
       const profile = fixture(); exactReads(profile);
-      const original = role === "focus" ? "tokens.focus-color.default" : role === "foreground" ? "tokens.text-color.primary" : "tokens.surface-color.base";
+      const original = role === "focus" ? "themes.ring.default" : role === "foreground" ? "themes.foreground.default" : "themes.background.default";
       const sibling = original.slice(0, original.lastIndexOf(".")) + ".sibling";
       profile.tokens[sibling] = { ...profile.tokens[original]!, property: `--${role}-sibling` }; refreshTokens(profile);
       for (const measurement of profile.observations["components.button"]!.measurements) {
@@ -111,11 +111,11 @@ describe("component consumer checks K1-K12", () => {
     };
     expect(checkComponentProfile(mixed()).findings.filter(f => f.code === "K11")).toEqual([]);
     const negatives = [
-      (p: Mutable<ComponentCheckInput>) => { p.fills[1]!.reads.tokens = p.fills[1]!.reads.tokens.filter(r => !r.startsWith("tokens.control-size.")); },
-      (p: Mutable<ComponentCheckInput>) => { p.fills[1]!.reads.tokens = p.fills[1]!.reads.tokens.filter(r => !r.startsWith("tokens.focus-")); },
-      (p: Mutable<ComponentCheckInput>) => { p.tokens["tokens.font-size.default"] = { property: "--font", light: "16px" }; p.fills[1]!.reads.tokens = p.fills[1]!.reads.tokens.map(r => r === "tokens.body-size.default" ? "tokens.font-size.default" : r); },
+      (p: Mutable<ComponentCheckInput>) => { p.fills[1]!.reads.themes = p.fills[1]!.reads.themes.filter(r => !r.startsWith("themes.spacing.")); },
+      (p: Mutable<ComponentCheckInput>) => { p.fills[1]!.reads.themes = p.fills[1]!.reads.themes.filter(r => !r.startsWith("themes.ring.")); },
+      (p: Mutable<ComponentCheckInput>) => { p.tokens["themes.font-heading.default"] = { property: "--font", light: "16px" }; p.fills[1]!.reads.themes = p.fills[1]!.reads.themes.map(r => r === "themes.font-sans.default" ? "themes.font-heading.default" : r); },
       (p: Mutable<ComponentCheckInput>) => { delete p.observations["components.select"]!.geometry; },
-      (p: Mutable<ComponentCheckInput>) => { p.observations["components.select"]!.geometry = { "size.md": "tokens.control-size.unknown" }; },
+      (p: Mutable<ComponentCheckInput>) => { p.observations["components.select"]!.geometry = { "size.md": "themes.spacing.unknown" }; },
       (p: Mutable<ComponentCheckInput>) => { p.observations["components.select"]!.measurements = []; },
       (p: Mutable<ComponentCheckInput>) => { const o = p.observations["components.select"]!; o.files[0]!.content += 'const bad = "var(--foreign)";'; o.sourceHash = componentSourceHash(o.files); },
     ];
@@ -129,12 +129,12 @@ describe("component consumer checks K1-K12", () => {
     const pendingK11 = checkComponentProfile(unobserved).findings.filter(f => f.code === "K11");
     expect(pendingK11).toEqual([{ code: "K11", rule: "K11", subject: "components.select", severity: "notice", message: `Mixed controls geometry parity: ${OBSERVATIONS_UNAVAILABLE}` }]);
     expect(pendingK11.every(isObservationPending)).toBe(true);
-    // Static gaps on an unobserved member still refuse: control-size, focus and label type are read from the descriptor.
+    // Static gaps on an unobserved member still refuse: spacing, focus and label type are read from the descriptor.
     for (const mutate of negatives.slice(0, 3)) {
       const profile = mixed(); delete profile.observations["components.select"]; mutate(profile);
       expect(checkComponentProfile(profile).findings.some(f => f.code === "K11" && f.severity === "error")).toBe(true);
     }
-    const deduplicated = mixed(); deduplicated.fills[1]!.reads.tokens.push("tokens.body-size", "tokens.body-size.default");
+    const deduplicated = mixed(); deduplicated.fills[1]!.reads.themes.push("themes.font-sans", "themes.font-sans.default");
     expect(checkComponentProfile(deduplicated).findings.filter(f => f.code === "K11")).toEqual([]);
   });
   it("K4 rejects hardcoded colours, lengths, fallback literals and unbound utilities", () => {
@@ -144,7 +144,7 @@ describe("component consumer checks K1-K12", () => {
   });
   it("K4 accepts a utility only with a resolved, declared token binding", () => {
     const profile = fixture(); source(profile, profile.observations["components.button"]!.files[0]!.content + ' const cls = "h-md";');
-    profile.classBindings = { "h-md": "tokens.control-size.md" }; expect(checkComponentProfile(profile).ok).toBe(true);
+    profile.classBindings = { "h-md": "themes.spacing.default" }; expect(checkComponentProfile(profile).ok).toBe(true);
   });
   it("K5 rejects axe, keyboard, roles, focus, forced colors and small targets independently", () => {
     const mutations = [
@@ -158,13 +158,13 @@ describe("component consumer checks K1-K12", () => {
     for (const mutate of mutations) { const profile = fixture(); mutate(profile); code(profile, "K5"); }
   });
   it("K5/K6 bind evidence to source and resolved consumer tokens", () => {
-    for (const stale of ["source", "tokens"]) {
-      const profile = fixture(); if (stale === "source") profile.observations["components.button"]!.files[0]!.content += " "; else profile.tokens["tokens.text-color.primary"]!.light = "#111111";
+    for (const stale of ["source", "themes"]) {
+      const profile = fixture(); if (stale === "source") profile.observations["components.button"]!.files[0]!.content += " "; else profile.tokens["themes.foreground.default"]!.light = "#111111";
       code(profile, "K5"); code(profile, "K6");
     }
   });
   it("K6 recomputes contrast from consumer tokens rather than accepting a claimed ratio", () => {
-    const profile = fixture(); profile.tokens["tokens.text-color.primary"]!.dark = "#222222"; profile.observations["components.button"]!.tokensHash = componentTokensHash(profile.tokens); code(profile, "K6");
+    const profile = fixture(); profile.tokens["themes.foreground.default"]!.dark = "#222222"; profile.observations["components.button"]!.tokensHash = componentTokensHash(profile.tokens); code(profile, "K6");
   });
   it("K7 rejects text glyphs, icon SVG, foreign imports and undeclared asset glyphs", () => {
     for (const suffix of ['const icon = "✓";', 'const icon = <svg><path /></svg>;', 'import Icon from "lucide-react";', 'const icon = "assets.icon-search";']) {
@@ -233,7 +233,7 @@ describe("component consumer checks K1-K12", () => {
   });
   it("K11 requires mixed controls to share geometry, focus and label type", () => {
     const profile = fixture(true); profile.fills[1]!.source = "second-kit"; profile.coherenceGroups = [{ id: "fixture-controls", slots: profile.fills.map(fill => fill.slot), kind: "controls" }]; expect(checkComponentProfile(profile).ok).toBe(true);
-    profile.fills[1]!.reads.tokens = profile.fills[1]!.reads.tokens.filter(read => read !== "tokens.control-size"); code(profile, "K11");
+    profile.fills[1]!.reads.themes = profile.fills[1]!.reads.themes.filter(read => read !== "themes.spacing"); code(profile, "K11");
   });
   it("K11 prohibits mixed chart sources", () => {
     const profile = fixture(true); profile.fills[1]!.source = "second-kit"; profile.coherenceGroups = [{ id: "fixture-charts", slots: profile.fills.map(fill => fill.slot), kind: "charts" }]; code(profile, "K11");
@@ -386,15 +386,15 @@ describe("controls label type parity", () => {
   const labelFinding = (profile: ComponentCheckInput) => checkComponentProfile(profile).findings.some(f => f.code === "K11" && f.subject === "fixture-controls");
   it("excludes a member that binds no label type read from the label comparison, not from size/focus parity", () => {
     const profile = mixed();
-    profile.fills[1]!.reads.tokens = profile.fills[1]!.reads.tokens.filter(r => !/(?:body-size|caption-size|typeface|font-size)(?:\.|$)/.test(r));
+    profile.fills[1]!.reads.themes = profile.fills[1]!.reads.themes.filter(r => !/^themes\.font-(?:sans|heading|mono|serif)(?:\.|$)/.test(r));
     expect(labelFinding(profile)).toBe(false);
-    profile.fills[1]!.reads.tokens = profile.fills[1]!.reads.tokens.filter(r => !r.startsWith("tokens.control-size"));
+    profile.fills[1]!.reads.themes = profile.fills[1]!.reads.themes.filter(r => !r.startsWith("themes.spacing"));
     expect(checkComponentProfile(profile).findings.some(f => f.code === "K11" && f.subject === profile.fills[1]!.slot && f.severity === "error")).toBe(true);
   });
   it("still fails two members that bind different nonempty label type sets", () => {
     const profile = mixed();
-    profile.tokens["tokens.caption-size.default"] = { property: "--caption", light: "12px" };
-    profile.fills[1]!.reads.tokens = profile.fills[1]!.reads.tokens.map(r => r === "tokens.body-size.default" ? "tokens.caption-size.default" : r);
+    profile.tokens["themes.font-mono.default"] = { property: "--caption", light: "12px" };
+    profile.fills[1]!.reads.themes = profile.fills[1]!.reads.themes.map(r => r === "themes.font-sans.default" ? "themes.font-mono.default" : r);
     expect(labelFinding(profile)).toBe(true);
   });
 });
@@ -404,9 +404,9 @@ describe("qualification rule groups (QUAL-RECOUNT G1, G2, G7a, G11)", () => {
   const append = (profile: Mutable<ComponentCheckInput>, text: string) => source(profile, componentProfile().observations["components.button"]!.files[0]!.content + text);
   function hairline(): Mutable<ComponentCheckInput> {
     const profile = fixture();
-    profile.tokens["tokens.border-width.hairline"] = { property: "--ui-border-hairline", light: "1px" };
-    profile.slots[0]!.contract.allowedReads.tokens.push("tokens.border-width");
-    profile.fills[0]!.reads.tokens.push("tokens.border-width"); refreshTokens(profile);
+    profile.tokens["themes.border.default"] = { property: "--ui-border-hairline", light: "1px" };
+    profile.slots[0]!.contract.allowedReads.themes.push("themes.border");
+    profile.fills[0]!.reads.themes.push("themes.border"); refreshTokens(profile);
     return profile;
   }
   it("check-components K4 ignores utility names inside custom properties and reads v4 arbitrary forms whole", () => {
@@ -448,7 +448,7 @@ describe("qualification rule groups (QUAL-RECOUNT G1, G2, G7a, G11)", () => {
     const profile = fixture(); append(profile, ` const cls = "${free.join(" ")}";`);
     expect(k4(profile)).toEqual([]);
     // A value-free name that the compiled CSS did bind to a token is still judged by its binding.
-    const bound = fixture(); append(bound, ' const cls = "p-0";'); bound.classBindings = { "p-0": "tokens.spacing.none" };
+    const bound = fixture(); append(bound, ' const cls = "p-0";'); bound.classBindings = { "p-0": "themes.spacing.none" };
     expect(k4(bound)).toEqual(["Utility p-0 has no bound consumer token"]);
     // Must still flag: every length, colour or spacing value, named or arbitrary.
     for (const [cls, message] of [["h-3", "Utility h-3 has no bound consumer token"], ["w-3", "Utility w-3 has no bound consumer token"], ["p-2", "Utility p-2 has no bound consumer token"],

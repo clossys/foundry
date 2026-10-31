@@ -27,7 +27,7 @@ export interface PublisherDeliveryChoice {
 }
 export type FormatMedium = "screen" | "email" | "image" | "document" | "video" | "deck";
 export type FormatSize =
-  | { readonly kind: "responsive"; readonly breakpoints: readonly `tokens.breakpoint.${LayoutBreakpoint}`[] }
+  | { readonly kind: "responsive"; readonly breakpoints: readonly LayoutBreakpoint[] }
   | { readonly kind: "fixed"; readonly unit: "px"; readonly width: number; readonly height?: number }
   | { readonly kind: "paper"; readonly unit: "mm"; readonly width: number; readonly height: number }
   | { readonly kind: "aspect-ratio"; readonly width: number; readonly height: number };

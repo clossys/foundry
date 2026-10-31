@@ -3,7 +3,7 @@ import { buildSlotTree, type SlotTreeNode } from "../model.js";
 import type { TreeViewNode } from "../TreeView.js";
 
 /** D5g row order: Frames on top, Tokens at the bottom. */
-export const EXPLORER_LAYER_ORDER: readonly LayerId[] = ["frames", "sections", "components", "assets", "tokens"];
+export const EXPLORER_LAYER_ORDER: readonly LayerId[] = ["frames", "sections", "components", "assets", "themes"];
 
 /** One navigation target: a layer, optionally an L1 or L2 branch inside it, optionally an L3 leaf. */
 export interface StudioNavigateTarget { readonly layer: LayerId; readonly l1?: string; readonly l2?: string; readonly leaf?: string }

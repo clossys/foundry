@@ -40,12 +40,18 @@
             "assets.image"
           ],
           "components": [],
-          "tokens": [
-            "tokens.body-size",
-            "tokens.caption-size",
-            "tokens.heading-size",
-            "tokens.spacing",
-            "tokens.text-color"
+          "themes": [
+            "themes.spacing",
+            "themes.foreground",
+            "themes.card-foreground",
+            "themes.popover-foreground",
+            "themes.primary-foreground",
+            "themes.secondary-foreground",
+            "themes.accent-foreground",
+            "themes.muted-foreground",
+            "themes.sidebar-foreground",
+            "themes.sidebar-primary-foreground",
+            "themes.sidebar-accent-foreground"
           ]
         },
         "sourceFiles": [
@@ -119,12 +125,18 @@
         "assets": [
           "assets.image"
         ],
-        "tokens": [
-          "tokens.body-size",
-          "tokens.caption-size",
-          "tokens.heading-size",
-          "tokens.spacing",
-          "tokens.text-color"
+        "themes": [
+          "themes.spacing",
+          "themes.foreground",
+          "themes.card-foreground",
+          "themes.popover-foreground",
+          "themes.primary-foreground",
+          "themes.secondary-foreground",
+          "themes.accent-foreground",
+          "themes.muted-foreground",
+          "themes.sidebar-foreground",
+          "themes.sidebar-primary-foreground",
+          "themes.sidebar-accent-foreground"
         ]
       },
       "slot": "sections.cards",

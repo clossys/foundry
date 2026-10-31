@@ -7,7 +7,7 @@ import type { WiringException } from "../../catalog-core/wiring.js";
 import type { ComputedBlockRelations, ComputedLeafConsumers } from "../../catalog/types.js";
 
 /** Lowest layer first. "Using what" reads in this order (below first); "Used where" in reverse (above first). */
-export const USAGE_LAYERS: readonly UsageLayer[] = ["tokens", "assets", "components", "sections", "frames", "pages"];
+export const USAGE_LAYERS: readonly UsageLayer[] = ["themes", "assets", "components", "sections", "frames", "pages"];
 const EVIDENCE: readonly UsageEvidence[] = ["declared", "scanned", "runtime"];
 
 /** One row: the element at the other end, its selected fill, and (direct rows) the edge kinds, evidence and site count. */
@@ -119,7 +119,7 @@ export function usageBlockRelations(graph: UsageGraph, sectionLeaf: string): Com
   const out = uses(graph, sectionLeaf);
   return {
     components: sorted(out.flatMap(edge => edge.kind === "composes" && edge.to.startsWith("components.") ? [edge.to as `components.${string}`] : [])),
-    tokens: sorted(out.flatMap(edge => edge.kind === "reads" && edge.to.startsWith("tokens.") ? [edge.to as `tokens.${string}`] : [])),
+    themes: sorted(out.flatMap(edge => edge.kind === "reads" && edge.to.startsWith("themes.") ? [edge.to as `themes.${string}`] : [])),
     composedBy: sorted(usedBy(graph, sectionLeaf).map(edge => edge.from)),
   };
 }

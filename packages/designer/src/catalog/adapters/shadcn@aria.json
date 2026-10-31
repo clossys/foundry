@@ -1,131 +1,130 @@
 {
   "bindings": {
     "accent": {
-      "member": "tokens.surface-color.selected",
+      "member": "themes.accent.default",
       "property": "--color-surface-selected"
     },
     "accent-foreground": {
-      "member": "tokens.text-color.primary",
+      "member": "themes.foreground.default",
       "property": "--color-ink-primary"
     },
     "background": {
-      "member": "tokens.surface-color.base",
+      "member": "themes.background.default",
       "property": "--color-surface-base"
     },
     "border": {
-      "member": "tokens.border-color.base",
+      "member": "themes.border.default",
       "property": "--color-line-base"
     },
     "card": {
-      "member": "tokens.surface-color.raised",
+      "member": "themes.card.default",
       "property": "--color-surface-raised"
     },
     "card-foreground": {
-      "member": "tokens.text-color.primary",
+      "member": "themes.foreground.default",
       "property": "--color-ink-primary"
     },
     "chart-1": {
-      "member": "tokens.categorical-color.1",
+      "member": "themes.chart-1.default",
       "property": "--color-chart-categorical-1"
     },
     "chart-2": {
-      "member": "tokens.categorical-color.2",
+      "member": "themes.chart-2.default",
       "property": "--color-chart-categorical-2"
     },
     "chart-3": {
-      "member": "tokens.categorical-color.3",
+      "member": "themes.chart-3.default",
       "property": "--color-chart-categorical-3"
     },
     "chart-4": {
-      "member": "tokens.categorical-color.4",
+      "member": "themes.chart-4.default",
       "property": "--color-chart-categorical-4"
     },
     "chart-5": {
-      "member": "tokens.categorical-color.5",
+      "member": "themes.chart-5.default",
       "property": "--color-chart-categorical-5"
     },
     "destructive": {
-      "member": "tokens.status-color.danger",
+      "member": "themes.destructive.default",
       "property": "--color-status-danger"
     },
     "foreground": {
-      "member": "tokens.text-color.primary",
+      "member": "themes.foreground.default",
       "property": "--color-ink-primary"
     },
     "input": {
-      "member": "tokens.border-color.strong",
       "property": "--color-line-strong"
     },
     "muted": {
-      "member": "tokens.surface-color.sunken",
+      "member": "themes.muted.default",
       "property": "--color-surface-sunken"
     },
     "muted-foreground": {
-      "member": "tokens.text-color.muted",
+      "member": "themes.muted-foreground.default",
       "property": "--color-ink-muted"
     },
     "popover": {
-      "member": "tokens.surface-color.overlay",
+      "member": "themes.popover.default",
       "property": "--color-overlay-surface"
     },
     "popover-foreground": {
-      "member": "tokens.text-color.primary",
+      "member": "themes.foreground.default",
       "property": "--color-ink-primary"
     },
     "primary": {
-      "member": "tokens.action-color.default",
+      "member": "themes.primary.default",
       "property": "--color-action"
     },
     "primary-foreground": {
-      "member": "tokens.text-color.on-action",
+      "member": "themes.primary-foreground.default",
       "property": "--color-ink-on-action"
     },
     "radius": {
-      "member": "tokens.control-radius.default",
+      "member": "themes.radius.default",
       "property": "--radius-control"
     },
     "ring": {
-      "member": "tokens.focus-color.default",
+      "member": "themes.ring.default",
       "property": "--color-focus-ring"
     },
     "secondary": {
-      "member": "tokens.control-color.tonal",
+      "member": "themes.secondary.default",
       "property": "--color-control-tonal"
     },
     "secondary-foreground": {
-      "member": "tokens.text-color.primary",
+      "member": "themes.foreground.default",
       "property": "--color-ink-primary"
     },
     "sidebar": {
-      "member": "tokens.surface-color.base",
+      "member": "themes.background.default",
       "property": "--color-surface-base"
     },
     "sidebar-accent": {
-      "member": "tokens.surface-color.selected",
+      "member": "themes.accent.default",
       "property": "--color-surface-selected"
     },
     "sidebar-accent-foreground": {
-      "member": "tokens.text-color.primary",
+      "member": "themes.foreground.default",
       "property": "--color-ink-primary"
     },
     "sidebar-border": {
-      "member": "tokens.border-color.base",
+      "member": "themes.border.default",
       "property": "--color-line-base"
     },
     "sidebar-foreground": {
-      "member": "tokens.text-color.primary",
+      "member": "themes.foreground.default",
       "property": "--color-ink-primary"
     },
     "sidebar-primary": {
-      "member": "tokens.action-color.default",
+      "member": "themes.primary.default",
       "property": "--color-action"
     },
     "sidebar-primary-foreground": {
-      "member": "tokens.text-color.on-action",
+      "member": "themes.primary-foreground.default",
       "property": "--color-ink-on-action"
     },
     "sidebar-ring": {
-      "member": "tokens.focus-color.default",
+      "member": "themes.ring.default",
       "property": "--color-focus-ring"
     }
   },
@@ -146,15 +145,13 @@
   },
   "fieldTypography": {
     "family": {
-      "member": "tokens.typeface.body",
+      "member": "themes.font-sans.default",
       "property": "--font-body"
     },
     "sm": {
-      "member": "tokens.body-size.default",
       "property": "--text-body"
     },
     "xs": {
-      "member": "tokens.caption-size.default",
       "property": "--text-caption"
     }
   },
@@ -390,15 +387,14 @@
   },
   "sizeLengths": {
     "14px": {
-      "member": "tokens.control-size.switch-thumb",
       "property": "--ui-control-switch-thumb"
     },
     "24px": {
-      "member": "tokens.spacing.xl",
+      "member": "themes.spacing.default",
       "property": "--spacing-xl"
     },
     "32px": {
-      "member": "tokens.spacing.2xl",
+      "member": "themes.spacing.default",
       "property": "--spacing-2xl"
     }
   },

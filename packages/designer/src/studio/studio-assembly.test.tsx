@@ -40,7 +40,7 @@ function scanCanvas(declared: number) {
 }
 
 it("renders every value-layer canvas board as the registered library-board Section: WL1 and WL6 are 0", async () => {
-  const library = adopt(emptyLibrary(), "tokens.surface-color", "foundry");
+  const library = adopt(emptyLibrary(), "themes.background", "shadcn@aria");
   const declared = { boards: -1 };
   function Declared() { declared.boards = useStudioSession().boards.length; return null; }
   render(<StudioProvider catalog={smallCatalog} adapter={{ load: async () => ({ library }), save: async () => ({ ok: false, reason: "unavailable" }) }} labels={labels}>

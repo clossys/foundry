@@ -9,12 +9,12 @@ export const testMetrics: SystemMetrics = {
 
 /** Five layers in catalog (build) order, deliberately not in canvas order. Ragged on purpose. */
 export const testPlacements: readonly Placement[] = [
-  { layer: "tokens", nodes: [
+  { layer: "themes", nodes: [
     { id: "color", label: "Color", children: [
-      { id: "color-engine", label: "Engine", leaves: ["tokens.color-ramp"] },
-      { id: "color-palettes", label: "Palettes", leaves: ["tokens.accent-color", "tokens.status-color", "tokens.surface-color"] },
+      { id: "color-engine", label: "Engine", leaves: ["themes.chart-1"] },
+      { id: "color-palettes", label: "Palettes", leaves: ["themes.primary", "themes.destructive", "themes.background"] },
     ] },
-    { id: "space", label: "Space", children: [{ id: "space-scale", label: "Scale", leaves: ["tokens.spacing", "tokens.radius"] }] },
+    { id: "space", label: "Space", children: [{ id: "space-scale", label: "Scale", leaves: ["themes.spacing", "themes.radius"] }] },
   ] },
   { layer: "assets", nodes: [{ id: "logo", label: "Logo", children: [{ id: "logo-artwork", label: "Artwork", leaves: ["assets.lockup", "assets.mark"] }] }] },
   { layer: "components", nodes: [

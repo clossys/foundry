@@ -31,7 +31,7 @@ export interface NeedCandidate { library: "shadcn@aria" | "starter" | "foundry";
 export interface NeedRecord { id: string; raisedBy: string; missing: string; kind: "slot" | "member" | "leaf"; status: NeedStatus; candidate: NeedCandidate | null; evidence: NeedEvidence[]; createdBy: "dogfood-check" | "skill" | "owner"; createdAt: string; updatedAt: string; closedBy: string | null }
 export interface DogfoodException { name: string; file: string; elementId: string; hash: string; reason: string; owner: string; expiry: string }
 export interface DogfoodInput {
-  files: readonly { file: string; content: string }[]; tokens?: readonly ConsumptionToken[]; themeCss?: string;
+  files: readonly { file: string; content: string }[]; themes?: readonly ConsumptionToken[]; themeCss?: string;
   /** JSON paths actually parsed by the source runner; never source or export bytes. */
   data?: readonly string[];
   /** Fresh selected source values for CSS definitions; never expected CSS or a submitted manifest. */
@@ -573,7 +573,7 @@ export function runDogfood(input: DogfoodInput) {
           if (marked) ignored.push({ file: file.file, line: lineAt(attribute.start), evidence: candidate.raw });
           else add("DF2", node, `Hard-coded ${candidate.kind}: ${candidate.raw}`);
         }
-        const observed = scanSurfaceReads([{ path: file.file, content: text }], { id: "attribute", allowedReads: {} }, input.tokens ?? [], input.themeCss ?? "")[0]!;
+        const observed = scanSurfaceReads([{ path: file.file, content: text }], { id: "attribute", allowedReads: {} }, input.themes ?? [], input.themeCss ?? "")[0]!;
         if (["class", "className"].includes(attribute.name) && isStatic && !marked) {
           const value = attribute.dynamic ? text.slice(1, -1).trim().slice(1, -1) : text.slice(1, -1);
           const unknown = value.split(/\s+/).filter(Boolean).filter(value => { const base = value.split(":").at(-1)!.replace(/^!|!$/g, ""); return !layoutClass.test(base) && !observed.utilities.includes(base) && !base.includes("["); });
@@ -581,7 +581,7 @@ export function runDogfood(input: DogfoodInput) {
         }
         if (attribute.name === "style" && isStatic && !tokenPart && !candidates.length && !observed.properties.length && text.replace(/\s/g, "") !== "{{}}" && !marked) add("DF2", node, "unresolved inline styling: no token read establishes these values.");
         const contract = input.contracts?.[file.file] ?? { id: `${file.file}#surface`, allowedReads: {} };
-        for (const finding of scanSurfaceReads([{ path: file.file, content: text }], contract, input.tokens ?? [], input.themeCss ?? "")[0]!.findings) add("DF4", node, `${finding.code}: ${finding.reads.join(", ")}`, contract.id);
+        for (const finding of scanSurfaceReads([{ path: file.file, content: text }], contract, input.themes ?? [], input.themeCss ?? "")[0]!.findings) add("DF4", node, `${finding.code}: ${finding.reads.join(", ")}`, contract.id);
       }
     }
     for (const issue of parsed.unresolved) add("DF2", { tag: "source", start: issue.start, end: issue.start, attributes: [] }, issue.message);

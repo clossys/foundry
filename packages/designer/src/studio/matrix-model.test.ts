@@ -11,7 +11,7 @@ it("covers every canonical token and asset leaf exactly once in rows and boards"
 });
 it("summarizes resolved from consumer fills instead of candidate availability", () => {
  const empty=emptyLibrary(); const a=matrixSummary({catalog,library:empty,working:empty}); expect(a.total).toBe(catalog.slots.length); expect(a.resolved).toBe(0);
- const working=adopt(); const b=matrixSummary({catalog,library:empty,working,layer:"tokens"}); expect(b.total).toBe(catalog.slots.filter(slot=>slot.layer==="tokens").length); expect(b.resolved).toBe(1); expect(b.categories.every(c=>c.supported)).toBe(true);
+ const working=adopt(); const b=matrixSummary({catalog,library:empty,working,layer:"themes"}); expect(b.total).toBe(catalog.slots.filter(slot=>slot.layer==="themes").length); expect(b.resolved).toBe(1); expect(b.categories.every(c=>c.supported)).toBe(true);
 });
 it("accepts new placement layers through the catalog seam without token filters", () => {
  const library=emptyLibrary(); const placements=[...smallCatalog.placements,{layer:"components" as const,nodes:[{id:"incoming",label:"Incoming registry",leaves:[]}]}]; expect(purePlacementTree(placements).map(n=>n.id)).toContain("components/incoming");
@@ -24,12 +24,12 @@ it("keeps selected-only projection separate from demanded candidate caching and 
  const library = adopt(); const cache = new Map<string, Candidate[]>();
  const input = { catalog: smallCatalog, library, working: library, changes: emptyChanges(library), expanded: new Set<string>(), cache, evaluation: createStudioEvaluation({ catalog: smallCatalog, working: library }) };
  const partial = matrixRows({ ...input, evaluateRows: new Set() });
- const selected = partial.find(row => row.id === "tokens.surface-color")!;
+ const selected = partial.find(row => row.id === "themes.background")!;
  expect(selected.candidatesReady).toBe(false); expect(selected.candidates).toHaveLength(1);
  expect(selected.candidates[0]?.selected).toBe(true); expect(selected.candidates[0]?.members.length).toBeGreaterThan(0);
  expect(cache.size).toBe(0);
  expect(partial.filter(row => row.scope !== "slot").every(row => row.candidates.length === 0)).toBe(true);
- const demanded = matrixRows({ ...input, evaluateRows: new Set(["tokens.surface-color"]) });
+ const demanded = matrixRows({ ...input, evaluateRows: new Set(["themes.background"]) });
  expect(demanded.find(row => row.id === selected.id)?.candidates.length).toBeGreaterThan(1);
  expect(demanded.find(row => row.id === selected.id)?.candidatesReady).toBe(true);
  for (const rows of [partial, demanded, matrixRows({ ...input, evaluateRows: new Set() })]) {

@@ -373,14 +373,6 @@
         },
         {
           "code": "K4",
-          "message": "starters/tailwind/src/Tree.tsx: z-10: Design utility needs a consumer binding"
-        },
-        {
-          "code": "K4",
-          "message": "starters/tailwind/src/Tree.tsx: z-20: Design utility needs a consumer binding"
-        },
-        {
-          "code": "K4",
           "message": "starters/tailwind/src/utils.ts: dark:outline-blue-500: Design utility needs a consumer binding"
         },
         {
@@ -464,7 +456,7 @@
         },
         {
           "path": "components/tree/Tree.tsx",
-          "sha256": "2f330a1b79899c5e0ee77c38e54bbc6e6c30006c63d694926f4356a88d782875"
+          "sha256": "4ae40ca482a0171de69941011725234112f7581e765b1f6c232d570554214ecd"
         },
         {
           "path": "components/tree/utils.ts",
@@ -519,18 +511,10 @@
           "components.checkbox",
           "components.icon"
         ],
-        "tokens": [
-          "tokens.border-width.hairline",
-          "tokens.control-radius.default",
-          "tokens.duration.default",
-          "tokens.easing.default",
-          "tokens.font-size.sm",
-          "tokens.font-size.xs",
-          "tokens.font-weight.medium",
-          "tokens.spacing.2xl",
-          "tokens.spacing.md",
-          "tokens.spacing.xs",
-          "tokens.typeface.body"
+        "themes": [
+          "themes.font-sans.default",
+          "themes.radius.default",
+          "themes.spacing.default"
         ]
       },
       "root": "rac:Tree",

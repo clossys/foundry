@@ -7,7 +7,7 @@ import { TOKENS } from "../../tokens/tokens.js";
  * to bottom, consumers above what they are built on, so the "uses" highlight
  * reads downward.
  */
-export const SYSTEM_LAYER_ORDER: readonly LayerId[] = ["frames", "sections", "components", "assets", "tokens"];
+export const SYSTEM_LAYER_ORDER: readonly LayerId[] = ["frames", "sections", "components", "assets", "themes"];
 
 export interface SystemCell {
   readonly leaf: string;

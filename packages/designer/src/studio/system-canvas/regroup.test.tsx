@@ -42,9 +42,9 @@ it("regroups a Sections leaf without changing its identity, fill, URL, frozen me
  expect(cell.l2).toBe(to.id);
  expect(trailAt(b,centreOn(cell.rect,{width:800,height:600},1),{width:800,height:600}).line?.label).toBe(to.label);expect(cell.line).not.toBe(a.cells.get(leaf)!.line);expect([...b.cells.keys()].sort()).toEqual([...a.cells.keys()].sort());
  for(const placements of [before,after]) {
-  expect(checkFrozenLeafSets(placements,build.slots,["tokens","assets","components"])).toEqual([]);
+  expect(checkFrozenLeafSets(placements,build.slots,["themes","assets","components"])).toEqual([]);
   expect(normaliseStudioUrl({search:"?node="+leaf,hash:""},resolverFromPlacements(placements)).location.node).toBe(leaf);
-  for(const id of systemLayout(placements).cells.keys())expect(id).toMatch(/^(tokens|assets|components|sections|frames)\.[a-z0-9-]+$/);
+  for(const id of systemLayout(placements).cells.keys())expect(id).toMatch(/^(themes|assets|components|sections|frames)\.[a-z0-9-]+$/);
  }
  const info={source:"foundry",pin:"recorded",origin:"composed"};
  expect(identityFor(after,leaf,info).path).toContain(to.label);

@@ -26,7 +26,7 @@ it('registers callable parts on their five existing section identities without a
 it('the unchanged native S5 contract rejects a removed part registration', () => {
   const slot = structuredClone(loadSectionRegistry().slots.find(slot => slot.id === 'sections.specimen-section-viewports')!);
   const fill = surfaceOf(specimenSectionSourceCatalog().fills.find(document => document.$extensions['com.clossys.fill'].slot === slot.id)!);
-  const actual = { scanStatus: 'lower-bound' as const, sourceFiles: [{ path: fill.impl.entry, sha256: fill.pin.files[0]!.sha256 }], scannedReads: { tokens: [], assets: [], components: [] }, scannedComposes: [] };
+  const actual = { scanStatus: 'lower-bound' as const, sourceFiles: [{ path: fill.impl.entry, sha256: fill.pin.files[0]!.sha256 }], scannedReads: { themes: [], assets: [], components: [] }, scannedComposes: [] };
   expect(surfaceConsumptionFindings(slot, fill, actual)).toEqual([]);
   slot.contract.parts = slot.contract.parts.filter(part => part !== 'renderViewport');
   expect(surfaceConsumptionFindings(slot, fill, actual)).toContain('S5 unsupported composes: renderViewport');

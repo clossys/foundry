@@ -65,8 +65,6 @@ function assembly({ body, values = {}, sectionHosts, seen = [] }: Options): Runt
     binding: { id: "section-channels", frame: { leaf: FRAME, fill: fillId(FRAME), config: null, members: [], content: required(FRAME) }, frameSlots: {}, sections: { body: sections } },
     layout: { descriptor: { library: engine.library.source.id, fill: "section-channels/layout", leaf: "layouts.stack", config: "single", members: {}, slots: [{ id: "body", min: 1, max: sections.length, accepts: sections.map(row => row.leaf as `sections.${string}`) }], breakpoints: [], states: ["default"], renderer: frame.renderer }, render: ({ slots }) => slots.body!.join("|"), expectedOrder: (_cell, paths) => paths.body! },
     themes: ["light"], states: ["default"], css: [{ id: "explicit", contents: "/* explicit */" }], assets: [],
-    breakpointPixels: Object.fromEntries(Object.entries(profile.values.members).filter(([id]) => id.startsWith("tokens.breakpoint.")).flatMap(([id, member]) => { const value = member.value.light as { unit?: string; value?: number }; return value?.unit === "px" ? [] : [[id, Math.round(value.value! * 16)]]; })),
-    breakpointBasis: { renderer: frame.renderer, environment: { rootFontSize: 16 } },
   } as unknown as RuntimeAssemblyInput<string>;
 }
 const header = (ref = "header:empty"): Record<string, RuntimeContentRef> => ({ [SECTION_HEADER_CONTENT_KEY]: { kind: "copy", ref } });

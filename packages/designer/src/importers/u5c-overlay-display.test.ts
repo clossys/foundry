@@ -6,7 +6,6 @@ import React from "react";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import slots from "../catalog/slots/components.json" with { type: "json" };
-import timing from "../catalog/fills/foundry/tokens.behavior-timing.json" with { type: "json" };
 import { generatedShadcnComponentFiles, importShadcnAriaComponents, materializeShadcnComponent, SHADCN_COMPONENT_ITEMS } from "./shadcn-aria-components.js";
 
 const here = resolve(import.meta.dirname, "__fixtures__/shadcn-aria");
@@ -64,13 +63,12 @@ describe("overlay and display pinned source evidence", () => {
     const source = result.rewrites.tooltip!.files.find(file => file.path === "components/tooltip/tooltip.tsx")!.content;
     const Trigger = () => null, Focusable = () => null;
     const exports = moduleExports(source, { TooltipTrigger: Trigger, Tooltip: () => null, OverlayArrow: () => null, Focusable });
-    const delay = timing.tokens["behavior-timing"]["tooltip-delay"].$value.value;
-    const closeDelay = timing.tokens["behavior-timing"]["tooltip-close"].$value.value;
+    // The caller binds exact consumer values; one member in seconds proves the unit conversion.
+    const delay = 500, closeDelay = 300;
     const behaviorTiming = {
-      "tokens.behavior-timing.tooltip-delay": timing.tokens["behavior-timing"]["tooltip-delay"].$value,
-      "tokens.behavior-timing.tooltip-close": timing.tokens["behavior-timing"]["tooltip-close"].$value,
+      "tooltip-delay": { value: 500, unit: "ms" as const },
+      "tooltip-close": { value: 0.3, unit: "s" as const },
     };
-    expect([delay, closeDelay]).toEqual([500, 300]);
     const children = [React.createElement("button", { key: "trigger" }, "Help"), React.createElement("span", { key: "tip" }, "Details")];
     const explicit = exports.TooltipTrigger!({ children, behaviorTiming, delay, closeDelay, isDisabled: true, "aria-label": "Help" });
     expect(explicit.type).toBe(Trigger);
@@ -80,8 +78,9 @@ describe("overlay and display pinned source evidence", () => {
     const bound = exports.TooltipTrigger!({ children, behaviorTiming });
     expect(bound.props).toMatchObject({ delay, closeDelay });
     expect(() => exports.TooltipTrigger!({ children })).toThrow(/tooltip timing binding/);
-    expect(slots.find(slot => slot.id === "components.tooltip")!.contract.allowedReads.tokens).toContain("tokens.behavior-timing");
-    expect(result.rewrites.tooltip!.reads.tokens).toEqual(expect.arrayContaining(["tokens.behavior-timing.tooltip-delay", "tokens.behavior-timing.tooltip-close"]));
+    // Timing is a caller binding, not a themes leaf: neither the contract nor the rewrite reads one.
+    expect(slots.find(slot => slot.id === "components.tooltip")!.contract.allowedReads.themes.some(read => /behavior-timing|duration|easing/.test(read))).toBe(false);
+    expect(result.rewrites.tooltip!.reads.themes.some(read => /behavior-timing|duration|easing/.test(read))).toBe(false);
   });
   it("keeps the popover trigger/context protocol and placement forwarding intact", () => {
     const result = importShadcnAriaComponents(input());
@@ -99,12 +98,11 @@ describe("overlay and display pinned source evidence", () => {
     expect(exports).not.toHaveProperty("PopoverContent");
     expect(source).not.toContain("OverlayArrow");
   });
-  it("preserves overlay elevation and z-index token reads without introducing literal shadows", () => {
+  it("preserves overlay elevation reads without introducing literal shadows", () => {
     const result = importShadcnAriaComponents(input());
     for (const item of ["dialog", "popover", "dropdown-menu"]) {
-      if (item === "dialog") expect(result.rewrites[item]!.reads.tokens.some(read => read.startsWith("tokens.elevation."))).toBe(false);
-      else expect(result.rewrites[item]!.reads.tokens).toContain("tokens.elevation.floating");
-      expect(result.rewrites[item]!.reads.tokens).toContain("tokens.z-index.modal");
+      if (item === "dialog") expect(result.rewrites[item]!.reads.themes.some(read => read.startsWith("themes.shadow."))).toBe(false);
+      else expect(result.rewrites[item]!.reads.themes).toContain("themes.shadow.md");
       expect(result.rewrites[item]!.files.map(file => file.content).join("\n")).not.toMatch(/\bshadow-(?:sm|md|lg|xl|2xl)\b/);
     }
     expect(result.rewrites.tabs!.files.map(file => file.content).join("\n")).not.toMatch(/cn-tabs-list-variant-(?:default|line)/);

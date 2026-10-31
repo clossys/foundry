@@ -1,6 +1,6 @@
 import { checkIAPlacement } from "../../../catalog-core/ia-placement.js";
 import type { Board, CoverageInput, CoverageReport, Fill, FillState, Finding, Layer, Leaf } from "./types.js";
-export const LAYERS: readonly Layer[] = ["tokens", "assets", "components", "sections", "frames"];
+export const LAYERS: readonly Layer[] = ["themes", "assets", "components", "sections", "frames"];
 const sorted = (items: Iterable<string>): string[] => [...new Set(items)].sort();
 const states = (): Record<FillState, number> => ({ absent: 0, draft: 0, checked: 0, approved: 0 });
 

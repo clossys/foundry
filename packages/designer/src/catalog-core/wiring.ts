@@ -29,7 +29,7 @@ export interface WiringFinding { code: WiringCode; severity: "error" | "warning"
 export type WiringLayer = "sections" | "frames" | "pages";
 export interface WiringSource { path: string; content: string; layer: WiringLayer }
 /** A buildSurfaceConsumption() fill row; only the fields WL2 reads. */
-export interface WiringSurfaceFill { id: string; slot: string; sourceFiles: readonly string[]; scannedReads: { tokens: readonly string[]; assets: readonly string[] }; scannedTokenMembers: readonly string[] }
+export interface WiringSurfaceFill { id: string; slot: string; sourceFiles: readonly string[]; scannedReads: { themes: readonly string[]; assets: readonly string[] }; scannedTokenMembers: readonly string[] }
 /** One `--check` runner row: the committed bytes and a fresh regeneration (absent: no generator). */
 export interface WiringGeneratedArtifact { path: string; committed?: string; regenerated?: string }
 /** Publisher's registered-route check output for one nonvisual provider: the exact emitted route
@@ -58,7 +58,7 @@ export interface WiringInput {
   sources: readonly WiringSource[];
   surfaces?: { readonly fills: readonly WiringSurfaceFill[] };
   /** Token inventory for WL2; without it direct token reads stay unmeasured (one notice). */
-  tokens?: readonly ConsumptionToken[];
+  themes?: readonly ConsumptionToken[];
   themeCss?: string;
   /** A wiring-exceptions document (`{ schemaVersion: 1, exceptions: [...] }`) or its row array. */
   exceptions?: unknown;
@@ -83,7 +83,7 @@ const K2_FORBIDDEN_MODULES = ["@radix-ui/", "radix-ui", "@base-ui/", "@tanstack/
 export const WIRING_HEADLESS_MODULES: readonly string[] = Object.freeze([...K2_FORBIDDEN_MODULES, "react-aria-components", "react-aria", "@react-aria/", "react-stately"]);
 const CODES: readonly WiringCode[] = ["WL1", "WL2", "WL3", "WL4", "WL5", "WL6", "WL7", "WL8", "WL9", "WL10"];
 const REQUIRED = ["name", "file", "elementId", "hash", "reason", "owner", "expiry", "read"] as const;
-const READ_ID = /^(?:tokens|assets)\.[a-z0-9]+(?:-[a-z0-9]+)*(?:\.[a-z0-9]+(?:-[a-z0-9]+)*)?$/;
+const READ_ID = /^(?:themes|assets)\.[a-z0-9]+(?:-[a-z0-9]+)*(?:\.[a-z0-9]+(?:-[a-z0-9]+)*)?$/;
 const VISUAL_MODULE = /(?:^|\/)(?:components|blocks|sections|frames|shell|icons|charts)(?:\/|\.|$)/;
 const KEY_LEXICON = /(?:width|height|size|gap|inset|offset|margin|padding|top|left|right|bottom|basis|radius)$/i;
 const DECLARATION_LEXICON = /(?:width|height|gap|inset|offset|margin|padding|basis|radius|panel|rail|sidebar|gutter|column|layout|region|inspector|aside)/i;
@@ -301,7 +301,7 @@ export function readWiringExceptions(document: unknown, files: readonly { path: 
       ...REQUIRED.filter(field => typeof row[field] !== "string" || !(row[field] as string).trim()).map(field => `missing ${field}`),
       ...(WIRING_REASON_CODES as readonly unknown[]).includes(row.reasonCode) ? [] : [`reasonCode ${JSON.stringify(row.reasonCode ?? null)} is outside A3 (${WIRING_REASON_CODES.join(", ")})`],
       ...row.status === "proposed" || row.status === "signed" ? [] : [`status ${JSON.stringify(row.status ?? null)} is not proposed or signed`],
-      ...typeof row.read === "string" && row.read && !READ_ID.test(row.read) ? [`read ${row.read} is not a tokens.* or assets.* slot member`] : [],
+      ...typeof row.read === "string" && row.read && !READ_ID.test(row.read) ? [`read ${row.read} is not a themes.* or assets.* slot member`] : [],
       ...typeof row.hash === "string" && row.hash && !/^sha256:[0-9a-f]{64}$/.test(row.hash) ? ["hash is not sha256:<64 hex>"] : [],
       ...typeof row.elementId === "string" && file && !row.elementId.startsWith(`${file}#`) ? ["elementId does not address its file"] : [],
       ...typeof row.name === "string" && (names.get(row.name) ?? 0) > 1 ? ["duplicate name"] : [],
@@ -329,11 +329,11 @@ export function checkWiring(input: WiringInput): WiringResult {
   const covering = read.exceptions.filter(row => row.state === "current" || row.state === "proposed").map(row => row.row);
   const covered = (files: readonly string[], member: string): boolean => covering.some(row => row.read === member && files.includes(row.file));
   // WL2: direct reads in the source itself; reads inside a registered component are that component's own.
-  if (!input.tokens && sources.length) findings.push({ code: "WL2", severity: "notice", file: "", line: 0, subject: "tokens", evidence: "Token inventory not supplied; direct token reads are unmeasured, not clean." });
+  if (!input.themes && sources.length) findings.push({ code: "WL2", severity: "notice", file: "", line: 0, subject: "themes", evidence: "Token inventory not supplied; direct token reads are unmeasured, not clean." });
   const property = new Map<string, string>();
-  for (const token of input.tokens ?? []) for (const [member, name] of Object.entries(token.contract.emit ?? {})) property.set(`${token.id}.${member}`, name);
+  for (const token of input.themes ?? []) for (const [member, name] of Object.entries(token.contract.emit ?? {})) property.set(`${token.id}.${member}`, name);
   for (const source of sources) {
-    const scan = scanSurfaceReads([{ path: source.path, content: mask(source.content, isCss(source.path), false) }], { id: source.path, allowedReads: {} }, input.tokens ?? [], input.themeCss ?? "")[0]!;
+    const scan = scanSurfaceReads([{ path: source.path, content: mask(source.content, isCss(source.path), false) }], { id: source.path, allowedReads: {} }, input.themes ?? [], input.themeCss ?? "")[0]!;
     for (const member of [...scan.tokenMembers, ...scan.assets]) if (!covered([source.path], member)) {
       const at = source.content.indexOf(property.get(member) ?? member);
       findings.push({ code: "WL2", severity: "error", file: source.path, line: at < 0 ? 1 : lineAt(source.content, at), subject: source.path, evidence: `${source.layer} reads ${member} directly with no current wiring exception (A3)` });

@@ -28,7 +28,7 @@ const components = {
   ] satisfies ComponentEntry[],
 };
 const tokens = {
-  kind: "tokens" as const,
+  kind: "themes" as const,
   groups: [{ id: "color", label: "Color", children: [{ id: "ink", label: "Ink" }] }],
   entries: [
     { id: "--color-ink-primary", label: "Ink primary", l1: "color", l2: "ink", lifecycle: "stable", tier: "role" },
@@ -64,7 +64,7 @@ const componentKind: CatalogBrowserKind<ComponentEntry> = {
   fields: entry => [{ label: "Status", value: entry.status }],
   states: entry => entry.id === "act.button" ? ["hover", "focus-visible", "disabled"] : [],
   usage: entry => entry.id === "act.button" ? <p>Use for the primary action.</p> : undefined,
-  builtFrom: entry => entry.id === "act.button" ? [{ catalog: "tokens", entryId: "--color-ink-primary" }, { catalog: "tokens", entryId: "--missing", label: "Missing token" }] : [],
+  builtFrom: entry => entry.id === "act.button" ? [{ catalog: "themes", entryId: "--color-ink-primary" }, { catalog: "themes", entryId: "--missing", label: "Missing token" }] : [],
   usedBy: entry => entry.id === "act.button" ? [{ catalog: "components", entryId: "act.icon-button" }] : [],
   filters: [{ id: "status", label: "Status", options: [{ id: "main", label: "On main" }, { id: "gap", label: "Gap" }], value: entry => entry.status }],
 };
@@ -186,9 +186,9 @@ describe("CatalogBrowser", () => {
     expect(screen.getByRole("heading", { level: 4, name: "Icon button" })).toBeInTheDocument();
     await userEvent.click(row("Button"));
     await userEvent.click(within(screen.getByRole("region", { name: "Built from" })).getByRole("button", { name: "Ink primary" }));
-    expect(onSelectionChange).toHaveBeenLastCalledWith({ catalog: "tokens", entryId: "--color-ink-primary" });
+    expect(onSelectionChange).toHaveBeenLastCalledWith({ catalog: "themes", entryId: "--color-ink-primary" });
     expect(screen.getByRole("tab", { name: /Tokens/ })).toHaveAttribute("aria-selected", "true");
-    expect(tokenPreview).toHaveBeenLastCalledWith(tokens.entries[0], { kind: "tokens", config: {} });
+    expect(tokenPreview).toHaveBeenLastCalledWith(tokens.entries[0], { kind: "themes", config: {} });
     expect(row("Ink primary")).toHaveAttribute("aria-selected", "true");
   });
 
@@ -232,8 +232,8 @@ describe("CatalogBrowser", () => {
     await userEvent.click(row("Icon button"));
     expect(onSelectionChange).toHaveBeenLastCalledWith({ catalog: "components", entryId: "act.icon-button" });
     expect(row("Button")).toHaveAttribute("aria-selected", "true");
-    rerender(<CatalogBrowser {...base} selection={{ catalog: "tokens", entryId: "--color-blue-500" }} config={{}} />);
-    expect(tokenPreview).toHaveBeenLastCalledWith(tokens.entries[1], { kind: "tokens", config: {} });
+    rerender(<CatalogBrowser {...base} selection={{ catalog: "themes", entryId: "--color-blue-500" }} config={{}} />);
+    expect(tokenPreview).toHaveBeenLastCalledWith(tokens.entries[1], { kind: "themes", config: {} });
     expect(row("Blue 500")).toHaveAttribute("aria-selected", "true");
   });
 

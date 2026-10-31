@@ -133,7 +133,7 @@ async function draw(input: CompositeEngineInput, changeOutput: (files: Composite
     const painted = Object.entries(attributes).filter(([key]) => key !== "key");
     expect([...icon.querySelectorAll(tag)].some(node => painted.every(([key, value]) => node.getAttribute(key) === value)), "rendered glyph must use consumer asset bytes").toBe(true);
   }
-  const ink = profile.values.members["tokens.text-color.primary"]!;
+  const ink = profile.values.members["themes.foreground.default"]!;
   expect(document.querySelector("style")!.textContent).toContain(`${ink.emit}: ${ink.css.light};`);
   expect(document.querySelector("style")!.getAttribute("data-selected-library")).toBe(profile.selectionHash);
   return { html, document, mark, profile };
@@ -146,7 +146,7 @@ describe("selected library → Tokens → Assets → Components → Sections →
 
   it.each([
     ["Library", /unresolved|missing|selected component set/i],
-    ["Tokens", /tokens\.text-color|unresolved/i],
+    ["Tokens", /themes\.foreground|unresolved/i],
     ["Assets", /assets\.icon-chevron-right|glyph module/i],
     ["Components", /components\.icon|selected component set/i],
     ["Sections", /CallToAction/],
@@ -154,7 +154,7 @@ describe("selected library → Tokens → Assets → Components → Sections →
   ] as const)("kills a broken %s link through the same chain oracle", async (layer, reason) => {
     const input = structuredClone(selected);
     if (layer === "Library") input.library = { ...input.library, values: { fills: [] }, components: { fills: [], files: [] }, surfaces: { version: 1, fills: [], files: [] } };
-    if (layer === "Tokens") input.library.values.fills = input.library.values.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot !== "tokens.text-color");
+    if (layer === "Tokens") input.library.values.fills = input.library.values.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot !== "themes.foreground");
     if (layer === "Assets") input.library.values.fills = input.library.values.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot !== GLYPH);
     if (layer === "Components") input.library.components.fills = input.library.components.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot !== "components.icon");
     if (layer === "Sections" || layer === "Frames") input.library.surfaces!.fills = input.library.surfaces!.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot !== (layer === "Sections" ? SECTION : FRAME));
@@ -182,7 +182,7 @@ describe("selected library → Tokens → Assets → Components → Sections →
 
   it("propagates a consumer token change through derived artwork to the actual rendered page", async () => {
     const initial = await draw(structuredClone(selected)), input = structuredClone(selected);
-    input.library = applyLibraryChange(input.catalog, input.library, { baseHash: libraryHash(input.library), changes: [{ portion: "values", change: { op: "author", slot: "tokens.text-color", tokens: { "on-inverse": { $type: "color", $value: "#fefefe", $extensions: { "com.clossys.css": { raw: "#fefefe" }, "com.clossys.modes": { dark: initial.profile.values.members["tokens.text-color.on-inverse"]!.value.dark! } } } } } }] }, { componentOptions: input.componentOptions, surfaceOptions: input.surfaceOptions! });
+    input.library = applyLibraryChange(input.catalog, input.library, { baseHash: libraryHash(input.library), changes: [{ portion: "values", change: { op: "author", slot: "themes.background", tokens: { default: { $type: "color", $value: "#fefefe", $extensions: { "com.clossys.css": { raw: "#fefefe" }, "com.clossys.modes": { dark: initial.profile.values.members["themes.background.default"]!.value.dark! } } } } } }] }, { componentOptions: input.componentOptions, surfaceOptions: input.surfaceOptions! });
     // Derived assets retain their old input commitment until the producer is explicitly run.
     await expect(draw(input)).rejects.toThrow(/stale|unresolved/i);
     const { source, adoptedAt, ...values } = deriveIdentity(input.catalog.values, { ...input.library.values, source: input.library.source, adoptedAt: input.library.adoptedAt });

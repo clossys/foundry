@@ -2,7 +2,7 @@
 /**
  * `designer-fold-check` — fails when a fold measurement JSON violates the
  * pre-auth fold contract. Same three-state exit contract as
- * `designer-hero-css-check` / `designer-token-check`.
+ * `designer-token-check`.
  */
 
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";

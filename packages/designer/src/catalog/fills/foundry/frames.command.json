@@ -34,11 +34,19 @@
         "scannedReads": {
           "assets": [],
           "components": [],
-          "tokens": [
-            "tokens.body-size",
-            "tokens.control-radius",
-            "tokens.spacing",
-            "tokens.text-color"
+          "themes": [
+            "themes.radius",
+            "themes.spacing",
+            "themes.foreground",
+            "themes.card-foreground",
+            "themes.popover-foreground",
+            "themes.primary-foreground",
+            "themes.secondary-foreground",
+            "themes.accent-foreground",
+            "themes.muted-foreground",
+            "themes.sidebar-foreground",
+            "themes.sidebar-primary-foreground",
+            "themes.sidebar-accent-foreground"
           ]
         },
         "sourceFiles": [
@@ -87,11 +95,19 @@
       "propMap": {},
       "reads": {
         "assets": [],
-        "tokens": [
-          "tokens.body-size",
-          "tokens.control-radius",
-          "tokens.spacing",
-          "tokens.text-color"
+        "themes": [
+          "themes.radius",
+          "themes.spacing",
+          "themes.foreground",
+          "themes.card-foreground",
+          "themes.popover-foreground",
+          "themes.primary-foreground",
+          "themes.secondary-foreground",
+          "themes.accent-foreground",
+          "themes.muted-foreground",
+          "themes.sidebar-foreground",
+          "themes.sidebar-primary-foreground",
+          "themes.sidebar-accent-foreground"
         ]
       },
       "slot": "frames.command",

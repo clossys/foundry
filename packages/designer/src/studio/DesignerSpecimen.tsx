@@ -72,7 +72,7 @@ export function DesignerSpecimen({ leaf, context, need }: DesignerSpecimenProps)
   if (isNeed(semantic)) return need(semantic);
   const Content = semantic.Component;
   const inside = (children: ReactNode) => <Content as="section" data-ds-leaf="components.semantic-content" data-designer-specimen={leaf} className="flex flex-col gap-md">{children}</Content>;
-  if (leaf.startsWith("tokens.") || leaf.startsWith("assets.")) {
+  if (leaf.startsWith("themes.") || leaf.startsWith("assets.")) {
     const members = Object.entries(context.profile.values.members).filter(([, member]) => member.slot === leaf);
     if (!members.length) return need({ leaf, reason: "not-chosen: no resolved consumer members" });
     return inside(<Content as="div" data-ds-leaf={leaf} className="flex flex-wrap gap-md">{members.map(([id, member]) => <Content key={id} as="section" className="flex flex-col gap-sm">
@@ -149,14 +149,14 @@ function TokenMember({ id, member, values, context, need, semantic }: MemberProp
   const css = member.css.light;
   const modes = member.css.dark === undefined ? ["light"] as const : ["light", "dark"] as const;
   if (member.$type === "color" || member.$type === "gradient") return <>{modes.map(mode => {
-    const ink = Object.entries(values.members).find(([, value]) => value.emit === "--color-ink-primary");
-    const ground = Object.entries(values.members).find(([, value]) => value.emit === "--color-surface-base");
-    const pair = member.emit?.includes("ink") ? ground : ink;
+    const ink = Object.entries(values.members).find(([, value]) => value.emit === "--foreground");
+    const ground = Object.entries(values.members).find(([, value]) => value.emit === "--background");
+    const pair = member.emit?.endsWith("foreground") ? ground : ink;
     const color = member.css[mode] ?? css;
     return <Content as="div" key={mode} data-specimen-mode={mode} className="flex flex-col gap-xs">
       <Content as="span" role="img" aria-label={`${id} ${mode}`} style={{ display: "inline-block", inlineSize: "6rem", blockSize: "4rem", background: color }} />
       <Content as="span">{color}</Content>
-      {pair && valid(pair[1]) ? <Content as="span" data-contrast-pair={pair[0]} style={{ background: member.emit?.includes("ink") ? pair[1].css[mode] ?? pair[1].css.light : color, color: member.emit?.includes("ink") ? color : pair[1].css[mode] ?? pair[1].css.light }}>{specimenDataset.tokens.sampleText}</Content> : need({ leaf: member.slot, reason: "The consumer has no resolved contrast pair." })}
+      {pair && valid(pair[1]) ? <Content as="span" data-contrast-pair={pair[0]} style={{ background: member.emit?.endsWith("foreground") ? pair[1].css[mode] ?? pair[1].css.light : color, color: member.emit?.endsWith("foreground") ? color : pair[1].css[mode] ?? pair[1].css.light }}>{specimenDataset.tokens.sampleText}</Content> : need({ leaf: member.slot, reason: "The consumer has no resolved contrast pair." })}
     </Content>;
   })}</>;
   if (member.$type === "duration" || member.$type === "cubicBezier") {
@@ -171,8 +171,7 @@ function TokenMember({ id, member, values, context, need, semantic }: MemberProp
   if (member.$type === "fontFamily") style = { fontFamily: css };
   else if (member.$type === "fontWeight") style = { fontWeight: css };
   else if (member.$type === "dimension" && /(?:body|heading|display|caption)-size$/.test(member.slot)) style = { fontSize: css };
-  else if (member.slot === "tokens.line-height") style = { lineHeight: css };
-  else if (member.slot === "tokens.letter-spacing") style = { letterSpacing: css };
+  else if (member.slot === "themes.tracking-tight") style = { letterSpacing: css };
   else if (member.$type === "dimension" && member.slot.includes("radius")) return <><Content as="div" role="img" aria-label={id} className="size-3xl border border-line-strong bg-surface-raised" style={{ borderRadius: css }} /><Content as="span">{css}</Content></>;
   else if (member.$type === "dimension" && /spacing|size|width|breakpoint/.test(member.slot)) return <><Content as="div" role="img" aria-label={id} className="block h-sm max-w-full bg-accent" style={{ inlineSize: css }} /><Content as="span">{css}</Content></>;
   else if (member.$type === "shadow") return <Content as="div" className="size-3xl bg-surface-raised" style={{ boxShadow: css }} aria-label={id} />;

@@ -12,8 +12,8 @@ function nativeProfile(accent = "#2468ac", darkAccent = "#8ab4de") {
   const initial: LibraryData = { source: { id: "example", kind: "consumer", author: "consumer", license: "MIT" }, fills: [], adoptedAt: "2026-10-30" };
   const color = (light: string, dark: string): DtcgToken => ({ $type: "color", $value: light, $extensions: { "com.clossys.modes": { dark } } });
   const library = applyLibraryChange(catalog, initial, { baseHash: libraryHash(initial), changes: [
-    { op: "author", slot: "tokens.accent-color", tokens: { default: color(accent, darkAccent) } },
-    { op: "author", slot: "tokens.surface-color", tokens: { base: color("#f9fafb", "#121519") } },
+    { op: "author", slot: "themes.primary", tokens: { default: color(accent, darkAccent) } },
+    { op: "author", slot: "themes.background", tokens: { default: color("#f9fafb", "#121519") } },
     { op: "adopt", slot: BACKDROP_GRAPHIC_SLOT, source: "foundry" },
   ] });
   return { catalog, library, resolved: resolve({ catalog, library }) };
@@ -56,7 +56,7 @@ describe("backdrop graphic native draft contribution", () => {
     expect(inherited.source).not.toMatch(/#[a-f0-9]+/i);
   });
   it("fails on missing consumer paint and invalid patterns instead of supplying brand defaults", () => {
-    expect(() => backdropGraphicFromResolved("mesh", { members: {} } as Resolved, "light")).toThrow("tokens.accent-color.default");
+    expect(() => backdropGraphicFromResolved("mesh", { members: {} } as Resolved, "light")).toThrow("themes.primary.default");
     expect(() => backdropGraphic("other" as "mesh")).toThrow("Unknown");
     expect(() => backdropGraphic("mesh", { accent: "red;background:red", surface: "var(--surface)" })).toThrow();
     expect(isBackdropGraphicRecipe({ pattern: "mesh", accent: "red", surface: "blue" })).toBe(false);

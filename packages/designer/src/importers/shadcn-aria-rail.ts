@@ -52,12 +52,12 @@ export function importShadcnAriaRail() {
   return Number(match[1]) * (match[2] === "rem" ? parseFloat(getComputedStyle(document.documentElement).fontSize) : 1)
 }`).replace('    const mql =', '    const MOBILE_BREAKPOINT = mobileBreakpoint()\n    const mql =');
         files.push({ path: "components/_parts/rail-use-mobile/index.ts", content });
-        tokens.add("tokens.breakpoint.mobile-lg"); continue;
+        continue;
       }
       const privatePart = name !== item;
       const inputPath = privatePart ? `components/_parts/rail-${name}/${name}.tsx` : upstream.path;
       const result = rewriteShadcnAria({ item: name, leaf: privatePart ? name : leaf, files: [{ path: inputPath, content: (item === "kbd" ? upstream.content : adapted.get(name)!.content).replaceAll("@/registry/bases/aria/hooks/use-mobile", `${privatePart ? "../../" : "../"}_parts/rail-use-mobile/index`) }], styles: style.content, leafByItem, transformVersion: 2, retainRegistryButtonProps: true });
-      result.reads.tokens.forEach(x => tokens.add(x)); result.reads.assets.forEach(x => assets.add(x)); result.reads.components.forEach(x => components.add(x));
+      result.reads.themes.forEach(x => tokens.add(x)); result.reads.assets.forEach(x => assets.add(x)); result.reads.components.forEach(x => components.add(x));
       issues.push(...result.issues); notes.push(...result.notes ?? []);
       for (const file of result.files) {
         let content = file.content.replace(/(_parts\/)(?!rail-)([a-z-]+)\//g, "$1rail-$2/")
@@ -85,7 +85,7 @@ export function importShadcnAriaRail() {
     const propMap = item === "kbd" ? { "scope.single": "Kbd", "scope.chord": "KbdGroup" } : {};
     // Only component anatomy values enter the generated leaf facade; hooks stay private to the source module.
     const secondaryExports = names.filter(name => name !== root && /^[A-Z][A-Za-z0-9]*$/.test(name)).map(name => ({ name, export: name }));
-    const descriptor = { slot, source, root: contract.contract.root, members: Object.keys(propMap), props: [], propMap, reads: { tokens: sorted(tokens), assets: sorted(assets), components: sorted(components) }, composes: sorted(components), impl: { kind: "source", entry: `components/${leaf}/${item}.tsx`, export: root }, ...(secondaryExports.length ? { secondaryExports } : {}), license: "MIT", pin, notice, transform, item, deps: [...adaptations.host.map(row => row.dependency), { name: "react", version: "19.3.0", license: "MIT" }, { name: "react-aria-components", version: "1.21.1", license: "Apache-2.0" }, { name: "tailwind-merge", version: "3.7.0", license: "MIT" }], parts: [...closure].filter(name => name !== item).map(item => ({ item: `rail-${item}` })), outputSha256: unique.map(file => ({ path: file.path, sha256: sha256(file.content) })), blockers: issues, rac: { instance: "react-aria-components", range: "^1.21.1", peer: false } };
+    const descriptor = { slot, source, root: contract.contract.root, members: Object.keys(propMap), props: [], propMap, reads: { themes: sorted(tokens), assets: sorted(assets), components: sorted(components) }, composes: sorted(components), impl: { kind: "source", entry: `components/${leaf}/${item}.tsx`, export: root }, ...(secondaryExports.length ? { secondaryExports } : {}), license: "MIT", pin, notice, transform, item, deps: [...adaptations.host.map(row => row.dependency), { name: "react", version: "19.3.0", license: "MIT" }, { name: "react-aria-components", version: "1.21.1", license: "Apache-2.0" }, { name: "tailwind-merge", version: "3.7.0", license: "MIT" }], parts: [...closure].filter(name => name !== item).map(item => ({ item: `rail-${item}` })), outputSha256: unique.map(file => ({ path: file.path, sha256: sha256(file.content) })), blockers: issues, rac: { instance: "react-aria-components", range: "^1.21.1", peer: false } };
     const document = { $extensions: { "com.clossys.fill": { id: `${source}/${slot}`, slot, source, mode: "implementation", sourceAddress: `${adapter.pin.url}/blob/${data.commit}/${original.path}`, relation: "same-contract", builtOn: sorted(components), conforms: [], evidence: [], author: "third-party", trust: "pinned-upstream", license: "MIT", status: "draft", pin: { url: adapter.pin.url, commit: data.commit, sha256: original.sha256 }, unmapped: [] } }, components: { [leaf]: descriptor } } as unknown as ComponentCandidateDocument;
     fills.push(document);
     const fill = Object.values(document.components)[0]!;

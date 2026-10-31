@@ -90,10 +90,8 @@ describe("admin display-name drafts", () => {
       expect(binding("publisher.frame", frame.id), frame.id).toBeDefined();
       for (const value of frame.contract.members.names) expect(binding(`designer.frameOption.${frame.id}`, value), value).toBeDefined();
     }
-    for (const id of ["mobile", "mobile-lg", "tablet", "tablet-lg", "desktop", "wide"]) {
-      expect(binding("publisher.screenSize", id)).toBeDefined();
-      expect(binding("publisher.breakpoint", `tokens.breakpoint.${id}`)).toBeDefined();
-    }
+    for (const id of ["mobile", "mobile-lg", "tablet", "tablet-lg", "desktop", "wide"]) expect(binding("publisher.screenSize", id)).toBeDefined();
+    for (const id of ["sm", "md", "lg", "xl", "2xl"]) expect(binding("publisher.breakpoint", id)).toBeDefined();
     for (const id of literalArray("MILESTONE_IDS", "packages/publisher/src/planning/menu.ts")) expect(binding("publisher.milestone", id), id).toBeDefined();
     for (const name of ["CANDIDATE_STATES", "CANDIDATE_ORIGINS"]) for (const value of literalArray(name, "packages/publisher/src/content/vocabulary.ts")) expect(binding("admin.enum", value), value).toBeDefined();
     for (const name of ["SLOT_KINDS", "SECTION_INTENTS", "LINK_RELATIONS"]) for (const value of literalArray(name, "packages/publisher/src/content/vocabulary.ts")) expect(binding("publisher.enum", value), value).toBeDefined();

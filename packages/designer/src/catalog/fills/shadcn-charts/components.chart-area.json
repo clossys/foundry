@@ -116,12 +116,11 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.border-color",
-          "tokens.categorical-color",
-          "tokens.chart-color",
-          "tokens.surface-color",
-          "tokens.text-color"
+        "themes": [
+          "themes.border",
+          "themes.chart-1",
+          "themes.background",
+          "themes.foreground"
         ]
       },
       "rendering": "client",

@@ -53,7 +53,7 @@ export function checkAssetProfileWithContext(catalog:CatalogData,library:Library
    else add('A5',id,'violated','Invalid A5 contrast exemption: kind must be logotype and reason must be non-empty');
    continue;
   }
-  const backgrounds=ground==='positive'?[profile.members['tokens.surface-color.base']?.css.light]:[profile.members['tokens.surface-color.inverse']?.css.light,profile.members['tokens.surface-color.base']?.css.dark];
+  const backgrounds=ground==='positive'?[profile.members['themes.background.default']?.css.light]:[profile.members['themes.foreground.default']?.css.light,profile.members['themes.background.default']?.css.dark];
   try{if(!paints?.length||backgrounds.some(bg=>!bg))throw Error('unmeasured paint or ground');const ratios=paints.flatMap(paint=>backgrounds.map(bg=>contrastRatio(paint,bg!)));add('A5',id,ratios.every(r=>r>=3)?'satisfied':'violated',`Minimum contrast ${Math.min(...ratios).toFixed(2)}:1`);}catch{add('A5',id,'indeterminate','Cannot measure paint against every light, inverse and dark ground');}
  }
  const favicon=profile.members['assets.favicon.vector']?.value.light;
@@ -69,11 +69,11 @@ export function checkAssetProfileWithContext(catalog:CatalogData,library:Library
  const safe=inset&&!inset.attrs.transform&&bounds&&bounds.every(Number.isFinite)&&[0,1].every(x=>[0,1].every(y=>Math.hypot(bounds[0]!+x*bounds[2]!-256,bounds[1]!+y*bounds[3]!-256)<=204.8));
  const standardDirect=standard?.filter(e=>e.depth===1);const transparent=standardDirect?.length===2&&standardDirect.every(e=>e.tag==='rect'||e.tag==='svg')&&standard?.find(e=>e.tag==='rect'&&e.depth===1&&Number(e.attrs.x)>0&&Number(e.attrs.y)>0&&Number(e.attrs.width)<512&&Number(e.attrs.height)<512&&Number(e.attrs.rx)>0);
  add('A8','assets.app-icon',opaque&&safe&&transparent?'satisfied':!mask||!standard?'indeterminate':'violated','Maskable art stays in the 80% circle on an opaque full-bleed ground; standard corners stay transparent');
- for(const mode of ['light','dark'] as const){const fg=profile.members['tokens.text-color.primary']?.css[mode],bg=profile.members['tokens.surface-color.base']?.css[mode];try{if(!fg||!bg)throw Error();const ratio=contrastRatio(fg,bg);add('A9',`assets.icons.${mode}`,ratio>=3?'satisfied':'violated',`Inherited text ink contrast ${ratio.toFixed(2)}:1`);}catch{add('A9',`assets.icons.${mode}`,'indeterminate','Inherited icon ink and ground require parseable token values');}}
+ for(const mode of ['light','dark'] as const){const fg=profile.members['themes.foreground.default']?.css[mode],bg=profile.members['themes.background.default']?.css[mode];try{if(!fg||!bg)throw Error();const ratio=contrastRatio(fg,bg);add('A9',`assets.icons.${mode}`,ratio>=3?'satisfied':'violated',`Inherited text ink contrast ${ratio.toFixed(2)}:1`);}catch{add('A9',`assets.icons.${mode}`,'indeterminate','Inherited icon ink and ground require parseable token values');}}
  const status={success:'success',warning:'warning',danger:'danger',info:'info'};
  for(const [icon,color] of Object.entries(status)){
   if(!profile.members[`assets.icon-${icon}.default`])continue;
-  const fg=profile.members[`tokens.status-color.${color}`],bg=profile.members[`tokens.status-color.${color}-tint`];
+  const fg=profile.members[`themes.destructive.${color}`],bg=profile.members[`themes.destructive.${color}-tint`];
   try{if(!fg||!bg)throw Error();const ratios=['light','dark'].map(mode=>contrastRatio(fg.css[mode as 'light'|'dark']??fg.css.light,bg.css[mode as 'light'|'dark']??bg.css.light));add('A9',`assets.icon-${icon}`,ratios.every(r=>r>=3)?'satisfied':'violated',`Status paint contrast minimum ${Math.min(...ratios).toFixed(2)}:1`);}catch{add('A9',`assets.icon-${icon}`,'indeterminate','Status ink or tint is absent or cannot be parsed');}
  }
  for(const [id,member] of Object.entries(profile.members).filter(([id])=>id.startsWith('assets.image-ratio.'))){const v=member.value.light as Record<string,unknown>|null;const valid=v&&typeof v==='object'&&!Array.isArray(v)&&typeof v.width==='number'&&typeof v.height==='number'&&Number.isFinite(v.width)&&Number.isFinite(v.height)&&v.width>0&&v.height>0;add('A10',id,valid?'satisfied':'violated','Image ratio must have finite positive width and height');}

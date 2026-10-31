@@ -83,7 +83,7 @@
         "components": [
           "components.button"
         ],
-        "tokens": []
+        "themes": []
       },
       "root": "rac:FileTrigger",
       "slot": "components.file-trigger",

@@ -31,22 +31,14 @@
       "props": [],
       "propMap": {},
       "reads": {
-        "tokens": [
-          "tokens.action-color.default",
-          "tokens.content-size.notice",
-          "tokens.control-radius.default",
-          "tokens.font-size.sm",
-          "tokens.font-weight.medium",
-          "tokens.letter-spacing.meta",
-          "tokens.line-height.heading",
-          "tokens.spacing.2xl",
-          "tokens.spacing.lg",
-          "tokens.spacing.md",
-          "tokens.spacing.sm",
-          "tokens.spacing.xl",
-          "tokens.surface-color.sunken",
-          "tokens.text-color.muted",
-          "tokens.text-color.primary"
+        "themes": [
+          "themes.foreground.default",
+          "themes.muted-foreground.default",
+          "themes.muted.default",
+          "themes.primary.default",
+          "themes.radius.default",
+          "themes.spacing.default",
+          "themes.tracking-tight.default"
         ],
         "assets": [],
         "components": []

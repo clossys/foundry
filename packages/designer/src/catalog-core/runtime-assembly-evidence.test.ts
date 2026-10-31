@@ -103,7 +103,7 @@ describe("SYNTHETIC runtime evidence schema and raw geometry corpus", () => {
 
 it("keeps missing or mismatched runner-resolved breakpoint edges pending", () => {
   const snap = snapshot(); const batch = structuredClone(observations(snap));
-  batch.cells[0]!.breakpoints = { ...batch.cells[0]!.breakpoints, "tokens.breakpoint.mobile": 999 };
+  batch.cells[0]!.breakpoints = { ...batch.cells[0]!.breakpoints, sm: 999 };
   expect(checkRuntimeMeasurements(snap, batch).status).toBe("pending");
 });
 

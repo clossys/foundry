@@ -10,7 +10,7 @@ import type { FrameSlot } from "./types.js";
 const frame: SurfacePackageFrameEntry = { slot: "frames.reader", members: ["mode.old", "mode.keep"], propMap: { "mode.old": "old", "mode.keep": "keep" }, slots: { main: "children", old: "old" }, statePorts: { old: "old", keep: "keep" }, impl: { kind: "package", module: "@example/kit/frames", export: "Reader" } };
 describe("surface refresh contract diff and descriptor retention", () => {
   it("flags removal of declared but unmapped contract members and slots", () => {
-    const before: FrameSlot = { id: frame.slot, layer: "frames", status: "draft", requires: [], contract: { kind: "frame", root: "div", landmarks: [], slots: [{ id: "main", required: true, accepts: "host-node" }, { id: "unmapped", required: false, accepts: "host-node" }], members: { mode: "closed", names: ["declared-only"] }, statePorts: [{ id: "declared-state", type: "boolean" }], rendering: "server", breakpoints: [], layers: [], allowedReads: { tokens: [], assets: [] } } };
+    const before: FrameSlot = { id: frame.slot, layer: "frames", status: "draft", requires: [], contract: { kind: "frame", root: "div", landmarks: [], slots: [{ id: "main", required: true, accepts: "host-node" }, { id: "unmapped", required: false, accepts: "host-node" }], members: { mode: "closed", names: ["declared-only"] }, statePorts: [{ id: "declared-state", type: "boolean" }], rendering: "server", breakpoints: [], allowedReads: { themes: [], assets: [] } } };
     const after = structuredClone(before);
     after.contract.members.names = [];
     after.contract.slots = after.contract.slots.filter(slot => slot.id !== "unmapped");

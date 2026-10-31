@@ -27,12 +27,12 @@ async function fixture() {
   const noticeText = "Reader unit-test source, MIT\n";
   const notice = { path: `notices/surfaces/n-${sha256(noticeText)}.txt`, content: noticeText };
   const files = [source, notice];
-  const fill: SurfaceCandidate = { kind: "section", slot: leaf, source: "example", impl: { kind: "source", entry: source.path, export: "Reader" }, rendering: "server", members: [], states: ["default"], reads: { tokens: [], assets: [] }, composes: [], parts: [], api: { version: 1, exports: [{ name: "Reader", export: "Reader" }] }, bindings: [], dependencies: [], license: "MIT", pin: { kind: "local-tree", tree: "a".repeat(40), files: surfaceManifest(files) }, notice: notice.path, outputSha256: surfaceManifest(files), blockers: [], propMap: {}, slotMap: {}, configs: {} };
+  const fill: SurfaceCandidate = { kind: "section", slot: leaf, source: "example", impl: { kind: "source", entry: source.path, export: "Reader" }, rendering: "server", members: [], states: ["default"], reads: { themes: [], assets: [] }, composes: [], parts: [], api: { version: 1, exports: [{ name: "Reader", export: "Reader" }] }, bindings: [], dependencies: [], license: "MIT", pin: { kind: "local-tree", tree: "a".repeat(40), files: surfaceManifest(files) }, notice: notice.path, outputSha256: surfaceManifest(files), blockers: [], propMap: {}, slotMap: {}, configs: {} };
   const engine: CompositeEngineInput = {
     catalog: {
       values: loadCatalog(),
       components: { slots: [], fills: [] },
-      surfaces: { slots: [{ id: leaf, layer: "sections", status: "draft", requires: [], contract: { kind: "section", root: "section", anatomy: { band: null, header: null }, slots: [], members: { mode: "closed", names: [] }, allowedComposes: [], parts: [], allowedReads: { tokens: [], assets: [] }, data: "host-injected", surface: "both" } }], fills: [], transforms: [], rules: [], materializations: [] },
+      surfaces: { slots: [{ id: leaf, layer: "sections", status: "draft", requires: [], contract: { kind: "section", root: "section", anatomy: { band: null, header: null }, slots: [], members: { mode: "closed", names: [] }, allowedComposes: [], parts: [], allowedReads: { themes: [], assets: [] }, data: "host-injected", surface: "both" } }], fills: [], transforms: [], rules: [], materializations: [] },
     },
     library: { source: { id: "example", kind: "consumer", author: "consumer", license: "MIT" }, values: { fills: [] }, components: { fills: [], files: [] } },
     surfaceOptions: { packages: [], measurements: [] },

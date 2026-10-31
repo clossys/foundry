@@ -59,7 +59,7 @@ function tokenParts(selected: DesignerSpecimenContext): SpecimenTokenHostParts {
     "studio.specimen-contrast": input => renderSpecimenContrastHostPart(selected, input),
   };
 }
-const leaves = ["tokens.accent-color", "tokens.accent-color", "tokens.heading-size", "tokens.spacing", "tokens.radius", "tokens.duration", "assets.favicon", "assets.icon-close"];
+const leaves = ["themes.primary", "themes.primary", "themes.tracking-tight", "themes.spacing", "themes.radius", "themes.animate-marquee", "assets.favicon", "assets.icon-close"];
 function itemsFor(index: number, selected: DesignerSpecimenContext): readonly SpecimenItem[] {
   const leaf = leaves[index]!;
   return index === 1 ? colorRampSpecimenItems(selected, leaf) : index > 5 ? assetSpecimenItems(selected, leaf) : tokenSpecimenItems(selected, leaf);
@@ -106,7 +106,7 @@ it.each(tokenAssetSpecimenLeaves)("$id rejects zero items and invalid member ide
   expect(screen.getByRole("status")).toHaveTextContent("zero-items");
   expect(empty.container.querySelector("[data-ds-specimen-item]")).toBeNull();
   empty.unmount();
-  expect(leaf.validate({ ...props, items: [{ id: "invalid", label: "Invalid", value: { memberId: "tokens.missing.value" } }] }).length).toBeGreaterThan(0);
+  expect(leaf.validate({ ...props, items: [{ id: "invalid", label: "Invalid", value: { memberId: "themes.missing.value" } }] }).length).toBeGreaterThan(0);
 });
 
 it("applies actual native color, typography, spacing and radius values without mutating them", async () => {
@@ -120,13 +120,13 @@ it("applies actual native color, typography, spacing and radius values without m
     if (index === 0) {
       expect(target.style.background).toBe(`var(${selected.profile.values.members[id]!.emit})`);
       expect(view.container.querySelector("[data-contrast-pair]")).toBeTruthy();
-      for (const [property, token] of [["inlineSize", "tokens.spacing.5xl"], ["blockSize", "tokens.spacing.4xl"]] as const) {
+      for (const [property, token] of [["inlineSize", "themes.spacing.default"], ["blockSize", "themes.spacing.default"]] as const) {
         const size = selected.profile.values.members[token]!;
         expect(size.$type).toBe("dimension");
-        expect(target.style[property]).toBe(`var(${size.emit})`);
+        expect(target.style[property]).toBe(`calc(var(${size.emit}) * ${property === "inlineSize" ? 24 : 16})`);
       }
     }
-    if (index === 2) expect(target.style.fontSize).toBe(value);
+    if (index === 2) expect(target.style.letterSpacing).toBe(value);
     if (index === 3) expect(target.style.inlineSize).toBe(value);
     if (index === 4) expect(target.style.borderRadius).toBe(value);
     view.unmount();
@@ -136,7 +136,7 @@ it("applies actual native color, typography, spacing and radius values without m
 
 it.each([0, 1])("routes selected ink and surface member identities and modes to both registered parts for leaf %i", async index => {
   const selected = context(), before = JSON.stringify(selected.profile.values);
-  const ids = ["tokens.surface-color.base", "tokens.text-color.primary"];
+  const ids = ["themes.background.default", "themes.foreground.default"];
   const swatch = vi.fn(tokenParts(selected)["studio.specimen-swatch"]!);
   const contrast = vi.fn(tokenParts(selected)["studio.specimen-contrast"]!);
   const items = index === 0 ? ids.map(id => ({ id, label: id, value: { memberId: id } })) : [{ id: "ramp", label: "Ramp", value: { memberIds: ids } }];
@@ -153,12 +153,12 @@ it.each([0, 1])("routes selected ink and surface member identities and modes to 
     const samples = [...view.container.querySelectorAll<HTMLElement>(`[data-specimen-mode='${mode}'] [role='img']`)];
     expect(samples.map(sample => sample.style.background)).toEqual(ids.map(id => `var(${selected.profile.values.members[id]!.emit})`));
     for (const sample of samples) {
-      expect(sample.style.inlineSize).toBe("var(--spacing-5xl)");
-      expect(sample.style.blockSize).toBe("var(--spacing-4xl)");
+      expect(sample.style.inlineSize).toBe("calc(var(--spacing) * 24)");
+      expect(sample.style.blockSize).toBe("calc(var(--spacing) * 16)");
     }
     for (const sample of view.container.querySelectorAll<HTMLElement>(`[data-specimen-mode='${mode}'] [data-contrast-pair]`)) {
-      expect(sample.style.background).toBe("var(--color-surface-base)");
-      expect(sample.style.color).toBe("var(--color-ink-primary)");
+      expect(sample.style.background).toBe("var(--background)");
+      expect(sample.style.color).toBe("var(--foreground)");
       expect(sample.textContent).toBe(specimenDataset.tokens.sampleText);
     }
   }
@@ -185,7 +185,7 @@ it("uses actual selected SVG logos and selected icon glyphs on both grounds", as
     const view = await renderSelected(tokenAssetSpecimenLeaves[index]!.render({ items: itemsFor(index, selected).slice(0, 1), context: selected, need, labels, renderParts: tokenParts(selected) }), selected);
     const grounds = [...view.container.querySelectorAll<HTMLElement>("[data-asset-ground]")];
     expect(grounds).toHaveLength(2);
-    for (const [ground, surface, ink] of [[grounds[0]!, "tokens.surface-color.raised", "tokens.text-color.primary"], [grounds[1]!, "tokens.surface-color.inverse", "tokens.text-color.on-inverse"]] as const) {
+    for (const [ground, surface, ink] of [[grounds[0]!, "themes.card.default", "themes.foreground.default"], [grounds[1]!, "themes.foreground.default", "themes.background.default"]] as const) {
       const background = selected.profile.values.members[surface]!, foreground = selected.profile.values.members[ink]!;
       expect(background.$type).toBe("color"); expect(foreground.$type).toBe("color");
       expect(ground.style.background).toBe(`var(${background.emit})`);
@@ -198,12 +198,10 @@ it("uses actual selected SVG logos and selected icon glyphs on both grounds", as
 });
 
 it.each([
-  { token: "tokens.spacing.5xl", indices: [0, 1] },
-  { token: "tokens.spacing.4xl", indices: [0, 1, 5] },
-  { token: "tokens.surface-color.raised", indices: [6, 7] },
-  { token: "tokens.surface-color.inverse", indices: [6, 7] },
-  { token: "tokens.text-color.primary", indices: [6, 7] },
-  { token: "tokens.text-color.on-inverse", indices: [6, 7] },
+  { token: "themes.spacing.default", indices: [0, 1] },
+  { token: "themes.card.default", indices: [6, 7] },
+  { token: "themes.background.default", indices: [6, 7] },
+  { token: "themes.foreground.default", indices: [6, 7] },
 ])("refuses missing, mistyped and mis-emitted selected chrome token $token", async ({ token, indices }) => {
   for (const index of indices) for (const fault of ["missing", "type", "emit"] as const) {
     const selected = context(), items = itemsFor(index, selected).slice(0, 1);
@@ -275,36 +273,8 @@ it("executes the exact consumer source override and refuses to borrow a missing 
   const view = await renderSelected(leaf.render({ items, context: native, need, labels, renderParts: tokenParts(native) }), native);
   expect(executed).toHaveBeenCalled();
   expect(view.container.querySelector("section[data-specimen-mode='light'] span[role='img']")).toBeTruthy();
-  expect(view.container.querySelector<HTMLElement>("[role='img']")!.style.background).toBe(`var(${native.profile.values.members["tokens.accent-color.default"]!.emit})`);
+  expect(view.container.querySelector<HTMLElement>("[role='img']")!.style.background).toBe(`var(${native.profile.values.members["themes.primary.default"]!.emit})`);
   view.unmount();
   const absent = { ...native, modules: selected.modules };
   expect(leaf.validate({ items, context: absent, need, labels, renderParts: tokenParts(absent) })).toEqual([expect.objectContaining({ reason: `module-unavailable: ${entry}` })]);
-});
-
-it("plays selected duration/easing and holds a static final state for reduced motion", async () => {
-  const selected = context();
-  let reduced = false;
-  const changes = new Set<() => void>();
-  vi.stubGlobal("matchMedia", () => ({ get matches() { return reduced; }, addEventListener: (_: string, fn: () => void) => changes.add(fn), removeEventListener: (_: string, fn: () => void) => changes.delete(fn) }));
-  const cancel = vi.fn(), animate = vi.fn(() => ({ cancel }));
-  Object.defineProperty(HTMLElement.prototype, "animate", { value: animate, configurable: true });
-  const item = itemsFor(5, selected)[0]!;
-  const view = await renderSelected(tokenAssetSpecimenLeaves[5]!.render({ items: [item], context: selected, need, labels, renderParts: tokenParts(selected) }), selected);
-  fireEvent.click(screen.getByRole("button", { name: "Play motion" }));
-  const duration = selected.profile.values.members["tokens.duration.default"]!;
-  const easing = Object.values(selected.profile.values.members).find(member => member.$type === "cubicBezier")!;
-  const shift = selected.profile.values.members["tokens.spacing.4xl"]!;
-  expect(shift.$type).toBe("dimension");
-  const final = `translateX(var(${shift.emit}))`;
-  expect(animate).toHaveBeenCalledWith([{ transform: "translateX(0)" }, { transform: final }], { duration: Number.parseFloat(duration.css.light) * (duration.css.light.endsWith("ms") ? 1 : 1000), easing: easing.css.light, fill: "forwards" });
-  reduced = true;
-  act(() => { for (const changed of changes) changed(); });
-  expect(cancel).toHaveBeenCalledTimes(1);
-  fireEvent.click(screen.getByRole("button", { name: "Play motion" }));
-  expect(animate).toHaveBeenCalledTimes(1);
-  expect(cancel).toHaveBeenCalledTimes(2);
-  expect(view.container.querySelector("[data-reduced-motion='static-final']")).toHaveStyle({ transform: final });
-  view.unmount();
-  expect(cancel).toHaveBeenCalledTimes(3);
-  expect(changes.size).toBe(0);
 });

@@ -15,7 +15,7 @@
       "license": "MIT",
       "status": "draft",
       "reads": {
-        "tokens": [],
+        "themes": [],
         "assets": []
       },
       "pin": {

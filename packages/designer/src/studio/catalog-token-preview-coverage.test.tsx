@@ -22,7 +22,7 @@ const SPECIMEN_NEED: readonly string[] = [];
 
 const catalog = loadCatalog();
 const metaOf = (doc: FillDoc) => doc.$extensions["com.clossys.fill"];
-const tokenLeaves = catalog.slots.filter(slot => slot.id.startsWith("tokens.")).map(slot => slot.id);
+const tokenLeaves = catalog.slots.filter(slot => slot.id.startsWith("themes.")).map(slot => slot.id);
 const tokenDocs = catalog.fills.filter(doc => tokenLeaves.includes(metaOf(doc).slot) && metaOf(doc).mode !== "reference");
 const byCodeUnit = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
@@ -36,7 +36,7 @@ function memberIds(doc: FillDoc): string[] {
       else if (child && typeof child === "object") visit(child, `${path}.${key}`);
     }
   };
-  visit(doc.tokens ?? {}, "tokens");
+  visit(doc.tokens ?? {}, "themes");
   return ids;
 }
 
@@ -75,7 +75,7 @@ function conformance(): { verdicts: Record<string, Verdict>; selected: Map<strin
   const verdicts: Record<string, Verdict> = {}, selected = new Map<string, string | undefined>();
   for (const leaf of tokenLeaves) verdicts[leaf] = { specimen: [], label: [] };
   for (const board of boards) {
-    const port = valueLibraryBoardPreviews({ layer: "tokens", board, sources: [], consumerSource: consumer, selectionHash, sourceHashes: { [consumer]: sourceHash }, mode: "view", canSave: false, pending: false, prompt: () => { throw new Error("prompts are not rendered by previews"); } }, labels);
+    const port = valueLibraryBoardPreviews({ layer: "themes", board, sources: [], consumerSource: consumer, selectionHash, sourceHashes: { [consumer]: sourceHash }, mode: "view", canSave: false, pending: false, prompt: () => { throw new Error("prompts are not rendered by previews"); } }, labels);
     for (const row of board.rows) {
       if (row.scope !== "slot" || !tokenLeaves.includes(row.id)) continue;
       const verdict = verdicts[row.id]!;

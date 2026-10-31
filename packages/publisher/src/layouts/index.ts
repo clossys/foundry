@@ -1,3 +1,4 @@
+import { TAILWIND_BREAKPOINT_NAMES } from "@clossys/designer/catalog";
 import { freeze, configProblems, LAYOUT_LEAVES } from "./resolve.js";
 export { LAYOUT_LEAVES, getLayoutLeaf, getEffectiveLayoutContract } from "./resolve.js";
 export type { EffectivePageLayoutContract } from "./resolve.js";
@@ -12,8 +13,8 @@ export type * from "./contract.js";
 export const LAYOUT_IA = freeze(ia as LayoutIA);
 export const RETIRED_LAYOUTS = freeze(retired as Readonly<Record<string, RetiredLayout>>);
 const PARTS = new Set(["sections.band", "sections.section-header", "sections.pagination"]);
-const BREAKPOINTS = ["mobile", "mobile-lg", "tablet", "tablet-lg", "desktop", "wide"];
-const READS = new Set(["tokens.spacing", "tokens.gutter", "tokens.content-size", "tokens.region-width", "tokens.breakpoint"]);
+const BREAKPOINTS: readonly string[] = TAILWIND_BREAKPOINT_NAMES;
+const READS = new Set(["themes.spacing"]);
 const SPANS = new Set(["1x1", "2x1", "1x2", "2x2"]);
 const SEGMENT = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const unique = (values: readonly unknown[]) => new Set(values).size === values.length;
@@ -56,8 +57,8 @@ export function checkLayoutRegistry(
     if (!unique(contract.allowedReads) || contract.allowedReads.some((read) => !READS.has(read))) add("contract", leaf.id, "invalid layout token read");
     let previous = -1;
     for (const step of contract.reflow) {
-      const at = BREAKPOINTS.indexOf(step.at.replace(/^tokens\.breakpoint\./, ""));
-      if (!step.at.startsWith("tokens.breakpoint.") || at <= previous || !Number.isSafeInteger(step.columns) || step.columns < 1 || (step.spans !== undefined && step.spans !== "clamp")) add("contract", leaf.id, "invalid ordered token reflow");
+      const at = BREAKPOINTS.indexOf(step.at);
+      if (at < 0 || at <= previous || !Number.isSafeInteger(step.columns) || step.columns < 1 || (step.spans !== undefined && step.spans !== "clamp")) add("contract", leaf.id, "invalid ordered token reflow");
       previous = at;
     }
     if (leaf.id === "layouts.bento" && contract.requiresSection?.container !== "adaptive") add("contract", leaf.id, "bento requires adaptive section containers");

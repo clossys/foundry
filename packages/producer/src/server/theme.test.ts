@@ -24,7 +24,7 @@ function adoptedDefaults(): LibraryData {
 async function brandedCells(composite = false, authored = true, consumerRoot = root, hue = 250): Promise<LibraryData> {
   const catalog = loadCatalog();
   let library = adoptedDefaults();
-  if (authored) library = applyLibraryChange(catalog, library, { baseHash: libraryHash(library), changes: [{ op: "author", slot: "tokens.accent-color", tokens: { default: { $type: "color", $value: `oklch(0.65 0.2 ${hue})`, $extensions: { "com.clossys.modes": { dark: `oklch(0.75 0.15 ${hue})` } } } } }] });
+  if (authored) library = applyLibraryChange(catalog, library, { baseHash: libraryHash(library), changes: [{ op: "author", slot: "themes.primary", tokens: { default: { $type: "color", $value: `oklch(0.65 0.2 ${hue})`, $extensions: { "com.clossys.modes": { dark: `oklch(0.75 0.15 ${hue})` } } } } }] });
   const api = await agentModule("designer", "library-cli/fs-library.js");
   const source = join(consumerRoot, "library");
   for (const [name, contents] of api.libraryFiles(catalog, library, [])) {
@@ -101,7 +101,7 @@ describe("Studio compiled theme", () => {
 
   it("distinguishes a corrupt consumer theme from an uninitialized theme", async () => {
     await brandedCells();
-    await writeFile(join(agentRoot(root, "designer"), "cells/tokens.accent-color/v1.md"), "invalid");
+    await writeFile(join(agentRoot(root, "designer"), "cells/themes.primary/v1.md"), "invalid");
     expect(await studioTheme(root)).toEqual({ ...defaultStudioTheme(), message: "Consumer theme could not be compiled; using the Foundry theme" });
   });
 

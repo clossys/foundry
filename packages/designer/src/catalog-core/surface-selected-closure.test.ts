@@ -34,11 +34,11 @@ it("accepts real package Frame and Section with their selected component and des
   expect(isSurfacePackageEntry(frame)).toBe(true);
   expect(frame.composes).toContain("components.avatar");
   expect(frame.composes).toContain("frames.sheet");
-  expect(frame.reads?.tokens).toContain("tokens.spacing");
+  expect(frame.reads?.themes).toContain("themes.spacing");
   expect(frame.consumption?.scannedComposes).toEqual(frame.composes);
   expect(profile.components.components["components.avatar"]?.origin.kind).toBe("adopted");
-  expect(profile.values.members["tokens.spacing"]).toBeUndefined();
-  expect(profile.values.members["tokens.spacing.md"]?.slot).toBe("tokens.spacing");
+  expect(profile.values.members["themes.spacing"]).toBeUndefined();
+  expect(profile.values.members["themes.spacing.default"]?.slot).toBe("themes.spacing");
   expect(Object.values(profile.values.members).some(member => member.slot === "assets.icon-chevron-left")).toBe(true);
 });
 
@@ -65,11 +65,11 @@ it("refuses a real package Section when a measured composed component is not sel
 });
 
 it("refuses measured token reads when the selected consumer has no member of that slot", () => {
-  // Blur is a real Frame read with no selected component dependency, so the
+  // The sidebar border is a real Frame read with no selected component dependency, so the
   // component resolver does not refuse before the surface gate can inspect it.
-  const profile = withoutValue("tokens.blur");
-  expect(Object.keys(profile.values.members).some(id => id === "tokens.blur" || id.startsWith("tokens.blur."))).toBe(false);
-  expect(profile.surfaces!.check.findings).toContainEqual({ code: "S5", rule: "surfaces", severity: "error", subject: "frames.app-shell", message: "consumer read missing tokens.blur" });
+  const profile = withoutValue("themes.sidebar-border");
+  expect(Object.keys(profile.values.members).some(id => id === "themes.sidebar-border" || id.startsWith("themes.sidebar-border."))).toBe(false);
+  expect(profile.surfaces!.check.findings).toContainEqual({ code: "S5", rule: "surfaces", severity: "error", subject: "frames.app-shell", message: "consumer read missing themes.sidebar-border" });
 });
 
 it("refuses measured asset reads even when the catalog still offers the missing consumer value", () => {

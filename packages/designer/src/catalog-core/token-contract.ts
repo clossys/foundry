@@ -67,7 +67,7 @@ export interface SourceRoster {
   readonly assets: readonly RosterRow[];
   readonly sections: readonly RosterRow[];
   readonly frames: readonly RosterRow[];
-  readonly tokens: { readonly presets: readonly TokenPreset[]; readonly default: string };
+  readonly themes: { readonly presets: readonly TokenPreset[]; readonly default: string };
 }
 
 export const tokenContract = contractDocument as unknown as TokenContract;
@@ -95,7 +95,7 @@ export function rosterStarter(roster: SourceRoster, slot: string): string | unde
 }
 
 export function defaultPreset(roster: SourceRoster): TokenPreset {
-  return roster.tokens.presets.find(preset => preset.id === roster.tokens.default) ?? roster.tokens.presets[0]!;
+  return roster.themes.presets.find(preset => preset.id === roster.themes.default) ?? roster.themes.presets[0]!;
 }
 
 /** One normalized value per mode, so a Custom value and a preset value compare by what they render. */
@@ -195,7 +195,7 @@ export function checkSourceRoster(input: RosterCheckInput): readonly RosterFindi
   const known = new Set(input.slots);
   for (const slot of input.slots) {
     const layer = slot.split(".")[0]!;
-    if (layer === "tokens") { if (!contract.leaves[slot]) error("R1", slot, `${slot} has no token contract leaf`); continue; }
+    if (layer === "themes") { if (!contract.leaves[slot]) error("R1", slot, `${slot} has no token contract leaf`); continue; }
     if (!isRosterLayer(layer)) continue;
     const rows = roster[layer].filter(row => row.leaves.includes(slot));
     if (rows.length !== 1) error("R1", slot, `${slot} resolves to ${rows.length} roster rows`);
@@ -209,8 +209,8 @@ export function checkSourceRoster(input: RosterCheckInput): readonly RosterFindi
     const externals = row.offers.filter(offer => offer.source !== "foundry");
     if (externals.length > EXTERNAL_LIMIT) error("R2", row.l2, `${row.l2} offers ${externals.length} externals (max ${EXTERNAL_LIMIT})`);
   }
-  if (roster.tokens.presets.length > PRESET_LIMIT) error("R2", "tokens", `${roster.tokens.presets.length} token presets (max ${PRESET_LIMIT})`);
-  if (!roster.tokens.presets.some(preset => preset.id === roster.tokens.default)) error("R2", "tokens", `default preset ${roster.tokens.default} is not offered`);
+  if (roster.themes.presets.length > PRESET_LIMIT) error("R2", "themes", `${roster.themes.presets.length} token presets (max ${PRESET_LIMIT})`);
+  if (!roster.themes.presets.some(preset => preset.id === roster.themes.default)) error("R2", "themes", `default preset ${roster.themes.default} is not offered`);
 
   // R3: an offer fills every leaf it claims; Foundry sits only where no external covers the component;
   // a preset fills every live theme key and alias.
@@ -226,7 +226,7 @@ export function checkSourceRoster(input: RosterCheckInput): readonly RosterFindi
     }
   }
   const themeKeys = Object.values(contract.leaves).flatMap(leaf => Object.values(leaf.members ?? {})).filter(member => member.kind === "theme" && member.status === "live").map(member => member.target);
-  for (const preset of roster.tokens.presets) {
+  for (const preset of roster.themes.presets) {
     for (const key of new Set(themeKeys)) for (const mode of ["light", "dark"] as const) {
       if (preset.theme.vars[mode][key] === undefined) error("R3", preset.id, `${preset.id} leaves live key ${key} empty in ${mode}`);
     }

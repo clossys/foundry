@@ -62,7 +62,7 @@ function fedKeys(): Set<string> {
 }
 
 function leafProfile(fill: ResolvedComponent["descriptor"]) {
-  const component = { slot: fill.slot, originKind: "adopted", origin: { kind: "adopted", source: "foundry" }, impl: fill.impl, propMap: fill.propMap, reads: { tokens: {}, assets: [], components: [] }, descriptor: fill } as unknown as ResolvedComponent;
+  const component = { slot: fill.slot, originKind: "adopted", origin: { kind: "adopted", source: "foundry" }, impl: fill.impl, propMap: fill.propMap, reads: { themes: {}, assets: [], components: [] }, descriptor: fill } as unknown as ResolvedComponent;
   return { selectionHash: `selection-${fill.slot}`, components: { components: { [fill.slot]: component } } } as unknown as CompositeResolved;
 }
 

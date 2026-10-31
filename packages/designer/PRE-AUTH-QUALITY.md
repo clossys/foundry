@@ -82,7 +82,7 @@ All of the following must hold, or the page is **below 3**:
 - **One display heading** through Designer `Hero` (`text-display-l` / `font-display`): not clipped, not stacked thesis lines masquerading as one H1.
 - **Exactly one primary CTA** in the fold. `Hero.actions` are `Button` components. No second pill competing for primary attention in the first viewport.
 - **Chrome does not intersect the first viewport** — chat, consent, locale pickers, dev overlays, and similar chrome are findings when they steal the fold. Chat starts closed on `/`.
-- **Stylesheet the app loads** contains the Hero/Button utilities required by `designer-hero-css-check`, via the default path: `tokens.css` + `compiled.css` (one path; no mixed `compiled.css` and `theme.css` + `@source`).
+- **Stylesheet the app loads** contains the Hero/Button utilities, via the default path: `tokens.css` + `compiled.css` (one path; no mixed `compiled.css` and `theme.css` + `@source`).
 - **Fold copy is not wallpaper** — generic positioning phrases any competitor could reuse (including case variants of built-in examples such as “AI-native”, “AI intelligence”, and “for founders” as the headline thesis). `writer-check --live` reports `fold-wallpaper` on declared live trees.
 - **`heroMediaKind` is honest** — `product-surface`, `original-art`, or `none` in fold measurement JSON. Never decorative stock or metaphor imagery. Supply evidence; `designer-fold-check` fails closed when measurement is missing or invalid.
 - **Ground rhythm is visible** — spacing and type rhythm read as intentional, not accidental markdown. Empty collections use `EmptyState` honestly instead of blank holes.
@@ -91,7 +91,6 @@ All of the following must hold, or the page is **below 3**:
 
 **Gates that prove 3 (not 4 or 5):**
 
-- `designer-hero-css-check` on the CSS file the app loads
 - `designer-fold-check` on fold measurement JSON (`--also` for an additional viewport)
 - `writer-check --live` with `--voice-record` on trees the page actually renders (includes `fold-wallpaper`)
 
@@ -108,8 +107,8 @@ The synthetic-user keep (**5**) is a **second pass** after the mechanical floor 
 green. It is not a substitute for fold-check **3**, and the doer walk must not
 self-certify exceptional keep.
 
-**Precondition:** `designer-hero-css-check`, `designer-fold-check`, and
-`writer-check --live` are green. Do not start inhabit or visual taste before
+**Precondition:** `designer-fold-check` and `writer-check --live` are
+green. Do not start inhabit or visual taste before
 `designer-fold-check` is green on fold measurement JSON. HTTP 200 and a heading
 string in markup are not keep evidence.
 
@@ -208,7 +207,7 @@ green one, is not a keep.
 ## Package roles (mechanical vs authored)
 
 - **Strategist** — Audience records that name who the user is. Not the user.
-- **Designer** — tokens, `Hero`, `Button`, fold measurement schema, `designer-hero-css-check`, `designer-fold-check`. Doer.
+- **Designer** — tokens, `Hero`, `Button`, fold measurement schema, `designer-fold-check`. Doer.
 - **Writer** — copy slots, live trees, `fold-wallpaper` on wallpaper fold phrases. Doer.
 - **Publisher** — `MarketingView` mount; `heroActions` carries the single primary CTA; `heroMedia` is product surface or original art. Sealer, not the user.
 - **Inspector** — pre-landing *rules*. Not a person landing on the page.

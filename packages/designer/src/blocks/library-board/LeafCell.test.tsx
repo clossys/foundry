@@ -51,12 +51,12 @@ describe('board anatomy visual pass (VF-1)', () => {
   });
 
   it('sets a leaf label that is still its id in the mono face, and leaves a human label alone (components-09)', () => {
-    const view = render(<LeafLabel id="tokens.color-ramp" label="tokens.color-ramp" />);
-    expect(screen.getByText('tokens.color-ramp')).toHaveClass('font-mono', 'tabular-nums');
-    view.rerender(<LeafLabel id="tokens.color-ramp" label="Colour ramp" />);
-    expect(screen.getByText('Colour ramp')).not.toHaveClass('font-mono');
+    const view = render(<LeafLabel id="themes.background" label="themes.background" />);
+    expect(screen.getByText('themes.background')).toHaveClass('font-mono', 'tabular-nums');
+    view.rerender(<LeafLabel id="themes.background" label="Background" />);
+    expect(screen.getByText('Background')).not.toHaveClass('font-mono');
     // vf13 (r2 sf-11 / components-09): the human label leads and the id stays underneath in the mono face.
-    expect(view.container.querySelector('[data-leaf-id]')).toHaveTextContent('tokens.color-ramp');
+    expect(view.container.querySelector('[data-leaf-id]')).toHaveTextContent('themes.background');
     expect(view.container.querySelector('[data-leaf-id]')).toHaveClass('font-mono', 'text-ink-secondary');
   });
 

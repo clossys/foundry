@@ -86,8 +86,8 @@ it("names every other refusal and never substitutes a placeholder", () => {
   expect(notRenderable.bind("components.button", profile)).toMatchObject({ refusal: { code: "export-unavailable" } });
   const specimens = componentSpecimenPreview({ modules: hostModules });
   expect(specimens.bind("components.select", profile)).toEqual({ refusal: { leaf: "components.select", code: "not-chosen", detail: "components.select" } });
-  expect(specimens.bind("tokens.text-color", profile)).toEqual({ refusal: { leaf: "tokens.text-color", code: "not-a-component", detail: "tokens.text-color" } });
-  expect(specimens.preview("tokens.text-color", profile)).toBeUndefined();
+  expect(specimens.bind("themes.foreground", profile)).toEqual({ refusal: { leaf: "themes.foreground", code: "not-a-component", detail: "themes.foreground" } });
+  expect(specimens.preview("themes.foreground", profile)).toBeUndefined();
   const button = profile.components.components["components.button"]!;
   // A pointer the dispatcher cannot express drops that member, named, and keeps the leaf bound.
   const first = button.descriptor.members[0]!;
@@ -123,7 +123,7 @@ it("binds every Foundry package-implemented component from the three public comp
     .filter(fill => fill.source === "foundry" && fill.impl.kind === "package" && slots.has(fill.slot));
   expect(fills.length).toBeGreaterThan(50);
   const refusals = fills.flatMap(fill => {
-    const component = { slot: fill.slot, originKind: "adopted", origin: { kind: "adopted", source: "foundry" }, impl: fill.impl, propMap: fill.propMap, reads: { tokens: {}, assets: [], components: [] }, descriptor: fill } as unknown as ResolvedComponent;
+    const component = { slot: fill.slot, originKind: "adopted", origin: { kind: "adopted", source: "foundry" }, impl: fill.impl, propMap: fill.propMap, reads: { themes: {}, assets: [], components: [] }, descriptor: fill } as unknown as ResolvedComponent;
     const profile = { components: { components: { [fill.slot]: component } } } as unknown as CompositeResolved;
     const bound = specimens.bind(fill.slot, profile);
     return "refusal" in bound ? [bound.refusal] : [];
@@ -157,7 +157,7 @@ function foundryLeaves() {
   return loadCatalogBundles().componentFills.flatMap(doc => Object.values(doc.components))
     .filter(fill => fill.source === "foundry" && fill.impl.kind === "package" && slots.has(fill.slot))
     .map(fill => {
-      const component = { slot: fill.slot, originKind: "adopted", origin: { kind: "adopted", source: "foundry" }, impl: fill.impl, propMap: fill.propMap, reads: { tokens: {}, assets: [], components: [] }, descriptor: fill } as unknown as ResolvedComponent;
+      const component = { slot: fill.slot, originKind: "adopted", origin: { kind: "adopted", source: "foundry" }, impl: fill.impl, propMap: fill.propMap, reads: { themes: {}, assets: [], components: [] }, descriptor: fill } as unknown as ResolvedComponent;
       return { leaf: fill.slot, profile: { selectionHash: `selection-${fill.slot}`, components: { components: { [fill.slot]: component } } } as unknown as CompositeResolved };
     });
 }

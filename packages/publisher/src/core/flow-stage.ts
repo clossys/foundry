@@ -1,8 +1,8 @@
-import { emit } from "@clossys/designer/catalog";
-import type { CompositeResolved } from "@clossys/designer/catalog";
+import { TAILWIND_BREAKPOINTS } from "@clossys/designer/catalog";
+import type { CompositeResolved, TailwindBreakpoint } from "@clossys/designer/catalog";
 import { getEffectiveLayoutContract } from "../layouts/resolve.js";
 import type { LayoutId, PageLayoutContract } from "../layouts/index.js";
-export type BreakpointValues = Readonly<Partial<Record<`tokens.breakpoint.${string}`, number>>>;
+export type BreakpointValues = Readonly<Partial<Record<TailwindBreakpoint, number>>>;
 export interface FlowStagePlan {
   readonly leaf: LayoutId;
   readonly config?: string;
@@ -11,7 +11,7 @@ export interface FlowStagePlan {
   readonly columns: number;
   readonly slotOrder: readonly string[];
 }
-export function breakpoint(at: `tokens.breakpoint.${string}`, values: BreakpointValues): number {
+export function breakpoint(at: TailwindBreakpoint, values: BreakpointValues): number {
   const value = values[at];
   if (!Number.isFinite(value) || value! <= 0) throw new Error(`Unresolved layout breakpoint: ${at}`);
   return value!;
@@ -25,7 +25,7 @@ export function planFlowStage(leaf: LayoutId, config: string | undefined, explic
   if (!Number.isFinite(width) || width < 0) throw new Error("Stage width must be finite and nonnegative");
   const contract = getEffectiveLayoutContract(leaf, config, explicit);
   const members = { ...Object.fromEntries(Object.entries(contract.members).map(([key, options]) => [key, options[0]!])), ...contract.memberValues };
-  if (leaf === "layouts.stack") breakpoint("tokens.breakpoint.mobile", values);
+  if (leaf === "layouts.stack") breakpoint("sm", values);
   let slotOrder = contract.slots.map(slot => slot.id);
   if (leaf === "layouts.split") slotOrder = members.collapse === "end-first" ? ["lead", "end", "start"] : ["lead", "start", "end"];
   if (leaf === "layouts.sidebar-content") {
@@ -85,23 +85,17 @@ const BASE = `[data-layout="layouts.stack"],
 [data-layout="layouts.bento"]>[data-layout-slot="tiles"]{grid-auto-flow:row;grid-template-columns:repeat(1,minmax(0,1fr))}
 [data-layout="layouts.bento"]>[data-layout-slot="tiles"]>[data-span="1x2"],[data-layout="layouts.bento"]>[data-layout-slot="tiles"]>[data-span="2x2"]{grid-row:span 2}
 `;
-/** Query thresholds come from the canonical consumer CSS emitter, never catalog
- * literals or CSS var() queries (which cannot resolve custom properties). */
-export function flowStageStyleSheet(profile: CompositeResolved, leaf: LayoutId, config?: string, explicit?: Readonly<Record<string, string>>): string {
-  const theme = emit(profile.values, ["tailwind-theme"], { header: false })[0]!.contents;
+/** Query thresholds are Tailwind's fixed screens (never CSS var() queries,
+ * which cannot resolve custom properties). The profile stays the call contract. */
+export function flowStageStyleSheet(_profile: CompositeResolved, leaf: LayoutId, config?: string, explicit?: Readonly<Record<string, string>>): string {
   const contract = getEffectiveLayoutContract(leaf, config, explicit);
   const members = { ...Object.fromEntries(Object.entries(contract.members).map(([key, options]) => [key, options[0]!])), ...contract.memberValues };
-  const threshold = (at: string) => {
-    const property = `--breakpoint-${at.slice("tokens.breakpoint.".length)}`;
-    const values = [...theme.matchAll(/(--[\w-]+):\s*([^;]+);/g)].filter(match => match[1] === property);
-    if (values.length !== 1 || !/^(?:\d+(?:\.\d+)?|\.\d+)(?:px|rem|em)$/.test(values[0]![2]!.trim())) throw new Error(`NEED: literal canonical container-query threshold ${at}`);
-    return values[0]![2]!.trim();
-  };
+  const threshold = (at: TailwindBreakpoint) => `${TAILWIND_BREAKPOINTS[at] / 16}rem`;
   let css = BASE;
-  const query = (at: string, rules: string) => { css += `@container publisher-stage (min-width:${threshold(at)}){${rules}}\n`; };
+  const query = (at: TailwindBreakpoint, rules: string) => { css += `@container publisher-stage (min-width:${threshold(at)}){${rules}}\n`; };
   if (leaf === "layouts.stack") {
     const token = ({ wide: "wide", content: "content", prose: "prose", form: "form" } as Readonly<Record<string, string>>)[members.measure ?? ""];
-    if (token) query("tokens.breakpoint.mobile", `[data-layout="layouts.stack"][data-measure="${members.measure}"]{max-inline-size:var(--ui-width-${token}-max)}`);
+    if (token) query("sm", `[data-layout="layouts.stack"][data-measure="${members.measure}"]{max-inline-size:var(--ui-width-${token}-max)}`);
   }
   if (leaf === "layouts.split") for (const step of contract.reflow) query(step.at, `[data-layout="layouts.split"]>[data-layout-columns]{flex-direction:row}[data-layout="layouts.split"]>[data-layout-columns]>:is([data-layout-slot="start"],[data-layout-slot="end"]){inline-size:auto}`);
   if (leaf === "layouts.sidebar-content") for (const step of contract.reflow) query(step.at, `[data-layout="layouts.sidebar-content"]>[data-layout-columns]{flex-direction:row}[data-layout="layouts.sidebar-content"]>[data-layout-columns]>[data-layout-slot="main"]{flex-grow:2;flex-basis:0;inline-size:auto}[data-layout="layouts.sidebar-content"]>[data-layout-columns]>[data-layout-slot="aside"]{flex-shrink:0;inline-size:var(--ui-layout-aside-w)}[data-layout="layouts.sidebar-content"]>[data-layout-columns][data-aside-width="third"]>[data-layout-slot="aside"]{flex-grow:1;flex-basis:0;inline-size:auto}[data-layout="layouts.sidebar-content"]>[data-layout-columns][data-sticky="aside"]>[data-layout-slot="aside"]{position:sticky;inset-block-start:0}`);

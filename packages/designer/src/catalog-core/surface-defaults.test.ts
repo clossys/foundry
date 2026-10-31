@@ -42,7 +42,7 @@ const MEASURED_MARKETING_DECLARATIONS = [
   },
   {
     slot: "sections.logo-cloud",
-    tokens: ["tokens.spacing", "tokens.gutter", "tokens.content-size", "tokens.region-width", "tokens.breakpoint", "tokens.surface-color", "tokens.animation", "tokens.shift-distance", "tokens.accent-color", "tokens.border-color", "tokens.control-radius", "tokens.status-color", "tokens.text-color", "tokens.touch-target", "tokens.action-color", "tokens.body-size", "tokens.control-color", "tokens.duration", "tokens.easing", "tokens.focus-color", "tokens.focus-outline", "tokens.state-opacity", "tokens.typeface"],
+    themes: ["themes.spacing", "themes.background", "themes.card", "themes.popover", "themes.secondary", "themes.accent", "themes.muted", "themes.sidebar", "themes.sidebar-accent", "themes.animate-marquee", "themes.animate-marquee-vertical", "themes.animate-shiny-text", "themes.primary", "themes.border", "themes.input", "themes.sidebar-border", "themes.radius", "themes.destructive", "themes.foreground", "themes.card-foreground", "themes.popover-foreground", "themes.primary-foreground", "themes.secondary-foreground", "themes.accent-foreground", "themes.muted-foreground", "themes.sidebar-foreground", "themes.sidebar-primary-foreground", "themes.sidebar-accent-foreground", "themes.sidebar-primary", "themes.ring", "themes.sidebar-ring", "themes.font-sans", "themes.font-heading", "themes.font-mono"],
   },
   {
     slot: "sections.logo-mark",
@@ -50,7 +50,7 @@ const MEASURED_MARKETING_DECLARATIONS = [
   },
   {
     slot: "frames.site-footer",
-    tokens: ["tokens.surface-color", "tokens.text-color", "tokens.border-color", "tokens.border-width", "tokens.spacing", "tokens.gutter", "tokens.content-size", "tokens.caption-size", "tokens.typeface", "tokens.breakpoint", "tokens.body-size", "tokens.brandmark-size", "tokens.touch-target", "tokens.z-index", "tokens.accent-color", "tokens.action-color", "tokens.control-color", "tokens.control-radius", "tokens.duration", "tokens.easing", "tokens.focus-color", "tokens.focus-outline", "tokens.state-opacity", "tokens.status-color"],
+    themes: ["themes.background", "themes.card", "themes.popover", "themes.secondary", "themes.accent", "themes.muted", "themes.sidebar", "themes.sidebar-accent", "themes.foreground", "themes.card-foreground", "themes.popover-foreground", "themes.primary-foreground", "themes.secondary-foreground", "themes.accent-foreground", "themes.muted-foreground", "themes.sidebar-foreground", "themes.sidebar-primary-foreground", "themes.sidebar-accent-foreground", "themes.border", "themes.input", "themes.sidebar-border", "themes.spacing", "themes.font-sans", "themes.font-heading", "themes.font-mono", "themes.primary", "themes.sidebar-primary", "themes.radius", "themes.ring", "themes.sidebar-ring", "themes.destructive"],
     composes: ["components.link", "components.icon", "components.logo", "components.separator", "components.semantic-content"],
   },
 ] as const;
@@ -61,7 +61,7 @@ describe("measured marketing surface declarations", () => {
     const plan = planSurfaceDefaults(input);
     expect(plan.rows.find(row => row.slot === expected.slot)).toMatchObject({ status: "default", source: "foundry", reasons: [] });
     const contract = input.catalog.slots.find(row => row.id === expected.slot)!.contract;
-    if ("tokens" in expected) expect(contract.allowedReads.tokens).toEqual(expected.tokens);
+    if ("themes" in expected) expect(contract.allowedReads.themes).toEqual(expected.themes);
     if ("composes" in expected) expect(contract.kind === "section" ? contract.allowedComposes : contract.composes).toEqual(expected.composes);
     expect(plan.decisions).toHaveLength(62);
   });

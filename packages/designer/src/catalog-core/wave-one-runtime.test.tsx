@@ -72,11 +72,6 @@ function assembly(sectionLeaves: readonly string[], overrides: Readonly<Record<s
     },
     themes: ["light"], states: ["default"], css,
     assets: usesLogo ? [{ id: "assets.mark", mediaType: "image/svg+xml", bytes: [...new TextEncoder().encode(artwork)] }] : [],
-    breakpointPixels: Object.fromEntries(Object.entries(profile.values.members).filter(([id]) => id.startsWith("tokens.breakpoint.")).flatMap(([id, member]) => {
-      const value = member.value.light as { unit: string; value: number };
-      return value.unit === "px" ? [] : [[id, Math.round(value.value * 16)]];
-    })),
-    breakpointBasis: { renderer: frame.renderer, environment: { rootFontSize: 16 } },
   };
   return { input, plan, artwork, markSrc };
 }

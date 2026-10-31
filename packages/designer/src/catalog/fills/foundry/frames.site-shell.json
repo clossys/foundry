@@ -60,13 +60,20 @@
             "components.logo",
             "components.semantic-content"
           ],
-          "tokens": [
-            "tokens.accent-color",
-            "tokens.control-color",
-            "tokens.spacing",
-            "tokens.text-color",
-            "tokens.touch-target",
-            "tokens.z-index"
+          "themes": [
+            "themes.primary",
+            "themes.input",
+            "themes.spacing",
+            "themes.foreground",
+            "themes.card-foreground",
+            "themes.popover-foreground",
+            "themes.primary-foreground",
+            "themes.secondary-foreground",
+            "themes.accent-foreground",
+            "themes.muted-foreground",
+            "themes.sidebar-foreground",
+            "themes.sidebar-primary-foreground",
+            "themes.sidebar-accent-foreground"
           ]
         },
         "scanStatus": "lower-bound",
@@ -84,13 +91,20 @@
             "components.logo",
             "components.semantic-content"
           ],
-          "tokens": [
-            "tokens.accent-color",
-            "tokens.control-color",
-            "tokens.spacing",
-            "tokens.text-color",
-            "tokens.touch-target",
-            "tokens.z-index"
+          "themes": [
+            "themes.primary",
+            "themes.input",
+            "themes.spacing",
+            "themes.foreground",
+            "themes.card-foreground",
+            "themes.popover-foreground",
+            "themes.primary-foreground",
+            "themes.secondary-foreground",
+            "themes.accent-foreground",
+            "themes.muted-foreground",
+            "themes.sidebar-foreground",
+            "themes.sidebar-primary-foreground",
+            "themes.sidebar-accent-foreground"
           ]
         },
         "sourceFiles": [
@@ -157,13 +171,20 @@
       },
       "reads": {
         "assets": [],
-        "tokens": [
-          "tokens.accent-color",
-          "tokens.control-color",
-          "tokens.spacing",
-          "tokens.text-color",
-          "tokens.touch-target",
-          "tokens.z-index"
+        "themes": [
+          "themes.primary",
+          "themes.input",
+          "themes.spacing",
+          "themes.foreground",
+          "themes.card-foreground",
+          "themes.popover-foreground",
+          "themes.primary-foreground",
+          "themes.secondary-foreground",
+          "themes.accent-foreground",
+          "themes.muted-foreground",
+          "themes.sidebar-foreground",
+          "themes.sidebar-primary-foreground",
+          "themes.sidebar-accent-foreground"
         ]
       },
       "slot": "frames.site-shell",

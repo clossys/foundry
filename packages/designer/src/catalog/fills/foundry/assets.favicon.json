@@ -15,8 +15,17 @@
       "license": "MIT",
       "status": "draft",
       "reads": {
-        "tokens": [
-          "tokens.text-color"
+        "themes": [
+          "themes.foreground",
+          "themes.card-foreground",
+          "themes.popover-foreground",
+          "themes.primary-foreground",
+          "themes.secondary-foreground",
+          "themes.accent-foreground",
+          "themes.muted-foreground",
+          "themes.sidebar-foreground",
+          "themes.sidebar-primary-foreground",
+          "themes.sidebar-accent-foreground"
         ],
         "assets": [
           "assets.mark"

@@ -16,7 +16,7 @@ export function assertInput(input: EngineInput): void {
   for (const [index, fill] of input.library.fills.entries()) {
     const meta = fill?.$extensions?.["com.clossys.fill"];
     if (!meta || typeof meta.id !== "string" || typeof meta.slot !== "string" || typeof meta.source !== "string" || !Array.isArray(meta.conforms) || !Array.isArray(meta.evidence)) throw new CatalogError(`schema: fills.${index} expected fill metadata`);
-    if (meta.reads && (!Array.isArray(meta.reads.tokens) || !Array.isArray(meta.reads.assets) || [...meta.reads.tokens,...meta.reads.assets].some(read => typeof read !== "string"))) throw new CatalogError(`schema: fills.${index}.reads expected token and asset arrays of ids`);
+    if (meta.reads && (!Array.isArray(meta.reads.themes) || !Array.isArray(meta.reads.assets) || [...meta.reads.themes,...meta.reads.assets].some(read => typeof read !== "string"))) throw new CatalogError(`schema: fills.${index}.reads expected token and asset arrays of ids`);
   }
 
 }

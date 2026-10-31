@@ -24,24 +24,24 @@ const descriptor = () => structuredClone(importFoundryFrames().fills.find(doc =>
 /** SYNTHETIC parser input: observations come from the same scanner as real descriptors. */
 const measured = (token = false) => {
   const file = { path: "src/Example.tsx", content: token ? 'export const View = () => <div style={{gap:"var(--spacing-md)"}}/>;' : 'import { Avatar } from "./Avatar.js"; export const View = () => <Avatar/>;' };
-  const row = buildSurfaceConsumption({ tokens: [{ id: "tokens.spacing", contract: { emit: { md: "--spacing-md" } } }], assets: [], components: [{ id: "components.avatar" }], sections: [], frames: [app()], fills: [{ id: "synthetic", slot: "frames.app-shell", source: "synthetic" }], sourceScans: [{ fill: "synthetic", files: [file], resolvedImports: { "src/Example.tsx:./Avatar.js#Avatar": "components.avatar" } }], themeCss: "" }).fills[0]!;
+  const row = buildSurfaceConsumption({ themes: [{ id: "themes.spacing", contract: { emit: { md: "--spacing-md" } } }], assets: [], components: [{ id: "components.avatar" }], sections: [], frames: [app()], fills: [{ id: "synthetic", slot: "frames.app-shell", source: "synthetic" }], sourceScans: [{ fill: "synthetic", files: [file], resolvedImports: { "src/Example.tsx:./Avatar.js#Avatar": "components.avatar" } }], themeCss: "" }).fills[0]!;
   return { scanStatus: row.scanStatus as "lower-bound", sourceFiles: [{ path: file.path, sha256: sha256(file.content) }], scannedReads: row.scannedReads, scannedComposes: row.scannedComposes };
 };
 
 it("refuses actual package composition outside the contract even when declared fields underreport it", () => {
   const slot = app(), fill = descriptor();
   slot.contract.composes = [];
-  Object.assign(fill, { reads: { tokens: [], assets: [] }, composes: [], consumption: measured() });
+  Object.assign(fill, { reads: { themes: [], assets: [] }, composes: [], consumption: measured() });
   expect(contractFindings(slot, fill).join(" ")).toContain("unsupported composes: components.avatar");
   expect(contractFindings(slot, fill).join(" ")).toContain("underreported composes: components.avatar");
 });
 
 it("refuses actual package reads outside the contract even when declared fields underreport them", () => {
   const slot = app(), fill = descriptor();
-  slot.contract.allowedReads.tokens = [];
-  Object.assign(fill, { reads: { tokens: [], assets: [] }, composes: [], consumption: measured(true) });
-  expect(contractFindings(slot, fill).some(row => row.startsWith("S5 unsupported tokens:") && row.includes("tokens.spacing"))).toBe(true);
-  expect(contractFindings(slot, fill).some(row => row.startsWith("S5 underreported tokens:") && row.includes("tokens.spacing"))).toBe(true);
+  slot.contract.allowedReads.themes = [];
+  Object.assign(fill, { reads: { themes: [], assets: [] }, composes: [], consumption: measured(true) });
+  expect(contractFindings(slot, fill).some(row => row.startsWith("S5 unsupported themes:") && row.includes("themes.spacing"))).toBe(true);
+  expect(contractFindings(slot, fill).some(row => row.startsWith("S5 underreported themes:") && row.includes("themes.spacing"))).toBe(true);
 });
 
 it("does not mistake an absent package consumption measurement for an empty successful scan", () => {
@@ -70,7 +70,7 @@ it("carries measured reads and composes on every real generated package descript
   for (const doc of docs) {
     const fill = Object.values((doc as any).sections ?? (doc as any).frames)[0] as any;
     expect(fill.consumption?.scanStatus, fill.slot).toBe("lower-bound");
-    expect(fill.reads, fill.slot).toEqual({ tokens: fill.consumption.scannedReads.tokens, assets: fill.consumption.scannedReads.assets });
+    expect(fill.reads, fill.slot).toEqual({ themes: fill.consumption.scannedReads.themes, assets: fill.consumption.scannedReads.assets });
     expect(fill.composes, fill.slot).toEqual(fill.consumption.scannedComposes);
     expect(fill.consumption.sourceFiles.length, fill.slot).toBeGreaterThan(0);
   }
@@ -86,13 +86,13 @@ it("accepts the real app-shell closure after its legitimate actual use is declar
 it("source resolution refuses an underreported actual read and uses the same contract diagnostic", () => {
   const { input, bundle } = adoptedSurface();
   const fill = structuredClone(surfaceOf(input.library.surfaces!.fills[0]!));
-  const files = input.library.surfaces!.files.map(file => file.path === fill.impl.entry ? { ...file, content: 'export function Synthetic() { return "var(--color-ink-primary)"; }\n' } : file);
+  const files = input.library.surfaces!.files.map(file => file.path === fill.impl.entry ? { ...file, content: 'export function Synthetic() { return "var(--foreground)"; }\n' } : file);
   fill.outputSha256 = surfaceManifest(files);
   fill.origin = { kind: "authored", license: fill.license, lineage: bundle.base, descriptorHash: surfaceDescriptorHash(fill) };
   input.library.surfaces = { ...input.library.surfaces!, fills: [surfaceDocument(input.library, fill as any)], files };
   const findings = resolve(input).surfaces!.check.findings;
-  expect(findings.some(row => row.code === "S5" && row.message === "unsupported tokens: tokens.text-color")).toBe(true);
-  expect(findings.some(row => row.code === "S5" && row.message === "underreported tokens: tokens.text-color")).toBe(true);
+  expect(findings.some(row => row.code === "S5" && row.message === "unsupported themes: themes.foreground")).toBe(true);
+  expect(findings.some(row => row.code === "S5" && row.message === "underreported themes: themes.foreground")).toBe(true);
 });
 
 it("source resolution refuses undeclared actual composition through the selected component index", () => {
@@ -129,9 +129,9 @@ async function packageInput(underreport: boolean | "measurement" = false) {
   const input = { catalog, library, componentOptions, surfaceOptions: { packages: await readSurfacePackageEvidence([doc]), measurements: [] } };
   const fill = doc.frames["app-shell"]!;
   if (underreport) {
-    fill.reads = { tokens: [], assets: [] };
+    fill.reads = { themes: [], assets: [] };
     fill.composes = [];
-    if (underreport === "measurement") fill.consumption = { ...fill.consumption, scannedReads: { tokens: [], assets: [], components: [] }, scannedComposes: [] };
+    if (underreport === "measurement") fill.consumption = { ...fill.consumption, scannedReads: { themes: [], assets: [], components: [] }, scannedComposes: [] };
     else slot.contract.composes = [];
   }
   input.library = applyLibraryChange(input.catalog, input.library, { baseHash: libraryHash(input.library), changes: [{ portion: "surfaces", change: { op: "adopt", slot: "frames.app-shell", source: "foundry" } }] }, { componentOptions: input.componentOptions, surfaceOptions: input.surfaceOptions });
@@ -156,13 +156,13 @@ it("refuses a forged empty package snapshot even when its caller-controlled cata
   expect(result.check.ok).toBe(false);
   expect(result.check.findings.some(row => row.code === "S8" && row.message === "package consumption snapshot differs from canonical measurement")).toBe(true);
   expect(result.check.findings.some(row => row.code === "S5" && row.message.startsWith("underreported composes:") && row.message.includes("components.avatar"))).toBe(true);
-  expect(result.check.findings.some(row => row.code === "S5" && row.message.startsWith("underreported tokens:"))).toBe(true);
+  expect(result.check.findings.some(row => row.code === "S5" && row.message.startsWith("underreported themes:"))).toBe(true);
 });
 
 it("keeps the measurement scanner's observed facts separate from broad allowed reads", () => {
   const slot = app();
-  const report = buildSurfaceConsumption({ tokens: [], assets: [], components: [], sections: [], frames: [slot], fills: [{ id: "test", slot: slot.id, source: "test" }], sourceScans: [{ fill: "test", files: [{ path: "src/plain.ts", content: "export const Plain = 1;" }] }], themeCss: "" });
-  expect(report.fills[0]!.scannedReads).toEqual({ tokens: [], assets: [], components: [] });
+  const report = buildSurfaceConsumption({ themes: [], assets: [], components: [], sections: [], frames: [slot], fills: [{ id: "test", slot: slot.id, source: "test" }], sourceScans: [{ fill: "test", files: [{ path: "src/plain.ts", content: "export const Plain = 1;" }] }], themeCss: "" });
+  expect(report.fills[0]!.scannedReads).toEqual({ themes: [], assets: [], components: [] });
   expect(report.fills[0]!.scannedComposes).toEqual([]);
   expect(readFileSync(new URL("../catalog/slots/frames.json", import.meta.url), "utf8")).toContain("frames.app-shell");
 });

@@ -24,7 +24,7 @@ beforeEach(async () => {
 });
 afterEach(async () => { await fs.rm(temporary, { recursive: true, force: true }); });
 
-const author = (base: string, px = 18): ChangeSet => ({ baseHash: base, changes: [{ op: "author", slot: "tokens.blur", tokens: { glass: { $type: "dimension", $value: { value: px, unit: "px" } } } }] });
+const author = (base: string, px = 18): ChangeSet => ({ baseHash: base, changes: [{ op: "author", slot: "themes.radius", tokens: { default: { $type: "dimension", $value: { value: px, unit: "px" } } } }] });
 const receipt = async (): Promise<DesignerReceipt> => JSON.parse(await fs.readFile(join(root, DESIGNER_RECEIPT_FILE), "utf8"));
 const gap = (line: number): DogfoodFinding => ({ code: "DF5", file: "src/Page.tsx", line, tag: "Widget", elementId: `src/Page.tsx#Widget@${line}`, raisedBy: "src/Page.tsx#Page", slotId: null, evidence: "Unknown visual Widget", missing: "Widget capability" });
 async function cli(...args: string[]) {
@@ -43,12 +43,12 @@ describe("designer write receipt: stamping at the source", () => {
     expect(stamped.writes).toHaveLength(1);
     const [entry] = stamped.writes;
     expect(entry).toMatchObject({ command: "writeLibrary", unreceipted: [] });
-    expect(entry!.inputs).toMatchObject({ baseHash: changes.baseHash, changes: [{ op: "author", slot: "tokens.blur" }] });
+    expect(entry!.inputs).toMatchObject({ baseHash: changes.baseHash, changes: [{ op: "author", slot: "themes.radius" }] });
     expect(entry!.inputs.changeset).toMatch(/^sha256:[a-f0-9]{64}$/);
     const verdict = await checkLibraryReceipt(root);
     expect(verdict).toMatchObject({ ok: true, findings: [] });
     expect(entry!.contentHash).toBe(verdict.contentHash);
-    expect(Object.keys(stamped.files)).toContain("fills/tokens.blur.json");
+    expect(Object.keys(stamped.files)).toContain("fills/themes.radius.json");
     expect(Object.keys(stamped.files)).not.toContain(DESIGNER_RECEIPT_FILE);
   });
 
@@ -91,12 +91,12 @@ describe("designer write receipt: the check", () => {
 
   it("fails a hand-edited fill and passes again once the edit is reverted (mutation proof)", async () => {
     await writeLibrary(root, catalog, author(libraryHash(fixture)));
-    const original = await fs.readFile(fillPath("tokens.blur"), "utf8");
-    await fs.writeFile(fillPath("tokens.blur"), original.replace("\"value\": 18", "\"value\": 24"));
+    const original = await fs.readFile(fillPath("themes.radius"), "utf8");
+    await fs.writeFile(fillPath("themes.radius"), original.replace("\"value\": 18", "\"value\": 24"));
     const verdict = await checkLibraryReceipt(root);
     expect(verdict.ok).toBe(false);
-    expect(verdict.findings).toEqual([expect.objectContaining({ code: "DR3", path: "fills/tokens.blur.json" })]);
-    await fs.writeFile(fillPath("tokens.blur"), original);
+    expect(verdict.findings).toEqual([expect.objectContaining({ code: "DR3", path: "fills/themes.radius.json" })]);
+    await fs.writeFile(fillPath("themes.radius"), original);
     expect(await checkLibraryReceipt(root)).toMatchObject({ ok: true, findings: [] });
   });
 
@@ -110,14 +110,14 @@ describe("designer write receipt: the check", () => {
 
   it("does not let a later designer write launder an earlier hand edit", async () => {
     await writeLibrary(root, catalog, author(libraryHash(fixture)));
-    const original = await fs.readFile(fillPath("tokens.blur"), "utf8");
-    await fs.writeFile(fillPath("tokens.blur"), original.replace("\"value\": 18", "\"value\": 24"));
+    const original = await fs.readFile(fillPath("themes.radius"), "utf8");
+    await fs.writeFile(fillPath("themes.radius"), original.replace("\"value\": 18", "\"value\": 24"));
     await emitLibrary(root, catalog);
     const stamped = await receipt();
-    expect(stamped.writes.at(-1)).toMatchObject({ command: "emitLibrary", unreceipted: ["fills/tokens.blur.json"] });
+    expect(stamped.writes.at(-1)).toMatchObject({ command: "emitLibrary", unreceipted: ["fills/themes.radius.json"] });
     const verdict = await checkLibraryReceipt(root);
     expect(verdict.ok).toBe(false);
-    expect(verdict.findings).toEqual([expect.objectContaining({ code: "DR4", path: "fills/tokens.blur.json" })]);
+    expect(verdict.findings).toEqual([expect.objectContaining({ code: "DR4", path: "fills/themes.radius.json" })]);
   });
 
   it("accepts a regeneration that restores hand-edited generated output to its receipted bytes", async () => {
@@ -138,7 +138,7 @@ describe("designer write receipt: the check", () => {
   it("fails a forged or malformed receipt", async () => {
     await writeLibrary(root, catalog, author(libraryHash(fixture)));
     const stamped = await receipt();
-    await fs.writeFile(join(root, DESIGNER_RECEIPT_FILE), stableStringify({ ...stamped, files: { ...stamped.files, "fills/tokens.blur.json": "sha256:" + "0".repeat(64) } }));
+    await fs.writeFile(join(root, DESIGNER_RECEIPT_FILE), stableStringify({ ...stamped, files: { ...stamped.files, "fills/themes.radius.json": "sha256:" + "0".repeat(64) } }));
     expect((await checkLibraryReceipt(root)).findings.map(row => row.code)).toContain("DR2");
     await fs.writeFile(join(root, DESIGNER_RECEIPT_FILE), "{");
     expect((await checkLibraryReceipt(root)).findings.map(row => row.code)).toEqual(["DR2"]);
@@ -163,12 +163,12 @@ describe("designer write receipt: the check", () => {
     const passed = await cli("receipt", "--json");
     expect(passed.code).toBe(0);
     expect(JSON.parse(passed.out)).toMatchObject({ ok: true, findings: [] });
-    const original = await fs.readFile(fillPath("tokens.blur"), "utf8");
-    await fs.writeFile(fillPath("tokens.blur"), original.replace("\"value\": 18", "\"value\": 24"));
+    const original = await fs.readFile(fillPath("themes.radius"), "utf8");
+    await fs.writeFile(fillPath("themes.radius"), original.replace("\"value\": 18", "\"value\": 24"));
     const failed = await cli("receipt");
     expect(failed.code).toBe(1);
-    expect(failed.out).toContain("DR3 fills/tokens.blur.json");
-    await fs.writeFile(fillPath("tokens.blur"), original);
+    expect(failed.out).toContain("DR3 fills/themes.radius.json");
+    await fs.writeFile(fillPath("themes.radius"), original);
     const basePath = join(temporary, "base-receipt.json");
     await fs.writeFile(basePath, JSON.stringify({ version: 1, files: {}, writes: [] }));
     expect((await cli("receipt", "--base", basePath)).code).toBe(0);

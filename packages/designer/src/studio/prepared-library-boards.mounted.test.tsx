@@ -28,7 +28,7 @@ it('exposes original records without source hashes and preserves one session ide
   render(<WholeStudioProvider adapter={f.adapter} labels={f.wholeLabels}><Probe /></WholeStudioProvider>);
   await screen.findByText('prepared');
   const identity = observed.prepared.projection.session.id;
-  const check = (layer: 'tokens' | 'assets') => {
+  const check = (layer: 'themes' | 'assets') => {
     const prepared = observed.prepared; expect(prepared.status).toBe('prepared');
     if (prepared.status !== 'prepared') throw new Error('Expected mounted records');
     expect(prepared.projection.layer).toBe(layer);
@@ -42,9 +42,9 @@ it('exposes original records without source hashes and preserves one session ide
     expect(prepared.projection.session.id).toBe(identity); expect(observed.whole.snapshot?.runtime).toBeUndefined();
     expect(prepared.projection.session.edits).toEqual([]);
   };
-  check('tokens');
+  check('themes');
   await act(async () => { await observed.whole.setLayer('assets'); }); check('assets');
-  await act(async () => { await observed.whole.setLayer('tokens'); }); check('tokens');
+  await act(async () => { await observed.whole.setLayer('themes'); }); check('themes');
   for (const key of ['session', 'sessionState', 'valueSession', 'edit', 'feedback', 'saving']) expect(key in observed.whole, key).toBe(false);
   for (const key of ['apply', 'use', 'reset', 'canReset', 'generateStarter', 'adapter', 'live', 'saving']) expect(key in observed.values, key).toBe(false);
   expect(f.load).toHaveBeenCalledOnce(); expect(f.save).not.toHaveBeenCalled();

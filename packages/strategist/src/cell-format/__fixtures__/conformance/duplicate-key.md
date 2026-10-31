@@ -1,4 +1,4 @@
 ---
-id: tokens.accent-color
+id: themes.primary
 id: assets.favicon
 ---

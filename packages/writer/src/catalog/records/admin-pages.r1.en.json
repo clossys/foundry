@@ -10,7 +10,7 @@
     "strings.admin.page.designer": "st.2zj7yrtkfr",
     "strings.admin.page.writer": "st.m22sa9p9y4",
     "strings.admin.page.publisher": "st.cy7122qr1d",
-    "strings.admin.group.designer.tokens": "st.c331pzvwey",
+    "strings.admin.group.designer.themes": "st.c331pzvwey",
     "strings.admin.group.designer.assets": "st.qxaxqewq3p",
     "strings.admin.group.designer.components": "st.jht60wz8e1",
     "strings.admin.group.designer.sections": "st.ata62btvcq",
@@ -1471,7 +1471,7 @@
       "kind": "CopyRef"
     },
     {
-      "cellId": "strings.admin.group.designer.tokens",
+      "cellId": "strings.admin.group.designer.themes",
       "recordId": "st.c331pzvwey",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
@@ -3640,137 +3640,137 @@
     {
       "recordId": "st.k2hbf8chyb",
       "source": "common-labels.r1.en.json",
-      "sourceContext": "designer.ia.tokens.color"
+      "sourceContext": "designer.ia.themes.color"
     },
     {
       "recordId": "st.bw8n6df3hn",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.color-engine"
+      "sourceContext": "designer.ia.themes.color-engine"
     },
     {
       "recordId": "st.gf4vyxz6js",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.color-palettes"
+      "sourceContext": "designer.ia.themes.color-palettes"
     },
     {
       "recordId": "st.yp9jcda42g",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.color-surfaces"
+      "sourceContext": "designer.ia.themes.color-surfaces"
     },
     {
       "recordId": "st.m7t4wh56ev",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.color-foregrounds"
+      "sourceContext": "designer.ia.themes.color-foregrounds"
     },
     {
       "recordId": "st.hfsb4xz44v",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.color-controls"
+      "sourceContext": "designer.ia.themes.color-controls"
     },
     {
       "recordId": "st.g8cdn1vmr7",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.color-charts"
+      "sourceContext": "designer.ia.themes.color-charts"
     },
     {
       "recordId": "st.753hsc4ym2",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.type"
+      "sourceContext": "designer.ia.themes.type"
     },
     {
       "recordId": "st.xx87k8vc06",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.type-fonts"
+      "sourceContext": "designer.ia.themes.type-fonts"
     },
     {
       "recordId": "st.0dmzmb7tpe",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.type-sizes"
+      "sourceContext": "designer.ia.themes.type-sizes"
     },
     {
       "recordId": "st.mn2v0dgaj8",
       "source": "common-labels.r1.en.json",
-      "sourceContext": "designer.item.tokens.spacing"
+      "sourceContext": "designer.item.themes.spacing"
     },
     {
       "recordId": "st.5r9jd8zqt1",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.space"
+      "sourceContext": "designer.ia.themes.space"
     },
     {
       "recordId": "st.ekd4wtwz4t",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.space-layout"
+      "sourceContext": "designer.ia.themes.space-layout"
     },
     {
       "recordId": "st.qnqy2cwr23",
       "source": "common-labels.r1.en.json",
-      "sourceContext": "designer.ia.tokens.space-rhythm"
+      "sourceContext": "designer.ia.themes.space-rhythm"
     },
     {
       "recordId": "st.9fpt6f67wx",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.shape"
+      "sourceContext": "designer.ia.themes.shape"
     },
     {
       "recordId": "st.a1qp1vcmyr",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.shape-corners"
+      "sourceContext": "designer.ia.themes.shape-corners"
     },
     {
       "recordId": "st.7e7dwaz8k5",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.shape-borders"
+      "sourceContext": "designer.ia.themes.shape-borders"
     },
     {
       "recordId": "st.jefpgjv0gp",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.shape-symbols"
+      "sourceContext": "designer.ia.themes.shape-symbols"
     },
     {
       "recordId": "st.h0xys4q2y0",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.depth"
+      "sourceContext": "designer.ia.themes.depth"
     },
     {
       "recordId": "st.t6thy09ja9",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.depth-effects"
+      "sourceContext": "designer.ia.themes.depth-effects"
     },
     {
       "recordId": "st.ykp69n1ht3",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.depth-stacking"
+      "sourceContext": "designer.ia.themes.depth-stacking"
     },
     {
       "recordId": "st.ykrqq0590w",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.motion"
+      "sourceContext": "designer.ia.themes.motion"
     },
     {
       "recordId": "st.92yqd0xz4g",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.motion-timing"
+      "sourceContext": "designer.ia.themes.motion-timing"
     },
     {
       "recordId": "st.r80mste1t3",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.motion-curves"
+      "sourceContext": "designer.ia.themes.motion-curves"
     },
     {
       "recordId": "st.a0cr4wtghk",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.motion-travel"
+      "sourceContext": "designer.ia.themes.motion-travel"
     },
     {
       "recordId": "st.cpkf5zm4zm",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.interaction"
+      "sourceContext": "designer.ia.themes.interaction"
     },
     {
       "recordId": "st.9wy8met97b",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.interaction-controls"
+      "sourceContext": "designer.ia.themes.interaction-controls"
     },
     {
       "recordId": "st.31tdz2e8k4",
@@ -3905,7 +3905,7 @@
     {
       "recordId": "st.k2hbf8chyb",
       "source": "common-labels.r1.en.json",
-      "sourceContext": "designer.ia.tokens.color"
+      "sourceContext": "designer.ia.themes.color"
     },
     {
       "recordId": "st.0d1qng8cf7",

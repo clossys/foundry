@@ -26,7 +26,7 @@ export interface StudioLabels {
     /** @deprecated Ignored: the board has no edit mode. */ changeSelection?: string; /** @deprecated Ignored: the board has no edit mode. */ done?: string;
     notChosen: string; /** @deprecated Ignored: a not-chosen row offers Ask agent only. */ choose?: string; askAgent: string; /** @deprecated Ignored: the edit-mode Custom column is gone. */ custom?: string; create: string; refresh: string; promptTitle: string; promptInstruction: string; returnStep: string; copy: string; copied: string; copyFailed: string; close: string; checkCandidates: string; checking: string; candidatesUnavailable: string; candidatesFailed: string; pendingSelection: string; noNewCandidates: string; /** @deprecated Ignored: Generate starter is gone; a coding agent authors a starter. */ generateStarter?: string };
   canvas: { noCandidatesInBoard: string; label: string; hint: string; search: string; explorerOpen: string; explorerClose: string; inspectorClose: string; minimap: string; filters: Record<CanvasFilter, string>; zoomLabel: string; zoomIn: string; zoomOut: string; fit: string; zoom: (percent: number) => string; openBoard: (name: string) => string; goToBoard: (name: string) => string };
-  layers: { label: string; tokens: string; assets: string; components: string; sections: string; frames: string; disabled: string };
+  layers: { label: string; themes: string; assets: string; components: string; sections: string; frames: string; disabled: string };
   scorecard: { title: string; close: string; resolved: string; checks: string; issues: string; noIssues: string; target: string; categories: Record<CheckCategory, string>; counts: (errors: number, notices: number) => string; supported: (codes: readonly string[]) => string };
   matrix: { label: string; leaf: string; libraries: string; showAll: string; expand: (leaf: string) => string; collapse: (leaf: string) => string; differs: string; pending: string };
   /**
@@ -119,7 +119,7 @@ export interface StudioProps extends StudioCanvasProps {
   /** Loaded once, when the Studio mounts. Keep it stable. */
   adapter: StudioAdapter;
   labels: StudioLabels;
-  /** @default "tokens.accent-color" */
+  /** @default "themes.primary" */
   initialSlotId?: string;
   /** @deprecated Ignored: there is no unsaved working state to preview. */
   livePreview?: boolean;

@@ -50,11 +50,11 @@ function consumerValues(reads: readonly string[]) {
   const order = ["foundry", "tailwind-default"];
   const offered = (slot: string) => values.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot === slot && doc.$extensions["com.clossys.fill"].mode !== "reference");
   const covers = (doc: (typeof values.fills)[number], slot: string) => {
-    const group = (doc as unknown as { tokens?: Record<string, Record<string, unknown>> }).tokens?.[slot.slice("tokens.".length)] ?? {};
+    const group = (doc as unknown as { tokens?: Record<string, Record<string, unknown>> }).tokens?.[slot.slice("themes.".length)] ?? {};
     return reads.filter(id => id.startsWith(`${slot}.`)).every(id => Object.hasOwn(group, id.slice(slot.length + 1)));
   };
-  const changes = values.slots.filter(slot => slot.layer === "tokens" || slot.id.startsWith("assets.icon-")).flatMap(slot => {
-    const docs = offered(slot.id), sources = docs.filter(doc => slot.layer !== "tokens" || covers(doc, slot.id)).map(doc => doc.$extensions["com.clossys.fill"].source);
+  const changes = values.slots.filter(slot => slot.layer === "themes" || slot.id.startsWith("assets.icon-")).flatMap(slot => {
+    const docs = offered(slot.id), sources = docs.filter(doc => slot.layer !== "themes" || covers(doc, slot.id)).map(doc => doc.$extensions["com.clossys.fill"].source);
     const source = order.find(name => sources.includes(name)) ?? sources[0] ?? docs[0]?.$extensions["com.clossys.fill"].source;
     return source ? [{ op: "adopt" as const, slot: slot.id, source }] : [];
   });
@@ -120,7 +120,7 @@ const temp = mkdtempSync(resolve(repository, ".selected-api-menu-"));
 
 beforeAll(async () => {
   const bundles = loadCatalogBundles(), registry = loadComponentRegistry();
-  const values = consumerValues(bundles.componentFills.map(componentOf).filter(fill => COHORT.some(([slot, source]) => fill.slot === slot && fill.source === source)).flatMap(fill => fill.reads.tokens));
+  const values = consumerValues(bundles.componentFills.map(componentOf).filter(fill => COHORT.some(([slot, source]) => fill.slot === slot && fill.source === source)).flatMap(fill => fill.reads.themes));
   const catalog = { slots: registry.slots, fills: bundles.componentFills, rules: loadComponentCompositionRules() };
   const empty: ComponentLibrary = { source: { id: "selected-api", kind: "consumer", author: "consumer", license: "MIT" }, adoptedAt: "2026-10-27", fills: [], files: [] };
   const library = applyComponentLibraryChange(catalog, empty, { baseHash: componentLibraryHash(empty), changes: COHORT.map(([slot, source]) => ({ op: "adopt" as const, slot, source })) }, bundles.sourceBundles);

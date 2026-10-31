@@ -16,7 +16,7 @@ export interface ComponentFinding {
 export interface ComponentCheckFill {
   slot: string; source: string; root: ComponentContract["root"];
   members: readonly string[]; props: readonly string[]; propMap: Readonly<Record<string, string>>;
-  reads: { tokens: readonly string[]; assets: readonly string[]; components: readonly string[] };
+  reads: { themes: readonly string[]; assets: readonly string[]; components: readonly string[] };
   composes: readonly string[];
   impl: { kind: "package"; module: string; export: string } | { kind: "source"; entry: string; export: string } | { kind: "composed"; rule: string };
   license: string;
@@ -58,7 +58,7 @@ export interface ComponentObservation {
   root: ComponentContract["root"]; forwardsRef: boolean; forwardsRenderProps: boolean;
   rac: { version: string; instance: string; dependency: "peer" | "bundled" | "source" };
   calls: readonly ComponentCallSite[];
-  /** Measured size-member bindings (`size.*` member -> `tokens.control-size.*`), needed when controls mix sources. */
+  /** Measured size-member bindings (`size.*` member -> the `themes.spacing.*` member its rendered control resolves), needed when controls mix sources. */
   geometry?: Readonly<Record<string, string>>;
   /**
    * Digest of the exact adopted descriptor the runtime evidence was measured against
@@ -353,7 +353,7 @@ function definedProperties(code: string): Set<string> {
 function rootNames(root: string): string[] { return root.startsWith("rac:") ? root.slice(4).split("+") : []; }
 /** Contracts grant leaves; declarations may name a leaf or one exact member. */
 function tokenLeaf(read: string): string | undefined {
-  return /^tokens\.[a-z0-9-]+(?:\.[a-z0-9-]+)?$/.test(read) ? read.split(".").slice(0, 2).join(".") : undefined;
+  return /^themes\.[a-z0-9-]+(?:\.[a-z0-9-]+)?$/.test(read) ? read.split(".").slice(0, 2).join(".") : undefined;
 }
 function tokenReadResolves(tokens: ComponentCheckInput["tokens"], read: string): boolean {
   const leaf = tokenLeaf(read);
@@ -363,10 +363,10 @@ function tokenReadResolves(tokens: ComponentCheckInput["tokens"], read: string):
 }
 function isRead(fill: ComponentCheckFill, member: string): boolean {
   const leaf = tokenLeaf(member);
-  return !!leaf && member !== leaf && (fill.reads.tokens.includes(member) || fill.reads.tokens.includes(leaf));
+  return !!leaf && member !== leaf && (fill.reads.themes.includes(member) || fill.reads.themes.includes(leaf));
 }
 function readLeaves(fill: ComponentCheckFill): string[] {
-  return [...new Set(fill.reads.tokens.map(tokenLeaf).filter((leaf): leaf is string => leaf !== undefined))];
+  return [...new Set(fill.reads.themes.map(tokenLeaf).filter((leaf): leaf is string => leaf !== undefined))];
 }
 function matrix(contract: ComponentContract): { states: string[]; grounds: string[] } {
   const members = contract.members.mode === "closed" ? contract.members.names : contract.members.required ?? [];
@@ -396,10 +396,10 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
     for (const prop of contract.props) if (!fill.props.includes(prop)) add("K1", fill.slot, `Required prop ${prop} is missing`);
     for (const member of Object.keys(fill.propMap)) if (!fill.members.includes(member)) add("K1", fill.slot, `Mapping names unsupported member ${member}`);
     for (const [layer, reads] of Object.entries(fill.reads)) for (const read of reads) {
-      if (layer === "tokens" && !tokenReadResolves(input.tokens, read)) add("K3", fill.slot, `Token read ${read} does not resolve`);
+      if (layer === "themes" && !tokenReadResolves(input.tokens, read)) add("K3", fill.slot, `Token read ${read} does not resolve`);
       if (layer === "assets" && (!read.startsWith("assets.") || !input.assets.includes(read))) add("K3", fill.slot, `Asset read ${read} does not resolve`);
       if (layer === "components" && (!read.startsWith("components.") || !fills.has(read))) add("K3", fill.slot, `Component read ${read} does not resolve`);
-      if (layer === "tokens" ? !contract.allowedReads.tokens.includes(tokenLeaf(read) ?? "") : layer === "assets" && !contract.allowedReads.assets.includes(read)) add("K3", fill.slot, `Read ${read} is outside the contract`);
+      if (layer === "themes" ? !contract.allowedReads.themes.includes(tokenLeaf(read) ?? "") : layer === "assets" && !contract.allowedReads.assets.includes(read)) add("K3", fill.slot, `Read ${read} is outside the contract`);
     }
     for (const target of fill.composes) if (!fill.reads.components.includes(target) || !fills.has(target)) add("K3", fill.slot, `Composition ${target} is undeclared or unresolved`);
     if (!LICENSES.has(fill.license) || fill.deps.some(dep => !LICENSES.has(dep.license))) add("K8", fill.slot, "Fill and every dependency require an allowed SPDX licence");
@@ -489,7 +489,7 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
       const noActivation = state === "disabled";
       if (measurement.axeViolations.length || protocols.some(protocol => protocol && (protocol.roles.some(role => !measurement.roles.includes(role)) || protocol.keys.some(key => noActivation && ACTIVATION_KEYS.includes(key) ? measurement.keyboard.includes(key) : !measurement.keyboard.includes(key)))) || protocols.some(protocol => !protocol)) add("K5", fill.slot, `Roles, keyboard or axe evidence fails for ${state}/${mode}/${ground}`);
       const interactive = protocols.some(protocol => !!protocol?.keys.length) || fill.slot === "components.resize-handle";
-      const directFocus = measurement.focusTokens.length > 0 && measurement.focusTokens.every(member => /^tokens\.focus-/.test(member) && !!input.tokens[member] && isRead(fill, member));
+      const directFocus = measurement.focusTokens.length > 0 && measurement.focusTokens.every(member => /^themes\.ring\./.test(member) && !!input.tokens[member] && isRead(fill, member));
       let delegatedFocus = false;
       if (ownedRule && /^rac:Date(?:Range)?Picker$/.test(contract.root) && measurement.focusOwner === "components.date-field" && measurement.focusTokens.length === 0 && fill.composes.includes(measurement.focusOwner)) {
         const owner = fills.get(measurement.focusOwner);
@@ -501,12 +501,12 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
         const call = observation.calls.some(call => call.target === measurement.focusOwner && call.contextRoot === ownerRoot);
         delegatedFocus = !!owner && !!ownerCommon && !!ownerObservation && call && ownerObservation.root === ownerRoot && ownerObservation.forwardsRef && ownerObservation.forwardsRenderProps &&
           ownerCommon.sourceHash === componentSourceHash(ownerCommon.files) && ownerCommon.tokensHash === tokenHash && ownerMeasurements.length === 1 &&
-          ownerMeasurements[0]!.focusTokens.length > 0 && ownerMeasurements[0]!.focusTokens.every(member => /^tokens\.focus-/.test(member) && !!input.tokens[member] && isRead(owner, member));
+          ownerMeasurements[0]!.focusTokens.length > 0 && ownerMeasurements[0]!.focusTokens.every(member => /^themes\.ring\./.test(member) && !!input.tokens[member] && isRead(owner, member));
       }
       const focus = measurement.focusOwner ? delegatedFocus : directFocus;
       if (interactive && !focus) add("K5", fill.slot, "Focus-visible indicator lacks bound focus tokens");
       if (!SYSTEM_COLORS.has(measurement.forcedColors.foreground) || !SYSTEM_COLORS.has(measurement.forcedColors.background) || measurement.forcedColors.foreground === measurement.forcedColors.background) add("K5", fill.slot, "Forced-colours evidence is missing or illegible");
-      if (interactive && ![measurement.target.width, measurement.target.height].every(value => Number.isFinite(value) && value >= 24) && !fill.reads.tokens.includes("tokens.touch-target")) add("K5", fill.slot, "Target is below 24 by 24 CSS pixels without touch-target binding");
+      if (interactive && ![measurement.target.width, measurement.target.height].every(value => Number.isFinite(value) && value >= 24)) add("K5", fill.slot, "Target is below 24 by 24 CSS pixels");
       if (!measurement.contrast.length) add("K6", fill.slot, `No contrast measurements for ${state}/${mode}/${ground}`);
       for (const pair of measurement.contrast) {
         const foreground = input.tokens[pair.foreground]; const background = input.tokens[pair.background];
@@ -573,16 +573,16 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
     if (group.kind === "charts") { add("K11", group.id, "Chart coherence group must have one source"); continue; }
     if (group.kind !== "controls") continue;
     // A member that renders no label of its own binds no label type; only members that bind label type are compared.
-    const labelLeaves = members.map(fill => readLeaves(fill).filter(read => /(?:body-size|caption-size|typeface|font-size)$/.test(read)).sort().join(",")).filter(leaves => leaves !== "");
+    const labelLeaves = members.map(fill => readLeaves(fill).filter(read => /^themes\.font-(?:sans|heading|mono|serif)$/.test(read)).sort().join(",")).filter(leaves => leaves !== "");
     if (new Set(labelLeaves).size > 1) add("K11", group.id, "Mixed controls bind labels to different type leaves");
     for (const fill of members) {
       const observation = input.observations[fill.slot];
       const leaves = readLeaves(fill);
-      const parity = "Mixed controls lack joint control-size/focus/type geometry parity";
+      const parity = "Mixed controls lack joint spacing/focus/type geometry parity";
       // Descriptor reads and real K4 errors refuse statically; geometry and focus measurements need observations.
-      if (!leaves.includes("tokens.control-size") || !leaves.some(read => /^tokens\.focus-/.test(read)) || findings.some(finding => finding.subject === fill.slot && finding.code === "K4" && finding.severity === "error")) { add("K11", fill.slot, parity); continue; }
+      if (!leaves.includes("themes.spacing") || !leaves.includes("themes.ring") || findings.some(finding => finding.subject === fill.slot && finding.code === "K4" && finding.severity === "error")) { add("K11", fill.slot, parity); continue; }
       if (!observation?.files.length) { findings.push({ code: "K11", rule: "K11", subject: fill.slot, severity: "notice", message: `Mixed controls geometry parity: ${OBSERVATIONS_UNAVAILABLE}` }); continue; }
-      if (!observation.measurements.length || fill.members.filter(member => member.startsWith("size.")).some(member => { const token = observation.geometry?.[member]; return !token || !token.startsWith("tokens.control-size.") || !input.tokens[token]; }) || observation.measurements.some(measurement => measurement.focusTokens.some(member => !/^tokens\.focus-/.test(member))) || findings.some(finding => finding.subject === fill.slot && finding.code === "K4")) add("K11", fill.slot, parity);
+      if (!observation.measurements.length || fill.members.filter(member => member.startsWith("size.")).some(member => { const token = observation.geometry?.[member]; return !token || !token.startsWith("themes.spacing.") || !input.tokens[token]; }) || observation.measurements.some(measurement => measurement.focusTokens.some(member => !/^themes\.ring\./.test(member))) || findings.some(finding => finding.subject === fill.slot && finding.code === "K4")) add("K11", fill.slot, parity);
     }
   }
   const unique = new Map(findings.map(finding => [stableStringify(finding), finding]));

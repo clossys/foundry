@@ -21,18 +21,18 @@ describe("strict Designer item-name resolution", () => {
     expect(copy.records[0]).not.toHaveProperty("approval");
   });
   it("refuses missing, wrong-kind, wrong-cell, wrong-record and wrong-target bindings", () => {
-    for (const bindings of [[], [{ ...binding, kind: "CopyRef" }], [{ ...binding, kind: "ia-name" }], [{ ...binding, cellId: "designer.item.components.badge" }], [{ ...binding, recordId: "st.unknown000" }], [{ ...binding, target: "packages/designer/src/catalog/slots/tokens.json" }]]) {
+    for (const bindings of [[], [{ ...binding, kind: "CopyRef" }], [{ ...binding, kind: "ia-name" }], [{ ...binding, cellId: "designer.item.components.badge" }], [{ ...binding, recordId: "st.unknown000" }], [{ ...binding, target: "packages/designer/src/catalog/slots/themes.json" }]]) {
       expect(resolveAdminCopyRef({ id: record.id }, copyWith({}, bindings), preview), JSON.stringify(bindings)).toBeUndefined();
     }
   });
-  it("resolves the existing Gradient record only with its authentic token-slot binding on preview", () => {
-    const slots = JSON.parse(readFileSync(new URL("../../designer/src/catalog/slots/tokens.json", import.meta.url), "utf8"));
-    expect(slots.some((row: { id: string }) => row.id === "tokens.gradient")).toBe(true);
-    const gradient = ADMIN_STUDIO_COPY_EN.records.find(row => row.id === "st.tbfa7dx2cf")!;
+  it("resolves the existing Background record only with its authentic theme-slot binding on preview", () => {
+    const slots = JSON.parse(readFileSync(new URL("../../designer/src/catalog/slots/themes.json", import.meta.url), "utf8"));
+    expect(slots.some((row: { id: string }) => row.id === "themes.background")).toBe(true);
+    const gradient = ADMIN_STUDIO_COPY_EN.records.find(row => row.id === "st.70ma9sgngq")!;
     const bindings = ADMIN_STUDIO_COPY_EN.bindings.filter(row => row.recordId === gradient.id);
-    expect(bindings).toEqual([{ cellId: "designer.item.tokens.gradient", recordId: gradient.id, kind: "item-name", target: "packages/designer/src/catalog/slots/tokens.json" }]);
+    expect(bindings).toEqual([{ cellId: "designer.item.themes.background", recordId: gradient.id, kind: "item-name", target: "packages/designer/src/catalog/slots/themes.json" }]);
     const copy = createAdminCopy([ADMIN_STUDIO_COPY_EN]), before = JSON.stringify(copy);
-    expect(resolveAdminCopyRef({ id: gradient.id }, copy, preview)).toMatchObject({ text: "Gradient", servedLocale: "en", status: "draft", activation: "none" });
+    expect(resolveAdminCopyRef({ id: gradient.id }, copy, preview)).toMatchObject({ text: "Background", servedLocale: "en", status: "draft", activation: "none" });
     expect(resolveAdminCopyRef({ id: gradient.id }, copy)).toBeUndefined();
     const missing = createAdminCopy([{ ...ADMIN_STUDIO_COPY_EN, bindings: ADMIN_STUDIO_COPY_EN.bindings.filter(row => row.recordId !== gradient.id) }]);
     expect(resolveAdminCopyRef({ id: gradient.id }, missing, preview)).toBeUndefined();

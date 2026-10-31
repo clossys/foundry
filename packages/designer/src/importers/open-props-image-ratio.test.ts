@@ -43,7 +43,7 @@ describe('optional Open Props image ratios', () => {
       member, property: `--ratio-${member}`, scalar: ['1', '4/3', '3/4', '16/9', '18/5', '1.6180/1'][index], line: index + 2, ...value,
     })));
     const fill = fills[0]!; const metadata = metaOf(fill);
-    expect(metadata).toMatchObject({ slot: 'assets.image-ratio', source: 'open-props', mode: 'implementation', relation: 'subset', author: 'third-party', trust: 'pinned-upstream', license: 'MIT', status: 'draft', reads: { tokens: [], assets: [] }, builtOn: [], conforms: [], evidence: [] });
+    expect(metadata).toMatchObject({ slot: 'assets.image-ratio', source: 'open-props', mode: 'implementation', relation: 'subset', author: 'third-party', trust: 'pinned-upstream', license: 'MIT', status: 'draft', reads: { themes: [], assets: [] }, builtOn: [], conforms: [], evidence: [] });
     expect(metadata.pin).toEqual({ package: 'open-props', version: '1.7.23', commit, file: 'src/props.aspects.css', url: `https://raw.githubusercontent.com/argyleink/open-props/${commit}/src/props.aspects.css`, sha256: sourceHash });
     expect(catalog.sources.find(source => source.id === 'open-props')).toMatchObject({ kind: 'external', author: 'third-party', license: 'MIT', pin: metadata.pin });
     expect(Object.fromEntries(Object.entries(flatten(fill)).map(([id, token]) => [id.slice(prefix.length), token]))).toEqual(Object.fromEntries(Object.entries(expected).map(([member, value]) => [member, { $type: 'rules', $value: value }])));

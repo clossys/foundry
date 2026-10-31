@@ -71,10 +71,16 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.control-radius",
-          "tokens.radius",
-          "tokens.surface-color"
+        "themes": [
+          "themes.radius",
+          "themes.background",
+          "themes.card",
+          "themes.popover",
+          "themes.secondary",
+          "themes.accent",
+          "themes.muted",
+          "themes.sidebar",
+          "themes.sidebar-accent"
         ]
       },
       "root": "presentational",

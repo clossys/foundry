@@ -32,7 +32,7 @@ export interface DefaultCandidatesReport {
   missing: DefaultCandidateMissing[];
   invalid: string[];
 }
-const layers = ["tokens", "assets", "components", "sections", "frames"] as const;
+const layers = ["themes", "assets", "components", "sections", "frames"] as const;
 const surfaceLayers = new Set<string>(["components", "sections", "frames"]);
 const unique = (values: readonly string[]) => [...new Set(values)].sort();
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
@@ -84,7 +84,7 @@ export function checkDefaultCandidates(input: DefaultCandidatesInput): { exitCod
   for (const slot of nativeSlots) if (slot && typeof slot.id === "string" && !slots.has(slot.id)) fail(`${slot.id}: native composite contract is unregistered`);
   const orderedSlots = [...slots.values()].sort((a, b) => b.id.length - a.id.length || a.id.localeCompare(b.id));
   const addRead = (surface: string, fill: string, read: unknown) => {
-    if (typeof read !== "string" || !read || !/^(tokens|assets|components|sections|frames)\.[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(read)) { fail(`${fill}: malformed read ${JSON.stringify(read)}`); return; }
+    if (typeof read !== "string" || !read || !/^(themes|assets|components|sections|frames)\.[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(read)) { fail(`${fill}: malformed read ${JSON.stringify(read)}`); return; }
     const slot = orderedSlots.find(slot => read === slot.id || read.startsWith(`${slot.id}.`));
     if (!slot) { fail(`${fill}: unregistered read ${read}`); return; }
     try { if (!validMember(slot, read)) { fail(`${fill}: invalid member read ${read}`); return; } }
@@ -103,7 +103,7 @@ export function checkDefaultCandidates(input: DefaultCandidatesInput): { exitCod
         addRead(surface, fill, read);
       }
     }
-    if (required && (!Array.isArray(value.tokens) || !Array.isArray(value.assets))) fail(`${fill}: explicit token and asset read evidence is required`);
+    if (required && (!Array.isArray(value.themes) || !Array.isArray(value.assets))) fail(`${fill}: explicit themes and asset read evidence is required`);
   };
   const links = (surface: string, fill: string, values: unknown, required = false) => {
     if (values === undefined && !required) return;
@@ -127,7 +127,7 @@ export function checkDefaultCandidates(input: DefaultCandidatesInput): { exitCod
       if (meta.mode !== "implementation" && meta.mode !== "derived") { fail(`${meta.id}: invalid candidate mode`); continue; }
       const reasons: string[] = [];
       let members: Set<string> | undefined;
-      if (slot.layer === "tokens" || slot.layer === "assets") {
+      if (slot.layer === "themes" || slot.layer === "assets") {
         const parsed = parseFill(doc);
         if (!parsed.fill) { fail(`${meta.id}: ${parsed.findings.map(row => row.message).join("; ")}`); continue; }
         const flat = flatten(parsed.fill);
@@ -159,7 +159,7 @@ export function checkDefaultCandidates(input: DefaultCandidatesInput): { exitCod
         }
         for (const key of ["deps", "dependencies"] as const) if (Array.isArray(value[key])) for (const dependency of value[key]) {
           if (record(dependency) && dependency.slot !== undefined) addRead(meta.slot, meta.id, dependency.slot);
-          if (record(dependency) && typeof dependency.id === "string" && /^(tokens|assets|components|sections|frames)\./.test(dependency.id)) addRead(meta.slot, meta.id, dependency.id);
+          if (record(dependency) && typeof dependency.id === "string" && /^(themes|assets|components|sections|frames)\./.test(dependency.id)) addRead(meta.slot, meta.id, dependency.id);
         }
         if (value.consumption !== undefined) {
           const measurement = value.consumption;
@@ -218,7 +218,7 @@ export function checkDefaultCandidates(input: DefaultCandidatesInput): { exitCod
   for (const id of unique(reads.map(row => row.slot))) {
     const rows = reads.filter(row => row.slot === id), source = input.defaultSources[id] ?? "";
     const offered = (candidates.get(id) ?? []).filter(candidate => candidate.source === source);
-    if (slots.get(id)?.layer === "tokens" || slots.get(id)?.layer === "assets") for (const candidate of offered) {
+    if (slots.get(id)?.layer === "themes" || slots.get(id)?.layer === "assets") for (const candidate of offered) {
       try {
         const empty: LibraryData = { source: { id: "default-candidate-check", kind: "consumer", author: "consumer", license: "MIT" }, adoptedAt: new Date().toISOString().slice(0, 10), fills: [] };
         const library = applyLibraryChange(input.catalog.values, empty, { baseHash: libraryHash(empty), changes: [{ op: "adopt", slot: id, source }] });

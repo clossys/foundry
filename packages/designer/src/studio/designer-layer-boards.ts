@@ -76,7 +76,7 @@ export function deriveDesignerLayerBoardsV1(value: DesignerLayerBoardsInput): De
   const p = input.projection;
   closed(p, ['phase','layer','consumer','libraryHash','selectionHash','session','activeLeaf','placements','slots','boards']);
   closed(p.session, ['id','revision','status','edits','history']);
-  if (!['tokens','assets','components','sections','frames'].includes(p.layer) || !['loading','error','ready'].includes(p.phase) || !text(p.session.id) || !Number.isSafeInteger(p.session.revision) || p.session.revision < 0) throw new TypeError('Original Designer provider projection required');
+  if (!['themes','assets','components','sections','frames'].includes(p.layer) || !['loading','error','ready'].includes(p.phase) || !text(p.session.id) || !Number.isSafeInteger(p.session.revision) || p.session.revision < 0) throw new TypeError('Original Designer provider projection required');
   if (!isRuntimeDigest(input.projectionHash) || input.projectionHash !== runtimeHash(p)) throw new TypeError('Stale Designer provider projection hash');
   const materialize = (data: { body: CompositionBody<{ slot: string; index: number }>; fills: Readonly<Record<string, readonly DesignerLayerSectionFill[]>>; content: readonly RuntimeContent[]; layout?: DesignerSelectedStateLayout }): DesignerLayerBoardsResult => runtimeSnapshot({ status: 'materialized' as const, query: DESIGNER_LAYER_BOARDS_QUERY, sessionId: p.session.id, projectionHash: input.projectionHash, inputHash: runtimeHash(input), materializationHash: runtimeHash(data), ...data });
   const state = (phase: 'loading' | 'error' | 'empty'): DesignerLayerBoardsResult => {
@@ -136,7 +136,7 @@ export function deriveDesignerLayerBoardsV1(value: DesignerLayerBoardsInput): De
     }));
     return { section: 'sections.comparison' as const, config: 'library-board', content: refs };
   });
-  return materialize({ body: { kind: 'canvas', source: { kind: 'derived', query: DESIGNER_LAYER_BOARDS_QUERY }, boards, arrangement: input.arrangement, collapseBelow: 'tokens.breakpoint.tablet' }, fills: { 'sections.comparison': fills }, content });
+  return materialize({ body: { kind: 'canvas', source: { kind: 'derived', query: DESIGNER_LAYER_BOARDS_QUERY }, boards, arrangement: input.arrangement, collapseBelow: 'md' }, fills: { 'sections.comparison': fills }, content });
 }
 
 export { createWholeStudioInitialSession, checkWholeStudioInitialSession, wholeStudioCatalogHash } from './initial-session.js';

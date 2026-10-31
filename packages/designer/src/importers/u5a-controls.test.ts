@@ -24,33 +24,35 @@ const supported: Record<string, string[]> = {
 const counts: Record<string, number> = { checkbox: 1, "radio-group": 0, switch: 6, slider: 4, "toggle-button": 11, "toggle-group": 8 };
 
 describe("six pinned control evidence surfaces", () => {
-  it("declares on toggle-group the toggle control height and focus outline its items render through the composed toggleVariants call", () => {
+  it("declares on toggle-group the toggle focus ring its items render through the composed toggleVariants call", () => {
     const result = importShadcnAriaComponents(input());
     const group = result.fills.find(doc => doc.components["toggle-group"])!.components["toggle-group"]!;
     const toggle = result.fills.find(doc => doc.components["toggle-button"])!.components["toggle-button"]!;
     expect(group.composes).toContain("components.toggle-button");
     expect(result.rewrites["toggle-group"]!.files.find(file => file.path === "components/toggle-group/toggle-group.tsx")!.content).toMatch(/\btoggleVariants\(/);
-    const inherited = toggle.reads.tokens.filter(read => /^tokens\.(?:control-size|focus-outline|focus-color)\./.test(read));
+    const inherited = toggle.reads.themes.filter(read => /^themes\.ring\./.test(read));
     expect(inherited.length).toBeGreaterThan(0);
-    expect(group.reads.tokens).toEqual(expect.arrayContaining(inherited));
-    expect(result.fills.find(doc => doc.components.calendar)!.components.calendar!.reads.tokens.filter(read => /^tokens\.control-size\./.test(read))).toEqual(result.rewrites.calendar!.reads.tokens.filter(read => /^tokens\.control-size\./.test(read)));
+    expect(group.reads.themes).toEqual(expect.arrayContaining(inherited));
+    expect(result.fills.find(doc => doc.components.calendar)!.components.calendar!.reads.themes.filter(read => /^themes\.ring\./.test(read))).toEqual(result.rewrites.calendar!.reads.themes.filter(read => /^themes\.ring\./.test(read)));
   });
-  it("binds the slider thumb's size-3 to the control mark, leaving the track untouched, inside the slider contract", () => {
+  it("binds the slider thumb's size-3 to the control mark var, leaving the track untouched, inside the slider contract", () => {
     const result = importShadcnAriaComponents(input());
     const fill = result.fills.find(doc => doc.components.slider)!.components.slider!;
-    expect(fill.reads.tokens).toContain("tokens.control-size.mark");
+    expect(fill.reads.themes).toContain("themes.ring.default");
+    expect(fill.reads.themes.some(read => /control-size|focus-outline/.test(read))).toBe(false);
     const source = result.rewrites.slider!.files.find(file => file.path === "components/slider/slider.tsx")!.content;
     expect(source).toMatch(/ relative size-\(--ui-control-mark\) rounded-full /);
     expect(source).not.toMatch(/h-\(--ui-control-mark/);
-    expect(slots.find(slot => slot.id === "components.slider")!.contract.allowedReads.tokens).toContain("tokens.control-size");
+    expect(slots.find(slot => slot.id === "components.slider")!.contract.allowedReads.themes).toContain("themes.ring");
   });
-  it("binds the radio item's 16px box to the control mark and keeps its focus outline, inside the radio contract", () => {
+  it("binds the radio item's 16px box to the control mark var and keeps its focus ring, inside the radio contract", () => {
     const result = importShadcnAriaComponents(input());
     const fill = result.fills.find(doc => doc.components["radio-group"])!.components["radio-group"]!;
-    expect(fill.reads.tokens).toEqual(expect.arrayContaining(["tokens.control-size.mark", "tokens.focus-outline.width", "tokens.focus-color.default"]));
+    expect(fill.reads.themes).toContain("themes.ring.default");
+    expect(fill.reads.themes.some(read => /control-size|focus-outline/.test(read))).toBe(false);
     const source = result.rewrites["radio-group"]!.files.find(file => file.path === "components/radio-group/radio-group.tsx")!.content;
     expect(source).toContain("size-(--ui-control-mark,calc(var(--spacing)*4))");
-    expect(slots.find(slot => slot.id === "components.radio-group")!.contract.allowedReads.tokens).toContain("tokens.control-size");
+    expect(slots.find(slot => slot.id === "components.radio-group")!.contract.allowedReads.themes).toContain("themes.ring");
   });
   it("partitions every closed contract into source-backed members and explicit gaps", () => {
     const result = importShadcnAriaComponents(input());
@@ -113,7 +115,7 @@ describe("six pinned control evidence surfaces", () => {
       }
     }
     expect(rewrite.reads.assets).toEqual(["assets.icon-check"]);
-    expect(rewrite.reads.tokens).toContain("tokens.spacing.sm");
+    expect(rewrite.reads.themes).toContain("themes.spacing.default");
     expect(rewrite.issues.some(issue => issue.code === "K7")).toBe(false);
     const { css } = await generateCompiledCss({ stylesDir: resolve(here, "../../../../styles"), candidates: ["w-(--spacing-sm)", "border-t-(length:--ui-border-hairline)"] });
     expect(css).toContain("width: var(--spacing-sm)");
@@ -151,20 +153,20 @@ describe("six pinned control evidence surfaces", () => {
       expect(css).toContain("color: var(--color-ink-on-action)");
     }
     const other = rewriteShadcnAria({ item: "example", leaf: "checkbox", files: [{ path: "example.tsx", content }], styles: "", leafByItem: {} });
-    expect(other.reads.tokens).not.toContain("tokens.action-color.default");
+    expect(other.reads.themes).not.toContain("themes.primary.default");
   });
-  it("binds only the three pinned toggle size markers to semantic control heights", async () => {
+  it("binds only the three pinned toggle size markers to semantic control heights without theme reads", async () => {
     for (const leaf of ["toggle-button", "toggle-group"]) for (const [size, height, member] of [["sm", "7", "sm"], ["default", "8", "md"], ["lg", "9", "lg"]]) {
       const result = rewriteShadcnAria({ item: leaf === "toggle-button" ? "toggle" : leaf, leaf, files: [{ path: "toggle.tsx", content: `const value = "cn-toggle-size-${size}"` }], styles: `.cn-toggle-size-${size} { @apply h-${height}; }`, leafByItem: {} });
       expect(result.files[0]!.content).toContain(`h-(--ui-control-h-${member})`);
-      expect(result.reads.tokens).toEqual([`tokens.control-size.h-${member}`]);
+      expect(result.reads.themes).toEqual([]);
       expect(result.issues).toEqual([]);
       const { css } = await generateCompiledCss({ stylesDir: resolve(here, "../../../../styles"), candidates: [`h-(--ui-control-h-${member})`, `control-h-${member}`] });
       expect(css).toContain(`height: var(--ui-control-h-${member})`);
       expect(css).toContain("min-block-size: var(--ui-layout-tap-target, 44px)");
     }
     const unknown = rewriteShadcnAria({ item: "toggle", leaf: "toggle-button", files: [{ path: "toggle.tsx", content: 'const value = "cn-toggle-size-xl"' }], styles: ".cn-toggle-size-xl { @apply h-7; }", leafByItem: {} });
-    expect(unknown.reads.tokens).not.toContain("tokens.control-size.h-sm");
+    expect(unknown.reads.themes).toEqual([]);
     expect(unknown.issues).toContainEqual(expect.objectContaining({ code: "K4", value: "h-7" }));
   });
   it("keeps the 44px hit area for medium and large control heights", () => {

@@ -1,5 +1,6 @@
 import { tokenActivation } from "./token-css-syntax.js";
-import { TOKENS } from "../tokens/tokens.js";
+import themeSlots from "../catalog/slots/themes.json" with { type: "json" };
+import tokenContract from "../catalog/rules/token-contract.json" with { type: "json" };
 import { compare, unsafeText } from "./model.js";
 import { stableStringify } from "./stable.js";
 import { CatalogError, type EmitFile, type EmitOptions, type EmitTarget } from "./api.js";
@@ -7,23 +8,28 @@ import type { Resolved, ResolvedMember } from "./types.js";
 
 const brandSelectors = { light: ":root[data-brand-bound]", mediaDark: '@media (prefers-color-scheme: dark) { :root[data-brand-bound]:not([data-theme="light"])', dark: ':root[data-brand-bound][data-theme="dark"]' };
 const scaleSelectors = { light: ":root", mediaDark: '@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])', dark: ':root[data-theme="dark"]' };
-const namespaces: Readonly<Record<string, string>> = { "color-ramp": "color", "font-size": "text", "font-weight": "font-weight", "letter-spacing": "tracking", "line-height": "leading", typeface: "font", spacing: "spacing", breakpoint: "breakpoint", radius: "radius", shadow: "shadow", blur: "blur", easing: "ease", "container-width": "container", animation: "animate" };
+export interface ThemeOutput { readonly property: string; readonly brandable: boolean; readonly themeDependent: boolean; readonly tailwind: boolean }
+/** Every CSS variable a themes leaf emits: shadcn theme variables (colors, radius) and Tailwind theme variables (fonts, spacing, shadow, motion). */
+export const THEME_OUTPUTS: readonly ThemeOutput[] = (themeSlots as readonly { id: string; contract: { $type: string; emit: Readonly<Record<string, string | undefined>>; modes: readonly string[] } }[])
+  .flatMap(slot => Object.values(slot.contract.emit).filter((property): property is string => !!property).map(property => ({
+    property, brandable: slot.contract.$type === "color", themeDependent: slot.contract.modes.includes("dark"),
+    tailwind: (tokenContract.leaves as Readonly<Record<string, { kind: string }>>)[slot.id]?.kind === "tailwind",
+  })));
+export const THEME_OUTPUT_BY_PROPERTY: ReadonlyMap<string, ThemeOutput> = new Map(THEME_OUTPUTS.map(output => [output.property, output]));
 /** Actual named outputs of the selected consumer, shared with component reads.
- * Explicit bindings name shipped CSS; open scale members name @theme outputs.
+ * Every themes member binds one shipped theme variable; Tailwind-kind variables are also @theme outputs.
  * Different consumer members must never claim the same output property.
  */
 export function emittedTokenProperties(resolved: Resolved): ReadonlyMap<string, { property: string; theme?: string }> {
-  const shipped = new Set(Object.values(TOKENS).map(token => token.property));
   const owners = new Map<string, string>();
   const result = new Map<string, { property: string; theme?: string }>();
   for (const [id, member] of Object.entries(resolved.members)) {
-    if (!id.startsWith("tokens.")) continue;
-    const [, leaf, ...relative] = id.split(".");
-    const namespace = namespaces[leaf ?? ""];
-    const theme = namespace ? `--${namespace}-${relative.join("-")}` : undefined;
-    if (member.emit && !shipped.has(member.emit)) throw new CatalogError(`emit: binding ${member.emit} is not a shipped token`);
-    const property = member.emit ?? theme;
-    if (!property) continue;
+    if (!id.startsWith("themes.")) continue;
+    if (!member.emit) continue;
+    const output = THEME_OUTPUT_BY_PROPERTY.get(member.emit);
+    if (!output) throw new CatalogError(`emit: binding ${member.emit} is not a shipped token`);
+    const property = member.emit;
+    const theme = output.tailwind ? property : undefined;
     for (const output of new Set([property, ...(theme ? [theme] : [])])) {
       if (!/^--[a-zA-Z0-9-]+$/.test(output)) throw new CatalogError("emit: invalid property");
       const owner = owners.get(output);
@@ -75,7 +81,7 @@ function materialize(resolved: Resolved, targets: readonly EmitTarget[], options
 
   for (const target of [...new Set(targets)]) {
     if (target === "css-brand" || target === "css-scales") {
-      const chosen = Object.values(TOKENS).filter(token => {
+      const chosen = THEME_OUTPUTS.filter(token => {
         const member = byCss.get(token.property); if (!member) return false;
         if (options.full && target === "css-brand") return true;
         if (target === "css-brand") return token.brandable;
@@ -86,16 +92,8 @@ function materialize(resolved: Resolved, targets: readonly EmitTarget[], options
       const row = (property: string, value: string, theme: "light" | "dark"): TokenRow => ({ id: owners.get(property)!, property, value, theme, target });
       const light = chosen.map(token => row(token.property, byCss.get(token.property)!.css.light, "light"));
       const dark = chosen.filter(token => options.full || token.themeDependent || (byCss.get(token.property)!.css.dark ?? byCss.get(token.property)!.css.light) !== byCss.get(token.property)!.css.light).map(token => { const member = byCss.get(token.property)!; return row(token.property, member.css.dark ?? member.css.light, "dark"); });
-      if (target === "css-scales") for (const [id, output] of properties) {
-        const member = resolved.members[id]!;
-        if (member.emit) continue;
-        light.push({ id, property: output.property, value: member.css.light, theme: "light", target });
-        if (options.full || (member.css.dark ?? member.css.light) !== member.css.light) {
-          dark.push({ id, property: output.property, value: member.css.dark ?? member.css.light, theme: "dark", target });
-        }
-      }
       if (options.extraVars) Object.keys(resolved.members).sort(compare).forEach((id, index) => {
-        const member = resolved.members[id]!; if (member.emit || !id.startsWith("tokens.")) return;
+        const member = resolved.members[id]!; if (member.emit || !id.startsWith("themes.")) return;
         light.push({ id, property: `--studio-m-${index}`, value: member.css.light, theme: "light", target });
         dark.push({ id, property: `--studio-m-${index}`, value: member.css.dark ?? member.css.light, theme: "dark", target });
       });

@@ -118,7 +118,7 @@
           "components.date-field",
           "components.popover"
         ],
-        "tokens": []
+        "themes": []
       },
       "root": "rac:DatePicker",
       "slot": "components.date-picker",

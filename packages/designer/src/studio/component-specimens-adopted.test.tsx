@@ -30,7 +30,7 @@ function adoptedFoundryLeaves() {
   return loadCatalogBundles().componentFills.flatMap(doc => Object.values(doc.components))
     .filter(fill => fill.source === "foundry" && fill.impl.kind === "package" && slots.has(fill.slot))
     .map(fill => {
-      const component = { slot: fill.slot, originKind: "adopted", origin: { kind: "adopted", source: "foundry" }, impl: fill.impl, propMap: fill.propMap, reads: { tokens: {}, assets: [], components: [] }, descriptor: { ...fill, source: "consumer-app" } } as unknown as ResolvedComponent;
+      const component = { slot: fill.slot, originKind: "adopted", origin: { kind: "adopted", source: "foundry" }, impl: fill.impl, propMap: fill.propMap, reads: { themes: {}, assets: [], components: [] }, descriptor: { ...fill, source: "consumer-app" } } as unknown as ResolvedComponent;
       return { leaf: fill.slot, profile: { selectionHash: `selection-${fill.slot}`, components: { components: { [fill.slot]: component } } } as unknown as CompositeResolved };
     });
 }
@@ -98,7 +98,7 @@ function adoptedShadcnLeaves() {
   const leaves = fills.map(fill => {
     const entry = (fill.impl as { entry: string }).entry;
     modules[entry] = vendoredModule([...shipped.values()], entry, () => components);
-    const component = { slot: fill.slot, originKind: "adopted", origin: { kind: "adopted", source: "shadcn@aria" }, impl: fill.impl, propMap: fill.propMap, reads: { tokens: {}, assets: [], components: [] }, descriptor: { ...fill, source: "consumer-app" } } as unknown as ResolvedComponent;
+    const component = { slot: fill.slot, originKind: "adopted", origin: { kind: "adopted", source: "shadcn@aria" }, impl: fill.impl, propMap: fill.propMap, reads: { themes: {}, assets: [], components: [] }, descriptor: { ...fill, source: "consumer-app" } } as unknown as ResolvedComponent;
     return { leaf: fill.slot, profile: { selectionHash: `selection-${fill.slot}`, components: { components: { [fill.slot]: component } } } as unknown as CompositeResolved };
   });
   return { leaves, modules, slotCount: loadBuildCatalog().slots.filter(slot => bundles.componentFills.some(doc => Object.values(doc.components).some(fill => fill.source === "shadcn@aria" && fill.slot === slot.id))).length };
@@ -208,7 +208,7 @@ it("draws every adopted shadcn-charts leaf as a live Recharts chart of the datas
   const fed = { "components.chart-area": d.charts.area.series, "components.chart-bar": d.charts.bar.series, "components.chart-line": d.charts.line.series } as const;
   const marks = { "components.chart-area": ".recharts-area-area", "components.chart-bar": ".recharts-bar-rectangle", "components.chart-line": ".recharts-line-curve" } as const;
   for (const fill of chartFills) {
-    const component = { slot: fill.slot, originKind: "adopted", origin: { kind: "adopted", source: "shadcn-charts" }, impl: fill.impl, propMap: fill.propMap, reads: { tokens: {}, assets: [], components: [] }, descriptor: { ...fill, source: "consumer-app" } } as unknown as ResolvedComponent;
+    const component = { slot: fill.slot, originKind: "adopted", origin: { kind: "adopted", source: "shadcn-charts" }, impl: fill.impl, propMap: fill.propMap, reads: { themes: {}, assets: [], components: [] }, descriptor: { ...fill, source: "consumer-app" } } as unknown as ResolvedComponent;
     const profile = { selectionHash: `selection-${fill.slot}`, components: { components: { [fill.slot]: component } } } as unknown as CompositeResolved;
     const { container } = render(<>{specimens.preview(fill.slot, profile)}</>);
     const leaf = fill.slot as keyof typeof marks;
@@ -242,7 +242,7 @@ function persistedDatePicker() {
   const rule = loadComponentCompositionRules().find(candidate => candidate.id === "compose:date-picker@1")!;
   const files = [...rule.files.map(file => ({ path: file.path, content: file.content.replace(/(from\s*"\.\.?\/[^"]+?)"/g, "$1.js\"") })), { path: "adapters/glyphs.ts", content: "export const glyphs = { \"assets.icon-date\": [] };" }];
   const entry = (rule.template.impl as { entry: string }).entry;
-  const component = { slot: rule.slot, originKind: "composed", origin: { kind: "composed", rule: rule.id, reads: rule.inputs, inputsHash: "persisted" }, impl: rule.template.impl, propMap: rule.template.propMap, reads: { tokens: {}, assets: ["assets.icon-date"], components: rule.inputs }, descriptor: { ...rule.template, source: "consumer-app" } } as unknown as ResolvedComponent;
+  const component = { slot: rule.slot, originKind: "composed", origin: { kind: "composed", rule: rule.id, reads: rule.inputs, inputsHash: "persisted" }, impl: rule.template.impl, propMap: rule.template.propMap, reads: { themes: {}, assets: ["assets.icon-date"], components: rule.inputs }, descriptor: { ...rule.template, source: "consumer-app" } } as unknown as ResolvedComponent;
   return { modules: { [entry]: vendoredModule(files, entry, () => components) }, profile: { selectionHash: "selection-date-picker", components: { components: { [rule.slot]: component } } } as unknown as CompositeResolved };
 }
 

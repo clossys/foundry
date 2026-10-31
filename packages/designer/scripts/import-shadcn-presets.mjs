@@ -20,7 +20,7 @@ const sources = Object.fromEntries(paths.map(name => [name, readFileSync(upstrea
   : resolve(root, "src/importers/vendor", `shadcn-${name}.txt`), "utf8")]));
 const sha256 = text => createHash("sha256").update(text).digest("hex");
 const commit = upstream ? execFileSync("git", ["-C", upstream, "rev-parse", "HEAD"], { encoding: "utf8" }).trim()
-  : roster.tokens.presets[0].theme.pin.commit;
+  : roster.themes.presets[0].theme.pin.commit;
 if (!/^[a-f0-9]{40}$/.test(commit)) throw new Error("upstream must have an immutable commit");
 
 // Read literal registry data without executing an upstream module or its imports.
@@ -48,7 +48,7 @@ visit(baseFile);
 if (arrays.length !== 1 || arrays[0].length !== new Set(arrays[0]).size) throw new Error("base color roster is ambiguous");
 const names = arrays[0];
 // Preserve established positions for existing presets, then append upstream additions.
-const ordered = [...roster.tokens.presets.map(row => row.theme.baseColor).filter(name => names.includes(name)), ...names.filter(name => !roster.tokens.presets.some(row => row.theme.baseColor === name))];
+const ordered = [...roster.themes.presets.map(row => row.theme.baseColor).filter(name => names.includes(name)), ...names.filter(name => !roster.themes.presets.some(row => row.theme.baseColor === name))];
 const presets = ordered.map(name => {
   const matches = themes.filter(theme => theme.name === name);
   if (matches.length !== 1) throw new Error(`missing or duplicate base theme ${name}`);
@@ -65,10 +65,10 @@ const presets = ordered.map(name => {
 });
 const wanted = JSON.stringify(presets);
 if (check) {
-  if (JSON.stringify(roster.tokens.presets) !== wanted) throw new Error("preset values or provenance differ from the pinned theme snapshot");
+  if (JSON.stringify(roster.themes.presets) !== wanted) throw new Error("preset values or provenance differ from the pinned theme snapshot");
   console.log(`Verified ${presets.length} base-color presets at ${commit}`);
 } else {
-  roster.tokens.presets = presets;
+  roster.themes.presets = presets;
   writeFileSync(rosterPath, JSON.stringify(roster, null, 2) + "\n");
   for (const name of paths) writeFileSync(resolve(root, "src/importers/vendor", `shadcn-${name}.txt`), sources[name]);
   console.log(`Imported ${presets.length} base-color presets at ${commit}`);

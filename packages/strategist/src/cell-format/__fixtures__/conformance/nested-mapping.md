@@ -1,5 +1,5 @@
 ---
-id: tokens.accent-color
+id: themes.primary
 config:
   nested: true
 ---

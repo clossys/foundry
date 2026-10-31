@@ -1,6 +1,6 @@
 /** Agent actions use permanent leaf identities; placement is presentation data only. */
 export function changeCommandFor(leaf: string): string | undefined {
-  return /^(tokens|assets|components|sections|frames)\.[a-z0-9-]+$/.exec(leaf)?.[0] === leaf
+  return /^(themes|assets|components|sections|frames)\.[a-z0-9-]+$/.exec(leaf)?.[0] === leaf
     ? `designer-library reselect --root <library> --leaf ${leaf} --source <source-id>` : undefined;
 }
 export const DESIGNER_AGENT_COMMANDS = Object.freeze([

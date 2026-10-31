@@ -14,8 +14,8 @@ import type { DesignerLayerBoardsInput } from "./designer-layer-boards.js";
 import { prepareValueLibraryBoard, prepareCompositeLibraryBoard, type PreparedBoardPreviews } from "./prepared-library-boards.js";
 import type { LibraryBoardRecords } from "../blocks/library-board/model.js";
 import { checkWholeStudioInitialSession } from "./initial-session.js";
-const LAYERS: readonly LayerId[] = ["tokens", "assets", "components", "sections", "frames"];
-const VALUE_LAYERS: ReadonlySet<LayerId> = new Set(["tokens", "assets"]);
+const LAYERS: readonly LayerId[] = ["themes", "assets", "components", "sections", "frames"];
+const VALUE_LAYERS: ReadonlySet<LayerId> = new Set(["themes", "assets"]);
 /** The host adapter as the read-only Designer sees it: catalog, contracts and load. Its save is never reachable. */
 export type CompositeStudioReadAdapter = Pick<CompositeStudioAdapter, "kind" | "catalog" | "contracts" | "load">;
 /**
@@ -41,8 +41,8 @@ function useWholeState({ adapter: host, labels, initialSlotId, initialSession }:
   const isLeaf = (id: string | undefined): id is string => id !== undefined && (adapter.catalog.values.slots.some(slot => slot.id === id) || contracts.slots.some(slot => slot.id === id));
   // The host page owns one canonical URL (?layer=&node=): normalise it once, before the first paint.
   const [initial] = useState(() => { const location = normaliseWindowLocation(resolver); return { layer: location.layer, leaf: isLeaf(location.node) ? location.node : undefined }; });
-  const [layer, setLayer] = useState<LayerId>(() => { if (initial.layer) return initial.layer; const id = initialSlotId?.split(".")[0] as LayerId; return LAYERS.includes(id) ? id : "tokens"; });
-  const [leaf, setLeaf] = useState(initial.leaf ?? initialSlotId ?? "tokens.accent-color");
+  const [layer, setLayer] = useState<LayerId>(() => { if (initial.layer) return initial.layer; const id = initialSlotId?.split(".")[0] as LayerId; return LAYERS.includes(id) ? id : "themes"; });
+  const [leaf, setLeaf] = useState(initial.leaf ?? initialSlotId ?? "themes.primary");
   const [selected, setSelected] = useState<string | undefined>(initial.leaf);
   const layerRef = useRef(layer); layerRef.current = layer;
   const [score, setScore] = useState(false);
@@ -125,7 +125,7 @@ export function useDesignerLayerBoardProjection(): { readonly projection: Design
   const engineInput = state?.input;
   const workingHash = useMemo(() => engineInput ? wholeLibraryHash(engineInput) as RuntimeDigest : null, [engineInput]);
   if (!state) throw new TypeError('Original WholeStudioProvider required');
-  const valueLayer = state.layer === 'tokens' || state.layer === 'assets';
+  const valueLayer = state.layer === 'themes' || state.layer === 'assets';
   const placements = (valueLayer ? values.activeCatalog.placements : state.contracts.placements).filter(placement => placement.layer === state.layer);
   const slots = (valueLayer ? values.activeCatalog.slots : state.contracts.slots).filter(slot => slot.layer === state.layer).map(({ id, layer }) => ({ id, layer }));
   const boards = valueLayer ? values.boards.map(({ id, label, leaves }) => ({ id, label, leaves })) : placements.flatMap(placement => placement.nodes.flatMap(domain => ('children' in domain ? domain.children : [domain]).map(group => ({ id: `${placement.layer}/${group.id}`, label: group.label, leaves: placedLeaves([group]).map(leaf => leaf.id) }))));
@@ -170,12 +170,12 @@ export function useDesignerPreparedLibraryBoards(options: DesignerPreparedLibrar
   const profile = state.evaluated.value.profile;
   const boards = projection.boards.map(board => {
     const control = controls.get(board.id)!;
-    if (state.layer === 'tokens' || state.layer === 'assets') {
+    if (state.layer === 'themes' || state.layer === 'assets') {
       const original = values.boards.find(value => value.id === board.id);
       if (!original || !values.working) throw new TypeError('Original Designer value board unavailable');
       return prepareValueLibraryBoard({ ...control, layer: state.layer, board: original, sources: values.catalog.sources, consumerSource: projection.consumer!, selectionHash: projection.selectionHash!, labels: state.labels, workflow: options.workflow,
         variants: Object.fromEntries(values.activeCatalog.slots.filter(slot => slot.contract.members.mode === 'closed').map(slot => [slot.id, slot.contract.members.mode === 'closed' ? slot.contract.members.names.map(name => `${slot.id}.${name}`) : []])),
-        contextTokens: Object.entries(values.resolved?.members ?? {}).filter(([, member]) => member.slot.startsWith('tokens.')).map(([id, member]) => ({ id, value: member.css.light })) });
+        contextTokens: Object.entries(values.resolved?.members ?? {}).filter(([, member]) => member.slot.startsWith('themes.')).map(([id, member]) => ({ id, value: member.css.light })) });
     }
     return prepareCompositeLibraryBoard({ ...control, layer: state.layer, board: { ...board, leaves: board.leaves.map(id => ({ id })) }, input: state.input!, snapshot: state.snapshot!, changes: state.changes!, contracts: state.contracts, profile, sources: values.catalog.sources, labels: state.labels, workflow: options.workflow });
   });

@@ -10015,14 +10015,6 @@
       "value": "mobile"
     },
     {
-      "cellId": "publisher.breakpoint.tokens.breakpoint.mobile",
-      "recordId": "st.txzn8z1qg7",
-      "target": "packages/publisher/src/formats/slots/formats.ts",
-      "kind": "display-name",
-      "parent": "publisher.breakpoint",
-      "value": "tokens.breakpoint.mobile"
-    },
-    {
       "cellId": "publisher.screenSize.mobile-lg",
       "recordId": "st.xp5eskkvj3",
       "target": "packages/publisher/src/formats/slots/formats.ts",
@@ -10031,12 +10023,12 @@
       "value": "mobile-lg"
     },
     {
-      "cellId": "publisher.breakpoint.tokens.breakpoint.mobile-lg",
+      "cellId": "publisher.breakpoint.sm",
       "recordId": "st.xp5eskkvj3",
       "target": "packages/publisher/src/formats/slots/formats.ts",
       "kind": "display-name",
       "parent": "publisher.breakpoint",
-      "value": "tokens.breakpoint.mobile-lg"
+      "value": "sm"
     },
     {
       "cellId": "publisher.screenSize.tablet",
@@ -10047,12 +10039,12 @@
       "value": "tablet"
     },
     {
-      "cellId": "publisher.breakpoint.tokens.breakpoint.tablet",
+      "cellId": "publisher.breakpoint.md",
       "recordId": "st.j57xeagqqc",
       "target": "packages/publisher/src/formats/slots/formats.ts",
       "kind": "display-name",
       "parent": "publisher.breakpoint",
-      "value": "tokens.breakpoint.tablet"
+      "value": "md"
     },
     {
       "cellId": "publisher.screenSize.tablet-lg",
@@ -10063,12 +10055,12 @@
       "value": "tablet-lg"
     },
     {
-      "cellId": "publisher.breakpoint.tokens.breakpoint.tablet-lg",
+      "cellId": "publisher.breakpoint.lg",
       "recordId": "st.psm20y3g29",
       "target": "packages/publisher/src/formats/slots/formats.ts",
       "kind": "display-name",
       "parent": "publisher.breakpoint",
-      "value": "tokens.breakpoint.tablet-lg"
+      "value": "lg"
     },
     {
       "cellId": "publisher.screenSize.desktop",
@@ -10079,12 +10071,12 @@
       "value": "desktop"
     },
     {
-      "cellId": "publisher.breakpoint.tokens.breakpoint.desktop",
+      "cellId": "publisher.breakpoint.xl",
       "recordId": "st.646wxbsgag",
       "target": "packages/publisher/src/formats/slots/formats.ts",
       "kind": "display-name",
       "parent": "publisher.breakpoint",
-      "value": "tokens.breakpoint.desktop"
+      "value": "xl"
     },
     {
       "cellId": "publisher.screenSize.wide",
@@ -10095,12 +10087,12 @@
       "value": "wide"
     },
     {
-      "cellId": "publisher.breakpoint.tokens.breakpoint.wide",
+      "cellId": "publisher.breakpoint.2xl",
       "recordId": "st.m8rb9g7ftb",
       "target": "packages/publisher/src/formats/slots/formats.ts",
       "kind": "display-name",
       "parent": "publisher.breakpoint",
-      "value": "tokens.breakpoint.wide"
+      "value": "2xl"
     },
     {
       "cellId": "publisher.layoutOption.layouts.stack.measure.full",
@@ -10295,20 +10287,20 @@
       "value": "after"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.breakpoint.tablet",
+      "cellId": "publisher.layoutOption.layouts.sidebar-content.breakpoint.md",
       "recordId": "st.j57xeagqqc",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
       "parent": "publisher.layoutOption.layouts.sidebar-content.breakpoint",
-      "value": "tablet"
+      "value": "md"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.breakpoint.tablet-lg",
+      "cellId": "publisher.layoutOption.layouts.sidebar-content.breakpoint.lg",
       "recordId": "st.psm20y3g29",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
       "parent": "publisher.layoutOption.layouts.sidebar-content.breakpoint",
-      "value": "tablet-lg"
+      "value": "lg"
     },
     {
       "cellId": "publisher.layoutOption.layouts.bento.density.airy",

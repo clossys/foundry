@@ -11,7 +11,7 @@ const cellOf = (view: ReturnType<typeof render>) => view.container.querySelector
 
 function selected() {
   const library = adopt();
-  return buildCandidates({ catalog: smallCatalog, library, working: library, scope: "slot", target: "tokens.surface-color", slotId: "tokens.surface-color" }).find(entry => entry.selected)!;
+  return buildCandidates({ catalog: smallCatalog, library, working: library, scope: "slot", target: "themes.background", slotId: "themes.background" }).find(entry => entry.selected)!;
 }
 
 it("marks a previewable candidate live and an unpreviewable one unavailable", () => {

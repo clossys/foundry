@@ -68,8 +68,8 @@ function snapshot<T>(input: T): T {
 /** No catalog numeric defaults: unresolved or non-integral measurements stay pending. */
 function widths(binding: InstanceBinding, contract: EffectivePageLayoutContract, values: BreakpointValues): number[] {
   const addresses = contract.reflow.map(step => step.at);
-  // Stack also changes its measure at this consumer token, outside its column reflow.
-  if (binding.layout.leaf === "layouts.stack") addresses.push("tokens.breakpoint.mobile");
+  // Stack also changes its measure at the sm screen, outside its column reflow.
+  if (binding.layout.leaf === "layouts.stack") addresses.push("sm");
   const result = new Set([320]);
   let previous = 0;
   for (const address of addresses) {

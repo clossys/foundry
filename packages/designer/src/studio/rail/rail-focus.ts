@@ -16,7 +16,7 @@ export type RailFocus = { readonly kind: "layer" } | { readonly kind: "row"; rea
  */
 export const RailFocusHandoff = createContext<RefObject<RailFocus | undefined> | null>(null);
 
-const VALUE_LAYERS: ReadonlySet<LayerId> = new Set(["tokens", "assets"]);
+const VALUE_LAYERS: ReadonlySet<LayerId> = new Set(["themes", "assets"]);
 /** True when a change between these layers swaps the canvas, and with it the rail. */
 export const swapsCanvas = (from: LayerId, to: LayerId): boolean => VALUE_LAYERS.has(from) !== VALUE_LAYERS.has(to);
 

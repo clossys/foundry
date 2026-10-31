@@ -185,7 +185,7 @@ export function specimenSectionSourceCatalog(packages: readonly SurfacePackageEv
     const dependencies = [{ module: "@clossys/designer/studio", version: packages.find(pkg => pkg.module === "@clossys/designer/studio")?.version ?? "0.12.0", license: "MIT" }, ...selectedDependencies.filter(dependency => dependency.module !== "@clossys/designer/studio")];
     const candidate: SurfaceSectionEntry = {
       kind: "section", slot: registration.id, source: "foundry", impl: { kind: "source", entry, export: registration.name },
-      rendering: "client", members: [], states: ["default"], reads: { tokens: ["tokens.spacing", "tokens.breakpoint"], assets: [] },
+      rendering: "client", members: [], states: ["default"], reads: { themes: ["themes.spacing"], assets: [] },
       composes: components, parts, api: { version: 1, exports: [{ name: registration.name, export: registration.name }, { name: "SpecimenLeaf", export: "SpecimenLeaf" }] },
       bindings: ports.map(port => ({ file: entry, module: `../../components/${port.id.slice(11)}/index.js`, name: port.name, local: port.name, slot: port.id })),
       dependencies, license: "MIT", pin, notice: `notices/surfaces/n-${sha256(notice)}.txt`,

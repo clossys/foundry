@@ -27,7 +27,7 @@ it("all five layers share the one read-only page; no remaining control reaches a
  await studioReady();for(const layer of ["Frames","Sections","Components","Assets","Tokens"]){await chooseLayer(labels,layer,userEvent.setup());noWrites();}
  await controls();expect(save).not.toHaveBeenCalled();
 },180_000);
-it.each(["components.button","tokens.surface-color"])("the %s inspector exposes facts and copy, never an editor",async leaf=>{
+it.each(["components.button","themes.background"])("the %s inspector exposes facts and copy, never an editor",async leaf=>{
  const {adapter,save}=composite();window.history.replaceState(null,"","?node="+leaf);
  render(<WholeStudioProvider adapter={adapter} labels={{...copy,whole:{signoff:"Membership",proposed:"Proposed",contract:"Contract",contentSlots:"Slots",configurations:"Configurations",unresolved:"Unresolved",unassessed:"Unassessed"}}}><Studio/></WholeStudioProvider>);
  await studioReady();const inspector=await waitFor(()=>{const panel=document.querySelector<HTMLElement>("[data-studio-panel=inspector]");expect(panel).toHaveAttribute("data-selected-leaf",leaf);return panel!;});

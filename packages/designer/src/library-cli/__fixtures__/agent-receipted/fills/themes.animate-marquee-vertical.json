@@ -1,0 +1,56 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "example/themes.animate-marquee-vertical",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "relation": "same-contract",
+      "slot": "themes.animate-marquee-vertical",
+      "source": "example",
+      "sourceAddress": "src/catalog/fills/foundry/themes.animate-marquee-vertical.json",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "themes": {
+    "animate-marquee-vertical": {
+      "default": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "marquee-vertical var(--duration) linear infinite"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/themes.animate-marquee-vertical",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "themes.animate-marquee-vertical.default",
+            "sha256": "c38bcd6c14c96841a9971d2976b6cc1e6ba53c6198cf24ef01e529c52f4abf0d",
+            "source": "foundry"
+          }
+        },
+        "$type": "duration",
+        "$value": "marquee-vertical var(--duration) linear infinite"
+      }
+    }
+  }
+}

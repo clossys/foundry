@@ -17,7 +17,7 @@ export const a276BackdropGraphicFill: FillDoc = {
     sourceAddress: "catalog-assets/backdrop-graphic.ts", relation: "same-contract", builtOn: [], conforms: [], evidence: [],
     author: "foundry", trust: "foundry", license: "MIT", status: "draft",
     pin: { file: "src/catalog-assets/backdrop-graphic.ts", export: "BACKDROP_GRAPHIC_RECIPES", sha256: sha256(stableStringify(BACKDROP_GRAPHIC_RECIPES)) },
-    reads: { tokens: [...BACKDROP_GRAPHIC_TOKEN_READS], assets: [] },
+    reads: { themes: [...BACKDROP_GRAPHIC_TOKEN_READS], assets: [] },
   } }, assets: { "backdrop-graphic": recipes },
 };
 /** Explicit logical-reference mapping for Hero; this is not a new native alias or schema extension. */

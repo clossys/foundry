@@ -30,7 +30,7 @@ const RAC = JSON.parse(readFileSync(join(src, "..", "..", "..", "node_modules", 
 function consumer() {
   const values = loadCatalog();
   const offers = (slot: string) => values.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot === slot && doc.$extensions["com.clossys.fill"].mode !== "reference").map(doc => doc.$extensions["com.clossys.fill"].source);
-  const changes = values.slots.filter(slot => slot.layer === "tokens" || slot.id.startsWith("assets.icon-")).flatMap(slot => {
+  const changes = values.slots.filter(slot => slot.layer === "themes" || slot.id.startsWith("assets.icon-")).flatMap(slot => {
     const sources = offers(slot.id);
     const source = ["foundry", "tailwind-default"].find(name => sources.includes(name)) ?? sources[0];
     return source ? [{ op: "adopt" as const, slot: slot.id, source }] : [];

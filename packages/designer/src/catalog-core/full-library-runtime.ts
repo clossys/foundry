@@ -1,4 +1,4 @@
-import tokenSlots from "../catalog/slots/tokens.json" with { type: "json" };
+import themeSlots from "../catalog/slots/themes.json" with { type: "json" };
 import assetSlots from "../catalog/slots/assets.json" with { type: "json" };
 import sectionSlots from "../catalog/slots/sections.json" with { type: "json" };
 import frameSlots from "../catalog/slots/frames.json" with { type: "json" };
@@ -33,7 +33,7 @@ export function fullLibraryRuntimeFindings<Node>(input: RuntimeAssemblyInput<Nod
   const findings: string[] = [];
   const values = input.engine.library.values.fills.map(fill => fill.$extensions["com.clossys.fill"].slot);
   const components = input.engine.library.components.fills.flatMap(fill => Object.values(fill.components));
-  for (const slot of [...tokenSlots, ...assetSlots]) if (values.filter(id => id === slot.id).length !== 1) findings.push(`whole-library value fill missing or duplicated: ${slot.id}`);
+  for (const slot of [...themeSlots, ...assetSlots]) if (values.filter(id => id === slot.id).length !== 1) findings.push(`whole-library value fill missing or duplicated: ${slot.id}`);
   for (const slot of componentSlots) {
     const fills = components.filter(fill => fill.slot === slot.id);
     if (fills.length !== 1) findings.push(`whole-library component fill missing or duplicated: ${slot.id}`);
@@ -49,7 +49,7 @@ export function fullLibraryRuntimeFindings<Node>(input: RuntimeAssemblyInput<Nod
     if (!input.ports.manifest.fills.some(fill => fill.leaf === selection.leaf && fill.fill === selection.fill && fill.config === selection.config && fill.surface)) findings.push(`selected surface runtime closure missing: ${selection.leaf}`);
   }
   // The consumer library may own other pages; only this binding must close here.
-  for (const slot of [...tokenSlots, ...assetSlots, ...componentSlots, ...sectionSlots.filter(slot => selected.some(fill => fill.leaf === slot.id)), ...frameSlots.filter(slot => selected.some(fill => fill.leaf === slot.id))]) {
+  for (const slot of [...themeSlots, ...assetSlots, ...componentSlots, ...sectionSlots.filter(slot => selected.some(fill => fill.leaf === slot.id)), ...frameSlots.filter(slot => selected.some(fill => fill.leaf === slot.id))]) {
     const actual = input.contracts.slots.filter(contract => contract.id === slot.id);
     if (actual.length !== 1) findings.push(`full graph contract missing or duplicated: ${slot.id}`);
     else if (runtimeHash(actual[0]!.contract) !== runtimeHash(slot.contract)) findings.push(`full graph contract differs: ${slot.id}`);
@@ -65,7 +65,7 @@ export async function runFullLibraryRuntime<Node>(input: RuntimeAssemblyInput<No
   const selected = selectedSurfaceClosure(input);
   const selectedCount = (prefix: "sections." | "frames.") => new Set(selected.filter(fill => fill.leaf.startsWith(prefix)).map(fill => JSON.stringify([fill.leaf, fill.fill]))).size;
   const inventory = {
-    tokens: input.engine.library.values.fills.filter(fill => fill.$extensions["com.clossys.fill"].slot.startsWith("tokens.")).length,
+    tokens: input.engine.library.values.fills.filter(fill => fill.$extensions["com.clossys.fill"].slot.startsWith("themes.")).length,
     assets: input.engine.library.values.fills.filter(fill => fill.$extensions["com.clossys.fill"].slot.startsWith("assets.")).length,
     components: input.engine.library.components.fills.reduce((sum, fill) => sum + Object.keys(fill.components).length, 0),
     sections: selectedCount("sections."),

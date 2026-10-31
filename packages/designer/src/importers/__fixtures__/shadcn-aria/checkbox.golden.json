@@ -41,22 +41,13 @@
     }
   ],
   "reads": {
-    "tokens": [
-      "tokens.action-color.default",
-      "tokens.border-color.strong",
-      "tokens.border-width.hairline",
-      "tokens.control-size.switch-thumb",
-      "tokens.duration.default",
-      "tokens.easing.default",
-      "tokens.focus-color.default",
-      "tokens.focus-outline.offset",
-      "tokens.focus-outline.width",
-      "tokens.radius.default",
-      "tokens.spacing.lg",
-      "tokens.spacing.sm",
-      "tokens.state-opacity.disabled",
-      "tokens.status-color.danger",
-      "tokens.text-color.on-action"
+    "themes": [
+      "themes.destructive.default",
+      "themes.primary-foreground.default",
+      "themes.primary.default",
+      "themes.radius.default",
+      "themes.ring.default",
+      "themes.spacing.default"
     ],
     "assets": [
       "assets.icon-check"

@@ -22,7 +22,7 @@ let selection: ConsumerComponentSelection;
 beforeAll(() => {
   const values = loadCatalog();
   let library: LibraryData = { source: { kind: "consumer", author: "consumer", id: "article-specimen", license: "MIT" }, adoptedAt: "2026-10-30", fills: [] };
-  const changes = values.slots.filter(slot => slot.layer === "tokens" || slot.id.startsWith("assets.icon-")).flatMap(slot => {
+  const changes = values.slots.filter(slot => slot.layer === "themes" || slot.id.startsWith("assets.icon-")).flatMap(slot => {
     const offers = values.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot === slot.id && doc.$extensions["com.clossys.fill"].mode !== "reference").map(doc => doc.$extensions["com.clossys.fill"].source);
     const source = ["foundry", "tailwind-default"].find(name => offers.includes(name)) ?? offers[0];
     return source ? [{ op: "adopt" as const, slot: slot.id, source }] : [];

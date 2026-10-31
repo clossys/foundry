@@ -39,7 +39,7 @@ afterEach(async () => {
   await fs.rm(temporary, { recursive: true, force: true });
 });
 const noChange = (library: LibraryData): ChangeSet => ({ baseHash: libraryHash(library), changes: [] });
-const change = (library: LibraryData): ChangeSet => ({ baseHash: libraryHash(library), changes: [{ op: "author", slot: "tokens.blur", tokens: { glass: { $type: "dimension", $value: { value: 18, unit: "px" } } } }] });
+const change = (library: LibraryData): ChangeSet => ({ baseHash: libraryHash(library), changes: [{ op: "author", slot: "themes.radius", tokens: { default: { $type: "dimension", $value: { value: 18, unit: "px" } } } }] });
 
 describe("consumer library disk format", () => {
   it("round trips consumer values, provenance, selection and helpers without catalog autofill", async () => {
@@ -78,15 +78,15 @@ describe("consumer library disk format", () => {
   });
 
   it("rejects traversal, absolute paths, unknown operations and prototype members before writes", async () => {
-    for (const slot of ["../outside", "/outside", "tokens.blur/../../outside", "tokens.blur\\outside"]) {
+    for (const slot of ["../outside", "/outside", "themes.radius/../../outside", "themes.radius\\outside"]) {
       const cs = { baseHash: libraryHash(fixture), changes: [{ op: "remove", slot }] };
       expect(isLibraryChangeSet(cs, catalog)).toBe(false);
       await expect(writeLibrary(root, catalog, cs as ChangeSet)).rejects.toThrow(/Invalid/);
     }
     for (const member of ["../outside", "/outside", "sm.constructor.value", "__proto__.polluted", "sm\\outside"]) {
-      expect(isLibraryChangeSet({ baseHash: libraryHash(fixture), changes: [{ op: "author", slot: "tokens.blur", tokens: { [member]: { $type: "dimension", $value: "5px" } } }] }, catalog)).toBe(false);
+      expect(isLibraryChangeSet({ baseHash: libraryHash(fixture), changes: [{ op: "author", slot: "themes.radius", tokens: { [member]: { $type: "dimension", $value: "5px" } } }] }, catalog)).toBe(false);
     }
-    expect(isLibraryChangeSet({ baseHash: libraryHash(fixture), changes: [{ op: "autofill", slot: "tokens.blur" }] }, catalog)).toBe(false);
+    expect(isLibraryChangeSet({ baseHash: libraryHash(fixture), changes: [{ op: "autofill", slot: "themes.radius" }] }, catalog)).toBe(false);
     expect(await fs.readdir(temporary)).toEqual(["library"]);
   });
 
@@ -112,7 +112,7 @@ describe("consumer library disk format", () => {
 
 describe("atomic writes and concurrency", () => {
   it("checks a proposed library before committing it", async () => {
-    await expect(writeLibrary(root, catalog, { baseHash: libraryHash(fixture), changes: [{ op: "remove", slot: "tokens.blur" }] })).rejects.toBeInstanceOf(LibraryCheckError);
+    await expect(writeLibrary(root, catalog, { baseHash: libraryHash(fixture), changes: [{ op: "remove", slot: "themes.radius" }] })).rejects.toBeInstanceOf(LibraryCheckError);
     expect(libraryHash(await readLibrary(root, catalog))).toBe(libraryHash(fixture));
   });
 

@@ -15,7 +15,7 @@ export async function seedLibrary(root: string): Promise<void> {
     await fs.writeFile(join(root, name), content);
   }
   await emitLibrary(root, catalog);
-  await writeLibrary(root, catalog, { baseHash: libraryHash(fixture), changes: [{ op: "author", slot: "tokens.blur", tokens: { glass: { $type: "dimension", $value: { value: 18, unit: "px" } } } }] }, { command: "synthetic fixture", inputs: { leaf: "tokens.blur" } });
+  await writeLibrary(root, catalog, { baseHash: libraryHash(fixture), changes: [{ op: "author", slot: "themes.radius", tokens: { default: { $type: "dimension", $value: { value: 0.75, unit: "rem" } } } }] }, { command: "synthetic fixture", inputs: { leaf: "themes.radius" } });
 }
 export async function temporaryLibrary() {
   const directory = await fs.realpath(await fs.mkdtemp(join(tmpdir(), "designer-agent-")));

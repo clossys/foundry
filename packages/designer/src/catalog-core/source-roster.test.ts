@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import {rosterOffers,rosterRow,sourceRoster} from './token-contract.js';
 
 const catalog = resolve(dirname(fileURLToPath(import.meta.url)), "../catalog");
-interface SlotRow { id: string; layer: string; contract: { members: { mode: string; names?: string[] }; allowedReads: { tokens: string[]; assets: string[] } } }
+interface SlotRow { id: string; layer: string; contract: { members: { mode: string; names?: string[] }; allowedReads: { themes: string[]; assets: string[] } } }
 interface FillRow { members?: string[]; propMap?: Record<string, string>; reads?: { tokens?: string[]; assets?: string[] } }
 const slots = new Map((JSON.parse(readFileSync(resolve(catalog, "slots/components.json"), "utf8")) as SlotRow[]).map(slot => [slot.id, slot]));
 const shadcnFills = new Map(readdirSync(resolve(catalog, "fills/shadcn@aria")).filter(name => /^components\.[a-z-]+\.json$/.test(name) && name !== "components.coverage.json").map(name => {
@@ -29,7 +29,7 @@ describe("shadcn-first member contracts", () => {
   it("the shadcn-held slot contracts allow every read shadcn@aria makes", () => {
     const offenders = [...shadcnFills].flatMap(([slot, fill]) => {
       const reads = slots.get(slot)!.contract.allowedReads;
-      return [...(fill.reads?.tokens ?? []).filter(read => !reads.tokens.includes(read.split(".").slice(0, 2).join("."))), ...(fill.reads?.assets ?? []).filter(read => !reads.assets.includes(read))].map(read => `${slot} ${read}`);
+      return [...(fill.reads?.themes ?? []).filter(read => !reads.themes.includes(read.split(".").slice(0, 2).join("."))), ...(fill.reads?.assets ?? []).filter(read => !reads.assets.includes(read))].map(read => `${slot} ${read}`);
     });
     expect(offenders).toEqual([]);
   });

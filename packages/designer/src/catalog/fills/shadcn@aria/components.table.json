@@ -110,19 +110,11 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.border-width.hairline",
-          "tokens.duration.default",
-          "tokens.easing.default",
-          "tokens.font-size.sm",
-          "tokens.font-weight.medium",
-          "tokens.spacing.3xl",
-          "tokens.spacing.5xl",
-          "tokens.spacing.lg",
-          "tokens.spacing.sm",
-          "tokens.surface-color.sunken",
-          "tokens.text-color.muted",
-          "tokens.text-color.primary"
+        "themes": [
+          "themes.foreground.default",
+          "themes.muted-foreground.default",
+          "themes.muted.default",
+          "themes.spacing.default"
         ]
       },
       "root": "rac:Table",

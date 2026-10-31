@@ -23,11 +23,9 @@ const leafTexts = (root: Element, text: string): Element[] =>
   [...root.querySelectorAll("*")].filter(element => element.children.length === 0 && visible(element) && element.textContent?.trim() === text);
 
 const cases: Array<[kind: string, slotId: string, $type: string]> = [
-  ["color", "tokens.scrim-color", "color"],
-  ["bound dimension", "tokens.spacing", "dimension"],
-  ["open dimension", "tokens.region-width", "dimension"],
-  ["fontWeight", "tokens.font-weight", "fontWeight"],
-  ["fontFamily", "tokens.typeface", "fontFamily"],
+  ["color", "themes.background", "color"],
+  ["bound dimension", "themes.spacing", "dimension"],
+  ["fontFamily", "themes.font-sans", "fontFamily"],
 ];
 
 it.each(cases)("%s members show one visible key and one separate value (%s)", (_kind, slotId, $type) => {

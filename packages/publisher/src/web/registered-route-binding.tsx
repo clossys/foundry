@@ -20,7 +20,7 @@ import { plainRouteProjectionRegistry } from "../core/route-projection.js";
 import type { PlainRegisteredRouteProjection } from "../core/route-projection.js";
 export type { PlainRegisteredRouteProjection } from "../core/route-projection.js";
 import type { RouteRuntimeMaterialization } from "../core/route-runtime.js";
-import { bindRegisteredFlowLayout, registeredRouteBreakpointValues } from "./registered-route-layout.js";
+import { bindRegisteredFlowLayout } from "./registered-route-layout.js";
 
 export interface RegisteredRouteRuntime {
   /** Existing selected consumer ports and finite runtime inputs only. */
@@ -158,7 +158,7 @@ function prepareRoute(registry: RouteRegistry, routeId: string, runtime: Registe
     const route = routes[0]!; let binding = route.composition.binding;
     const brand = registeredRouteBrandLink(registry, route);
     if (!brand) return { status: "refused", findings: ["Exact registered brand home link is unavailable"] };
-    if (!runtime || !only(runtime, ["assembly", "instanceLibrary", "registries", "layoutRenderer", "cell", "headerActions", "designerQuery", "source", "page", "itemPath"]) || !only(runtime.assembly, ["identity", "engine", "contracts", "ports", "themes", "states", "breakpointPixels", "breakpointBasis", "css", "assets", "runner", "stage", "stageMeasurements", "query"]) || !only(runtime.assembly.ports, ["manifest", "renderers", "resolveContent", "frameOrder", "stageActions", "frameHost", "sectionHosts"])) return { status: "refused", findings: ["Host runtime contains an unknown page/body escape"] };
+    if (!runtime || !only(runtime, ["assembly", "instanceLibrary", "registries", "layoutRenderer", "cell", "headerActions", "designerQuery", "source", "page", "itemPath"]) || !only(runtime.assembly, ["identity", "engine", "contracts", "ports", "themes", "states", "css", "assets", "runner", "stage", "stageMeasurements", "query"]) || !only(runtime.assembly.ports, ["manifest", "renderers", "resolveContent", "frameOrder", "stageActions", "frameHost", "sectionHosts"])) return { status: "refused", findings: ["Host runtime contains an unknown page/body escape"] };
     if (runtime.itemPath !== undefined && (!route.path.endsWith("/[l0]/[id]") || typeof runtime.itemPath !== "string")) return { status: "refused", findings: ["Concrete item path requires its registered item route"] };
     let materialization: RouteRuntimeMaterialization | undefined;
     let assembly = runtime.assembly;
@@ -226,8 +226,7 @@ function prepareRoute(registry: RouteRegistry, routeId: string, runtime: Registe
       const flow = binding as FlowInstanceBinding;
       const css = flowStageStyleSheet(profile, flow.layout.leaf, flow.layout.config, flow.layout.members);
       if (!assembly.css.some(file => file.id === "publisher-flow-stage.css" && file.contents === css)) return { status: "pending", findings: ["Exact consumer-emitted flow Stage stylesheet is unavailable"] };
-      const pixels = registeredRouteBreakpointValues(profile, assembly.breakpointPixels ?? {}) as Readonly<Record<string, number>>;
-      layout = runtime.layoutRenderer && bindRegisteredFlowLayout(flow, runtime.instanceLibrary, runtime.layoutRenderer, pixels);
+      layout = runtime.layoutRenderer && bindRegisteredFlowLayout(flow, runtime.instanceLibrary, runtime.layoutRenderer);
       if (!layout) return { status: "pending", findings: ["Exact selected public flow Layout source/configuration is unavailable"] };
 
     } else if (runtime.layoutRenderer !== undefined) return { status: "refused", findings: ["Canvas cannot substitute a flow Layout renderer"] };

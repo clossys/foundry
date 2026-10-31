@@ -1,5 +1,5 @@
 import sectionContracts from "./section-contracts.json" with { type: "json" };
-import { STANDARD_INSTANCE_FIXTURES, FIXTURE_BREAKPOINTS } from "../../instances/__fixtures__/standard-instances.js";
+import { STANDARD_INSTANCE_FIXTURES } from "../../instances/__fixtures__/standard-instances.js";
 import { FORMAT_LEAVES } from "../../../formats/index.js";
 import { LAYOUT_LEAVES } from "../../../layouts/resolve.js";
 import type { BindingSectionLeaf, ConsumerInstanceFill, ConsumerInstanceLibrary, ContentRef, FlowInstanceBinding as InstanceBinding, InstanceRegistries, LayoutRendererSource, SectionFill } from "../../../core/instance-binding.js";
@@ -33,14 +33,7 @@ export const STANDARD_PACK_REGISTRIES: InstanceRegistries = {
   // Leaf identity comes from Frames IA; config names are the public Publisher SiteSurfaceKind projection.
   frames: [{ id: "frames.site-shell", status: "draft", contract: { surface: "site", configs: ["site", "front-door"] } }, { id: "frames.app-shell", status: "draft", contract: { surface: "app", configs: [] } }],
   formats: FORMAT_LEAVES, layouts: LAYOUT_LEAVES, sections,
-  tokens: [
-    { id: "tokens.spacing.lg", property: "--spacing-lg" },
-    { id: "tokens.content-size.wide", property: "--ui-width-wide-max" },
-    { id: "tokens.content-size.content", property: "--ui-width-content-max" },
-    { id: "tokens.content-size.prose", property: "--ui-width-prose-max" },
-    { id: "tokens.content-size.form", property: "--ui-width-form-max" },
-    ...Object.keys(FIXTURE_BREAKPOINTS).map(id => ({ id: id as `tokens.breakpoint.${string}`, property: `--breakpoint-${id.slice("tokens.breakpoint.".length)}` })),
-  ],
+  themes: [{ id: "themes.spacing.default", property: "--spacing" }],
 };
 
 /** Source bytes come from the actual local layout closure, supplied by the fixture host. */

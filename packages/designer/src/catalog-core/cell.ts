@@ -20,7 +20,7 @@ export function parseFill(json: unknown): { fill?: FillDoc; findings: Finding[] 
     const text = typeof value === "string" ? value : String(value);
     if (typeof value !== "string" || !isValidId(kind, value)) findings.push(idFinding(kind, text, fillId));
   };
-  const layer = slotId?.split(".")[0] === "assets" ? "assets" : "tokens";
+  const layer = slotId?.split(".")[0] === "assets" ? "assets" : "themes";
   if (root) {
     for (const key of Object.keys(root)) if (key !== "$extensions" && key !== layer) contract(`extra root key ${key}`);
   }

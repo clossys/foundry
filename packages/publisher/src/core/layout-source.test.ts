@@ -20,7 +20,7 @@ const compiler: LayoutCompilerPort = {
 const fixture = instanceFixture();
 const contract = fixture.registries.layouts[0]!.contract;
 const tokens: BindingToken[] = [
-  ...["md", "lg", "xl"].map(value => ({ id: `tokens.spacing.${value}` as const, property: `--spacing-${value}` })),
+  ...["md", "lg", "xl"].map(value => ({ id: `themes.spacing.${value}` as const, property: `--spacing-${value}` })),
   ...["wide", "content", "prose", "form"].map(value => ({ id: `tokens.content-size.${value}` as const, property: `--ui-width-${value}-max` })),
   { id: "tokens.region-width.aside", property: "--ui-layout-aside-w" },
   ...["mobile", "tablet", "tablet-lg", "desktop"].map(value => ({ id: `tokens.breakpoint.${value}` as const, property: `--breakpoint-${value}` })),

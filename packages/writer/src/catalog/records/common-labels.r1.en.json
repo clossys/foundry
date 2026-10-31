@@ -895,7 +895,7 @@
       "context": "Designer console",
       "status": "draft",
       "origin": "foundry-default",
-      "text": "Tokens",
+      "text": "Themes",
       "limits": {
         "maxChars": 32
       }
@@ -1286,7 +1286,7 @@
     {
       "id": "st.k2hbf8chyb",
       "leaf": "strings.common",
-      "context": "designer.ia.tokens.color",
+      "context": "designer.ia.themes.color",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Color",
@@ -1385,7 +1385,7 @@
     {
       "id": "st.mn2v0dgaj8",
       "leaf": "strings.common",
-      "context": "designer.item.tokens.spacing",
+      "context": "designer.item.themes.spacing",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Spacing",
@@ -1517,7 +1517,7 @@
     {
       "id": "st.qnqy2cwr23",
       "leaf": "strings.common",
-      "context": "designer.ia.tokens.space-rhythm",
+      "context": "designer.ia.themes.space-rhythm",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Rhythm",
@@ -1628,7 +1628,7 @@
     {
       "id": "st.sm9bq8fv8f",
       "leaf": "strings.common",
-      "context": "designer.item.tokens.density",
+      "context": "admin.writer.sections.dataTable.densityLabel",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Density",
@@ -2625,18 +2625,6 @@
       "status": "draft"
     },
     {
-      "recordId": "st.aa0s69mdxk",
-      "legacyRecordId": "st.kc4qwnns4j",
-      "source": "records/admin-studio.r1.en.json",
-      "context": "designer.item.tokens.icon-size",
-      "leaf": "strings.names",
-      "limits": {
-        "maxChars": 60
-      },
-      "origin": "foundry-default",
-      "status": "draft"
-    },
-    {
       "recordId": "st.13d97mrmzy",
       "legacyRecordId": "st.13d97mrmzy",
       "source": "records/admin-meta.r1.en.json",
@@ -3514,7 +3502,7 @@
       "recordId": "st.c331pzvwey",
       "legacyRecordId": "st.xja32c6gn7",
       "source": "records/admin-pages.r1.en.json",
-      "context": "strings.admin.group.designer.tokens",
+      "context": "strings.admin.group.designer.themes",
       "leaf": "strings.navigation",
       "limits": {},
       "origin": "authored",
@@ -4298,7 +4286,7 @@
       "recordId": "st.qnqy2cwr23",
       "legacyRecordId": "st.qnqy2cwr23",
       "source": "records/admin-studio.r1.en.json",
-      "context": "designer.ia.tokens.space-rhythm",
+      "context": "designer.ia.themes.space-rhythm",
       "leaf": "strings.names",
       "limits": {
         "maxChars": 60
@@ -4574,7 +4562,7 @@
       "recordId": "st.31tdz2e8k4",
       "legacyRecordId": "st.mt3nvmdc3j",
       "source": "records/admin-studio.r1.en.json",
-      "context": "designer.ia.tokens.interaction-states",
+      "context": "designer.ia.themes.interaction-states",
       "leaf": "strings.names",
       "limits": {
         "maxChars": 60
@@ -5398,7 +5386,7 @@
       "recordId": "st.k2hbf8chyb",
       "legacyRecordId": "st.k2hbf8chyb",
       "source": "records/admin-studio.r1.en.json",
-      "context": "designer.ia.tokens.color",
+      "context": "designer.ia.themes.color",
       "leaf": "strings.names",
       "limits": {
         "maxChars": 60
@@ -5422,7 +5410,7 @@
       "recordId": "st.mn2v0dgaj8",
       "legacyRecordId": "st.mn2v0dgaj8",
       "source": "records/admin-studio.r1.en.json",
-      "context": "designer.item.tokens.spacing",
+      "context": "designer.item.themes.spacing",
       "leaf": "strings.names",
       "limits": {
         "maxChars": 60
@@ -5434,19 +5422,7 @@
       "recordId": "st.mn2v0dgaj8",
       "legacyRecordId": "st.qrvmkqp6hq",
       "source": "records/admin-studio.r1.en.json",
-      "context": "designer.ia.tokens.type-spacing",
-      "leaf": "strings.names",
-      "limits": {
-        "maxChars": 60
-      },
-      "origin": "foundry-default",
-      "status": "draft"
-    },
-    {
-      "recordId": "st.sm9bq8fv8f",
-      "legacyRecordId": "st.sm9bq8fv8f",
-      "source": "records/admin-studio.r1.en.json",
-      "context": "designer.item.tokens.density",
+      "context": "designer.ia.themes.type-spacing",
       "leaf": "strings.names",
       "limits": {
         "maxChars": 60

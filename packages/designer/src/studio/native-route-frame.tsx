@@ -1,11 +1,10 @@
 "use client";
-import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Fragment, useMemo, type ReactNode } from "react";
 import { Banner } from "../components/Banner.js";
 import { checkConsumerRuntimePorts, runtimeHash, runtimeSourceFindings } from "../catalog-core/index.js";
 import type { BuildCatalogData, CompositeResolved, RuntimeRenderInput } from "../catalog-core/index.js";
 import { surfaceRuntimeCallbacks, surfaceRendererId } from "../runtime/index.js";
 import { surfaceRuntimeIdentity } from "../catalog-core/surface-check.js";
-import { routeBreakpointPixels, routeBreakpointsReady } from "./route-data.js";
 import type { NativeRouteFrameData } from "./route-data.js";
 
 /** Original frame behaviour stays on the client; finite hrefs never carry callbacks. */
@@ -15,31 +14,6 @@ export function nativeRouteNavigate(href: string): void {
     window.history.pushState(null, "", next.href);
     window.dispatchEvent(new HashChangeEvent("hashchange"));
   } else window.location.assign(next.href);
-}
-export function useNativeRouteBreakpoints(profile: CompositeResolved, rootFontSizeToken?: string) {
-  const deterministic = useMemo(() => routeBreakpointPixels(profile, rootFontSizeToken), [profile, rootFontSizeToken]);
-  const [measurement, setMeasurement] = useState<{ profile: CompositeResolved; rootFontSizeToken?: string; values: Readonly<Record<string, number>> }>();
-  useEffect(() => {
-    if (routeBreakpointsReady(profile, deterministic)) return;
-    const measure = () => {
-      const rootPx = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
-      if (!Number.isFinite(rootPx) || rootPx <= 0) return;
-      const actual: Record<string, number> = {};
-      for (const [id, member] of Object.entries(profile.values.members).filter(([id]) => id.startsWith("tokens.breakpoint."))) {
-        const value = member.value.light;
-        if (value && typeof value === "object" && !Array.isArray(value) && "unit" in value && "value" in value && value.unit === "rem" && typeof value.value === "number") actual[id] = value.value * rootPx;
-      }
-      const values = routeBreakpointPixels(profile, undefined, actual);
-      setMeasurement(previous => previous?.profile === profile && runtimeHash(previous.values) === runtimeHash(values) ? previous : { profile, rootFontSizeToken, values });
-    };
-    measure();
-    const observer = typeof MutationObserver === "function" ? new MutationObserver(measure) : undefined;
-    observer?.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "style"] });
-    window.addEventListener("resize", measure);
-    return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
-  }, [profile, rootFontSizeToken, deterministic]);
-  const values = routeBreakpointsReady(profile, deterministic) ? deterministic : measurement?.profile === profile && measurement.rootFontSizeToken === rootFontSizeToken ? measurement.values : deterministic;
-  return { values, ready: routeBreakpointsReady(profile, values) };
 }
 /** Native display composition only. No route/source/materialization/lifecycle
  * receipt is created here; the existing registered route validators own those. */

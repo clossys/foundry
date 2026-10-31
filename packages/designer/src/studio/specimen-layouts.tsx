@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { TOKENS } from "../tokens/tokens.js";
 import type { DesignerSpecimenContext, DesignerSpecimenNeed } from "./DesignerSpecimen.js";
 import type { SpecimenPublishedPage } from "./specimen-content-ports.js";
 import type { SpecimenTokenHostParts } from "./specimen-token-host-part-types.js";
@@ -165,9 +166,8 @@ export function specimenPart(binding: ComponentSpecimenBinding, foundryName: str
   const value = binding.source === "shadcn@aria" ? binding.exports[shadcnName] : (binding.Component as unknown as Record<string, unknown>)[foundryName];
   return component(value) ? value : undefined;
 }
-function useMobile(context: DesignerSpecimenContext): boolean {
-  const breakpoints = Object.entries(context.profile.values.members).filter(([, member]) => member.slot === "tokens.breakpoint");
-  const breakpoint = (breakpoints.find(([id]) => id.endsWith(".mobile")) ?? breakpoints[0])?.[1].css.light;
+function useMobile(): boolean {
+  const breakpoint = TOKENS["--breakpoint-mobile"]?.value;
   const [mobile, setMobile] = useState(false);
   useEffect(() => {
     if (!breakpoint || typeof matchMedia !== "function") return;
@@ -181,7 +181,7 @@ function useMobile(context: DesignerSpecimenContext): boolean {
 /** Private intrinsic layout engine. The bound leaf owns this call, never the cell or Studio row. */
 export function SpecimenLayoutSection(props: LayoutProps): ReactNode {
   const { id, label, layout, items, context, need, expanded, labels, renderItem } = props;
-  const mobile = useMobile(context);
+  const mobile = useMobile();
   const semantic = specimenComponent(context, "components.semantic-content");
   if ("reason" in semantic) return need(semantic);
   const fail = (reason: string) => <Content as="div" data-ds-leaf={id} data-ds-specimen-need="true">{need({ leaf: id, reason })}</Content>;

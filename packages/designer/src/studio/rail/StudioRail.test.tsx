@@ -57,8 +57,8 @@ const railCopy: StudioCopyBinding = {
   },
 };
 const legacy = () => {
-  const library = adopt(emptyLibrary(), "tokens.surface-color", "foundry");
-  return <StudioProvider copy={railCopy} catalog={smallCatalog} initialSlotId="tokens.surface-color" adapter={{ load: async () => ({ library }), save: vi.fn() }} labels={labels}><Studio copy={railCopy} /></StudioProvider>;
+  const library = adopt(emptyLibrary(), "themes.background", "shadcn@aria");
+  return <StudioProvider copy={railCopy} catalog={smallCatalog} initialSlotId="themes.background" adapter={{ load: async () => ({ library }), save: vi.fn() }} labels={labels}><Studio copy={railCopy} /></StudioProvider>;
 };
 function compositeAdapter() {
   const input = componentIntegration();
@@ -143,13 +143,13 @@ describe("inspector card", () => {
     const inspector = railCard("inspector")!;
     expect(within(inspector).getByText(labels.rail.inspectorEmpty)).toBeTruthy();
     const tree = screen.getByRole("treegrid", { name: labels.treeLabel });
-    await user.click(within(tree).getByText(/^tokens\.surface-color/));
+    await user.click(within(tree).getByText(/^themes\.surface-color/));
     await waitFor(() => expect(within(railCard("inspector")!).queryByText(labels.rail.inspectorEmpty)).toBeNull());
     expect(railCard("inspector")!.querySelector('[data-studio-panel="inspector"]')).not.toBeNull();
-    expect(window.location.search).toBe("?layer=tokens&node=tokens.surface-color");
+    expect(window.location.search).toBe("?layer=themes&node=themes.background");
     await user.keyboard("{Escape}");
     await waitFor(() => expect(within(railCard("inspector")!).getByText(labels.rail.inspectorEmpty)).toBeTruthy());
-    expect(window.location.search).toBe("?layer=tokens");
+    expect(window.location.search).toBe("?layer=themes");
   }, 30_000);
 
   it("opens on a deep-linked ?node= leaf and normalises the URL", async () => {

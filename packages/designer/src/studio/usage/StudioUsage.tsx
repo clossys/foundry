@@ -9,7 +9,7 @@ import { UsagePanel, type UsagePanelLabels } from "./UsagePanel.js";
 import type { UsageHistory } from "./useUsageNavigation.js";
 import { useStudioCopy } from "../copy-context.js";
 
-const STUDIO_LAYERS: readonly LayerId[] = ["tokens", "assets", "components", "sections", "frames"];
+const STUDIO_LAYERS: readonly LayerId[] = ["themes", "assets", "components", "sections", "frames"];
 const layerOf = (id: string): LayerId | undefined => STUDIO_LAYERS.find(layer => id.startsWith(layer + "."));
 
 /** One back stack per Studio session, so it survives the value and contract inspectors swapping on a tab change. */

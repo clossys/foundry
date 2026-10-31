@@ -19,3730 +19,540 @@
     "moved"
   ],
   "leaves": {
-    "tokens.accent-color": {
+    "themes.accent": {
+      "kind": "theme",
+      "target": "--accent",
+      "status": "live",
       "members": {
         "default": {
-          "kind": "extension",
-          "target": "--brand",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.accent-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.4748 0 0)"
-                },
-                "com.clossys.modes": {
-                  "dark": {
-                    "colorSpace": "oklch",
-                    "components": [
-                      0.62,
-                      0,
-                      0
-                    ]
-                  }
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "oklch",
-                "components": [
-                  0.4748,
-                  0,
-                  0
-                ]
-              }
-            }
-          }
-        },
-        "hover": {
-          "kind": "extension",
-          "target": "--brand-hover",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.accent-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.36 0 0)"
-                },
-                "com.clossys.modes": {
-                  "dark": "oklch(0.70 0 0)"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "oklch",
-                "components": [
-                  0.36,
-                  0,
-                  0
-                ]
-              }
-            }
-          }
-        },
-        "on-inverse": {
-          "kind": "extension",
-          "target": "--inverse-brand",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.accent-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.7763 0 0)"
-                },
-                "com.clossys.modes": {
-                  "dark": {
-                    "colorSpace": "oklch",
-                    "components": [
-                      0.42,
-                      0,
-                      0
-                    ]
-                  }
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "oklch",
-                "components": [
-                  0.7763,
-                  0,
-                  0
-                ]
-              }
-            }
-          }
-        },
-        "text": {
+          "kind": "theme",
+          "target": "--accent",
+          "status": "live"
+        }
+      }
+    },
+    "themes.accent-foreground": {
+      "kind": "theme",
+      "target": "--accent-foreground",
+      "status": "live",
+      "members": {
+        "default": {
           "kind": "theme",
           "target": "--accent-foreground",
           "status": "live"
-        },
-        "tint": {
-          "kind": "theme",
-          "target": "--accent",
-          "status": "live"
         }
       }
     },
-    "tokens.action-color": {
-      "members": {
-        "default": {
-          "kind": "theme",
-          "target": "--primary",
-          "status": "live"
-        },
-        "hover": {
-          "kind": "style",
-          "target": "--color-action-hover",
-          "status": "dead",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.action-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "#262626"
-                },
-                "com.clossys.modes": {
-                  "dark": {
-                    "colorSpace": "srgb",
-                    "components": [
-                      0.898039,
-                      0.898039,
-                      0.898039
-                    ],
-                    "hex": "#E5E5E5"
-                  }
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "srgb",
-                "components": [
-                  0.14902,
-                  0.14902,
-                  0.14902
-                ],
-                "hex": "#262626"
-              }
-            }
-          }
-        },
-        "pressed": {
-          "kind": "style",
-          "target": "--color-action-pressed",
-          "status": "dead",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.action-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "#404040"
-                },
-                "com.clossys.modes": {
-                  "dark": {
-                    "colorSpace": "srgb",
-                    "components": [
-                      0.831373,
-                      0.831373,
-                      0.831373
-                    ],
-                    "hex": "#D4D4D4"
-                  }
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "srgb",
-                "components": [
-                  0.25098,
-                  0.25098,
-                  0.25098
-                ],
-                "hex": "#404040"
-              }
-            }
-          }
-        },
-        "on-inverse": {
-          "kind": "extension",
-          "target": "--inverse-primary",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.action-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "#FAFAFA"
-                },
-                "com.clossys.modes": {
-                  "dark": {
-                    "colorSpace": "srgb",
-                    "components": [
-                      0.039216,
-                      0.039216,
-                      0.039216
-                    ],
-                    "hex": "#0A0A0A"
-                  }
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "srgb",
-                "components": [
-                  0.980392,
-                  0.980392,
-                  0.980392
-                ],
-                "hex": "#FAFAFA"
-              }
-            }
-          }
-        },
-        "on-inverse-hover": {
-          "kind": "extension",
-          "target": "--inverse-primary-hover",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.action-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "#E5E5E5"
-                },
-                "com.clossys.modes": {
-                  "dark": {
-                    "colorSpace": "srgb",
-                    "components": [
-                      0.14902,
-                      0.14902,
-                      0.14902
-                    ],
-                    "hex": "#262626"
-                  }
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "srgb",
-                "components": [
-                  0.898039,
-                  0.898039,
-                  0.898039
-                ],
-                "hex": "#E5E5E5"
-              }
-            }
-          }
-        }
-      }
-    },
-    "tokens.behavior-timing": {
-      "members": {
-        "confirm-hold": {
-          "kind": "extension",
-          "target": "--timing-confirm-hold",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.behavior-timing",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "2000ms"
-                }
-              },
-              "$type": "duration",
-              "$value": {
-                "unit": "ms",
-                "value": 2000
-              }
-            }
-          }
-        },
-        "loading-delay": {
-          "kind": "extension",
-          "target": "--timing-loading-delay",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.behavior-timing",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "150ms"
-                }
-              },
-              "$type": "duration",
-              "$value": {
-                "unit": "ms",
-                "value": 150
-              }
-            }
-          }
-        },
-        "loading-long": {
-          "kind": "extension",
-          "target": "--timing-loading-long",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.behavior-timing",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "10000ms"
-                }
-              },
-              "$type": "duration",
-              "$value": {
-                "unit": "ms",
-                "value": 10000
-              }
-            }
-          }
-        },
-        "loading-min": {
-          "kind": "extension",
-          "target": "--timing-loading-min",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.behavior-timing",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "400ms"
-                }
-              },
-              "$type": "duration",
-              "$value": {
-                "unit": "ms",
-                "value": 400
-              }
-            }
-          }
-        },
-        "tooltip-close": {
-          "kind": "extension",
-          "target": "--timing-tooltip-close",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.behavior-timing",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "300ms"
-                }
-              },
-              "$type": "duration",
-              "$value": {
-                "unit": "ms",
-                "value": 300
-              }
-            }
-          }
-        },
-        "tooltip-delay": {
-          "kind": "extension",
-          "target": "--timing-tooltip-delay",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.behavior-timing",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "500ms"
-                }
-              },
-              "$type": "duration",
-              "$value": {
-                "unit": "ms",
-                "value": 500
-              }
-            }
-          }
-        }
-      }
-    },
-    "tokens.blur": {
+    "themes.animate-marquee": {
       "kind": "tailwind",
-      "namespace": "--blur-*",
-      "status": "live"
-    },
-    "tokens.body-size": {
-      "members": {
-        "blockquote": {
-          "kind": "extension",
-          "target": "--text-blockquote",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.body-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "22px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 22
-              }
-            }
-          }
-        },
-        "default": {
-          "kind": "tailwind",
-          "target": "--text-sm",
-          "status": "live"
-        },
-        "l": {
-          "kind": "extension",
-          "target": "--text-body-lg",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.body-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "17px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 17
-              }
-            }
-          }
-        },
-        "s": {
-          "kind": "tailwind",
-          "target": "--text-xs",
-          "status": "live"
-        }
-      }
-    },
-    "tokens.border-color": {
-      "members": {
-        "base": {
-          "kind": "theme",
-          "target": "--border",
-          "status": "live"
-        },
-        "control": {
-          "kind": "theme",
-          "target": "--input",
-          "status": "live"
-        },
-        "on-inverse": {
-          "kind": "extension",
-          "target": "--inverse-border",
-          "status": "live",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.border-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.9702 0 0 / 0.14)"
-                },
-                "com.clossys.modes": {
-                  "dark": {
-                    "alpha": 0.14,
-                    "colorSpace": "oklch",
-                    "components": [
-                      0.2178,
-                      0,
-                      0
-                    ]
-                  }
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "alpha": 0.14,
-                "colorSpace": "oklch",
-                "components": [
-                  0.9702,
-                  0,
-                  0
-                ]
-              }
-            }
-          }
-        },
-        "overlay": {
-          "kind": "theme",
-          "target": "--border",
-          "status": "live"
-        },
-        "panel": {
-          "kind": "theme",
-          "target": "--border",
-          "status": "live"
-        },
-        "strong": {
-          "kind": "extension",
-          "target": "--border-strong",
-          "status": "live",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.border-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.7763 0 0)"
-                },
-                "com.clossys.modes": {
-                  "dark": "oklch(0.40 0 0)"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "oklch",
-                "components": [
-                  0.7763,
-                  0,
-                  0
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    "tokens.border-width": {
-      "members": {
-        "hairline": {
-          "kind": "style",
-          "target": "--ui-border-hairline",
-          "status": "live",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry-baseline/tokens.border-width",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "1px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 1
-              }
-            }
-          }
-        },
-        "panel": {
-          "kind": "style",
-          "target": "--ui-border-panel",
-          "status": "dead",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry-baseline/tokens.border-width",
-            "token": {
-              "$type": "dimension",
-              "$value": "{tokens.border-width.hairline}"
-            }
-          }
-        },
-        "rule": {
-          "kind": "style",
-          "target": "--ui-border-rule",
-          "status": "live",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry-baseline/tokens.border-width",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "2px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 2
-              }
-            }
-          }
-        }
-      }
-    },
-    "tokens.brandmark-size": {
-      "members": {
-        "gap-lg": {
-          "kind": "moved",
-          "target": "assets.logo-artwork",
-          "status": "dead",
-          "decision": "moved"
-        },
-        "gap-md": {
-          "kind": "moved",
-          "target": "assets.logo-artwork",
-          "status": "dead",
-          "decision": "moved"
-        },
-        "gap-sm": {
-          "kind": "moved",
-          "target": "assets.logo-artwork",
-          "status": "dead",
-          "decision": "moved"
-        },
-        "height-lg": {
-          "kind": "moved",
-          "target": "assets.logo-artwork",
-          "status": "dead",
-          "decision": "moved"
-        },
-        "height-md": {
-          "kind": "moved",
-          "target": "assets.logo-artwork",
-          "status": "dead",
-          "decision": "moved"
-        },
-        "height-sm": {
-          "kind": "moved",
-          "target": "assets.logo-artwork",
-          "status": "dead",
-          "decision": "moved"
-        }
-      }
-    },
-    "tokens.breakpoint": {
-      "kind": "tailwind",
-      "namespace": "--breakpoint-*",
-      "status": "live"
-    },
-    "tokens.caption-size": {
-      "members": {
-        "default": {
-          "kind": "tailwind",
-          "target": "--text-xs",
-          "status": "live"
-        }
-      }
-    },
-    "tokens.categorical-color": {
-      "members": {
-        "1": {
-          "kind": "theme",
-          "target": "--chart-1",
-          "status": "live"
-        },
-        "2": {
-          "kind": "theme",
-          "target": "--chart-2",
-          "status": "live"
-        },
-        "3": {
-          "kind": "theme",
-          "target": "--chart-3",
-          "status": "live"
-        },
-        "4": {
-          "kind": "theme",
-          "target": "--chart-4",
-          "status": "live"
-        },
-        "5": {
-          "kind": "theme",
-          "target": "--chart-5",
-          "status": "live"
-        },
-        "6": {
-          "kind": "extension",
-          "target": "--chart-6",
-          "status": "live",
-          "decision": "extension",
-          "default": {
-            "from": "carbon-colors/tokens.categorical-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "#002d9c"
-                },
-                "com.clossys.modes": {
-                  "dark": "#4589ff"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "srgb",
-                "components": [
-                  0,
-                  0.176471,
-                  0.611765
-                ],
-                "hex": "#002d9c"
-              }
-            }
-          }
-        },
-        "7": {
-          "kind": "extension",
-          "target": "--chart-7",
-          "status": "live",
-          "decision": "extension",
-          "default": {
-            "from": "carbon-colors/tokens.categorical-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "#012749"
-                },
-                "com.clossys.modes": {
-                  "dark": "#bae6ff"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "srgb",
-                "components": [
-                  0.003922,
-                  0.152941,
-                  0.286275
-                ],
-                "hex": "#012749"
-              }
-            }
-          }
-        },
-        "8": {
-          "kind": "extension",
-          "target": "--chart-8",
-          "status": "live",
-          "decision": "extension",
-          "default": {
-            "from": "carbon-colors/tokens.categorical-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "#8a3800"
-                },
-                "com.clossys.modes": {
-                  "dark": "#ba4e00"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "srgb",
-                "components": [
-                  0.541176,
-                  0.219608,
-                  0
-                ],
-                "hex": "#8a3800"
-              }
-            }
-          }
-        }
-      }
-    },
-    "tokens.chart-color": {
-      "members": {
-        "axis": {
-          "kind": "extension",
-          "target": "--chart-axis",
-          "status": "live",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.chart-color",
-            "token": {
-              "$type": "color",
-              "$value": "{tokens.border-color.strong}"
-            }
-          }
-        },
-        "axis-label": {
-          "kind": "extension",
-          "target": "--chart-axis-label",
-          "status": "live",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.chart-color",
-            "token": {
-              "$type": "color",
-              "$value": "{tokens.text-color.muted}"
-            }
-          }
-        },
-        "grid": {
-          "kind": "extension",
-          "target": "--chart-grid",
-          "status": "live",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.chart-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.91 0 0)"
-                },
-                "com.clossys.modes": {
-                  "dark": {
-                    "colorSpace": "oklch",
-                    "components": [
-                      0.32,
-                      0,
-                      0
-                    ]
-                  }
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "oklch",
-                "components": [
-                  0.91,
-                  0,
-                  0
-                ]
-              }
-            }
-          }
-        },
-        "surface": {
-          "kind": "extension",
-          "target": "--chart-surface",
-          "status": "live",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.chart-color",
-            "token": {
-              "$type": "color",
-              "$value": "{tokens.surface-color.raised}"
-            }
-          }
-        }
-      }
-    },
-    "tokens.code-size": {
-      "members": {
-        "block": {
-          "kind": "extension",
-          "target": "--text-code",
-          "status": "live",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.code-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "13px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 13
-              }
-            }
-          }
-        }
-      }
-    },
-    "tokens.color-ramp": {
-      "kind": "moved",
-      "target": "engine:color-ramp",
-      "status": "dead",
-      "decision": "moved",
-      "note": "Read-only engine row of Color; presets author role values from ramps, components never read a ramp."
-    },
-    "tokens.content-size": {
-      "members": {
-        "content": {
-          "kind": "extension",
-          "target": "--content-content",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.content-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "64rem"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "rem",
-                "value": 64
-              }
-            }
-          }
-        },
-        "display": {
-          "kind": "extension",
-          "target": "--content-display",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.content-size",
-            "token": {
-              "$type": "dimension",
-              "$value": "{tokens.content-size.wide}"
-            }
-          }
-        },
-        "dock-default": {
-          "kind": "extension",
-          "target": "--content-dock-default",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.content-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "240px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 240
-              }
-            }
-          }
-        },
-        "dock-max": {
-          "kind": "extension",
-          "target": "--content-dock-max",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.content-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "480px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 480
-              }
-            }
-          }
-        },
-        "dock-min": {
-          "kind": "extension",
-          "target": "--content-dock-min",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.content-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "160px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 160
-              }
-            }
-          }
-        },
-        "form": {
-          "kind": "extension",
-          "target": "--content-form",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.content-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "38rem"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "rem",
-                "value": 38
-              }
-            }
-          }
-        },
-        "hero-wide": {
-          "kind": "extension",
-          "target": "--content-hero-wide",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.content-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "64rem"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "rem",
-                "value": 64
-              }
-            }
-          }
-        },
-        "notice": {
-          "kind": "extension",
-          "target": "--content-notice",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.content-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "24rem"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "rem",
-                "value": 24
-              }
-            }
-          }
-        },
-        "prose": {
-          "kind": "extension",
-          "target": "--content-prose",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.content-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "48rem"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "rem",
-                "value": 48
-              }
-            }
-          }
-        },
-        "scene-card": {
-          "kind": "extension",
-          "target": "--content-scene-card",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.content-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "30rem"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "rem",
-                "value": 30
-              }
-            }
-          }
-        },
-        "table-max-block": {
-          "kind": "extension",
-          "target": "--content-table-max-block",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.content-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "min(70vh, 40rem)"
-                }
-              },
-              "$type": "dimension",
-              "$value": "min(70vh, 40rem)"
-            }
-          }
-        },
-        "toast": {
-          "kind": "extension",
-          "target": "--content-toast",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.content-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "24rem"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "rem",
-                "value": 24
-              }
-            }
-          }
-        },
-        "wide": {
-          "kind": "extension",
-          "target": "--content-wide",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.content-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "72rem"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "rem",
-                "value": 72
-              }
-            }
-          }
-        }
-      }
-    },
-    "tokens.control-color": {
-      "members": {
-        "quiet": {
-          "kind": "theme",
-          "target": "--accent",
-          "status": "live"
-        },
-        "tonal": {
-          "kind": "theme",
-          "target": "--secondary",
-          "status": "live"
-        },
-        "tonal-hover": {
-          "kind": "style",
-          "target": "--color-control-tonal-hover",
-          "status": "dead",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.control-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.2178 0 0 / 0.12)"
-                },
-                "com.clossys.modes": {
-                  "dark": {
-                    "alpha": 0.12,
-                    "colorSpace": "oklch",
-                    "components": [
-                      0.97,
-                      0,
-                      0
-                    ]
-                  }
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "alpha": 0.12,
-                "colorSpace": "oklch",
-                "components": [
-                  0.2178,
-                  0,
-                  0
-                ]
-              }
-            }
-          }
-        },
-        "tonal-inverse": {
-          "kind": "extension",
-          "target": "--inverse-secondary",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.control-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.9702 0 0 / 0.12)"
-                },
-                "com.clossys.modes": {
-                  "dark": {
-                    "alpha": 0.12,
-                    "colorSpace": "oklch",
-                    "components": [
-                      0.2178,
-                      0,
-                      0
-                    ]
-                  }
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "alpha": 0.12,
-                "colorSpace": "oklch",
-                "components": [
-                  0.9702,
-                  0,
-                  0
-                ]
-              }
-            }
-          }
-        },
-        "tonal-inverse-hover": {
-          "kind": "extension",
-          "target": "--inverse-secondary-hover",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.control-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.9702 0 0 / 0.16)"
-                },
-                "com.clossys.modes": {
-                  "dark": {
-                    "alpha": 0.16,
-                    "colorSpace": "oklch",
-                    "components": [
-                      0.2178,
-                      0,
-                      0
-                    ]
-                  }
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "alpha": 0.16,
-                "colorSpace": "oklch",
-                "components": [
-                  0.9702,
-                  0,
-                  0
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    "tokens.control-radius": {
-      "members": {
-        "default": {
-          "kind": "tailwind",
-          "target": "--radius-md",
-          "status": "live"
-        }
-      }
-    },
-    "tokens.control-size": {
-      "members": {
-        "h-lg": {
-          "kind": "style",
-          "target": "--ui-control-h-lg",
-          "status": "live",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.control-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "36px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 36
-              }
-            }
-          }
-        },
-        "h-md": {
-          "kind": "style",
-          "target": "--ui-control-h-md",
-          "status": "live",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.control-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "32px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 32
-              }
-            }
-          }
-        },
-        "h-sm": {
-          "kind": "style",
-          "target": "--ui-control-h-sm",
-          "status": "live",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.control-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "28px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 28
-              }
-            }
-          }
-        },
-        "mark": {
-          "kind": "style",
-          "target": "--ui-control-mark",
-          "status": "dead",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.control-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "16px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 16
-              }
-            }
-          }
-        },
-        "row-h": {
-          "kind": "style",
-          "target": "--ui-control-row-h",
-          "status": "dead",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.control-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "36px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 36
-              }
-            }
-          }
-        },
-        "switch-h": {
-          "kind": "style",
-          "target": "--ui-control-switch-h",
-          "status": "dead",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.control-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "20px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 20
-              }
-            }
-          }
-        },
-        "switch-thumb": {
-          "kind": "style",
-          "target": "--ui-control-switch-thumb",
-          "status": "live",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.control-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "14px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 14
-              }
-            }
-          }
-        },
-        "switch-w": {
-          "kind": "style",
-          "target": "--ui-control-switch-w",
-          "status": "dead",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.control-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "36px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 36
-              }
-            }
-          }
-        }
-      }
-    },
-    "tokens.density": {
-      "members": {
-        "gap": {
-          "kind": "extension",
-          "target": "--density-gap",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.density",
-            "token": {
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 16
-              }
-            }
-          }
-        },
-        "pad": {
-          "kind": "extension",
-          "target": "--density-pad",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.density",
-            "token": {
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 24
-              }
-            }
-          }
-        },
-        "row": {
-          "kind": "extension",
-          "target": "--density-row",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.density",
-            "token": {
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 48
-              }
-            }
-          }
-        },
-        "table-row-comfortable": {
-          "kind": "extension",
-          "target": "--density-table-row-comfortable",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.density",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "48px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 48
-              }
-            }
-          }
-        },
-        "table-row-compact": {
-          "kind": "extension",
-          "target": "--density-table-row-compact",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.density",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "36px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 36
-              }
-            }
-          }
-        }
-      }
-    },
-    "tokens.display-face": {
-      "members": {
-        "optical-size": {
-          "kind": "extension",
-          "target": "--font-display-optical-size",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.display-face",
-            "token": {
-              "$type": "number",
-              "$value": 72
-            }
-          }
-        },
-        "scale-x": {
-          "kind": "extension",
-          "target": "--font-display-scale-x",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.display-face",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "1"
-                }
-              },
-              "$type": "number",
-              "$value": 1
-            }
-          }
-        },
-        "stretch": {
-          "kind": "extension",
-          "target": "--font-display-stretch",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.display-face",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "100%"
-                }
-              },
-              "$type": "dimension",
-              "$value": "100%"
-            }
-          }
-        },
-        "style": {
-          "kind": "extension",
-          "target": "--font-display-style",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.display-face",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "normal"
-                }
-              },
-              "$type": "dimension",
-              "$value": "normal"
-            }
-          }
-        },
-        "weight": {
-          "kind": "extension",
-          "target": "--font-display-weight",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.display-face",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "400"
-                }
-              },
-              "$type": "fontWeight",
-              "$value": 400
-            }
-          }
-        }
-      }
-    },
-    "tokens.display-size": {
-      "members": {
-        "2xl": {
-          "kind": "extension",
-          "target": "--text-display-2xl",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.display-size",
-            "token": {
-              "$type": "dimension",
-              "$value": "clamp(4.5rem, 10vw, 8rem)"
-            }
-          }
-        },
-        "l": {
-          "kind": "extension",
-          "target": "--text-display-l",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.display-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "56px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 56
-              }
-            }
-          }
-        },
-        "m": {
-          "kind": "extension",
-          "target": "--text-display-m",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.display-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "44px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 44
-              }
-            }
-          }
-        },
-        "xl": {
-          "kind": "extension",
-          "target": "--text-display-xl",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.display-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "72px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 72
-              }
-            }
-          }
-        }
-      }
-    },
-    "tokens.diverging-color": {
-      "members": {
-        "negative": {
-          "kind": "extension",
-          "target": "--chart-diverging-negative",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "tailwind-default/tokens.diverging-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.5770000000000001 0.245 27.325)"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "oklch",
-                "components": [
-                  0.5770000000000001,
-                  0.245,
-                  27.325
-                ]
-              }
-            }
-          }
-        },
-        "neutral": {
-          "kind": "extension",
-          "target": "--chart-diverging-neutral",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "rules/tokens.diverging-neutral",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "{{tokens.border-color.base}}"
-                },
-                "com.clossys.modes": {
-                  "dark": "{tokens.border-color.base}"
-                }
-              },
-              "$type": "color",
-              "$value": "{tokens.border-color.base}"
-            }
-          }
-        },
-        "positive": {
-          "kind": "extension",
-          "target": "--chart-diverging-positive",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "tailwind-default/tokens.diverging-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.546 0.245 262.881)"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "oklch",
-                "components": [
-                  0.546,
-                  0.245,
-                  262.881
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    "tokens.duration": {
-      "kind": "style",
-      "namespace": "--ui-duration-*",
+      "target": "--animate-marquee",
       "status": "live",
-      "decision": "style-default"
-    },
-    "tokens.easing": {
-      "kind": "tailwind",
-      "namespace": "--ease-*",
-      "status": "live"
-    },
-    "tokens.elevation": {
       "members": {
-        "floating": {
+        "default": {
           "kind": "tailwind",
-          "target": "--shadow-lg",
+          "target": "--animate-marquee",
           "status": "live"
-        },
-        "none": {
-          "kind": "extension",
-          "target": "--shadow-none",
-          "status": "live",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.elevation",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "none"
-                }
-              },
-              "$type": "shadow",
-              "$value": "none"
-            }
-          }
-        },
-        "panel": {
+        }
+      }
+    },
+    "themes.animate-marquee-vertical": {
+      "kind": "tailwind",
+      "target": "--animate-marquee-vertical",
+      "status": "live",
+      "members": {
+        "default": {
           "kind": "tailwind",
-          "target": "--shadow-md",
+          "target": "--animate-marquee-vertical",
           "status": "live"
-        },
-        "raised": {
+        }
+      }
+    },
+    "themes.animate-shiny-text": {
+      "kind": "tailwind",
+      "target": "--animate-shiny-text",
+      "status": "live",
+      "members": {
+        "default": {
           "kind": "tailwind",
-          "target": "--shadow-sm",
+          "target": "--animate-shiny-text",
           "status": "live"
         }
       }
     },
-    "tokens.focus-color": {
+    "themes.background": {
+      "kind": "theme",
+      "target": "--background",
+      "status": "live",
       "members": {
         "default": {
-          "kind": "theme",
-          "target": "--ring",
-          "status": "live"
-        },
-        "on-inverse": {
-          "kind": "extension",
-          "target": "--inverse-ring",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.focus-color",
-            "token": {
-              "$type": "color",
-              "$value": "{tokens.text-color.on-inverse}"
-            }
-          }
-        }
-      }
-    },
-    "tokens.focus-outline": {
-      "members": {
-        "offset": {
-          "kind": "style",
-          "target": "--ui-focus-offset",
-          "status": "live",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.focus-outline",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "2px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 2
-              }
-            }
-          }
-        },
-        "width": {
-          "kind": "style",
-          "target": "--ui-border-focus",
-          "status": "live",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.focus-outline",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "2px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 2
-              }
-            }
-          }
-        }
-      }
-    },
-    "tokens.focus-shadow": {
-      "members": {
-        "default": {
-          "kind": "style",
-          "target": "--ui-ring-focus",
-          "status": "dead",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.focus-shadow",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "0 0 0 2px var(--color-accent, oklch(0.4748 0 0))",
-                  "reads": [
-                    "tokens.accent-color.default"
-                  ]
-                }
-              },
-              "$type": "shadow",
-              "$value": "0 0 0 2px var(--color-accent, oklch(0.4748 0 0))"
-            }
-          }
-        },
-        "on-inverse": {
-          "kind": "style",
-          "target": "--ui-ring-on-inverse",
-          "status": "dead",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.focus-shadow",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "0 0 0 2px var(--color-focus-ring-on-inverse, oklch(0.9702 0 0))",
-                  "reads": [
-                    "tokens.focus-color.on-inverse"
-                  ]
-                }
-              },
-              "$type": "shadow",
-              "$value": "0 0 0 2px var(--color-focus-ring-on-inverse, oklch(0.9702 0 0))"
-            }
-          }
-        }
-      }
-    },
-    "tokens.font-size": {
-      "kind": "tailwind",
-      "namespace": "--text-*",
-      "status": "live"
-    },
-    "tokens.font-weight": {
-      "kind": "tailwind",
-      "namespace": "--font-weight-*",
-      "status": "live"
-    },
-    "tokens.gutter": {
-      "members": {
-        "page-x": {
-          "kind": "extension",
-          "target": "--gutter-page-x",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.gutter",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "clamp(16px, 4vw, 48px)"
-                }
-              },
-              "$type": "dimension",
-              "$value": "clamp(16px, 4vw, 48px)"
-            }
-          }
-        }
-      }
-    },
-    "tokens.heading-size": {
-      "members": {
-        "2xl": {
-          "kind": "extension",
-          "target": "--text-heading-2xl",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.heading-size",
-            "token": {
-              "$type": "dimension",
-              "$value": "clamp(3rem, 6vw, 5rem)"
-            }
-          }
-        },
-        "h0": {
-          "kind": "extension",
-          "target": "--text-heading-0",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.heading-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "32px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 32
-              }
-            }
-          }
-        },
-        "h1": {
-          "kind": "extension",
-          "target": "--text-heading-1",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.heading-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "28px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 28
-              }
-            }
-          }
-        },
-        "h2": {
-          "kind": "extension",
-          "target": "--text-heading-2",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.heading-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "18px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 18
-              }
-            }
-          }
-        },
-        "h3": {
-          "kind": "extension",
-          "target": "--text-heading-3",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.heading-size",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "14px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 14
-              }
-            }
-          }
-        }
-      }
-    },
-    "tokens.icon-size": {
-      "members": {
-        "lg": {
-          "kind": "style",
-          "target": "--ui-icon-lg",
-          "status": "dead",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.icon-size",
-            "token": {
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 32
-              }
-            }
-          }
-        },
-        "md": {
-          "kind": "style",
-          "target": "--ui-icon-md",
-          "status": "dead",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.icon-size",
-            "token": {
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 24
-              }
-            }
-          }
-        },
-        "sm": {
-          "kind": "style",
-          "target": "--ui-icon-sm",
-          "status": "dead",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.icon-size",
-            "token": {
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 16
-              }
-            }
-          }
-        }
-      }
-    },
-    "tokens.icon-stroke": {
-      "members": {
-        "default": {
-          "kind": "moved",
-          "target": "assets.icons",
-          "status": "dead",
-          "decision": "moved"
-        }
-      }
-    },
-    "tokens.letter-spacing": {
-      "kind": "tailwind",
-      "namespace": "--tracking-*",
-      "status": "live"
-    },
-    "tokens.line-height": {
-      "kind": "tailwind",
-      "namespace": "--leading-*",
-      "status": "live"
-    },
-    "tokens.radius": {
-      "kind": "tailwind",
-      "namespace": "--radius-*",
-      "status": "live"
-    },
-    "tokens.region-width": {
-      "members": {
-        "aside": {
-          "kind": "extension",
-          "target": "--aside-width",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.region-width",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "320px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 320
-              }
-            }
-          }
-        },
-        "drawer": {
-          "kind": "extension",
-          "target": "--drawer-width",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.region-width",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "min(20rem, 85vw)"
-                }
-              },
-              "$type": "dimension",
-              "$value": "min(20rem, 85vw)"
-            }
-          }
-        },
-        "inspector": {
-          "kind": "extension",
-          "target": "--inspector-width",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.region-width",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "280px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 280
-              }
-            }
-          }
-        },
-        "inspector-max": {
-          "kind": "extension",
-          "target": "--inspector-max-width",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.region-width",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "420px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 420
-              }
-            }
-          }
-        },
-        "inspector-min": {
-          "kind": "extension",
-          "target": "--inspector-min-width",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.region-width",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "220px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 220
-              }
-            }
-          }
-        },
-        "sidebar": {
-          "kind": "component",
-          "target": "--sidebar-width",
-          "status": "live",
-          "default": {
-            "from": "shadcn@aria/apps/v4/registry/bases/aria/ui/sidebar.tsx",
-            "token": {
-              "$type": "dimension",
-              "$value": {
-                "unit": "rem",
-                "value": 16
-              },
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "16rem"
-                }
-              }
-            }
-          }
-        },
-        "sidebar-rail": {
-          "kind": "component",
-          "target": "--sidebar-width-icon",
-          "status": "live",
-          "default": {
-            "from": "shadcn@aria/apps/v4/registry/bases/aria/ui/sidebar.tsx",
-            "token": {
-              "$type": "dimension",
-              "$value": {
-                "unit": "rem",
-                "value": 3
-              },
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "3rem"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "tokens.scrim-color": {
-      "members": {
-        "default": {
-          "kind": "extension",
-          "target": "--scrim",
-          "status": "live",
-          "decision": "extension",
-          "default": {
-            "from": "foundry-baseline/tokens.scrim-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0 0 0 / 0.4)"
-                },
-                "com.clossys.modes": {
-                  "dark": {
-                    "alpha": 0.6,
-                    "colorSpace": "oklch",
-                    "components": [
-                      0,
-                      0,
-                      0
-                    ]
-                  }
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "alpha": 0.4,
-                "colorSpace": "oklch",
-                "components": [
-                  0,
-                  0,
-                  0
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    "tokens.sequential-color": {
-      "members": {
-        "100": {
-          "kind": "extension",
-          "target": "--chart-sequential-100",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "tailwind-default/tokens.sequential-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.932 0.032 255.585)"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "oklch",
-                "components": [
-                  0.932,
-                  0.032,
-                  255.585
-                ]
-              }
-            }
-          }
-        },
-        "200": {
-          "kind": "extension",
-          "target": "--chart-sequential-200",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "tailwind-default/tokens.sequential-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.882 0.059 254.128)"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "oklch",
-                "components": [
-                  0.882,
-                  0.059,
-                  254.128
-                ]
-              }
-            }
-          }
-        },
-        "300": {
-          "kind": "extension",
-          "target": "--chart-sequential-300",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "tailwind-default/tokens.sequential-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.809 0.105 251.813)"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "oklch",
-                "components": [
-                  0.809,
-                  0.105,
-                  251.813
-                ]
-              }
-            }
-          }
-        },
-        "400": {
-          "kind": "extension",
-          "target": "--chart-sequential-400",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "tailwind-default/tokens.sequential-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.7070000000000001 0.165 254.624)"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "oklch",
-                "components": [
-                  0.7070000000000001,
-                  0.165,
-                  254.624
-                ]
-              }
-            }
-          }
-        },
-        "500": {
-          "kind": "extension",
-          "target": "--chart-sequential-500",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "tailwind-default/tokens.sequential-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.623 0.214 259.815)"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "oklch",
-                "components": [
-                  0.623,
-                  0.214,
-                  259.815
-                ]
-              }
-            }
-          }
-        },
-        "600": {
-          "kind": "extension",
-          "target": "--chart-sequential-600",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "tailwind-default/tokens.sequential-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.546 0.245 262.881)"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "oklch",
-                "components": [
-                  0.546,
-                  0.245,
-                  262.881
-                ]
-              }
-            }
-          }
-        },
-        "700": {
-          "kind": "extension",
-          "target": "--chart-sequential-700",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "tailwind-default/tokens.sequential-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.488 0.243 264.376)"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "oklch",
-                "components": [
-                  0.488,
-                  0.243,
-                  264.376
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    "tokens.shadow": {
-      "kind": "tailwind",
-      "namespace": "--shadow-*",
-      "status": "live"
-    },
-    "tokens.shift-distance": {
-      "members": {
-        "default": {
-          "kind": "extension",
-          "target": "--shift-distance",
-          "status": "live",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.shift-distance",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "4px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 4
-              }
-            }
-          }
-        },
-        "reveal": {
-          "kind": "extension",
-          "target": "--ui-motion-shift-reveal",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.shift-distance",
-            "token": {
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 24
-              }
-            }
-          }
-        }
-      }
-    },
-    "tokens.spacing": {
-      "kind": "tailwind",
-      "namespace": "--spacing",
-      "status": "live"
-    },
-    "tokens.state-opacity": {
-      "members": {
-        "disabled": {
-          "kind": "style",
-          "target": "--ui-alpha-disabled",
-          "status": "live",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.state-opacity",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "0.5"
-                }
-              },
-              "$type": "number",
-              "$value": 0.5
-            }
-          }
-        },
-        "hover": {
-          "kind": "style",
-          "target": "--ui-state-hover-alpha",
-          "status": "dead",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.state-opacity",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "0.08"
-                }
-              },
-              "$type": "number",
-              "$value": 0.08
-            }
-          }
-        },
-        "pressed": {
-          "kind": "style",
-          "target": "--ui-state-pressed-alpha",
-          "status": "dead",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.state-opacity",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "0.14"
-                }
-              },
-              "$type": "number",
-              "$value": 0.14
-            }
-          }
-        },
-        "stale": {
-          "kind": "style",
-          "target": "--ui-alpha-stale",
-          "status": "live",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.state-opacity",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "0.7"
-                }
-              },
-              "$type": "number",
-              "$value": 0.7
-            }
-          }
-        }
-      }
-    },
-    "tokens.status-color": {
-      "members": {
-        "danger": {
-          "kind": "theme",
-          "target": "--destructive",
-          "status": "live"
-        },
-        "danger-text": {
-          "kind": "extension",
-          "target": "--danger-subtle-foreground",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "radix-colors/tokens.status-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "#641723"
-                },
-                "com.clossys.modes": {
-                  "dark": "#ffd1d9"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "srgb",
-                "components": [
-                  0.392157,
-                  0.090196,
-                  0.137255
-                ],
-                "hex": "#641723"
-              }
-            }
-          }
-        },
-        "danger-tint": {
-          "kind": "extension",
-          "target": "--danger-subtle",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "radix-colors/tokens.status-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "#feebec"
-                },
-                "com.clossys.modes": {
-                  "dark": "#3b1219"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "srgb",
-                "components": [
-                  0.996078,
-                  0.921569,
-                  0.92549
-                ],
-                "hex": "#feebec"
-              }
-            }
-          }
-        },
-        "info": {
-          "kind": "extension",
-          "target": "--info",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "radix-colors/tokens.status-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "#0d74ce"
-                },
-                "com.clossys.modes": {
-                  "dark": "#70b8ff"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "srgb",
-                "components": [
-                  0.05098,
-                  0.454902,
-                  0.807843
-                ],
-                "hex": "#0d74ce"
-              }
-            }
-          }
-        },
-        "info-text": {
-          "kind": "extension",
-          "target": "--info-subtle-foreground",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "radix-colors/tokens.status-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "#113264"
-                },
-                "com.clossys.modes": {
-                  "dark": "#c2e6ff"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "srgb",
-                "components": [
-                  0.066667,
-                  0.196078,
-                  0.392157
-                ],
-                "hex": "#113264"
-              }
-            }
-          }
-        },
-        "info-tint": {
-          "kind": "extension",
-          "target": "--info-subtle",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "radix-colors/tokens.status-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "#e6f4fe"
-                },
-                "com.clossys.modes": {
-                  "dark": "#0d2847"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "srgb",
-                "components": [
-                  0.901961,
-                  0.956863,
-                  0.996078
-                ],
-                "hex": "#e6f4fe"
-              }
-            }
-          }
-        },
-        "success": {
-          "kind": "extension",
-          "target": "--success",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "radix-colors/tokens.status-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "#218358"
-                },
-                "com.clossys.modes": {
-                  "dark": "#3dd68c"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "srgb",
-                "components": [
-                  0.129412,
-                  0.513725,
-                  0.345098
-                ],
-                "hex": "#218358"
-              }
-            }
-          }
-        },
-        "success-text": {
-          "kind": "extension",
-          "target": "--success-subtle-foreground",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "radix-colors/tokens.status-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "#193b2d"
-                },
-                "com.clossys.modes": {
-                  "dark": "#b1f1cb"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "srgb",
-                "components": [
-                  0.098039,
-                  0.231373,
-                  0.176471
-                ],
-                "hex": "#193b2d"
-              }
-            }
-          }
-        },
-        "success-tint": {
-          "kind": "extension",
-          "target": "--success-subtle",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "radix-colors/tokens.status-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "#e6f6eb"
-                },
-                "com.clossys.modes": {
-                  "dark": "#132d21"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "srgb",
-                "components": [
-                  0.901961,
-                  0.964706,
-                  0.921569
-                ],
-                "hex": "#e6f6eb"
-              }
-            }
-          }
-        },
-        "warning": {
-          "kind": "extension",
-          "target": "--warning",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "radix-colors/tokens.status-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "#ab6400"
-                },
-                "com.clossys.modes": {
-                  "dark": "#ffca16"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "srgb",
-                "components": [
-                  0.670588,
-                  0.392157,
-                  0
-                ],
-                "hex": "#ab6400"
-              }
-            }
-          }
-        },
-        "warning-text": {
-          "kind": "extension",
-          "target": "--warning-subtle-foreground",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "radix-colors/tokens.status-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "#4f3422"
-                },
-                "com.clossys.modes": {
-                  "dark": "#ffe7b3"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "srgb",
-                "components": [
-                  0.309804,
-                  0.203922,
-                  0.133333
-                ],
-                "hex": "#4f3422"
-              }
-            }
-          }
-        },
-        "warning-tint": {
-          "kind": "extension",
-          "target": "--warning-subtle",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "radix-colors/tokens.status-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "#fff7c2"
-                },
-                "com.clossys.modes": {
-                  "dark": "#302008"
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "srgb",
-                "components": [
-                  1,
-                  0.968627,
-                  0.760784
-                ],
-                "hex": "#fff7c2"
-              }
-            }
-          }
-        }
-      }
-    },
-    "tokens.surface-color": {
-      "members": {
-        "aside": {
-          "kind": "theme",
-          "target": "--sidebar",
-          "status": "live"
-        },
-        "base": {
           "kind": "theme",
           "target": "--background",
           "status": "live"
-        },
-        "glass": {
-          "kind": "extension",
-          "target": "--glass",
-          "status": "live",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.surface-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(1 0 0 / 0.6)"
-                },
-                "com.clossys.modes": {
-                  "dark": {
-                    "alpha": 0.86,
-                    "colorSpace": "oklch",
-                    "components": [
-                      0.26,
-                      0,
-                      0
-                    ]
-                  }
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "alpha": 0.6,
-                "colorSpace": "oklch",
-                "components": [
-                  1,
-                  0,
-                  0
-                ]
-              }
-            }
-          }
-        },
-        "glass-inverse": {
-          "kind": "extension",
-          "target": "--glass-inverse",
-          "status": "live",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.surface-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.2178 0 0 / 0.85)"
-                },
-                "com.clossys.modes": {
-                  "dark": {
-                    "alpha": 0.6,
-                    "colorSpace": "oklch",
-                    "components": [
-                      0.96,
-                      0,
-                      0
-                    ]
-                  }
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "alpha": 0.85,
-                "colorSpace": "oklch",
-                "components": [
-                  0.2178,
-                  0,
-                  0
-                ]
-              }
-            }
-          }
-        },
-        "inverse": {
-          "kind": "extension",
-          "target": "--inverse",
-          "status": "live",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.surface-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.2178 0 0)"
-                },
-                "com.clossys.modes": {
-                  "dark": {
-                    "colorSpace": "oklch",
-                    "components": [
-                      0.96,
-                      0,
-                      0
-                    ]
-                  }
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "oklch",
-                "components": [
-                  0.2178,
-                  0,
-                  0
-                ]
-              }
-            }
-          }
-        },
-        "inverse-raised": {
-          "kind": "extension",
-          "target": "--inverse-raised",
-          "status": "live",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.surface-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.285 0 0)"
-                },
-                "com.clossys.modes": {
-                  "dark": {
-                    "colorSpace": "oklch",
-                    "components": [
-                      1,
-                      0,
-                      0
-                    ]
-                  }
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "oklch",
-                "components": [
-                  0.285,
-                  0,
-                  0
-                ]
-              }
-            }
-          }
-        },
-        "overlay": {
+        }
+      }
+    },
+    "themes.border": {
+      "kind": "theme",
+      "target": "--border",
+      "status": "live",
+      "members": {
+        "default": {
           "kind": "theme",
-          "target": "--popover",
+          "target": "--border",
           "status": "live"
-        },
-        "raised": {
+        }
+      }
+    },
+    "themes.card": {
+      "kind": "theme",
+      "target": "--card",
+      "status": "live",
+      "members": {
+        "default": {
           "kind": "theme",
           "target": "--card",
           "status": "live"
-        },
-        "selected": {
+        }
+      }
+    },
+    "themes.card-foreground": {
+      "kind": "theme",
+      "target": "--card-foreground",
+      "status": "live",
+      "members": {
+        "default": {
           "kind": "theme",
-          "target": "--accent",
-          "status": "live"
-        },
-        "skeleton": {
-          "kind": "theme",
-          "target": "--muted",
-          "status": "live"
-        },
-        "sunken": {
-          "kind": "theme",
-          "target": "--muted",
+          "target": "--card-foreground",
           "status": "live"
         }
       }
     },
-    "tokens.surface-radius": {
+    "themes.chart-1": {
+      "kind": "theme",
+      "target": "--chart-1",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--chart-1",
+          "status": "live"
+        }
+      }
+    },
+    "themes.chart-2": {
+      "kind": "theme",
+      "target": "--chart-2",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--chart-2",
+          "status": "live"
+        }
+      }
+    },
+    "themes.chart-3": {
+      "kind": "theme",
+      "target": "--chart-3",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--chart-3",
+          "status": "live"
+        }
+      }
+    },
+    "themes.chart-4": {
+      "kind": "theme",
+      "target": "--chart-4",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--chart-4",
+          "status": "live"
+        }
+      }
+    },
+    "themes.chart-5": {
+      "kind": "theme",
+      "target": "--chart-5",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--chart-5",
+          "status": "live"
+        }
+      }
+    },
+    "themes.destructive": {
+      "kind": "theme",
+      "target": "--destructive",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--destructive",
+          "status": "live"
+        }
+      }
+    },
+    "themes.font-heading": {
+      "kind": "tailwind",
+      "target": "--font-heading",
+      "status": "live",
       "members": {
         "default": {
           "kind": "tailwind",
-          "target": "--radius-lg",
-          "status": "live"
-        },
-        "overlay": {
-          "kind": "tailwind",
-          "target": "--radius-xl",
-          "status": "live"
-        },
-        "panel": {
-          "kind": "tailwind",
-          "target": "--radius-lg",
+          "target": "--font-heading",
           "status": "live"
         }
       }
     },
-    "tokens.text-color": {
-      "members": {
-        "link": {
-          "kind": "theme",
-          "target": "--primary",
-          "status": "live"
-        },
-        "muted": {
-          "kind": "theme",
-          "target": "--muted-foreground",
-          "status": "live"
-        },
-        "on-accent": {
-          "kind": "theme",
-          "target": "--accent-foreground",
-          "status": "live"
-        },
-        "on-action": {
-          "kind": "theme",
-          "target": "--primary-foreground",
-          "status": "live"
-        },
-        "on-inverse": {
-          "kind": "extension",
-          "target": "--inverse-foreground",
-          "status": "live",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.text-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.9702 0 0)"
-                },
-                "com.clossys.modes": {
-                  "dark": {
-                    "colorSpace": "oklch",
-                    "components": [
-                      0.2178,
-                      0,
-                      0
-                    ]
-                  }
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "oklch",
-                "components": [
-                  0.9702,
-                  0,
-                  0
-                ]
-              }
-            }
-          }
-        },
-        "on-inverse-muted": {
-          "kind": "extension",
-          "target": "--inverse-muted-foreground",
-          "status": "live",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.text-color",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "oklch(0.7763 0 0)"
-                },
-                "com.clossys.modes": {
-                  "dark": {
-                    "colorSpace": "oklch",
-                    "components": [
-                      0.42,
-                      0,
-                      0
-                    ]
-                  }
-                }
-              },
-              "$type": "color",
-              "$value": {
-                "colorSpace": "oklch",
-                "components": [
-                  0.7763,
-                  0,
-                  0
-                ]
-              }
-            }
-          }
-        },
-        "primary": {
-          "kind": "theme",
-          "target": "--foreground",
-          "status": "live"
-        },
-        "secondary": {
-          "kind": "theme",
-          "target": "--muted-foreground",
-          "status": "live"
-        }
-      }
-    },
-    "tokens.touch-target": {
+    "themes.font-mono": {
+      "kind": "tailwind",
+      "target": "--font-mono",
+      "status": "live",
       "members": {
         "default": {
-          "kind": "extension",
-          "target": "--touch-target",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.touch-target",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "44px"
-                }
-              },
-              "$type": "dimension",
-              "$value": {
-                "unit": "px",
-                "value": 44
-              }
-            }
-          }
-        }
-      }
-    },
-    "tokens.transition-duration": {
-      "members": {
-        "overlay": {
-          "kind": "style",
-          "target": "--ui-duration-overlay",
-          "status": "dead",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.transition-duration",
-            "token": {
-              "$type": "duration",
-              "$value": "{tokens.duration.fast}"
-            }
-          }
-        }
-      }
-    },
-    "tokens.transition-easing": {
-      "members": {
-        "enter": {
-          "kind": "style",
-          "target": "--ease-enter",
-          "status": "live",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.transition-easing",
-            "token": {
-              "$type": "cubicBezier",
-              "$value": [
-                0,
-                0,
-                0.2,
-                1
-              ]
-            }
-          }
-        },
-        "exit": {
-          "kind": "style",
-          "target": "--ease-exit",
-          "status": "live",
-          "decision": "style-default",
-          "default": {
-            "from": "foundry/tokens.transition-easing",
-            "token": {
-              "$type": "cubicBezier",
-              "$value": [
-                0.4,
-                0,
-                1,
-                1
-              ]
-            }
-          }
-        }
-      }
-    },
-    "tokens.typeface": {
-      "members": {
-        "body": {
-          "kind": "tailwind",
-          "target": "--font-sans",
-          "status": "live"
-        },
-        "display": {
-          "kind": "extension",
-          "target": "--font-display",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "tailwind-default/tokens.typeface",
-            "token": {
-              "$type": "fontFamily",
-              "$value": "{tokens.typeface.body}"
-            }
-          }
-        },
-        "mono": {
           "kind": "tailwind",
           "target": "--font-mono",
           "status": "live"
         }
       }
     },
-    "tokens.z-index": {
-      "kind": "style",
-      "namespace": "--ui-z-*",
-      "status": "live",
-      "decision": "style-default"
-    },
-    "tokens.container-width": {
+    "themes.font-sans": {
       "kind": "tailwind",
-      "namespace": "--container-*",
+      "target": "--font-sans",
       "status": "live",
-      "slot": "pending: U3b",
-      "defaults": {
-        "3xs": "16rem",
-        "2xs": "18rem",
-        "xs": "20rem",
-        "sm": "24rem",
-        "md": "28rem",
-        "lg": "32rem",
-        "xl": "36rem",
-        "2xl": "42rem",
-        "3xl": "48rem",
-        "4xl": "56rem",
-        "5xl": "64rem",
-        "6xl": "72rem",
-        "7xl": "80rem"
-      }
-    },
-    "tokens.animation": {
-      "kind": "tailwind",
-      "namespace": "--animate-*",
-      "status": "live",
-      "slot": "pending: U3b",
-      "defaults": {
-        "spin": "spin 1s linear infinite",
-        "ping": "ping 1s cubic-bezier(0, 0, 0.2, 1) infinite",
-        "pulse": "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        "bounce": "bounce 1s infinite"
-      },
-      "provided": {
-        "tw-animate-css": [
-          "enter",
-          "exit",
-          "accordion-down",
-          "accordion-up",
-          "caret-blink"
-        ]
-      },
       "members": {
-        "count": {
-          "kind": "extension",
-          "target": "--animate-count",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.animation",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "count 1200ms cubic-bezier(0, 0, 0.2, 1) both"
-                }
-              },
-              "$type": "duration",
-              "$value": "count 1200ms cubic-bezier(0, 0, 0.2, 1) both"
-            }
-          }
-        },
-        "marquee": {
-          "kind": "extension",
-          "target": "--animate-marquee",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.animation",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "marquee 20000ms linear infinite"
-                }
-              },
-              "$type": "duration",
-              "$value": "marquee 20000ms linear infinite"
-            }
-          }
-        },
-        "reveal": {
-          "kind": "extension",
-          "target": "--animate-reveal",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.animation",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "reveal 600ms cubic-bezier(0, 0, 0.2, 1) both"
-                }
-              },
-              "$type": "duration",
-              "$value": "reveal 600ms cubic-bezier(0, 0, 0.2, 1) both"
-            }
-          }
-        },
-        "scroll-reveal": {
-          "kind": "extension",
-          "target": "--animate-scroll-reveal",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.animation",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "reveal 600ms cubic-bezier(0, 0, 0.2, 1) both"
-                }
-              },
-              "$type": "duration",
-              "$value": "reveal 600ms cubic-bezier(0, 0, 0.2, 1) both"
-            }
-          }
-        },
-        "scroll-sticky": {
-          "kind": "extension",
-          "target": "--animate-scroll-sticky",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.animation",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "scroll-sticky 1000ms linear both"
-                }
-              },
-              "$type": "duration",
-              "$value": "scroll-sticky 1000ms linear both"
-            }
-          }
-        },
-        "stagger": {
-          "kind": "extension",
-          "target": "--animate-stagger",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.animation",
-            "token": {
-              "$extensions": {
-                "com.clossys.css": {
-                  "raw": "reveal 600ms cubic-bezier(0, 0, 0.2, 1) both"
-                }
-              },
-              "$type": "duration",
-              "$value": "reveal 600ms cubic-bezier(0, 0, 0.2, 1) both"
-            }
-          }
+        "default": {
+          "kind": "tailwind",
+          "target": "--font-sans",
+          "status": "live"
         }
       }
     },
-    "tokens.gradient": {
+    "themes.font-serif": {
+      "kind": "tailwind",
+      "target": "--font-serif",
+      "status": "live",
       "members": {
-        "border-shine": {
-          "kind": "extension",
-          "target": "--gradient-border-shine",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.gradient",
-            "token": {
-              "$extensions": {
-                "com.clossys.modes": {
-                  "dark": [
-                    {
-                      "color": "{tokens.border-color.strong}",
-                      "position": 0
-                    },
-                    {
-                      "color": "{tokens.border-color.base}",
-                      "position": 1
-                    }
-                  ]
-                }
-              },
-              "$type": "gradient",
-              "$value": [
-                {
-                  "color": "{tokens.border-color.base}",
-                  "position": 0
-                },
-                {
-                  "color": "{tokens.border-color.strong}",
-                  "position": 1
-                }
-              ]
-            }
-          }
+        "default": {
+          "kind": "tailwind",
+          "target": "--font-serif",
+          "status": "live"
+        }
+      }
+    },
+    "themes.foreground": {
+      "kind": "theme",
+      "target": "--foreground",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--foreground",
+          "status": "live"
+        }
+      }
+    },
+    "themes.input": {
+      "kind": "theme",
+      "target": "--input",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--input",
+          "status": "live"
+        }
+      }
+    },
+    "themes.muted": {
+      "kind": "theme",
+      "target": "--muted",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--muted",
+          "status": "live"
+        }
+      }
+    },
+    "themes.muted-foreground": {
+      "kind": "theme",
+      "target": "--muted-foreground",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--muted-foreground",
+          "status": "live"
+        }
+      }
+    },
+    "themes.popover": {
+      "kind": "theme",
+      "target": "--popover",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--popover",
+          "status": "live"
+        }
+      }
+    },
+    "themes.popover-foreground": {
+      "kind": "theme",
+      "target": "--popover-foreground",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--popover-foreground",
+          "status": "live"
+        }
+      }
+    },
+    "themes.primary": {
+      "kind": "theme",
+      "target": "--primary",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--primary",
+          "status": "live"
+        }
+      }
+    },
+    "themes.primary-foreground": {
+      "kind": "theme",
+      "target": "--primary-foreground",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--primary-foreground",
+          "status": "live"
+        }
+      }
+    },
+    "themes.radius": {
+      "kind": "theme",
+      "target": "--radius",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--radius",
+          "status": "live"
+        }
+      }
+    },
+    "themes.ring": {
+      "kind": "theme",
+      "target": "--ring",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--ring",
+          "status": "live"
+        }
+      }
+    },
+    "themes.secondary": {
+      "kind": "theme",
+      "target": "--secondary",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--secondary",
+          "status": "live"
+        }
+      }
+    },
+    "themes.secondary-foreground": {
+      "kind": "theme",
+      "target": "--secondary-foreground",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--secondary-foreground",
+          "status": "live"
+        }
+      }
+    },
+    "themes.shadow": {
+      "kind": "tailwind",
+      "target": "--shadow-*",
+      "status": "live",
+      "members": {
+        "2xs": {
+          "kind": "tailwind",
+          "target": "--shadow-2xs",
+          "status": "live"
         },
-        "glow": {
-          "kind": "extension",
-          "target": "--gradient-glow",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.gradient",
-            "token": {
-              "$extensions": {
-                "com.clossys.modes": {
-                  "dark": [
-                    {
-                      "color": "{tokens.accent-color.default}",
-                      "position": 0
-                    },
-                    {
-                      "color": "{tokens.accent-color.tint}",
-                      "position": 1
-                    }
-                  ]
-                }
-              },
-              "$type": "gradient",
-              "$value": [
-                {
-                  "color": "{tokens.accent-color.tint}",
-                  "position": 0
-                },
-                {
-                  "color": "{tokens.accent-color.default}",
-                  "position": 1
-                }
-              ]
-            }
-          }
+        "xs": {
+          "kind": "tailwind",
+          "target": "--shadow-xs",
+          "status": "live"
         },
-        "media-scrim": {
-          "kind": "extension",
-          "target": "--gradient-media-scrim",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.gradient",
-            "token": {
-              "$extensions": {
-                "com.clossys.modes": {
-                  "dark": [
-                    {
-                      "color": "{tokens.surface-color.glass-inverse}",
-                      "position": 0
-                    },
-                    {
-                      "color": "{tokens.surface-color.inverse}",
-                      "position": 1
-                    }
-                  ]
-                }
-              },
-              "$type": "gradient",
-              "$value": [
-                {
-                  "color": "{tokens.surface-color.glass}",
-                  "position": 0
-                },
-                {
-                  "color": "{tokens.surface-color.inverse}",
-                  "position": 1
-                }
-              ]
-            }
-          }
+        "sm": {
+          "kind": "tailwind",
+          "target": "--shadow-sm",
+          "status": "live"
         },
-        "wash": {
-          "kind": "extension",
-          "target": "--gradient-wash",
-          "status": "dead",
-          "decision": "extension",
-          "default": {
-            "from": "foundry/tokens.gradient",
-            "token": {
-              "$extensions": {
-                "com.clossys.modes": {
-                  "dark": [
-                    {
-                      "color": "{tokens.surface-color.sunken}",
-                      "position": 0
-                    },
-                    {
-                      "color": "{tokens.surface-color.base}",
-                      "position": 1
-                    }
-                  ]
-                }
-              },
-              "$type": "gradient",
-              "$value": [
-                {
-                  "color": "{tokens.surface-color.base}",
-                  "position": 0
-                },
-                {
-                  "color": "{tokens.surface-color.raised}",
-                  "position": 1
-                }
-              ]
-            }
-          }
+        "md": {
+          "kind": "tailwind",
+          "target": "--shadow-md",
+          "status": "live"
+        },
+        "lg": {
+          "kind": "tailwind",
+          "target": "--shadow-lg",
+          "status": "live"
+        },
+        "xl": {
+          "kind": "tailwind",
+          "target": "--shadow-xl",
+          "status": "live"
+        },
+        "2xl": {
+          "kind": "tailwind",
+          "target": "--shadow-2xl",
+          "status": "live"
+        }
+      }
+    },
+    "themes.sidebar": {
+      "kind": "theme",
+      "target": "--sidebar",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--sidebar",
+          "status": "live"
+        }
+      }
+    },
+    "themes.sidebar-accent": {
+      "kind": "theme",
+      "target": "--sidebar-accent",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--sidebar-accent",
+          "status": "live"
+        }
+      }
+    },
+    "themes.sidebar-accent-foreground": {
+      "kind": "theme",
+      "target": "--sidebar-accent-foreground",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--sidebar-accent-foreground",
+          "status": "live"
+        }
+      }
+    },
+    "themes.sidebar-border": {
+      "kind": "theme",
+      "target": "--sidebar-border",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--sidebar-border",
+          "status": "live"
+        }
+      }
+    },
+    "themes.sidebar-foreground": {
+      "kind": "theme",
+      "target": "--sidebar-foreground",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--sidebar-foreground",
+          "status": "live"
+        }
+      }
+    },
+    "themes.sidebar-primary": {
+      "kind": "theme",
+      "target": "--sidebar-primary",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--sidebar-primary",
+          "status": "live"
+        }
+      }
+    },
+    "themes.sidebar-primary-foreground": {
+      "kind": "theme",
+      "target": "--sidebar-primary-foreground",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--sidebar-primary-foreground",
+          "status": "live"
+        }
+      }
+    },
+    "themes.sidebar-ring": {
+      "kind": "theme",
+      "target": "--sidebar-ring",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--sidebar-ring",
+          "status": "live"
+        }
+      }
+    },
+    "themes.spacing": {
+      "kind": "tailwind",
+      "target": "--spacing",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "tailwind",
+          "target": "--spacing",
+          "status": "live"
+        }
+      }
+    },
+    "themes.tracking-tight": {
+      "kind": "tailwind",
+      "target": "--tracking-tight",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "tailwind",
+          "target": "--tracking-tight",
+          "status": "live"
         }
       }
     }
   },
-  "aliases": {
-    "--card-foreground": "tokens.text-color.primary",
-    "--popover-foreground": "tokens.text-color.primary",
-    "--secondary-foreground": "tokens.text-color.primary",
-    "--sidebar-foreground": "tokens.text-color.primary",
-    "--sidebar-accent": "tokens.surface-color.selected",
-    "--sidebar-accent-foreground": "tokens.text-color.primary",
-    "--sidebar-border": "tokens.border-color.base",
-    "--sidebar-ring": "tokens.focus-color.default",
-    "--sidebar-primary": "tokens.action-color.default",
-    "--sidebar-primary-foreground": "tokens.text-color.on-action",
-    "--radius": "tokens.surface-radius.default"
-  }
+  "aliases": {}
 }

@@ -1,5 +1,3 @@
-import { TOKENS } from "../tokens/tokens.js";
-import { CONTRAST_PAIRS } from "../tokens/contrast-pairs.js";
 import { resolveTokenValue } from "../tokens/internal/resolve-token-value.js";
 import type { TokenDefinition } from "../tokens/tokens.js";
 import { contrastRatio } from "../tokens/color.js";
@@ -7,6 +5,7 @@ import { parseFill } from "./cell.js";
 import { idFinding, isValidId, LAYERS } from "./ids.js";
 import { aliasOf, assetReferences, compare, flatten, leafOf, malformed, metaOf, modeValue, references, relativeOf, unsafeText } from "./model.js";
 import { gradientColorAlias, gradientStops } from "../tokens/expressive.js";
+import { THEME_OUTPUTS, THEME_OUTPUT_BY_PROPERTY } from "./emit.js";
 import { resolveForCheck, type EngineInput } from "./resolve.js";
 import { createDerivationInputsHasher, generateSelection, originOf, tokenContent } from "./library.js";
 import { sha256 } from "./digest.js";
@@ -18,6 +17,12 @@ import { checkIdentityDerivationsWithContext } from "../catalog-assets/identity.
 import type { CheckResult } from "./api.js";
 import type { CheckCode, DtcgToken, FillDoc, Finding, Resolved, Slot } from "./types.js";
 
+/** WCAG 1.4.3 pairs for the shadcn theme: each foreground variable on the ground it is designed for. */
+const THEME_CONTRAST_PAIRS: readonly { foreground: string; background: string; minimumRatio: number; compositeOver?: string }[] = [
+  ["--foreground", "--background"], ["--muted-foreground", "--background"], ["--card-foreground", "--card"], ["--popover-foreground", "--popover"],
+  ["--primary-foreground", "--primary"], ["--secondary-foreground", "--secondary"], ["--accent-foreground", "--accent"],
+  ["--sidebar-foreground", "--sidebar"], ["--sidebar-primary-foreground", "--sidebar-primary"], ["--sidebar-accent-foreground", "--sidebar-accent"],
+].map(([foreground, background]) => ({ foreground: foreground!, background: background!, minimumRatio: 4.5 }));
 const LICENSES = new Set(["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "OFL-1.1", "CC0-1.0"]);
 export function check(input: EngineInput & { resolved?: Resolved; fileExists?: (path: string) => boolean; strategy?: SelectionStrategyReader }): CheckResult {
   const { resolved: fresh, chosen, fills, flattened } = resolveForCheck(input);
@@ -53,7 +58,7 @@ export function check(input: EngineInput & { resolved?: Resolved; fileExists?: (
   const slots = new Map(input.catalog.slots.map(slot => [slot.id, slot]));
   const sources = new Map([input.library.source].map(source => [source.id, source]));
   const clauses = new Set(input.catalog.standards.flatMap(standard => standard.clauses.map(clause => `${standard.id}#${clause.id}`)));
-  const bound = new Map<string, string[]>(); const shipped = new Map(Object.values(TOKENS).map(token => [token.property, token]));
+  const bound = new Map<string, string[]>(); const shipped = THEME_OUTPUT_BY_PROPERTY;
   const rank = (slot: Slot): string => slot.contract.kind === "token" ? slot.contract.tier === "scale" ? "0.0" : "0.1" : String(LAYERS.indexOf(slot.layer));
   const status = (subject: string, data: { status: string; signoff?: { by: string; date: string; ref: string } }): void => {
     if (data.status === "stable" && (!data.signoff || data.signoff.by !== "owner" || !/^\d{4}-\d{2}-\d{2}$/.test(data.signoff.date) || typeof data.signoff.ref !== "string" || !data.signoff.ref.trim())) add("C8", "status", subject, { message: `status: ${subject} is stable without an owner sign-off`, copy: { id: "st.q61fvrqvf9", values: { item: (subject ?? "") } } });
@@ -81,7 +86,7 @@ export function check(input: EngineInput & { resolved?: Resolved; fileExists?: (
   for (const [css, members] of bound) if (members.length > 1) {
     const ordered = members.sort(compare); add("C4", "binding", css, { message: `binding: ${css} is bound to ${ordered[0]} and ${ordered[1]}`, copy: { id: "st.rqeyv00dt6", values: { property: (css ?? ""), first: (ordered[0] ?? ""), second: (ordered[1] ?? "") } } });
   }
-  for (const token of Object.values(TOKENS)) if (!bound.has(token.property)) add("C4", "binding", token.property, { message: `binding: shipped token ${token.property} is not bound`, copy: { id: "st.2vpfv868dy", values: { property: (token.property ?? "") } } });
+  for (const token of THEME_OUTPUTS) if (!bound.has(token.property)) add("C4", "binding", token.property, { message: `binding: shipped token ${token.property} is not bound`, copy: { id: "st.2vpfv868dy", values: { property: (token.property ?? "") } } });
   const grouped = new Map<string, number>();
   for (const fill of fills) {
     const meta = metaOf(fill); const slot = slots.get(meta.slot); const source = sources.get(meta.source); const tokens = tokensOf(fill);
@@ -112,7 +117,7 @@ export function check(input: EngineInput & { resolved?: Resolved; fileExists?: (
     if (source?.kind === "external" && meta.license !== source.license) add("C6", "licence", meta.id, { message: `licence: ${meta.id} licence ${meta.license} differs from source ${source.id} licence ${source.license}`, copy: { id: "st.egfd1mhzhm", values: { item: (meta.id ?? ""), source: (source.id ?? "") } } });
     const originKinds = [...new Set(Object.values(tokens).map(originOf).filter(Boolean).map(origin => origin!.kind))].sort(compare);
     if (stableStringify(meta.originKinds ?? []) !== stableStringify(originKinds)) add("C10", "provenance", meta.id, { message: `provenance: ${meta.id} originKinds does not summarize its members`, copy: { id: "st.x1we8bkk3z", values: { item: (meta.id ?? "") } } });
-    if (slot.contract.kind === "asset" && (!meta.reads || !Array.isArray(meta.reads.tokens) || !Array.isArray(meta.reads.assets))) add("C2", "reads", meta.id, { message: `reads: ${meta.id} must declare token and asset leaf reads`, copy: { id: "st.w4szzgnvem", values: { item: (meta.id ?? "") } } });
+    if (slot.contract.kind === "asset" && (!meta.reads || !Array.isArray(meta.reads.themes) || !Array.isArray(meta.reads.assets))) add("C2", "reads", meta.id, { message: `reads: ${meta.id} must declare token and asset leaf reads`, copy: { id: "st.w4szzgnvem", values: { item: (meta.id ?? "") } } });
     for (const [member, token] of Object.entries(tokens)) {
       const relative = relativeOf(member);
       const origin = originOf(token);
@@ -185,7 +190,7 @@ export function check(input: EngineInput & { resolved?: Resolved; fileExists?: (
       const font = token.$extensions?.["com.clossys.font"];
       if (font?.kind === "fontsource" && !LICENSES.has(font.license)) add("C6", "licence", meta.id, { message: `licence: ${meta.id} licence ${font.license} is not on the allow list`, copy: { id: "st.4rycwd4m8p", values: { item: (meta.id ?? ""), license: (font.license ?? "") } } });
       if (slot.contract.kind === "asset") for (const ref of readsOf(token)) {
-        const layer = leafOf(ref).split(".")[0]; const declared = layer === "tokens" ? meta.reads?.tokens : meta.reads?.assets;
+        const layer = leafOf(ref).split(".")[0]; const declared = layer === "themes" ? meta.reads?.themes : meta.reads?.assets;
         if (!declared?.includes(leafOf(ref))) add("C2", "reads", member, { message: `reads: ${member} in ${meta.id} reads undeclared leaf ${leafOf(ref)}`, copy: { id: "st.gk574ngpg2", values: { option: (member ?? ""), target: (leafOf(ref) ?? "") } } });
       }
     }
@@ -208,7 +213,7 @@ export function check(input: EngineInput & { resolved?: Resolved; fileExists?: (
     const composedReads = origin?.kind === "composed" && Array.isArray(origin.reads) ? origin.reads.filter((read): read is string => typeof read === "string") : [];
     let preciseLeaves = preciseLeavesByFill.get(entry.fill);
     if (!preciseLeaves) { preciseLeaves = new Set(Object.values(tokensOf(entry.fill)).flatMap(token => readsOf(token).map(leafOf))); preciseLeavesByFill.set(entry.fill, preciseLeaves); }
-    for (const leaf of [...(meta.reads?.tokens ?? []), ...(meta.reads?.assets ?? []), ...composedReads]) {
+    for (const leaf of [...(meta.reads?.themes ?? []), ...(meta.reads?.assets ?? []), ...composedReads]) {
       const targetSlot = slots.get(leaf);
       if (!targetSlot || !membersByLeaf.has(leaf)) add("C2", "reads", member, { message: `reads: ${member} in ${meta.id} reads ${leaf}, which does not resolve in profile ${input.library.source.id}`, copy: { id: "st.wv477682as", values: { option: (member ?? ""), target: (leaf ?? ""), source: (input.library.source.id ?? "") } } });
       else {
@@ -249,11 +254,11 @@ export function check(input: EngineInput & { resolved?: Resolved; fileExists?: (
   const byCss = new Map<string, import("./types.js").ResolvedMember>(Object.values(fresh.members).filter(m => m.emit).map(m => [m.emit!, m]));
   for (const [id, member] of Object.entries(fresh.members)) if (member.emit && shipped.get(member.emit)?.brandable === false && input.library.baseline?.[member.emit] && input.library.baseline[member.emit]!.light !== member.css.light) add("C3", "standards", id, { message: `standards: ${id} overrides fixed Foundry scale ${member.emit}; emitted to scales.css`, copy: { id: "st.vp83q9wnjs", values: { item: (id ?? ""), property: (member.emit ?? "") } } }, "notice");
   const contrastRegistries = new Map<string, Record<string, TokenDefinition>>();
-  for (const pair of CONTRAST_PAIRS) for (const mode of ["light", "dark"] as const) {
+  for (const pair of THEME_CONTRAST_PAIRS) for (const mode of ["light", "dark"] as const) {
     const fg = byCss.get(pair.foreground); const bg = byCss.get(pair.background);
     if (!fg || !bg) continue;
     let registry = contrastRegistries.get(mode);
-    if (!registry) { registry = Object.fromEntries([...byCss].map(([css, member]) => [css, { ...(TOKENS[css] ?? { property: css, family: "surface", brandable: false, themeDependent: false }), value: member.css[mode] ?? member.css.light } as TokenDefinition])); contrastRegistries.set(mode, registry); }
+    if (!registry) { registry = Object.fromEntries([...byCss].map(([css, member]) => [css, { property: css, family: "surface", brandable: shipped.get(css)?.brandable ?? false, themeDependent: shipped.get(css)?.themeDependent ?? false, value: member.css[mode] ?? member.css.light } as TokenDefinition])); contrastRegistries.set(mode, registry); }
     const text = (css: string): string | undefined => resolveTokenValue(css, registry).value;
     try {
       const composite = pair.compositeOver ? pair.compositeOver.startsWith("--") ? text(pair.compositeOver) : pair.compositeOver : undefined;

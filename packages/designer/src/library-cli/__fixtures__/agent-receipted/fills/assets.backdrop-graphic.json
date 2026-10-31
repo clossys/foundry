@@ -1,0 +1,131 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "example/assets.backdrop-graphic",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "BACKDROP_GRAPHIC_RECIPES",
+        "file": "src/catalog-assets/backdrop-graphic.ts",
+        "sha256": "0bc3acf1eabbf2fd1373f0a619de1abe77434f1637a4329006a123529440445b"
+      },
+      "reads": {
+        "assets": [],
+        "themes": []
+      },
+      "relation": "same-contract",
+      "slot": "assets.backdrop-graphic",
+      "source": "example",
+      "sourceAddress": "catalog-assets/backdrop-graphic.ts",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "assets": {
+    "backdrop-graphic": {
+      "dot": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/assets.backdrop-graphic",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "assets.backdrop-graphic.dot",
+            "pin": {
+              "export": "BACKDROP_GRAPHIC_RECIPES",
+              "file": "src/catalog-assets/backdrop-graphic.ts",
+              "sha256": "0bc3acf1eabbf2fd1373f0a619de1abe77434f1637a4329006a123529440445b"
+            },
+            "sha256": "809dacfe2914df455abd6c1abf977ab517125ed2bfac575e9fed0e717582d7a0",
+            "source": "foundry"
+          }
+        },
+        "$type": "rules",
+        "$value": {
+          "accent": "--color-accent",
+          "pattern": "dot",
+          "surface": "--color-surface-base"
+        }
+      },
+      "grid": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/assets.backdrop-graphic",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "assets.backdrop-graphic.grid",
+            "pin": {
+              "export": "BACKDROP_GRAPHIC_RECIPES",
+              "file": "src/catalog-assets/backdrop-graphic.ts",
+              "sha256": "0bc3acf1eabbf2fd1373f0a619de1abe77434f1637a4329006a123529440445b"
+            },
+            "sha256": "176e28cf72d83ddb75d92dc9e0f5777b495183a812801a99392bbcc8aab4adbb",
+            "source": "foundry"
+          }
+        },
+        "$type": "rules",
+        "$value": {
+          "accent": "--color-accent",
+          "pattern": "grid",
+          "surface": "--color-surface-base"
+        }
+      },
+      "mesh": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/assets.backdrop-graphic",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "assets.backdrop-graphic.mesh",
+            "pin": {
+              "export": "BACKDROP_GRAPHIC_RECIPES",
+              "file": "src/catalog-assets/backdrop-graphic.ts",
+              "sha256": "0bc3acf1eabbf2fd1373f0a619de1abe77434f1637a4329006a123529440445b"
+            },
+            "sha256": "6af711656b80e1488665f6539779cd8df5de174ff07beaf031c4d7019c932dcd",
+            "source": "foundry"
+          }
+        },
+        "$type": "rules",
+        "$value": {
+          "accent": "--color-accent",
+          "pattern": "mesh",
+          "surface": "--color-surface-base"
+        }
+      },
+      "noise": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/assets.backdrop-graphic",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "assets.backdrop-graphic.noise",
+            "pin": {
+              "export": "BACKDROP_GRAPHIC_RECIPES",
+              "file": "src/catalog-assets/backdrop-graphic.ts",
+              "sha256": "0bc3acf1eabbf2fd1373f0a619de1abe77434f1637a4329006a123529440445b"
+            },
+            "sha256": "d2b67bd2f4c78d1cd15ba78af18e90c79d0cf78e8451262dc38c886811ac1651",
+            "source": "foundry"
+          }
+        },
+        "$type": "rules",
+        "$value": {
+          "accent": "--color-accent",
+          "pattern": "noise",
+          "surface": "--color-surface-base"
+        }
+      }
+    }
+  }
+}

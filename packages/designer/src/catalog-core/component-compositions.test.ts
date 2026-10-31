@@ -45,7 +45,7 @@ describe("production date-picker composition", () => {
     expect(rules[0]).toMatchObject({ id: "compose:date-picker@1", kind: "compose", slot: "components.date-picker", inputs: direct });
     expect(rules[0]!.template.impl).toEqual({ kind: "source", entry: "components/date-picker/date-picker.tsx", export: "DatePicker" });
     expect(rules[0]!.template).not.toHaveProperty("origin");
-    expect(rules[0]!.template.reads).toEqual({ tokens: [], assets: ["assets.icon-date"], components: direct });
+    expect(rules[0]!.template.reads).toEqual({ themes: [], assets: ["assets.icon-date"], components: direct });
     expect(rules[0]!.files.map(file => file.path).sort()).toEqual(["components/date-picker/date-picker.tsx", "notices/date-picker.md"]);
     rules[0]!.template.props = [];
     expect(loadComponentCompositionRules()[0]!.template.props).toContain("triggerLabel");
@@ -108,16 +108,16 @@ describe("production date-picker composition", () => {
   it("delegates focus only to an observed fresh direct child's matching member", () => {
     const { catalog, library } = productionCompositionFixture();
     const installed = applyComponentLibraryChange(catalog, library, { baseHash: componentLibraryHash(library), changes: [{ op: "compose", slot: "components.date-picker", rule: "compose:date-picker@1" }] });
-    const tokens = { "tokens.focus-ring.default": { property: "--ring", light: "black" } };
+    const tokens = { "themes.ring.default": { property: "--ring", light: "black" } };
     const measurement = { state: "default", mode: "light" as const, ground: "base", roles: ["group"], keyboard: ["ArrowUp", "ArrowDown", "Escape"], axeViolations: [], focusTokens: [], focusOwner: "components.date-field", forcedColors: { foreground: "CanvasText", background: "Canvas" }, target: { width: 24, height: 24 }, contrast: [] };
     const files = loadComponentCompositionRules()[0]!.files;
     const observation = { files, sourceHash: componentSourceHash(files), tokensHash: componentTokensHash(tokens), root: "rac:DatePicker" as const, forwardsRef: true, forwardsRenderProps: true, rac: { version: "1.21.1", instance: "test", dependency: "source" as const }, calls: [{ target: "components.date-field", contextRoot: "rac:DateField", props: [], members: [] }], measurements: [], memberObservations: Object.fromEntries(["single", "range"].map(selection => [`selection.${selection}`, { root: selection === "single" ? "rac:DatePicker" as const : "rac:DateRangePicker" as const, forwardsRef: true, forwardsRenderProps: true, calls: [{ target: "components.date-field", contextRoot: "rac:DateField", props: [], members: [] }], measurements: [measurement, { ...measurement, mode: "dark" as const }] }])) };
     const childFiles = [{ path: "DateField.tsx", content: 'import {DateField} from "react-aria-components";' }];
-    const child = { ...observation, files: childFiles, sourceHash: componentSourceHash(childFiles), root: "rac:DateField" as const, memberObservations: undefined, measurements: [measurement, { ...measurement, mode: "dark" as const }].map(value => ({ ...value, focusOwner: undefined, focusTokens: ["tokens.focus-ring.default"] })) };
+    const child = { ...observation, files: childFiles, sourceHash: componentSourceHash(childFiles), root: "rac:DateField" as const, memberObservations: undefined, measurements: [measurement, { ...measurement, mode: "dark" as const }].map(value => ({ ...value, focusOwner: undefined, focusTokens: ["themes.ring.default"] })) };
     const input = { slots: catalog.slots, fills: installed.fills.map(componentOf), observations: { "components.date-picker": observation, "components.date-field": child }, tokens, assets: ["assets.icon-date"], installedRac: { version: "1.21.1", instance: "test" }, compositions: { rules: catalog.rules!, library: installed } };
-    const field = input.fills.find(fill => fill.slot === "components.date-field")!; field.reads.tokens = [...field.reads.tokens, "tokens.focus-ring"];
+    const field = input.fills.find(fill => fill.slot === "components.date-field")!; field.reads.themes = [...field.reads.themes, "themes.ring"];
     // Keep the current consumer descriptor in the exact provenance domain.
-    componentOf(installed.fills.find(doc => componentOf(doc).slot === field.slot)!).reads.tokens = field.reads.tokens;
+    componentOf(installed.fills.find(doc => componentOf(doc).slot === field.slot)!).reads.themes = field.reads.themes;
     const picker = input.fills.find(fill => fill.slot === "components.date-picker")!;
     (picker as typeof picker & { origin: { inputsHash: string } }).origin.inputsHash = componentInputsHash(installed, direct);
     const focusErrors = () => checkComponentProfile(input).findings.filter(f => f.subject === "components.date-picker" && /Focus-visible/.test(f.message));

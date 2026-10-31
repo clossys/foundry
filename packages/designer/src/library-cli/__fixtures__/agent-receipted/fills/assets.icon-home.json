@@ -19,7 +19,7 @@
       },
       "reads": {
         "assets": [],
-        "tokens": []
+        "themes": []
       },
       "relation": "same-contract",
       "slot": "assets.icon-home",

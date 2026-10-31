@@ -187,6 +187,7 @@ function datasetStrings(root: unknown): string[] {
 
 describe("one dataset feeds every layer", () => {
   it("carries all five layers in the one deterministic dataset", () => {
+    // The dataset still keys the Themes layer's sample as `tokens` (specimen-dataset.ts).
     for (const layer of ["tokens", "assets", "sections", "frames"] as const) expect(Object.keys(specimenDataset), layer).toContain(layer);
     // Components are fed from the dataset's per-component records (component-specimen-dataset.test.tsx).
     expect(specimenDataset.table.rows.length).toBeGreaterThan(0);
@@ -234,7 +235,7 @@ function overrideFaults(root: Element, label: string): string[] {
 }
 
 describe("specimen role and reason-coded overrides", () => {
-  it("stamps every token specimen with data-layer=\"tokens\" and applies the member only as a reason-coded override", () => {
+  it("stamps every theme specimen with data-layer=\"themes\" and applies the member only as a reason-coded override", () => {
     const faults: string[] = [], kinds = new Set<string>(), cells: ReactElement[] = [];
     for (const slotId of Object.keys(TOKEN_LEAF_SPECIMENS)) for (const { id, member } of membersOf(slotId)) {
       const kind = tokenLeafSpecimenKind(member);
@@ -246,25 +247,25 @@ describe("specimen role and reason-coded overrides", () => {
     const { container, unmount } = render(createElement("div", null, cells));
     for (const cell of container.querySelectorAll<HTMLElement>("[data-cell]")) {
       const id = cell.dataset.cell!, root = cell.firstElementChild!;
-      if (root.getAttribute("data-layer") !== "tokens") faults.push(`${id}: root data-layer ${root.getAttribute("data-layer")}`);
+      if (root.getAttribute("data-layer") !== "themes") faults.push(`${id}: root data-layer ${root.getAttribute("data-layer")}`);
       if (root.getAttribute("data-override-reason") !== "token-under-review") faults.push(`${id}: the member value is not a token-under-review override`);
       faults.push(...overrideFaults(root, id));
     }
     unmount();
-    expect(cells.length).toBeGreaterThan(20);
+    expect(cells.length).toBeGreaterThan(10);
     expect(faults).toEqual([]);
-    expect([...kinds].sort()).toEqual(["blur", "density", "focus", "gradient", "icon", "layer-fan", "motion", "opacity", "radius", "ruler", "shadow", "text-metric"]);
+    expect([...kinds].sort()).toEqual(["motion", "radius", "ruler", "shadow", "text-metric"]);
   }, 60_000);
 
   it("draws token sample text from the dataset when the host gives none", () => {
-    const [entry] = membersOf("tokens.line-height");
+    const [entry] = membersOf("themes.tracking-tight");
     const { container } = render(createElement(TokenLeafSpecimen, { id: entry!.id, member: entry!.member }));
     expect(container.textContent).toContain(specimenDataset.tokens.sampleText);
   });
 
   it("draws the dataset sample in every Studio text-metric and focus cell, never the host's label copy", () => {
     const leaves = Object.entries(TOKEN_LEAF_SPECIMENS).filter(([, kind]) => kind === "text-metric" || kind === "focus").map(([slot]) => slot);
-    expect(leaves).toHaveLength(12);
+    expect(leaves).toHaveLength(5);
     const sample = specimenDataset.tokens.sampleText, firstWord = sample.trim().split(/\s+/)[0]!;
     const faults: string[] = [];
     let drawn = 0;
@@ -327,7 +328,7 @@ describe("every leaf on all five layers renders its registered fill from the dat
 
     // Tokens and Assets: the Studio's own cell for the selected fill of a library that fills every leaf.
     const library = completedCatalogLibrary(catalog, { id: "edge-consumer", kind: "consumer", author: "consumer", license: "UNLICENSED" }, "2026-10-25");
-    for (const layer of ["tokens", "assets"] as const) {
+    for (const layer of ["themes", "assets"] as const) {
       const slots = slotsOf(layer);
       totals[layer] = slots.length;
       for (const slot of slots) {
@@ -370,7 +371,7 @@ describe("every leaf on all five layers renders its registered fill from the dat
         if (!sample || !drawsDataset({ props: sample.props, children: sample.children })) gap("components", slot, `source sample ${source.impl.entry} draws no dataset content`);
         continue;
       }
-      const component = { slot, originKind: "adopted", origin: { kind: "adopted", source: "foundry" }, impl: fill.impl, propMap: fill.propMap, reads: { tokens: {}, assets: [], components: [] }, descriptor: fill } as unknown as ResolvedComponent;
+      const component = { slot, originKind: "adopted", origin: { kind: "adopted", source: "foundry" }, impl: fill.impl, propMap: fill.propMap, reads: { themes: {}, assets: [], components: [] }, descriptor: fill } as unknown as ResolvedComponent;
       const profile = { selectionHash: `selection-${slot}`, components: { components: { [slot]: component } } } as unknown as CompositeResolved;
       const drawn = specimens.preview(slot, profile);
       if (!drawn) { gap("components", slot, "specimen host refused"); continue; }
@@ -397,7 +398,7 @@ describe("every leaf on all five layers renders its registered fill from the dat
     console.info(`specimen leaves filled per layer: ${JSON.stringify(counts)}`);
     const runtimeOwned = Object.keys(gaps.frames ?? {}).filter(slot => FRAMES_RUNTIME_OWNED.includes(slot));
     for (const slot of runtimeOwned) delete gaps.frames![slot];
-    expect(totals).toEqual({ tokens: 55, assets: 48, components: 59, sections: 45, frames: 9 });
+    expect(totals).toEqual({ themes: 42, assets: 48, components: 59, sections: 45, frames: 9 });
     expect(Object.fromEntries(Object.entries(gaps).filter(([, rows]) => Object.keys(rows).length > 0))).toEqual({});
     expect(runtimeOwned).toEqual(FRAMES_RUNTIME_OWNED);
   }, 240_000);

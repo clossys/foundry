@@ -66,7 +66,7 @@
         },
         {
           "path": "components/tooltip/tooltip.tsx",
-          "sha256": "b2d158774b4d78c462eeee316120ef9aeac6b9dd094c48f8c73d2466f9f5e958"
+          "sha256": "bb30c14808bcfb9e5473af12fde222c6f01e0a0df793fa4971e2df4d1c742fb9"
         },
         {
           "path": "notices/THIRD-PARTY.md",
@@ -116,22 +116,11 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.behavior-timing.tooltip-close",
-          "tokens.behavior-timing.tooltip-delay",
-          "tokens.border-width.rule",
-          "tokens.control-radius.default",
-          "tokens.duration.fast",
-          "tokens.font-size.xs",
-          "tokens.radius.subtle",
-          "tokens.shift-distance.default",
-          "tokens.spacing.md",
-          "tokens.spacing.sm",
-          "tokens.surface-color.base",
-          "tokens.text-color.primary",
-          "tokens.transition-easing.enter",
-          "tokens.transition-easing.exit",
-          "tokens.z-index.modal"
+        "themes": [
+          "themes.background.default",
+          "themes.foreground.default",
+          "themes.radius.default",
+          "themes.spacing.default"
         ]
       },
       "root": "rac:Tooltip",

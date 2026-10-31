@@ -1,3 +1,4 @@
+import { TAILWIND_BREAKPOINT_NAMES } from "@clossys/designer/catalog";
 import { FORMAT_IDS, FORMAT_DELIVERY_IDS } from "./contract.js";
 import type { FormatBindingFinding, FormatFinding, FormatIA, FormatLeaf } from "./contract.js";
 import { formatLeaves } from "./slots/formats.js";
@@ -21,7 +22,7 @@ const names = (values: readonly string[]) => Array.isArray(values) && unique(val
 const text = (value: unknown): value is string => typeof value === "string" && value.length > 0 && value.trim() === value;
 const positive = (value: number) => Number.isFinite(value) && value > 0;
 const integer = (value: number) => Number.isSafeInteger(value) && value > 0;
-const BREAKPOINTS = ["mobile", "mobile-lg", "tablet", "tablet-lg", "desktop", "wide"].map(id => `tokens.breakpoint.${id}`);
+const BREAKPOINTS: readonly string[] = TAILWIND_BREAKPOINT_NAMES;
 const MEDIA = ["screen", "email", "image", "document", "video", "deck"];
 
 function data(value: unknown, seen = new Set<object>()): boolean {

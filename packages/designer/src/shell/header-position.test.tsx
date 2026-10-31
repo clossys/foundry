@@ -21,11 +21,12 @@ describe("header position members", () => {
     }
   });
 
-  it.each(["frames.app-header", "frames.site-header"] as const)("%s reads the sticky layer only when sticky", frame => {
+  it.each(["frames.app-header", "frames.site-header"] as const)("%s resolves sticky and static without a themes read (z-index is not a themes leaf)", frame => {
     const sticky = resolveFrameHeaderOptions(frame, { position: "sticky", surface: "solid" });
     const flow = resolveFrameHeaderOptions(frame, { position: "static", surface: "solid" });
     expect(sticky.position).toBe("sticky");
-    expect(sticky.reads).toEqual(["tokens.z-index.sticky"]);
+    expect(sticky.reads).toEqual([]);
+    expect(sticky.members).toEqual({ position: "sticky", surface: "solid" });
     expect(flow.position).toBe("static");
     expect(flow.reads).toEqual([]);
   });

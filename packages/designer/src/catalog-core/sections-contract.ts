@@ -30,7 +30,7 @@ export interface SectionContract {
   /** Registered sections composed by this implementation, separate from shared parts. */
   composes?: readonly `sections.${string}`[];
   parts: readonly ("sections.band" | "sections.section-header" | "sections.pagination" | SpecimenRenderPartName | StudioSpecimenHostPartId)[];
-  allowedReads: { tokens: readonly `tokens.${string}`[]; assets: readonly `assets.${string}`[] };
+  allowedReads: { themes: readonly `themes.${string}`[]; assets: readonly `assets.${string}`[] };
   data: "host-injected";
   states?: readonly ("loading" | "empty" | "error")[];
   surface: "site" | "app" | "both";

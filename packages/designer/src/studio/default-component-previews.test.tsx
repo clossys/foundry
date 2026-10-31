@@ -61,26 +61,23 @@ it("refuses a tampered origin checksum or a rehashed descriptor edit", () => {
   expect(defaultComponentPreviews.preview(changed.slot, edited)).toBeUndefined();
 });
 
-it("accepts additional open-scale members while refusing changed registered CSS bindings", () => {
-  const extended = profile(), changed = profile();
-  const button = extended.components.components["components.button"]!;
-  button.reads.tokens = { ...button.reads.tokens, "tokens.easing.consumer": "--ease-consumer" };
-  extended.values.members["tokens.easing.consumer"] = { slot: "tokens.easing" } as typeof extended.values.members[string];
-  expect(defaultComponentPreviews.preview(button.slot, extended)).toBeDefined();
+it("refuses changed registered CSS bindings", () => {
+  // Every themes leaf is closed, so only the registered binding change is exercised here (extensions: next test).
+  const changed = profile();
   const edited = changed.components.components["components.button"]!;
-  edited.reads.tokens = { ...edited.reads.tokens, "tokens.easing.default": "--ease-consumer" };
+  edited.reads.themes = { ...edited.reads.themes, "themes.primary.default": "--color-consumer" };
   expect(defaultComponentPreviews.preview(edited.slot, changed)).toBeUndefined();
 });
 
 it("refuses missing registered bindings, undeclared reads and closed-scale extensions", () => {
-  for (const member of ["tokens.not-declared.consumer", "tokens.action-color.consumer", "tokens.chart-color.axis"]) {
+  for (const member of ["themes.not-declared.consumer", "themes.primary.default", "themes.primary.consumer"]) {
     const selected = profile(), button = selected.components.components["components.button"]!;
-    button.reads.tokens = { ...button.reads.tokens, [member]: member === "tokens.chart-color.axis" ? "--color-chart-axis" : "--color-consumer" };
+    button.reads.themes = { ...button.reads.themes, [member]: member === "themes.primary.consumer" ? "--color-accent" : "--color-consumer" };
     expect(defaultComponentPreviews.preview(button.slot, selected)).toBeUndefined();
   }
   const selected = profile(), button = selected.components.components["components.button"]!;
-  const { "tokens.easing.default": _removed, ...tokens } = button.reads.tokens;
-  button.reads.tokens = tokens;
+  const { "themes.primary.default": _removed, ...themes } = button.reads.themes;
+  button.reads.themes = themes;
   expect(defaultComponentPreviews.preview(button.slot, selected)).toBeUndefined();
 });
 

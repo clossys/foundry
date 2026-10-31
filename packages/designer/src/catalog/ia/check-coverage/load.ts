@@ -16,7 +16,7 @@ const object = (value: unknown): value is Record<string, unknown> => value !== n
 const records = (value: unknown): Record<string, unknown>[] => Array.isArray(value) ? value.filter(object) : [];
 const strings = (value: unknown): string[] => Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 const read = (path: string): unknown => JSON.parse(readFileSync(path, "utf8"));
-const leafOf = (id: string): string => /^(tokens|assets|components|sections|frames)\./.test(id) ? id.split(".").slice(0, 2).join(".") : id;
+const leafOf = (id: string): string => /^(themes|assets|components|sections|frames)\./.test(id) ? id.split(".").slice(0, 2).join(".") : id;
 function jsonFiles(root: string): string[] {
   if (!existsSync(root)) return [];
   return readdirSync(root, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name)).flatMap(entry =>
@@ -68,7 +68,7 @@ export function loadCoverageInput(options: LoadOptions = {}): CoverageInput {
     const fill: Fill = { id: meta.id, leaf: canonical(meta.slot), hash: `sha256:${createHash("sha256").update(bytes).digest("hex")}` };
     if (object(meta.signoff) && typeof meta.signoff.by === "string" && typeof meta.signoff.date === "string" && typeof meta.signoff.ref === "string") fill.signoff = { by: meta.signoff.by, date: meta.signoff.date, ref: meta.signoff.ref };
     fills.push(fill);
-    if (object(value) && object(value.tokens)) for (const token of Object.values(flatten(value as unknown as FillDoc))) for (const reference of references(token)) {
+    if (object(value) && object(value.themes)) for (const token of Object.values(flatten(value as unknown as FillDoc))) for (const reference of references(token)) {
       const target = canonical(reference);
       // A member alias within a leaf is not a leaf-level consumption cycle.
       if (target !== fill.leaf) add(fill.leaf, target, "fill-token-reference");

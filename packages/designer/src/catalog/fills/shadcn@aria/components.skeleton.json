@@ -103,9 +103,9 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.control-radius.default",
-          "tokens.surface-color.sunken"
+        "themes": [
+          "themes.muted.default",
+          "themes.radius.default"
         ]
       },
       "root": "presentational",

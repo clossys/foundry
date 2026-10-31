@@ -26,8 +26,8 @@ registerHooks({
 });
 const { buildSurfaceConsumption } = await import(pathToFileURL(resolve(src, "catalog-core/surface-consumption.ts")).href);
 const { stableStringify } = await import(pathToFileURL(resolve(src, "catalog-core/stable.ts")).href);
-const inventory = Object.fromEntries(["tokens", "assets", "components", "sections", "frames"].map(layer => [layer, json(`src/catalog/slots/${layer}.json`)]));
-for (const layer of ["tokens", "assets", "components"]) assert.deepEqual(inventory[layer].map(row => row.id).sort(), [...json(`src/catalog/ia/${layer}.leaf-freeze.json`).leafIds].sort(), `${layer} signed leaf inventory changed`);
+const inventory = Object.fromEntries(["themes", "assets", "components", "sections", "frames"].map(layer => [layer, json(`src/catalog/slots/${layer}.json`)]));
+for (const layer of ["themes", "assets", "components"]) assert.deepEqual(inventory[layer].map(row => row.id).sort(), [...json(`src/catalog/ia/${layer}.leaf-freeze.json`).leafIds].sort(), `${layer} signed leaf inventory changed`);
 const leaves = nodes => nodes.flatMap(node => node.leaves ?? leaves(node.children));
 for (const layer of ["sections", "frames"]) assert.deepEqual(inventory[layer].map(row => row.id).sort(), leaves(json(`src/catalog/ia/${layer}.json`).nodes).sort(), `${layer} IA differs from slots`);
 const docs = readdirSync(resolve(src, "catalog/fills/foundry")).filter(file => /^(?:components|sections|frames)\.(?!coverage\.)[^/]+\.json$/.test(file)).sort().map(file => json(`src/catalog/fills/foundry/${file}`));

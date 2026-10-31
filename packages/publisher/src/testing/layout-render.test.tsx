@@ -61,7 +61,7 @@ function fixture(leafId: keyof typeof names = "layouts.split", configId = "split
     f.put(section, "default", { headings: slot.id === "lead" ? [1] : [2], bandGround: "base" });
   }
   f.registries.tokens = [
-    ...["md", "lg", "xl"].map(member => ({ id: `tokens.spacing.${member}` as const, property: `--spacing-${member}` })),
+    ...["md", "lg", "xl"].map(member => ({ id: `themes.spacing.${member}` as const, property: `--spacing-${member}` })),
     ...["wide", "content", "prose", "form"].map(member => ({ id: `tokens.content-size.${member}` as const, property: `--ui-width-${member}-max` })),
     { id: "tokens.region-width.aside", property: "--ui-layout-aside-w" },
     ...Object.keys(breakpoints).map(id => ({ id: id as keyof typeof breakpoints, property: `--breakpoint-${id.split(".").at(-1)}` })),

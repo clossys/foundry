@@ -30,7 +30,6 @@ export function syntheticSurfacePair(): CompositeEngineInput {
     for (const key of ["slots", "fills", "transforms", "materializations"] as const)
         input.catalog.surfaces![key] = [...input.catalog.surfaces![key], ...frame.input.catalog.surfaces![key]] as never;
     input.library = applyLibraryChange(input.catalog, input.library, { baseHash: libraryHash(input.library), changes: [
-            { portion: "values", change: { op: "author", slot: "tokens.breakpoint", tokens: Object.fromEntries(["mobile", "mobile-lg", "tablet", "tablet-lg", "desktop", "wide"].map((name, index) => [name, { $type: "dimension", $value: { value: 400 + index * 200, unit: "px" } }])) } },
             ...[section, frame].map(f => ({ portion: "surfaces" as const, change: { op: "adopt" as const, slot: f.bundle.slot, source: "synthetic" } })),
         ], surfaceBundles: [section.bundle, frame.bundle] }, { componentOptions: input.componentOptions, surfaceOptions: input.surfaceOptions! });
     return input;

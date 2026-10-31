@@ -59,7 +59,7 @@ test("check refuses an added slot until regeneration and never rewrites the stal
     // An owner-picked candidate that violates the live contract stays unchosen.
     const componentsPath = resolve(fixture, "src/catalog/slots/components.json");
     const components = json(componentsPath);
-    components.find(slot => slot.id === "components.button").contract.allowedReads.tokens = [];
+    components.find(slot => slot.id === "components.button").contract.allowedReads.themes = [];
     writeFileSync(componentsPath, JSON.stringify(components));
     assert.equal(run(fixture, "--write").status, 0);
     assert.equal(json(reportPath).nodes.find(node => node.id === "components.button").fill, undefined);

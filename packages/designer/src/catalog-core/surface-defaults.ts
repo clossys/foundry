@@ -26,7 +26,7 @@ import { stableStringify } from "./stable.js";
 export interface SurfaceDefaultDescriptor {
   slot: string;
   impl?: { kind: string; module?: string; export?: string };
-  reads?: { tokens: readonly string[]; assets: readonly string[] };
+  reads?: { themes: readonly string[]; assets: readonly string[] };
   composes?: readonly string[];
   parts?: readonly string[];
   consumption?: SurfaceConsumptionMeasurement;
@@ -93,7 +93,7 @@ export function surfaceConsumptionFindings(slot: SectionSlot | FrameSlot, fill: 
   const contract = slot.contract;
   const allowedComposes = contract.kind === "section" ? [...contract.allowedComposes, ...contract.composes ?? [], ...contract.parts] : contract.composes ?? [];
   for (const [label, observed, declared, allowed] of [
-    ["tokens", actual.scannedReads.tokens, fill.reads?.tokens ?? [], contract.allowedReads.tokens],
+    ["themes", actual.scannedReads.themes, fill.reads?.themes ?? [], contract.allowedReads.themes],
     ["assets", actual.scannedReads.assets, fill.reads?.assets ?? [], contract.allowedReads.assets],
     ["composes", unique([...actual.scannedComposes, ...actual.scannedReads.components]), [...fill.composes ?? [], ...fill.parts ?? []], allowedComposes],
   ] as const) {

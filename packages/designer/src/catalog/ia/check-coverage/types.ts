@@ -1,5 +1,5 @@
 /** Private report schema: catalog ids remain independent of all display paths. */
-export type Layer = "tokens" | "assets" | "components" | "sections" | "frames";
+export type Layer = "themes" | "assets" | "components" | "sections" | "frames";
 export type FillState = "absent" | "draft" | "checked" | "approved";
 export type Priority = "P0" | "P1" | "P2";
 export interface Placement {

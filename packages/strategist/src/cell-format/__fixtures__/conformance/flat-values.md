@@ -1,5 +1,5 @@
 ---
-id: tokens.accent-color
+id: themes.primary
 version: 1
 status: draft
 updated: 2026-10-29

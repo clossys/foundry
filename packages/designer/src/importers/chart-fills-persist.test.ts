@@ -26,7 +26,7 @@ function persist(doc: ComponentCandidateDocument): ComponentFile[] {
     slot: descriptor.slot, originKind: "adopted",
     origin: { kind: "adopted", source: descriptor.source, fill: fillId(doc), pin: descriptor.pin, license: descriptor.license ?? "MIT", sha256: componentDescriptorHash(descriptor), adoptedAt: "2026-01-01T00:00:00.000Z" },
     impl: descriptor.impl, propMap: structuredClone(descriptor.propMap),
-    reads: { tokens: {}, assets: [], components: [] }, descriptor,
+    reads: { themes: {}, assets: [], components: [] }, descriptor,
   };
   const profile: ResolvedComponents = {
     consumer: "chart-check", selectionHash: `sha256:${"0".repeat(64)}`,

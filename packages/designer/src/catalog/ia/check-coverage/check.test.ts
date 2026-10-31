@@ -8,7 +8,7 @@ describe("bottom-up IA completeness", () => {
     expect(report.findings).toEqual([]);
     expect(report.summary.levels).toEqual({ L0: 5, L1: 5, L2: 5, L3: 5 });
     expect(report.summary.states).toEqual({ absent: 0, draft: 5, checked: 0, approved: 0 });
-    const token = report.leaves.find(row => row.id === "tokens.example")!;
+    const token = report.leaves.find(row => row.id === "themes.example")!;
     expect(token.usedBy).toEqual(["components.example"]);
     expect(token.uses).toEqual([]);
     expect(token.admin).toBe("reachable");
@@ -16,10 +16,10 @@ describe("bottom-up IA completeness", () => {
   });
   it("names exactly one P0 missing-leaf finding", () => {
     const input = fixture();
-    input.slots = input.slots.filter(slot => slot.id !== "tokens.example");
-    input.fills = input.fills.filter(fill => fill.leaf !== "tokens.example");
-    input.edges = input.edges.filter(edge => edge.to !== "tokens.example");
-    expect(checkCoverage(input).findings).toEqual([expect.objectContaining({ code: "IA-MISSING-LEAF", subject: "tokens.example", priority: "P0" })]);
+    input.slots = input.slots.filter(slot => slot.id !== "themes.example");
+    input.fills = input.fills.filter(fill => fill.leaf !== "themes.example");
+    input.edges = input.edges.filter(edge => edge.to !== "themes.example");
+    expect(checkCoverage(input).findings).toEqual([expect.objectContaining({ code: "IA-MISSING-LEAF", subject: "themes.example", priority: "P0" })]);
   });
   it("names exactly one P0 dangling-reference finding", () => {
     const input = fixture(); input.edges.push({ from: "frames.example", to: "components.missing", evidence: "fixture" });
@@ -38,12 +38,12 @@ describe("bottom-up IA completeness", () => {
     expect(checkCoverage(input).findings).toEqual([expect.objectContaining({ code: "IA-UNPLACED-LEAF", subject: "components.extra", priority: "P0" })]);
   });
   it("reports a directed cycle once, including its complete membership", () => {
-    const input = fixture(); input.edges.push({ from: "tokens.example", to: "frames.example", evidence: "fixture" });
-    expect(checkCoverage(input).summary.cycles).toEqual([["components.example", "frames.example", "sections.example", "tokens.example"]]);
+    const input = fixture(); input.edges.push({ from: "themes.example", to: "frames.example", evidence: "fixture" });
+    expect(checkCoverage(input).summary.cycles).toEqual([["components.example", "frames.example", "sections.example", "themes.example"]]);
     expect(checkCoverage(input).findings).toEqual([expect.objectContaining({ code: "IA-CYCLE", priority: "P1" })]);
   });
   it("derives states from hash-bound check results and valid owner signoff, never a status label", () => {
-    const input = fixture(); input.fills = input.fills.filter(fill => fill.leaf !== "tokens.example");
+    const input = fixture(); input.fills = input.fills.filter(fill => fill.leaf !== "themes.example");
     const component = input.fills.find(fill => fill.leaf === "components.example")!;
     component.checks = [{ sourceHash: hash, results: [{ code: "fixture-check", passed: true }] }];
     const section = input.fills.find(fill => fill.leaf === "sections.example")!;
@@ -51,7 +51,7 @@ describe("bottom-up IA completeness", () => {
     const asset = input.fills.find(fill => fill.leaf === "assets.example")!;
     Object.assign(asset, { status: "approved", evidence: [{ check: "asserted-pass" }] });
     expect(checkCoverage(input).summary.states).toEqual({ absent: 1, draft: 2, checked: 1, approved: 1 });
-    expect(checkCoverage(input).findings).toContainEqual(expect.objectContaining({ code: "IA-UNFILLED", subject: "tokens.example", priority: "P1" }));
+    expect(checkCoverage(input).findings).toContainEqual(expect.objectContaining({ code: "IA-UNFILLED", subject: "themes.example", priority: "P1" }));
     component.checks = [{ sourceHash: `sha256:${"1".repeat(64)}`, results: [{ code: "fixture-check", passed: true }] }];
     expect(checkCoverage(input).leaves.find(row => row.id === "components.example")!.state).toBe("draft");
   });
@@ -68,7 +68,7 @@ describe("bottom-up IA completeness", () => {
     input.placements[0]!.nodes[0]!.children[0]!.id = "new-family";
     const next = checkCoverage(input);
     expect(next.leaves.map(row => row.id)).toEqual(first.leaves.map(row => row.id));
-    expect(next.leaves.find(row => row.id === "tokens.example")!.path.l2).toBe("new-family");
+    expect(next.leaves.find(row => row.id === "themes.example")!.path.l2).toBe("new-family");
   });
   it("validates inverse schema ownership without inventing a consumption cycle", () => {
     const input = fixture(); input.external!.push({ id: "writer:passages.example", package: "writer", kind: "schema" });
@@ -76,8 +76,8 @@ describe("bottom-up IA completeness", () => {
     expect(checkCoverage(input).findings).toEqual([]);
   });
   it("lists dangling fill and admin-root references alongside broken graph edges", () => {
-    const input = fixture(); input.fills.push({ id: "fixture/missing", leaf: "tokens.missing", hash }); input.adminRoots.push("frames.missing");
-    expect(checkCoverage(input).summary.dangling).toEqual(expect.arrayContaining([{ from: "fixture/missing", to: "tokens.missing" }, { from: "admin", to: "frames.missing" }]));
+    const input = fixture(); input.fills.push({ id: "fixture/missing", leaf: "themes.missing", hash }); input.adminRoots.push("frames.missing");
+    expect(checkCoverage(input).summary.dangling).toEqual(expect.arrayContaining([{ from: "fixture/missing", to: "themes.missing" }, { from: "admin", to: "frames.missing" }]));
   });
   it("does not promote a failed or empty execution record to checked", () => {
     const input = fixture(), fill = input.fills[0]!;

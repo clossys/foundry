@@ -41,9 +41,6 @@ function assembly(frameLeaf: string, sectionLeaf: string, edit: (fill: RuntimeFi
     binding: { id: "package-pointer", frame: select(frame), frameSlots: {}, sections: { body: [select(section)] } },
     layout: { descriptor: { library: engine.library.source.id, fill: "package-pointer/layout", leaf: "layouts.stack", config: "single", members: {}, slots: [{ id: "body", min: 1, max: 1, accepts: [section.leaf as `sections.${string}`] }], breakpoints: [], states: ["default"], renderer: frame.renderer }, render: ({ slots }) => slots.body!.join(""), expectedOrder: (_cell, paths) => paths.body! },
     themes: ["light"], states: ["default"], css: [{ id: "explicit", contents: "/* explicit */" }], assets: [],
-    // Relative breakpoint tokens need a measured pixel basis; a 16px root is stated as the measurement environment.
-    breakpointPixels: Object.fromEntries(Object.entries(profile.values.members).filter(([id]) => id.startsWith("tokens.breakpoint.")).flatMap(([id, member]) => { const value = member.value.light as { unit?: string; value?: number }; return value?.unit === "px" ? [] : [[id, Math.round(value.value! * 16)]]; })),
-    breakpointBasis: { renderer: frame.renderer, environment: { rootFontSize: 16 } },
   } as unknown as RuntimeAssemblyInput<string>;
 }
 

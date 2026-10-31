@@ -8,7 +8,7 @@ import aliases from "../catalog/aliases/components.json" with { type: "json" };
 import { describe, expect, it } from "vitest";
 import { runDogfood, dogfoodComposes, dogfoodSourceModules, elementHash, type DogfoodInput } from "./dogfood.js";
 const input = (content: string): DogfoodInput => ({ files: [{ file: "src/Page.tsx", content }],
-  tokens: [{ id: "tokens.ink", contract: { emit: { primary: "--color-ink" } } }], themeCss: "@theme { --color-ink: var(--color-ink); }" });
+  themes: [{ id: "themes.ink", contract: { emit: { primary: "--color-ink" } } }], themeCss: "@theme { --color-ink: var(--color-ink); }" });
 
 function observedView(content = 'import {Card} from "@clossys/designer/components";export function View(){return <Card/>;}'): DogfoodInput {
   return {

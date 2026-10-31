@@ -56,7 +56,7 @@ export async function readStudioDesignerLibrary(root: string, report?: StudioRep
       if (!Array.isArray(paths) || paths.some(path => typeof path !== 'string' || typeof owned[path] !== 'string')) throw new Error('Designer owned source is missing.');
       return paths.map((path: string) => ({ path, content: owned[path] as string }));
     };
-    const library: CompositeLibraryData = { source, ...(metadata.adoptedAt ? { adoptedAt: metadata.adoptedAt } : {}), values: { ...metadata.values, fills: fills.filter(fill => /^(tokens|assets)\./.test(fill.$extensions['com.clossys.fill'].slot)) }, components: { ...metadata.components, fills: fills.filter(fill => fill.$extensions['com.clossys.fill'].slot.startsWith('components.')), files: files(metadata.files) }, ...(metadata.surfaces ? { surfaces: { version: 1, fills: fills.filter(fill => /^(sections|frames)\./.test(fill.$extensions['com.clossys.fill'].slot)), files: files(metadata.surfaces.files) } } : {}) };
+    const library: CompositeLibraryData = { source, ...(metadata.adoptedAt ? { adoptedAt: metadata.adoptedAt } : {}), values: { ...metadata.values, fills: fills.filter(fill => /^(themes|assets)\./.test(fill.$extensions['com.clossys.fill'].slot)) }, components: { ...metadata.components, fills: fills.filter(fill => fill.$extensions['com.clossys.fill'].slot.startsWith('components.')), files: files(metadata.files) }, ...(metadata.surfaces ? { surfaces: { version: 1, fills: fills.filter(fill => /^(sections|frames)\./.test(fill.$extensions['com.clossys.fill'].slot)), files: files(metadata.surfaces.files) } } : {}) };
     return { catalog, library, activeIds: active.map(cell => cell.id), componentOptions: tree.meta?.componentOptions };
   }
   const reader = await agentModule("designer", "library-cli/fs-library.js");
@@ -69,7 +69,7 @@ export async function readStudioDesignerLibrary(root: string, report?: StudioRep
 export async function studioTheme(root: string): Promise<StudioTheme> {
   try {
     const input = await readStudioDesignerLibrary(root);
-    if (!input || !input.activeIds.some(id => id.startsWith("tokens."))) return defaultStudioTheme();
+    if (!input || !input.activeIds.some(id => id.startsWith("themes."))) return defaultStudioTheme();
     const { library } = input;
     const tokens = "values" in library ? { ...library.values, source: library.source, adoptedAt: library.adoptedAt } : library;
     const css = themeCss(tokens);

@@ -101,7 +101,7 @@ describe("component build IA registry", () => {
       }
     };
     for (const slot of registry.slots) {
-      for (const id of slot.contract.allowedReads.tokens) expect(id.startsWith("tokens.") && ids.has(id), `${slot.id} reads ${id}`).toBe(true);
+      for (const id of slot.contract.allowedReads.themes) expect(id.startsWith("themes.") && ids.has(id), `${slot.id} reads ${id}`).toBe(true);
       for (const id of slot.contract.allowedReads.assets) expect(id.startsWith("assets.") && ids.has(id), `${slot.id} reads ${id}`).toBe(true);
       walk(slot.id, []);
     }
@@ -112,12 +112,12 @@ describe("component build IA registry", () => {
     const runtime = loadCatalog();
     const build = loadBuildCatalog();
     expect(runtime.slots.filter(slot => slot.id !== "assets.icon-panel-left")).toHaveLength(98);
-    expect(build.slots.filter(slot => slot.layer === "tokens" || slot.layer === "assets" || slot.layer === "components")).toHaveLength(157);
+    expect(build.slots.filter(slot => slot.layer === "themes" || slot.layer === "assets" || slot.layer === "components")).toHaveLength(157);
     expect(build.registryStatus).toBe("build-unfrozen");
-    expect(build.slots.filter(slot => slot.layer === "tokens" || slot.layer === "assets")).toEqual(runtime.slots);
+    expect(build.slots.filter(slot => slot.layer === "themes" || slot.layer === "assets")).toEqual(runtime.slots);
     expect(build.fills).toEqual(runtime.fills);
     expect(build.fills.every(fill => !fill.$extensions["com.clossys.fill"].slot.startsWith("components."))).toBe(true);
-    expect(build.placements.filter(row => row.layer === "tokens" || row.layer === "assets")).toEqual(runtime.placements);
+    expect(build.placements.filter(row => row.layer === "themes" || row.layer === "assets")).toEqual(runtime.placements);
     expect(build.retired).toEqual(retired);
     expect(retired).toEqual([]);
     const component = build.slots.find(slot => slot.layer === "components")!;

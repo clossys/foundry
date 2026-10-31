@@ -5,6 +5,7 @@ import { useState, type ReactNode } from 'react';
 import { resolve } from '../catalog-core/api.js';
 import { runtimeHash, type RuntimeCell } from '../catalog-core/runtime-ports.js';
 import type { RuntimeLayoutPort } from '../catalog-core/runtime-assembly.js';
+import { TAILWIND_BREAKPOINTS } from '../catalog-core/breakpoints.js';
 import { standardM1FixtureEngine } from '../catalog-core/__fixtures__/standard-m1-runtime.js';
 import { createPortal } from 'react-dom';
 import userEvent from '@testing-library/user-event';
@@ -32,7 +33,7 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); discon
 const a = { slot: 'sections.comparison', index: 0 }, b = { slot: 'sections.comparison', index: 1 };
 function Editor() { const [edit, setEdit] = useState(false); return <button onClick={() => setEdit(!edit)}>{edit ? 'Editing' : 'Edit'}</button>; }
 function props(): Extract<FrameStageProps<typeof a>, { body: { kind: 'canvas' } }> { return {
-  'aria-label': 'Library boards', body: { kind: 'canvas', source: { kind: 'derived', query: { id: 'layer-boards', version: 1 } }, boards: [{ id: 'a', section: a, groups: { domain: 'first' } }, { id: 'b', section: b, groups: { domain: 'second' } }], arrangement: { kind: 'lanes', groupKey: 'domain', gap: { x: 12, y: 8 }, laneGap: 20 }, collapseBelow: 'tokens.breakpoint.tablet' },
+  'aria-label': 'Library boards', body: { kind: 'canvas', source: { kind: 'derived', query: { id: 'layer-boards', version: 1 } }, boards: [{ id: 'a', section: a, groups: { domain: 'first' } }, { id: 'b', section: b, groups: { domain: 'second' } }], arrangement: { kind: 'lanes', groupKey: 'domain', gap: { x: 12, y: 8 }, laneGap: 20 }, collapseBelow: 'md' },
   contract: { accepts: ['flow', 'canvas'], scroll: 'region' }, collapseBelowPx: 768,
   sectionNodes: { [frameSectionRefKey(a)]: { label: 'Colors', node: <Editor /> }, [frameSectionRefKey(b)]: { label: 'Spacing', node: <input aria-label="Native input" /> } },
   camera: { viewport: { x: 0, y: 0, zoom: 1 }, onViewportChange: vi.fn(), minZoom: .12, maxZoom: 2, fitPadding: 0 },
@@ -157,9 +158,8 @@ it('ignores synthetic focus bubbling from a portal outside the physical board', 
 /** SYNTHETIC selected Layout port; no consumer qualification or public config change. */
 function flowFixture() {
   const profile = resolve(standardM1FixtureEngine());
-  const token = profile.values.members['tokens.breakpoint.tablet']!.value.light;
-  if (!token || typeof token !== 'object' || Array.isArray(token) || !('value' in token) || !('unit' in token) || token.unit !== 'px' || typeof token.value !== 'number') throw new Error('Fixture requires actual pixel tablet token');
-  const threshold = token.value;
+  // Breakpoints are Tailwind screens, not a themes leaf; the selected port names the md screen.
+  const threshold = TAILWIND_BREAKPOINTS.md;
   const main = { slot: 'main', index: 0 }, aside = { slot: 'aside', index: 0 };
   const source = { entry: 'SYNTHETIC-layout.tsx', files: { 'SYNTHETIC-layout.tsx': '// SYNTHETIC selected port only' }, dependencies: {} };
   const cell: RuntimeCell = { theme: 'light', state: 'default', width: threshold * 3 };
@@ -167,7 +167,7 @@ function flowFixture() {
     {(stageWidth < threshold ? ['main', 'aside'] : ['aside', 'main']).map(slot => <div key={slot} data-synthetic-slot={slot}>{slots[slot]}</div>)}
   </div>);
   const layout: RuntimeLayoutPort<ReactNode> = {
-    descriptor: { library: profile.consumer, fill: 'SYNTHETIC selected layout', leaf: 'layouts.sidebar-content', config: 'SYNTHETIC-order', members: {}, slots: [{ id: 'main', min: 1, max: 1, accepts: ['sections.comparison'] }, { id: 'aside', min: 1, max: 1, accepts: ['sections.comparison'] }], breakpoints: ['tokens.breakpoint.tablet'], states: ['default'], renderer: { id: 'SYNTHETIC-layout', source, sourceHash: runtimeHash(source) } },
+    descriptor: { library: profile.consumer, fill: 'SYNTHETIC selected layout', leaf: 'layouts.sidebar-content', config: 'SYNTHETIC-order', members: {}, slots: [{ id: 'main', min: 1, max: 1, accepts: ['sections.comparison'] }, { id: 'aside', min: 1, max: 1, accepts: ['sections.comparison'] }], breakpoints: ['md'], states: ['default'], renderer: { id: 'SYNTHETIC-layout', source, sourceHash: runtimeHash(source) } },
     render: renderLayout,
     expectedOrder: (_cell, paths, stageWidth) => (stageWidth < threshold ? ['main', 'aside'] : ['aside', 'main']).flatMap(slot => paths[slot] ?? []),
   };

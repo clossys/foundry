@@ -60,7 +60,7 @@ if (!["--check", "--write"].includes(mode) || extra.length) {
       (parents[evidence] ??= []).push(id);
     }
   }
-  const inventory = Object.fromEntries(["tokens", "assets", "components", "sections", "frames"].map(layer => [layer, json(`catalog/slots/${layer}.json`).map(slot => slot.id).sort()]));
+  const inventory = Object.fromEntries(["themes", "assets", "components", "sections", "frames"].map(layer => [layer, json(`catalog/slots/${layer}.json`).map(slot => slot.id).sort()]));
   // Resolve the package's value consumer before asking the production component
   // planner for defaults. Generic scale/asset offers fill gaps in Foundry values.
   // These are report inputs, never consumer-library mutations or approvals.
@@ -114,7 +114,7 @@ if (!["--check", "--write"].includes(mode) || extra.length) {
   for (const { id, fill } of selectedComponents) {
     let row = componentFills.find(row => row.id === id);
     if (!row) { row = { id, slot: fill.slot }; componentFills.push(row); }
-    row.declaredReads = Object.fromEntries(["tokens", "assets"].map(layer => [layer, [...new Set(fill.reads[layer])].sort()]));
+    row.declaredReads = Object.fromEntries(["themes", "assets"].map(layer => [layer, [...new Set(fill.reads[layer])].sort()]));
     for (const target of new Set([...fill.composes, ...fill.reads.components])) {
       const parents = reverseComposes[target] ??= {};
       parents.declared = [...new Set([...parents.declared ?? [], id])].sort();

@@ -39,7 +39,7 @@ describe("selected consumer shadcn token mapping", () => {
 
   it("uses actual authored consumer values instead of copying a preset palette", () => {
     const input = consumer();
-    const fill = input.library.fills.find(fill => fill.$extensions["com.clossys.fill"].slot === "tokens.action-color")!;
+    const fill = input.library.fills.find(fill => fill.$extensions["com.clossys.fill"].slot === "themes.primary")!;
     const action = (fill.tokens as Record<string, any>)["action-color"].default;
     action.$value = { colorSpace: "oklch", components: [0.31, 0.08, 240] };
     action.$extensions["com.clossys.css"].raw = "oklch(0.31 0.08 240)";
@@ -48,8 +48,8 @@ describe("selected consumer shadcn token mapping", () => {
     const output = selectionShadcnTokens(profile, tokenContract);
     const light = values(block(output.css, ":root {"));
     const dark = values(block(output.css, ':root[data-theme="dark"] {'));
-    expect(light["--primary"]).toBe(profile.members["tokens.action-color.default"]!.css.light);
-    expect(dark["--primary"]).toBe(profile.members["tokens.action-color.default"]!.css.dark);
+    expect(light["--primary"]).toBe(profile.members["themes.primary.default"]!.css.light);
+    expect(dark["--primary"]).toBe(profile.members["themes.primary.default"]!.css.dark);
     expect(light["--primary"]).not.toBe(dark["--primary"]);
     for (const preset of sourceRoster.tokens.presets) {
       expect(light["--primary"]).not.toBe(preset.theme.vars.light["--primary"]);
@@ -61,7 +61,7 @@ describe("selected consumer shadcn token mapping", () => {
 
   it("reduces shared shadcn keys to explicit native roles independently of contract order", () => {
     const profile = selected();
-    const canonical = { "--accent": "tokens.surface-color.selected", "--accent-foreground": "tokens.text-color.on-accent", "--border": "tokens.border-color.base", "--muted": "tokens.surface-color.sunken", "--muted-foreground": "tokens.text-color.muted", "--primary": "tokens.action-color.default", "--radius-lg": "tokens.surface-radius.default", "--text-xs": "tokens.body-size.s" };
+    const canonical = { "--accent": "themes.background.default", "--accent-foreground": "themes.foreground.default", "--border": "themes.border.default", "--muted": "themes.background.default", "--muted-foreground": "themes.foreground.default", "--primary": "themes.primary.default", "--radius-lg": "themes.radius.default", "--text-xs": "tokens.body-size.s" };
     // Distinct signals expose a wrong owner even when a preset gives both
     // competing native roles the same value.
     for (const [target, id] of Object.entries(canonical)) {
@@ -79,25 +79,25 @@ describe("selected consumer shadcn token mapping", () => {
 
   it("follows consumer aliases in each mode and permits invariant structural tokens", () => {
     const profile = selected();
-    const member = profile.members["tokens.action-color.default"]!;
-    member.alias = { light: "tokens.text-color.primary", dark: "tokens.text-color.on-inverse" };
+    const member = profile.members["themes.primary.default"]!;
+    member.alias = { light: "themes.foreground.default", dark: "themes.foreground.default" };
     const output = selectionShadcnTokens(profile, tokenContract);
-    expect(values(block(output.css, ":root {"))["--primary"]).toBe(profile.members["tokens.text-color.primary"]!.css.light);
-    expect(values(block(output.css, ':root[data-theme="dark"] {'))["--primary"]).toBe(profile.members["tokens.text-color.on-inverse"]!.css.dark);
-    expect(values(block(output.css, ':root[data-theme="dark"] {'))["--radius"]).toBe(profile.members["tokens.surface-radius.default"]!.css.light);
+    expect(values(block(output.css, ":root {"))["--primary"]).toBe(profile.members["themes.foreground.default"]!.css.light);
+    expect(values(block(output.css, ':root[data-theme="dark"] {'))["--primary"]).toBe(profile.members["themes.foreground.default"]!.css.dark);
+    expect(values(block(output.css, ':root[data-theme="dark"] {'))["--radius"]).toBe(profile.members["themes.radius.default"]!.css.light);
   });
 
   it("reports a missing consumer token, dark color or broken alias instead of filling it from defaults", () => {
     const absent = selected();
-    delete (absent.members as Record<string, unknown>)["tokens.surface-color.base"];
-    expect(() => selectionShadcnTokens(absent, tokenContract)).toThrow(/tokens.surface-color.base is unavailable/);
+    delete (absent.members as Record<string, unknown>)["themes.background.default"];
+    expect(() => selectionShadcnTokens(absent, tokenContract)).toThrow(/themes.background.default is unavailable/);
     const noDark = selected();
-    delete noDark.members["tokens.action-color.default"]!.css.dark;
-    expect(() => selectionShadcnTokens(noDark, tokenContract)).toThrow(/tokens.action-color.default has no dark value/);
+    delete noDark.members["themes.primary.default"]!.css.dark;
+    expect(() => selectionShadcnTokens(noDark, tokenContract)).toThrow(/themes.primary.default has no dark value/);
     const broken = selected();
-    broken.members["tokens.action-color.default"]!.alias = { light: "tokens.missing.default" };
+    broken.members["themes.primary.default"]!.alias = { light: "tokens.missing.default" };
     expect(() => selectionShadcnTokens(broken, tokenContract)).toThrow(/tokens.missing.default is unavailable/);
-    broken.members["tokens.action-color.default"]!.alias = { light: "tokens.action-color.default" };
+    broken.members["themes.primary.default"]!.alias = { light: "themes.primary.default" };
     expect(() => selectionShadcnTokens(broken, tokenContract)).toThrow(/cyclic light alias/);
   });
 
@@ -109,7 +109,7 @@ describe("selected consumer shadcn token mapping", () => {
       expect(css).toContain(`${declaration}: ${value}`);
     }
     expect(css).toContain("background-color: var(--background)");
-    expect(css).toContain(`border-radius: var(${selected().members["tokens.surface-radius.default"]!.emit})`);
+    expect(css).toContain(`border-radius: var(${selected().members["themes.radius.default"]!.emit})`);
     expect(css).not.toContain("background-color: oklch(");
   });
 });

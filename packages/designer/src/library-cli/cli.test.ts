@@ -38,7 +38,7 @@ describe("designer-library CLI", () => {
     expect(good.code).toBe(0);
     expect(JSON.parse(good.out).findings).toEqual([]);
     const css = await fs.readFile(join(root, "theme.css"), "utf8");
-    await fs.writeFile(join(root, "theme.css"), css.replace(/(--blur-glass:) [^;]+;/, "$1 999px;"));
+    await fs.writeFile(join(root, "theme.css"), css.replace(/(--radius:) [^;]+;/, "$1 999px;"));
     const stale = await call();
     expect(stale.code).toBe(1);
     expect(JSON.parse(stale.out).findings.some((row: { code: string; evidence: string }) => row.code === "DF2" && row.evidence.includes("value mismatch"))).toBe(true);
@@ -70,19 +70,19 @@ describe("designer-library CLI", () => {
   });
 
   it("checks the full library and each supported layer", async () => {
-    for (const layer of [undefined, "tokens", "assets", "components"]) {
+    for (const layer of [undefined, "themes", "assets", "components"]) {
       const result = await run("check", "--json", ...(layer ? ["--layer", layer] : []));
       expect(result.code).toBe(0); expect(JSON.parse(result.out).ok).toBe(true);
     }
   });
 
   it("fails a check with an engine error in both JSON and compiled-bin invocations", async () => {
-    const damaged = { ...fixture, fills: fixture.fills.filter(fill => fill.$extensions["com.clossys.fill"].slot !== "tokens.blur") };
-    await fs.unlink(join(root, "fills/tokens.blur.json"));
+    const damaged = { ...fixture, fills: fixture.fills.filter(fill => fill.$extensions["com.clossys.fill"].slot !== "themes.radius") };
+    await fs.unlink(join(root, "fills/themes.radius.json"));
     await fs.writeFile(join(root, "selection.json"), stableStringify(generateSelection(damaged)));
-    const result = await run("check", "--layer", "tokens", "--json");
+    const result = await run("check", "--layer", "themes", "--json");
     expect(result.code).toBe(1);
-    expect(JSON.parse(result.out)).toMatchObject({ ok: false, findings: expect.arrayContaining([expect.objectContaining({ severity: "error", subject: expect.stringContaining("tokens.blur") })]) });
+    expect(JSON.parse(result.out)).toMatchObject({ ok: false, findings: expect.arrayContaining([expect.objectContaining({ severity: "error", subject: expect.stringContaining("themes.radius") })]) });
     const compiled = spawnSync(process.execPath, [bin, "check", "--root", root], { encoding: "utf8" });
     expect(compiled.status).toBe(1); expect(compiled.stdout).toContain("Library check failed");
   });
@@ -99,7 +99,7 @@ describe("designer-library CLI", () => {
 
   it("applies a supplied changeset only through the explicit apply command", async () => {
     const file = join(temporary, "changeset.json");
-    await fs.writeFile(file, JSON.stringify({ baseHash: libraryHash(fixture), changes: [{ op: "author", slot: "tokens.blur", tokens: { glass: { $type: "dimension", $value: { value: 18, unit: "px" } } } }] }));
+    await fs.writeFile(file, JSON.stringify({ baseHash: libraryHash(fixture), changes: [{ op: "author", slot: "themes.radius", tokens: { default: { $type: "dimension", $value: { value: 18, unit: "px" } } } }] }));
     expect((await run("status")).code).toBe(0);
     expect((await run("recommend")).code).toBe(2);
     expect(JSON.parse((await run("status", "--json")).out).baseHash).toBe(libraryHash(fixture));
@@ -153,6 +153,6 @@ it("supports explicitly empty surface layers/targets and keeps cross-layer error
  for(const [name,content] of libraryFiles(compositeCatalog,composite,[])){await fs.mkdir(dirname(join(root,name)),{recursive:true});await fs.writeFile(join(root,name),content);}
  expect((await run("status","--json")).code).toBe(0);for(const layer of ["sections","frames"])expect((await run("check","--layer",layer,"--json")).code).toBe(0);
  expect((await run("emit","--target","surface-index","--target","surfaces-consumption")).code).toBe(0);
- await fs.unlink(join(root,"fills/tokens.blur.json"));await fs.writeFile(join(root,"selection.json"),stableStringify(generateSelection({...fixture,fills:fixture.fills.filter(fill=>fill.$extensions["com.clossys.fill"].slot!=="tokens.blur")})));for(const layer of ["sections","frames"])expect((await run("check","--layer",layer,"--json")).code).toBe(1);
+ await fs.unlink(join(root,"fills/themes.radius.json"));await fs.writeFile(join(root,"selection.json"),stableStringify(generateSelection({...fixture,fills:fixture.fills.filter(fill=>fill.$extensions["com.clossys.fill"].slot!=="themes.radius")})));for(const layer of ["sections","frames"])expect((await run("check","--layer",layer,"--json")).code).toBe(1);
  const file=join(temporary,"too-many.json");const {libraryHash:wholeHash}=await import("../catalog-core/api.js");await fs.writeFile(file,JSON.stringify({baseHash:wholeHash(composite),changes:Array.from({length:257},()=>({portion:"surfaces",change:{op:"remove",slot:"sections.access-matrix"}}))}));expect((await run("apply","--changeset",file)).code).toBe(2);
 });

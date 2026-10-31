@@ -250,8 +250,8 @@ export interface InstanceRegistries {
   readonly frames: readonly BindingFrameLeaf[];
   readonly layouts: readonly LayoutLeaf[];
   readonly sections: readonly BindingSectionLeaf[];
-  /** Actual consumer token addresses, not a catalog fallback. */
-  readonly tokens: readonly BindingToken[];
+  /** Actual consumer theme addresses, not a catalog fallback. */
+  readonly themes: readonly BindingToken[];
 }
 /** Full local source closure. Missing imports and unsupported dynamic syntax fail closed. */
 export interface LayoutRendererSource { readonly entry: string; readonly files: Readonly<Record<string, string>> }

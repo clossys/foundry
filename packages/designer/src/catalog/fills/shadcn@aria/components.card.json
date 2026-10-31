@@ -99,20 +99,13 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.border-width.hairline",
-          "tokens.control-radius.default",
-          "tokens.font-size.base",
-          "tokens.font-size.sm",
-          "tokens.font-weight.medium",
-          "tokens.line-height.heading",
-          "tokens.spacing.lg",
-          "tokens.spacing.md",
-          "tokens.spacing.xs",
-          "tokens.surface-color.raised",
-          "tokens.surface-color.sunken",
-          "tokens.text-color.muted",
-          "tokens.text-color.primary"
+        "themes": [
+          "themes.card.default",
+          "themes.foreground.default",
+          "themes.muted-foreground.default",
+          "themes.muted.default",
+          "themes.radius.default",
+          "themes.spacing.default"
         ]
       },
       "root": "presentational",

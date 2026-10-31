@@ -16,7 +16,7 @@ const contract = () => ({ substrates: ["flow", "canvas"] as const, substrateTest
   { substrate: "flow" as const, file: "section.render.test.tsx", name: "renders in flow" },
   { substrate: "canvas" as const, file: "section.render.test.tsx", name: "renders in canvas" },
 ] });
-const canvas: CompositionBody<string> = { kind: "canvas", source: { kind: "derived", query: { id: "library.layer-boards", version: 1 } }, boards, arrangement: lanes, collapseBelow: "tokens.breakpoint.tablet" };
+const canvas: CompositionBody<string> = { kind: "canvas", source: { kind: "derived", query: { id: "library.layer-boards", version: 1 } }, boards, arrangement: lanes, collapseBelow: "md" };
 describe("pure measured canvas arrangement", () => {
   it("sizes grid tracks by column and row maxima and bounds by actual content", () => {
     expect(arrangeCanvas(boards, sizes, grid)).toEqual({ status: "ready", positions: [
@@ -91,7 +91,7 @@ describe("body and stage compatibility preconditions", () => {
   });
   it("requires versioned derivation, explicit fallback token and the correct body data", () => {
     expect(bodySubstrateFindings({ ...canvas, source: { kind: "derived", query: { id: "", version: 0 } } }, stage, contract)).toContain("derived body requires a versioned query id");
-    expect(bodySubstrateFindings({ ...canvas, collapseBelow: "900px" } as never, stage, contract)).toContain("canvas fallback requires an explicit consumer breakpoint token");
+    expect(bodySubstrateFindings({ ...canvas, collapseBelow: "900px" } as never, stage, contract)).toContain("canvas fallback requires an explicit Tailwind breakpoint");
     expect(bodySubstrateFindings({ kind: "flow", source: { kind: "static" }, sections: [], arrangement: grid } as never, stage, contract)).toContain("flow body cannot carry canvas data");
   });
 });

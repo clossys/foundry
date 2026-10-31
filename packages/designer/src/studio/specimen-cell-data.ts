@@ -15,14 +15,14 @@ export type DesignerSpecimenCellCases = { readonly context: DesignerSpecimenCont
 /** Preserves cell-specific values; a draft without executable native data never borrows an active fill. */
 export function designerSpecimenCellData(context: DesignerSpecimenContext, cell: DesignerSpecimenCellData): DesignerSpecimenCellCases {
   let selected = context;
-  if (/^(tokens|assets)\./.test(cell.id)) {
+  if (/^(themes|assets)\./.test(cell.id)) {
     if (cell.members !== undefined) {
       const members = Object.entries(cell.members);
       if (!members.length || members.some(([id, member]) => !id.startsWith(`${cell.id}.`) || member.slot !== cell.id)) return { leaf: cell.id, reason: "The cell's resolved members do not belong to its exact native leaf." };
       const current = Object.fromEntries(Object.entries(context.profile.values.members).filter(([, member]) => member.slot !== cell.id));
       selected = { ...context, profile: { ...context.profile, values: { ...context.profile.values, members: { ...current, ...cell.members } } } };
     } else if (cell.status && cell.status !== "active") return { leaf: cell.id, reason: "This draft or retired cell has no cell-specific resolved values." };
-    const items = cell.id.startsWith("tokens.") ? tokenSpecimenItems(selected, cell.id) : assetSpecimenItems(selected, cell.id);
+    const items = cell.id.startsWith("themes.") ? tokenSpecimenItems(selected, cell.id) : assetSpecimenItems(selected, cell.id);
     return items.length ? { context: selected, cases: { items, axes: [] } } : { leaf: cell.id, reason: "This cell has no resolved value specimens." };
   }
   if (cell.status && cell.status !== "active") return { leaf: cell.id, reason: "This draft or retired cell requires its own descriptor-matched native runtime." };

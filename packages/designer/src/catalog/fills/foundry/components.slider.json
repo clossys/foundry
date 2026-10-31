@@ -88,19 +88,20 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.accent-color",
-          "tokens.action-color",
-          "tokens.border-width",
-          "tokens.control-size",
-          "tokens.duration",
-          "tokens.easing",
-          "tokens.focus-color",
-          "tokens.focus-outline",
-          "tokens.focus-shadow",
-          "tokens.spacing",
-          "tokens.state-opacity",
-          "tokens.surface-color"
+        "themes": [
+          "themes.primary",
+          "themes.sidebar-primary",
+          "themes.ring",
+          "themes.sidebar-ring",
+          "themes.spacing",
+          "themes.background",
+          "themes.card",
+          "themes.popover",
+          "themes.secondary",
+          "themes.accent",
+          "themes.muted",
+          "themes.sidebar",
+          "themes.sidebar-accent"
         ]
       },
       "root": "rac:Slider",

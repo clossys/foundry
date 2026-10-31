@@ -202,7 +202,7 @@ export function inspectInstanceChecks(input: unknown, library: ConsumerInstanceL
     if (layoutFill && (layoutFill.leadGround !== first?.fill?.bandGround)) add("LK9", "layout.leadGround", "Lead ground must equal the first rendered section band ground");
     if (frameFill && (frameFill.groundRead !== "leadGround" || ((frameFill.headerGround === "glass" || frameFill.headerGround === "transparent") && !text(layoutFill?.leadGround)))) add("LK9", "frame.groundRead", "Frame ground input must be the declared layout leadGround");
     if (!layoutFill?.renderer) add("LK11", "layout.renderer", "Actual layout renderer source is required");
-    else for (const message of checkLayoutRendererSource(layoutFill.renderer, effective, registries.tokens, compiler)) add("LK11", "layout.renderer", message);
+    else for (const message of checkLayoutRendererSource(layoutFill.renderer, effective, registries.themes, compiler)) add("LK11", "layout.renderer", message);
     for (const state of binding.states ?? []) {
       if (!resolved.some(item => item.fill.states.includes(state))) add("LK14", "states", "Instance state is undeclared");
       for (const item of resolved) if (!item.fill.states.includes(state)) add("LK14", item.path, "Every fill must support every instance state");

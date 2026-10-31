@@ -2336,7 +2336,7 @@
     },
     {
       "recordId": "st.tk773axxm2",
-      "cellId": "designer.layers.tokens",
+      "cellId": "designer.layers.themes",
       "severity": "P2",
       "status": "reviewed",
       "scope": "draft only",
@@ -2344,7 +2344,7 @@
         "commit": "9966f3d283471a39ad4f2fb27c72225c58e2780b",
         "path": "packages/designer/src/studio/route-labels.ts",
         "line": 9,
-        "key": "routeStudioLabels.layers.tokens"
+        "key": "routeStudioLabels.layers.themes"
       },
       "before": "Tokens",
       "after": "Tokens",
@@ -6200,14 +6200,14 @@
       "detail": "This source still supplies an inline literal or formatter. Bind this draft through a Writer CopyRef after review; extraction changes no rendered or approved copy."
     },
     {
-      "cellId": "designer.layers.tokens.writer-binding",
+      "cellId": "designer.layers.themes.writer-binding",
       "severity": "P0",
       "status": "Need",
       "package": "designer",
       "source": {
         "path": "packages/designer/src/studio/route-labels.ts",
         "line": 9,
-        "key": "routeStudioLabels.layers.tokens"
+        "key": "routeStudioLabels.layers.themes"
       },
       "recordId": "st.tk773axxm2",
       "detail": "This source still supplies an inline literal or formatter. Bind this draft through a Writer CopyRef after review; extraction changes no rendered or approved copy."

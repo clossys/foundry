@@ -11,15 +11,15 @@ import type { CompositeEngineInput, CompositeLibraryOperation, FillDoc, Slot } f
 
 function fixture(): CompositeEngineInput {
   const s = synthetic(), source = { id: "example", kind: "consumer" as const, author: "consumer" as const, license: "MIT" };
-  s.candidate.reads = { tokens: [], assets: [], components: [] };
-  const slots: Slot[] = ["spacing", "radius"].map(name => ({ id: `tokens.${name}`, layer: "tokens", status: "draft", requires: [], contract: { kind: "token", tier: "scale", $type: "dimension", modes: ["light"], members: { mode: "open", pattern: "^[a-z]+$" } } }));
-  const doc: FillDoc = { $extensions: { "com.clossys.fill": { id: "test-kit/tokens.spacing", slot: "tokens.spacing", source: "test-kit", mode: "implementation", sourceAddress: "synthetic.json", relation: "same-contract", builtOn: [], conforms: [], evidence: [], author: "third-party", trust: "pinned-upstream", license: "MIT", status: "draft" } }, tokens: { spacing: { base: { $type: "dimension", $value: { value: 4, unit: "px" } } } } };
-  const catalog = { values: { slots, fills: [doc], sources: [{ id: "test-kit", kind: "base" as const, author: "third-party" as const, license: "MIT" }], rules: [{ id: "synthetic:radius", slot: "tokens.radius", inputs: ["tokens.spacing.base"], values: { base: { $type: "dimension" as const, $value: "{tokens.spacing.base}" } } }], placements: [], retired: [], standards: [] }, components: s.catalog };
+  s.candidate.reads = { themes: [], assets: [], components: [] };
+  const slots: Slot[] = ["spacing", "radius"].map(name => ({ id: `themes.${name}`, layer: "themes", status: "draft", requires: [], contract: { kind: "token", tier: "scale", $type: "dimension", modes: ["light"], members: { mode: "open", pattern: "^[a-z]+$" } } }));
+  const doc: FillDoc = { $extensions: { "com.clossys.fill": { id: "test-kit/themes.spacing", slot: "themes.spacing", source: "test-kit", mode: "implementation", sourceAddress: "synthetic.json", relation: "same-contract", builtOn: [], conforms: [], evidence: [], author: "third-party", trust: "pinned-upstream", license: "MIT", status: "draft" } }, themes: { spacing: { base: { $type: "dimension", $value: { value: 4, unit: "px" } } } } };
+  const catalog = { values: { slots, fills: [doc], sources: [{ id: "test-kit", kind: "base" as const, author: "third-party" as const, license: "MIT" }], rules: [{ id: "synthetic:radius", slot: "themes.radius", inputs: ["themes.spacing.base"], values: { base: { $type: "dimension" as const, $value: "{themes.spacing.base}" } } }], placements: [], retired: [], standards: [] }, components: s.catalog };
   let input: CompositeEngineInput = { catalog, library: { source, adoptedAt: "2026-10-25", values: { fills: [] }, components: { fills: [], files: [] } } };
   const change = (operation: CompositeLibraryOperation) => { input = { ...input, library: applyLibraryChange(catalog, input.library, { baseHash: libraryHash(input.library), changes: [operation] }) }; };
-  change({ portion: "values", change: { op: "adopt", slot: "tokens.spacing", source: "test-kit" } });
-  change({ portion: "values", change: { op: "author", slot: "tokens.spacing", tokens: { extra: { $type: "dimension", $value: { value: 8, unit: "px" } } } } });
-  change({ portion: "values", change: { op: "derive", slot: "tokens.radius", rule: "synthetic:radius", inputs: ["tokens.spacing.base"] } });
+  change({ portion: "values", change: { op: "adopt", slot: "themes.spacing", source: "test-kit" } });
+  change({ portion: "values", change: { op: "author", slot: "themes.spacing", tokens: { extra: { $type: "dimension", $value: { value: 8, unit: "px" } } } } });
+  change({ portion: "values", change: { op: "derive", slot: "themes.radius", rule: "synthetic:radius", inputs: ["themes.spacing.base"] } });
   change({ portion: "components", change: { op: "adopt", slot: "components.button", source: "test-kit" } });
   return input;
 }
@@ -68,8 +68,8 @@ describe("complete source-owner record association", () => {
     const input = fixture(), template = componentOf(input.catalog.components.fills[0]!);
     const slot = input.catalog.components.slots[0]!;
     input.catalog.components.slots = [slot, ...["authored", "derived", "composed"].map(name => ({ ...slot, id: `components.${name}` }))];
-    const derive = { ...structuredClone(template), slot: "components.derived", reads: { tokens: [], assets: [], components: ["components.button"] }, composes: ["components.button"] };
-    const compose = { ...structuredClone(derive), slot: "components.composed", reads: { tokens: [], assets: [], components: ["components.derived"] }, composes: ["components.derived"] };
+    const derive = { ...structuredClone(template), slot: "components.derived", reads: { themes: [], assets: [], components: ["components.button"] }, composes: ["components.button"] };
+    const compose = { ...structuredClone(derive), slot: "components.composed", reads: { themes: [], assets: [], components: ["components.derived"] }, composes: ["components.derived"] };
     input.catalog.components.rules = [{ id: "synthetic:derive", kind: "derive", slot: derive.slot, inputs: ["components.button"], template: derive, files: [] }, { id: "synthetic:compose", kind: "compose", slot: compose.slot, inputs: ["components.derived"], template: compose, files: [] }];
     for (const change of [{ op: "author" as const, slot: "components.authored", fill: { ...structuredClone(template), slot: "components.authored" }, files: [] }, { op: "derive" as const, slot: derive.slot, rule: "synthetic:derive", inputs: ["components.button"] }, { op: "compose" as const, slot: compose.slot, rule: "synthetic:compose" }]) input.library = applyLibraryChange(input.catalog, input.library, { baseHash: libraryHash(input.library), changes: [{ portion: "components", change }] });
     const result = associated(input), records = result.records.filter(record => record.kind === "component");
@@ -88,31 +88,31 @@ describe("complete source-owner record association", () => {
   it("revokes on stale upstream, installed content or partial membership without advertising partial hashes [mutant: stale/partial]", () => {
     for (const mutate of [
       (input: CompositeEngineInput) => { input.catalog.values.fills = []; },
-      (input: CompositeEngineInput) => { input.catalog.values.fills[0]!.tokens!.spacing = {}; },
+      (input: CompositeEngineInput) => { input.catalog.values.fills[0]!.themes!.spacing = {}; },
       (input: CompositeEngineInput) => { componentOf(input.library.components.fills[0]!).props = []; },
-      (input: CompositeEngineInput) => { input.library.values.fills[0]!.tokens!.spacing = { base: { $type: "dimension", $value: { value: 99, unit: "px" } } }; },
+      (input: CompositeEngineInput) => { input.library.values.fills[0]!.themes!.spacing = { base: { $type: "dimension", $value: { value: 99, unit: "px" } } }; },
       (input: CompositeEngineInput) => { input.catalog.values.rules = []; },
     ]) { const input = fixture(); mutate(input); pending(input); }
   });
 
   it("binds consumer-owned edits, authored members, catalog membership and current selection [mutant: dropped-authored]", () => {
     const input = fixture(), first = associated(input);
-    input.library = applyLibraryChange(input.catalog, input.library, { baseHash: libraryHash(input.library), changes: [{ portion: "values", change: { op: "author", slot: "tokens.spacing", tokens: { extra: { $type: "dimension", $value: { value: 12, unit: "px" } } } } }] });
+    input.library = applyLibraryChange(input.catalog, input.library, { baseHash: libraryHash(input.library), changes: [{ portion: "values", change: { op: "author", slot: "themes.spacing", tokens: { extra: { $type: "dimension", $value: { value: 12, unit: "px" } } } } }] });
     const changed = associated(input); expect(changed.sourceHashes.example).not.toBe(first.sourceHashes.example); expect(changed.selectionHash).not.toBe(first.selectionHash);
-    input.library.values.rationale = { "tokens.spacing": "Use the authored spacing choice." };
+    input.library.values.rationale = { "themes.spacing": "Use the authored spacing choice." };
     pending(input); // A caller cannot silently leave generated selection stale.
     input.library.values.selection = generateSelection({ ...input.library.values, source: input.library.source, adoptedAt: input.library.adoptedAt });
     expect(associated(input).selectionHash).not.toBe(changed.selectionHash);
-    const rawDelete = fixture(); const spacing = rawDelete.library.values.fills.find(doc => doc.$extensions["com.clossys.fill"].slot === "tokens.spacing")!.tokens!.spacing as Record<string, unknown>; delete spacing.extra;
+    const rawDelete = fixture(); const spacing = rawDelete.library.values.fills.find(doc => doc.$extensions["com.clossys.fill"].slot === "themes.spacing")!.themes!.spacing as Record<string, unknown>; delete spacing.extra;
     rawDelete.library.values.selection = generateSelection({ ...rawDelete.library.values, source: rawDelete.library.source, adoptedAt: rawDelete.library.adoptedAt });
-    expect(pending(rawDelete).needs.some(need => need.message === "provenance: example/tokens.spacing originKinds does not summarize its members")).toBe(true);
+    expect(pending(rawDelete).needs.some(need => need.message === "provenance: example/themes.spacing originKinds does not summarize its members")).toBe(true);
     const less = fixture();
     less.library = applyLibraryChange(less.catalog, less.library, { baseHash: libraryHash(less.library), changes: [
-      { portion: "values", change: { op: "remove", slot: "tokens.spacing" } },
-      { portion: "values", change: { op: "adopt", slot: "tokens.spacing", source: "test-kit", members: ["base"] } },
+      { portion: "values", change: { op: "remove", slot: "themes.spacing" } },
+      { portion: "values", change: { op: "adopt", slot: "themes.spacing", source: "test-kit", members: ["base"] } },
     ] });
     const reduced = associated(less);
-    expect(reduced.records.some(record => record.kind === "value-member" && record.member === "tokens.spacing.extra")).toBe(false);
+    expect(reduced.records.some(record => record.kind === "value-member" && record.member === "themes.spacing.extra")).toBe(false);
     expect(reduced.records.filter(record => record.kind === "value-member")).toHaveLength(first.records.filter(record => record.kind === "value-member").length - 1);
     expect(reduced.sourceHashes.example).not.toBe(first.sourceHashes.example);
     const offer = fixture(); offer.catalog.values.fills = []; pending(offer);
@@ -129,7 +129,7 @@ describe("complete source-owner record association", () => {
   });
 
   it("requires every actual authored output and notice byte, rejecting duplicates, extras and stale receipts [mutant: missing-byte]", () => {
-    const input = fixture(), source = syntheticSource(); source.candidate.reads = { tokens: [], assets: [], components: [] };
+    const input = fixture(), source = syntheticSource(); source.candidate.reads = { themes: [], assets: [], components: [] };
     input.library = applyLibraryChange(input.catalog, input.library, { baseHash: libraryHash(input.library), changes: [{ portion: "components", change: { op: "author", slot: "components.button", fill: source.candidate, files: [source.file, source.notice] } }] });
     const result = associated(input);
     expect(result.records.find(record => record.kind === "component")!.files).toEqual([source.file, source.notice]);
@@ -138,15 +138,15 @@ describe("complete source-owner record association", () => {
 
   it("preserves valid adopted literalization and its distinct upstream/member self hashes", () => {
     const input = fixture(), up = input.catalog.values.fills[0]!;
-    const radius: FillDoc = { $extensions: { "com.clossys.fill": { ...up.$extensions["com.clossys.fill"], id: "test-kit/tokens.radius", slot: "tokens.radius" } }, tokens: { radius: { base: { $type: "dimension", $value: { value: 4, unit: "px" } } } } };
-    up.tokens!.spacing = { base: { $type: "dimension", $value: "{tokens.radius.base}" } };
+    const radius: FillDoc = { $extensions: { "com.clossys.fill": { ...up.$extensions["com.clossys.fill"], id: "test-kit/themes.radius", slot: "themes.radius" } }, themes: { radius: { base: { $type: "dimension", $value: { value: 4, unit: "px" } } } } };
+    up.themes!.spacing = { base: { $type: "dimension", $value: "{themes.radius.base}" } };
     input.catalog.values.fills = [up, radius]; input.library.values = { fills: [] };
-    for (const change of [{ op: "author" as const, slot: "tokens.radius", tokens: { base: { $type: "dimension" as const, $value: { value: 8, unit: "px" } } } }, { op: "adopt" as const, slot: "tokens.spacing", source: "test-kit" }]) input.library = applyLibraryChange(input.catalog, input.library, { baseHash: libraryHash(input.library), changes: [{ portion: "values", change }] });
-    const record = associated(input).records.find(record => record.kind === "value-member" && record.slot === "tokens.spacing")!;
+    for (const change of [{ op: "author" as const, slot: "themes.radius", tokens: { base: { $type: "dimension" as const, $value: { value: 8, unit: "px" } } } }, { op: "adopt" as const, slot: "themes.spacing", source: "test-kit" }]) input.library = applyLibraryChange(input.catalog, input.library, { baseHash: libraryHash(input.library), changes: [{ portion: "values", change }] });
+    const record = associated(input).records.find(record => record.kind === "value-member" && record.slot === "themes.spacing")!;
     expect(record.kind).toBe("value-member");
     if (record.kind === "value-member" && record.origin?.kind === "adopted") {
       expect(record.token.$extensions!["com.clossys.materializedSha256"]).not.toBe(record.origin.sha256);
-      expect(record.origin.aliasOf).toBe("tokens.radius.base");
+      expect(record.origin.aliasOf).toBe("themes.radius.base");
     }
   });
 
@@ -174,7 +174,7 @@ describe("complete source-owner record association", () => {
     expect(next.rule!.source).not.toBe(derived.rule.source);
     expect(Object.isFrozen(next.rule!.source)).toBe(true);
     expect(() => runtimeSnapshot(next)).not.toThrow();
-    expect(next.inputRecords.some(record => record.member === "tokens.text-color.primary")).toBe(true);
+    expect(next.inputRecords.some(record => record.member === "themes.foreground.default")).toBe(true);
     input.library.surfaces!.files = input.library.surfaces!.files.slice(1); pending(input);
   });
 });

@@ -45,7 +45,7 @@ export function heroGraphicSpecimenValues(): Resolved {
   const base = loadCatalog();
   const catalog = base.slots.some(slot => slot.id === BACKDROP_GRAPHIC_SLOT) ? base : withA276BackdropGraphic(base);
   let library: LibraryData = { source: { id: "hero-specimen", kind: "consumer", author: "consumer", license: "MIT" }, fills: [], adoptedAt: "2026-10-30" };
-  const changes = catalog.slots.filter(slot => slot.layer === "tokens").flatMap(slot => {
+  const changes = catalog.slots.filter(slot => slot.layer === "themes").flatMap(slot => {
     const offers = catalog.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot === slot.id && doc.$extensions["com.clossys.fill"].mode !== "reference");
     const chosen = offers.find(doc => doc.$extensions["com.clossys.fill"].source === "foundry") ?? offers[0];
     return chosen ? [{ op: "adopt" as const, slot: slot.id, source: chosen.$extensions["com.clossys.fill"].source }] : [];

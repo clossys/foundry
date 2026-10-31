@@ -17,7 +17,7 @@ function fixture(layer: LayerId): DesignerLayerBoardsInput {
   const projection = { phase: 'ready' as const, layer, consumer: 'SYNTHETIC', libraryHash, selectionHash, session: { id: 'SYNTHETIC-session', revision: 1, status: 'saved', edits: [], history: null }, activeLeaf: boards[0]?.leaves[0] ?? '', placements: [placement], slots: catalog.slots.filter(slot => slot.layer === layer).map(({ id, layer }) => ({ id, layer })), boards };
   return { query: DESIGNER_LAYER_BOARDS_QUERY, projection, projectionHash: runtimeHash(projection), arrangement: { kind: 'lanes', groupKey: 'domain', gap: { x: 12, y: 8 }, laneGap: 20 }, stateSections: {}, records: boards.map(board => ({ sessionId: projection.session.id, consumer: projection.consumer, libraryHash, selectionHash, records: { columns: { version: 1, items: [] }, controls: { version: 1, mode: 'view', canSave: false, pending: false }, rows: { version: 1, layer, boardId: board.id, label: board.label, items: board.leaves.map(id => ({ id, label: id, scope: 'slot', selectedSource: null, candidates: [], prompt: { consumer: projection.consumer, board: { id: board.id, label: board.label }, slot: { id, label: id }, variants: [], tokens: [], siblings: [], returnStep: 'SYNTHETIC-return' } })) } } })) };
 }
-it.each(['tokens','assets','components','sections','frames'] as const)('designer.layer-boards v1 materializes actual %s placement inventory', layer => {
+it.each(['themes','assets','components','sections','frames'] as const)('designer.layer-boards v1 materializes actual %s placement inventory', layer => {
   const input = fixture(layer), before = runtimeHash(input);
   const result = deriveDesignerLayerBoardsV1(input);
   expect(result.status).toBe('materialized');
@@ -27,7 +27,7 @@ it.each(['tokens','assets','components','sections','frames'] as const)('designer
   expect(result.body.boards.map(board => board.groups?.domain)).toEqual(domains);
   expect(result.body.boards.map(board => board.section)).toEqual(input.projection.boards.map((_, index) => ({ slot: 'sections.comparison', index })));
   expect(result.body.source).toEqual({ kind: 'derived', query: DESIGNER_LAYER_BOARDS_QUERY });
-  expect(result.body.collapseBelow).toBe('tokens.breakpoint.tablet');
+  expect(result.body.collapseBelow).toBe('md');
   expect(runtimeHash(input)).toBe(before);
   expect(result.fills['sections.comparison']).toHaveLength(input.records.length);
 });
@@ -52,7 +52,7 @@ it('lanes to grid retains exactly the same board IDs, rows and checked selection
   expect(after.materializationHash).not.toBe(before.materializationHash);
 });
 it('refuses unknown query versions, stale projection hashes, foreign rows and caller-authored inventory', () => {
-  const input = fixture('tokens');
+  const input = fixture('themes');
   expect(DESIGNER_LAYER_BOARDS_QUERY).toEqual({ id: 'designer.layer-boards', version: 1 });
   expect(() => deriveDesignerLayerBoardsV1({ ...input, query: { id: 'designer.layer-boards', version: 2 } })).toThrow(/version/);
   expect(() => deriveDesignerLayerBoardsV1({ ...input, query: { id: 'host-query', version: 1 } })).toThrow(/version/);
@@ -64,12 +64,12 @@ it('refuses unknown query versions, stale projection hashes, foreign rows and ca
   expect(() => deriveDesignerLayerBoardsV1({ ...input, render: () => null } as DesignerLayerBoardsInput)).toThrow(/snapshot/);
 });
 it('keeps missing ready identity and missing actual checked records pending without invented boards', () => {
-  const input = fixture('tokens'), projection = { ...input.projection, libraryHash: null };
+  const input = fixture('themes'), projection = { ...input.projection, libraryHash: null };
   expect(deriveDesignerLayerBoardsV1({ ...input, projection, projectionHash: runtimeHash(projection) })).toEqual({ status: 'pending', reason: expect.stringMatching(/identity/) });
   expect(deriveDesignerLayerBoardsV1({ ...input, records: [] })).toEqual({ status: 'pending', reason: expect.stringMatching(/records/) });
 });
 function stateFixture(phase: 'loading' | 'error' | 'empty'): DesignerLayerBoardsInput {
-  const input = fixture('tokens');
+  const input = fixture('themes');
   const projection = { ...input.projection, phase: phase === 'empty' ? 'ready' as const : phase, ...(phase === 'empty' ? { placements: [], slots: [], boards: [] } : {}) };
   const section = phase === 'loading' ? 'sections.notices' as const : phase === 'error' ? 'sections.error-state' as const : 'sections.empty-state' as const;
   const reference = { kind: phase === 'loading' ? 'records' as const : phase === 'error' ? 'copy' as const : 'action' as const, ref: `SYNTHETIC/${phase}` };
@@ -95,7 +95,7 @@ it('state output without actual selected Layout or content stays pending and for
   expect(() => deriveDesignerLayerBoardsV1({ ...input, stateSections: { loading: { ...state, sessionId: 'foreign-original-session' } } })).toThrow(/different original session/);
 });
 it('binds original Edit revision and operations into query input identity without retaining another store', () => {
-  const input = fixture('tokens'), first = ready(input);
+  const input = fixture('themes'), first = ready(input);
   const projection = { ...input.projection, session: { ...input.projection.session, revision: 2, edits: [{ leaf: input.projection.activeLeaf, operationsHash: runtimeHash('SYNTHETIC-edit') }] } };
   const next = ready({ ...input, projection, projectionHash: runtimeHash(projection) });
   expect(next.inputHash).not.toBe(first.inputHash); expect(next.materializationHash).toBe(first.materializationHash);

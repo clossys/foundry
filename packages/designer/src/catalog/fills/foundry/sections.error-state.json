@@ -38,8 +38,8 @@
         "scannedReads": {
           "assets": [],
           "components": [],
-          "tokens": [
-            "tokens.spacing"
+          "themes": [
+            "themes.spacing"
           ]
         },
         "sourceFiles": [
@@ -105,8 +105,8 @@
       },
       "reads": {
         "assets": [],
-        "tokens": [
-          "tokens.spacing"
+        "themes": [
+          "themes.spacing"
         ]
       },
       "slot": "sections.error-state",

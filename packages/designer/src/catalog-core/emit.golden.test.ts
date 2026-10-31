@@ -2,15 +2,14 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve as resolvePath } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { applyLibraryChange, libraryHash, emit, loadCatalog, resolve, stableStringify, check, type Resolved, type LibraryData, type FillDoc } from "./index.js";
+import { applyLibraryChange, libraryHash, emit, loadCatalog, resolve, stableStringify, check, type Resolved, type LibraryData } from "./index.js";
 import { TOKENS, type TokenDefinition } from "../tokens/tokens.js";
 import { parseDeclarationsForSelector } from "../tokens/internal/parse-css.js";
 import { resolveCascade, type CascadeRule } from "../tokens/internal/cascade.js";
 import { resolveTokenValue } from "../tokens/internal/resolve-token-value.js";
-import originalFoundryFills from "./__fixtures__/foundry-original-fills.json" with { type: "json" };
 function shipped(): Resolved {
-  const catalog={...loadCatalog(),fills:structuredClone(originalFoundryFills) as unknown as FillDoc[]}; let library:LibraryData={source:{id:"example",kind:"consumer",author:"consumer",license:"UNLICENSED",extends:"foundry"},fills:[],adoptedAt:"2026-10-23"};
-  library=applyLibraryChange(catalog,library,{baseHash:libraryHash(library),changes:catalog.fills.filter(fill=>fill.$extensions["com.clossys.fill"].source==="foundry").map(fill=>({op:"adopt" as const,slot:fill.$extensions["com.clossys.fill"].slot,source:"foundry"}))});
+  const catalog=loadCatalog(); let library:LibraryData={source:{id:"example",kind:"consumer",author:"consumer",license:"UNLICENSED",extends:"foundry"},fills:[],adoptedAt:"2026-10-23"};
+  library=applyLibraryChange(catalog,library,{baseHash:libraryHash(library),changes:catalog.fills.map(fill=>fill.$extensions["com.clossys.fill"]).filter(meta=>meta.slot.startsWith("themes.")).map(meta=>({op:"adopt" as const,slot:meta.slot,source:meta.source}))});
   const profile=resolve({catalog,library}); return {...profile,baseline:Object.fromEntries(Object.values(profile.members).filter(m=>m.emit).map(m=>[m.emit!,{...m.css}]))};
 }
 
@@ -56,12 +55,12 @@ describe("deterministic catalog emit", () => {
   });
   it("deduplicates font imports, sorts theme variables and provides safe scoped preview CSS", () => {
     const profile = structuredClone(shipped());
-    for (const id of ["tokens.typeface.body", "tokens.typeface.display"]) profile.members[id]!.font = { kind: "fontsource", package: "@fontsource/inter", version: "5.3.0", weights: [600, 400, 400], styles: ["normal", "italic"], license: "OFL-1.1" };
+    for (const id of ["themes.font-sans.default", "themes.font-heading.default"]) profile.members[id]!.font = { kind: "fontsource", package: "@fontsource/inter", version: "5.3.0", weights: [600, 400, 400], styles: ["normal", "italic"], license: "OFL-1.1" };
     expect(emit(profile, ["css-fonts"], { header: false })[0]!.contents).toBe('@import "@fontsource/inter/400-italic.css";\n@import "@fontsource/inter/400.css";\n@import "@fontsource/inter/600-italic.css";\n@import "@fontsource/inter/600.css";\n');
     const scoped = emit(profile, ["css-brand"], { full: true, header: false, selectors: { light: '[data-candidate="0"]', mediaDark: '@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) [data-candidate="0"]', dark: ':root[data-theme="dark"] [data-candidate="0"]' } })[0]!.contents;
-    expect(scoped.match(/--color-surface-base:/g)).toHaveLength(3);
+    expect(scoped.match(/--background:/g)).toHaveLength(3);
     expect((scoped.match(/\{/g) ?? []).length).toBe((scoped.match(/\}/g) ?? []).length);
-    profile.members["tokens.typeface.body"]!.css.light = "</style>";
+    profile.members["themes.background.default"]!.css.light = "</style>";
     expect(() => emit(profile, ["css-brand"])).toThrow("emit: unsafe CSS text (<)");
   });
 });

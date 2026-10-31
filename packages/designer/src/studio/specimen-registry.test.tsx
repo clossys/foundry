@@ -36,9 +36,10 @@ it("declares a valid card span on every actual leaf with full content and third-
 it("measures the complete actual native spacing registry and its expanded leaf DOM as fixture coverage", async () => {
   const context = nativeContext();
   const leaf = studioSpecimenLeaves.find(leaf => leaf.id === "sections.specimen-spacing-ladder")!;
-  const expected = enumerateRegisteredDesignerSpecimenCases({ context, specimen: leaf.id, sourceLeaf: "tokens.spacing" })!;
-  expect(expected.items.length).toBeGreaterThan(1);
-  const cell: SpecimenCoverageCell = { agent: "designer", id: "tokens.spacing", kind: "spacing", layer: "tokens", ...expected };
+  const expected = enumerateRegisteredDesignerSpecimenCases({ context, specimen: leaf.id, sourceLeaf: "themes.spacing" })!;
+  // themes.spacing is the single shadcn `--spacing` base unit: one closed member.
+  expect(expected.items).toHaveLength(1);
+  const cell: SpecimenCoverageCell = { agent: "designer", id: "themes.spacing", kind: "spacing", layer: "themes", ...expected };
   const props = { ...expected, context, expanded: true, need: ({ reason }: { reason: string }) => <components.SemanticContent as="p">NEED {reason}</components.SemanticContent>, labels: { showAllVariants: (count: number) => `Show all ${count}` } };
   const selection = { profile: context.profile, selectionHash: context.profile.components.selectionHash, modules: context.modules, descriptors: Object.fromEntries(Object.entries(context.profile.components.components).map(([id, chosen]) => [id, componentDescriptorHash(chosen.descriptor)])) };
   const view = render(<ConsumerComponentProvider value={selection}><Suspense>{leaf.render(props)}</Suspense></ConsumerComponentProvider>);

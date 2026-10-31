@@ -16,19 +16,6 @@ export interface SelectionShadcnTokens {
   readonly properties: readonly string[];
 }
 
-// A native library can distinguish roles that a shadcn preset combines. These
-// owners keep that reduction explicit instead of depending on object order.
-const SHARED_TARGET_OWNERS: Readonly<Record<string, string>> = {
-  "--accent": "tokens.surface-color.selected",
-  "--accent-foreground": "tokens.text-color.on-accent",
-  "--border": "tokens.border-color.base",
-  "--muted": "tokens.surface-color.sunken",
-  "--muted-foreground": "tokens.text-color.muted",
-  "--primary": "tokens.action-color.default",
-  "--radius-lg": "tokens.surface-radius.default",
-  "--text-xs": "tokens.body-size.s",
-};
-
 /**
  * Map the selected consumer's resolved tokens to every live exact contract key.
  * Wildcard scale namespaces remain the existing Designer emitter's responsibility.
@@ -46,7 +33,8 @@ export function selectionShadcnTokens(resolved: Pick<Resolved, "members">, contr
   }
   const owners = new Map<string, { id: string; kind: string }>();
   for (const [target, candidates] of targets) {
-    const owner = candidates.length === 1 ? candidates[0] : candidates.find(candidate => candidate.id === SHARED_TARGET_OWNERS[target]);
+    // Each themes leaf names exactly one shadcn variable; a shared target is a contract defect.
+    const owner = candidates.length === 1 ? candidates[0] : undefined;
     if (!owner) throw new Error(`NEED: selected shadcn token ${target} has no unambiguous native owner`);
     owners.set(target, owner);
   }

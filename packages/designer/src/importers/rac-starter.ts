@@ -151,7 +151,7 @@ export function importRacStarter(input: RacStarterInput) {
     const blockers = [...new Map(issues.map(issue => [JSON.stringify(issue), { code: issue.code, message: `${issue.file}: ${issue.value}: ${issue.message}` }])).values()];
     const descriptor = {
       slot, source: SOURCE, root: componentRoot, members: Object.keys(propMap).sort(), props: [], propMap,
-      reads: { tokens: rewrite.reads.tokens, assets: rewrite.reads.assets, components: [...components].sort() }, composes: [...components].sort(),
+      reads: { themes: rewrite.reads.themes, assets: rewrite.reads.assets, components: [...components].sort() }, composes: [...components].sort(),
       impl: { kind: "source" as const, entry: `components/${leaf}/${name}.tsx`, export: name }, license: "Apache-2.0",
       pin: { ...RAC_STARTER_PIN, files: upstreamFiles.map(file => ({ path: file.path, sha256: sha256(file.content) })).sort((a, b) => a.path.localeCompare(b.path)) },
       transform: transformId, notice: adapter.notice, deps, outputSha256: output.map(file => ({ path: file.path, sha256: sha256(file.content) })).sort((a, b) => a.path.localeCompare(b.path)), blockers,

@@ -71,7 +71,7 @@ describe("composite changeset batching", { timeout: 300_000 }, () => {
 
   it("re-resolves after a values operation replaces the values portion", () => {
     // Removing an absent value slot leaves the content as it was but replaces the values portion object.
-    const changes: CompositeChangeSet["changes"] = [operations[0]!, { portion: "values", change: { op: "remove", slot: "tokens.batch-absent" } }, operations[1]!];
+    const changes: CompositeChangeSet["changes"] = [operations[0]!, { portion: "values", change: { op: "remove", slot: "themes.batch-absent" } }, operations[1]!];
     const mixed = counted(() => apply(empty, changes));
     const surfacesOnly = counted(() => apply(empty, operations.slice(0, 2)));
     expect(mixed.resolves).toBeGreaterThan(surfacesOnly.resolves);

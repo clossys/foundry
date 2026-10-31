@@ -14,7 +14,7 @@ function setup() {
   const write = (path: string, data: unknown) => { mkdirSync(join(path, ".."), { recursive: true }); writeFileSync(path, JSON.stringify(data, null, 2)); };
   const base = fixture();
   for (const layer of layers) {
-    const contract = layer === "sections" ? { passageSchema: "passages.example", parts: ["components.example"] } : layer === "frames" ? { composes: ["sections.example", "assets.example"] } : { allowedReads: { tokens: ["tokens.example"] } };
+    const contract = layer === "sections" ? { passageSchema: "passages.example", parts: ["components.example"] } : layer === "frames" ? { composes: ["sections.example", "assets.example"] } : { allowedReads: { themes: ["themes.example"] } };
     write(join(catalog, "slots", `${layer}.json`), [{ id: `${layer}.example`, layer, contract }]);
     write(join(catalog, "ia", `${layer}.json`), base.placements.find(row => row.layer === layer));
     write(join(catalog, "fills", "fixture", `${layer}.json`), { $extensions: { "com.clossys.fill": { id: `fixture/${layer}.example`, slot: `${layer}.example`, status: "stable" } } });
@@ -53,7 +53,7 @@ describe("read-only catalog adapters", () => {
   it("keeps permission declarations out of the usage graph", () => {
     const { catalog, writer } = setup();
     const input = loadCoverageInput({ catalogRoot: catalog, writerCatalogRoot: writer });
-    expect(input.edges.some(edge => edge.from === "components.example" && edge.to === "tokens.example")).toBe(false);
+    expect(input.edges.some(edge => edge.from === "components.example" && edge.to === "themes.example")).toBe(false);
   });
   it("only advances fill state using execution results bound to the actual file bytes", () => {
     const { catalog, writer, checks, write } = setup();

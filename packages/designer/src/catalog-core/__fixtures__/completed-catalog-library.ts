@@ -23,5 +23,5 @@ export function authorConsumerMedia(catalog: CatalogData, prior: LibraryData): L
     src: "https://media.example.invalid/tour.mp4", mediaType: "video/mp4", width: 1280, height: 720, reducedMotion: "poster",
     captions: { src: "https://media.example.invalid/tour.en.vtt", srclang: "en", label: "English" },
   } } });
-  return applyLibraryChange(catalog, library, { baseHash: libraryHash(library), changes: [{ op: "adopt", slot: "assets.pattern", source: "foundry" }] });
+  return applyLibraryChange(catalog, library, { baseHash: libraryHash(library), changes: [{ op: "adopt", slot: "assets.pattern", source: "foundry" }, { op: "adopt", slot: "assets.backdrop-graphic", source: "foundry" }] });
 }

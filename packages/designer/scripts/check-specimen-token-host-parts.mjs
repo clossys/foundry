@@ -42,7 +42,7 @@ for (const name of [canonicalPath, hostPath, 'packages/designer/src/studio/speci
   if (result.emitSkipped || emitted !== installed) throw new Error(`Current source build required: ${name}`);
   sourceInputs.push({ path: name, sha256: sha256(file.text), compiledSha256: sha256(installed) });
 }
-const tokenRegistryPath = 'packages/designer/src/catalog/slots/tokens.json';
+const tokenRegistryPath = 'packages/designer/src/catalog/slots/themes.json';
 const tokenRegistrySource = await readFile(join(root, tokenRegistryPath), 'utf8');
 const tokenRegistryInstalled = await readFile(join(root, tokenRegistryPath.replace('/src/', '/dist/')), 'utf8');
 if (JSON.stringify(JSON.parse(tokenRegistrySource)) !== JSON.stringify(JSON.parse(tokenRegistryInstalled))) throw new Error('The current registered token/member emit mappings differ from the installed build');
@@ -65,7 +65,7 @@ const inventory = JSON.parse(compiler.stdout);
 const catalog = { values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: importFoundryComponents().fills } };
 const componentOptions = { packageExports: Object.fromEntries(inventory.packages.map(row => [row.module, row.values])) };
 const empty = { source: { id: 'example', kind: 'consumer', author: 'consumer', license: 'MIT' }, adoptedAt: '2026-10-30', values: { fills: [] }, components: { fills: [], files: [] } };
-const changes = catalog.values.slots.filter(slot => slot.layer === 'tokens').flatMap(slot => {
+const changes = catalog.values.slots.filter(slot => slot.layer === 'themes').flatMap(slot => {
   const offers = catalog.values.fills.filter(fill => fill.$extensions['com.clossys.fill'].slot === slot.id && fill.$extensions['com.clossys.fill'].mode !== 'reference');
   const fill = ['foundry', 'tailwind-default'].map(source => offers.find(fill => fill.$extensions['com.clossys.fill'].source === source)).find(Boolean) ?? offers[0];
   return fill ? [{ portion: 'values', change: { op: 'adopt', slot: slot.id, source: fill.$extensions['com.clossys.fill'].source } }] : [];
@@ -87,7 +87,7 @@ await symlink(join(root, 'node_modules'), join(directory, 'node_modules'), 'dir'
 const bundlePath = join(directory, 'actual-host-binding.mjs'); await writeFile(bundlePath, bundled.outputFiles[0].text);
 const executable = await import(pathToFileURL(bundlePath).href);
 const context = { profile, modules: executable.componentModules };
-const memberId = 'tokens.surface-color.base', pairMemberId = 'tokens.text-color.primary';
+const memberId = 'themes.background.default', pairMemberId = 'themes.foreground.default';
 const callbackCalls = [];
 const parts = {
   'studio.specimen-swatch': input => { callbackCalls.push({ part: 'studio.specimen-swatch', ...input }); return executable.renderSpecimenSwatchHostPart(context, input); },
@@ -122,7 +122,7 @@ for (const source of sources) {
   const bound = bindSurfaceSource(fill, [file], profile, inventory.packages);
   if (bound.proof.findings.length) throw new Error(JSON.stringify(bound.proof.findings));
   const resolvedImports = surfaceDogfoodImportBindings(fill, bound);
-  const report = buildSurfaceConsumption({ tokens: catalog.values.slots.filter(slot => slot.layer === 'tokens').map(slot => ({ id: slot.id, contract: { emit: slot.contract.emit } })), assets: catalog.values.slots.filter(slot => slot.layer === 'assets'), components: catalog.components.slots, sections: loadSectionRegistry().slots.filter(slot => slot.id === fill.slot), frames: [], fills: [{ id: 'foundry/sections.specimen-swatch', slot: fill.slot, source: 'foundry' }], sourceScans: [{ fill: 'foundry/sections.specimen-swatch', files: [file], resolvedImports }], themeCss: '' });
+  const report = buildSurfaceConsumption({ tokens: catalog.values.slots.filter(slot => slot.layer === 'themes').map(slot => ({ id: slot.id, contract: { emit: slot.contract.emit } })), assets: catalog.values.slots.filter(slot => slot.layer === 'assets'), components: catalog.components.slots, sections: loadSectionRegistry().slots.filter(slot => slot.id === fill.slot), frames: [], fills: [{ id: 'foundry/sections.specimen-swatch', slot: fill.slot, source: 'foundry' }], sourceScans: [{ fill: 'foundry/sections.specimen-swatch', files: [file], resolvedImports }], themeCss: '' });
   nativeFindings.push(...report.findings);
   cases.push({ sourcePath: source.sourcePath, export: source.name, observedPath: entry, observedSourceSha256: sha256(code), originalDeclarationSha256: sha256(source.name === 'Swatch' ? swatch.getText(ast) : hostAst.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === source.name).getText(hostAst)), s4Findings: bound.proof.findings, resolvedImports, findings: report.findings });
 }

@@ -40,15 +40,31 @@
           "components": [
             "components.semantic-content"
           ],
-          "tokens": [
-            "tokens.border-color",
-            "tokens.caption-size",
-            "tokens.content-size",
-            "tokens.control-radius",
-            "tokens.spacing",
-            "tokens.status-color",
-            "tokens.surface-color",
-            "tokens.text-color"
+          "themes": [
+            "themes.border",
+            "themes.input",
+            "themes.sidebar-border",
+            "themes.radius",
+            "themes.spacing",
+            "themes.destructive",
+            "themes.background",
+            "themes.card",
+            "themes.popover",
+            "themes.secondary",
+            "themes.accent",
+            "themes.muted",
+            "themes.sidebar",
+            "themes.sidebar-accent",
+            "themes.foreground",
+            "themes.card-foreground",
+            "themes.popover-foreground",
+            "themes.primary-foreground",
+            "themes.secondary-foreground",
+            "themes.accent-foreground",
+            "themes.muted-foreground",
+            "themes.sidebar-foreground",
+            "themes.sidebar-primary-foreground",
+            "themes.sidebar-accent-foreground"
           ]
         },
         "sourceFiles": [
@@ -141,15 +157,31 @@
       },
       "reads": {
         "assets": [],
-        "tokens": [
-          "tokens.border-color",
-          "tokens.caption-size",
-          "tokens.content-size",
-          "tokens.control-radius",
-          "tokens.spacing",
-          "tokens.status-color",
-          "tokens.surface-color",
-          "tokens.text-color"
+        "themes": [
+          "themes.border",
+          "themes.input",
+          "themes.sidebar-border",
+          "themes.radius",
+          "themes.spacing",
+          "themes.destructive",
+          "themes.background",
+          "themes.card",
+          "themes.popover",
+          "themes.secondary",
+          "themes.accent",
+          "themes.muted",
+          "themes.sidebar",
+          "themes.sidebar-accent",
+          "themes.foreground",
+          "themes.card-foreground",
+          "themes.popover-foreground",
+          "themes.primary-foreground",
+          "themes.secondary-foreground",
+          "themes.accent-foreground",
+          "themes.muted-foreground",
+          "themes.sidebar-foreground",
+          "themes.sidebar-primary-foreground",
+          "themes.sidebar-accent-foreground"
         ]
       },
       "slot": "sections.media",

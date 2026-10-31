@@ -45,7 +45,7 @@ describe("system-canvas copy hand-roll", () => {
   it("renders the real empty studio page with only resolver-wrapped chrome text and aria labels", () => {
     // Empty data is a real supported page state. Raw catalog IDs, graph values,
     // check diagnostics and selected-history presentation remain named Needs.
-    const { container } = render(<DesignerPage copy={binding} data={{ placements: [{ layer: "tokens", nodes: [] }] }} initialUrl={{ search: "", hash: "" }} />);
+    const { container } = render(<DesignerPage copy={binding} data={{ placements: [{ layer: "themes", nodes: [] }] }} initialUrl={{ search: "", hash: "" }} />);
     expect(container.querySelector("[data-designer-page]")).not.toBeNull();
     assertWrapped(container);
   });

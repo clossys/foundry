@@ -28,7 +28,7 @@ export function instanceFixture() {
     ],
     layouts: structuredClone(LAYOUT_LEAVES) as Mutable<InstanceRegistries>["layouts"],
     sections: [section("sections.hero"), section("sections.content"), section("sections.stats")],
-    tokens: [{ id: "tokens.spacing.lg", property: "--spacing-lg" }, { id: "tokens.breakpoint.tablet", property: "--breakpoint-tablet" }],
+    themes: [{ id: "themes.spacing.default", property: "--spacing" }],
   };
   const fills = new Map<string, Mutable<ConsumerInstanceFill>>();
   const put = (leaf: string, config: string | undefined, extra: Partial<Mutable<ConsumerInstanceFill>> = {}) => {

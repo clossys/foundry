@@ -16,7 +16,7 @@ export function flatten(fill: FillDoc): Record<string, DtcgToken> {
     if (Object.hasOwn(node, "$value")) { result[path] = node as unknown as DtcgToken; return; }
     for (const key of Object.keys(node).filter(key => !key.startsWith("$")).sort(compare)) walk(node[key], `${path}.${key}`);
   };
-  if (fill.tokens) walk(fill.tokens, "tokens");
+  if (fill.themes) walk(fill.themes, "themes");
   if (fill.assets) walk(fill.assets, "assets");
   return result;
 }

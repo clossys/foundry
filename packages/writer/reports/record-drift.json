@@ -7,47 +7,51 @@
   "inputs": [
     {
       "path": "admin-chat.r1.en.json",
-      "sha256": "d588c69266e163fbb5c9a65034526aabe7eac3140fd12cc811e673ef711fffd1"
+      "sha256": "1d64be02194d47d5c03034b2ec33e320616ddacd5f9a082ada83d90e20e299fd"
     },
     {
       "path": "admin-meta.r1.en.json",
-      "sha256": "1970bb3327fb1f0a9cc5357ce791102d9094a00a7c85874bb526c3f8aad549d5"
+      "sha256": "caaf3bb3d52e61e04d8e48b59ac2f7f6219b3f3944ced6d452a56044d14ad4e4"
     },
     {
       "path": "admin-pages.r1.en.json",
-      "sha256": "1493fce2ff8631a587febe3e558ecf6705dcb79469e41c87a1d2ff822f2774c0"
+      "sha256": "c89c52f5ba48e2c6cb8fbb7c7b7f1f2bdc0bf8bdf2da7279e0f8cbee9e234fd2"
     },
     {
       "path": "admin-studio.r1.en.json",
-      "sha256": "d50111cc044c1c079639ebca099079cbadfb7d52676b45f592886f2602d3c77b"
+      "sha256": "455bd4e19a1f4f887e94f4d586f8320a5b2fa6f06dae873a79dea5042417f4fe"
     },
     {
       "path": "admin-voice.r1.en.json",
-      "sha256": "36b3955087f05be4345d6681b4ab969ca102ae15727679865667543a4398ba2c"
+      "sha256": "127a08a26f720dc10c08bf396253d3844350f41ef115add722ff52fd17868236"
     },
     {
       "path": "admin-writer-paging.r1.en.json",
-      "sha256": "f1eb924b8e677e0f81ba817e0360ebcc3323d246124ac77be80b3e3e78bc1b45"
+      "sha256": "6df0a5989fc555c2b6ac18cb3a460ef66aca92cee82ac0daeea1599339ffda2e"
     },
     {
       "path": "admin-writer.r1.en.json",
-      "sha256": "c5e5b4fff837898528e261e66aed461748a2995f67afd5000fca2c5949a9b9c8"
+      "sha256": "e56ae49597d46c7a7072adcf9059a3f9b50dbef177a393f346ef7b43e9c022f2"
+    },
+    {
+      "path": "common-labels.r1.en.json",
+      "sha256": "34ceac23dd69fb8877bc29ee0419da340fce86c07158393a43ecb35bdf6a2f46"
     },
     {
       "path": "pending/sections-upgrade.r1.en.json",
-      "sha256": "9d48dee988dc90df91ff3f0ea40e4f85574a411b808de4c1a7049e307c1c5118"
+      "sha256": "767957a12a214f1ec84836fc207bb6f682020bf164ab2d824ebff3ac8b118c54"
     },
     {
       "path": "section-defaults.r1.en.json",
-      "sha256": "fbacf11c6bfc1416aaea273c387e3baecf22bdf840c71fce70626e70cba8000d"
+      "sha256": "919c189e4aaa1d209bcbb7a8997d8182786757b15442e8c7f05745c19f206db7"
     },
     {
       "path": "sign-in.json",
-      "sha256": "b2988bc422baed14c3fa8b4c6e7958eb8199f5437799bc905585bf48e526a754"
+      "sha256": "a95362da02a1004a291292a54e0ca29b8a6403ea7942d44a77b90fc355fef676"
     },
     {
       "path": "site.en.json",
-      "sha256": "fc2fc7ad073c84a7153d2174de20c89c2e563a369dc82cf58db8daf90b9ca3cd"
+      "sha256": "94044c46564611da0613de177acb2d7fa6b45077240ba4795dd93a4145e5aa19"
     }
   ],
   "bundles": [
@@ -57,7 +61,7 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 136
+      "records": 121
     },
     {
       "path": "admin-meta.r1.en.json",
@@ -65,7 +69,7 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 347
+      "records": 291
     },
     {
       "path": "admin-pages.r1.en.json",
@@ -73,7 +77,7 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 226
+      "records": 124
     },
     {
       "path": "admin-studio.r1.en.json",
@@ -81,7 +85,7 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 504
+      "records": 374
     },
     {
       "path": "admin-voice.r1.en.json",
@@ -89,7 +93,7 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 206
+      "records": 129
     },
     {
       "path": "admin-writer-paging.r1.en.json",
@@ -105,7 +109,15 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 17
+      "records": 12
+    },
+    {
+      "path": "common-labels.r1.en.json",
+      "defaultLocale": "en",
+      "declaredLocales": [
+        "en"
+      ],
+      "records": 171
     },
     {
       "path": "pending/sections-upgrade.r1.en.json",
@@ -113,7 +125,7 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 10
+      "records": 7
     },
     {
       "path": "section-defaults.r1.en.json",
@@ -121,7 +133,7 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 108
+      "records": 91
     },
     {
       "path": "sign-in.json",
@@ -130,7 +142,7 @@
         "ar",
         "en"
       ],
-      "records": 78
+      "records": 76
     },
     {
       "path": "site.en.json",
@@ -138,10 +150,10 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 99
+      "records": 52
     }
   ],
-  "records": 1735,
+  "records": 1452,
   "locales": [
     "ar",
     "en"

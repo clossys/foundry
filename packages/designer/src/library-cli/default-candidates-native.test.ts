@@ -38,11 +38,12 @@ describe("native default candidate input integration", () => {
     expect(input.componentBundles!.some(bundle => bundle.slot === "components.sheet" && bundle.files.some(file => file.path === "components/sheet/sheet.tsx" && file.content.trim().length > 0))).toBe(true);
     expect(checkDefaultCandidates(input).report.missing.some(row => row.slot === "components.sheet")).toBe(false);
   });
-  it("detects deletion of the native spacing default while retaining other sources and restores the exact baseline", () => {
-    const input = nativeInput(), original = input.catalog.values.fills, baseline = checkDefaultCandidates(input), slot = "tokens.spacing", source = input.defaultSources[slot];
+  it("detects deletion of the native spacing default while retaining that source's other theme fills and restores the exact baseline", () => {
+    const input = nativeInput(), original = input.catalog.values.fills, baseline = checkDefaultCandidates(input), slot = "themes.spacing", source = input.defaultSources[slot];
     const defaults = original.filter(doc => doc.$extensions["com.clossys.fill"].slot === slot && doc.$extensions["com.clossys.fill"].source === source);
     expect(defaults).toHaveLength(1);
-    expect(original.some(doc => doc.$extensions["com.clossys.fill"].slot === slot && doc.$extensions["com.clossys.fill"].source !== source)).toBe(true);
+    // Each themes leaf has exactly one shipped source; the mutation must leave that source's other theme fills in place.
+    expect(original.some(doc => doc.$extensions["com.clossys.fill"].slot !== slot && doc.$extensions["com.clossys.fill"].slot.startsWith("themes.") && doc.$extensions["com.clossys.fill"].source === source)).toBe(true);
     input.catalog.values.fills = original.filter(doc => doc.$extensions["com.clossys.fill"].id !== defaults[0]!.$extensions["com.clossys.fill"].id);
     const mutated = checkDefaultCandidates(input);
     expect(mutated.exitCode).not.toBe(0);
@@ -68,8 +69,8 @@ describe("native default candidate input integration", () => {
   });
   it("exposes missing default policy as invalid input", () => {
     const input = nativeInput();
-    input.defaultSources = { ...input.defaultSources, "tokens.spacing": undefined };
-    expect(checkDefaultCandidates(input)).toMatchObject({ exitCode: 2, report: { invalid: expect.arrayContaining(["MISSING_POLICY tokens.spacing: default source definition is missing"]) } });
+    input.defaultSources = { ...input.defaultSources, "themes.spacing": undefined };
+    expect(checkDefaultCandidates(input)).toMatchObject({ exitCode: 2, report: { invalid: expect.arrayContaining(["MISSING_POLICY themes.spacing: default source definition is missing"]) } });
   });
   it("retains the explicit rich-text policy when its existing native candidate is removed", () => {
     const input = nativeInput(), original = input.catalog.components.fills, baseline = checkDefaultCandidates(input), slot = "components.rich-text";

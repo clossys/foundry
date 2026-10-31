@@ -41,7 +41,7 @@ async function snapshot(root: string): Promise<Record<string, string>> {
 async function addRationale(): Promise<string> {
   const rationale = "Chosen for the interface hierarchy.\nKeep the authored contrast decision.";
   const metadata = await json(input, "metadata.json");
-  metadata.rationale = { "tokens.accent-color": rationale };
+  metadata.rationale = { "themes.primary": rationale };
   await writeJson(input, "metadata.json", metadata);
   const library = { ...metadata, source: await json(input, "source.json"), fills: await Promise.all((await fs.readdir(join(input, "fills"))).sort().map(name => json(input, `fills/${name}`))) } as LibraryData;
   await writeJson(input, "selection.json", generateSelection(library));
@@ -61,7 +61,7 @@ describe("Designer cell migration and compile", () => {
     const tree = await json(cells, "tree.json");
     expect(Object.values(tree.active)).toEqual(Array(103).fill(1));
     for (const id of Object.keys(tree.active)) {
-      expect(id).toMatch(/^(tokens|assets|components|sections|frames)\.[a-z][a-z0-9-]*$/);
+      expect(id).toMatch(/^(themes|assets|components|sections|frames)\.[a-z][a-z0-9-]*$/);
       expect(await fs.readdir(join(cells, "cells", id))).toEqual(["v1.md"]);
       const text = await fs.readFile(join(cells, "cells", id, "v1.md"), "utf8");
       expect(text).toContain("confirmed: migration:2026-10-29");
@@ -79,10 +79,10 @@ describe("Designer cell migration and compile", () => {
 
   it("preserves nonempty multi-line rationale through the cell body and generated selection", async () => {
     const rationale = await addRationale(); await migrate();
-    const text = await fs.readFile(join(cells, "cells/tokens.accent-color/v1.md"), "utf8");
+    const text = await fs.readFile(join(cells, "cells/themes.primary/v1.md"), "utf8");
     expect(text).toContain("- Chosen for the interface hierarchy.");
     await compileLibraryCells(cells, output, { catalog });
-    expect((await json(output, "selection.json")).slots.find((slot: { slot: string }) => slot.slot === "tokens.accent-color").rationale).toBe(rationale);
+    expect((await json(output, "selection.json")).slots.find((slot: { slot: string }) => slot.slot === "themes.primary").rationale).toBe(rationale);
     expect(await readLibrary(output, catalog)).toEqual(await readLibrary(input, catalog));
   });
 
@@ -120,7 +120,7 @@ describe("Designer cell migration and compile", () => {
     await migrate(); await compileLibraryCells(cells, output, { catalog });
     expect(await compileLibraryCells(cells, output, { catalog, check: true })).toMatchObject({ ok: true, drift: [] });
     await fs.appendFile(join(output, "index.ts"), "// hand edit\n");
-    const fillPath = "fills/tokens.accent-color.json";
+    const fillPath = "fills/themes.primary.json";
     const fill = await json(output, fillPath); fill.$extensions["com.clossys.fill"].source = "edited";
     await writeJson(output, fillPath, fill);
     const before = await snapshot(output), result = await compileLibraryCells(cells, output, { catalog, check: true });

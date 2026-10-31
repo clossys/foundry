@@ -8,11 +8,11 @@ const fixture = (name: string): string => readFileSync(new URL(`./__fixtures__/w
 const NOW = "2026-10-26";
 const SECTION = "packages/example/sections/aside-band.tsx";
 const tokens = [
-  { id: "tokens.region-width", contract: { emit: { aside: "--ui-layout-aside-w" } } },
-  { id: "tokens.surface-color", contract: { emit: { canvas: "--ui-surface-canvas" } } },
+  { id: "themes.spacing", contract: { emit: { aside: "--ui-layout-aside-w" } } },
+  { id: "themes.background", contract: { emit: { canvas: "--ui-surface-canvas" } } },
 ];
 const frame = (content: string, path = "packages/example/frames/frame.tsx"): WiringSource => ({ path, content, layer: "frames" });
-const run = (input: Partial<WiringInput>) => checkWiring({ sources: [], tokens, now: NOW, ...input });
+const run = (input: Partial<WiringInput>) => checkWiring({ sources: [], themes: tokens, now: NOW, ...input });
 const codes = (result: ReturnType<typeof checkWiring>) => result.findings.map(row => `${row.code}:${row.severity}`);
 const wl9 = () => JSON.parse(fixture("wl9.exceptions.json")) as { schemaVersion: 1; exceptions: Record<string, unknown>[] };
 const routes = (content: string) => ({ modules: [{ path: "apps/example/app/studio/page.tsx", content }], assembly: [{ module: "@clossys/publisher/web", export: "RegisteredRoutePage" }, { module: "./runtime", export: "registry" }, { module: "./runtime", export: "useRuntime" }] });
@@ -28,14 +28,14 @@ describe("checkWiring static codes", () => {
   it("WL2: a Section reading a token member directly with no current exception", () => {
     const result = run({ sources: [{ path: SECTION, content: fixture("wl2.section.tsx.txt"), layer: "sections" }] });
     expect(codes(result)).toEqual(["WL2:error"]);
-    expect(result.findings[0]).toMatchObject({ file: SECTION, line: 3, evidence: expect.stringContaining("tokens.region-width.aside") });
+    expect(result.findings[0]).toMatchObject({ file: SECTION, line: 3, evidence: expect.stringContaining("themes.spacing.aside") });
   });
 
   it("WL2: surfaces fills of sections/frames slots report scanned members not covered by an exception", () => {
-    const fill = { id: "fill-aside", slot: "sections.aside-band", sourceFiles: [SECTION], scannedReads: { tokens: ["tokens.region-width"], assets: ["assets.mark"] }, scannedTokenMembers: ["tokens.region-width.aside"] };
+    const fill = { id: "fill-aside", slot: "sections.aside-band", sourceFiles: [SECTION], scannedReads: { themes: ["themes.spacing"], assets: ["assets.mark"] }, scannedTokenMembers: ["themes.spacing.aside"] };
     const other = { ...fill, id: "fill-button", slot: "components.button" };
     const result = run({ surfaces: { fills: [fill, other] } });
-    expect(result.findings.map(row => [row.code, row.subject, row.evidence.split(" ")[2]])).toEqual([["WL2", "sections.aside-band", "assets.mark"], ["WL2", "sections.aside-band", "tokens.region-width.aside"]]);
+    expect(result.findings.map(row => [row.code, row.subject, row.evidence.split(" ")[2]])).toEqual([["WL2", "sections.aside-band", "assets.mark"], ["WL2", "sections.aside-band", "themes.spacing.aside"]]);
   });
 
   it("WL2: unmeasured without a token inventory, reported as a notice and never as clean", () => {
@@ -128,7 +128,7 @@ describe("checkWiring static codes", () => {
   it("WL9: a whole-file anchor is live only while the file hash matches", async () => {
     const { elementHash } = await import("./dogfood.js");
     const content = "export const A = 1;\n", path = "packages/example/frames/a.ts", hash = elementHash(content);
-    const row = { name: "file-anchor", file: path, elementId: `${path}#file@${hash.slice(7, 19)}`, hash, read: "tokens.region-width.aside", reasonCode: "layout-geometry", reason: "Whole-file hand-off.", owner: "designer-maintainers", expiry: "2027-01-31", status: "signed" };
+    const row = { name: "file-anchor", file: path, elementId: `${path}#file@${hash.slice(7, 19)}`, hash, read: "themes.spacing.aside", reasonCode: "layout-geometry", reason: "Whole-file hand-off.", owner: "designer-maintainers", expiry: "2027-01-31", status: "signed" };
     expect(readWiringExceptions([row], [{ path, content }], NOW).exceptions[0]?.state).toBe("current");
     expect(readWiringExceptions([row], [{ path, content: `${content}// edited\n` }], NOW).exceptions[0]?.state).toBe("dead");
   });

@@ -4,6 +4,7 @@ import { standardM1FixtureEngine, standardM1Runtime } from "./__fixtures__/stand
 import { prepareRuntimeAssembly, runtimeAssemblyCells } from "./runtime-assembly.js";
 import { applyLibraryChange, libraryHash, resolve } from "./api.js";
 import { runtimeHash } from "./runtime-ports.js";
+import { TAILWIND_BREAKPOINTS } from "./breakpoints.js";
 import { emittedTokenProperties } from "./emit.js";
 import type { RuntimeCanvasAssemblyInput, RuntimeBodyQueryBinding } from "./runtime-assembly.js";
 import type { RuntimeFrameStage } from "./runtime-ports.js";
@@ -13,7 +14,7 @@ const fixture = () => standardM1Runtime({ engine: structuredClone(engine), ident
 function canvasFixture() {
   const flow = fixture(), { layout: _layout, ...base } = flow;
   const refs = [{ slot: "body", index: 0 }, { slot: "body", index: 1 }];
-  const body = { kind: "canvas" as const, source: { kind: "static" as const }, boards: refs.map((section, index) => ({ id: `example/group-${index}`, section })), arrangement: { kind: "grid" as const, columns: 2, gap: { x: 0, y: 0 } }, collapseBelow: "tokens.breakpoint.tablet" as const };
+  const body = { kind: "canvas" as const, source: { kind: "static" as const }, boards: refs.map((section, index) => ({ id: `example/group-${index}`, section })), arrangement: { kind: "grid" as const, columns: 2, gap: { x: 0, y: 0 } }, collapseBelow: "md" as const };
   const source = { entry: "frames/FrameStage.tsx", files: { "frames/FrameStage.tsx": "// SYNTHETIC Stage source; not component qualification" }, dependencies: {} };
   const renderer = { id: "SYNTHETIC Stage", source, sourceHash: runtimeHash(source) };
   const module = { package: "@clossys/designer/frames" as const, export: "FrameStage" as const, renderer };
@@ -75,9 +76,9 @@ describe("canonical runtime Stage/body seam (synthetic metadata only)", () => {
     const { query: _query, ...missing } = current; expect(prepareRuntimeAssembly(missing).status).toBe("pending");
   });
   it("actual Stage width differs from viewport at the same cell and independently decides expected flow order", () => {
-    const flow = fixture(), profile = resolve(flow.engine), threshold = (profile.values.members["tokens.breakpoint.tablet"]!.value.light as { value: number }).value;
+    const flow = fixture(), threshold = TAILWIND_BREAKPOINTS.md;
     const body = { kind: "flow" as const, source: { kind: "static" as const }, sections: [{ slot: "body", index: 0 }, { slot: "body", index: 1 }] };
-    const cells = runtimeAssemblyCells(profile, flow.themes, flow.states);
+    const cells = runtimeAssemblyCells(flow.themes, flow.states);
     let renderedWidth: number | undefined;
     const input = { ...flow, binding: { ...flow.binding, body }, contracts: canvasFixture().input.contracts,
       stageMeasurements: { renderer: flow.layout.descriptor.renderer, environment: { kind: "SYNTHETIC measured container smaller than viewport" }, cells: cells.map(cell => ({ cell, width: Math.min(cell.width, threshold - 1) })) },
@@ -116,15 +117,15 @@ describe("SYNTHETIC runtime assembly unit corpus (not full-library proof)", () =
     expect(result.assembly.render(result.assembly.snapshot.cells[0]!).type).toBe("div");
     expect(() => result.assembly.render({ theme: "foreign", state: "default", width: 320 })).toThrow(/outside/);
   });
-  it("uses all consumer breakpoint ±1 widths, deduplicates and expands every theme/state once", () => {
-    const profile = resolve(fixture().engine);
-    const cells = runtimeAssemblyCells(profile, ["light", "dark"], ["default", "loading"]);
-    const values = Object.values(profile.values.members).filter(member => member.slot === "tokens.breakpoint").map(member => (member.value.light as { value: number }).value);
+  it("uses all Tailwind screen ±1 widths, deduplicates and expands every theme/state once", () => {
+    const cells = runtimeAssemblyCells(["light", "dark"], ["default", "loading"]);
+    const values = Object.values(TAILWIND_BREAKPOINTS);
     const widths = [...new Set([320, ...values.flatMap(value => [value - 1, value, value + 1])])].sort((a, b) => a - b);
     expect(cells).toHaveLength(widths.length * 4);
     expect(cells.filter(cell => cell.theme === "dark" && cell.state === "loading").map(cell => cell.width)).toEqual(widths);
-    expect(() => runtimeAssemblyCells(profile, [], ["default"])).toThrow();
-    expect(() => runtimeAssemblyCells(profile, ["light", "light"], ["default"])).toThrow();
+    expect(() => runtimeAssemblyCells([], ["default"])).toThrow();
+    expect(() => runtimeAssemblyCells(["light", "light"], ["default"])).toThrow();
+    expect(() => runtimeAssemblyCells(["light"], ["default"], ["tablet"])).toThrow(/unknown Tailwind breakpoint tablet/);
   });
   it("passes exact selected config and members into runtime callbacks", () => {
     const input = fixture(); const fill = input.ports.manifest.fills[1]!;
@@ -162,7 +163,7 @@ describe("SYNTHETIC runtime assembly unit corpus (not full-library proof)", () =
     expect(prepareRuntimeAssembly({ ...input, ports, assets: [{ id: "assets.logo", mediaType: "image/svg+xml", bytes: [60, 115, 118, 103, 62] }] }).status).toBe("ready");
     expect(prepareRuntimeAssembly({ ...input, ports: { ...input.ports, manifest: { ...input.ports.manifest, assetClosure: { complete: false, ids: [] } } } }).status).toBe("pending");
   });
-  it.each(["head", "tree", "library", "source", "content", "tokens", "css", "assets", "matrix", "selection"])("binds fresh %s bytes or identity", change => {
+  it.each(["head", "tree", "library", "source", "content", "themes", "css", "assets", "matrix", "selection"])("binds fresh %s bytes or identity", change => {
     const input = fixture(); const initial = prepareRuntimeAssembly(input); expect(initial.status).toBe("ready"); if (initial.status !== "ready") return;
     let changed = { ...input };
     if (change === "head") changed = { ...input, identity: { kind: "git", head: "3".repeat(40), tree: "2".repeat(40) } };
@@ -173,10 +174,10 @@ describe("SYNTHETIC runtime assembly unit corpus (not full-library proof)", () =
     if (change === "content") changed = { ...input, ports: { ...input.ports, resolveContent: ref => ({ reference: ref, value: "Fresh content", hash: runtimeHash("Fresh content") }) } };
     if (change === "selection") changed = { ...input, binding: { ...input.binding, id: "other-instance" } };
     if (change === "source") { const source = { ...input.layout.descriptor.renderer.source, files: { "synthetic.tsx": "new source" } }; changed = { ...input, layout: { ...input.layout, descriptor: { ...input.layout.descriptor, renderer: { ...input.layout.descriptor.renderer, source, sourceHash: runtimeHash(source) } } } }; }
-    if (change === "library" || change === "tokens") {
+    if (change === "library" || change === "themes") {
       let library = structuredClone(input.engine.library);
       if (change === "library") library.values.rationale = { changed: true };
-      else library = applyLibraryChange(input.engine.catalog, library, { baseHash: libraryHash(library), changes: [{ portion: "values", change: { op: "author", slot: "tokens.breakpoint", tokens: { mobile: { $type: "dimension", $value: { value: 376, unit: "px" } } } } }] });
+      else library = applyLibraryChange(input.engine.catalog, library, { baseHash: libraryHash(library), changes: [{ portion: "values", change: { op: "author", slot: "themes.radius", tokens: { default: { $type: "dimension", $value: { value: 0.5, unit: "rem" } } } } }] });
       const hash = libraryHash(library) as `sha256:${string}`;
       changed = { ...input, engine: { ...input.engine, library }, ports: { ...input.ports, manifest: { ...input.ports.manifest, libraryHash: hash, selectionHash: hash } } };
     }
@@ -185,21 +186,13 @@ describe("SYNTHETIC runtime assembly unit corpus (not full-library proof)", () =
   });
 });
 
-describe("runtime breakpoint measurement basis", () => {
-  it("requires explicit rem pixels and basis, binds changed edges and refuses fabricated px overrides", () => {
-    const input = fixture();
-    const library = applyLibraryChange(input.engine.catalog, input.engine.library, { baseHash: libraryHash(input.engine.library), changes: [{ portion: "values", change: { op: "author", slot: "tokens.breakpoint", tokens: { mobile: { $type: "dimension", $value: { unit: "rem", value: 20 } } } } }] });
-    const hash = libraryHash(library) as `sha256:${string}`;
-    const rem = { ...input, engine: { ...input.engine, library }, ports: { ...input.ports, manifest: { ...input.ports.manifest, libraryHash: hash, selectionHash: hash } } };
-    expect(prepareRuntimeAssembly(rem).status).toBe("pending");
-    expect(prepareRuntimeAssembly({ ...rem, breakpointPixels: { "tokens.breakpoint.mobile": 320 } }).status).toBe("pending");
-    const basis = { renderer: input.layout.descriptor.renderer, environment: { rootFontPx: 16, css: "html{font-size:16px}", kind: "SYNTHETIC" } };
-    const a = prepareRuntimeAssembly({ ...rem, breakpointPixels: { "tokens.breakpoint.mobile": 320 }, breakpointBasis: basis });
-    const b = prepareRuntimeAssembly({ ...rem, breakpointPixels: { "tokens.breakpoint.mobile": 400 }, breakpointBasis: { ...basis, environment: { rootFontPx: 20, kind: "SYNTHETIC" } } });
-    expect(a.status).toBe("ready"); expect(b.status).toBe("ready");
-    if (a.status === "ready" && b.status === "ready") { expect(a.assembly.snapshot.hash).not.toBe(b.assembly.snapshot.hash); expect(a.assembly.snapshot.cells.some(cell => cell.width === 319)).toBe(true); expect(b.assembly.snapshot.cells.some(cell => cell.width === 399)).toBe(true); }
-    for (const pixels of [{ "tokens.breakpoint.mobile": -1 }, { "tokens.breakpoint.invented": 320 }, { "tokens.breakpoint.mobile": NaN }]) expect(prepareRuntimeAssembly({ ...rem, breakpointPixels: pixels, breakpointBasis: basis }).status).toBe("refused");
-    expect(prepareRuntimeAssembly({ ...input, breakpointPixels: { "tokens.breakpoint.mobile": 999 }, breakpointBasis: basis }).status).toBe("refused");
+describe("runtime breakpoint basis", () => {
+  it("binds the fixed Tailwind screen table and refuses a canvas fallback outside it", () => {
+    const result = prepareRuntimeAssembly(fixture()); expect(result.status).toBe("ready"); if (result.status !== "ready") return;
+    expect(result.assembly.snapshot.breakpoints).toEqual(TAILWIND_BREAKPOINTS);
+    expect(result.assembly.snapshot.cells.map(cell => cell.width)).toContain(TAILWIND_BREAKPOINTS.md - 1);
+    const { input } = canvasFixture(), body = { ...input.binding.body, collapseBelow: "tablet" };
+    expect(prepareRuntimeAssembly({ ...input, binding: { ...input.binding, body }, stage: { ...input.stage, bodyDigest: runtimeHash(body) } } as never).status).toBe("refused");
   });
   it("binds renderer dependency artifact bytes and rejects state changes unsupported by real fills", () => {
     const input = fixture(); const before = prepareRuntimeAssembly(input); expect(before.status).toBe("ready");
@@ -232,9 +225,6 @@ it("binds synthetic consumer glyph payload changes and component descriptors", a
   // Evidence is a snapshot input: replace its top-level identity after each
   // deliberate mutation so the resolver observes the new fixture evidence.
   const refreshEvidence = () => { component.componentOptions = { ...component.componentOptions, evidence: { ...component.componentOptions!.evidence! } }; };
-  const pixels = resolve(input.engine).values.members;
-  const tokens = Object.fromEntries(Object.entries(pixels).filter(([, member]) => member.slot === "tokens.breakpoint").map(([id, member]) => [id.slice("tokens.breakpoint.".length), { $type: "dimension" as const, $value: member.value.light }]));
-  component.library = applyLibraryChange(component.catalog, component.library, { baseHash: libraryHash(component.library), changes: [{ portion: "values", change: { op: "author", slot: "tokens.breakpoint", tokens } }] });
   const { source, adoptedAt, values } = component.library;
   const profile = resolve({ catalog: component.catalog.values, library: { ...values, source, adoptedAt } });
   // SYNTHETIC fixture evidence binds all actual emitted outputs, including open @theme members.
@@ -242,7 +232,9 @@ it("binds synthetic consumer glyph payload changes and component descriptors", a
     const member = profile.members[id]!;
     return [id, { property: output.property, light: member.alias.light ? cssText(member.$type, member.value.light) : member.css.light, ...(member.value.dark === undefined ? {} : { dark: member.alias.dark ? cssText(member.$type, member.value.dark) : member.css.dark! }) }];
   }));
-  const incomplete = Object.fromEntries(Object.entries(observations).filter(([id]) => id !== "tokens.breakpoint.sm"));
+  const dropped = Object.keys(observations).sort()[0]!;
+  expect(dropped).toMatch(/^themes\./);
+  const incomplete = Object.fromEntries(Object.entries(observations).filter(([id]) => id !== dropped));
   component.componentOptions!.evidence!.observations["components.button"]!.tokensHash = componentTokensHash(incomplete);
   refreshEvidence();
   const stale = resolve(component).check.findings.filter(finding => finding.severity === "error");

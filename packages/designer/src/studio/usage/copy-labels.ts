@@ -19,7 +19,7 @@ export function createStudioUsageLabels(binding: StudioCopyBinding): UsagePanelL
     loading: readStudioCopy(binding, { id: 'st.h0jcz83wh7' }),
     none: readStudioCopy(binding, { id: 'st.6vygykgwag' }),
     layer: {
-    tokens: readStudioCopy(binding, { id: 'st.c331pzvwey' }),
+    themes: readStudioCopy(binding, { id: 'st.c331pzvwey' }),
     assets: readStudioCopy(binding, { id: 'st.7fsbf7m1ak' }),
     components: readStudioCopy(binding, { id: 'st.jht60wz8e1' }),
     sections: readStudioCopy(binding, { id: 'st.pvbdyf5y7k' }),

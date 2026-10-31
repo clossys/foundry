@@ -111,24 +111,14 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.action-color.default",
-          "tokens.border-color.base",
-          "tokens.border-width.hairline",
-          "tokens.border-width.rule",
-          "tokens.font-size.sm",
-          "tokens.font-size.xs",
-          "tokens.spacing.2xl",
-          "tokens.spacing.3xl",
-          "tokens.spacing.lg",
-          "tokens.spacing.md",
-          "tokens.spacing.sm",
-          "tokens.spacing.xl",
-          "tokens.surface-color.base",
-          "tokens.surface-color.sunken",
-          "tokens.text-color.muted",
-          "tokens.text-color.on-action",
-          "tokens.z-index.sticky"
+        "themes": [
+          "themes.background.default",
+          "themes.border.default",
+          "themes.muted-foreground.default",
+          "themes.muted.default",
+          "themes.primary-foreground.default",
+          "themes.primary.default",
+          "themes.spacing.default"
         ]
       },
       "root": "presentational",

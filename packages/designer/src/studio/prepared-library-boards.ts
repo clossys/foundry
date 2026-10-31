@@ -45,7 +45,7 @@ export function compositeBoardPrompt(input: CompositeBoardPromptInput, refresh =
   return { consumer, board: { id: board.id, label: board.label }, slot: { id: leaf, label: leaf },
     variants: contract && 'members' in contract && contract.members.mode === 'closed' ? contract.members.names.map(name => `${leaf}.${name}`) : [],
     ...(workflow?.guidelines?.[leaf] ? { guidelines: workflow.guidelines[leaf] } : {}),
-    tokens: Object.entries(profile?.values.members ?? {}).filter(([, member]) => member.slot.startsWith('tokens.')).map(([id, member]) => ({ id, value: member.css.light })),
+    tokens: Object.entries(profile?.values.members ?? {}).filter(([, member]) => member.slot.startsWith('themes.')).map(([id, member]) => ({ id, value: member.css.light })),
     siblings: board.leaves.flatMap(leaf => { const selected = profile?.components.components[leaf.id]; return selected ? [{ id: leaf.id, source: selected.descriptor.source }] : []; }),
     ...(refresh && profile?.components.components[leaf] ? { currentCandidate: { id: leaf, source: profile.components.components[leaf]!.descriptor.source, variants: [] } } : {}),
     returnStep: workflow?.returnStep ?? input.returnStep };

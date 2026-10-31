@@ -88,18 +88,26 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.action-color",
-          "tokens.body-size",
-          "tokens.control-radius",
-          "tokens.duration",
-          "tokens.easing",
-          "tokens.focus-color",
-          "tokens.focus-outline",
-          "tokens.spacing",
-          "tokens.state-opacity",
-          "tokens.text-color",
-          "tokens.typeface"
+        "themes": [
+          "themes.accent-foreground",
+          "themes.card-foreground",
+          "themes.font-heading",
+          "themes.font-mono",
+          "themes.font-sans",
+          "themes.foreground",
+          "themes.muted-foreground",
+          "themes.popover-foreground",
+          "themes.primary",
+          "themes.primary-foreground",
+          "themes.radius",
+          "themes.ring",
+          "themes.secondary-foreground",
+          "themes.sidebar-accent-foreground",
+          "themes.sidebar-foreground",
+          "themes.sidebar-primary",
+          "themes.sidebar-primary-foreground",
+          "themes.sidebar-ring",
+          "themes.spacing"
         ]
       },
       "root": "engine:none",

@@ -1,9 +1,10 @@
+import type { TailwindBreakpoint } from "@clossys/designer/catalog";
 import type { ArrangementModel, LayoutId } from "./ids.js";
 
 export type SectionLeafId = `sections.${string}`;
 export type LayoutSpan = "1x1" | "2x1" | "1x2" | "2x2";
-export type LayoutRead = "tokens.spacing" | "tokens.gutter" | "tokens.content-size" | "tokens.region-width" | "tokens.breakpoint";
-export type LayoutBreakpoint = "mobile" | "mobile-lg" | "tablet" | "tablet-lg" | "desktop" | "wide";
+export type LayoutRead = "themes.spacing";
+export type LayoutBreakpoint = TailwindBreakpoint;
 export interface LayoutSlot {
   readonly id: string;
   readonly accepts: readonly SectionLeafId[];
@@ -29,7 +30,7 @@ export interface PageLayoutContract {
   readonly slots: readonly LayoutSlot[];
   readonly members: Readonly<Record<string, readonly string[]>>;
   readonly configs: readonly LayoutConfig[];
-  readonly reflow: readonly { readonly at: `tokens.breakpoint.${LayoutBreakpoint}`; readonly columns: number; readonly spans?: "clamp" }[];
+  readonly reflow: readonly { readonly at: LayoutBreakpoint; readonly columns: number; readonly spans?: "clamp" }[];
   readonly allowedReads: readonly LayoutRead[];
   readonly requiresSection?: { readonly container: "adaptive" };
 }

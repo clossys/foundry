@@ -114,22 +114,12 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.action-color.default",
-          "tokens.border-width.hairline",
-          "tokens.border-width.rule",
-          "tokens.control-size.mark",
-          "tokens.duration.default",
-          "tokens.easing.default",
-          "tokens.focus-color.default",
-          "tokens.focus-outline.offset",
-          "tokens.focus-outline.width",
-          "tokens.spacing.6xl",
-          "tokens.spacing.sm",
-          "tokens.spacing.xs",
-          "tokens.state-opacity.disabled",
-          "tokens.surface-color.raised",
-          "tokens.surface-color.sunken"
+        "themes": [
+          "themes.card.default",
+          "themes.muted.default",
+          "themes.primary.default",
+          "themes.ring.default",
+          "themes.spacing.default"
         ]
       },
       "root": "rac:Slider",

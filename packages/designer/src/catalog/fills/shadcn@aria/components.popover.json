@@ -108,26 +108,14 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.border-width.hairline",
-          "tokens.control-radius.default",
-          "tokens.duration.fast",
-          "tokens.elevation.floating",
-          "tokens.focus-color.default",
-          "tokens.focus-outline.offset",
-          "tokens.focus-outline.width",
-          "tokens.font-size.sm",
-          "tokens.font-weight.medium",
-          "tokens.shift-distance.default",
-          "tokens.spacing.6xl",
-          "tokens.spacing.md",
-          "tokens.spacing.xs",
-          "tokens.surface-color.overlay",
-          "tokens.text-color.muted",
-          "tokens.text-color.primary",
-          "tokens.transition-easing.enter",
-          "tokens.transition-easing.exit",
-          "tokens.z-index.modal"
+        "themes": [
+          "themes.foreground.default",
+          "themes.muted-foreground.default",
+          "themes.popover.default",
+          "themes.radius.default",
+          "themes.ring.default",
+          "themes.shadow.md",
+          "themes.spacing.default"
         ]
       },
       "root": "rac:Popover",

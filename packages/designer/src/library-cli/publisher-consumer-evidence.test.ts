@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { dogfoodComposes } from "../catalog-core/dogfood.js";
-import tokenSlots from "../catalog/slots/tokens.json" with { type: "json" };
+import themeSlots from "../catalog/slots/themes.json" with { type: "json" };
 import { consumerDogfoodSources, runConsumerDogfood, type ConsumerDogfoodContract } from "./consumer-dogfood.js";
 
 // Read the current Publisher graph in this checkout. A copied excerpt, frozen
@@ -14,14 +14,14 @@ const publisher = new URL("../../../publisher/src/", import.meta.url);
 const layout = "web/internal/PageLayout.tsx";
 const links = "web/internal/ViewLinks.tsx";
 const app = "web/publisher/app/AppPack.tsx";
-const tokens = tokenSlots.map(slot => ({ id: slot.id, contract: { emit: Object.fromEntries(Object.entries(slot.contract.emit ?? {}).filter(([, property]) => typeof property === "string")) } }));
+const themes = themeSlots.map(slot => ({ id: slot.id, contract: { emit: Object.fromEntries(Object.entries(slot.contract.emit ?? {}).filter(([, property]) => typeof property === "string")) } }));
 let root: string;
 let route: string;
 let input: Awaited<ReturnType<typeof consumerDogfoodSources>>;
 let themeCss: string;
 let contract: ConsumerDogfoodContract;
 const load = () => consumerDogfoodSources(["ConsumerRoute.tsx", fileURLToPath(new URL("../../styles/theme.css", import.meta.url))], contract, root, root);
-const observed = () => ({ ...input, tokens, themeCss });
+const observed = () => ({ ...input, themes, themeCss });
 const source = (suffix: string) => {
   const file = input.files.find(file => file.file.endsWith(`/${suffix}`));
   if (!file) throw new Error(`Publisher source not reached: ${suffix}`);

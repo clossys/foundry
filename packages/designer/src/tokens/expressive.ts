@@ -1,7 +1,7 @@
 import type { DtcgValue } from "../catalog-core/types.js";
 
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
-const COLOR_ROLE = /^\{(tokens\.(?:surface|text|border|accent|action|control|status|focus|scrim|chart|categorical|sequential|diverging)-color\.[a-z0-9]+(?:-[a-z0-9]+)*)\}$/;
+const COLOR_ROLE = /^\{(themes\.(?:background|foreground|card|card-foreground|popover|popover-foreground|primary|primary-foreground|secondary|secondary-foreground|muted|muted-foreground|accent|accent-foreground|destructive|border|input|ring|chart-[1-5]|sidebar(?:-(?:foreground|primary|primary-foreground|accent|accent-foreground|border|ring))?)\.default)\}$/;
 /** Only a complete semantic colour-role alias is legal inside a gradient stop. */
 export function gradientColorAlias(value: unknown): string | undefined {
   return typeof value === "string" ? COLOR_ROLE.exec(value)?.[1] : undefined;

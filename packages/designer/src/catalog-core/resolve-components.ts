@@ -42,7 +42,7 @@ export interface ResolvedComponent {
   slot: string; originKind: ComponentOrigin["kind"]; origin: ComponentOrigin;
   impl: Exclude<ComponentCandidate["impl"], { kind: "composed" }>;
   propMap: Readonly<Record<string, string>>;
-  reads: { tokens: Readonly<Record<string, string>>; assets: readonly string[]; components: readonly string[] };
+  reads: { themes: Readonly<Record<string, string>>; assets: readonly string[]; components: readonly string[] };
   descriptor: ComponentCandidate;
 }
 export interface ResolvedComponents {
@@ -159,7 +159,7 @@ export function resolveComponents(input: ComponentResolutionInput): ResolvedComp
   for (const file of input.library.files) if (!receiptedPaths.has(file.path)) throw new CatalogError(`components: unreceipted consumer file ${file.path}`);
   for (const [slot, fill] of fills) {
     const tokens: Record<string, string> = {};
-    for (const leaf of sortedComponentIds(fill.reads.tokens)) {
+    for (const leaf of sortedComponentIds(fill.reads.themes)) {
       const entries = Object.entries(input.values.tokens).filter(([member]) => member === leaf || member.startsWith(`${leaf}.`)).sort(([a], [b]) => compare(a, b));
       if (!entries.length) throw new CatalogError(`components: unresolved token ${leaf}`);
       for (const [member, token] of entries) {
@@ -174,7 +174,7 @@ export function resolveComponents(input: ComponentResolutionInput): ResolvedComp
     if (origin.kind === "derived" || origin.kind === "composed") {
       validateInstalledComponentRule(fill as ComponentCandidate & { origin: ComponentOrigin }, { rules: input.catalog.rules ?? [], library: input.library });
     }
-    components[slot] = { slot, originKind: origin.kind, origin, impl: fill.impl, propMap: structuredClone(fill.propMap), reads: { tokens, assets: sortedComponentIds(fill.reads.assets), components: sortedComponentIds(fill.reads.components) }, descriptor: fill };
+    components[slot] = { slot, originKind: origin.kind, origin, impl: fill.impl, propMap: structuredClone(fill.propMap), reads: { themes: tokens, assets: sortedComponentIds(fill.reads.assets), components: sortedComponentIds(fill.reads.components) }, descriptor: fill };
   }
   const checkedFills = [...fills.values()].map(fill => {
     const origin = (fill as ComponentCandidate & { origin: ComponentOrigin }).origin;

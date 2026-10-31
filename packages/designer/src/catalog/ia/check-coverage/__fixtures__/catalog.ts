@@ -1,5 +1,5 @@
 import type { CoverageInput, Layer } from "../types.js";
-export const layers: readonly Layer[] = ["tokens", "assets", "components", "sections", "frames"];
+export const layers: readonly Layer[] = ["themes", "assets", "components", "sections", "frames"];
 export const hash = `sha256:${"0".repeat(64)}`;
 /** Synthetic, completely connected five-layer catalog; no production approval evidence. */
 export function fixture(): CoverageInput {
@@ -13,7 +13,7 @@ export function fixture(): CoverageInput {
       { from: "frames.example", to: "sections.example", evidence: "fixture" },
       { from: "frames.example", to: "assets.example", evidence: "fixture" },
       { from: "sections.example", to: "components.example", evidence: "fixture" },
-      { from: "components.example", to: "tokens.example", evidence: "fixture" },
+      { from: "components.example", to: "themes.example", evidence: "fixture" },
     ],
     adminRoots: ["frames.example"], adminInputsComplete: true,
   };

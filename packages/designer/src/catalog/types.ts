@@ -510,11 +510,11 @@ export interface ComputedLeafConsumers {
 
 /**
  * The computed relations of a block leaf, read from its section leaf in the usage graph: the components it
- * composes, the tokens it reads, and the frames and pages that use it. Filled from `uses`/`usedBy`, never authored.
+ * composes, the themes it reads, and the frames and pages that use it. Filled from `uses`/`usedBy`, never authored.
  */
 export interface ComputedBlockRelations {
   readonly components: readonly `components.${string}`[];
-  readonly tokens: readonly `tokens.${string}`[];
+  readonly themes: readonly `themes.${string}`[];
   readonly composedBy: readonly string[];
 }
 

@@ -14,10 +14,10 @@ import * as wholeModel from './whole-model.js';
 function valueInput() {
   const library = adopt();
   const rows = matrixRows({ catalog: smallCatalog, library, working: library, changes: emptyChanges(library), expanded: new Set(), evaluateRows: new Set() });
-  const board = matrixBoards({ catalog: smallCatalog, library, working: library }, rows).find(board => board.leaves.includes('tokens.surface-color'))!;
-  return { layer: 'tokens' as const, board, sources: smallCatalog.sources, consumerSource: library.source.id,
+  const board = matrixBoards({ catalog: smallCatalog, library, working: library }, rows).find(board => board.leaves.includes('themes.background'))!;
+  return { layer: 'themes' as const, board, sources: smallCatalog.sources, consumerSource: library.source.id,
     selectionHash: runtimeHash('SYNTHETIC-selected-library'), mode: 'view' as const, canSave: false, pending: false, labels,
-    contextTokens: [{ id: 'tokens.surface-color.base', value: 'var(--synthetic)' }] };
+    contextTokens: [{ id: 'themes.background.default', value: 'var(--synthetic)' }] };
 }
 
 it('keeps checked records, original prompts and caller controls usable while source association is pending', () => {
@@ -25,7 +25,7 @@ it('keeps checked records, original prompts and caller controls usable while sou
   const prepared = prepareValueLibraryBoard(input);
   assertLibraryBoardRecords(prepared.records);
   expect(prepared.records.rows.items.map(row => row.id)).toEqual(input.board.rows.filter(row => row.scope === 'slot').map(row => row.id));
-  expect(prepared.records.rows.items.find(row => row.id === 'tokens.surface-color')?.selectedSource).toBe(input.consumerSource);
+  expect(prepared.records.rows.items.find(row => row.id === 'themes.background')?.selectedSource).toBe(input.consumerSource);
   expect(prepared.records.controls).toEqual({ version: 1, mode: 'view', canSave: false, pending: false });
   expect(prepared.previews).toEqual({ status: 'pending', code: 'SOURCE_HASH_ASSOCIATION_UNAVAILABLE', sources: [input.consumerSource] });
   expect(prepared.records.rows.items.every(row => !row.selectedPreview && row.candidates.every(candidate => !candidate.previewIdentity))).toBe(true);
@@ -37,13 +37,13 @@ it('uses explicit source association for live previews and rejects stale selecti
   const prepared = prepareValueLibraryBoard({ ...input, sourceHashes });
   expect(prepared.previews.status).toBe('available');
   if (prepared.previews.status !== 'available') throw new Error('Expected test association');
-  const identity = prepared.records.rows.items.find(row => row.id === 'tokens.surface-color')!.selectedPreview!;
+  const identity = prepared.records.rows.items.find(row => row.id === 'themes.background')!.selectedPreview!;
   expect(identity.sourceHash).toBe(sourceHashes[input.consumerSource]);
   expect(prepared.previews.port.sourceHashes).toBe(sourceHashes);
   expect(prepared.previews.port.render(identity)).toBeDefined();
   expect(prepared.previews.port.render({ ...identity, selectionHash: runtimeHash('SYNTHETIC-stale') })).toBeUndefined();
   expect(prepared.previews.port.render({ ...identity, sourceHash: runtimeHash('SYNTHETIC-other-source') })).toBeUndefined();
-  expect(prepared.previews.port.render({ ...identity, leaf: 'tokens.absent' })).toBeUndefined();
+  expect(prepared.previews.port.render({ ...identity, leaf: 'themes.absent' })).toBeUndefined();
 });
 
 it('never substitutes a fill hash when one source association is absent or empty', () => {
@@ -58,7 +58,7 @@ it('never substitutes a fill hash when one source association is absent or empty
 });
 
 it('retains exact value prompt variants, selected siblings, workflow and current candidate identity', () => {
-  const input = valueInput(), row = input.board.rows.find(row => row.id === 'tokens.surface-color')!;
+  const input = valueInput(), row = input.board.rows.find(row => row.id === 'themes.background')!;
   const workflow = { guidelines: { [row.id]: ['SYNTHETIC original guideline'] }, returnStep: 'SYNTHETIC host return step' };
   const context = { board: input.board, row, consumer: input.consumerSource, contextTokens: input.contextTokens, variants: { [row.id]: ['SYNTHETIC-explicit-member'] }, workflow, returnStep: labels.board.returnStep };
   const ordinary = valueBoardPrompt(context), refresh = valueBoardPrompt(context, true);
@@ -79,7 +79,7 @@ it('preserves contract prompt token context, registered variants and selected co
   const prompt = compositeBoardPrompt(context, true), selected = profile.components.components['components.button']!;
   expect(prompt.siblings).toEqual([{ id: 'components.button', source: selected.descriptor.source }]);
   expect(prompt.currentCandidate).toEqual({ id: 'components.button', source: selected.descriptor.source, variants: [] });
-  expect(prompt.tokens).toEqual(Object.entries(profile.values.members).filter(([, member]) => member.slot.startsWith('tokens.')).map(([id, member]) => ({ id, value: member.css.light })));
+  expect(prompt.tokens).toEqual(Object.entries(profile.values.members).filter(([, member]) => member.slot.startsWith('themes.')).map(([id, member]) => ({ id, value: member.css.light })));
   const missing = compositeBoardPrompt({ ...context, leaf: 'sections.empty-state', profile: undefined }, true);
   expect(missing.currentCandidate).toBeUndefined(); expect(missing.tokens).toEqual([]); expect(missing.siblings).toEqual([]);
 });
