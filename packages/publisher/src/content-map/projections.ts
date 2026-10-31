@@ -1,3 +1,4 @@
+import { expandCollections } from "./collections.js";
 import { isLegacyRouteRegistration, routeSourcePath } from "../core/route-identities.js";
 import { isCompleteRouteMetadataKind } from "./complete-route-metadata.js";
 import type { CompleteRouteMetadata } from "./complete-route-metadata.js";
@@ -13,9 +14,11 @@ const text = (value: unknown): value is string => typeof value === "string" && v
 const equal = (left: unknown, right: unknown): boolean => JSON.stringify(left) === JSON.stringify(right);
 const sameBrand = (left: RouteRegistration["brand"], right: RouteRegistration["brand"]) => left.homeRouteId === right.homeRouteId && left.label === right.label;
 const navigable = (entry: ContentMapNode) => entry.kind === "page" || entry.kind === "section";
-function web(map: ContentMap): void {
+const anchored = (entry: ContentMapNode) => entry.kind === "group" && contentMapPath(entry).includes("#");
+function web(map: ContentMap): ContentMap {
   checkedContentMap(map);
   if (map.format !== "web.page.responsive") throw new TypeError("Web projection requires web.page.responsive");
+  return expandCollections(map);
 }
 function ordered(map: ContentMap, parentId?: string): ContentMapNode[] {
   return map.entries.filter(entry => entry.parentId === parentId).sort((a, b) => a.order - b.order || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
@@ -38,14 +41,14 @@ function presentation(entry: ContentMapNode) {
 /** Data only: the complete group > page > section hierarchy is preserved.
  * Older two-level frame renderers must not truncate this three-level contract. */
 export function projectNavigation(map: ContentMap, activeId: string): ContentMapNavigation {
-  web(map);
+  map = web(map);
   const active = map.entries.find(entry => entry.id === activeId);
   if (!active || !navigable(active)) throw new TypeError("An existing page or section is required as the active entry");
   const visit = (parentId?: string): ContentMapNavigationNode[] => ordered(map, parentId).flatMap(entry => {
     if (!entry.pin) return [];
     const children = visit(entry.id);
-    if (entry.kind === "group" && !children.length) return [];
-    return [{ ...presentation(entry), ...(entry.kind === "external" ? { href: entry.href, external: true as const } : navigable(entry) ? { href: contentMapPath(entry) } : {}), ...(children.length ? { children } : {}) }];
+    if (entry.kind === "group" && !children.length && !anchored(entry)) return [];
+    return [{ ...presentation(entry), ...(entry.kind === "external" ? { href: entry.href, external: true as const } : (navigable(entry) || anchored(entry)) ? { href: contentMapPath(entry) } : {}), ...(children.length ? { children } : {}) }];
   });
   return { tree: visit(), activeId };
 }
@@ -53,14 +56,14 @@ export function projectNavigation(map: ContentMap, activeId: string): ContentMap
  * use their top-level map identity; root pages use the publication identity.
  * Action groups with an existing group identity merge, keeping IDs unique. */
 export function projectCommands(map: ContentMap): readonly ContentMapCommandGroup[] {
-  web(map);
+  map = web(map);
   const groups = new Map<string, { id: string; label: string; items: ContentMapCommand[] }>();
   const group = (id: string, label: string) => {
     let value = groups.get(id);
     if (!value) { value = { id, label, items: [] }; groups.set(id, value); }
     return value;
   };
-  for (const entry of preorder(map).filter(entry => navigable(entry) || entry.kind === "external")) {
+  for (const entry of preorder(map).filter(entry => navigable(entry) || anchored(entry) || entry.kind === "external")) {
     const top = ancestry(map, entry.id).find(row => row.kind === "group");
     group(top?.id ?? map.publicationId, top?.title ?? map.publicationId).items.push({ ...presentation(entry), href: entry.kind === "external" ? entry.href : contentMapPath(entry), ...(entry.description ? { description: entry.description } : {}) });
   }
@@ -68,13 +71,16 @@ export function projectCommands(map: ContentMap): readonly ContentMapCommandGrou
   return [...groups.values()];
 }
 export function projectBreadcrumbs(map: ContentMap, currentId: string): readonly ContentMapBreadcrumb[] {
-  web(map);
-  return ancestry(map, currentId).map(entry => ({ id: entry.id, label: entry.title, ...(entry.kind === "external" ? { href: entry.href } : navigable(entry) ? { href: contentMapPath(entry) } : {}) }));
+  const agents = new Set(map.entries.filter(entry => entry.kind === "collection").map(entry => entry.id));
+  map = web(map);
+  const chain = ancestry(map, currentId);
+  const collection = chain.some(entry => agents.has(entry.id));
+  return [...(collection ? [{ id: "agents", label: "Agents", href: "/" }] : []), ...chain.map(entry => ({ id: entry.id, label: entry.title, ...(entry.kind === "external" ? { href: entry.href } : (navigable(entry) || anchored(entry)) ? { href: contentMapPath(entry) } : {}) }))];
 }
 /** Only public site page URLs enter a sitemap. Sections are query/subpath views
  * of their owning pages; admin, app and other channels cannot emit a sitemap. */
 export function projectSitemap(map: ContentMap, options: ContentMapSitemapOptions): readonly ContentMapSitemapEntry[] {
-  web(map);
+  map = web(map);
   if (options.channel !== "site") throw new TypeError(`Sitemap refused for ${options.channel} channel`);
   const origin = contentMapOrigin(options.origin);
   return preorder(map).filter(entry => entry.kind === "page" && entry.indexing?.mode !== "noindex").map(entry => {
@@ -87,8 +93,9 @@ function sourceExport(value: RouteSourceExport): boolean {
   return !!value && Object.keys(value).every(key => ["file", "export"].includes(key)) && routeSourcePath(value.file) && /^[A-Za-z_$][\w$]*$/.test(value.export);
 }
 const NEXT_FILE = /(?:^|\/)(?:page|layout|template|route|default|loading|error|global-error|not-found|middleware|instrumentation)\.[cm]?[jt]sx?$/;
-function registered(mapEntry: ContentMapEntry, options: ContentMapRouteOptions): AnyRouteRegistration | CompleteRouteMetadata {
+function registered(mapEntry: ContentMapEntry, options: ContentMapRouteOptions, collection = false): AnyRouteRegistration | CompleteRouteMetadata {
   const matches = (options.registrations ?? []).filter(route => {
+    if (collection && route.routeId !== mapEntry.id) return false;
     if (mapEntry.source.planItemId !== undefined) return route.planItemId === mapEntry.source.planItemId;
     if (!isLegacyRouteRegistration(route)) return false;
     const binding = route.composition.binding;
@@ -107,7 +114,10 @@ function registered(mapEntry: ContentMapEntry, options: ContentMapRouteOptions):
  * Existing completeRoute plan fields are compatibility input only, and must
  * agree exactly with map identity/title/path/brand before they can project. */
 export function projectRoutes(map: ContentMap, options: ContentMapRouteOptions): ContentMapRoutes {
-  web(map);
+  checkedContentMap(map);
+  const collectionOwners = new Map(map.entries.flatMap(entry => entry.kind === "collection" ? [entry.id, ...entry.collection!.leaves.map(leaf => leaf.id)].map(id => [id, entry.id] as const) : []));
+  const collectionIds = new Set(collectionOwners.keys());
+  map = web(map);
   if (!text(options.consumer) || !PUBLISHER_CHANNELS.some(channel => channel.id === options.channel) || !options.brand || !text(options.brand.label)
     || !map.entries.some(entry => entry.kind === "page" && entry.id === options.brand.homeRouteId)) throw new TypeError("Actual consumer/channel and one mapped home page are required");
   const routes = preorder(map).filter((entry): entry is ContentMapEntry => entry.kind === "page").map(entry => {
@@ -116,13 +126,19 @@ export function projectRoutes(map: ContentMap, options: ContentMapRouteOptions):
     const plans = id === undefined ? [] : (options.planItems ?? []).filter(item => item.id === id && item.completeRoute !== undefined);
     if (plans.length > 1 || (source && plans.length)) throw new TypeError(`Ambiguous complete route source: ${entry.id}`);
     const plan = plans[0], complete = source ?? plan?.completeRoute;
-    if (!complete) return registered(entry, options);
+    if (!complete) return registered(entry, options, collectionIds.has(entry.id));
     if (plan && (plan.appRouteId !== entry.id || plan.completeRoute!.title !== entry.title || plan.completeRoute!.path !== contentMapPath(entry) || !sameBrand(plan.completeRoute!.brand, options.brand))) throw new TypeError(`Plan completeRoute disagrees with content map: ${entry.id}`);
     if (!isCompleteRouteMetadataKind(complete.kind) || !sourceExport(complete.entry) || complete.entry.export !== "default" || !complete.entry.file.endsWith(".tsx") || !sourceExport(complete.loader)
       || !/\.[jt]sx?$/.test(complete.loader.file) || complete.loader.file.endsWith(".d.ts") || NEXT_FILE.test(complete.loader.file) || complete.entry.file === complete.loader.file) throw new TypeError(`Registered complete route exports required: ${entry.id}`);
     return { routeId: entry.id, planItemId: id!, path: contentMapPath(entry), title: entry.title, channel: options.channel, brand: { ...options.brand }, entry: { ...complete.entry }, composition: { complete: { kind: complete.kind }, loader: { ...complete.loader } } };
   });
-  if (new Set(routes.map(route => route.entry.file)).size !== routes.length) throw new TypeError("Each page requires its own registered executable entry");
+  const executableOwners = new Map<string, string>();
+  for (const route of routes) {
+    const owner = collectionOwners.has(route.routeId) ? `collection:${collectionOwners.get(route.routeId)}` : `page:${route.routeId}`;
+    const previous = executableOwners.get(route.entry.file);
+    if (previous !== undefined && previous !== owner) throw new TypeError("Each page requires its own registered executable entry");
+    executableOwners.set(route.entry.file, owner);
+  }
   return { version: 1, consumer: options.consumer, routes };
 }
 /** Finite data for web, deck and document consumers. This is an outline, not an
@@ -151,12 +167,12 @@ export function projectToc(map: ContentMap): readonly ContentMapTocEntry[] {
 
 /** Next-compatible redirects from explicit declarations and external entries. */
 export function projectRedirects(map: ContentMap): readonly ContentMapRedirect[] {
-  web(map);
+  map = web(map);
   return projectContentMapRedirects(map);
 }
 /** Catch-all route parameters include noindex pages; external destinations and
  * structural groups never acquire local executable routes. Root uses []. */
 export function projectStaticParams(map: ContentMap): readonly ContentMapStaticParams[] {
-  web(map);
+  map = web(map);
   return preorder(map).filter(entry => entry.kind === "page").map(entry => ({ slug: contentMapPath(entry).split("/").filter(Boolean) }));
 }
