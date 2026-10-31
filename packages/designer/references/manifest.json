@@ -1,0 +1,4174 @@
+{
+  "schema": "clossys.references-manifest/1",
+  "package": "designer",
+  "fetchedAt": "2026-10-31T03:39:46Z",
+  "fetchedWith": "shadcn CLI 4.23.0 registry endpoints and GitHub raw at pinned commits",
+  "hashAlgorithm": "sha256-tree/1",
+  "registries": {
+    "shadcn": {
+      "namespace": "@shadcn",
+      "source": "https://ui.shadcn.com/r/styles/radix-nova/{name}.json",
+      "version": "4.23.0",
+      "versionBasis": "registry endpoint used by shadcn CLI 4.23.0, served at fetchedAt; upstream source commit recorded in upstream",
+      "upstream": "github.com/shadcn-ui/ui@b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+      "license": "MIT",
+      "licenseFiles": [
+        "shadcn/LICENSE.md"
+      ]
+    },
+    "magicui": {
+      "namespace": "@magicui",
+      "source": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/{name}.json",
+      "version": "efe76fc",
+      "versionBasis": "built registry JSON committed upstream; byte-identical to https://magicui.design/r/{name}.json at fetchedAt",
+      "upstream": "github.com/magicuidesign/magicui@efe76fc5755eca1142dd4f74c1d6f0ace2887e3c",
+      "license": "MIT",
+      "licenseFiles": [
+        "magicui/LICENSE.md"
+      ]
+    },
+    "diceui": {
+      "namespace": "@diceui",
+      "source": "https://diceui.com/r/new-york/{name}.json",
+      "version": "04aad54",
+      "versionBasis": "registry endpoint served at fetchedAt; upstream HEAD commit at fetch time",
+      "upstream": "github.com/sadmann7/diceui@04aad54e7cb02f209b31f294cea020208a3deed6",
+      "license": "MIT",
+      "licenseFiles": [
+        "diceui/LICENSE"
+      ]
+    },
+    "tailark-oss": {
+      "namespace": "@tailark-oss",
+      "source": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/{path}",
+      "version": "8139698",
+      "versionBasis": "registry host did not resolve; source files from the MIT GitHub repository (radix base, mist kit) at a pinned commit",
+      "upstream": "github.com/tailark/blocks@8139698115c1341bfd2e3e286c04bb4d8146f472",
+      "license": "MIT",
+      "licenseFiles": [
+        "tailark-oss/LICENCE.md"
+      ]
+    },
+    "lucide": {
+      "namespace": "lucide",
+      "source": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/{path}",
+      "version": "1.65.0",
+      "versionBasis": "lucide release tag 1.65.0 (lucide-react 1.65.0 renders the same icon nodes)",
+      "upstream": "github.com/lucide-icons/lucide@1.65.0",
+      "license": "ISC",
+      "licenseFiles": [
+        "lucide/LICENSE"
+      ]
+    }
+  },
+  "licenses": [
+    {
+      "path": "diceui/LICENSE",
+      "sha256": "798456e9f649d796bad55d80f9ee50a71eb2d16920300a66a8221b70123e40db",
+      "bytes": 1068,
+      "sourceUrl": "https://raw.githubusercontent.com/sadmann7/diceui/04aad54e7cb02f209b31f294cea020208a3deed6/LICENSE"
+    },
+    {
+      "path": "lucide/LICENSE",
+      "sha256": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57",
+      "bytes": 3208,
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/LICENSE"
+    },
+    {
+      "path": "magicui/LICENSE.md",
+      "sha256": "0147b84235ed916b8b4e89c1f80655351c5afe7d211b629be61f553a227b34ba",
+      "bytes": 1060,
+      "sourceUrl": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/LICENSE.md"
+    },
+    {
+      "path": "shadcn/LICENSE.md",
+      "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f",
+      "bytes": 1063,
+      "sourceUrl": "https://raw.githubusercontent.com/shadcn-ui/ui/b8d7baa15b1dca5716f13153e63795fc3d741f6b/LICENSE.md"
+    },
+    {
+      "path": "tailark-oss/LICENCE.md",
+      "sha256": "9ceb2565db4149b699df9fb53b16963f59675f5308de1143679639b2c561410c",
+      "bytes": 1061,
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/LICENCE.md"
+    }
+  ],
+  "items": [
+    {
+      "registry": "diceui",
+      "name": "color-picker",
+      "version": "04aad54",
+      "dir": "diceui/color-picker@04aad54",
+      "type": "registry:ui",
+      "sourceUrl": "https://diceui.com/r/new-york/color-picker.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.color-picker"
+      ],
+      "registryDependencies": [
+        "button",
+        "input",
+        "popover",
+        "select",
+        "@diceui/use-value-as-ref",
+        "@diceui/use-ref-with-init"
+      ],
+      "dependencies": [
+        "cn",
+        "radix-ui"
+      ],
+      "hash": "sha256:bd4a8d192035af22f3727b3c7a4dd554e80da8a178eaf79fd33c4278576f3033",
+      "files": [
+        {
+          "path": "color-picker.json",
+          "sha256": "e78d13f6cf2d7b07a30f1a2d94645d19148e921d94ab6205e7427274e7be7fe2",
+          "bytes": 50337,
+          "origin": "https://diceui.com/r/new-york/color-picker.json"
+        },
+        {
+          "path": "components/visually-hidden-input.tsx",
+          "sha256": "21df23098299dc50240ed4465c72da9d1ac7c0b5c289aea90639af24fe9bb379",
+          "bytes": 4079,
+          "origin": "color-picker.json#files[1].content"
+        },
+        {
+          "path": "ui/color-picker.tsx",
+          "sha256": "c3629747369f28ca7f0c1ac04ba4357d92a9cfafaa3c88b9f210556e394f6a11",
+          "bytes": 43203,
+          "origin": "color-picker.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "diceui",
+      "name": "faceted",
+      "version": "04aad54",
+      "dir": "diceui/faceted@04aad54",
+      "type": "registry:ui",
+      "sourceUrl": "https://diceui.com/r/new-york/faceted.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.filter-builder"
+      ],
+      "registryDependencies": [
+        "command",
+        "popover"
+      ],
+      "dependencies": [
+        "cn",
+        "cmdk",
+        "radix-ui"
+      ],
+      "hash": "sha256:7065c62ef703257b5ee4ae11db4570d9157c4d1f4a84c224ca925f0e371b64b2",
+      "files": [
+        {
+          "path": "faceted.json",
+          "sha256": "30987eb7ed6665aadcf6f4f0c4d7e1d2c7f2e6e9b62452190b3e596e5984a75e",
+          "bytes": 18396,
+          "origin": "https://diceui.com/r/new-york/faceted.json"
+        },
+        {
+          "path": "ui/faceted.tsx",
+          "sha256": "8ddc2ad2c5d9dce79cb6d1dce9e017e92dd43b00914e402e471ca8dbd31ec496",
+          "bytes": 17258,
+          "origin": "faceted.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "diceui",
+      "name": "file-upload",
+      "version": "04aad54",
+      "dir": "diceui/file-upload@04aad54",
+      "type": "registry:ui",
+      "sourceUrl": "https://diceui.com/r/new-york/file-upload.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.file-trigger"
+      ],
+      "registryDependencies": [
+        "@diceui/use-value-as-ref",
+        "@diceui/use-ref-with-init"
+      ],
+      "dependencies": [
+        "cn",
+        "radix-ui"
+      ],
+      "hash": "sha256:83a2b4cb7c920cc9ee5eadc8ff58c05d52f092ce31689252702b7e35b066344f",
+      "files": [
+        {
+          "path": "file-upload.json",
+          "sha256": "0a5588868a45474a997f0eeb6798cfe262c44b04930dc857a05e991c5ef37378",
+          "bytes": 41520,
+          "origin": "https://diceui.com/r/new-york/file-upload.json"
+        },
+        {
+          "path": "ui/file-upload.tsx",
+          "sha256": "e2bc66a139f3cbcd2f6f0b3c7bce348318c3c8b242da9b8cb59692c399a3af12",
+          "bytes": 39200,
+          "origin": "file-upload.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "diceui",
+      "name": "media-player",
+      "version": "04aad54",
+      "dir": "diceui/media-player@04aad54",
+      "type": "registry:ui",
+      "sourceUrl": "https://diceui.com/r/new-york/media-player.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.media-player"
+      ],
+      "registryDependencies": [
+        "badge",
+        "button",
+        "select",
+        "slider",
+        "tooltip",
+        "dropdown-menu",
+        "@diceui/use-ref-with-init"
+      ],
+      "dependencies": [
+        "cn",
+        "radix-ui",
+        "media-chrome"
+      ],
+      "hash": "sha256:05e18441a6e5a2276c6b40f8c6cd9e2cdd3aa296e971ad1de58a05dbf1bf23e9",
+      "files": [
+        {
+          "path": "media-player.json",
+          "sha256": "f1a10e9d94c778d85b3f4e315a898680630cac1b5ad70e5c63e26da654e3f166",
+          "bytes": 106258,
+          "origin": "https://diceui.com/r/new-york/media-player.json"
+        },
+        {
+          "path": "ui/media-player.tsx",
+          "sha256": "fa01d5e9f2077583e52276bb8571f10eb26b2ff469de4f6b2cb3caa479513fcb",
+          "bytes": 101299,
+          "origin": "media-player.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "diceui",
+      "name": "scroll-spy",
+      "version": "04aad54",
+      "dir": "diceui/scroll-spy@04aad54",
+      "type": "registry:ui",
+      "sourceUrl": "https://diceui.com/r/new-york/scroll-spy.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.table-of-contents"
+      ],
+      "registryDependencies": [
+        "@diceui/use-value-as-ref",
+        "@diceui/use-ref-with-init"
+      ],
+      "dependencies": [
+        "cn",
+        "radix-ui"
+      ],
+      "hash": "sha256:98899863b32bb9a73309ab0d21b839ed011ee582dfcf172686b3e5ceff309458",
+      "files": [
+        {
+          "path": "scroll-spy.json",
+          "sha256": "8bf3cd210ca52a73bb20bc3da86fdf94e171e9b969f2fb27223d147f76add7b2",
+          "bytes": 13318,
+          "origin": "https://diceui.com/r/new-york/scroll-spy.json"
+        },
+        {
+          "path": "ui/scroll-spy.tsx",
+          "sha256": "d0c3052c17dd469f6c87a048bb3bf65753ca0a22ada93a88999d1125fe86e75a",
+          "bytes": 12408,
+          "origin": "scroll-spy.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "diceui",
+      "name": "status",
+      "version": "04aad54",
+      "dir": "diceui/status@04aad54",
+      "type": "registry:ui",
+      "sourceUrl": "https://diceui.com/r/new-york/status.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.status-mark"
+      ],
+      "dependencies": [
+        "cn",
+        "radix-ui"
+      ],
+      "hash": "sha256:3ea06683ca5681b1550f3d8bab5deed735a46642b5dbe4896b78ac448ff77449",
+      "files": [
+        {
+          "path": "status.json",
+          "sha256": "455f45eb874e5567cfb70d0375ce85ba3f4aac1e662b400b525a3e205c8d70b9",
+          "bytes": 2816,
+          "origin": "https://diceui.com/r/new-york/status.json"
+        },
+        {
+          "path": "ui/status.tsx",
+          "sha256": "63e74105c4221ed2d0814a39a12947f8b48eec7680cee8fda332b0618c8435e8",
+          "bytes": 2481,
+          "origin": "status.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "diceui",
+      "name": "stepper",
+      "version": "04aad54",
+      "dir": "diceui/stepper@04aad54",
+      "type": "registry:ui",
+      "sourceUrl": "https://diceui.com/r/new-york/stepper.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.wizard"
+      ],
+      "registryDependencies": [
+        "button",
+        "@diceui/use-value-as-ref",
+        "@diceui/use-ref-with-init"
+      ],
+      "dependencies": [
+        "cn",
+        "radix-ui"
+      ],
+      "hash": "sha256:36059d7c6d4c9644f8c80a0efe317d4cfd561d1d1ba0eb6e250a325768dccbba",
+      "files": [
+        {
+          "path": "stepper.json",
+          "sha256": "12a5380e3e04a4467de6082881df494e2f4f6649020d2f3aa558a290c4748c75",
+          "bytes": 37769,
+          "origin": "https://diceui.com/r/new-york/stepper.json"
+        },
+        {
+          "path": "ui/stepper.tsx",
+          "sha256": "2c1a86d991288f5e28d6e469698a67fd0bacbf436b34b5211bc08be84210d970",
+          "bytes": 35770,
+          "origin": "stepper.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "diceui",
+      "name": "tags-input",
+      "version": "04aad54",
+      "dir": "diceui/tags-input@04aad54",
+      "type": "registry:ui",
+      "sourceUrl": "https://diceui.com/r/new-york/tags-input.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.tag-group"
+      ],
+      "dependencies": [
+        "cn",
+        "@diceui/tags-input"
+      ],
+      "hash": "sha256:1b07b658eb734f77610da1410f6391babe7ca82ff0dcfae8a66343b0f5e28e31",
+      "files": [
+        {
+          "path": "tags-input.json",
+          "sha256": "26592c8e0660b72cda156d3dc08f1a1c7124406bfd4adf697ab8e2ef5080fbf9",
+          "bytes": 3495,
+          "origin": "https://diceui.com/r/new-york/tags-input.json"
+        },
+        {
+          "path": "ui/tags-input.tsx",
+          "sha256": "2699f807d51c6615df2efe495b695d33d883e94e28007c89941d0663c809a5b2",
+          "bytes": 3104,
+          "origin": "tags-input.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "diceui",
+      "name": "timeline",
+      "version": "04aad54",
+      "dir": "diceui/timeline@04aad54",
+      "type": "registry:ui",
+      "sourceUrl": "https://diceui.com/r/new-york/timeline.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.timeline"
+      ],
+      "registryDependencies": [
+        "@diceui/use-ref-with-init"
+      ],
+      "dependencies": [
+        "cn",
+        "radix-ui"
+      ],
+      "hash": "sha256:0b3e5d2e13f9940f69aaf723e51358844797e092fe4af2243aa979f830c2a059",
+      "files": [
+        {
+          "path": "timeline.json",
+          "sha256": "555319caa34aaeb429a36e31cf081f8f905285c01cb38038cc799e60c80c5551",
+          "bytes": 19346,
+          "origin": "https://diceui.com/r/new-york/timeline.json"
+        },
+        {
+          "path": "ui/timeline.tsx",
+          "sha256": "315cf16724be43f18fc87679522a362edc60fd67533f7ead2c4c1af413a6a592",
+          "bytes": 17976,
+          "origin": "timeline.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "diceui",
+      "name": "use-ref-with-init",
+      "version": "04aad54",
+      "dir": "diceui/use-ref-with-init@04aad54",
+      "type": "registry:hook",
+      "sourceUrl": "https://diceui.com/r/new-york/use-ref-with-init.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "hash": "sha256:df76b03d56b9a5d71a3d54a746b00a0ff849c4e3ddc548e5169f386c2588a41e",
+      "files": [
+        {
+          "path": "hooks/use-ref-with-init.ts",
+          "sha256": "68e993f97c680327117113e58a701df3731858a37edc50778e68b17892fc1059",
+          "bytes": 330,
+          "origin": "use-ref-with-init.json#files[0].content"
+        },
+        {
+          "path": "use-ref-with-init.json",
+          "sha256": "1b81316692129af2062c39337ff1c96cf9f73ec4287678746f05fd8893c3ac6d",
+          "bytes": 552,
+          "origin": "https://diceui.com/r/new-york/use-ref-with-init.json"
+        }
+      ],
+      "requiredBy": [
+        "@diceui/color-picker",
+        "@diceui/file-upload",
+        "@diceui/media-player",
+        "@diceui/scroll-spy",
+        "@diceui/stepper",
+        "@diceui/timeline"
+      ]
+    },
+    {
+      "registry": "diceui",
+      "name": "use-value-as-ref",
+      "version": "04aad54",
+      "dir": "diceui/use-value-as-ref@04aad54",
+      "type": "registry:hook",
+      "sourceUrl": "https://diceui.com/r/new-york/use-value-as-ref.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "dependencies": [
+        "radix-ui"
+      ],
+      "hash": "sha256:7f91c0f9d34782496fad259c3829190a7226b21843e79cb9553a17bb65906716",
+      "files": [
+        {
+          "path": "hooks/use-value-as-ref.ts",
+          "sha256": "93edaf8ff06dee9fcfa7be007199b34b48c8e3adfe3fa52a49f4a0345e6b4d0c",
+          "bytes": 264,
+          "origin": "use-value-as-ref.json#files[0].content"
+        },
+        {
+          "path": "use-value-as-ref.json",
+          "sha256": "d1cb3da4f3ea52bcad455377595c4b1d948f6d57e107d5bf7ef64d0c89dbf393",
+          "bytes": 525,
+          "origin": "https://diceui.com/r/new-york/use-value-as-ref.json"
+        }
+      ],
+      "requiredBy": [
+        "@diceui/color-picker",
+        "@diceui/file-upload",
+        "@diceui/scroll-spy",
+        "@diceui/stepper"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "arrow-right",
+      "version": "1.65.0",
+      "dir": "lucide/arrow-right@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/arrow-right.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-arrow-right"
+      ],
+      "hash": "sha256:86a008288453770b6408cd9615f0c12f257fc78ccc819a038d95b9d9e54bc87e",
+      "files": [
+        {
+          "path": "icons/arrow-right.svg",
+          "sha256": "288397fdb73bb4f783cf9eabb726ff47357df1d4e3f1201dd748090579f108b9",
+          "bytes": 261,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/arrow-right.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "book-open",
+      "version": "1.65.0",
+      "dir": "lucide/book-open@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/book-open.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-guide"
+      ],
+      "hash": "sha256:11240d639775af38c63fd9d11d6c9c94415d55c11fc24ff5942c546f19ac6ab9",
+      "files": [
+        {
+          "path": "icons/book-open.svg",
+          "sha256": "9b9bed0ff057283d5c5c5a1c71f8d3e927db26a56639603a92fdf7b25961510e",
+          "bytes": 387,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/book-open.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "briefcase",
+      "version": "1.65.0",
+      "dir": "lucide/briefcase@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/briefcase.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-business"
+      ],
+      "hash": "sha256:5b259bdfb5070d6e819e1121495df72e7a8244184451b5dca860ee9d2a3f1860",
+      "files": [
+        {
+          "path": "icons/briefcase.svg",
+          "sha256": "7c9e6bea85d15affdc5802bacbb7aae548c6031f246e4faef3747f36847365d0",
+          "bytes": 319,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/briefcase.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "building-2",
+      "version": "1.65.0",
+      "dir": "lucide/building-2@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/building-complex.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-organization"
+      ],
+      "hash": "sha256:52a23b75ebd10e6297270c94775f0e7bf650f77faf3a22028e57ede20a5921db",
+      "files": [
+        {
+          "path": "icons/building-complex.svg",
+          "sha256": "e0d46029dac60bf48ecac4532d39e15772cf484e4d230a6b40aee98775ffae85",
+          "bytes": 441,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/building-complex.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "calendar",
+      "version": "1.65.0",
+      "dir": "lucide/calendar@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/calendar.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-date"
+      ],
+      "hash": "sha256:dae34c786fe11a5ac21b9f9797ed99d67d453dd0f345c9022a695beac1baae45",
+      "files": [
+        {
+          "path": "icons/calendar.svg",
+          "sha256": "312ac8e715ac2b71bcc942dec2e8de9c1929085474f08885af35b563f6aa7a0b",
+          "bytes": 329,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/calendar.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "check",
+      "version": "1.65.0",
+      "dir": "lucide/check@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/check.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-check"
+      ],
+      "hash": "sha256:28375602bd5d0465838d12a423125836b180beaafe7b8b518091c552b8458325",
+      "files": [
+        {
+          "path": "icons/check.svg",
+          "sha256": "7f33acc9a77a61659531044525fc008edebe215bf4dcf1c789c8674ad3277db0",
+          "bytes": 239,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/check.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "chevron-down",
+      "version": "1.65.0",
+      "dir": "lucide/chevron-down@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/chevron-down.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-chevron-down"
+      ],
+      "hash": "sha256:cd4acf0e0fa126961c43306d62999c126ec02b6f7c8fd0a00e62b02458ba9136",
+      "files": [
+        {
+          "path": "icons/chevron-down.svg",
+          "sha256": "66ea878e72ed3488bb3b464c39dfdccee8d1f78e560dccea40e5e12da0e87e87",
+          "bytes": 236,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/chevron-down.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "chevron-left",
+      "version": "1.65.0",
+      "dir": "lucide/chevron-left@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/chevron-left.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-chevron-left"
+      ],
+      "hash": "sha256:0b119c521ff62f90a02395184a2c894020e31516185bb50008599929813c1035",
+      "files": [
+        {
+          "path": "icons/chevron-left.svg",
+          "sha256": "83b0681aa38bf55e9d52a1e4b4cced624abe1fe7678ecafda133a574f1161d93",
+          "bytes": 238,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/chevron-left.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "chevron-right",
+      "version": "1.65.0",
+      "dir": "lucide/chevron-right@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/chevron-right.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-chevron-right"
+      ],
+      "hash": "sha256:c0d94213314e03382ab0087494939fec83a4da58ed24a218858783665b2334b3",
+      "files": [
+        {
+          "path": "icons/chevron-right.svg",
+          "sha256": "2758143d7b2434e4aa7307dfd34405c87909ff4052f21b5f3f40d45224b4f19b",
+          "bytes": 237,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/chevron-right.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "chevron-up",
+      "version": "1.65.0",
+      "dir": "lucide/chevron-up@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/chevron-up.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-chevron-up"
+      ],
+      "hash": "sha256:62ed9761eaf397a01f3f3354817f2dbcf732b533b8ab959bd61aca261d19fec8",
+      "files": [
+        {
+          "path": "icons/chevron-up.svg",
+          "sha256": "d09f13fcbef3c493ead7e4663b5ee91804fec38d5edb5e7cc3acfbd547641cf4",
+          "bytes": 238,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/chevron-up.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "circle-check",
+      "version": "1.65.0",
+      "dir": "lucide/circle-check@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/circle-check.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-success"
+      ],
+      "hash": "sha256:ae059209bb54dcf561b518f94662632b831f8b4ecf554fcd1806c152351fd4fe",
+      "files": [
+        {
+          "path": "icons/circle-check.svg",
+          "sha256": "9711e045a5999f8a3b0782eb88e09b04e0559bc7b379dcc0a4ae645223e10345",
+          "bytes": 278,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/circle-check.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "circle-x",
+      "version": "1.65.0",
+      "dir": "lucide/circle-x@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/circle-x.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-danger"
+      ],
+      "hash": "sha256:dbb24d07e9cc14264ea8a3a0e50b4cda2deeeab96683924f272e728b029e89a6",
+      "files": [
+        {
+          "path": "icons/circle-x.svg",
+          "sha256": "bcd8788901e6f29e1b231a81ba5e707d083d06cb4848a28f29407fab4f8e0b64",
+          "bytes": 293,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/circle-x.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "clock",
+      "version": "1.65.0",
+      "dir": "lucide/clock@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/clock.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-time"
+      ],
+      "hash": "sha256:2bde60d5a7044de60c1383e13d028ed65c397ec1ede2d6577721e066177a8f18",
+      "files": [
+        {
+          "path": "icons/clock.svg",
+          "sha256": "e9d3e3acf4d1c280fcf8092293439dc0a4756a908ceb859de144b12451cd1cb9",
+          "bytes": 271,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/clock.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "credit-card",
+      "version": "1.65.0",
+      "dir": "lucide/credit-card@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/credit-card.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-payment"
+      ],
+      "hash": "sha256:40eeb0e0dcdd62ca4e0426f12b3ca9cd7349f88bd99d648cf0d65d3e530db925",
+      "files": [
+        {
+          "path": "icons/credit-card.svg",
+          "sha256": "72d2b1acd904e01c6f676b4f6d07d56550a80b5d42687d43a313b85040943a2e",
+          "bytes": 326,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/credit-card.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "external-link",
+      "version": "1.65.0",
+      "dir": "lucide/external-link@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/external-link.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-external-link"
+      ],
+      "hash": "sha256:58d270af4c57a00c8bfb458fe9e8ae2edb6879ecc91f712b19b8e0482aeab4d9",
+      "files": [
+        {
+          "path": "icons/external-link.svg",
+          "sha256": "3891241b8c3bfc3a8a930078f26ffc5a7e9763da6d0162ace2050b28d4c1d1fe",
+          "bytes": 332,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/external-link.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "file-check",
+      "version": "1.65.0",
+      "dir": "lucide/file-check@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/file-check.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-document-approved"
+      ],
+      "hash": "sha256:56444922a4d2d9051921995db42028c48f39189b0c9daa27547320b52f20fb92",
+      "files": [
+        {
+          "path": "icons/file-check.svg",
+          "sha256": "c64133f05e44d87830e37c7a9c45a439c5146017f86e91e563f806ff8a2ad4c1",
+          "bytes": 402,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/file-check.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "file-text",
+      "version": "1.65.0",
+      "dir": "lucide/file-text@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/file-text.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-document"
+      ],
+      "hash": "sha256:583197dda13576ca3f3a5ef49602f0422d2d7b3610405f57bdfd8b270e17d299",
+      "files": [
+        {
+          "path": "icons/file-text.svg",
+          "sha256": "52ca55846c202335fb870c8aa23e9345630ec10489303756d62e750f7109605c",
+          "bytes": 444,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/file-text.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "folder",
+      "version": "1.65.0",
+      "dir": "lucide/folder@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/folder.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-folder"
+      ],
+      "hash": "sha256:eb5cd5fb4db93126cb3ff85c4528a109006e43f0186686b4370089a1aba6bf1e",
+      "files": [
+        {
+          "path": "icons/folder.svg",
+          "sha256": "f0d92b94b797a8ab7d4c4ae33c3236c47f64068351b4e14bdb5014ee42898a39",
+          "bytes": 342,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/folder.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "globe",
+      "version": "1.65.0",
+      "dir": "lucide/globe@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/globe.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-website"
+      ],
+      "hash": "sha256:1c8fa61553642cad50f8d37f00acfdc7262ceba4f5013033dc93d8eb02590579",
+      "files": [
+        {
+          "path": "icons/globe.svg",
+          "sha256": "82c6b8fa0b8e8d775ec9becd86f74a4e50bff7bee4c81f7362de45348504f14d",
+          "bytes": 331,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/globe.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "house",
+      "version": "1.65.0",
+      "dir": "lucide/house@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/house.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-home"
+      ],
+      "hash": "sha256:df50d4861dd56ea5eac865c7329d45bb89f3fcf0206c2f2d8fb9c7dc0f2ccb84",
+      "files": [
+        {
+          "path": "icons/house.svg",
+          "sha256": "28216c479005731ef5e382e7d8627eda2b129b019eb1f3d9de9f5915576d448e",
+          "bytes": 383,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/house.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "info",
+      "version": "1.65.0",
+      "dir": "lucide/info@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/info.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-info"
+      ],
+      "hash": "sha256:4b9e7b2fa1943280ce9e270b9d4859ebac16af061c13b7a7b53f4acb8be766c0",
+      "files": [
+        {
+          "path": "icons/info.svg",
+          "sha256": "bc977a64eb96f3e9c1041ffd09a3fceb70e3e65c02b571f76064062ed31f3cb9",
+          "bytes": 294,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/info.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "landmark",
+      "version": "1.65.0",
+      "dir": "lucide/landmark@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/landmark.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-institution"
+      ],
+      "hash": "sha256:a8fb1dd3f1238bf697dd89847209ca5ec634cd2f3768e2bc63f331b81ad52b3b",
+      "files": [
+        {
+          "path": "icons/landmark.svg",
+          "sha256": "28408ef995796bffc390e8f217cdaa61e383627789d66300d4ff839248a3f144",
+          "bytes": 432,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/landmark.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "layers",
+      "version": "1.65.0",
+      "dir": "lucide/layers@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/layers.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-layers"
+      ],
+      "hash": "sha256:a3df583045465e98d527d784a6ee40d8405a84d883d6df2096e3c63bd2fbd077",
+      "files": [
+        {
+          "path": "icons/layers.svg",
+          "sha256": "ce16d0a955e3581cda17f6b2fd5c5bc2034b405f9cecc31c8ebb8495b4afc1bb",
+          "bytes": 510,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/layers.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "layout-grid",
+      "version": "1.65.0",
+      "dir": "lucide/layout-grid@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/layout-grid.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-grid-view"
+      ],
+      "hash": "sha256:678b74cb006618249f703151f7bf8a817fe7f0e2d76aa8da6ee00396fd4e5b3d",
+      "files": [
+        {
+          "path": "icons/layout-grid.svg",
+          "sha256": "b8903f61d09b1d75e55c71158277d26570962f69c2099446a251871e0a2d6678",
+          "bytes": 416,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/layout-grid.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "list",
+      "version": "1.65.0",
+      "dir": "lucide/list@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/list.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-list-view"
+      ],
+      "hash": "sha256:2d1f159ecad505b4703142f1aff43fcc97e51a3b1e319ef535bcd3fce0ae52eb",
+      "files": [
+        {
+          "path": "icons/list.svg",
+          "sha256": "ff97a7379eb962ddc3863bb59f0f45875ac8da91aac8a38a67361e7118d2d627",
+          "bytes": 353,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/list.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "lock",
+      "version": "1.65.0",
+      "dir": "lucide/lock@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/lock.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-locked"
+      ],
+      "hash": "sha256:f0b5d52f1d02b9bb4897c401c3be5f5ec431d2a7a0c71d5a3a30c5b111be556f",
+      "files": [
+        {
+          "path": "icons/lock.svg",
+          "sha256": "d2cfe60cac8deaef36442b5c8218c1e61abe18222784b2a370ea090d13fca840",
+          "bytes": 309,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/lock.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "monitor",
+      "version": "1.65.0",
+      "dir": "lucide/monitor@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/monitor.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-theme-system"
+      ],
+      "hash": "sha256:0195c460816f13f60c59625642c3e2f8e822d21eb4aa331ea41079163e1d96ec",
+      "files": [
+        {
+          "path": "icons/monitor.svg",
+          "sha256": "d1a443233345724859de8e4fb48968ba91e885e12ddbd710701548bd91b39428",
+          "bytes": 346,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/monitor.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "moon",
+      "version": "1.65.0",
+      "dir": "lucide/moon@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/moon.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-theme-dark"
+      ],
+      "hash": "sha256:d132a14fcf2d995e8b730d0f532fd54b0ed9c8e988d796c7e47d214cd1ba4910",
+      "files": [
+        {
+          "path": "icons/moon.svg",
+          "sha256": "205b959e940d5841f0ce1d09c933153da9d9c94130a54d5cc0c68c2af1d403da",
+          "bytes": 334,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/moon.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "package",
+      "version": "1.65.0",
+      "dir": "lucide/package@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/package.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-package"
+      ],
+      "hash": "sha256:6bf8339daf23a267fe5993bca91c9c3a5e7ea086472c2d5211730e468c3fa57d",
+      "files": [
+        {
+          "path": "icons/package.svg",
+          "sha256": "69d6bc7650d26c4d24dd55eb22791607b982ce7637073944c256f1f61575509d",
+          "bytes": 446,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/package.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "panel-left",
+      "version": "1.65.0",
+      "dir": "lucide/panel-left@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/panel-left.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-panel-left"
+      ],
+      "hash": "sha256:d856992ea13132e4e0f025edd7c1ff19abe129578233f1b40b4969cfd0a6c2a8",
+      "files": [
+        {
+          "path": "icons/panel-left.svg",
+          "sha256": "029f67b9e3eeb7ddf7c7c499b174c50388725e8ea50d4ea59ed7dbaf8d61cb82",
+          "bytes": 284,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/panel-left.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "plug",
+      "version": "1.65.0",
+      "dir": "lucide/plug@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/plug.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-integration"
+      ],
+      "hash": "sha256:00fc466fe6ff2b75bcb003ac4c9abe6dd53a7fdf0f038b72d6426d319eb07b8f",
+      "files": [
+        {
+          "path": "icons/plug.svg",
+          "sha256": "11ba780e4b6f15d37906a8a73537144b59720333d7a9fc8048a437d0389422f8",
+          "bytes": 363,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/plug.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "receipt",
+      "version": "1.65.0",
+      "dir": "lucide/receipt@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/receipt.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-receipt"
+      ],
+      "hash": "sha256:8c73de9f929eae7a35d6089a91753d16b9986676d6fd829583c8f49c0d87bd39",
+      "files": [
+        {
+          "path": "icons/receipt.svg",
+          "sha256": "26b4af2c5ea5aef9578c765a01585d9c8726ce00928dc64175a0d7d9f7c5f0a0",
+          "bytes": 741,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/receipt.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "scale",
+      "version": "1.65.0",
+      "dir": "lucide/scale@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/scale.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-legal"
+      ],
+      "hash": "sha256:7bff579e985d5e9ea0848b60db1c4dae65c989322126c90eae7326f54b7ef9e3",
+      "files": [
+        {
+          "path": "icons/scale.svg",
+          "sha256": "a7faa238b153311b18aaffb14ade8989128eaac35a92482edb7a7ee04c7333de",
+          "bytes": 395,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/scale.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "search",
+      "version": "1.65.0",
+      "dir": "lucide/search@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/search.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-search"
+      ],
+      "hash": "sha256:db18ae8fc08bcfa380141c066dfb99d85ebf7a1899035008266333f740793650",
+      "files": [
+        {
+          "path": "icons/search.svg",
+          "sha256": "283d371c2e433817bb9c0c8310caa6c77fa4177c0f4f1168d9c83b97af7389dc",
+          "bytes": 275,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/search.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "settings",
+      "version": "1.65.0",
+      "dir": "lucide/settings@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/settings.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-settings"
+      ],
+      "hash": "sha256:e53988af627dae4929b4283b079db7a772038bebd2d17ecc257650f17d09b79f",
+      "files": [
+        {
+          "path": "icons/settings.svg",
+          "sha256": "0ae27fd0f81999229e3127ac96c5b32edfea448e291d509e76212b917551d66b",
+          "bytes": 586,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/settings.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "shield",
+      "version": "1.65.0",
+      "dir": "lucide/shield@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/shield.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-security"
+      ],
+      "hash": "sha256:4c5f0b55ad89cf7b68870805651bf600fd10afb946ed214c07adf875139d7b35",
+      "files": [
+        {
+          "path": "icons/shield.svg",
+          "sha256": "be32f6a86df7cbe43a83c439dd8849e5bcf5145e484d23420c20d8b98a78e82b",
+          "bytes": 386,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/shield.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "sun",
+      "version": "1.65.0",
+      "dir": "lucide/sun@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/sun.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-theme-light"
+      ],
+      "hash": "sha256:29671c87a75a5072595fdfa4f79cddd1b73328d492c5e724b5545e73d7139a34",
+      "files": [
+        {
+          "path": "icons/sun.svg",
+          "sha256": "a3955c8b0425fcc5c9ba12d2bdd77fe53b2cd5dd05e7742a56f342e996fb2ef8",
+          "bytes": 485,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/sun.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "triangle-alert",
+      "version": "1.65.0",
+      "dir": "lucide/triangle-alert@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/triangle-alert.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-warning"
+      ],
+      "hash": "sha256:469cec9e577b315aae754a1929d5e3b31bfb24f4b4125761c4cdb377eed587d2",
+      "files": [
+        {
+          "path": "icons/triangle-alert.svg",
+          "sha256": "4866f38b8560d410f21e3226413e0b77997b6dfbb6931fadfe0a0d5aef9ffeb4",
+          "bytes": 345,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/triangle-alert.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "user",
+      "version": "1.65.0",
+      "dir": "lucide/user@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/user.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-user"
+      ],
+      "hash": "sha256:e4556df289ee53354b3abbffbb9de00263e3de8f4587c0b082c8a6e89ef3e493",
+      "files": [
+        {
+          "path": "icons/user.svg",
+          "sha256": "eae3b3b2400031ddd5ec869327d127a96014e5f63aa6e06658dd5d4e90661aa8",
+          "bytes": 299,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/user.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "users",
+      "version": "1.65.0",
+      "dir": "lucide/users@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/users.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-team"
+      ],
+      "hash": "sha256:6684e468e4c73343176913e3e88c83b5762315d47e81f9305c56a56e9ca1d03c",
+      "files": [
+        {
+          "path": "icons/users.svg",
+          "sha256": "eeed488a1ec95ba730dd69996536fb65061d6ea273afb2429ae47e65eebf401c",
+          "bytes": 383,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/users.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "x",
+      "version": "1.65.0",
+      "dir": "lucide/x@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/x.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-close"
+      ],
+      "hash": "sha256:e8aaef15b604c6a51184da1f4eb81ce0fd10c9fcbcc963c6f085e3a64f902b96",
+      "files": [
+        {
+          "path": "icons/x.svg",
+          "sha256": "4a9cdab38fbb96162e7dace28e33f4ca0e49d8963a6162abc3d4691b7d675117",
+          "bytes": 260,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/x.svg"
+        }
+      ]
+    },
+    {
+      "registry": "magicui",
+      "name": "animated-shiny-text",
+      "version": "efe76fc",
+      "dir": "magicui/animated-shiny-text@efe76fc",
+      "type": "registry:ui",
+      "sourceUrl": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/animated-shiny-text.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "themes.animate-shiny-text"
+      ],
+      "hash": "sha256:f0a36548e04a7c53a6d694ffbb06ee960038425b70ee50a851b212c1d002c998",
+      "files": [
+        {
+          "path": "animated-shiny-text.json",
+          "sha256": "f8f3bf18fc6a4e18dd28c301e9706a2791407f4ae7e236ea53aa9852aa635e91",
+          "bytes": 1799,
+          "origin": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/animated-shiny-text.json"
+        },
+        {
+          "path": "registry/magicui/animated-shiny-text.tsx",
+          "sha256": "3743a0a0b4894840a96bacd839e493872bac484a940684f91fd23a1784c00fbb",
+          "bytes": 999,
+          "origin": "animated-shiny-text.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "magicui",
+      "name": "file-tree",
+      "version": "efe76fc",
+      "dir": "magicui/file-tree@efe76fc",
+      "type": "registry:ui",
+      "sourceUrl": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/file-tree.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.tree"
+      ],
+      "hash": "sha256:bfc08e38ed3b0ccc6b8f91d6834f803a31405bd05cd7894cff505d66672af97b",
+      "files": [
+        {
+          "path": "file-tree.json",
+          "sha256": "a4b8c998d7a3d7f42db01976970b4b52cc7526edd5de466e6a202b3a767ac5b5",
+          "bytes": 13548,
+          "origin": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/file-tree.json"
+        },
+        {
+          "path": "registry/magicui/file-tree.tsx",
+          "sha256": "19f8c8923a3aba1ef840b8a2c0eca1c7e4772f850140c38a532c0cb2d4d20875",
+          "bytes": 12565,
+          "origin": "file-tree.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "magicui",
+      "name": "grid-pattern",
+      "version": "efe76fc",
+      "dir": "magicui/grid-pattern@efe76fc",
+      "type": "registry:ui",
+      "sourceUrl": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/grid-pattern.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "assets.pattern"
+      ],
+      "hash": "sha256:f3d2d48daec643d659ff9a287a4dc52b4d2ad870b166da5c699ef00a85702a9e",
+      "files": [
+        {
+          "path": "grid-pattern.json",
+          "sha256": "87b67223033ca97ee464f34cf4bafe12ee699ec583616b42f9249de1d8b7b0aa",
+          "bytes": 2004,
+          "origin": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/grid-pattern.json"
+        },
+        {
+          "path": "registry/magicui/grid-pattern.tsx",
+          "sha256": "1d1caaf01de0a1ebfdffea1163535f8fbfdfbee33cd0a640e09388815d1823df",
+          "bytes": 1537,
+          "origin": "grid-pattern.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "magicui",
+      "name": "marquee",
+      "version": "efe76fc",
+      "dir": "magicui/marquee@efe76fc",
+      "type": "registry:ui",
+      "sourceUrl": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/marquee.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical"
+      ],
+      "hash": "sha256:42e1105f44b0a0dd7be3a3b871952e487541a6db0af2ab62af879e5cedcb1f14",
+      "files": [
+        {
+          "path": "marquee.json",
+          "sha256": "6378d12f6ac7b383bcbe25cbfcd21ad567d4726ff9979bf07991598a7bdef1ce",
+          "bytes": 2694,
+          "origin": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/marquee.json"
+        },
+        {
+          "path": "registry/magicui/marquee.tsx",
+          "sha256": "779f360a107409bfa35cda13bcef7d54cd620a15ab4a0ee50412442a4dd6b9c7",
+          "bytes": 1658,
+          "origin": "marquee.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "magicui",
+      "name": "safari",
+      "version": "efe76fc",
+      "dir": "magicui/safari@efe76fc",
+      "type": "registry:ui",
+      "sourceUrl": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/safari.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.media"
+      ],
+      "hash": "sha256:fea2b9b1c9a74525b181b3818a0eecac645983498ecddd7c637743cfb75f9c93",
+      "files": [
+        {
+          "path": "registry/magicui/safari.tsx",
+          "sha256": "2cb6ce69def86020f6860a3dd8696f0998dac340db932a3eee05e990b2e29f3e",
+          "bytes": 13124,
+          "origin": "safari.json#files[0].content"
+        },
+        {
+          "path": "safari.json",
+          "sha256": "8e50e929a19b82cc70930b1572d37179ffc2516174892e12b56bc39b15d801aa",
+          "bytes": 13864,
+          "origin": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/safari.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "accordion",
+      "version": "4.23.0",
+      "dir": "shadcn/accordion@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/accordion.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.accordion"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:922b2227077ce0af4f6f593c795d89f6215fba16ceaef64547c15ee84ae8d46d",
+      "files": [
+        {
+          "path": "accordion.json",
+          "sha256": "203a172c0e1d17457d2661e6009cdbbc26f2be983f1116484ba329ed869ca773",
+          "bytes": 3836,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/accordion.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/accordion.tsx",
+          "sha256": "832d6737d43aa9c1457adb9c40d48a668d8a22263a0c77261bb378313b5c081a",
+          "bytes": 3103,
+          "origin": "accordion.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "alert",
+      "version": "4.23.0",
+      "dir": "shadcn/alert@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/alert.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.banner",
+        "sections.notices"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:95a396b53c8c797b22ad5f7d00e281ef867e94723c7f3b21ae61b15c7a72a4ac",
+      "files": [
+        {
+          "path": "alert.json",
+          "sha256": "aaa6f7ee84101a00522e70c60518c18a8dd65770f9066ce56b0b8c77804409af",
+          "bytes": 2632,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/alert.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/alert.tsx",
+          "sha256": "f253568242c1c69b343f12474002fdbe229f603158171c59e21c491ab79f2e6e",
+          "bytes": 2038,
+          "origin": "alert.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "aspect-ratio",
+      "version": "4.23.0",
+      "dir": "shadcn/aspect-ratio@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/aspect-ratio.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "assets.image-ratio"
+      ],
+      "hash": "sha256:b6c6bb66c79a2e28091337b07bbcfd344ef7ff051baff59da12532f865756b88",
+      "files": [
+        {
+          "path": "aspect-ratio.json",
+          "sha256": "fa464f4d52ceac9fa3d8b24f321daee26b8393ee292bae0e3a3e45b6bdbc3774",
+          "bytes": 850,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/aspect-ratio.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/aspect-ratio.tsx",
+          "sha256": "b1c157886236782cb92d8fbcd4749532aaf6d8aabefd6e157ca40358f902f407",
+          "bytes": 274,
+          "origin": "aspect-ratio.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "avatar",
+      "version": "4.23.0",
+      "dir": "shadcn/avatar@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/avatar.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.avatar"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:32dcb71ec3c8218efde9067e5332f63cb3bc6d5ad4abc6a490db26e04ecd2f4a",
+      "files": [
+        {
+          "path": "avatar.json",
+          "sha256": "488881fc960597b6ed7a3ae8d43107589465baffd18b0659fda0eee62883a666",
+          "bytes": 3814,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/avatar.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/avatar.tsx",
+          "sha256": "036b8f39d9f42962a9eedd097103c90450d58a50ea55c693896c4cea4b5953a4",
+          "bytes": 3088,
+          "origin": "avatar.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn/sidebar-07"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "badge",
+      "version": "4.23.0",
+      "dir": "shadcn/badge@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/badge.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.badge"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:8baa90939e0ced544f4523d00142ce28b506f9105387cd16ab163b5fec361a95",
+      "files": [
+        {
+          "path": "badge.json",
+          "sha256": "4c7eae206938e55350a0d506c7b35b4c20bfe8b0f51ad2883fd75d6d4a956c27",
+          "bytes": 2416,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/badge.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/badge.tsx",
+          "sha256": "59953420d01d23d172b4e32583426db153ff09226e2d460d53526b9f25282801",
+          "bytes": 1855,
+          "origin": "badge.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@diceui/media-player"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "breadcrumb",
+      "version": "4.23.0",
+      "dir": "shadcn/breadcrumb@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/breadcrumb.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.breadcrumbs"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:ef8b6b798149fd6567c0e1088d0c4fb8f87ff58c7ecd81fa2763852880a0b428",
+      "files": [
+        {
+          "path": "breadcrumb.json",
+          "sha256": "7d80a0e01e31281ce987a99139731fd2d8f2f3dacc190f6b9c5a7bad6825e860",
+          "bytes": 3599,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/breadcrumb.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/breadcrumb.tsx",
+          "sha256": "4676c0c62a5699ed4f6b5079cb4e912149307d1150cb0d474c30bbc6e1817feb",
+          "bytes": 2874,
+          "origin": "breadcrumb.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn/sidebar-07"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "button-group",
+      "version": "4.23.0",
+      "dir": "shadcn/button-group@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/button-group.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.toolbar"
+      ],
+      "registryDependencies": [
+        "separator"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:cde9f208aea097d875f16b5ed97207f0155357ce04d895cd20b207ac1b344878",
+      "files": [
+        {
+          "path": "button-group.json",
+          "sha256": "728b29703cb6c9e0edecf65d4ec0d1c46c2a8d3d4555e64cc7f40df044d8dffc",
+          "bytes": 3034,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/button-group.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/button-group.tsx",
+          "sha256": "91c87303e83e93095f9afcb8c0ed9c4f28d1938fafaeb12428a6d5f680eafdac",
+          "bytes": 2359,
+          "origin": "button-group.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "button",
+      "version": "4.23.0",
+      "dir": "shadcn/button@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/button.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.button",
+        "components.link"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:9e41c76cf882fc46d3518f621c87ac7e58ec381ea546fda891de2cabe95fc350",
+      "files": [
+        {
+          "path": "button.json",
+          "sha256": "c07a8feb7b7ed07ad5279023e45ce23ed7b5b94c7dba3de5c08f30a2aa037de3",
+          "bytes": 3984,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/button.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/button.tsx",
+          "sha256": "08e5f87833c5db8436e89337ebde0f776bcdbf649d3de69fb89be6441ca2e366",
+          "bytes": 3375,
+          "origin": "button.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@diceui/color-picker",
+        "@diceui/media-player",
+        "@diceui/stepper",
+        "@shadcn/calendar",
+        "@shadcn/carousel",
+        "@shadcn/combobox",
+        "@shadcn/dialog",
+        "@shadcn/input-group",
+        "@shadcn/login-03",
+        "@shadcn/pagination",
+        "@shadcn/sheet",
+        "@shadcn/sidebar"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "calendar",
+      "version": "4.23.0",
+      "dir": "shadcn/calendar@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/calendar.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.calendar",
+        "components.date-picker"
+      ],
+      "registryDependencies": [
+        "button"
+      ],
+      "dependencies": [
+        "cn",
+        "react-day-picker@latest",
+        "date-fns"
+      ],
+      "hash": "sha256:73dab4e450a8b7495bae54c944003339e534f17599f59524674d5e603364e11c",
+      "files": [
+        {
+          "path": "calendar.json",
+          "sha256": "3644b2838d31649ce5d1c7d6bd76dd4c49fcbd101683e7cbcbf162a7c35b0b49",
+          "bytes": 10145,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/calendar.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/calendar.tsx",
+          "sha256": "4f245084e691dec10205b684d2ba6512831a6ebb4aa94e106d7f4e5c9537ab2f",
+          "bytes": 9131,
+          "origin": "calendar.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "card",
+      "version": "4.23.0",
+      "dir": "shadcn/card@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/card.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.card",
+        "sections.cards"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e",
+      "files": [
+        {
+          "path": "card.json",
+          "sha256": "acf04c936ab6b613ed761067d8c2963508ba0f009f2accf2565aa5c3aeb4c06a",
+          "bytes": 3254,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/card.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/card.tsx",
+          "sha256": "645c3d73e387a99f1492220cc619453b0c7f5454134ee3cd548be7a80f7eccde",
+          "bytes": 2623,
+          "origin": "card.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn/login-03"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "carousel",
+      "version": "4.23.0",
+      "dir": "shadcn/carousel@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/carousel.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.gallery"
+      ],
+      "registryDependencies": [
+        "button"
+      ],
+      "dependencies": [
+        "cn",
+        "embla-carousel-react"
+      ],
+      "hash": "sha256:85afbe330be3dcb1f5770cf8f1becd5d0337aa9aab8700d9d01fbff95f920d91",
+      "files": [
+        {
+          "path": "carousel.json",
+          "sha256": "6af406074a0398ab9ec2f940a29823320242f314f9771ead6b2efd0ed0583201",
+          "bytes": 7073,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/carousel.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/carousel.tsx",
+          "sha256": "d82229fbca0f04ad1c7509a8e3540b136f6b979856623fcf1b0c895ac4323e19",
+          "bytes": 6047,
+          "origin": "carousel.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "chart",
+      "version": "4.23.0",
+      "dir": "shadcn/chart@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/chart.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.chart-area",
+        "components.chart-bar",
+        "components.chart-line",
+        "components.chart-sparkline"
+      ],
+      "dependencies": [
+        "cn",
+        "recharts@3.8.0"
+      ],
+      "hash": "sha256:8aa2bb3c26cc72c551d96e47f1ea4314800c90760fedf693601aefc32802fc9d",
+      "files": [
+        {
+          "path": "chart.json",
+          "sha256": "755bee32914a939772cd0ef56fcfc8bb0f0d231059243bf4115ad628269e4f30",
+          "bytes": 11500,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/chart.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/chart.tsx",
+          "sha256": "1869f68f2eb0108071681c78f3827280fb38212ce7b145139d7ed5d65823ec40",
+          "bytes": 10491,
+          "origin": "chart.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "checkbox",
+      "version": "4.23.0",
+      "dir": "shadcn/checkbox@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/checkbox.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.checkbox"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:00d5a564ff2680e0daade49b6ff6c368f3e7a72b24fce34941461e5f2ddcd802",
+      "files": [
+        {
+          "path": "checkbox.json",
+          "sha256": "fe791df77078b10eac5363484b77a7e203be9fa9ff9741a5fced9b2546ae0426",
+          "bytes": 2410,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/checkbox.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/checkbox.tsx",
+          "sha256": "038e8d38fbea4d1c2f602938b00b095171d40a8371d7b60f772260c2eb8cb2cf",
+          "bytes": 1771,
+          "origin": "checkbox.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "collapsible",
+      "version": "4.23.0",
+      "dir": "shadcn/collapsible@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/collapsible.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.disclosure"
+      ],
+      "hash": "sha256:4609e7d77ea3680af4da1bffb9024f4e5c36cf5eed33161c2cb5db67558204f2",
+      "files": [
+        {
+          "path": "collapsible.json",
+          "sha256": "e7f440016561f83cbb8658b954b6763c7a42b4156294aa5cbc2f4df6efe79ce5",
+          "bytes": 1392,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/collapsible.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/collapsible.tsx",
+          "sha256": "c6598e5584f4258b5d9fefadbc5ad6a66888ad58729f4b634a0bb2d9c513188b",
+          "bytes": 795,
+          "origin": "collapsible.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn/sidebar-07"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "combobox",
+      "version": "4.23.0",
+      "dir": "shadcn/combobox@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/combobox.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.combo-box"
+      ],
+      "registryDependencies": [
+        "button",
+        "input-group"
+      ],
+      "dependencies": [
+        "cn",
+        "@base-ui/react"
+      ],
+      "hash": "sha256:96e870e2dfce21be524cd17fec60df9bbb0065840690e3594c041a169ab351a4",
+      "files": [
+        {
+          "path": "combobox.json",
+          "sha256": "9ce2036bf25e8dbf255fa80f25762c683c00a455299e3af2d8194f445e9ab1b7",
+          "bytes": 11000,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/combobox.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/combobox.tsx",
+          "sha256": "028a40a2b73c9c6e74da7d4ebd8441b9fc0d7ffbcff84df9f521a51c2ac057c8",
+          "bytes": 9876,
+          "origin": "combobox.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "command",
+      "version": "4.23.0",
+      "dir": "shadcn/command@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/command.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.command",
+        "frames.command"
+      ],
+      "registryDependencies": [
+        "dialog",
+        "input-group"
+      ],
+      "dependencies": [
+        "cn",
+        "cmdk"
+      ],
+      "hash": "sha256:549cd010f34024eea234a587e123b487112262775590c6e9baa82e3a6212545c",
+      "files": [
+        {
+          "path": "command.json",
+          "sha256": "c6b71409eb4166193efa3489dc45e55afd0a86f2157fad84d6271f007ad404a0",
+          "bytes": 6269,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/command.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/command.tsx",
+          "sha256": "6a4539df6e8fb9900c49d353bcb4dfa2e675e27588b9060a8ed5ac7c46bc2ec8",
+          "bytes": 5364,
+          "origin": "command.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@diceui/faceted"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "dialog",
+      "version": "4.23.0",
+      "dir": "shadcn/dialog@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/dialog.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.dialog"
+      ],
+      "registryDependencies": [
+        "button"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:48ec4fced8dc7d3d772e0966feaa43ef02a90c2754df8ce0d6e00955c6272db9",
+      "files": [
+        {
+          "path": "dialog.json",
+          "sha256": "0cc5aed4d38ed5580c8636d1f406192cbc3c001fc4eb9fb6fab39ce2deaca6f6",
+          "bytes": 5315,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/dialog.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/dialog.tsx",
+          "sha256": "9a4690ab16c37b62c2dd5c023c28fb0fbb262e21fa981f07c679e53e8155acc3",
+          "bytes": 4463,
+          "origin": "dialog.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn/command"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "dropdown-menu",
+      "version": "4.23.0",
+      "dir": "shadcn/dropdown-menu@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/dropdown-menu.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.dropdown-menu"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:b40ef3c7663c103fce8f1aeab0d613bdfabe8c67b8fe604927fc7e10a4ed3c83",
+      "files": [
+        {
+          "path": "dropdown-menu.json",
+          "sha256": "cf35c272d386e57dc55d91c7982694ae95bca64ef2b0f8dc46771809bb13fddd",
+          "bytes": 10506,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/dropdown-menu.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/dropdown-menu.tsx",
+          "sha256": "19964ff76e458e9ffd22da3e9669449e2ed044902a70fef88b957e20ddc5b314",
+          "bytes": 9508,
+          "origin": "dropdown-menu.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@diceui/media-player",
+        "@shadcn/sidebar-07"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "empty",
+      "version": "4.23.0",
+      "dir": "shadcn/empty@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/empty.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.empty",
+        "sections.empty-state",
+        "sections.error-state"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:fc6a8c64f6c422c0ab8ed46e6e832f7b5536d06c787206dc54c56bfa1c841d23",
+      "files": [
+        {
+          "path": "empty.json",
+          "sha256": "d61e8b9b63259ffc26d9b5e24336923d1837ecad31e3df46e83ab21910614435",
+          "bytes": 3022,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/empty.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/empty.tsx",
+          "sha256": "5cac88b6f80f40cf4aa5e4c3d5a6810f43e132a24032d1c55a7aecdae446cf15",
+          "bytes": 2390,
+          "origin": "empty.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "field",
+      "version": "4.23.0",
+      "dir": "shadcn/field@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/field.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.field",
+        "components.form"
+      ],
+      "registryDependencies": [
+        "label",
+        "separator"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:baaf0edbc3aa1799ab21ffc550ba83b49fbc4b990b1ad439417bea3512809f26",
+      "files": [
+        {
+          "path": "field.json",
+          "sha256": "d5b8a8f1bed259d07e4a6e0431a26f07cd9fa18ab0fb6bf9ffede4c38b878c93",
+          "bytes": 7160,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/field.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/field.tsx",
+          "sha256": "a5deef8fa6d55baa9fa25d0e068137ef9db45b660d01a423321ddfc9c7cf3c7c",
+          "bytes": 6275,
+          "origin": "field.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn/login-03"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "font-inter",
+      "version": "4.23.0",
+      "dir": "shadcn/font-inter@4.23.0",
+      "type": "registry:font",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/font-inter.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "themes.font-sans"
+      ],
+      "hash": "sha256:5b9befd619243d601a5bc4306ebe0cc7a921caefd38fe12f30f745c636707d6f",
+      "files": [
+        {
+          "path": "font-inter.json",
+          "sha256": "af120bc5698e5f9d9e00b4d1d7ca12389e6bc5659e69a8cfb47c9cf305fdcbef",
+          "bytes": 365,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/font-inter.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "font-jetbrains-mono",
+      "version": "4.23.0",
+      "dir": "shadcn/font-jetbrains-mono@4.23.0",
+      "type": "registry:font",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/font-jetbrains-mono.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "themes.font-mono"
+      ],
+      "hash": "sha256:7f3159be218751270e584bdd63bade09b51f68c777503d49f808dad4777299c4",
+      "files": [
+        {
+          "path": "font-jetbrains-mono.json",
+          "sha256": "bdf0c6f00c61df21bbd0bc4ed84a47c648e9414947a58f3e81263fa3dae9b1bf",
+          "bytes": 409,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/font-jetbrains-mono.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "input-group",
+      "version": "4.23.0",
+      "dir": "shadcn/input-group@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/input-group.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.search-field"
+      ],
+      "registryDependencies": [
+        "button",
+        "input",
+        "textarea"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:0151584192f3e7ee45db4cd81f0d822cd90401cde915f8df9023c659197a85b8",
+      "files": [
+        {
+          "path": "input-group.json",
+          "sha256": "09df858d8391c409378a88c40a5cf1d3f42ff83bcde8e24c920c37943ce27bda",
+          "bytes": 6054,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/input-group.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/input-group.tsx",
+          "sha256": "3ba9524f746e9f5add361f685fbec41efef42068ef84c6e98b971dc93c86eaf8",
+          "bytes": 5224,
+          "origin": "input-group.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn/combobox",
+        "@shadcn/command"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "input",
+      "version": "4.23.0",
+      "dir": "shadcn/input@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/input.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.text-field"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:fcb9a932c624fa0abe30e940c76d656323a66ed1304bb2b2d1e83c517f719169",
+      "files": [
+        {
+          "path": "input.json",
+          "sha256": "2a94c176dcab621485ad6f902ec9a8b928b1a380a13c196d467ae46923e49044",
+          "bytes": 1467,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/input.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/input.tsx",
+          "sha256": "75418e030b2a54dd017ac0f4588db4bbdbabca7525e88bbc9d84cb3e18bcb905",
+          "bytes": 958,
+          "origin": "input.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@diceui/color-picker",
+        "@shadcn/input-group",
+        "@shadcn/login-03",
+        "@shadcn/sidebar"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "item",
+      "version": "4.23.0",
+      "dir": "shadcn/item@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/item.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.grid-list",
+        "components.item",
+        "sections.resource-list",
+        "sections.task-list"
+      ],
+      "registryDependencies": [
+        "separator"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:d77118866e85aa15a62c24e3475ad410f23a7851c46932d92a73f8c493cf53f9",
+      "files": [
+        {
+          "path": "item.json",
+          "sha256": "0261cea0e9d7138b4c73e14542a1888958bab254a90382bb20f29805bced8cac",
+          "bytes": 5606,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/item.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/item.tsx",
+          "sha256": "6bab466798ad5bca030df773464cbe6c9dcc1dcc863d99e7091f75cd8d14a5eb",
+          "bytes": 4780,
+          "origin": "item.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "kbd",
+      "version": "4.23.0",
+      "dir": "shadcn/kbd@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/kbd.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.keyboard"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:edac8ee76c99615ca21cea95cd004190113a9474ed67e9a012ad7ccdbeed3301",
+      "files": [
+        {
+          "path": "kbd.json",
+          "sha256": "f1f54a454c5f229be033ff53c6ee2033f96d423a53ca533a3a32ae361852dc4b",
+          "bytes": 1341,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/kbd.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/kbd.tsx",
+          "sha256": "d17724eb15923ea4f0432cd1cf22538addb14a386f4f9326661efcce7f97e33b",
+          "bytes": 828,
+          "origin": "kbd.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "label",
+      "version": "4.23.0",
+      "dir": "shadcn/label@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/label.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:729b89ba8d82fe77f7ede91cfcc2a66851fcf643d90b1689204967bac1a53092",
+      "files": [
+        {
+          "path": "label.json",
+          "sha256": "043f0ce3b7d12e8fcbf4af6aa58bc341894f0a3862af7bc3861d78ef0283361f",
+          "bytes": 1189,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/label.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/label.tsx",
+          "sha256": "344bde38b8531615dbf8e14af3895517c24d8ef6ce56ddeda7e2e6fe4b5d0c00",
+          "bytes": 596,
+          "origin": "label.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn/field",
+        "@shadcn/login-03"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "login-03",
+      "version": "4.23.0",
+      "dir": "shadcn/login-03@4.23.0",
+      "type": "registry:block",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/login-03.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "frames.auth-shell",
+        "sections.sign-in-form"
+      ],
+      "registryDependencies": [
+        "button",
+        "card",
+        "input",
+        "label",
+        "field"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:5ec4f2e1397fc999153a27f5d3a4fa3808acbe20e6a0805385545d0508126708",
+      "files": [
+        {
+          "path": "login-03.json",
+          "sha256": "bdce8292e52d39a309a6b4952c7858575c08971309e0f05649de5781a4db99f0",
+          "bytes": 5874,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/login-03.json"
+        },
+        {
+          "path": "registry/radix-nova/blocks/login-03/components/login-form.tsx",
+          "sha256": "8baeec06b6a5f40a0dce677ad39ab1364616a0aed86919f6619a53dd61a53ff0",
+          "bytes": 3960,
+          "origin": "login-03.json#files[1].content"
+        },
+        {
+          "path": "registry/radix-nova/blocks/login-03/page.tsx",
+          "sha256": "35f189926f7330e9f87b6315c59fc1f803118fc81c52f01d165c1fe629fa617c",
+          "bytes": 965,
+          "origin": "login-03.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "message",
+      "version": "4.23.0",
+      "dir": "shadcn/message@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/message.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.chat"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:7db615d68aabf885c3056200c6eb936fc69068376a71a64166b27b3641e05fd8",
+      "files": [
+        {
+          "path": "message.json",
+          "sha256": "7312eca1343e863fdf4daf097b9fac0cb57d49249de7b7ad3971656afc3c80fc",
+          "bytes": 2636,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/message.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/message.tsx",
+          "sha256": "64e9ae0f9d1e268b0ed7b738a53d374d273fe1e7e2dd7b35ad7417e50a9bbe6c",
+          "bytes": 2222,
+          "origin": "message.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "navigation-menu",
+      "version": "4.23.0",
+      "dir": "shadcn/navigation-menu@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/navigation-menu.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.navigation-menu"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:5faae3cbd440998dbba143c6ab168807a09b838bc4f458ee0d803433fe57a621",
+      "files": [
+        {
+          "path": "navigation-menu.json",
+          "sha256": "b7e22014b407febd0f74ca4d3432fa947fedefa767fe0868cc5c0d0b9795d310",
+          "bytes": 7583,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/navigation-menu.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/navigation-menu.tsx",
+          "sha256": "36fd420d70afc3e0568a48f5a8c76186c4adae13cbfdb274d760412214b437ba",
+          "bytes": 6739,
+          "origin": "navigation-menu.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "neutral",
+      "version": "4.23.0",
+      "dir": "shadcn/neutral@4.23.0",
+      "type": "registry:item",
+      "sourceUrl": "https://ui.shadcn.com/r/colors/neutral.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "themes.accent",
+        "themes.accent-foreground",
+        "themes.background",
+        "themes.border",
+        "themes.card",
+        "themes.card-foreground",
+        "themes.chart-1",
+        "themes.chart-2",
+        "themes.chart-3",
+        "themes.chart-4",
+        "themes.chart-5",
+        "themes.destructive",
+        "themes.foreground",
+        "themes.input",
+        "themes.muted",
+        "themes.muted-foreground",
+        "themes.popover",
+        "themes.popover-foreground",
+        "themes.primary",
+        "themes.primary-foreground",
+        "themes.radius",
+        "themes.ring",
+        "themes.secondary",
+        "themes.secondary-foreground",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.sidebar-accent-foreground",
+        "themes.sidebar-border",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-ring"
+      ],
+      "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161",
+      "files": [
+        {
+          "path": "neutral.json",
+          "sha256": "58f847c9413f0c0e326f4796702a40c31a6d115e2b73b07edc288e7ef949af7f",
+          "bytes": 10094,
+          "origin": "https://ui.shadcn.com/r/colors/neutral.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "pagination",
+      "version": "4.23.0",
+      "dir": "shadcn/pagination@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/pagination.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.pagination"
+      ],
+      "registryDependencies": [
+        "button"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:c2de58282863e744c8127d1e7f3e9d9917462a46cf17a9ae093bba0dc56faa7d",
+      "files": [
+        {
+          "path": "pagination.json",
+          "sha256": "73247081e10018724aa15f23ac42522dd1137aba6069f334c6f3f7af2f3d8760",
+          "bytes": 4236,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/pagination.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/pagination.tsx",
+          "sha256": "80a7dcb83c56727a765f0a3775bc534b543b49c5dbf90c5f7f729db6ab01e813",
+          "bytes": 3431,
+          "origin": "pagination.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "popover",
+      "version": "4.23.0",
+      "dir": "shadcn/popover@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/popover.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.popover"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:387ab173964f395464bfea99aa299e0af46fdd618d0ee3d9c8b270129b5e44e0",
+      "files": [
+        {
+          "path": "popover.json",
+          "sha256": "2d61356c065868ee9ef6b98ab280665ec5bca65eb6b9d9d92217df92d7578784",
+          "bytes": 3059,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/popover.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/popover.tsx",
+          "sha256": "61be62a441fb6b90e26ceaf93353f57411a4d114f305e0417b8f1122750b9018",
+          "bytes": 2365,
+          "origin": "popover.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@diceui/color-picker",
+        "@diceui/faceted"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "progress",
+      "version": "4.23.0",
+      "dir": "shadcn/progress@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/progress.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.meter",
+        "components.progress-bar"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:53e771e7368f56b5957ae4ce16e0a34e3f81f88647a7bb263df97b34b9c2f9b3",
+      "files": [
+        {
+          "path": "progress.json",
+          "sha256": "43cc4543a80a6519576827c274bb5be5d094d3c54200d94ca7e4701d7c9b06ac",
+          "bytes": 1355,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/progress.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/progress.tsx",
+          "sha256": "11470bfbc6c80a4b198a1c00b6ea6300f5b29990fdd2ac36921d1f30eb2d4aa4",
+          "bytes": 736,
+          "origin": "progress.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "radio-group",
+      "version": "4.23.0",
+      "dir": "shadcn/radio-group@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/radio-group.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.radio-group"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:8a63e06ff75dfbf931d8a94d3734a0f6ad89d16c5d09d8bb62e4464a2e69ec6e",
+      "files": [
+        {
+          "path": "radio-group.json",
+          "sha256": "5e6cc661a2a19ea5c38de67c5d48e99039f872dd2b2ffd8de7030d2e8c65c178",
+          "bytes": 2517,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/radio-group.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/radio-group.tsx",
+          "sha256": "e36464d09f7339a1803610f5a016d7822aaa7ecab306230e6fc7c329ec799df9",
+          "bytes": 1864,
+          "origin": "radio-group.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "resizable",
+      "version": "4.23.0",
+      "dir": "shadcn/resizable@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/resizable.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.resize-handle"
+      ],
+      "dependencies": [
+        "cn",
+        "react-resizable-panels"
+      ],
+      "hash": "sha256:d0a0f1a4a61b426405c7d8cb3f3989d136a37bd3e18d8097bed8c875c6447948",
+      "files": [
+        {
+          "path": "registry/radix-nova/ui/resizable.tsx",
+          "sha256": "c45c4e1a32aefb83d60406366e2368b9d8a6e772406f8b964154e7202d6304f7",
+          "bytes": 1661,
+          "origin": "resizable.json#files[0].content"
+        },
+        {
+          "path": "resizable.json",
+          "sha256": "9435a1280e02d9a42fb58d3cf740e83179b87029e4b90969882ba4bb598aacd3",
+          "bytes": 2321,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/resizable.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "scroll-area",
+      "version": "4.23.0",
+      "dir": "shadcn/scroll-area@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/scroll-area.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.scroll-area"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:ebf805286284762c329b48209e8e2c07860073adef9459181c7f2ceb2fd0b67f",
+      "files": [
+        {
+          "path": "registry/radix-nova/ui/scroll-area.tsx",
+          "sha256": "436777583f300e9fb0ca9df97ce9d1ca45443b7513273f39d27c6183b99db396",
+          "bytes": 1682,
+          "origin": "scroll-area.json#files[0].content"
+        },
+        {
+          "path": "scroll-area.json",
+          "sha256": "19a663a8a054c16b23b9731b7f2b24818068690900bcf1647280fb0f177b6d20",
+          "bytes": 2350,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/scroll-area.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "select",
+      "version": "4.23.0",
+      "dir": "shadcn/select@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/select.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.select"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:54a359906fb92a0ff987501dbf71a6082957ee66bbdafac13e317dfef5b381d5",
+      "files": [
+        {
+          "path": "registry/radix-nova/ui/select.tsx",
+          "sha256": "d5b78764549e83e4f0deb49b1eb409b94aaa8d7eaca5edb659b6fde79701ff26",
+          "bytes": 7489,
+          "origin": "select.json#files[0].content"
+        },
+        {
+          "path": "select.json",
+          "sha256": "fabccf9d428ccea4769ac7933315ed4d5a5f34b931f83006d0b65d3ab0ff6d29",
+          "bytes": 8387,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/select.json"
+        }
+      ],
+      "requiredBy": [
+        "@diceui/color-picker",
+        "@diceui/media-player"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "separator",
+      "version": "4.23.0",
+      "dir": "shadcn/separator@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/separator.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.separator"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:5b065cf744e28c8bb5d0ddc5f70bb5245f4432ac7d2af026b12911385fc8944d",
+      "files": [
+        {
+          "path": "registry/radix-nova/ui/separator.tsx",
+          "sha256": "b5b5460e5337c2d5f361c1512001615b2e5eacb38c7449a4418bb9ddb47c4bba",
+          "bytes": 634,
+          "origin": "separator.json#files[0].content"
+        },
+        {
+          "path": "separator.json",
+          "sha256": "1df209eff67aeefa35ff65002ddf9762044a4202ba217b82d447b2f8b8ffd4f2",
+          "bytes": 1253,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/separator.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn/button-group",
+        "@shadcn/field",
+        "@shadcn/item",
+        "@shadcn/sidebar",
+        "@shadcn/sidebar-07"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "sheet",
+      "version": "4.23.0",
+      "dir": "shadcn/sheet@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/sheet.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.sheet",
+        "frames.inspector",
+        "frames.sheet"
+      ],
+      "registryDependencies": [
+        "button"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:faf68ebfa080e72f9f8c2f0a946c0a243f6fedf8d3a35cc71ba125a4436fe711",
+      "files": [
+        {
+          "path": "registry/radix-nova/ui/sheet.tsx",
+          "sha256": "0598c3a868ef88da6e142d9e440fef56e0231b3d0c9644302ef4a931f6928d25",
+          "bytes": 4799,
+          "origin": "sheet.json#files[0].content"
+        },
+        {
+          "path": "sheet.json",
+          "sha256": "2bd0d9a16075ad5d9179b575d71ea1967ba73b1fb39400018b519dd9989607e2",
+          "bytes": 5634,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/sheet.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn/sidebar"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "sidebar-07",
+      "version": "4.23.0",
+      "dir": "shadcn/sidebar-07@4.23.0",
+      "type": "registry:block",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/sidebar-07.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "frames.app-header",
+        "frames.app-shell",
+        "frames.app-sidebar"
+      ],
+      "registryDependencies": [
+        "sidebar",
+        "breadcrumb",
+        "separator",
+        "collapsible",
+        "dropdown-menu",
+        "avatar"
+      ],
+      "hash": "sha256:cb3b5a933d64347eb59403336ca1be71d991fcd50921142e7ed4fe974afe7d60",
+      "files": [
+        {
+          "path": "registry/radix-nova/blocks/sidebar-07/components/app-sidebar.tsx",
+          "sha256": "30a3616e7b646721899c5600926d292edc3c30768b0c07e2a0d3eb84a07a7d55",
+          "bytes": 5235,
+          "origin": "sidebar-07.json#files[1].content"
+        },
+        {
+          "path": "registry/radix-nova/blocks/sidebar-07/components/nav-main.tsx",
+          "sha256": "a5fe0ab4bc6abf4435662e782e494f9f03a6406df2a0eaf690f26d2f9bbd0d6b",
+          "bytes": 2268,
+          "origin": "sidebar-07.json#files[2].content"
+        },
+        {
+          "path": "registry/radix-nova/blocks/sidebar-07/components/nav-projects.tsx",
+          "sha256": "99c77b0bc6272dce5c1ea2565e7d9fef34bee1b6a6638ae10f72713ac0f6f414",
+          "bytes": 3728,
+          "origin": "sidebar-07.json#files[3].content"
+        },
+        {
+          "path": "registry/radix-nova/blocks/sidebar-07/components/nav-user.tsx",
+          "sha256": "8ad2f5537c2f593978e02e40dfc0891f843d06a39a14a53263ea513759372013",
+          "bytes": 4774,
+          "origin": "sidebar-07.json#files[4].content"
+        },
+        {
+          "path": "registry/radix-nova/blocks/sidebar-07/components/team-switcher.tsx",
+          "sha256": "0db5de47c798932117d0d80fdd761bf32536dfb781126eb4156dc975052862c5",
+          "bytes": 3369,
+          "origin": "sidebar-07.json#files[5].content"
+        },
+        {
+          "path": "registry/radix-nova/blocks/sidebar-07/page.tsx",
+          "sha256": "f4bbcc3eb27b7e4b18be74ccd39e3decc8f673de82196f7b62e475782d22682e",
+          "bytes": 2015,
+          "origin": "sidebar-07.json#files[0].content"
+        },
+        {
+          "path": "sidebar-07.json",
+          "sha256": "1762183979d8cecfcf48b796b31adb755ebd7cb6ff03d3bb9a916c20a35b4251",
+          "bytes": 23990,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/sidebar-07.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "sidebar",
+      "version": "4.23.0",
+      "dir": "shadcn/sidebar@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/sidebar.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.navigation-tree",
+        "components.sidebar"
+      ],
+      "registryDependencies": [
+        "button",
+        "separator",
+        "sheet",
+        "tooltip",
+        "input",
+        "use-mobile",
+        "skeleton"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:e75932364c73e302a667c8a7f67e4fc15628c84b946ca4fa2ef4b63717486067",
+      "files": [
+        {
+          "path": "registry/radix-nova/ui/sidebar.tsx",
+          "sha256": "9ca111074a4ce38aaa31627b2da1d3d46a4408f24ad9784558f31863106cbb8b",
+          "bytes": 21531,
+          "origin": "sidebar.json#files[0].content"
+        },
+        {
+          "path": "sidebar.json",
+          "sha256": "dfb6a22c81dc4d34b974b368ceb5001c931ac9c077353f2da4ab2ba874e69bf8",
+          "bytes": 23263,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/sidebar.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn/sidebar-07"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "skeleton",
+      "version": "4.23.0",
+      "dir": "shadcn/skeleton@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/skeleton.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.skeleton"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:3f0ce327987c52c20f0be7e2394fa3cf29870d11037f47f88be80e305ae62408",
+      "files": [
+        {
+          "path": "registry/radix-nova/ui/skeleton.tsx",
+          "sha256": "4c2af7fa9c645358a0fb188779deab6f0b981733b62befc25e18aaebea1350dc",
+          "bytes": 266,
+          "origin": "skeleton.json#files[0].content"
+        },
+        {
+          "path": "skeleton.json",
+          "sha256": "f956c1b1a8425265e75f6d3439863bd9a515fceb04bbc2da0474d4b80fb23300",
+          "bytes": 780,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/skeleton.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn/sidebar"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "slider",
+      "version": "4.23.0",
+      "dir": "shadcn/slider@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/slider.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.slider"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:1b2af3f0917356531fc894c84295c53d04433443fe9063070f0f23bfd941563b",
+      "files": [
+        {
+          "path": "registry/radix-nova/ui/slider.tsx",
+          "sha256": "c427312448882a4e504d0e8c9367cd309ebedb19c40d64b511b7fa02e62fd370",
+          "bytes": 1843,
+          "origin": "slider.json#files[0].content"
+        },
+        {
+          "path": "slider.json",
+          "sha256": "01bdb9023e9c0986eb473d53183ca8c7e6b9be98b911898736ae1d8ed0f4ee67",
+          "bytes": 2488,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/slider.json"
+        }
+      ],
+      "requiredBy": [
+        "@diceui/media-player"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "sonner",
+      "version": "4.23.0",
+      "dir": "shadcn/sonner@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/sonner.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.toast"
+      ],
+      "dependencies": [
+        "sonner",
+        "next-themes"
+      ],
+      "hash": "sha256:72d9868323fe1deaaef319b195daf83dc6c0367511cea992859ac0c2766c6935",
+      "files": [
+        {
+          "path": "registry/radix-nova/ui/sonner.tsx",
+          "sha256": "d5178ce4c7834d3f46d261698395b498b8f45fef29975585df7e26cb43aa3cc7",
+          "bytes": 2282,
+          "origin": "sonner.json#files[0].content"
+        },
+        {
+          "path": "sonner.json",
+          "sha256": "1a2e2eeca1b8dc4bb1ce60d5f13e6ba10cac12b3aa633bca68c4e71ad06137d9",
+          "bytes": 3012,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/sonner.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "spinner",
+      "version": "4.23.0",
+      "dir": "shadcn/spinner@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/spinner.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.spinner"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:69dde204a8fac215c247fa619015e99d9a2c5b22eea1d61bf6f5bdada36ba5d7",
+      "files": [
+        {
+          "path": "registry/radix-nova/ui/spinner.tsx",
+          "sha256": "494f71fd2733709d0e43be44e3353d9df215b370137af0195251cbdfdcc9e17b",
+          "bytes": 531,
+          "origin": "spinner.json#files[0].content"
+        },
+        {
+          "path": "spinner.json",
+          "sha256": "3f8237b3f2e14b4796a992f0b74d987a805781940c8e60550e4f81936ea649e4",
+          "bytes": 1066,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/spinner.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "switch",
+      "version": "4.23.0",
+      "dir": "shadcn/switch@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/switch.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.switch"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:4362c360807e1dd4dcda558baa2bd16fd788f3719d6b78b6db567eaaa9385988",
+      "files": [
+        {
+          "path": "registry/radix-nova/ui/switch.tsx",
+          "sha256": "afd5b6e6b9c2bcd42ee164a39ca18c342b2d7a2dfedd29da3065dc37021090e8",
+          "bytes": 1842,
+          "origin": "switch.json#files[0].content"
+        },
+        {
+          "path": "switch.json",
+          "sha256": "fee13a8c9978c7af8a87e9a9d72d9e9c033fcd62818a121e8e0f124d72168f24",
+          "bytes": 2459,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/switch.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "table",
+      "version": "4.23.0",
+      "dir": "shadcn/table@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/table.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.table",
+        "sections.data-table"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:7c761c65cbdd8a04693fbde181016cf3af26590ebc57c1073a47fd6a0e188561",
+      "files": [
+        {
+          "path": "registry/radix-nova/ui/table.tsx",
+          "sha256": "749b0501e97591f8d7c9ef81366d636e4b47857a15a28e6cf3b87841232e74bf",
+          "bytes": 2392,
+          "origin": "table.json#files[0].content"
+        },
+        {
+          "path": "table.json",
+          "sha256": "99e6991f093e71db516a0cc88395d862b713d2b40d309d78de6e11d122232da7",
+          "bytes": 3046,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/table.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "tabs",
+      "version": "4.23.0",
+      "dir": "shadcn/tabs@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/tabs.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.tabs"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:3694a0147e4ed8eccfc7644b7cb5214b76f9e0f76780740faf9f1908cef3d0f7",
+      "files": [
+        {
+          "path": "registry/radix-nova/ui/tabs.tsx",
+          "sha256": "b977274550595594055d850a16775c75761765e1cd76b4827e101c2f432762df",
+          "bytes": 3562,
+          "origin": "tabs.json#files[0].content"
+        },
+        {
+          "path": "tabs.json",
+          "sha256": "b91ac50256d7de55eaee4d443ea35dc19f5977f8d3a221b3fc087fa7278d1edc",
+          "bytes": 4246,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/tabs.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "textarea",
+      "version": "4.23.0",
+      "dir": "shadcn/textarea@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/textarea.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.textarea"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:4b911ef746396cdc419d1d6844341d94241042dcf2cea64a3b1c431e49cc835b",
+      "files": [
+        {
+          "path": "registry/radix-nova/ui/textarea.tsx",
+          "sha256": "82601c91ffc6c727d924162c78d7cb853114bcced4e2eb922a68ca12d4239c0f",
+          "bytes": 832,
+          "origin": "textarea.json#files[0].content"
+        },
+        {
+          "path": "textarea.json",
+          "sha256": "940fc16b5a019922c5f3ccf64d765776bf96eb735eeb8685df7b8e1c29ab75ad",
+          "bytes": 1352,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/textarea.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn/input-group"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "toggle-group",
+      "version": "4.23.0",
+      "dir": "shadcn/toggle-group@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/toggle-group.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.toggle-group"
+      ],
+      "registryDependencies": [
+        "toggle"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:2e0038f8aba16ba91c3a5bdd4de956e04aa52d03123282e7a61d2fbc534c5c97",
+      "files": [
+        {
+          "path": "registry/radix-nova/ui/toggle-group.tsx",
+          "sha256": "9851ca6ee2fa8f150f323c0e6a59a78b18a6f2667e507b9e854e109c4a68a2da",
+          "bytes": 3191,
+          "origin": "toggle-group.json#files[0].content"
+        },
+        {
+          "path": "toggle-group.json",
+          "sha256": "9ceb59376e2828f749ee235d91d2cad48232fa1ca1d0ec4b1462e86a2f69fe4a",
+          "bytes": 3961,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/toggle-group.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "toggle",
+      "version": "4.23.0",
+      "dir": "shadcn/toggle@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/toggle.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.toggle-button"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:effdc1bc0cd54d74ce86dafb2a343bafe1f8eb1f7d35fcf11e8b69aaca2e8e38",
+      "files": [
+        {
+          "path": "registry/radix-nova/ui/toggle.tsx",
+          "sha256": "5fb58fc5f5da383322cbad37bfe275eec4a1b035efed9f922b4fb28cd2851040",
+          "bytes": 1805,
+          "origin": "toggle.json#files[0].content"
+        },
+        {
+          "path": "toggle.json",
+          "sha256": "1f6119c5ff39981ac32dee82946ab1dacacd07db606c25813f800ecd912d0cfc",
+          "bytes": 2446,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/toggle.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn/toggle-group"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "tooltip",
+      "version": "4.23.0",
+      "dir": "shadcn/tooltip@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/tooltip.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.tooltip"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:a4ada70243a8ff7bb5a15abc8d11f2d4559af3348893db0c437e9aef0435196f",
+      "files": [
+        {
+          "path": "registry/radix-nova/ui/tooltip.tsx",
+          "sha256": "e94530dd6877132d5eda73f6fb0d217f345477232f140f2ca6e024d790177f6a",
+          "bytes": 2101,
+          "origin": "tooltip.json#files[0].content"
+        },
+        {
+          "path": "tooltip.json",
+          "sha256": "c639f7ee0511b6d2a1d12e25624952e07209a0d1ddaca47c52bd1e1183efdb89",
+          "bytes": 3191,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/tooltip.json"
+        }
+      ],
+      "requiredBy": [
+        "@diceui/media-player",
+        "@shadcn/sidebar"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "use-mobile",
+      "version": "4.23.0",
+      "dir": "shadcn/use-mobile@4.23.0",
+      "type": "registry:hook",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/use-mobile.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "hash": "sha256:b91a682f97e7bdbd3e2c6f7f8d8f97cc4de62080ec65eb3071a04707873de7c6",
+      "files": [
+        {
+          "path": "registry/radix-nova/hooks/use-mobile.ts",
+          "sha256": "ad0936f84f1df79d3697bfbff9c18f8ad58431c1cbaf2359c6a853b0fcc9f28b",
+          "bytes": 565,
+          "origin": "use-mobile.json#files[0].content"
+        },
+        {
+          "path": "use-mobile.json",
+          "sha256": "730abb80c2f6ec4dafd387d757409ad9d8bbfe37c24a3538ad0fabc06e612f1d",
+          "bytes": 845,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/use-mobile.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn/sidebar"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-accordion",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-accordion@8139698",
+      "type": "registry:ui",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/ui/accordion.tsx",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "hash": "sha256:18a700eda134bda193412388ea00da5457c5ba67586829aea5a518e202347944",
+      "files": [
+        {
+          "path": "mist/ui/accordion.tsx",
+          "sha256": "aa4d76c0d6af11009463e0d852b0d23cf89a6ede75196d25c16fda13d9f699a8",
+          "bytes": 2067,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/ui/accordion.tsx"
+        }
+      ],
+      "requiredBy": [
+        "@tailark-oss/mist-faqs-1"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-button",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-button@8139698",
+      "type": "registry:ui",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/ui/button.tsx",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "hash": "sha256:4a8cfabde7e07085fac4665c89f4f96b184bf9e47d0eec1d6f20537e854eef83",
+      "files": [
+        {
+          "path": "mist/ui/button.tsx",
+          "sha256": "f682b8eabcab62c245a4a4ca3c56baf310bdd88f066c9ddf285da19a6c55ad28",
+          "bytes": 2095,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/ui/button.tsx"
+        }
+      ],
+      "requiredBy": [
+        "@tailark-oss/mist-call-to-action-1",
+        "@tailark-oss/mist-comparator-1",
+        "@tailark-oss/mist-contact-1",
+        "@tailark-oss/mist-content-1",
+        "@tailark-oss/mist-hero-section-1",
+        "@tailark-oss/mist-hero-section-1-header",
+        "@tailark-oss/mist-pricing-1",
+        "@tailark-oss/mist-team-1"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-call-to-action-1",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-call-to-action-1@8139698",
+      "type": "registry:block",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/call-to-action/one.tsx",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.call-to-action"
+      ],
+      "registryDependencies": [
+        "@tailark-oss/mist-button"
+      ],
+      "hash": "sha256:f01e18e96040619b4b41304fbd129a7bf94601a7119745648d7a04b9a36084cb",
+      "files": [
+        {
+          "path": "mist/blocks/call-to-action/one.tsx",
+          "sha256": "0f3edecfc78441a06f1bc321226ec37d35550766011eec2a80c43ead9d5fc995",
+          "bytes": 1202,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/call-to-action/one.tsx"
+        }
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-card",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-card@8139698",
+      "type": "registry:ui",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/ui/card.tsx",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "hash": "sha256:34b2e3fd2c96b7c8733b1edaf6da1b603a9f75782dedb3c8a030393455d9d4cd",
+      "files": [
+        {
+          "path": "mist/ui/card.tsx",
+          "sha256": "63d019ee88efa2950ecc5df38f124128b3280a5b65a8aaaa5a8af2496c4b6e08",
+          "bytes": 2395,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/ui/card.tsx"
+        }
+      ],
+      "requiredBy": [
+        "@tailark-oss/mist-contact-1",
+        "@tailark-oss/mist-features-1",
+        "@tailark-oss/mist-pricing-1",
+        "@tailark-oss/mist-stats-1"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-comparator-1",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-comparator-1@8139698",
+      "type": "registry:block",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/comparator/one.tsx",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.comparison"
+      ],
+      "registryDependencies": [
+        "@tailark-oss/mist-button"
+      ],
+      "hash": "sha256:32ac76cf078ea4021d1cbf1e6ee48c4973f044e3c764cb1112b8694d03676653",
+      "files": [
+        {
+          "path": "mist/blocks/comparator/one.tsx",
+          "sha256": "94590af062da41592142b3005a2a7b6b497aa8002177f20348c65151cf02c554",
+          "bytes": 8075,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/comparator/one.tsx"
+        }
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-contact-1",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-contact-1@8139698",
+      "type": "registry:block",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/contact/one.tsx",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.form"
+      ],
+      "registryDependencies": [
+        "@tailark-oss/mist-button",
+        "@tailark-oss/mist-card",
+        "@tailark-oss/mist-input",
+        "@tailark-oss/mist-label",
+        "@tailark-oss/mist-select",
+        "@tailark-oss/mist-textarea"
+      ],
+      "hash": "sha256:d8ffd48124b899ed4e3a6d7a750cec7ba0790bc03dbc1634100b74c1466964ec",
+      "files": [
+        {
+          "path": "mist/blocks/contact/one.tsx",
+          "sha256": "50fd06131e0fec2e9a2b8017c092561af66feb93103fcae1362571cd4ad7b431",
+          "bytes": 7025,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/contact/one.tsx"
+        }
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-content-1",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-content-1@8139698",
+      "type": "registry:block",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/content/one.tsx",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.content"
+      ],
+      "registryDependencies": [
+        "@tailark-oss/mist-button",
+        "@tailark-oss/mist-toggle-group"
+      ],
+      "hash": "sha256:0cf80a2d54e12d33e43610eb0bd50703a9964a4be0b27a76a97e8ee6104b0aca",
+      "files": [
+        {
+          "path": "mist/blocks/content/one.tsx",
+          "sha256": "62a1c2ff0235f857d3bdbfacab45bdf77cd64f386590b818ada4411d2723c4c0",
+          "bytes": 6217,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/content/one.tsx"
+        }
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-faqs-1",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-faqs-1@8139698",
+      "type": "registry:block",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/faqs/one.tsx",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.faq"
+      ],
+      "registryDependencies": [
+        "@tailark-oss/mist-accordion"
+      ],
+      "hash": "sha256:0d341f5eb4d4e8799d83e9f52cb8ab007e05c2aa12195083067b238836c9b4c8",
+      "files": [
+        {
+          "path": "mist/blocks/faqs/one.tsx",
+          "sha256": "a5a97bdc869f25ab708da547967a558ec4482bc430119c00339666425af7911a",
+          "bytes": 3699,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/faqs/one.tsx"
+        }
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-features-1-table",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-features-1-table@8139698",
+      "type": "registry:component",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/features/one/table.tsx",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "hash": "sha256:66d1a0fb23c0ae50f8f315ab8c62b63ee250e9e7644c5f04df99a4dc88c8a8e5",
+      "files": [
+        {
+          "path": "mist/blocks/features/one/table.tsx",
+          "sha256": "2d8c5ff07af9ebb742a361a379134c1ebf5a611939a2d3b83984afb0ffc7b589",
+          "bytes": 4553,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/features/one/table.tsx"
+        }
+      ],
+      "requiredBy": [
+        "@tailark-oss/mist-features-1"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-features-1",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-features-1@8139698",
+      "type": "registry:block",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/features/one/features.tsx",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.features"
+      ],
+      "registryDependencies": [
+        "@tailark-oss/mist-card",
+        "@tailark-oss/mist-features-1-table"
+      ],
+      "hash": "sha256:db3281ad9f475e7812837d9badf22d2d94ebd70340f18556c6f6a4ea8297418a",
+      "files": [
+        {
+          "path": "mist/blocks/features/one/features.tsx",
+          "sha256": "99a1fe908b4b09478eb48b5e16e8bb34fb11b3b44e73630679f27ceee6990e10",
+          "bytes": 3200,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/features/one/features.tsx"
+        }
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-footer-1",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-footer-1@8139698",
+      "type": "registry:block",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/footer/one.tsx",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "frames.site-footer"
+      ],
+      "registryDependencies": [
+        "@tailark-oss/mist-logo"
+      ],
+      "hash": "sha256:1896969884e97bae5407bcd6f54838c22e4c608b503de954af02e4e75fdc82de",
+      "files": [
+        {
+          "path": "mist/blocks/footer/one.tsx",
+          "sha256": "f5233507c4c429734632a3eaaffb23d4d123486d3d2f0eb130b7291a12d775b8",
+          "bytes": 8240,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/footer/one.tsx"
+        }
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-hero-section-1-header",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-hero-section-1-header@8139698",
+      "type": "registry:component",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/hero-section/one/header.tsx",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "frames.site-header"
+      ],
+      "registryDependencies": [
+        "@tailark-oss/mist-button",
+        "@tailark-oss/mist-logo"
+      ],
+      "hash": "sha256:d88ac2c6f6dee57c80af744c8f30151b4d573b7621099c3da26ef24d4a2c473c",
+      "files": [
+        {
+          "path": "mist/blocks/hero-section/one/header.tsx",
+          "sha256": "60f97bef245c33eb1227512d8441ab2cae7c23e3a85e29c14f3fa87a9daff1e1",
+          "bytes": 6505,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/hero-section/one/header.tsx"
+        }
+      ],
+      "requiredBy": [
+        "@tailark-oss/mist-hero-section-1"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-hero-section-1",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-hero-section-1@8139698",
+      "type": "registry:block",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/hero-section/one/hero-section.tsx",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.hero"
+      ],
+      "registryDependencies": [
+        "@tailark-oss/mist-hero-section-1-header",
+        "@tailark-oss/mist-button",
+        "@tailark-oss/core-spotify",
+        "@tailark-oss/core-supabase",
+        "@tailark-oss/core-vercel"
+      ],
+      "hash": "sha256:315ecac252ac891e44ae37f2c2d946312c78f3998fd7ed5d7279ab0f1582ce52",
+      "files": [
+        {
+          "path": "mist/blocks/hero-section/one/hero-section.tsx",
+          "sha256": "79d54e20adb1ba43f9353556e903509adfdd4be27bb7e2ee801c8d54b408e760",
+          "bytes": 4903,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/hero-section/one/hero-section.tsx"
+        }
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-input",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-input@8139698",
+      "type": "registry:ui",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/ui/input.tsx",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "hash": "sha256:2bdeece1cf055fd08defbd491ee7e251668d1dff1476c5f0ced920e4c2b8744d",
+      "files": [
+        {
+          "path": "mist/ui/input.tsx",
+          "sha256": "93b0af8349063e08006549cadcd0cb27cd9a56942310966ef6c3c167c21debd9",
+          "bytes": 1028,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/ui/input.tsx"
+        }
+      ],
+      "requiredBy": [
+        "@tailark-oss/mist-contact-1"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-label",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-label@8139698",
+      "type": "registry:ui",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/ui/label.tsx",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "hash": "sha256:242388af2d60485bba719d13ee02e049ff53ee37f6812631d7f4c68fdaa35ba5",
+      "files": [
+        {
+          "path": "mist/ui/label.tsx",
+          "sha256": "a2e09e5937bdce972b0a1d120d5870da4a10e5948455507572aba3d4eb222b9f",
+          "bytes": 581,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/ui/label.tsx"
+        }
+      ],
+      "requiredBy": [
+        "@tailark-oss/mist-contact-1"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-logo-cloud-1",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-logo-cloud-1@8139698",
+      "type": "registry:block",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/logo-cloud/one.tsx",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.logo-cloud"
+      ],
+      "registryDependencies": [
+        "@tailark-oss/core-hulu",
+        "@tailark-oss/core-spotify",
+        "@tailark-oss/core-supabase",
+        "@tailark-oss/core-vercel"
+      ],
+      "hash": "sha256:405568b809e3c20c96355097e5cd7e804578377303cef96150b9f8c965b3e443",
+      "files": [
+        {
+          "path": "mist/blocks/logo-cloud/one.tsx",
+          "sha256": "07e3a42db776570e9ae668a29cccc139abd0db740b2639f880b2d2d6b554f1d7",
+          "bytes": 1141,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/logo-cloud/one.tsx"
+        }
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-logo",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-logo@8139698",
+      "type": "registry:ui",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/ui/logo.tsx",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "hash": "sha256:b1ea57f73a042059544d5ba8ef59617b0236ccb6e83b06a9a09abb1e96e6d7d3",
+      "files": [
+        {
+          "path": "mist/ui/logo.tsx",
+          "sha256": "4cf95c9cccddc9d8e1bc59aa81c7019801ea5d8281832b63d796e0e5e09281aa",
+          "bytes": 6610,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/ui/logo.tsx"
+        }
+      ],
+      "requiredBy": [
+        "@tailark-oss/mist-footer-1",
+        "@tailark-oss/mist-hero-section-1-header"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-pricing-1",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-pricing-1@8139698",
+      "type": "registry:block",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/pricing/one.tsx",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.pricing"
+      ],
+      "registryDependencies": [
+        "@tailark-oss/mist-button",
+        "@tailark-oss/mist-card",
+        "@tailark-oss/core-spotify",
+        "@tailark-oss/core-supabase",
+        "@tailark-oss/core-vercel"
+      ],
+      "hash": "sha256:702629fd3704dc54b3e635e8689b0d63488e4376984e7dcc36200cc5de9c3156",
+      "files": [
+        {
+          "path": "mist/blocks/pricing/one.tsx",
+          "sha256": "9608ac9079c28c832030e7622c45d389aafc4ddd388cb083ee0ffafd4d580106",
+          "bytes": 4264,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/pricing/one.tsx"
+        }
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-select",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-select@8139698",
+      "type": "registry:ui",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/ui/select.tsx",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "hash": "sha256:fb664e666957418f2cd1d0538889a89b93de571ed023c4f801b8a3ca5f5d9070",
+      "files": [
+        {
+          "path": "mist/ui/select.tsx",
+          "sha256": "b8860c72d3e1d44c7b3650256162f4c334b36874480ca8480398748ba1d35821",
+          "bytes": 6303,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/ui/select.tsx"
+        }
+      ],
+      "requiredBy": [
+        "@tailark-oss/mist-contact-1"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-stats-1",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-stats-1@8139698",
+      "type": "registry:block",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/stats/one.tsx",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.stats"
+      ],
+      "registryDependencies": [
+        "@tailark-oss/mist-card"
+      ],
+      "hash": "sha256:232e3332b04959e4e5a7bddc3b5c454d5104e658b9137ad2ec4eead41ebc64c7",
+      "files": [
+        {
+          "path": "mist/blocks/stats/one.tsx",
+          "sha256": "757915a7ab6140171fd1146a53d0c99b6e0a8f23772890ffa5ac3e83ee7f518d",
+          "bytes": 1100,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/stats/one.tsx"
+        }
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-team-1",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-team-1@8139698",
+      "type": "registry:block",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/team/one.tsx",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.people"
+      ],
+      "registryDependencies": [
+        "@tailark-oss/mist-button"
+      ],
+      "hash": "sha256:efcb7fffd7681de678cb115ae5571031adb13c4181e5091c7d9a4c6120234252",
+      "files": [
+        {
+          "path": "mist/blocks/team/one.tsx",
+          "sha256": "9ef6218dd79d46a6d8334a097be035387167356f176ed89edd6f51b3b0461aa9",
+          "bytes": 3626,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/team/one.tsx"
+        }
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-testimonials-1",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-testimonials-1@8139698",
+      "type": "registry:block",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/testimonials/one.tsx",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.testimonials"
+      ],
+      "hash": "sha256:c0b6f1b9e5bae8f4b5a27e92d08f43d198611a08d05a06cd77400359bee01053",
+      "files": [
+        {
+          "path": "mist/blocks/testimonials/one.tsx",
+          "sha256": "123c3c5b6f78da4e0abdcade9be56d749dc61258824d12c91987c7e076625338",
+          "bytes": 1153,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/blocks/testimonials/one.tsx"
+        }
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-textarea",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-textarea@8139698",
+      "type": "registry:ui",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/ui/textarea.tsx",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "hash": "sha256:926b112d86fc27b917533fa019307655ecda140ccdbf35ddc28a0241fe22d8ee",
+      "files": [
+        {
+          "path": "mist/ui/textarea.tsx",
+          "sha256": "0c64f2c2265401282c924831d5ff959d183668e82c7e62f289768320ffa718f4",
+          "bytes": 749,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/ui/textarea.tsx"
+        }
+      ],
+      "requiredBy": [
+        "@tailark-oss/mist-contact-1"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-toggle-group",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-toggle-group@8139698",
+      "type": "registry:ui",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/ui/toggle-group.tsx",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "registryDependencies": [
+        "@tailark-oss/mist-toggle"
+      ],
+      "hash": "sha256:3addea89a95b4b8daa6f010491e0cda0f7d7b2365095ade61d70110914828945",
+      "files": [
+        {
+          "path": "mist/ui/toggle-group.tsx",
+          "sha256": "7a5edfaeba53494c39665987cc71395e20b2a87c8ca3658b997c1396faed9897",
+          "bytes": 1902,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/ui/toggle-group.tsx"
+        }
+      ],
+      "requiredBy": [
+        "@tailark-oss/mist-content-1"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-toggle",
+      "version": "8139698",
+      "dir": "tailark-oss/mist-toggle@8139698",
+      "type": "registry:ui",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/ui/toggle.tsx",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "hash": "sha256:f802c15caa13529f260fcc5786777cda4d6e43e17fb7ec7c766e1e360cb0cf8c",
+      "files": [
+        {
+          "path": "mist/ui/toggle.tsx",
+          "sha256": "20515889fec38dceb9c20277421513717b49f5c347a4388cdb11a482f57500d5",
+          "bytes": 1639,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/mist/ui/toggle.tsx"
+        }
+      ],
+      "requiredBy": [
+        "@tailark-oss/mist-toggle-group"
+      ]
+    }
+  ],
+  "skipped": [
+    {
+      "ref": "@plate/editor-basic",
+      "slots": [
+        "components.rich-text"
+      ],
+      "reason": "registry @plate is not in this unit's registry list (shadcn, Magic UI, Tailark OSS, Dice UI, lucide)"
+    },
+    {
+      "ref": "@reui/data-grid",
+      "slots": [
+        "sections.data-grid"
+      ],
+      "reason": "registry @reui is approved-alternate only and not in this unit's registry list"
+    },
+    {
+      "ref": "@tailark-oss/core-hulu",
+      "reason": "third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-logo-cloud-1)"
+    },
+    {
+      "ref": "@tailark-oss/core-spotify",
+      "reason": "third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-hero-section-1); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-logo-cloud-1); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-pricing-1)"
+    },
+    {
+      "ref": "@tailark-oss/core-supabase",
+      "reason": "third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-hero-section-1); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-logo-cloud-1); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-pricing-1)"
+    },
+    {
+      "ref": "@tailark-oss/core-vercel",
+      "reason": "third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-hero-section-1); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-logo-cloud-1); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-pricing-1)"
+    },
+    {
+      "ref": "@tailwindcss/typography",
+      "slots": [
+        "components.semantic-content"
+      ],
+      "reason": "npm Tailwind plugin, not a registry item"
+    },
+    {
+      "ref": "consumer-owned items",
+      "slots": [
+        "assets.app-icon",
+        "assets.favicon",
+        "assets.image",
+        "assets.lockup",
+        "assets.mark",
+        "assets.video",
+        "components.logo",
+        "frames.document",
+        "frames.site-shell",
+        "sections.article",
+        "sections.legal-prose",
+        "themes.font-heading"
+      ],
+      "reason": "consumer-owned: authored in the consumer's own registry, not a Foundry reference"
+    },
+    {
+      "ref": "gap rows",
+      "slots": [
+        "components.chart-heatmap",
+        "components.chart-range",
+        "components.chart-scatter",
+        "components.chart-status-strip",
+        "components.chart-waterfall",
+        "components.date-field",
+        "components.number-field",
+        "sections.account-summary",
+        "sections.activity-feed",
+        "sections.audit-log",
+        "sections.consent",
+        "sections.explorer",
+        "sections.link-index",
+        "sections.newsletter",
+        "sections.page-header",
+        "sections.record-detail",
+        "sections.settings",
+        "sections.status-list",
+        "sections.steps",
+        "sections.usage"
+      ],
+      "reason": "gap: the map names no approved source yet"
+    },
+    {
+      "ref": "lucide-react",
+      "slots": [
+        "components.icon"
+      ],
+      "reason": "npm package; the mapped lucide icons are referenced individually"
+    },
+    {
+      "ref": "tailwind default",
+      "slots": [
+        "themes.shadow",
+        "themes.spacing",
+        "themes.tracking-tight"
+      ],
+      "reason": "Tailwind default or unset theme value, not a registry item"
+    },
+    {
+      "ref": "unset",
+      "slots": [
+        "themes.font-serif"
+      ],
+      "reason": "Tailwind default or unset theme value, not a registry item"
+    }
+  ]
+}
