@@ -30,6 +30,10 @@ export interface CliArgs {
   origin?: string;
   /** publish --install --site: run the substrate's Vite build. */
   build: boolean;
+  /** check: validate the slot model and report coverage (slots / with candidate / pinned). */
+  slots: boolean;
+  /** check --slots: also report blocked-by per agent. */
+  readiness: boolean;
 }
 
 export class CliUsageError extends Error {
@@ -39,12 +43,13 @@ export class CliUsageError extends Error {
 export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check> [--check] [--root <dir>] [--json]\n"
   + "Options: --help; produce --once --port <0-65535> --no-open [--out <install out folder>]; publish --install --page <id> | --site <pack id> [--origin <url>] [--build] [--out <dir>]\n"
   + "Page check: clossys check --pages <generated-manifest.json> --report <report.json> [--json]\n"
+  + "Slots: clossys check --slots [--readiness] [--root <dir>]; migration: clossys migrate slots [--check] [--compare]\n"
   + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root)\n"
   + "Install: clossys publish --install --page <page id | page record.json> [--out <dir>] [--records <library dir>]...\n"
   + "Site: clossys publish --install --site <route pack id> [--origin <deployment origin>] [--build] [--out <dir>] [--records <library dir>]... (one routed app: content-map paths, route-pack slots, one frame)";
 
 export function parseArgs(argv: readonly string[]): CliArgs {
-  const args: CliArgs = { help: false, check: false, json: false, once: false, noOpen: false, suites: false, strict: false, records: [], install: false, build: false };
+  const args: CliArgs = { help: false, check: false, json: false, once: false, noOpen: false, suites: false, strict: false, records: [], install: false, build: false, slots: false, readiness: false };
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index]!;
     const value = (): string => {
@@ -70,6 +75,8 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       case "--site": args.site = value(); break;
       case "--build": args.build = true; break;
       case "--origin": args.origin = value(); break;
+      case "--slots": args.slots = true; break;
+      case "--readiness": args.readiness = true; break;
       case "--port": {
         const port = value();
         if (!/^\d+$/.test(port) || Number(port) > 65535) throw new CliUsageError("--port must be an integer from 0 to 65535");
@@ -88,6 +95,8 @@ export function parseArgs(argv: readonly string[]): CliArgs {
     throw new CliUsageError("--pages and --report require check");
   }
   if ((args.suites || args.strict) && args.verb !== "check") throw new CliUsageError("--suites and --strict require check");
+  if ((args.slots || args.readiness) && args.verb !== "check") throw new CliUsageError("--slots and --readiness require check");
+  if (args.readiness && !args.slots) throw new CliUsageError("--readiness requires --slots");
   if (args.records.length && args.verb !== "publish") throw new CliUsageError("--records requires publish");
   if ((args.install || args.page !== undefined || args.site !== undefined || args.build || args.origin !== undefined) && args.verb !== "publish") throw new CliUsageError("--install, --page, --site, --origin and --build require publish");
   if (args.page !== undefined && args.site !== undefined) throw new CliUsageError("publish --install takes --page or --site, not both");
@@ -98,7 +107,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   if (args.verb === "check" && !args.help) {
     const page = args.pages !== undefined || args.report !== undefined;
     if (page && (args.pages === undefined || args.report === undefined)) throw new CliUsageError("check requires --pages and --report");
-    if (!page && !args.suites) throw new CliUsageError("check requires --pages and --report, or --suites");
+    if (!page && !args.suites && !args.slots) throw new CliUsageError("check requires --pages and --report, or --suites (or --slots)");
   }
   return args;
 }

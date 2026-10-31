@@ -4,6 +4,7 @@ import type { AgentKind } from "../agents.js";
 import type { PageLintReport } from "../check/page-types.js";
 import type { RecordSuitesReport } from "../check/record-suites.js";
 import { runSpecimenCli } from "./specimen.js";
+import { runMigrateCli, runSlotCheck } from "./migrate.js";
 import { CliUsageError, parseArgs, USAGE } from "./args.js";
 import type { Verb } from "./args.js";
 import { discoverRoot } from "./root.js";
@@ -34,9 +35,12 @@ export async function runCli(argv: readonly string[], cwd = process.cwd()): Prom
   try {
     // `specimen` has its own subcommands and flags; it never reaches the shared parser.
     if (argv[0] === "specimen") return await runSpecimenCli(argv.slice(1), cwd);
+    // `migrate slots` has its own flags; it never reaches the shared parser.
+    if (argv[0] === "migrate") return await runMigrateCli(argv.slice(1), cwd);
     const args = parseArgs(argv);
     if (args.help) return { exitCode: 0, message: USAGE };
     const verb = args.verb!;
+    if (verb === "check" && args.slots && args.pages === undefined && !args.suites) return runSlotCheck(resolve(cwd, args.root ?? "."), args.readiness);
     if (verb === "check") return await runCheck(args, cwd);
     const root = discoverRoot(resolve(cwd, args.root ?? "."));
     if (verb === "produce") return await runProduce(args, root);
