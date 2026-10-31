@@ -10,7 +10,8 @@
  * each page loads at `<url>?page=<id>` (and `&theme=dark` for dark). Findings:
  *   overflow     document scrollWidth exceeds the viewport (the page scrolls sideways)
  *   scroll       an element scrolls horizontally: content does not fit the measure
- *   clipped      an element hides horizontal overflow it actually has (bleed cut off)
+ *   clipped      an element hides horizontal overflow it actually has (bleed cut off);
+ *                visually hidden (sr-only) elements are clipped by design and skipped
  *   decoration   a visible box of 4000px² or more with no text, media or control in it
  * `--shots` also writes `<page>-<width>-<theme>.png` full-page screenshots.
  * CHROME_BIN overrides the Chrome path. Exit 1 on any finding.
@@ -26,11 +27,23 @@ export const MEASURE = `(() => {
   const label = (el) => (el.getAttribute('data-slot') || el.id || el.tagName.toLowerCase()) + (el.className && typeof el.className === 'string' ? '.' + el.className.split(/\\s+/).slice(0, 3).join('.') : '')
   const out = { viewport: vw, scrollWidth: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight, beyond: [], scroll: [], clipped: [], empty: [] }
   const MEDIA = 'img,svg,video,canvas,picture,iframe,input,textarea,select,button,[role=img]'
+  // Visually hidden (sr-only: a 1px box clipped to nothing) is clipped by design and never paints;
+  // it and everything inside it are skipped, so the skip link and table captions are not findings.
+  const hiddenCache = new Map()
+  const visuallyHidden = (el) => {
+    if (!el || el === document.body) return false
+    if (hiddenCache.has(el)) return hiddenCache.get(el)
+    const cs = getComputedStyle(el), r = el.getBoundingClientRect()
+    const own = cs.clip === 'rect(0px, 0px, 0px, 0px)' || cs.clipPath === 'inset(50%)' || (cs.position === 'absolute' && r.width <= 1 && r.height <= 1 && cs.overflow === 'hidden')
+    const hidden = own || visuallyHidden(el.parentElement)
+    hiddenCache.set(el, hidden)
+    return hidden
+  }
   for (const el of document.querySelectorAll('body *')) {
     const r = el.getBoundingClientRect()
     if (!r.width || !r.height) continue
     const cs = getComputedStyle(el)
-    if (cs.visibility === 'hidden' || cs.display === 'none') continue
+    if (cs.visibility === 'hidden' || cs.display === 'none' || visuallyHidden(el)) continue
     if (r.right > vw + 0.5 || r.left < -0.5) out.beyond.push(label(el) + ' ' + Math.round(r.left) + '..' + Math.round(r.right))
     const extra = el.scrollWidth - el.clientWidth
     if (extra > 1 && el.clientWidth > 0) {
@@ -108,8 +121,11 @@ async function main(args) {
     console.log(`check-page-overflow: ok; ${Object.keys(report).length} views, scrollWidth = viewport, no scroll, clip or empty decoration`);
     return 0;
   } finally {
+    // Chrome keeps writing its profile until it exits; remove the profile only after that.
+    const exited = chrome.exitCode !== null ? Promise.resolve() : new Promise(done => chrome.once("exit", done));
     chrome.kill();
-    rmSync(profile, { recursive: true, force: true });
+    await Promise.race([exited, sleep(5000)]);
+    rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
   }
 }
 
