@@ -11,6 +11,8 @@ export interface GalleryCardData {
   /** A rendered specimen (`/__specimen`) thumbnail; agents without one show `excerpt` lines. */
   specimenSrc?: string;
   excerpt?: readonly string[];
+  /** Set when there is nothing to preview: the card shows this shared leaf status instead. */
+  specimenStatus?: import('../../lib/leaf-status').LeafStatus;
   /** Extra outline marks beside the status, such as options pending approval. */
   badges?: readonly string[];
 }

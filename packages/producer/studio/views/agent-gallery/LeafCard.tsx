@@ -1,4 +1,5 @@
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, LinkButton, SpecimenFrame } from '@clossys/designer-ui';
+import { LEAF_STATUS_LABEL, LEAF_STATUS_TONE } from '../../lib/leaf-status';
 import type { GalleryCardData } from './types';
 
 /** One L3 leaf: a view-only specimen (fixed-ratio thumbnail or text excerpt), name, version and status. The whole card is the link. */
@@ -9,7 +10,9 @@ export function LeafCard({ card }: { card: GalleryCardData }) {
         ? <SpecimenFrame title={`${card.name} specimen`} src={card.specimenSrc} />
         : card.excerpt?.length
           ? card.excerpt.map((line, index) => <CardDescription key={index} className="line-clamp-3 break-words">{line}</CardDescription>)
-          : <Badge variant="outline">No specimen</Badge>}
+          : card.specimenStatus
+            ? <Badge variant={LEAF_STATUS_TONE[card.specimenStatus]}>{LEAF_STATUS_LABEL[card.specimenStatus]}</Badge>
+            : <Badge variant="outline">No specimen</Badge>}
     </CardContent>
     <CardHeader>
       <CardTitle>
