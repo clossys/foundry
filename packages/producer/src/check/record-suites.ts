@@ -1,12 +1,14 @@
 /**
  * Record suites for `clossys check`: Publisher's page conformance over the consumer's
- * page records, the Writer and Director slot suites over their active cells, and the
- * agents' slot contracts against the slot engine's `clossys.slot-contract/1` schema.
+ * page records, the Writer and Director slot suites over their active cells, the
+ * agents' slot contracts against the slot engine's `clossys.slot-contract/1` schema,
+ * and Designer's ref-verbatim check over every pinned library version.
  *
  * Each suite is the owning package's own check, loaded from its shipped dist; Producer
  * only gathers inputs and prints. Report only: findings never change the exit code
  * unless `strict` is set.
  */
+import { join } from "node:path";
 import { agentModule, readCells } from "../server/cells.js";
 import { readPublisher, readWriter } from "../publish/site-source.js";
 import { writerText } from "../publish/site-plan.js";
@@ -15,7 +17,7 @@ import { validateSlotContract } from "../records/validate.js";
 export interface SuiteFinding { readonly severity: "error" | "warning" | "info"; readonly where: string; readonly code: string; readonly message: string }
 
 export interface SuiteReport {
-  readonly suite: "archetypes" | "writer-slots" | "director-slots" | "slot-contracts";
+  readonly suite: "archetypes" | "writer-slots" | "director-slots" | "slot-contracts" | "ref-verbatim";
   readonly status: "ran" | "error";
   /** Pages, cells or contracts the suite looked at. */
   readonly checked: number;
@@ -133,6 +135,22 @@ export async function slotContractSuite(): Promise<SuiteReport> {
   return report("slot-contracts", checked, findings);
 }
 
+/**
+ * Designer's ref-verbatim check over every pin in `clossys/selection.json`: each pinned
+ * code file must be its recorded reference file plus allowed hunks. Pins in Designer's
+ * shrink-only baseline are reported as info; everything else that fails is an error.
+ */
+export async function refVerbatimSuite(root: string): Promise<SuiteReport> {
+  const { refVerbatimReport } = await import("@clossys/designer/ref-verbatim");
+  const result = refVerbatimReport(join(root, "clossys"));
+  const findings: SuiteFinding[] = result.findings.map(finding => ({
+    severity: "error", code: finding.code, message: finding.detail,
+    where: `${finding.element}${finding.file ? ` ${finding.file}` : ""}${finding.range ? `:${finding.range.start.line}` : ""}`,
+  }));
+  for (const key of result.baselined) findings.push({ severity: "info", code: "REF-BASELINED", where: key, message: "fails ref-verbatim; listed in the shrink-only baseline" });
+  return report("ref-verbatim", result.elements.length, findings);
+}
+
 export async function runRecordSuites(rootIn: string, options: { strict?: boolean } = {}): Promise<RecordSuitesReport> {
   const strict = options.strict === true;
   const run = (suite: SuiteReport["suite"], body: () => Promise<SuiteReport>) => body().catch(error => failed(suite, error));
@@ -141,13 +159,14 @@ export async function runRecordSuites(rootIn: string, options: { strict?: boolea
     await run("writer-slots", () => writerSuite(rootIn)),
     await run("director-slots", () => directorSuite(rootIn)),
     await run("slot-contracts", () => slotContractSuite()),
+    await run("ref-verbatim", () => refVerbatimSuite(rootIn)),
   ];
   const failing = suites.some(suite => suite.status === "error" || suite.totals.error > 0 || suite.exitCode === 1);
   return { schemaVersion: 1, root: rootIn, strict, exitCode: strict && failing ? 1 : 0, suites };
 }
 
-const LABEL: Record<SuiteReport["suite"], string> = { "archetypes": "Archetypes", "writer-slots": "Writer slots", "director-slots": "Director slots", "slot-contracts": "Slot contracts" };
-const UNIT: Record<SuiteReport["suite"], string> = { "archetypes": "pages", "writer-slots": "cells", "director-slots": "cells", "slot-contracts": "contracts" };
+const LABEL: Record<SuiteReport["suite"], string> = { "archetypes": "Archetypes", "writer-slots": "Writer slots", "director-slots": "Director slots", "slot-contracts": "Slot contracts", "ref-verbatim": "Ref verbatim" };
+const UNIT: Record<SuiteReport["suite"], string> = { "archetypes": "pages", "writer-slots": "cells", "director-slots": "cells", "slot-contracts": "contracts", "ref-verbatim": "pins" };
 
 /** Human summary: every archetype finding, at most `limit` per other suite. */
 export function recordSuitesSummary(result: RecordSuitesReport, limit = 20): string {

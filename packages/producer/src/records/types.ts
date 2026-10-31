@@ -10,6 +10,8 @@ export type ReferenceRef = {
   readonly version: string;
   readonly hash?: Hash;
   readonly url?: string;
+  /** Payload file -> file path inside the vendored reference item it was copied from. */
+  readonly files?: Readonly<Record<string, string>>;
 };
 
 export type CheckResult = {
@@ -156,6 +158,8 @@ export type ReferencesManifest = {
         readonly version: string;
         readonly versionBasis?: string;
         readonly upstream?: string;
+        readonly style?: string;
+        readonly fetchedAt?: string;
         readonly license: string;
         readonly licenseFiles: readonly string[];
       }

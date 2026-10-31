@@ -44,9 +44,19 @@ change is `v<N+1>`.
    - **pick**: the reference item as is (`lineage.mode: verbatim`, with
      `lineage.source` = the reference row);
    - **adopt**: the reference item with edits (`customized`, same source);
-   - **create**: customize the closest trusted reference into a new item
-     (`customized`, `lineage.source` = that reference). Create never starts
-     from nothing.
+   - **create**: copy the closest trusted reference verbatim (as `shadcn add`
+     writes it) into a new item (`customized`, `lineage.source` = that
+     reference). Create never starts from nothing and never rewrites the code.
+   Every path ships the reference's code files unchanged except for the
+   allowed hunks: imports (H-IMPORT), a utility swapped for a theme-variable
+   utility of the same kind (H-TOKEN), literal copy or data bound to props
+   (H-DATA), added props, `className` passthrough and non-visual attributes
+   (H-PROPS), and the router link component (H-LINK). Added classes, changed
+   markup, added logic or rewritten text fail the pin gate. Cite a
+   `registry:block` or `registry:example` for a frame or section, never a
+   `registry:ui` primitive, and a reference of the consumer's own style
+   (`components.json` `style`, for example aria-nova) unless its code names no
+   headless engine.
    `original` is allowed only in a consumer-asset slot (the logo, brand marks
    and the consumer's own images and video; the list is `consumerAssets` in
    `src/catalog/rules/provenance.json`). When no trusted reference fits the
@@ -69,7 +79,10 @@ change is `v<N+1>`.
    `slot`, `kind: "registry:block"`, `lineage`, `license`, `creator`, `reason`,
    `createdAt`, `checks`, `deps`, `reads.copyKeys`, `reads.themeVars`), a
    preview (`fixtures`, sample `copy`, `container`, `theme`, `width`) and
-   `files: { "<element>.json": "<registry item JSON>" }`.
+   `files: { "<element>.json": "<registry item JSON>", "<file>.tsx": "<code>" }`.
+   Record where each code file came from in `lineage.source.files`
+   (`{ "<file>.tsx": "<path inside the vendored reference item>" }`); the pin
+   gate refuses a code file without that entry.
 5. **Show the options.** Snapshot each one at desktop and narrow widths:
    ```sh
    npx clossys specimen snapshot --records clossys/library --element <id> --v <N> --width 1280,390
@@ -78,12 +91,14 @@ change is `v<N+1>`.
    (`/__specimen`). Give the owner the image paths, the path taken (pick,
    adopt or create) and one line on each trade-off. Do not pin anything yet.
 6. **Pin the approved option** only after the owner's explicit yes, and only
-   when its provenance passes. Run the gate first; a non-zero exit means do
-   not pin (re-source the item from a trusted reference or raise a NEED):
+   when its provenance and its code pass. Run both gates first; a non-zero exit
+   means do not pin (re-source the item from a trusted reference, cut the
+   failing hunks, or raise a NEED):
    ```sh
    npx designer-provenance-check --root clossys --element <slot>/<element>/v<N>
+   npx designer-ref-verbatim --root clossys --element <slot>/<element>/v<N>
    ```
-   Then pin:
+   Then pin (pin() runs the ref-verbatim gate again and refuses a failing version):
    ```sh
    node --input-type=module -e '
    import { existsSync } from "node:fs";
@@ -91,7 +106,7 @@ change is `v<N+1>`.
    const [slot, id, v, by] = process.argv.slice(1);
    const { element } = readElementVersion("library", slot, id, Number(v));
    const current = existsSync("selection.json") ? loadSelection("selection.json") : emptySelection();
-   writeSelection(".", pin(current, { element, at: new Date().toISOString(), by, from: "option" }));' <slot> <element> <N> <owner>
+   writeSelection(".", pin(current, { root: ".", element, at: new Date().toISOString(), by, from: "option" }));' <slot> <element> <N> <owner>
    ```
    History only grows; to go back, pin the earlier version again.
 7. **Check and commit.**
@@ -180,7 +195,8 @@ stays draft. For the older consumer-library commands see
   `element.json` hash verifies (`npx clossys check --suites` shows no
   selection finding for it).
 - The snapshot of the pinned version renders with its preview copy.
-- `designer-provenance-check --element` passed for the pinned version.
+- `designer-provenance-check --element` and `designer-ref-verbatim --element`
+  passed for the pinned version.
 - Every required copy input of the contract appears in `reads.copyKeys`, so
   Writer can fill it.
 - `check-section-tokens.mjs` reports nothing for the consumer, and every page

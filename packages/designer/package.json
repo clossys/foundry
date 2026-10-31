@@ -149,6 +149,10 @@
     "./frames/error": {
       "types": "./dist/frames/site-frame/landing/internal/errors.d.ts",
       "import": "./dist/frames/site-frame/landing/internal/errors.js"
+    },
+    "./ref-verbatim": {
+      "types": "./scripts/check-ref-verbatim.d.ts",
+      "import": "./scripts/check-ref-verbatim.mjs"
     }
   },
   "bin": {
@@ -162,7 +166,8 @@
     "designer-rate-check": "dist/design-conformance-rate-cli.js",
     "designer-section-check": "scripts/check-section-tokens.mjs",
     "designer-overflow-check": "scripts/check-page-overflow.mjs",
-    "designer-provenance-check": "scripts/check-provenance.mjs"
+    "designer-provenance-check": "scripts/check-provenance.mjs",
+    "designer-ref-verbatim": "scripts/check-ref-verbatim.mjs"
   },
   "foundry": {
     "assessment": {
@@ -349,7 +354,10 @@
     "scripts/check-section-tokens.mjs",
     "scripts/check-page-overflow.mjs",
     "scripts/check-provenance.mjs",
-    "references/manifest.json",
+    "references",
+    "scripts/check-ref-verbatim.mjs",
+    "scripts/check-ref-verbatim.d.ts",
+    "scripts/ref-verbatim",
     "THIRD-PARTY-NOTICES.md",
     "fit-signal-declarations.json",
     "strategy-brief.json",
@@ -377,6 +385,7 @@
     "check:section-tokens": "node scripts/check-section-tokens.mjs --root",
     "check:page-overflow": "node scripts/check-page-overflow.mjs",
     "check:provenance": "node scripts/check-provenance.mjs --scan ..",
+    "check:ref-verbatim": "node scripts/check-ref-verbatim.mjs --root ../../clossys --pinned --components ui/components.json --report reports/ref-verbatim.json",
     "test:section-tokens": "node --test scripts/check-section-tokens.test.mjs",
     "test:references": "node --test scripts/check-references.test.mjs",
     "fetch:references": "node scripts/fetch-references.mjs",
