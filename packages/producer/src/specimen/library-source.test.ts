@@ -1,10 +1,10 @@
-import { cpSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
 import { RecordError } from "../records/validate.js";
-import { libraryRecordSource, libraryRecordStore, listLibraryElements, locateLibraryElement } from "./library-source.js";
+import { libraryRecordSource, libraryRecordStore, listLibraryElements, locateLibraryElement, pinnedLibraryVersion } from "./library-source.js";
 
 const library = fileURLToPath(new URL("./__fixtures__/library/", import.meta.url));
 const temps: string[] = [];
@@ -51,5 +51,27 @@ describe("library record source (SU-2A records through the slot engine loaders)"
     const dir = copy();
     cpSync(join(dir, "components.card/sample-card"), join(dir, "components.panel/sample-card"), { recursive: true });
     expect(() => locateLibraryElement([dir], "sample-card")).toThrow(/2 slots/);
+  });
+
+  it("reads the version selection.json pins, not the newest one", async () => {
+    const workspace = mkdtempSync(join(tmpdir(), "producer-library-pins-"));
+    temps.push(workspace);
+    const root = join(workspace, "library");
+    mkdirSync(root);
+    cpSync(library, root, { recursive: true });
+    const pin = (version: number) => writeFileSync(join(workspace, "selection.json"), `${JSON.stringify({
+      schema: "clossys.selection/1",
+      pins: { "components.card": { element: "sample-card", version, hash: `sha256:${"0".repeat(64)}`, event: "e1" } },
+      history: [{ id: "e1", at: "2026-10-31T00:00:00Z", by: "test", action: "pin", slot: "components.card", element: "sample-card", version, hash: `sha256:${"0".repeat(64)}`, from: "option", reason: "Test pin." }],
+    })}\n`);
+    pin(1);
+    expect(pinnedLibraryVersion(root, "components.card", "sample-card")).toBe(1);
+    expect(await libraryRecordStore([root]).load("sample-card")).toMatchObject({ version: 1 });
+    // A pin to a version the library does not hold resolves to nothing, never to the newest version.
+    pin(7);
+    expect(pinnedLibraryVersion(root, "components.card", "sample-card")).toBe(7);
+    expect(await libraryRecordStore([root]).load("sample-card")).toBeUndefined();
+    // A slot without a pin keeps the newest version.
+    expect(await libraryRecordStore([root]).load("sample-button")).toMatchObject({ version: 1 });
   });
 });

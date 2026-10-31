@@ -14,6 +14,7 @@ import { publication, servePreview } from "./publication.js";
 import { selectionProfile, selectionRuntime, studioSelection } from "./selection.js";
 import { consumerApps } from "./publications.js";
 import { DESIGNER_FONT_PREFIX, consumerBrand, consumerFontFile, consumerGlobals } from "./designer-globals.js";
+import { installedSpecimens } from "./installed-specimens.js";
 import { designerDefaultTheme, designerGallery, designerLeaf } from "./designer-library.js";
 import { specimenMount } from "../publish/site-server.js";
 import { existsSync } from "node:fs";
@@ -61,6 +62,8 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
   const library = resolve(options.root, options.library ?? "clossys");
   const hasLibrary = existsSync(join(library, "library"));
   const defaultTheme = hasLibrary ? designerDefaultTheme(library) : undefined;
+  // Pinned items render through the install pipeline; the record handler stays for other versions.
+  const installed = hasLibrary ? installedSpecimens({ root: options.root, library }) : undefined;
   const specimen = hasLibrary ? await specimenMount({ records: [join(library, "library")], workspace: specimenNpmRoot(library), ...(defaultTheme ? { defaultTheme } : {}) }) : undefined;
   const token = randomBytes(32).toString("base64url");
   const aborter = new AbortController();
@@ -194,6 +197,10 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
     // Run tokens are header-only; do not forward a token accidentally placed in a URL.
     const decodedQuery = [...new URL(raw, origin).searchParams].flat().join(" ");
     if (raw.includes(token) || decodedQuery.includes(token)) { json(response, 400, { error: "Run tokens must use the request header" }); return; }
+    if (installed && (pathname === "/__specimen" || pathname.startsWith("/__specimen-site/"))) {
+      if (request.method !== "GET" && request.method !== "HEAD") { json(response, 405, { error: "Specimens are read-only" }); return; }
+      if (await installed.handle(request, response, pathname)) return;
+    }
     if (specimen && (pathname === "/__specimen" || pathname.startsWith("/__specimen/"))) {
       if (request.method !== "GET" && request.method !== "HEAD") { json(response, 405, { error: "Specimens are read-only" }); return; }
       if (await specimen(request, response)) return;

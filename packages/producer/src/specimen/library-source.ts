@@ -7,12 +7,13 @@
  * Specimen ids are `<slot>/<element>`. A bare `<element>` (how a payload names a sibling
  * it imports through `@/`) resolves when exactly one slot in the roots holds it.
  */
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { recordStoreSource, type SpecimenElementVersion, type SpecimenRecordSource, type SpecimenRecordStore } from "@clossys/publisher/specimen";
 import { hashFiles } from "../records/hash.js";
 import { ELEMENT_FILE, listVersions, payloadFiles, PREVIEW_FILE, readElementVersion, verifyElementVersion } from "../records/library.js";
-import { RecordError } from "../records/validate.js";
+import { SELECTION_FILE } from "../records/selection.js";
+import { loadSelection, RecordError } from "../records/validate.js";
 
 const SEGMENT = /^[a-z0-9][a-z0-9.-]*$/;
 
@@ -44,6 +45,18 @@ export function locateLibraryElement(roots: readonly string[], id: string): { ro
   return undefined;
 }
 
+/**
+ * The version a read without an explicit version resolves to: the version the workspace's
+ * `selection.json` (beside the library root) pins for that slot and element. Pinned is not
+ * newest; only a slot with no pin for this element falls back to its newest version.
+ */
+export function pinnedLibraryVersion(root: string, slot: string, element: string): number | undefined {
+  const file = join(dirname(root), SELECTION_FILE);
+  if (!existsSync(file)) return undefined;
+  const pin = loadSelection(file).pins[slot];
+  return pin?.element === element ? pin.version : undefined;
+}
+
 /** A record store over library roots: every read is schema-validated and hash-verified. */
 export function libraryRecordStore(rootsIn: readonly string[]): SpecimenRecordStore {
   const roots = rootsIn.map(root => resolve(root));
@@ -53,7 +66,7 @@ export function libraryRecordStore(rootsIn: readonly string[]): SpecimenRecordSt
       if (!where) return undefined;
       const { root, slot, element } = where;
       const versions = listVersions(root, slot, element);
-      const chosen = version ?? versions.at(-1);
+      const chosen = version ?? pinnedLibraryVersion(root, slot, element) ?? versions.at(-1);
       if (chosen === undefined || !versions.includes(chosen)) return undefined;
       const read = readElementVersion(root, slot, element, chosen);
       const issues = verifyElementVersion(root, slot, element, chosen);

@@ -1,14 +1,29 @@
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@clossys/designer-ui';
+import { Badge, Card, CardContent, CardDescription, CardGrid, CardHeader, CardTitle, SpecimenFrame, Tabs, TabsContent, TabsList, TabsTrigger } from '@clossys/designer-ui';
+import type { DetailSpecimenData } from './types';
 
-/** The pinned version rendered by Publisher's `/__specimen`. */
-export function SpecimenBlock({ name, src }: { name: string; src?: string }) {
+const RATIO = { 375: 'mobile', 768: 'tablet', 1280: 'desktop' } as const;
+
+/** The pinned version, installed and bound the way the site renders it, at each viewport in light and dark. */
+export function SpecimenBlock({ name, specimens }: { name: string; specimens: readonly DetailSpecimenData[] }) {
   return <Card size="sm">
     <CardHeader>
       <CardTitle role="heading" aria-level={2}>Specimen</CardTitle>
-      <CardDescription>The pinned version as Publisher renders it.</CardDescription>
+      <CardDescription>The pinned version, installed and bound the way the site renders it.</CardDescription>
     </CardHeader>
-    {src
-      ? <iframe title={`${name} specimen`} src={src} width="100%" height="460" />
-      : <CardContent><Badge variant="outline">No specimen for this leaf</Badge></CardContent>}
+    <CardContent>
+      {specimens.length
+        ? <Tabs defaultSelectedKey={String(specimens.at(-1)!.viewport)}>
+          <TabsList aria-label="Viewport">
+            {specimens.map(row => <TabsTrigger key={row.viewport} id={String(row.viewport)}>{row.viewport} px</TabsTrigger>)}
+          </TabsList>
+          {specimens.map(row => <TabsContent key={row.viewport} id={String(row.viewport)}>
+            <CardGrid>
+              <SpecimenFrame interactive ratio={RATIO[row.viewport]} title={`${name} at ${row.viewport} px, light`} src={row.light} />
+              <SpecimenFrame interactive ratio={RATIO[row.viewport]} title={`${name} at ${row.viewport} px, dark`} src={row.dark} />
+            </CardGrid>
+          </TabsContent>)}
+        </Tabs>
+        : <Badge variant="outline">No specimen for this leaf</Badge>}
+    </CardContent>
   </Card>;
 }

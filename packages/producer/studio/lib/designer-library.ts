@@ -8,6 +8,8 @@ export type DesignerStatus = 'pinned' | 'missing' | 'failing' | 'stale' | 'unrel
 export interface DesignerCard {
   slot: string; slug: string; name: string; layer: string; status: DesignerStatus;
   element?: string; version?: number; pinned: boolean; specimen?: string;
+  /** Versions of the pinned element newer than the pin: options pending approval. */
+  options: number[];
 }
 export interface DesignerSection { id: string; label: string; level: 0 | 1 | 2; cards: DesignerCard[] }
 export interface DesignerGallery { state: 'ready' | 'missing'; sections: DesignerSection[]; count: number }
@@ -31,7 +33,7 @@ export const DESIGNER_STATUS_TONE: Record<DesignerStatus, 'secondary' | 'outline
   pinned: 'secondary', unreleased: 'outline', stale: 'outline', failing: 'destructive', missing: 'destructive',
 };
 
-/** The one specimen URL: Publisher's `/__specimen`, mounted by the Producer server. */
+/** The one specimen URL: Producer's `/__specimen`, which frames the installed item at `width` CSS px and scales it to fit. */
 export function specimenHref(card: Pick<DesignerCard, 'specimen' | 'version'>, theme: 'light' | 'dark', width: number): string | undefined {
   if (!card.specimen) return undefined;
   const params = new URLSearchParams({ element: card.specimen, theme, width: String(width) });

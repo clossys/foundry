@@ -11,6 +11,7 @@ import { GalleryNotice } from './designer-gallery';
 
 type Load = { state: 'loading' } | { state: 'ready'; value: DesignerLeaf } | { state: 'missing' } | { state: 'error'; message: string };
 const NO_ACTIONS: never[] = [];
+const SPECIMEN_VIEWPORTS = [375, 768, 1280] as const;
 
 const versionFlags = (row: DesignerLeaf['versions'][number]) => [row.pinned && 'Pinned', row.released && 'Released', row.verified && 'Verified'].filter((flag): flag is string => Boolean(flag));
 
@@ -37,7 +38,12 @@ export default function DesignerLeafView({ slug }: { slug: string }) {
           statusLabel: DESIGNER_STATUS_LABEL[leaf.card.status], statusTone: DESIGNER_STATUS_TONE[leaf.card.status],
           statusDetail: leaf.statusDetail, trail: leaf.trail, galleryHref: '/designer',
         }}
-        {...(leaf.card.specimen ? { specimenSrc: specimenHref(leaf.card, resolved, 960)! } : {})}
+        specimens={leaf.card.specimen ? SPECIMEN_VIEWPORTS.map(viewport => ({ viewport, light: specimenHref(leaf.card, 'light', viewport)!, dark: specimenHref(leaf.card, 'dark', viewport)! })) : []}
+        options={leaf.card.specimen && leaf.card.version !== undefined && leaf.card.options.length ? [leaf.card.version, ...leaf.card.options].map(version => ({
+          version, pinned: version === leaf.card.version,
+          reason: leaf.versions.find(row => row.version === version)?.reason ?? '',
+          src: specimenHref({ specimen: leaf.card.specimen, version }, resolved, 1280)!,
+        })) : []}
         contract={{
           ...(leaf.contract.kind ? { kind: leaf.contract.kind } : {}), ...(leaf.contract.root ? { root: leaf.contract.root } : {}),
           inputs: leaf.contract.inputs,

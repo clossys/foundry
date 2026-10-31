@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { librarySelection, libraryWorkspace } from "./library-selection.js";
 import { basename, dirname, extname, posix, relative, sep } from "node:path";
 import { build, transform, type Plugin } from "esbuild";
 import { libraryHash, resolve } from "@clossys/designer/catalog";
@@ -272,6 +273,9 @@ export function selectionProfile(hash: string): CompositeResolved | undefined { 
 
 /** The API reads a real compiler projection; missing selected leaves retain explicit NEEDs. */
 export async function studioSelection(root: string): Promise<StudioSelection> {
+  // A library workspace pins shadcn items; its selection is read directly, not through the legacy fills schema.
+  const workspace = libraryWorkspace(root);
+  if (workspace) return librarySelection(workspace);
   let leaves: StudioSelectionLeaf[] = [];
   let hash = themeHash("Designer selection unavailable");
   const gateReports: StudioGateReport[] = [];
