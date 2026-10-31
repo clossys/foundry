@@ -398,7 +398,7 @@ async function checkRegisteredRoutesInternal(input: RegisteredRouteCheckInput) {
             return [...new Set([output.property, ...(output.theme ? [output.theme] : [])])].map(property => ({ id: leaf, contract: { emit: { [member]: property } } }));
           });
           dogfood = runConsumerDogfood({
-            ...source, tokens, themeCss: css.map(file => file.content).join("\n"),
+            ...source, themes: tokens, themeCss: css.map(file => file.content).join("\n"),
             tokenLibrary: {
               catalog: engine.catalog.values,
               library: { ...engine.library.values, source: engine.library.source, adoptedAt: engine.library.adoptedAt },

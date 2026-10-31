@@ -47,5 +47,5 @@ const nodes: Record<string,IconNode> = {PanelLeft,ChevronDown,ChevronUp,ChevronL
 export const LUCIDE_SOURCE: Source = source as Source;
 /** Exact vendored path nodes, including upstream keys. No artwork is redrawn. */
 export function importLucide(): FillDoc[] {
- return roster.map(row => ({$extensions:{"com.clossys.fill":{id:`lucide/${row.leaf}`,slot:row.leaf,source:"lucide",mode:"implementation",sourceAddress:`lucide-react@${row.pin.version}/dist/esm/icons/${row.upstream}.js`,relation:"same-contract",builtOn:[],conforms:[],evidence:[],author:"third-party",trust:"pinned-upstream",license:"ISC",pin:row.pin,status:"draft",reads:{tokens:[],assets:[]}}},assets:{[row.leaf.slice(7)]:{default:{$type:"glyph",$value:structuredClone(nodes[row.export]!)}}}}));
+ return roster.map(row => ({$extensions:{"com.clossys.fill":{id:`lucide/${row.leaf}`,slot:row.leaf,source:"lucide",mode:"implementation",sourceAddress:`lucide-react@${row.pin.version}/dist/esm/icons/${row.upstream}.js`,relation:"same-contract",builtOn:[],conforms:[],evidence:[],author:"third-party",trust:"pinned-upstream",license:"ISC",pin:row.pin,status:"draft",reads:{themes:[],assets:[]}}},assets:{[row.leaf.slice(7)]:{default:{$type:"glyph",$value:structuredClone(nodes[row.export]!)}}}}));
 }

@@ -1,5 +1,5 @@
 import type { CoverageInput, Layer } from "../types.js";
-export const layers: readonly Layer[] = ["tokens", "assets", "components", "sections", "frames"];
+export const layers: readonly Layer[] = ["themes", "assets", "components", "sections", "frames"];
 export const hash = `sha256:${"0".repeat(64)}`;
 /** Synthetic, completely connected five-layer catalog; no production approval evidence. */
 export function fixture(): CoverageInput {

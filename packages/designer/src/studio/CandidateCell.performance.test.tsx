@@ -19,7 +19,7 @@ vi.mock("./previews.js", async importOriginal => {
 
 it("reuses the actual selected preview across matrix reprojection and updates every rendered input", () => {
   const library = adopt();
-  const candidate = buildCandidates({ catalog: smallCatalog, library, working: library, scope: "slot", target: "tokens.surface-color", slotId: "tokens.surface-color" }).find(entry => entry.selected)!;
+  const candidate = buildCandidates({ catalog: smallCatalog, library, working: library, scope: "slot", target: "themes.background", slotId: "themes.background" }).find(entry => entry.selected)!;
   const preview = vi.mocked(CompactPreview);
   preview.mockClear();
   const view = render(<CandidateCell candidate={candidate} labels={labels} />);
@@ -65,7 +65,7 @@ it("reuses the actual selected preview across matrix reprojection and updates ev
  */
 it("carries the loaded token context into the inspector prompt and refreshes host callbacks on rerender", async () => {
   const base = emptyLibrary();
-  const library = applyLibraryChange(smallCatalog, base, { baseHash: libraryHash(base), changes: [{ op: "author", slot: "tokens.surface-color", tokens: { base: { $type: "color", $value: "#123456", $extensions: { "com.clossys.css": { raw: "#123456" } } } } }] });
+  const library = applyLibraryChange(smallCatalog, base, { baseHash: libraryHash(base), changes: [{ op: "author", slot: "themes.background", tokens: { default: { $type: "color", $value: "#123456", $extensions: { "com.clossys.css": { raw: "#123456" } } } } }] });
   const firstCheck = vi.fn(async () => ({ status: "checked" as const, candidates: [] }));
   const nextCheck = vi.fn(async () => ({ status: "checked" as const, candidates: [] }));
   const save = vi.fn(async () => ({ ok: false as const, reason: "unavailable" as const }));
@@ -76,17 +76,17 @@ it("carries the loaded token context into the inspector prompt and refreshes hos
   const view = renderFrame(<Surface check={firstCheck} />);
   await findLayerSelect();
   view.rerender(<Surface check={nextCheck} />);
-  const current = await waitFor(() => boardRow("tokens.surface-color", view.container)!);
-  await userEvent.click(within(current).getByText("tokens.surface-color"));
+  const current = await waitFor(() => boardRow("themes.background", view.container)!);
+  await userEvent.click(within(current).getByText("themes.background"));
   const inspector = await waitFor(() => document.querySelector<HTMLElement>('[data-studio-panel="inspector"]')!);
   fireEvent.click(within(inspector).getByRole("button", { name: labels.board.create }));
   const dialog = await screen.findByRole("dialog");
   const prompt = JSON.parse(dialog.querySelector("code")!.textContent!.split("\n\n").slice(1).join("\n\n"));
-  expect(prompt.tokens).toContainEqual({ id: "tokens.surface-color.base", value: "#123456" });
-  const contract = smallCatalog.slots.find(slot => slot.id === "tokens.surface-color")!.contract;
+  expect(prompt.tokens).toContainEqual({ id: "themes.background.default", value: "#123456" });
+  const contract = smallCatalog.slots.find(slot => slot.id === "themes.background")!.contract;
   expect(contract.members.mode).toBe("closed");
-  if (contract.members.mode === "closed") expect(prompt.variants).toEqual(contract.members.names.map(name => `tokens.surface-color.${name}`));
+  if (contract.members.mode === "closed") expect(prompt.variants).toEqual(contract.members.names.map(name => `themes.background.${name}`));
   fireEvent.click(within(dialog).getByRole("button", { name: labels.board.checkCandidates }));
-  await waitFor(() => expect(nextCheck).toHaveBeenCalledWith("tokens.surface-color"));
+  await waitFor(() => expect(nextCheck).toHaveBeenCalledWith("themes.background"));
   expect(firstCheck).not.toHaveBeenCalled(); expect(save).not.toHaveBeenCalled();
 });

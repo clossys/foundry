@@ -27,7 +27,7 @@ export interface BackdropGraphicArtifact {
     readonly backgroundRepeat: "repeat" | "no-repeat";
   };
 }
-export const BACKDROP_GRAPHIC_TOKEN_READS = ["tokens.accent-color.default", "tokens.surface-color.base"] as const;
+export const BACKDROP_GRAPHIC_TOKEN_READS = ["themes.primary.default", "themes.background.default"] as const;
 /** CSS custom properties inherit theme and consumer overrides on the painted element. */
 export const BACKDROP_GRAPHIC_CSS_TOKENS: BackdropGraphicTokens = Object.freeze({ accent: "var(--color-accent)", surface: "var(--color-surface-base)" });
 export function isBackdropGraphicRecipe(value: unknown): value is BackdropGraphicRecipe {

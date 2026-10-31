@@ -44,7 +44,7 @@ describe("token contract (shadcn@aria)", () => {
     for (const name of ["--background", "--foreground", "--primary", "--ring", "--muted-foreground", "--sidebar-accent-foreground", "--sidebar-width", "--destructive"]) expect(scannedVars, name).toContain(name);
   });
   it("has one leaf for every token slot, and every member maps to a shadcn var, Tailwind key or extension", () => {
-    for (const slot of slotIds.filter(id => id.startsWith("tokens."))) expect(tokenContract.leaves[slot], slot).toBeDefined();
+    for (const slot of slotIds.filter(id => id.startsWith("themes."))) expect(tokenContract.leaves[slot], slot).toBeDefined();
     const targets = Object.values(tokenContract.leaves).flatMap(leaf => Object.values(leaf.members ?? {})).filter(member => member.kind !== "moved").map(member => member.target);
     for (const target of targets) expect(target).toMatch(/^--[a-z][a-z0-9-]*$/);
   });
@@ -52,7 +52,7 @@ describe("token contract (shadcn@aria)", () => {
     const theme = read(createRequire(import.meta.url).resolve("tailwindcss/theme.css"));
     const value = (name: string) => new RegExp(`^\\s*${name}:\\s*([^;]+);`, "m").exec(theme)?.[1]?.trim();
     const container = tokenContract.leaves["tokens.container-width"]!;
-    const animation = tokenContract.leaves["tokens.animation"]!;
+    const animation = tokenContract.leaves["themes.animate-marquee"]!;
     expect(container.namespace).toBe("--container-*");
     expect(animation.namespace).toBe("--animate-*");
     expect(Object.keys(container.defaults!)).toHaveLength(13);
@@ -70,9 +70,9 @@ describe("token contract (shadcn@aria)", () => {
 
 describe("token presets", () => {
   it("offers all seven shadcn base colors, each composed with the tailwind-default namespace", () => {
-    expect(sourceRoster.tokens.presets.map(entry => entry.id)).toEqual(["shadcn-neutral", "shadcn-zinc", "shadcn-stone", "shadcn-mauve", "shadcn-olive", "shadcn-mist", "shadcn-taupe"]);
+    expect(sourceRoster.themes.presets.map(entry => entry.id)).toEqual(["shadcn-neutral", "shadcn-zinc", "shadcn-stone", "shadcn-mauve", "shadcn-olive", "shadcn-mist", "shadcn-taupe"]);
     expect(preset.id).toBe("shadcn-neutral");
-    for (const entry of sourceRoster.tokens.presets) {
+    for (const entry of sourceRoster.themes.presets) {
       expect(entry.namespace.source).toBe("tailwind-default");
       expect(entry.theme.pin.commit).toBe("96da9cc7f1aa10580a3741664e2a77c721206c00");
     }
@@ -88,8 +88,8 @@ describe("token presets", () => {
     expect(preset.theme.vars.dark).toEqual(vars(dark!));
   });
   it("presetValues reads theme members from the preset and the rest from the contract default", () => {
-    const zinc = sourceRoster.tokens.presets[1]!;
-    expect(presetValues(tokenContract, zinc, "tokens.surface-color").base).toEqual({ light: "oklch(1 0 0)", dark: "oklch(0.141 0.005 285.823)" });
+    const zinc = sourceRoster.themes.presets[1]!;
+    expect(presetValues(tokenContract, zinc, "themes.background").base).toEqual({ light: "oklch(1 0 0)", dark: "oklch(0.141 0.005 285.823)" });
     expect(presetValues(tokenContract, preset, "tokens.region-width").sidebar).toEqual({ light: "16rem" });
   });
 });
@@ -129,12 +129,12 @@ describe("source roster", () => {
 
 describe("mutation proofs", () => {
   const cases: readonly [string, RosterCode, () => Partial<RosterCheckInput>][] = [
-    ["an 8th preset", "R2", () => ({ roster: mutateRoster(roster => { roster.tokens.presets.push({ ...clone(sourceRoster.tokens.presets[1]!), id: "shadcn-extra" }); }) })],
+    ["an 8th preset", "R2", () => ({ roster: mutateRoster(roster => { roster.themes.presets.push({ ...clone(sourceRoster.themes.presets[1]!), id: "shadcn-extra" }); }) })],
     ["a 3rd external on an L2", "R2", () => ({ roster: mutateRoster(roster => { roster.components[0].offers.push({ source: "shadcn-charts", leaves: [] }, { source: "base-ui-x", leaves: [] }); }) })],
-    ["drop --ring", "R9", () => ({ contract: mutateContract(contract => { delete contract.leaves["tokens.focus-color"].members.default; }) })],
+    ["drop --ring", "R9", () => ({ contract: mutateContract(contract => { delete contract.leaves["themes.ring"].members.default; }) })],
     ["a dead member without a decision", "R9", () => ({ contract: mutateContract(contract => { delete contract.leaves["tokens.region-width"].members.aside.decision; }) })],
     ["shadcn@aria offered where it ships no fill", "R3", () => ({ roster: mutateRoster(roster => { roster.components.find((row: any) => row.l2 === "actions-toolbars").offers.unshift({ source: "shadcn@aria", leaves: ["components.toolbar"] }); }) })],
-    ["a preset that leaves a live key empty", "R3", () => ({ roster: mutateRoster(roster => { delete roster.tokens.presets[1].theme.vars.dark["--ring"]; }) })],
+    ["a preset that leaves a live key empty", "R3", () => ({ roster: mutateRoster(roster => { delete roster.themes.presets[1].theme.vars.dark["--ring"]; }) })],
     ["Custom not last", "R4", () => ({ roster: mutateRoster(roster => { roster.custom.position = "first"; }) })],
     ["a brand row offering Foundry", "R5", () => ({ roster: mutateRoster(roster => { roster.assets.find((row: any) => row.l2 === "logo-artwork").offers.push({ source: "foundry", leaves: ["assets.mark"], reason: "no external covers" }); }) })],
     ["a brand row without its Generate starter", "R5", () => ({ roster: mutateRoster(roster => { delete roster.assets.find((row: any) => row.l2 === "app-identity-browser").starter; }) })],

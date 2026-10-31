@@ -52,7 +52,7 @@ describe("IA1 exact three levels and IA2 unmixed nodes", () => {
       try {
         Object.assign(input, { nodes: [{ id: "bad", label: "Bad", leaves: ids }] });
         expect(() => loadBuildCatalog()).toThrow("IA1");
-        if (layer === "tokens" || layer === "assets") expect(() => loadCatalog()).toThrow("IA1");
+        if (layer === "themes" || layer === "assets") expect(() => loadCatalog()).toThrow("IA1");
       } finally { Object.assign(input, { nodes: original }); }
       expect(loadBuildCatalog().slots).toHaveLength(233);
     });
@@ -65,10 +65,10 @@ describe("IA1 exact three levels and IA2 unmixed nodes", () => {
   });
 
   it("rejects deeper nesting, missing trees, empty families and facet branches", () => {
-    const placement = { layer: "tokens", nodes: [{ id: "color", label: "Color", children: [{ id: "role", label: "Role", children: [{ id: "nested", label: "Nested", leaves: ["tokens.accent-color"] }] }] }] };
+    const placement = { layer: "themes", nodes: [{ id: "color", label: "Color", children: [{ id: "role", label: "Role", children: [{ id: "nested", label: "Nested", leaves: ["themes.primary"] }] }] }] };
     expect(checkIAPlacement(placement).some(finding => finding.code === "IA1")).toBe(true);
-    expect(() => assertIAPlacements([], [{ id: "tokens.accent-color", layer: "tokens" }])).toThrow("IA1");
-    expect(checkIAPlacement({ layer: "tokens", nodes: [{ id: "color", label: "Color", children: [{ id: "empty", label: "Empty", leaves: [] }] }] }).some(finding => finding.code === "IA1")).toBe(true);
+    expect(() => assertIAPlacements([], [{ id: "themes.primary", layer: "themes" }])).toThrow("IA1");
+    expect(checkIAPlacement({ layer: "themes", nodes: [{ id: "color", label: "Color", children: [{ id: "empty", label: "Empty", leaves: [] }] }] }).some(finding => finding.code === "IA1")).toBe(true);
   });
 });
 
@@ -84,19 +84,19 @@ describe("owner-signed IA moves (ledger #44, 2026-10-26)", () => {
   it("places color-ramp alone as the read-only engine family of Color", () => {
     expect(tokens.nodes[0]!.id).toBe("color");
     expect(tokens.nodes[0]!.children[0]).toEqual({ id: "color-engine", label: "Engine", leaves: ["tokens.color-ramp"] });
-    expect(family(tokens as Placement, "color-palettes")).toEqual(["tokens.accent-color", "tokens.status-color"]);
+    expect(family(tokens as Placement, "color-palettes")).toEqual(["themes.primary", "themes.destructive"]);
   });
   it("adds container-width under Space > Layout and animation under Motion > Timing, once each", () => {
     expect(family(tokens as Placement, "space-layout")).toContain("tokens.container-width");
-    expect(family(tokens as Placement, "motion-timing")).toContain("tokens.animation");
-    for (const id of ["tokens.container-width", "tokens.animation", "tokens.color-ramp"]) expect(homes(tokens as Placement, id)).toHaveLength(1);
+    expect(family(tokens as Placement, "motion-timing")).toContain("themes.animate-marquee");
+    for (const id of ["tokens.container-width", "themes.animate-marquee", "tokens.color-ramp"]) expect(homes(tokens as Placement, id)).toHaveLength(1);
   });
   it("gives each cross-layer moved id one home leaf and exactly one cross-reference", () => {
     const { placements } = build();
-    const tokenTree = placements.find(tree => tree.layer === "tokens")!;
+    const tokenTree = placements.find(tree => tree.layer === "themes")!;
     for (const [id, target] of [["tokens.icon-stroke", "assets:icons"], ["tokens.brandmark-size", "assets:logo-artwork"]] as const) {
       expect(homes(tokenTree, id)).toEqual(["shape-symbols"]);
-      expect(placements.flatMap(tree => tree.layer === "tokens" ? [] : leafIds(tree)).filter(leaf => leaf === id)).toEqual([]);
+      expect(placements.flatMap(tree => tree.layer === "themes" ? [] : leafIds(tree)).filter(leaf => leaf === id)).toEqual([]);
       expect(references(placements, id)).toEqual([target]);
     }
     expect((assets as WithReferences).crossReferences).toEqual([{ node: "icons", leaves: ["tokens.icon-stroke"] }, { node: "logo-artwork", leaves: ["tokens.brandmark-size"] }]);

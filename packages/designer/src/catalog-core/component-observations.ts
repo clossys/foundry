@@ -36,7 +36,7 @@ export interface ComponentBrowserArtifact {
   measurements: readonly ComponentMeasurement[];
   /** Per member-root measurements, keyed by exactly the contract's `memberRoots` members. */
   memberMeasurements?: Readonly<Record<string, readonly ComponentMeasurement[]>>;
-  /** Each `size.*` member of the descriptor mapped to the `tokens.control-size.*` member its rendered control resolves. */
+  /** Each `size.*` member of the descriptor mapped to the `themes.spacing.*` member its rendered control resolves. */
   geometry?: Readonly<Record<string, string>>;
 }
 export interface ComponentObservationInput {
@@ -156,9 +156,9 @@ function artifactRefusal(artifact: ComponentBrowserArtifact, fill: ComponentCand
   if (!sameKeys(Object.keys(artifact.memberMeasurements ?? {}), memberRoots)) return "Artifact member-root measurements differ from the contract's member roots";
   if (artifact.geometry) {
     const sizes = fill.members.filter(member => member.startsWith("size."));
-    const reads = new Set(fill.reads.tokens.map(read => read.split(".").slice(0, 2).join(".")));
+    const reads = new Set(fill.reads.themes.map(read => read.split(".").slice(0, 2).join(".")));
     if (!sameKeys(Object.keys(artifact.geometry), sizes)) return "Artifact geometry does not cover exactly the descriptor's size members";
-    if (Object.values(artifact.geometry).some(token => !/^tokens\.control-size\.[a-z0-9-]+$/.test(token) || !Object.hasOwn(input.tokens, token) || !reads.has("tokens.control-size"))) return "Artifact geometry names a token that is not a read consumer control-size member";
+    if (Object.values(artifact.geometry).some(token => !/^themes\.spacing\.[a-z0-9-]+$/.test(token) || !Object.hasOwn(input.tokens, token) || !reads.has("themes.spacing"))) return "Artifact geometry names a token that is not a read consumer spacing member";
   }
   return undefined;
 }

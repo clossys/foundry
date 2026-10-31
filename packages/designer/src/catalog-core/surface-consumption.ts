@@ -12,7 +12,7 @@ export interface SurfaceConsumptionScan {
   unresolved?: readonly { file: string; line: number; evidence: string; code?: DogfoodCode }[];
 }
 export interface SurfaceConsumptionInput {
-  tokens: readonly ConsumptionToken[]; assets: readonly { id: string }[]; components: readonly { id: string }[];
+  themes: readonly ConsumptionToken[]; assets: readonly { id: string }[]; components: readonly { id: string }[];
   sections: SurfaceConsumptionSlot[]; frames: SurfaceConsumptionSlot[];
   fills: { id: string; slot: string; source: string; pin?: unknown }[];
   sourceScans: SurfaceConsumptionScan[]; themeCss: string;
@@ -37,11 +37,11 @@ export interface SurfaceConsumptionMeasurement {
   unresolved?: readonly { file: string; line: number; evidence: string; code?: DogfoodCode }[];
 }
 const sorted = (items: readonly string[]): string[] => [...new Set(items)].sort();
-const reads = (value: Partial<ConsumptionReads>): ConsumptionReads => ({ tokens: sorted(value.tokens ?? []), assets: sorted(value.assets ?? []), components: sorted(value.components ?? []) });
+const reads = (value: Partial<ConsumptionReads>): ConsumptionReads => ({ themes: sorted(value.themes ?? []), assets: sorted(value.assets ?? []), components: sorted(value.components ?? []) });
 
 export function buildSurfaceConsumption(input: SurfaceConsumptionInput) {
   const slots = [...input.sections, ...input.frames], scans = new Map(input.sourceScans.map(row => [row.fill, row]));
-  const inventory = Object.fromEntries((["tokens", "assets", "components", "sections", "frames"] as const).map(layer => [layer, sorted(input[layer].map(row => row.id))])) as Record<"tokens" | "assets" | "components" | "sections" | "frames", string[]>;
+  const inventory = Object.fromEntries((["themes", "assets", "components", "sections", "frames"] as const).map(layer => [layer, sorted(input[layer].map(row => row.id))])) as Record<"themes" | "assets" | "components" | "sections" | "frames", string[]>;
   const findings: SurfaceConsumptionFinding[] = [];
   const fills = [...input.fills].sort((a, b) => a.id.localeCompare(b.id)).map(fill => {
     const slot = slots.find(row => row.id === fill.slot), scan = scans.get(fill.id);
@@ -49,14 +49,14 @@ export function buildSurfaceConsumption(input: SurfaceConsumptionInput) {
     const declaredReads = reads({ ...slot?.contract.allowedReads, components: declaredComposes.filter(id => id.startsWith("components.")) });
     const contract: SurfaceReadContract = { id: fill.slot, allowedReads: declaredReads, allowedComposes: declaredComposes };
     const files = scan?.files ?? [];
-    const dogfoodInput: DogfoodInput = { files: files.map(file => ({ file: file.path, content: file.content })), tokens: input.tokens, themeCss: input.themeCss,
+    const dogfoodInput: DogfoodInput = { files: files.map(file => ({ file: file.path, content: file.content })), themes: input.themes, themeCss: input.themeCss,
       contracts: Object.fromEntries(files.map(file => [file.path, contract])), resolvedImports: scan?.resolvedImports };
     const observedComposes = dogfoodComposes(dogfoodInput), dogfood = runDogfood(dogfoodInput);
     const scannedComposes = sorted(observedComposes.map(row => row.slotId));
-    const readScans = scanSurfaceReads(files, contract, input.tokens, input.themeCss);
-    const scannedReads = reads({ tokens: readScans.flatMap(row => row.tokens), assets: readScans.flatMap(row => row.assets), components: scannedComposes.filter(id => id.startsWith("components.")) });
-    const missingDeclaredReads = reads(Object.fromEntries((["tokens", "assets", "components"] as const).map(layer => [layer, scannedReads[layer].filter(id => !declaredReads[layer].includes(id))])));
-    const effectiveReads = reads(Object.fromEntries((["tokens", "assets", "components"] as const).map(layer => [layer, [...declaredReads[layer], ...scannedReads[layer]]])));
+    const readScans = scanSurfaceReads(files, contract, input.themes, input.themeCss);
+    const scannedReads = reads({ themes: readScans.flatMap(row => row.themes), assets: readScans.flatMap(row => row.assets), components: scannedComposes.filter(id => id.startsWith("components.")) });
+    const missingDeclaredReads = reads(Object.fromEntries((["themes", "assets", "components"] as const).map(layer => [layer, scannedReads[layer].filter(id => !declaredReads[layer].includes(id))])));
+    const effectiveReads = reads(Object.fromEntries((["themes", "assets", "components"] as const).map(layer => [layer, [...declaredReads[layer], ...scannedReads[layer]]])));
     findings.push(...dogfood.findings.map(row => ({ code: row.code, fill: fill.id, file: row.file, line: row.line, evidence: row.evidence })));
     // Whole reachable declarations include token-bound class constants and helper reads,
     // not just JSX attribute literals. This is the same consumption scanner as DF4.
@@ -73,8 +73,8 @@ export function buildSurfaceConsumption(input: SurfaceConsumptionInput) {
   const reverseComposes = Object.fromEntries([...inventory.components, ...inventory.sections, ...inventory.frames].sort().map(id => [id, {
     declared: fills.filter(row => row.declaredComposes.includes(id)).map(row => row.id), scanned: fills.filter(row => row.scannedComposes.includes(id)).map(row => row.id), effective: fills.filter(row => row.effectiveComposes.includes(id)).map(row => row.id),
   }]));
-  const reverseReads = Object.fromEntries([...inventory.tokens, ...inventory.assets].sort().map(id => [id, {
-    declared: fills.filter(row => [...row.declaredReads.tokens, ...row.declaredReads.assets].includes(id)).map(row => row.id), scanned: fills.filter(row => [...row.scannedReads.tokens, ...row.scannedReads.assets].includes(id)).map(row => row.id), effective: fills.filter(row => [...row.effectiveReads.tokens, ...row.effectiveReads.assets].includes(id)).map(row => row.id),
+  const reverseReads = Object.fromEntries([...inventory.themes, ...inventory.assets].sort().map(id => [id, {
+    declared: fills.filter(row => [...row.declaredReads.themes, ...row.declaredReads.assets].includes(id)).map(row => row.id), scanned: fills.filter(row => [...row.scannedReads.themes, ...row.scannedReads.assets].includes(id)).map(row => row.id), effective: fills.filter(row => [...row.effectiveReads.themes, ...row.effectiveReads.assets].includes(id)).map(row => row.id),
   }]));
   findings.sort((a, b) => a.fill.localeCompare(b.fill) || a.file.localeCompare(b.file) || a.line - b.line || a.code.localeCompare(b.code) || a.evidence.localeCompare(b.evidence));
   return { schemaVersion: 1, scope: "Authored section/frame contracts and reachable source observations; source-only lower bounds.", inventory,

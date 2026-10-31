@@ -80,8 +80,8 @@ describe("overlay and display pinned source evidence", () => {
     const bound = exports.TooltipTrigger!({ children, behaviorTiming });
     expect(bound.props).toMatchObject({ delay, closeDelay });
     expect(() => exports.TooltipTrigger!({ children })).toThrow(/tooltip timing binding/);
-    expect(slots.find(slot => slot.id === "components.tooltip")!.contract.allowedReads.tokens).toContain("tokens.behavior-timing");
-    expect(result.rewrites.tooltip!.reads.tokens).toEqual(expect.arrayContaining(["tokens.behavior-timing.tooltip-delay", "tokens.behavior-timing.tooltip-close"]));
+    expect(slots.find(slot => slot.id === "components.tooltip")!.contract.allowedReads.themes).toContain("tokens.behavior-timing");
+    expect(result.rewrites.tooltip!.reads.themes).toEqual(expect.arrayContaining(["tokens.behavior-timing.tooltip-delay", "tokens.behavior-timing.tooltip-close"]));
   });
   it("keeps the popover trigger/context protocol and placement forwarding intact", () => {
     const result = importShadcnAriaComponents(input());
@@ -102,9 +102,9 @@ describe("overlay and display pinned source evidence", () => {
   it("preserves overlay elevation and z-index token reads without introducing literal shadows", () => {
     const result = importShadcnAriaComponents(input());
     for (const item of ["dialog", "popover", "dropdown-menu"]) {
-      if (item === "dialog") expect(result.rewrites[item]!.reads.tokens.some(read => read.startsWith("tokens.elevation."))).toBe(false);
-      else expect(result.rewrites[item]!.reads.tokens).toContain("tokens.elevation.floating");
-      expect(result.rewrites[item]!.reads.tokens).toContain("tokens.z-index.modal");
+      if (item === "dialog") expect(result.rewrites[item]!.reads.themes.some(read => read.startsWith("themes.shadow."))).toBe(false);
+      else expect(result.rewrites[item]!.reads.themes).toContain("themes.shadow.lg");
+      expect(result.rewrites[item]!.reads.themes).toContain("tokens.z-index.modal");
       expect(result.rewrites[item]!.files.map(file => file.content).join("\n")).not.toMatch(/\bshadow-(?:sm|md|lg|xl|2xl)\b/);
     }
     expect(result.rewrites.tabs!.files.map(file => file.content).join("\n")).not.toMatch(/cn-tabs-list-variant-(?:default|line)/);

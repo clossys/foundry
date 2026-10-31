@@ -37,7 +37,7 @@
         "scannedReads": {
           "assets": [],
           "components": [],
-          "tokens": []
+          "themes": []
         },
         "sourceFiles": [
           {
@@ -87,7 +87,7 @@
       "propMap": {},
       "reads": {
         "assets": [],
-        "tokens": []
+        "themes": []
       },
       "slot": "sections.logo-hero",
       "slotMap": {

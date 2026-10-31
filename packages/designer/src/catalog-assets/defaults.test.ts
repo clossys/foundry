@@ -37,7 +37,7 @@ describe('Custom defaults for existing unfilled leaves',()=>{
   expect(fill.components['semantic-content'].impl).toEqual({kind:'package',module:'@clossys/designer/components',export:'SemanticContent'});
  });
  it('binds every pattern stroke to the existing strong border token in either theme',()=>{
-  expect(PATTERN_TOKEN_READS).toContain('tokens.border-color.strong');
+  expect(PATTERN_TOKEN_READS).toContain('themes.border.default');
   for(const recipe of Object.values(PATTERN_RECIPES)){
    expect(recipe.ink).toBe('--color-line-strong');
    expect(patternBackground(recipe).backgroundImage).toContain('var(--color-line-strong)');

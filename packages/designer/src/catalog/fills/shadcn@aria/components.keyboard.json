@@ -110,17 +110,13 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.code-size.block",
-          "tokens.control-radius.default",
-          "tokens.font-weight.medium",
-          "tokens.spacing.md",
-          "tokens.spacing.xl",
-          "tokens.spacing.xs",
-          "tokens.surface-color.base",
-          "tokens.surface-color.sunken",
-          "tokens.text-color.muted",
-          "tokens.typeface.body"
+        "themes": [
+          "themes.radius.default",
+          "themes.spacing.default",
+          "themes.background.default",
+          "themes.muted.default",
+          "themes.muted-foreground.default",
+          "themes.font-sans.default"
         ]
       },
       "root": "rac:Keyboard",

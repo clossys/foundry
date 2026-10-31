@@ -159,7 +159,7 @@ export interface TokenBaseline {
 }
 /** Uses the actual pinned catalog fill; absence stays absent, including Foundry-only tokens. */
 export function tokenBaseline(catalog: CatalogData, slot: string, member: string, current?: DtcgToken): TokenBaseline | undefined {
-  if (!slot.startsWith("tokens.")) return undefined;
+  if (!slot.startsWith("themes.")) return undefined;
   const fill = catalog.fills.find(fill => {
     const meta = fill.$extensions["com.clossys.fill"];
     return meta.slot === slot && meta.source === "tailwind-default" && meta.mode !== "reference";

@@ -857,10 +857,10 @@ describe("compiled CatalogBrowser public contract", () => {
   const consumerFor = (entry: string, index: number) => `
     import { CatalogBrowser as Browser${index}, type CatalogBrowserProps as Props${index}, type CatalogBrowserKind as Kind${index}, type CatalogBrowserLabels as Labels${index}, type CatalogBrowserSelection as Selection${index} } from ${JSON.stringify(join(packageRoot, "dist", entry))};
     interface Entry${index} { id: string; label: string; l1: string; l2: string; lifecycle: "draft" | "stable" | "deprecated" | "parked"; tier: "core" | "role" }
-    const catalog${index} = { kind: "tokens" as const, groups: [{ id: "color", label: "Color", children: [{ id: "ink", label: "Ink" }] }], entries: [{ id: "--ink", label: "Ink", l1: "color", l2: "ink", lifecycle: "draft", tier: "role" }] satisfies Entry${index}[] };
+    const catalog${index} = { kind: "themes" as const, groups: [{ id: "color", label: "Color", children: [{ id: "ink", label: "Ink" }] }], entries: [{ id: "--ink", label: "Ink", l1: "color", l2: "ink", lifecycle: "draft", tier: "role" }] satisfies Entry${index}[] };
     const kind${index}: Kind${index}<Entry${index}> = { label: "Tokens", preview: (entry, context) => entry.tier + context.kind + String(context.config.tone), controls: () => [{ type: "toggle", id: "tone", label: "Tone", defaultValue: false }] };
     declare const labels${index}: Labels${index};
-    const selection${index}: Selection${index} = { catalog: "tokens", entryId: null };
+    const selection${index}: Selection${index} = { catalog: "themes", entryId: null };
     const props${index}: Props${index}<typeof catalog${index}> = { catalogs: [catalog${index}], kinds: { tokens: kind${index} }, label: "Catalog", labels: labels${index}, defaultSelection: selection${index} };
     const element${index} = Browser${index}(props${index});
   `;
@@ -1088,7 +1088,7 @@ describe("compiled composite component catalog contract", () => {
         declare const observation: ComponentObservation;
         declare const bundle: SourceBundle;
         const changes: CompositeChangeSet = { baseHash: libraryHash(library), bundles: [bundle], changes: [
-          {portion: "values", change: {op: "author", slot: "tokens.text-color", tokens: {primary: {$type: "color", $value: "#111111"}}}},
+          {portion: "values", change: {op: "author", slot: "themes.foreground", tokens: {default: {$type: "color", $value: "#111111"}}}},
           {portion: "components", change: {op: "adopt", slot: "components.button", source: "example"}},
           {portion: "components", change: {op: "compose", slot: "components.select", rule: "compose:example@1"}}
         ]};
@@ -1147,7 +1147,7 @@ describe("compiled usage graph public contract", () => {
       const consumer = `
         import { buildUsageGraph, uses, usedBy, closure, graphFindings, type UsageGraph, type UsageGraphInputs, type UsageEdge, type UsageNode, type UsageGraphFinding } from ${JSON.stringify(join(packageRoot, "dist", entry))};
         const input: UsageGraphInputs = { inventory: { tokens: ["tokens.color"], components: ["components.button"] }, selection: { "components.button": "example/components.button" },
-          components: { fills: [{ id: "example/components.button", slot: "components.button", declaredReads: { tokens: ["tokens.color"], assets: [] } }] } };
+          components: { fills: [{ id: "example/components.button", slot: "components.button", declaredReads: { themes: ["tokens.color"], assets: [] } }] } };
         const graph: UsageGraph = buildUsageGraph(input);
         const out: readonly UsageEdge[] = uses(graph, "components.button"), into: readonly UsageEdge[] = usedBy(graph, "tokens.color");
         const reach: readonly string[] = closure(graph, "tokens.color", "usedBy");
@@ -1160,7 +1160,7 @@ describe("compiled usage graph public contract", () => {
       host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
       expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(d => ts.flattenDiagnosticMessageText(d.messageText, "\n")), entry).toEqual([]);
       const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))};
-        const graph = api.buildUsageGraph({ inventory: { tokens: ["tokens.color"], components: ["components.button"] }, selection: { "components.button": "example/components.button" }, components: { fills: [{ id: "example/components.button", slot: "components.button", declaredReads: { tokens: ["tokens.color"], assets: [] } }] } });
+        const graph = api.buildUsageGraph({ inventory: { tokens: ["tokens.color"], components: ["components.button"] }, selection: { "components.button": "example/components.button" }, components: { fills: [{ id: "example/components.button", slot: "components.button", declaredReads: { themes: ["tokens.color"], assets: [] } }] } });
         process.stdout.write(JSON.stringify({ types: ["buildUsageGraph","uses","usedBy","closure","graphFindings"].map(name => typeof api[name]), usedBy: api.usedBy(graph, "tokens.color").map(edge => edge.from), closure: api.closure(graph, "tokens.color", "usedBy") }));`;
       expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot })), entry).toEqual({ types: Array(5).fill("function"), usedBy: ["components.button"], closure: ["components.button"] });
     }

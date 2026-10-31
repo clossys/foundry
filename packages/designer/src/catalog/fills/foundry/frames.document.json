@@ -30,8 +30,8 @@
         "scannedReads": {
           "assets": [],
           "components": [],
-          "tokens": [
-            "tokens.accent-color"
+          "themes": [
+            "themes.primary"
           ]
         },
         "sourceFiles": [
@@ -65,8 +65,8 @@
       },
       "reads": {
         "assets": [],
-        "tokens": [
-          "tokens.accent-color"
+        "themes": [
+          "themes.primary"
         ]
       },
       "slot": "frames.document",

@@ -17,7 +17,7 @@ const readJson = path => JSON.parse(readFileSync(resolve(root, path), "utf8"));
 const contract = readJson("src/catalog/rules/token-contract.json");
 const tokenNames = new Set([...Object.values(contract.leaves).flatMap(leaf => Object.values(leaf.members ?? {}).map(member => member.target)), ...Object.keys(contract.aliases)]);
 const roster = readJson("src/catalog/rules/source-roster.json");
-const variables = [...new Set(roster.tokens.presets.flatMap(preset => Object.values(preset.theme.vars).flatMap(vars => Object.keys(vars))))].sort();
+const variables = [...new Set(roster.themes.presets.flatMap(preset => Object.values(preset.theme.vars).flatMap(vars => Object.keys(vars))))].sort();
 const adapterPath = resolve(root, "src/catalog/adapters/shadcn@aria.json");
 const adapterText = readFileSync(adapterPath, "utf8");
 const reportPath = resolve(root, "src/catalog/rules/shadcn-refresh-needs.json");
@@ -89,7 +89,7 @@ const report = {
     "ai-elements": { url: "https://github.com/vercel/ai-elements", commit: pins["ai-elements"], license: "Apache-2.0", adoption: "inspected-only" },
   },
   themeVariables: { source: "apps/v4/registry/themes.ts", count: variables.length, covered: variables.filter(name => tokenNames.has(name)), needs: variables.filter(name => !tokenNames.has(name)).map(variable => ({ status: "NEED", variable, reason: "Absent from the frozen token contract" })) },
-  presets: roster.tokens.presets.map(preset => ({ id: preset.id, commit: preset.theme.pin.commit })),
+  presets: roster.themes.presets.map(preset => ({ id: preset.id, commit: preset.theme.pin.commit })),
   icons: requirements,
   inspectedFiles: sources.sort((a, b) => `${a.source}/${a.path}`.localeCompare(`${b.source}/${b.path}`)),
   // Preserve measured component evidence only while all its source inputs match.

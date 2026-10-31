@@ -25,8 +25,6 @@ export const PUBLISHER_VALUE_NAME_REFS: Readonly<Record<string, Readonly<Record<
     "frames.command": Object.freeze({ id: "st.b0jrfbc3my" }),
   }),
   "designer.boardName": Object.freeze({
-    "designer.ia.tokens.color-controls": Object.freeze({ id: "st.hfsb4xz44v" }),
-    "designer.ia.tokens.interaction-controls": Object.freeze({ id: "st.9wy8met97b" }),
     "designer.ia.frames.panels": Object.freeze({ id: "st.dg3e6jc56v" }),
     "designer.ia.frames.overlay-shells-panels": Object.freeze({ id: "st.n3jkssxad5" }),
   }),
@@ -133,12 +131,11 @@ export const PUBLISHER_VALUE_NAME_REFS: Readonly<Record<string, Readonly<Record<
     "wide": Object.freeze({ id: "st.m8rb9g7ftb" }),
   }),
   "publisher.breakpoint": Object.freeze({
-    "tokens.breakpoint.mobile": Object.freeze({ id: "st.txzn8z1qg7" }),
-    "tokens.breakpoint.mobile-lg": Object.freeze({ id: "st.xp5eskkvj3" }),
-    "tokens.breakpoint.tablet": Object.freeze({ id: "st.j57xeagqqc" }),
-    "tokens.breakpoint.tablet-lg": Object.freeze({ id: "st.psm20y3g29" }),
-    "tokens.breakpoint.desktop": Object.freeze({ id: "st.646wxbsgag" }),
-    "tokens.breakpoint.wide": Object.freeze({ id: "st.m8rb9g7ftb" }),
+    "sm": Object.freeze({ id: "st.xp5eskkvj3" }),
+    "md": Object.freeze({ id: "st.j57xeagqqc" }),
+    "lg": Object.freeze({ id: "st.psm20y3g29" }),
+    "xl": Object.freeze({ id: "st.646wxbsgag" }),
+    "2xl": Object.freeze({ id: "st.m8rb9g7ftb" }),
   }),
   "publisher.layoutOption.layouts.stack.measure": Object.freeze({
     "full": Object.freeze({ id: "st.ana61jy0p8" }),
@@ -185,8 +182,8 @@ export const PUBLISHER_VALUE_NAME_REFS: Readonly<Record<string, Readonly<Record<
     "after": Object.freeze({ id: "st.v7t7c2pr8y" }),
   }),
   "publisher.layoutOption.layouts.sidebar-content.breakpoint": Object.freeze({
-    "tablet": Object.freeze({ id: "st.j57xeagqqc" }),
-    "tablet-lg": Object.freeze({ id: "st.psm20y3g29" }),
+    "md": Object.freeze({ id: "st.j57xeagqqc" }),
+    "lg": Object.freeze({ id: "st.psm20y3g29" }),
   }),
   "publisher.layoutOption.layouts.bento.density": Object.freeze({
     "airy": Object.freeze({ id: "st.8ac2dy1j6t" }),

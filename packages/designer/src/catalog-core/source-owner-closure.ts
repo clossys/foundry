@@ -157,7 +157,7 @@ export function associateSourceOwnerRecords(original: CompositeEngineInput, bund
     add(row);
     pendingInputs.set(row.id, [
       ...[...new Set([...descriptor.reads.components, ...descriptor.composes, ...(origin?.kind === "derived" ? origin.inputs : origin?.kind === "composed" ? origin.reads : [])])].map(target => ({ portion: "components" as const, target })),
-      ...[...descriptor.reads.tokens, ...descriptor.reads.assets].map(target => ({ portion: "values" as const, target })),
+      ...[...descriptor.reads.themes, ...descriptor.reads.assets].map(target => ({ portion: "values" as const, target })),
     ]);
   });
   for (const file of ownedComponents.files) if (!receipted.has(file.path)) need("SOURCE_BYTES_MISSING", `Unassociated component file ${file.path}`);
@@ -200,7 +200,7 @@ export function associateSourceOwnerRecords(original: CompositeEngineInput, bund
     add(row);
     pendingInputs.set(row.id, [
       ...(origin.kind === "derived" ? origin.inputs.filter(item => item.input.kind !== "dependency").map(item => ({ portion: item.input.kind === "value" ? "values" as const : item.input.kind === "component" ? "components" as const : "surfaces" as const, target: item.input.id })) : []),
-      ...[...descriptor.reads.tokens, ...descriptor.reads.assets].map(target => ({ portion: "values" as const, target })),
+      ...[...descriptor.reads.themes, ...descriptor.reads.assets].map(target => ({ portion: "values" as const, target })),
       ...descriptor.composes.map(target => ({ portion: target.startsWith("components.") ? "components" as const : "surfaces" as const, target })),
     ]);
   });

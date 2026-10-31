@@ -34,7 +34,7 @@ export async function prepareStudioSelection(stored?: StudioDesignerLibrary, sou
   authored.surfaces ??= { version: 1, fills: [], files: [] };
   const own = new Map<string, any>([...authored.values.fills, ...authored.components.fills, ...authored.surfaces.fills].map(fill => [meta(fill).slot, fill]));
   let values: LibraryData = { ...authored.values, source: authored.source, adoptedAt: authored.adoptedAt };
-  const absentValues = catalog.values.slots.filter(slot => slot.layer === "tokens" || slot.id.startsWith("assets.icon-")).filter(slot => !values.fills.some(fill => meta(fill).slot === slot.id));
+  const absentValues = catalog.values.slots.filter(slot => slot.layer === "themes" || slot.id.startsWith("assets.icon-")).filter(slot => !values.fills.some(fill => meta(fill).slot === slot.id));
   const changes = absentValues.flatMap(slot => {
     const offers = catalog.values.fills.filter(fill => meta(fill).slot === slot.id && meta(fill).mode !== "reference");
     const fill = ["foundry", "tailwind-default"].map(source => offers.find(fill => meta(fill).source === source)).find(Boolean) ?? offers[0];

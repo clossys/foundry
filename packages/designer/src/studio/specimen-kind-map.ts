@@ -3,12 +3,12 @@ import type { SpecimenLeafDefinition, SpecimenLeafId } from "./specimen-layouts.
 
 /** Semantic kinds come from the native cell projection; ambiguous or unknown kinds stay unbound. */
 export const SPECIMEN_KIND_MAP: readonly { readonly agent: SpecimenAgent; readonly kind: string; readonly canonicalKind?: string; readonly layer?: string; readonly specimen: SpecimenLeafId }[] = [
-  { agent: "designer", kind: "color", layer: "tokens", specimen: "sections.specimen-swatch" },
-  { agent: "designer", kind: "color-ramp", layer: "tokens", specimen: "sections.specimen-color-ramp" },
-  { agent: "designer", kind: "type", layer: "tokens", specimen: "sections.specimen-type-ladder" },
-  { agent: "designer", kind: "spacing", layer: "tokens", specimen: "sections.specimen-spacing-ladder" },
-  { agent: "designer", kind: "radius", layer: "tokens", specimen: "sections.specimen-radius-ladder" },
-  { agent: "designer", kind: "motion", layer: "tokens", specimen: "sections.specimen-motion-player" },
+  { agent: "designer", kind: "color", layer: "themes", specimen: "sections.specimen-swatch" },
+  { agent: "designer", kind: "color-ramp", layer: "themes", specimen: "sections.specimen-color-ramp" },
+  { agent: "designer", kind: "type", layer: "themes", specimen: "sections.specimen-type-ladder" },
+  { agent: "designer", kind: "spacing", layer: "themes", specimen: "sections.specimen-spacing-ladder" },
+  { agent: "designer", kind: "radius", layer: "themes", specimen: "sections.specimen-radius-ladder" },
+  { agent: "designer", kind: "motion", layer: "themes", specimen: "sections.specimen-motion-player" },
   { agent: "designer", kind: "asset", layer: "assets", specimen: "sections.specimen-asset-grid" },
   { agent: "designer", kind: "icon", layer: "assets", specimen: "sections.specimen-icon-grid" },
   { agent: "designer", kind: "component", layer: "components", specimen: "sections.specimen-variant-matrix" },

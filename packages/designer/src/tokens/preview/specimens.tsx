@@ -25,48 +25,17 @@ import { specimenDataset } from "../../studio/specimen-dataset.js";
 export type TokenSpecimenKind = "motion" | "radius" | "shadow" | "blur" | "text-metric" | "ruler" | "density" | "focus" | "layer-fan" | "icon" | "opacity" | "gradient";
 
 export const TOKEN_LEAF_SPECIMENS: Readonly<Record<string, TokenSpecimenKind>> = Object.freeze({
-  "tokens.gradient": "gradient",
-  "tokens.duration": "motion",
-  "tokens.transition-duration": "motion",
-  "tokens.behavior-timing": "motion",
-  "tokens.easing": "motion",
-  "tokens.transition-easing": "motion",
-  "tokens.radius": "radius",
-  "tokens.control-radius": "radius",
-  "tokens.surface-radius": "radius",
-  "tokens.shadow": "shadow",
-  "tokens.elevation": "shadow",
-  "tokens.focus-shadow": "shadow",
-  "tokens.blur": "blur",
-  "tokens.font-size": "text-metric",
-  "tokens.body-size": "text-metric",
-  "tokens.caption-size": "text-metric",
-  "tokens.code-size": "text-metric",
-  "tokens.heading-size": "text-metric",
-  "tokens.display-size": "text-metric",
-  "tokens.typeface": "text-metric",
-  "tokens.display-face": "text-metric",
-  "tokens.font-weight": "text-metric",
-  "tokens.letter-spacing": "text-metric",
-  "tokens.line-height": "text-metric",
-  "tokens.breakpoint": "ruler",
-  "tokens.control-size": "ruler",
-  "tokens.spacing": "ruler",
-  "tokens.gutter": "ruler",
-  "tokens.touch-target": "ruler",
-  "tokens.brandmark-size": "ruler",
-  "tokens.shift-distance": "ruler",
-  "tokens.border-width": "ruler",
-  "tokens.content-size": "ruler",
-  "tokens.region-width": "ruler",
-  "tokens.container-width": "ruler",
-  "tokens.animation": "motion",
-  "tokens.density": "density",
-  "tokens.focus-outline": "focus",
-  "tokens.z-index": "layer-fan",
-  "tokens.icon-size": "icon",
-  "tokens.icon-stroke": "icon",
-  "tokens.state-opacity": "opacity",
+  "themes.radius": "radius",
+  "themes.shadow": "shadow",
+  "themes.font-sans": "text-metric",
+  "themes.font-heading": "text-metric",
+  "themes.font-mono": "text-metric",
+  "themes.font-serif": "text-metric",
+  "themes.tracking-tight": "text-metric",
+  "themes.spacing": "ruler",
+  "themes.animate-marquee": "motion",
+  "themes.animate-marquee-vertical": "motion",
+  "themes.animate-shiny-text": "motion",
 });
 
 /**
@@ -101,23 +70,14 @@ const TICK_POSITIONS = ["start-0", "start-1/4 -translate-x-1/2", "start-1/2 -tra
 
 const TEXT_SIZE = "text-(length:--studio-specimen-value) leading-none";
 /** Text-metric leaves whose member is a size: they set the sample's first word, so the largest step still fits. */
-const TEXT_SIZE_LEAVES = new Set(["tokens.font-size", "tokens.body-size", "tokens.caption-size", "tokens.code-size", "tokens.heading-size", "tokens.display-size"]);
+const TEXT_SIZE_LEAVES = new Set<string>();
 /** The utility a text-metric member applies, by leaf or, where members differ in role, by leaf and member key. */
 const TEXT_METRIC: Readonly<Record<string, string>> = {
-  "tokens.font-size": TEXT_SIZE,
-  "tokens.body-size": TEXT_SIZE,
-  "tokens.caption-size": TEXT_SIZE,
-  "tokens.code-size": TEXT_SIZE,
-  "tokens.heading-size": TEXT_SIZE,
-  "tokens.display-size": TEXT_SIZE,
-  "tokens.typeface": "text-body-l font-(family-name:--studio-specimen-value)",
-  "tokens.display-face.weight": "text-body-l font-(weight:--studio-specimen-value)",
-  "tokens.display-face.stretch": "text-body-l font-stretch-(--studio-specimen-value)",
-  "tokens.display-face.scale-x": "text-body-l origin-left rtl:origin-right scale-x-(--studio-specimen-value)",
-  "tokens.font-weight": "text-body-l font-(weight:--studio-specimen-value)",
-  "tokens.letter-spacing": "text-body-l tracking-(--studio-specimen-value)",
-  // The line box is tinted so the leading itself is visible.
-  "tokens.line-height": "text-body leading-(--studio-specimen-value) bg-accent-tint",
+  "themes.font-sans": "text-body-l font-(family-name:--studio-specimen-value)",
+  "themes.font-heading": "text-body-l font-(family-name:--studio-specimen-value)",
+  "themes.font-mono": "text-body-l font-(family-name:--studio-specimen-value)",
+  "themes.font-serif": "text-body-l font-(family-name:--studio-specimen-value)",
+  "themes.tracking-tight": "text-body-l tracking-(--studio-specimen-value)",
 };
 
 const CAPTION = "text-caption text-ink-muted";
@@ -150,12 +110,12 @@ const ANIMATION = /^[a-z][a-z0-9-]*\s+(?:\d*\.)?\d+m?s(?:\s+(?:[a-z-]+|cubic-bez
 /** A CSS `font-style` keyword, the grammar of a display face's style member. */
 const FONT_STYLE = /^(?:normal|italic|oblique(?:\s+-?(?:\d*\.)?\d+deg)?)$/;
 /** The display face's style member: a font-style keyword under a dimension-typed leaf. */
-const fontStyleMember = (member: ResolvedMember): boolean => member.slot === "tokens.display-face" && member.emit?.endsWith("-style") === true;
+const fontStyleMember = (member: ResolvedMember): boolean => member.slot === "themes.font-heading" && member.emit?.endsWith("-style") === true;
 
 /** The checked value a specimen may paint, or undefined when the member is outside its grammar. */
 function paintable(member: ResolvedMember): string | undefined {
   const css = member.css.light;
-  const checked = member.slot === "tokens.animation" ? ANIMATION.test(css.trim())
+  const checked = member.slot === "themes.animate-marquee" ? ANIMATION.test(css.trim())
     : fontStyleMember(member) ? FONT_STYLE.test(css.trim()) : checkedPreviewCss(member.$type, css);
   return typeof css === "string" && css.trim() && !unsafeText(css) && checked ? css : undefined;
 }
@@ -171,7 +131,7 @@ export function cubicBezierPoints(css: string): readonly [number, number, number
 
 function MotionSpecimen({ css, role, linear, curve, playLabel }: { css: string; role: "duration" | "easing" | "animation"; linear: boolean; curve?: readonly [number, number, number, number]; playLabel: string }): ReactElement {
   const [playing, setPlaying] = useState(false);
-  if (role === "animation") return <figure data-layer="tokens" data-token-specimen="motion" data-kind="motion" data-playing={String(playing)} {...bound(css)}
+  if (role === "animation") return <figure data-layer="themes" data-token-specimen="motion" data-kind="motion" data-playing={String(playing)} {...bound(css)}
     className={join("m-0 grid justify-items-start gap-xs overflow-hidden", TOKEN_SPECIMEN_WIDTHS.motion.className)}>
     {/* The member's own keyframes run on the sample only while playing; reduced motion keeps it still. */}
     <span aria-hidden="true" data-motion-target="" className={join("block size-xl rounded-control bg-accent", playing && "animate-(--studio-specimen-value) motion-reduce:animate-none")} />
@@ -180,7 +140,7 @@ function MotionSpecimen({ css, role, linear, curve, playLabel }: { css: string; 
   const timing = role === "duration"
     ? join("duration-(--studio-specimen-value)", linear ? "ease-linear" : "ease-(--ease-default)")
     : "duration-(--ui-duration-deliberate) ease-(--studio-specimen-value)";
-  return <figure data-layer="tokens" data-token-specimen="motion" data-kind="motion" data-playing={String(playing)} {...bound(css)}
+  return <figure data-layer="themes" data-token-specimen="motion" data-kind="motion" data-playing={String(playing)} {...bound(css)}
     className={join("m-0 grid justify-items-start gap-xs overflow-hidden", TOKEN_SPECIMEN_WIDTHS.motion.className)}>
     <div className="flex items-center gap-sm">
       {curve ? <svg aria-hidden="true" data-easing-curve="" viewBox="0 0 1 1" className="size-xl shrink-0 overflow-visible fill-none stroke-accent">
@@ -208,7 +168,7 @@ function MotionSpecimen({ css, role, linear, curve, playLabel }: { css: string; 
 
 function RulerSpecimen({ css, leaf }: { css: string; leaf: string }): ReactElement {
   const ruler = RULERS[leaf]!;
-  return <figure data-layer="tokens" data-token-specimen="ruler" data-kind="ruler" data-ruler-scale={ruler.scale} {...bound(css, { "--studio-ruler-bar": `calc(${css} * ${ruler.factor})` })}
+  return <figure data-layer="themes" data-token-specimen="ruler" data-kind="ruler" data-ruler-scale={ruler.scale} {...bound(css, { "--studio-ruler-bar": `calc(${css} * ${ruler.factor})` })}
     className={join("m-0 grid gap-xs overflow-hidden", TOKEN_SPECIMEN_WIDTHS.ruler.className)}>
     <span aria-hidden="true" className="relative block h-sm w-(--ui-layout-sidebar-w) overflow-hidden rounded-pill bg-surface-sunken">
       <span data-ruler-bar="" className="absolute inset-y-0 start-0 block w-(--studio-ruler-bar) max-w-full rounded-pill bg-accent" />
@@ -221,7 +181,7 @@ function RulerSpecimen({ css, leaf }: { css: string; leaf: string }): ReactEleme
 
 function LayerFanSpecimen({ css, property }: { css: string; property?: string }): ReactElement {
   const ranks = Object.values(TOKENS).filter(token => token.family === "z").sort((a, b) => Number(a.value) - Number(b.value));
-  return <figure data-layer="tokens" data-token-specimen="layer-fan" data-kind="layer-fan" {...bound(css)}
+  return <figure data-layer="themes" data-token-specimen="layer-fan" data-kind="layer-fan" {...bound(css)}
     className={join("relative isolate m-0 h-4xl overflow-hidden", TOKEN_SPECIMEN_WIDTHS["layer-fan"].className)}>
     {ranks.map((token, rank) => {
       const current = token.property === property;
@@ -245,7 +205,7 @@ const ICON_STEPS: readonly IconSize[] = ["sm", "md", "lg"];
 const emitted = (member: ResolvedMember): `--${string}` | undefined => member.emit !== undefined && /^--[a-z][a-z0-9-]*$/.test(member.emit) ? member.emit : undefined;
 
 function frame(kind: TokenSpecimenKind, css: string, children: ReactNode, className?: string, extra?: Readonly<Record<`--${string}`, string>>): ReactElement {
-  return <figure data-layer="tokens" data-token-specimen={kind} data-kind={kind} {...bound(css, extra)} className={join("m-0 overflow-hidden", TOKEN_SPECIMEN_WIDTHS[kind].className, className)}>{children}</figure>;
+  return <figure data-layer="themes" data-token-specimen={kind} data-kind={kind} {...bound(css, extra)} className={join("m-0 overflow-hidden", TOKEN_SPECIMEN_WIDTHS[kind].className, className)}>{children}</figure>;
 }
 
 export interface TokenLeafSpecimenProps {
@@ -266,7 +226,7 @@ export function tokenLeafSpecimenKind(member: ResolvedMember): TokenSpecimenKind
   const css = kind ? paintable(member) : undefined;
   if (!kind || css === undefined) return undefined;
   if (kind === "motion" && member.$type === "cubicBezier" && !cubicBezierPoints(css)) return undefined;
-  if (kind === "motion" && member.slot !== "tokens.animation" && member.$type !== "cubicBezier" && member.$type !== "duration") return undefined;
+  if (kind === "motion" && member.slot !== "themes.animate-marquee" && member.$type !== "cubicBezier" && member.$type !== "duration") return undefined;
   return kind;
 }
 
@@ -279,9 +239,9 @@ export function TokenLeafSpecimen({ id, member, sampleText = SAMPLES.sampleText,
   switch (kind) {
     case "gradient": return frame(kind, css, <TokenValuePreview id={id} member={member} sampleText={sampleText} lightLabel="" darkLabel="" compact />);
     case "motion": {
-      const role = member.slot === "tokens.animation" ? "animation" : member.$type === "cubicBezier" ? "easing" : "duration";
+      const role = member.slot.startsWith("themes.animate-") ? "animation" : member.$type === "cubicBezier" ? "easing" : "duration";
       const curve = role === "easing" ? cubicBezierPoints(css) : undefined;
-      return <MotionSpecimen key={id} css={css} role={role} linear={member.slot === "tokens.behavior-timing"} curve={curve} playLabel={playLabel} />;
+      return <MotionSpecimen key={id} css={css} role={role} linear={false} curve={curve} playLabel={playLabel} />;
     }
     case "ruler": return <RulerSpecimen css={css} leaf={member.slot} />;
     case "layer-fan": return <LayerFanSpecimen css={css} property={member.emit} />;
@@ -295,7 +255,7 @@ export function TokenLeafSpecimen({ id, member, sampleText = SAMPLES.sampleText,
       <span aria-hidden="true" data-specimen-target="" className="absolute inset-y-0 end-0 block w-1/2 border-s border-line-base bg-surface-glass backdrop-blur-(--studio-specimen-value)" />
     </Card>);
     case "text-metric": {
-      if (member.slot === "tokens.display-face" && key === "optical-size") return frame(kind, css, <TokenValuePreview id={id} member={member} sampleText={sampleText} lightLabel="" darkLabel="" />);
+      if (member.slot === "themes.font-heading" && key === "optical-size") return frame(kind, css, <TokenValuePreview id={id} member={member} sampleText={sampleText} lightLabel="" darkLabel="" />);
       // No utility reads a font-style value, so the style member picks the keyword's own utility.
       const metric = fontStyleMember(member) ? join("text-body-l", css.trim() === "normal" ? "not-italic" : "italic") : TEXT_METRIC[`${member.slot}.${key}`] ?? TEXT_METRIC[member.slot];
       const sample = TEXT_SIZE_LEAVES.has(member.slot) ? sampleText.trim().split(/\s+/)[0] ?? sampleText : sampleText;
@@ -343,7 +303,7 @@ export function OklchSwatch({ id, light, dark, lightLabel, darkLabel }: { id: st
   // Only a value the anchored oklch grammar accepts whole ever reaches CSS, as the member under review.
   if (!oklchChannels(light) || !oklchChannels(dark ?? light)) return null;
   const paint = [light.trim(), (dark ?? light).trim()] as const;
-  return <span data-layer="tokens" data-token-value-preview={id} data-studio-color-swatch="" className="inline-flex size-xl shrink-0 overflow-hidden border border-line-base">
+  return <span data-layer="themes" data-token-value-preview={id} data-studio-color-swatch="" className="inline-flex size-xl shrink-0 overflow-hidden border border-line-base">
     <span role="img" aria-label={`${lightLabel} ${light}`} className="h-full w-1/2 bg-(--studio-swatch)" {...specimenOverride("token-under-review", { "--studio-swatch": paint[0] })} />
     <span role="img" aria-label={`${darkLabel} ${dark ?? light}`} className="h-full w-1/2 bg-(--studio-swatch)" {...specimenOverride("token-under-review", { "--studio-swatch": paint[1] })} />
   </span>;

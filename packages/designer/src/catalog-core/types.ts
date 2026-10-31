@@ -37,7 +37,7 @@ export interface AssetContract {
   modes: readonly ["light"];
   grid?: 24;
 }
-export interface LeafReads { tokens: readonly string[]; assets: readonly string[] }
+export interface LeafReads { themes: readonly string[]; assets: readonly string[] }
 /** The component registry describes contracts; it does not supply executable fills. */
 export interface ComponentContract {
   kind: "component";
@@ -155,7 +155,7 @@ export interface DtcgToken {
 }
 export type DtcgNode = DtcgToken | { readonly [key: string]: DtcgNode };
 export type DtcgGroup = { readonly [key: string]: DtcgNode };
-export type FillDoc = { $extensions: { "com.clossys.fill": FillMeta } } & ({ tokens: DtcgGroup; assets?: never } | { assets: DtcgGroup; tokens?: never });
+export type FillDoc = { $extensions: { "com.clossys.fill": FillMeta } } & ({ themes: DtcgGroup; assets?: never } | { assets: DtcgGroup; themes?: never });
 export interface LibraryData {
   source: Source; fills: readonly FillDoc[]; complete?: boolean;
   baseline?: Readonly<Record<string, { light: string; dark?: string }>>;

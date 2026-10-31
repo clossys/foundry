@@ -56,7 +56,7 @@ function persistDescriptor(fill: string, descriptor: ComponentCandidate, files: 
   const component: ResolvedComponent = {
     slot: descriptor.slot, originKind: origin.kind, origin,
     impl: descriptor.impl as ResolvedComponent["impl"], propMap: structuredClone(descriptor.propMap),
-    reads: { tokens: {}, assets: [], components: [] }, descriptor,
+    reads: { themes: {}, assets: [], components: [] }, descriptor,
   };
   const profile: ResolvedComponents = {
     consumer: "pack-check", selectionHash: `sha256:${"0".repeat(64)}`,
@@ -148,7 +148,7 @@ describe("pack check: shadcn@aria materialized sources persist through the real 
       slot: descriptor.slot, originKind: "adopted",
       origin: { kind: "adopted", source: descriptor.source, fill: fillId(doc), pin: descriptor.pin, license: descriptor.license ?? "MIT", sha256: componentDescriptorHash(descriptor), adoptedAt: "2026-01-01T00:00:00.000Z" },
       impl: descriptor.impl, propMap: structuredClone(descriptor.propMap),
-      reads: { tokens: {}, assets: [...descriptor.reads.assets], components: [...descriptor.reads.components] }, descriptor,
+      reads: { themes: {}, assets: [...descriptor.reads.assets], components: [...descriptor.reads.components] }, descriptor,
     };
   }
   function persistTogether(docs: readonly ComponentCandidateDocument[]): ComponentFile[] {

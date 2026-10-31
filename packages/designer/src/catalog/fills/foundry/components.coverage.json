@@ -160,7 +160,7 @@
       "missing": [],
       "notes": [
         "Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available.",
-        "Frozen reads omit source-consumed tokens.status-color; the contract's allowedReads must widen before this is enforced.",
+        "Frozen reads omit source-consumed themes.destructive; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.chart-range",
@@ -176,7 +176,7 @@
       "missing": [],
       "notes": [
         "Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available.",
-        "Frozen reads omit source-consumed tokens.body-size, tokens.spacing; the contract's allowedReads must widen before this is enforced.",
+        "Frozen reads omit source-consumed themes.spacing; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.chart-scatter",
@@ -192,7 +192,7 @@
       "missing": [],
       "notes": [
         "Axes, legend and tooltip are opt-in (off by default, so the bare inline trend is unchanged). The tooltip reuses the shared ChartFrame.Tooltip part; accessibility and browser behavior remain unmeasured, static CSS inspection has no Escape dismissal, and long labels may clip. The complete table remains available.",
-        "Frozen reads omit source-consumed tokens.caption-size, tokens.spacing; the contract's allowedReads must widen before this is enforced.",
+        "Frozen reads omit source-consumed themes.spacing; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.chart-sparkline",
@@ -238,7 +238,7 @@
       "missing": [],
       "notes": [
         "Group scope dispatches to Checkbox.Group (RAC CheckboxGroup); each member Checkbox takes a value.",
-        "Frozen reads omit source-consumed tokens.caption-size, tokens.typeface; the contract's allowedReads must widen before this is enforced.",
+        "Frozen reads omit source-consumed themes.font-sans; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.checkbox",
@@ -329,7 +329,7 @@
       "missing": [],
       "notes": [
         "Group scope dispatches to Disclosure.Group (RAC DisclosureGroup); members are addressed by id.",
-        "Frozen reads omit source-consumed tokens.border-color; the contract's allowedReads must widen before this is enforced.",
+        "Frozen reads omit source-consumed themes.border; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.disclosure",
@@ -401,7 +401,7 @@
     {
       "missing": [],
       "notes": [
-        "Frozen reads omit source-consumed tokens.control-color; the contract's allowedReads must widen before this is enforced.",
+        "Frozen reads omit source-consumed themes.input; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.grid-list",
@@ -492,7 +492,7 @@
       "missing": [],
       "notes": [
         "Menu is the trigger-owned popup; Menu.Inline presents the same menu inline. Root selectionMode applies to both; selected items show the check glyph.",
-        "Frozen reads omit source-consumed tokens.accent-color; the contract's allowedReads must widen before this is enforced.",
+        "Frozen reads omit source-consumed themes.primary; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.menu",
@@ -751,7 +751,7 @@
       "missing": [],
       "notes": [
         "A range is a value array with one thumbLabels name per thumb; the fill spans the selected range. Source and runtime qualification remain unmeasured.",
-        "Frozen reads omit source-consumed tokens.body-size, tokens.radius, tokens.text-color, tokens.typeface; the contract's allowedReads must widen before this is enforced.",
+        "Frozen reads omit source-consumed themes.radius, themes.foreground, themes.font-sans; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.slider",
@@ -820,7 +820,6 @@
     {
       "missing": [],
       "notes": [
-        "Frozen reads omit source-consumed tokens.caption-size; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.tabs",
@@ -867,7 +866,7 @@
       "missing": [],
       "notes": [
         "Toaster is the region; tone, timeout and authored action dispatch through shell toast.",
-        "Frozen reads omit source-consumed tokens.body-size, tokens.control-radius, tokens.elevation, tokens.spacing, tokens.status-color, tokens.text-color, tokens.typeface, tokens.z-index; the contract's allowedReads must widen before this is enforced.",
+        "Frozen reads omit source-consumed themes.radius, themes.shadow, themes.spacing, themes.destructive, themes.foreground, themes.font-sans; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.toast",
@@ -941,7 +940,7 @@
     {
       "missing": [],
       "notes": [
-        "Frozen reads omit source-consumed tokens.control-color, tokens.control-size; the contract's allowedReads must widen before this is enforced.",
+        "Frozen reads omit source-consumed themes.input; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.tree",

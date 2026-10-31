@@ -36,14 +36,14 @@ function fixtureCopy(placements: readonly Placement[]): StudioCopyBinding {
 
 const inspectorCopy = fixtureCopy(testPlacements);
 const routeStudioLabels=createRouteStudioLabels(studioTestCopy);
-const graph = buildUsageGraph({ inventory: { tokens:["tokens.accent-color"], components:["components.button","components.menu"], sections:["sections.band"], frames:["frames.site-shell"] }, selection:{},
-  runtime:[{from:"components.button",to:"tokens.accent-color",kind:"reads",route:"example",selector:"button"},{from:"sections.band",to:"components.button",kind:"composes",route:"example",selector:"button"},{from:"frames.site-shell",to:"sections.band",kind:"hosts",route:"example",selector:"section"},{from:"components.menu",to:"tokens.accent-color",kind:"reads",route:"example",selector:"button"}] });
+const graph = buildUsageGraph({ inventory: { tokens:["themes.primary"], components:["components.button","components.menu"], sections:["sections.band"], frames:["frames.site-shell"] }, selection:{},
+  runtime:[{from:"components.button",to:"themes.primary",kind:"reads",route:"example",selector:"button"},{from:"sections.band",to:"components.button",kind:"composes",route:"example",selector:"button"},{from:"frames.site-shell",to:"sections.band",kind:"hosts",route:"example",selector:"section"},{from:"components.menu",to:"themes.primary",kind:"reads",route:"example",selector:"button"}] });
 afterEach(()=>{cleanup();localStorage.clear();window.history.replaceState(null,"","/");vi.unstubAllGlobals();});
 function setup(extra: Partial<React.ComponentProps<typeof DesignerPage>> = {}) {
   return render(<DesignerPage data={{placements:testPlacements}} copy={inspectorCopy} labels={{...routeStudioLabels, howToChange:"Ask the coding agent"}} graph={graph} initialUrl={{search:"?node=components.button",hash:""}} viewSize={{width:1200,height:800}} {...extra}/>);
 }
 it("lights exactly self plus separate uses/usedBy closures, never a sibling sharing a dependency",()=>{
-  const view=setup();expect(view.container.querySelector("[data-system-canvas]")).toHaveAttribute("data-system-lit","components.button frames.site-shell sections.band tokens.accent-color");
+  const view=setup();expect(view.container.querySelector("[data-system-canvas]")).toHaveAttribute("data-system-lit","components.button frames.site-shell sections.band themes.primary");
 });
 it("a cross-layer connection keeps the inspector open and supports the existing back stack",async()=>{
   setup();await userEvent.click(within(document.querySelector<HTMLElement>("[data-studio-panel=inspector]")!).getByRole("button",{name:"sections.band",exact:true}));

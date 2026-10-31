@@ -6,12 +6,12 @@ import { flatten, metaOf } from './model.js';
 
 const catalog = loadCatalog();
 const complete = completedCatalogLibrary(catalog,{id:'example-raw-identity',kind:'consumer',author:'consumer',license:'MIT'},'2026-10-23');
-const adoptionInputs=['tokens.text-color.primary','tokens.text-color.on-inverse','tokens.surface-color.base','tokens.surface-color.inverse','tokens.accent-color.default','tokens.text-color.on-accent','tokens.typeface.display'];
+const adoptionInputs=['themes.foreground.default','themes.foreground.default','themes.background.default','themes.background.default','themes.primary.default','themes.accent-foreground.default','themes.font-heading.default'];
 const inputs = {
   'identity-lockup@1':['assets.lockup.positive',...adoptionInputs],
   'identity-mark@1':['assets.mark.positive',...adoptionInputs],
-  'identity-favicon@1':['assets.mark.positive','tokens.text-color.primary','tokens.text-color.on-inverse'],
-  'identity-app-icon@1':['assets.mark.positive','tokens.text-color.primary','tokens.text-color.on-inverse'],
+  'identity-favicon@1':['assets.mark.positive','themes.foreground.default','themes.foreground.default'],
+  'identity-app-icon@1':['assets.mark.positive','themes.foreground.default','themes.foreground.default'],
 };
 const changes: ChangeSet['changes'] = Object.entries(inputs).map(([rule,inputs])=>({op:'derive',slot:'assets.'+rule.slice(9,-2),rule,inputs}));
 function raw(c:CatalogData,library:LibraryData):LibraryData { return applyLibraryChange(c,library,{baseHash:libraryHash(library),changes}); }
@@ -50,7 +50,7 @@ describe('builtin identity rules through ordinary library changes',()=>{
     const removed={...catalog,rules:catalog.rules?.filter(rule=>!rule.id.startsWith('identity-'))};
     expect(()=>raw(removed,seed)).toThrow(/unknown rule/);
     expect(errors(removed,complete).some(finding=>finding.code==='C10'&&finding.message.includes('unknown rule'))).toBe(true);
-    for(const bad of [{...op,rule:'identity-lockup@99'},{...op,inputs:[]},{...op,inputs:[...inputs['identity-lockup@1'],'tokens.spacing.xs']},{...op,slot:'assets.mark'}]) {
+    for(const bad of [{...op,rule:'identity-lockup@99'},{...op,inputs:[]},{...op,inputs:[...inputs['identity-lockup@1'],'themes.spacing.default']},{...op,slot:'assets.mark'}]) {
       expect(()=>applyLibraryChange(catalog,seed,{baseHash:libraryHash(seed),changes:[bad]})).toThrow(/rule|input/);
     }
     const altered={...catalog,rules:catalog.rules?.map(rule=>rule.id==='identity-lockup@1'?{...rule,inputs:[]}:rule)};
@@ -64,7 +64,7 @@ describe('builtin identity rules through ordinary library changes',()=>{
     expect(errors(catalog,damaged).some(finding=>finding.message.includes('identity output differs'))).toBe(true);
   });
   it('keeps saved outputs stale until an explicit ordinary derive refresh',()=>{
-    const changed=applyLibraryChange(catalog,complete,{baseHash:libraryHash(complete),changes:[{op:'author',slot:'tokens.text-color',tokens:{primary:{$type:'color',$value:'#111111',$extensions:{'com.clossys.css':{raw:'#111111'},'com.clossys.modes':{dark:'#ffffff'}}}}}]});
+    const changed=applyLibraryChange(catalog,complete,{baseHash:libraryHash(complete),changes:[{op:'author',slot:'themes.foreground',tokens:{primary:{$type:'color',$value:'#111111',$extensions:{'com.clossys.css':{raw:'#111111'},'com.clossys.modes':{dark:'#ffffff'}}}}}]});
     const before=resolve({catalog,library:complete}).members['assets.favicon.vector']!.value.light;
     expect(resolve({catalog,library:changed}).members['assets.favicon.vector']!.value.light).toBe(before);
     expect(errors(catalog,changed).some(finding=>finding.code==='C10'&&finding.message.includes('stale inputsHash'))).toBe(true);

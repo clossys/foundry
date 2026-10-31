@@ -70,7 +70,7 @@ describe("item-specific library provenance", () => {
     const token = catalog.fills.find(doc => doc.$extensions["com.clossys.fill"].source === "shadcn@aria")!;
     const meta = token.$extensions["com.clossys.fill"];
     const evidence = libraryItemProvenance(catalog.sources, meta);
-    expect(evidence.layer).toBe("tokens");
+    expect(evidence.layer).toBe("themes");
     expect(evidence.fill).toEqual(meta);
     expect(evidence.sourceRecordPin?.file).toBe("apps/v4/registry/themes.ts#neutral");
     const missingPin = { ...button.fill };

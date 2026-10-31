@@ -55,17 +55,9 @@ export function standardM1Runtime(options: {
 /** Bounded token-only consumer for structural fixture tests; no component qualification claim. */
 export function standardM1FixtureEngine(): CompositeEngineInput {
   const all = loadCatalog();
-  const values = { ...all, slots: all.slots.filter(slot => slot.layer === "tokens"), fills: all.fills.filter(fill => !!fill.tokens) };
+  const values = { ...all, slots: all.slots.filter(slot => slot.layer === "themes"), fills: all.fills.filter(fill => !!fill.themes) };
   const source = { id: "standard-m1-fixture", kind: "consumer" as const, author: "consumer" as const, license: "MIT" };
-  let library = completedTokenLibrary(values, source, "2026-10-24");
-  // This SYNTHETIC fixture explicitly authors pixel tokens from its 16px calibration;
-  // production assembly never makes this conversion or assumes a root font size.
-  const profile = resolve({ catalog: values, library });
-  const tokens = Object.fromEntries(Object.entries(profile.members).filter(([, member]) => member.slot === "tokens.breakpoint").map(([id, member]) => {
-    const value = member.value.light as { unit: string; value: number };
-    return [id.slice("tokens.breakpoint.".length), { $type: "dimension" as const, $value: { unit: "px", value: value.value * (value.unit === "rem" ? 16 : 1) } }];
-  }));
-  library = applyLibraryChange(values, library, { baseHash: libraryHash(library), changes: [{ op: "author", slot: "tokens.breakpoint", tokens }] });
+  const library = completedTokenLibrary(values, source, "2026-10-24");
   const { source: _source, adoptedAt, ...portion } = library;
   return { catalog: { values, components: { slots: [], fills: [] } }, library: { source, adoptedAt, values: portion, components: { fills: [], files: [] } } };
 }

@@ -110,16 +110,11 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.action-color.default",
-          "tokens.duration.default",
-          "tokens.easing.default",
-          "tokens.font-size.sm",
-          "tokens.font-weight.medium",
-          "tokens.spacing.md",
-          "tokens.spacing.xs",
-          "tokens.surface-color.sunken",
-          "tokens.text-color.muted"
+        "themes": [
+          "themes.primary.default",
+          "themes.spacing.default",
+          "themes.muted.default",
+          "themes.muted-foreground.default"
         ]
       },
       "root": "rac:ProgressBar",

@@ -1,6 +1,6 @@
 import { DEFAULT_COMPONENT_PICKS, loadCatalog, loadComponentCompositionRules, loadComponentRegistry, type BuildCatalogData } from "../catalog-core/index.js";
 import { loadCatalogBundles } from "../catalog-bundles.js";
-import { sourceRoster } from "../catalog-core/token-contract.js";
+import { sourceRoster, tokenContract } from "../catalog-core/token-contract.js";
 import { foundrySurfaceCatalog } from "./surface-catalog.js";
 
 /** Explicit source decisions take precedence over roster availability. */
@@ -75,8 +75,16 @@ export function loadNativeCompositeCatalog(values = loadCatalog()) {
   };
 }
 
+/** Each themes leaf has one native source: shadcn theme variables, Tailwind theme variables, or Foundry keyframes. */
+function themeDefaultSource(slot: string): string | undefined {
+  const kind = tokenContract.leaves[slot]?.kind;
+  if (kind === "theme") return "shadcn@aria";
+  if (kind !== "tailwind") return undefined;
+  return slot.startsWith("themes.animate-") ? "foundry" : "tailwind-default";
+}
+
 /**
- * Tokens use the explicitly requested default source. Other layers retain only
+ * Themes use their single native source. Other layers retain only
  * unambiguous existing native policy. Availability never chooses a source;
  * multiple offers and unregistered slots remain undefined.
  */
@@ -84,8 +92,8 @@ export function loadNativeDefaultSources(build: Pick<BuildCatalogData, "slots">)
   const result: Record<string, string | undefined> = {};
   for (const slot of build.slots) {
     if (Object.hasOwn(sourceDecisions, slot.id)) { result[slot.id] = sourceDecisions[slot.id]; continue; }
-    if (slot.layer === "tokens") {
-      result[slot.id] = "shadcn@aria";
+    if (slot.layer === "themes") {
+      result[slot.id] = themeDefaultSource(slot.id);
       continue;
     }
     const explicit = DEFAULT_COMPONENT_PICKS[slot.id];

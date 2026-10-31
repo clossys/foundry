@@ -27,10 +27,11 @@ function assetLibrary(): { catalog: client.CatalogData; library: LibraryData } {
   let library: LibraryData = { source: { id: "example", kind: "consumer", author: "consumer", license: "MIT" }, fills: [], adoptedAt: "2026-10-23" };
   const color = (light: string, dark?: string): DtcgToken => ({ $type: "color", $value: light, $extensions: { "com.clossys.css": { raw: light }, ...(dark ? { "com.clossys.modes": { dark } } : {}) } });
   library = client.applyLibraryChange(catalog, library, { baseHash: client.libraryHash(library), changes: [
-    { op: "author", slot: "tokens.text-color", tokens: { primary: color("#111111", "#ffffff"), "on-inverse": color("#ffffff"), "on-accent": color("#ffffff") } },
-    { op: "author", slot: "tokens.surface-color", tokens: { base: color("#ffffff", "#111111"), inverse: color("#111111") } },
-    { op: "author", slot: "tokens.accent-color", tokens: { default: color("#2255aa") } },
-    { op: "author", slot: "tokens.typeface", tokens: { display: { $type: "fontFamily", $value: ["sans-serif"] } } },
+    { op: "author", slot: "themes.foreground", tokens: { default: color("#111111", "#ffffff") } },
+    { op: "author", slot: "themes.primary-foreground", tokens: { default: color("#ffffff") } },
+    { op: "author", slot: "themes.background", tokens: { default: color("#ffffff", "#111111") } },
+    { op: "author", slot: "themes.primary", tokens: { default: color("#2255aa") } },
+    { op: "author", slot: "themes.font-heading", tokens: { default: { $type: "fontFamily", $value: ["sans-serif"] } } },
     ...catalog.fills.filter(fill => metaOf(fill).source === "lucide").map(fill => ({ op: "adopt" as const, slot: metaOf(fill).slot, source: "lucide" })),
   ] });
   library = client.deriveIdentity(catalog, client.createConsumerIdentitySeeds(catalog, library, { name: "Example", fontLicence: { family: "sans-serif", outlining: "unknown" } }));
@@ -41,7 +42,7 @@ function assetLibrary(): { catalog: client.CatalogData; library: LibraryData } {
 describe("asset integration through the public catalog", () => {
   it("loads 56 token leaves and 49 asset leaves as fresh owned data", () => {
     const catalog = client.loadCatalog();
-    expect(catalog.slots.filter(slot => slot.layer === "tokens")).toHaveLength(56);
+    expect(catalog.slots.filter(slot => slot.layer === "themes")).toHaveLength(56);
     expect(catalog.slots.filter(slot => slot.layer === "assets")).toHaveLength(49);
     expect(catalog.fills.filter(fill => !!fill.assets)).toHaveLength(89);
     expect(catalog.fills.filter(fill => !!fill.assets && metaOf(fill).source === "phosphor")).toHaveLength(40);

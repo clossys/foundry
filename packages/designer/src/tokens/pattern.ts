@@ -6,7 +6,7 @@ export interface PatternRecipe {
   readonly weight: string;
   readonly tile: string;
 }
-export const PATTERN_TOKEN_READS = Object.freeze(["tokens.border-color.strong", "tokens.border-width.hairline", "tokens.spacing.xl"] as const);
+export const PATTERN_TOKEN_READS = Object.freeze(["themes.border.default", "themes.spacing.default"] as const);
 const SHARED = { ink: "--color-line-strong", weight: "--ui-border-hairline", tile: "--spacing-xl" } as const;
 export const PATTERN_RECIPES: Readonly<Record<PatternName, PatternRecipe>> = Object.freeze({
   dots: Object.freeze({ shape: "dots", ...SHARED }),

@@ -6,8 +6,8 @@ import type { ConsumptionInput } from "./consumption.js";
 
 const input = (): ConsumptionInput => ({
   tokens: [
-    { id: "tokens.text-color", contract: { emit: { primary: "--color-ink-primary" } } },
-    { id: "tokens.spacing", contract: { emit: { md: "--spacing-md" } } },
+    { id: "themes.foreground", contract: { emit: { primary: "--color-ink-primary" } } },
+    { id: "themes.spacing", contract: { emit: { md: "--spacing-md" } } },
     { id: "tokens.control-size", contract: { emit: { md: "--ui-control-h-md" } } },
     { id: "tokens.unread", contract: {} },
   ],
@@ -15,7 +15,7 @@ const input = (): ConsumptionInput => ({
   components: [{ id: "components.button" }, { id: "components.dialog" }],
   themeCss: "@theme inline { --color-ink-primary: var(--color-ink-primary); --spacing-md: var(--spacing-md); --spacing-control: var(--ui-control-h-md); }",
   fills: [{ id: "foundry/components.button", slot: "components.button", source: "foundry", members: [], composes: [],
-    reads: { tokens: [], assets: [], components: [] }, conforms: [], evidence: [] }],
+    reads: { themes: [], assets: [], components: [] }, conforms: [], evidence: [] }],
   sourceScans: [{ fill: "foundry/components.button", files: [{ path: "src/components/Button.tsx", content: 'const style = "text-ink-primary hover:px-md h-control"; useGlyph("assets.icon-close");' }], components: ["components.dialog"] }],
   foundryCoverage: [{ slot: "components.button", status: "candidate", supported: [], missing: [], notes: [] }, { slot: "components.dialog", status: "unavailable", supported: [], missing: [], notes: [] }],
   shadcnReceipt: [],
@@ -25,8 +25,8 @@ describe("component consumption lower bounds", () => {
   it("expands theme utilities, variants and arbitrary properties into exact token members", () => {
     const fixture = input();
     const scan = scanComponentReads('"text-ink-primary dark:hover:px-md h-control ring-(--color-ink-primary)"', fixture.tokens, fixture.themeCss);
-    expect(scan.tokens).toEqual(["tokens.control-size", "tokens.spacing", "tokens.text-color"]);
-    expect(scan.tokenMembers).toEqual(["tokens.control-size.md", "tokens.spacing.md", "tokens.text-color.primary"]);
+    expect(scan.tokens).toEqual(["tokens.control-size", "themes.spacing", "themes.foreground"]);
+    expect(scan.tokenMembers).toEqual(["tokens.control-size.md", "themes.spacing.default", "themes.foreground.default"]);
     expect(scan.utilities).toEqual(["h-control", "px-md", "text-ink-primary"]);
     expect(scan.properties).toEqual(["--color-ink-primary", "--spacing-md", "--ui-control-h-md"]);
   });
@@ -34,11 +34,11 @@ describe("component consumption lower bounds", () => {
   it("keeps missing declarations visible even when effective reads include the scanned lower bound", () => {
     const report = buildComponentsConsumption(input());
     const row = report.fills[0]!;
-    expect(row.declaredReads.tokens).toEqual([]);
-    expect(row.scannedReads.tokens).toEqual(["tokens.control-size", "tokens.spacing", "tokens.text-color"]);
-    expect(row.effectiveReads.tokens).toEqual(row.scannedReads.tokens);
-    expect(row.missingDeclaredReads).toEqual({ tokens: row.scannedReads.tokens, assets: ["assets.icon-close"], components: ["components.dialog"] });
-    expect(report.findings).toContainEqual(expect.objectContaining({ code: "missing-declared-reads", fill: row.id, layer: "tokens" }));
+    expect(row.declaredReads.themes).toEqual([]);
+    expect(row.scannedReads.themes).toEqual(["tokens.control-size", "themes.spacing", "themes.foreground"]);
+    expect(row.effectiveReads.themes).toEqual(row.scannedReads.themes);
+    expect(row.missingDeclaredReads).toEqual({ tokens: row.scannedReads.themes, assets: ["assets.icon-close"], components: ["components.dialog"] });
+    expect(report.findings).toContainEqual(expect.objectContaining({ code: "missing-declared-reads", fill: row.id, layer: "themes" }));
     expect(report.findings).toContainEqual(expect.objectContaining({ code: "missing-declared-reads", fill: row.id, layer: "assets" }));
     expect(report.unreadTokenLeaves.scanned).toEqual(["tokens.unread"]);
     expect(report.unreadTokenLeaves.declared).toEqual(input().tokens.map(token => token.id).sort());
@@ -46,14 +46,14 @@ describe("component consumption lower bounds", () => {
 
   it("detects removal of a declaration and indexes both declared and scanned composition dependents", () => {
     const fixture = input();
-    fixture.fills[0]!.reads.tokens = ["tokens.control-size", "tokens.spacing", "tokens.text-color"];
+    fixture.fills[0]!.reads.themes = ["tokens.control-size", "themes.spacing", "themes.foreground"];
     fixture.fills[0]!.reads.assets = ["assets.icon-close"];
     fixture.fills[0]!.composes = ["components.dialog"];
     fixture.fills[0]!.reads.components = ["components.dialog"];
     expect(buildComponentsConsumption(fixture).findings).toEqual([]);
-    fixture.fills[0]!.reads.tokens = ["tokens.spacing"];
+    fixture.fills[0]!.reads.themes = ["themes.spacing"];
     const mutated = buildComponentsConsumption(fixture);
-    expect(mutated.findings).toContainEqual(expect.objectContaining({ code: "missing-declared-reads", layer: "tokens", reads: ["tokens.control-size", "tokens.text-color"] }));
+    expect(mutated.findings).toContainEqual(expect.objectContaining({ code: "missing-declared-reads", layer: "themes", reads: ["tokens.control-size", "themes.foreground"] }));
     expect(mutated.reverseComposes["components.dialog"]).toEqual({ declared: ["foundry/components.button"], scanned: ["foundry/components.button"], effective: ["foundry/components.button"] });
   });
 
@@ -83,7 +83,7 @@ describe("committed component consumption evidence", () => {
 
   it("preserves the exact signed 53/45/57 leaf inventories", () => {
     const actual = report();
-    for (const [layer, count] of [["tokens", 53], ["assets", 45], ["components", 57]] as const) {
+    for (const [layer, count] of [["themes", 53], ["assets", 45], ["components", 57]] as const) {
       const freeze = read(`../catalog/ia/${layer}.leaf-freeze.json`);
       expect(actual.inventory[layer]).toEqual([...freeze.leafIds].sort());
       expect(actual.inventory[layer]).toHaveLength(count);

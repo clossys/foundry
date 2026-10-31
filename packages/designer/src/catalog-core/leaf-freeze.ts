@@ -1,13 +1,12 @@
-import tokens from "../catalog/ia/tokens.leaf-freeze.json" with { type: "json" };
+import themes from "../catalog/ia/themes.leaf-freeze.json" with { type: "json" };
 import assets from "../catalog/ia/assets.leaf-freeze.json" with { type: "json" };
 import components from "../catalog/ia/components.leaf-freeze.json" with { type: "json" };
 import componentAmendments from "../catalog/ia/components.leaf-amendments.json" with { type: "json" };
 import draftAssetAmendments from "../catalog/ia/assets.draft-leaf-amendments.json" with { type: "json" };
 import assetAmendments from "../catalog/ia/assets.leaf-amendments.json" with { type: "json" };
-import tokenAmendments from "../catalog/ia/tokens.leaf-amendments.json" with { type: "json" };
 import type { Placement, PlacementNode } from "./types.js";
 
-export type FrozenLeafLayer = "tokens" | "assets" | "components";
+export type FrozenLeafLayer = "themes" | "assets" | "components";
 
 /** Leaf membership only: grouping, contracts, role metadata and readiness are separate. */
 export interface LeafFreezeFinding {
@@ -43,28 +42,13 @@ if (draftAssetAmendments.schemaVersion !== 1 || draftAssetAmendments.layer !== "
     draftAssetAmendments.addedLeafIds.some(id => !id.startsWith("assets.") || assets.leafIds.includes(id) || assetAmendments.addedLeafIds.includes(id))) {
   throw new Error("LEAF_FREEZE: invalid draft asset amendment");
 }
-// The owner-signed token amendment: every row carries the owner signature; added leaves are new to the signed baseline.
-const tokenSignature = "OWNER 2026-10-26T18:03Z ledger #44";
-const tokenAddedIds: readonly string[] = Array.isArray(tokenAmendments.addedLeaves) ? tokenAmendments.addedLeaves.map(row => row?.id) : [];
-const signedRow = (row: unknown): boolean => row !== null && typeof row === "object" && (row as { signed?: unknown }).signed === tokenSignature && typeof (row as { id?: unknown }).id === "string";
-if (tokenAmendments.schemaVersion !== 1 || tokenAmendments.layer !== "tokens" ||
-    tokenAmendments.baseSignedHead !== tokens.signedHead ||
-    tokenAmendments.status !== "owner-signed" ||
-    !Array.isArray(tokenAmendments.addedLeaves) || !tokenAmendments.addedLeaves.length || !Array.isArray(tokenAmendments.recorded) ||
-    ![...tokenAmendments.addedLeaves, ...tokenAmendments.recorded].every(signedRow) ||
-    new Set(tokenAddedIds).size !== tokenAddedIds.length ||
-    tokenAddedIds.some(id => !id.startsWith("tokens.") || tokens.leafIds.includes(id)) ||
-    tokenAmendments.recorded.some(row => !tokens.leafIds.includes(row.id))) {
-  throw new Error("LEAF_FREEZE: invalid explicit token amendment");
-}
-// Copy signed IDs plus the explicit versioned additions once, never current slots or IA.
-const pending = tokenAmendments.pending;
-if (!pending || pending.status !== "pending-owner-ratification" || pending.source !== "workspace#45 A131/A132 AUTO-DECIDED 2026-10-28" ||
-    !Array.isArray(pending.addedLeafIds) || pending.addedLeafIds.length !== 1 || pending.addedLeafIds[0] !== "tokens.gradient") {
-  throw new Error("LEAF_FREEZE: invalid pending expressive token amendment");
+// The themes freeze is the approved shadcn-universe leaf set; it has no amendment file.
+if (themes.schemaVersion !== 1 || themes.layer !== "themes" || new Set(themes.leafIds).size !== themes.leafIds.length ||
+    themes.leafIds.some(id => !id.startsWith("themes."))) {
+  throw new Error("LEAF_FREEZE: invalid themes leaf freeze");
 }
 const baseline: Readonly<Record<FrozenLeafLayer, ReadonlySet<string>>> = {
-  tokens: new Set([...tokens.leafIds, ...tokenAddedIds, ...pending.addedLeafIds]),
+  themes: new Set(themes.leafIds),
   assets: new Set([...assets.leafIds, ...assetAmendments.addedLeafIds, ...draftAssetAmendments.addedLeafIds]),
   components: new Set([...components.leafIds, ...componentAmendments.addedLeafIds]),
 };

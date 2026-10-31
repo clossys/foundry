@@ -34,11 +34,11 @@ it("accepts real package Frame and Section with their selected component and des
   expect(isSurfacePackageEntry(frame)).toBe(true);
   expect(frame.composes).toContain("components.avatar");
   expect(frame.composes).toContain("frames.sheet");
-  expect(frame.reads?.tokens).toContain("tokens.spacing");
+  expect(frame.reads?.themes).toContain("themes.spacing");
   expect(frame.consumption?.scannedComposes).toEqual(frame.composes);
   expect(profile.components.components["components.avatar"]?.origin.kind).toBe("adopted");
-  expect(profile.values.members["tokens.spacing"]).toBeUndefined();
-  expect(profile.values.members["tokens.spacing.md"]?.slot).toBe("tokens.spacing");
+  expect(profile.values.members["themes.spacing"]).toBeUndefined();
+  expect(profile.values.members["themes.spacing.default"]?.slot).toBe("themes.spacing");
   expect(Object.values(profile.values.members).some(member => member.slot === "assets.icon-chevron-left")).toBe(true);
 });
 

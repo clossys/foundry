@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { buildStudioOpenContext } from "./open-context.js";
 import { studioOpenHrefs } from "./open-targets.js";
-const input = { projectPath: "/workspace/example & project", layer: "tokens" as const, selectedId: "tokens.surface-color", taskPrompt: "Inspect & explain # current selection" };
+const input = { projectPath: "/workspace/example & project", layer: "themes" as const, selectedId: "themes.background", taskPrompt: "Inspect & explain # current selection" };
 describe("consumer-supplied Open in context", () => {
   it("builds the same bounded context without reading environment or changing the input", () => {
     const before = structuredClone(input);
     const context = buildStudioOpenContext(input);
-    expect(context.prompt).toBe("Inspect & explain # current selection\nProject: /workspace/example & project\nLayer: tokens\nSelected item: tokens.surface-color");
+    expect(context.prompt).toBe("Inspect & explain # current selection\nProject: /workspace/example & project\nLayer: tokens\nSelected item: themes.background");
     expect(buildStudioOpenContext(input)).toEqual(context); expect(input).toEqual(before);
     expect(buildStudioOpenContext({ ...input, selectedId: undefined }).prompt).not.toContain("Selected item:");
   });

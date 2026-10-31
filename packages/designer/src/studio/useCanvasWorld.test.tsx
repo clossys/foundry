@@ -9,7 +9,7 @@ it("uses the actual stage ResizeObserver width rather than the viewport, and dis
   vi.spyOn(HTMLElement.prototype,"clientHeight","get").mockReturnValue(600);
   const remove=vi.spyOn(window,"removeEventListener");
   const oldWidth=window.innerWidth;Object.defineProperty(window,"innerWidth",{value:390,configurable:true});
-  function Probe(){const canvas=useCanvasWorld("tokens");return <><div data-testid="stage" ref={canvas.onSurfaceElement}><div ref={canvas.onWorldElement}/></div><output>{canvas.overlayLayout}</output></>;}
+  function Probe(){const canvas=useCanvasWorld("themes");return <><div data-testid="stage" ref={canvas.onSurfaceElement}><div ref={canvas.onWorldElement}/></div><output>{canvas.overlayLayout}</output></>;}
   const result=render(<Probe/>);
   expect(screen.getByRole("status")).toHaveTextContent("wide");
   width=900;act(()=>notify.forEach(fn=>fn()));expect(screen.getByRole("status")).toHaveTextContent("compact");

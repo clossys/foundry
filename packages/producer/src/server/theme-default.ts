@@ -15,10 +15,16 @@ export function defaultStudioTheme(): StudioTheme {
   if (!foundryTheme) {
     const catalog = loadCatalog();
     const empty: LibraryData = { source: { id: "studio", kind: "consumer", author: "consumer", license: "MIT", extends: "foundry" }, adoptedAt: "2026-10-29", fills: [] };
-    const library = applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes: catalog.fills.filter(fill => {
+    // One offer per themes leaf, preferring Foundry, then the shadcn preset, then Tailwind's theme.
+    const rank = (source: string) => { const index = ["foundry", "shadcn@aria", "tailwind-default"].indexOf(source); return index < 0 ? 3 : index; };
+    const chosen = new Map<string, string>();
+    for (const fill of catalog.fills) {
       const meta = fill.$extensions["com.clossys.fill"];
-      return meta.source === "foundry" && meta.slot.startsWith("tokens.");
-    }).map(fill => ({ op: "adopt", slot: fill.$extensions["com.clossys.fill"].slot, source: "foundry" })) });
+      if (!meta.slot.startsWith("themes.") || meta.mode === "reference") continue;
+      const previous = chosen.get(meta.slot);
+      if (previous === undefined || rank(meta.source) < rank(previous)) chosen.set(meta.slot, meta.source);
+    }
+    const library = applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes: [...chosen].map(([slot, source]) => ({ op: "adopt", slot, source })) });
     const css = themeCss(library);
     foundryTheme = { source: "foundry", css, hash: themeHash(css) };
   }

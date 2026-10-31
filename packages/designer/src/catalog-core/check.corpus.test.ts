@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { loadCatalog, check, stableStringify, type CatalogData, type DtcgToken, type FillDoc, type FillMeta, type LegacySelection, type Slot, type Source } from "./index.js";
 const baseSource: Source = { id: "foundry", kind: "base", author: "foundry", license: "MIT" };
-const baseSlot: Slot = { id: "tokens.sample", layer: "tokens", contract: { kind: "token", tier: "scale", $type: "number", members: { mode: "open", pattern: "^[a-z0-9-]+$" }, modes: ["light"] }, requires: [], status: "draft" };
+const baseSlot: Slot = { id: "tokens.sample", layer: "themes", contract: { kind: "token", tier: "scale", $type: "number", members: { mode: "open", pattern: "^[a-z0-9-]+$" }, modes: ["light"] }, requires: [], status: "draft" };
 const meta: FillMeta = { id: "foundry/tokens.sample", slot: "tokens.sample", source: "foundry", mode: "implementation", sourceAddress: "fixture", relation: "same-contract", builtOn: [], conforms: [], evidence: [], author: "foundry", trust: "foundry", license: "MIT", status: "draft" };
 function fixture() {
   const fill: FillDoc = { $extensions: { "com.clossys.fill": { ...meta } }, tokens: { sample: { default: { $type: "number", $value: 1 } } } };
@@ -68,10 +68,10 @@ it("measures contrast using each mode's actual selected values", () => {
   const catalog = loadCatalog();
   const black = { colorSpace: "srgb", components: [0, 0, 0], hex: "#000000" };
   const white = { colorSpace: "srgb", components: [1, 1, 1], hex: "#FFFFFF" };
-  const focus = catalog.fills.find(f => f.$extensions["com.clossys.fill"].slot === "tokens.focus-color")!;
+  const focus = catalog.fills.find(f => f.$extensions["com.clossys.fill"].slot === "themes.ring")!;
   (focus.tokens!["focus-color"]!.default as DtcgToken).$value = black;
   (focus.tokens!["focus-color"]!.default as DtcgToken).$extensions = { "com.clossys.modes": { dark: white } };
-  const surface = catalog.fills.find(f => f.$extensions["com.clossys.fill"].slot === "tokens.surface-color")!;
+  const surface = catalog.fills.find(f => f.$extensions["com.clossys.fill"].slot === "themes.background")!;
   (surface.tokens!["surface-color"]!.base as DtcgToken).$value = white;
   (surface.tokens!["surface-color"]!.base as DtcgToken).$extensions = {};
   const result = check({ catalog, library: { source: baseSource, fills: catalog.fills } });

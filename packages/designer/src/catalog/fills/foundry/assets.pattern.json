@@ -15,10 +15,8 @@
       },
       "reads": {
         "assets": [],
-        "tokens": [
-          "tokens.border-color.strong",
-          "tokens.border-width.hairline",
-          "tokens.spacing.xl"
+        "themes": [
+          "themes.spacing.default"
         ]
       },
       "relation": "same-contract",

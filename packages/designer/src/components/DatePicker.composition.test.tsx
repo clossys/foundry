@@ -19,7 +19,7 @@ describe("stored production DatePicker source protocol", () => {
     expect(file.content).toContain('pickerTrigger={{ label: triggerLabel');
     expect(file.content).toContain('glyphs["assets.icon-date"]');
     expect(file.content).not.toMatch(/<svg|--[a-z]|buttonVariants|PopoverContent/);
-    expect(rule.template.reads.tokens).toEqual([]);
+    expect(rule.template.reads.themes).toEqual([]);
     expect(rule.template.composes).toHaveLength(3);
     expect(rule.template.outputSha256).toContainEqual({ path: file.path, sha256: sha256(file.content) });
   });

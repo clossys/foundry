@@ -34,11 +34,12 @@
         "scannedReads": {
           "assets": [],
           "components": [],
-          "tokens": [
-            "tokens.accent-color",
-            "tokens.border-color",
-            "tokens.breakpoint",
-            "tokens.spacing"
+          "themes": [
+            "themes.primary",
+            "themes.border",
+            "themes.input",
+            "themes.sidebar-border",
+            "themes.spacing"
           ]
         },
         "sourceFiles": [
@@ -115,11 +116,12 @@
       },
       "reads": {
         "assets": [],
-        "tokens": [
-          "tokens.accent-color",
-          "tokens.border-color",
-          "tokens.breakpoint",
-          "tokens.spacing"
+        "themes": [
+          "themes.primary",
+          "themes.border",
+          "themes.input",
+          "themes.sidebar-border",
+          "themes.spacing"
         ]
       },
       "slot": "frames.inspector",

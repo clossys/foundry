@@ -10,8 +10,8 @@ it("reserves estimates, loads only on intersection, and keeps anchoring on the s
   const observe = vi.fn(), disconnect = vi.fn();
   const observer = vi.fn(function (this: object, cb: IntersectionObserverCallback, options: IntersectionObserverInit) { callback = cb; expect(options.rootMargin).toBe(CHUNK_ROOT_MARGIN); return { observe, disconnect }; });
   vi.stubGlobal("IntersectionObserver", observer);
-  const load = vi.fn(async () => <h2 id="tokens">Tokens</h2>);
-  const view = render(<ChunkHost chunks={[{ id: "tokens", estimate: 440, load }]} />);
+  const load = vi.fn(async () => <h2 id="themes">Tokens</h2>);
+  const view = render(<ChunkHost chunks={[{ id: "themes", estimate: 440, load }]} />);
   expect(load).not.toHaveBeenCalled();
   const placeholder = view.container.querySelector("[data-chunk-placeholder]") as HTMLElement;
   expect(placeholder.style.minHeight).toBe("440px");

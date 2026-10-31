@@ -71,7 +71,7 @@ export function importFoundryComponents(input: FoundryComponentImportInput = {})
       }
     }
     const composes = sorted(mapping.composes ?? []);
-    const tokenReads = sorted(slot.contract.allowedReads.tokens);
+    const tokenReads = sorted(slot.contract.allowedReads.themes);
     // Frozen reads are checked against what the component's own source consumes (foundry-source-reads.json).
     // An omission is recorded, not yet enforced: the fix is widening the slot contract's allowedReads.
     const omitted = sorted((sourceReads[leaf] ?? []).filter(read => !tokenReads.includes(read)));
@@ -81,7 +81,7 @@ export function importFoundryComponents(input: FoundryComponentImportInput = {})
       slot: slot.id, source: "foundry", root: slot.contract.root, members: supported,
       props: sorted(mapping.props), propMap,
       // Contract bindings are declarations. Source scans and runtime observations remain separate.
-      reads: { tokens: tokenReads, assets: sorted(mapping.assets ?? (leaf === "button" ? ["assets.icon-chevron-right"] : [])), components: composes },
+      reads: { themes: tokenReads, assets: sorted(mapping.assets ?? (leaf === "button" ? ["assets.icon-chevron-right"] : [])), components: composes },
       composes, impl: { kind: "package", module: `${PACKAGE}/${mapping.subpath}`, export: mapping.export },
       ...(blockers.length ? { blockers: structuredClone(blockers) } : {}),
       license: "MIT", pin, deps: [

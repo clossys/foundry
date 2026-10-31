@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, type CSSProperties } from "react";
+import { useMemo } from "react";
 import { Banner } from "../components/Banner.js";
 import { defaultComponentPreviews } from "./default-component-previews.js";
 import { surfaceRuntimeCallbacks } from "../runtime/index.js";
@@ -8,7 +8,7 @@ import { WholeStudioProvider, useWholeStudio } from "./WholeStudioProvider.js";
 import { Studio } from "./Studio.js";
 import { checkedDesignerRouteData } from "./route-data.js";
 import type { DesignerRoutePageProps } from "./route-data.js";
-import { NativeRouteFrame, nativeRouteNavigate, useNativeRouteBreakpoints } from "./native-route-frame.js";
+import { NativeRouteFrame, nativeRouteNavigate } from "./native-route-frame.js";
 import { createRouteStudioLabels, readRouteStudioLabel } from "./route-labels.js";
 import { studioCopyNeed, type StudioCopyBinding } from "./copy-binding.js";
 import { StudioCopyProvider, useStudioCopy } from "./copy-context.js";
@@ -40,10 +40,8 @@ function CheckedDesignerRoute({ checked, initialSession, agent, copy }: { copy: 
 function DesignerRouteSurface({ checked, agent }: { agent: import("./system-canvas/inspector/types.js").DesignerAgentData; checked: ReturnType<typeof checkedDesignerRouteData> }) {
   const whole = useWholeStudio()!;
   const copy = useStudioCopy();
-  const pixels = useNativeRouteBreakpoints(checked.profile, checked.data.rootFontSizeToken);
-  if (!pixels.ready) return <Banner>{readRouteStudioLabel(copy, "route.breakpoints")}</Banner>;
   if (whole.failed) return <Banner variant="danger">{readRouteStudioLabel(copy, "route.failed")}</Banner>;
   const { nav: _legacyLayerTabs, ...headerData } = checked.data.header.data;
   const header = { ...checked.data.header, data: headerData };
-  return <div data-route-display="designer" data-route-authentication="unverified" data-route-session={whole.sessionIdentity} data-route-layer={whole.layer} className="absolute inset-0 min-h-0 min-w-0" style={Object.fromEntries(Object.entries(pixels.values).map(([id, px]) => [`--breakpoint-${id.slice("tokens.breakpoint.".length)}`, `${px}px`])) as CSSProperties}><NativeRouteFrame data={checked.data} profile={checked.profile} contracts={checked.contracts} header={header}><Studio copy={copy} {...agent} /></NativeRouteFrame></div>;
+  return <div data-route-display="designer" data-route-authentication="unverified" data-route-session={whole.sessionIdentity} data-route-layer={whole.layer} className="absolute inset-0 min-h-0 min-w-0"><NativeRouteFrame data={checked.data} profile={checked.profile} contracts={checked.contracts} header={header}><Studio copy={copy} {...agent} /></NativeRouteFrame></div>;
 }

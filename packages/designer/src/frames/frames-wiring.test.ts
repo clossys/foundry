@@ -47,7 +47,7 @@ const sources: WiringInput["sources"] = [...walk("src/frames"), ...walk("src/she
 
 const run = (input: Partial<WiringInput> = {}) => checkWiring({
   sources,
-  tokens: JSON.parse(read("src/catalog/slots/tokens.json")) as WiringInput["tokens"],
+  tokens: JSON.parse(read("src/catalog/slots/tokens.json")) as WiringInput["themes"],
   // `styles/theme.css` imports `theme-keys.css`; its `@theme inline` keys are what expand utilities into token reads.
   themeCss: read("styles/theme-keys.css"),
   exceptions: foundryWiringExceptions(),
@@ -62,30 +62,30 @@ const errors = (findings: readonly WiringFinding[], code: string) => findings.fi
  * still go through inline styles, because `compiled-css/class-scan.ts` drops `(--var)` utility
  * shorthand and a named `@utility` lives in `styles/theme-keys.css`, outside this unit.
  */
-const LAYOUT_READ = /^tokens\.(?:spacing|region-width|z-index|breakpoint|content-size|gutter|touch-target|border-width)\./;
+const LAYOUT_READ = /^themes\.(?:spacing|region-width|z-index|breakpoint|content-size|gutter|touch-target|border-width)\./;
 const WL2_RESIDUAL_READS: Record<string, string[]> = {
   // NEED-c frame chrome text/surface component
-  "src/frames/AppFrame.specimen.tsx": ["tokens.body-size.default", "tokens.body-size.s", "tokens.border-color.base", "tokens.caption-size.default", "tokens.control-radius.default", "tokens.surface-color.raised", "tokens.text-color.muted", "tokens.text-color.secondary"],
+  "src/frames/AppFrame.specimen.tsx": ["tokens.body-size.default", "tokens.body-size.s", "themes.border.default", "tokens.caption-size.default", "themes.radius.default", "themes.card.default", "themes.muted-foreground.default", "themes.muted-foreground.default"],
   // NEED-c frame chrome text/surface component
-  "src/frames/AppFrame.tsx": ["tokens.accent-color.default", "tokens.body-size.default", "tokens.border-color.base", "tokens.control-radius.default", "tokens.focus-color.default", "tokens.surface-color.base", "tokens.text-color.primary"],
+  "src/frames/AppFrame.tsx": ["themes.primary.default", "tokens.body-size.default", "themes.border.default", "themes.radius.default", "themes.ring.default", "themes.background.default", "themes.foreground.default"],
   // NEED-c frame chrome text/surface component
-  "src/frames/FrameDock.tsx": ["tokens.border-color.base", "tokens.control-radius.default", "tokens.surface-color.raised"],
+  "src/frames/FrameDock.tsx": ["themes.border.default", "themes.radius.default", "themes.card.default"],
   // NEED-c frame chrome text/surface component
-  "src/frames/InspectorFrame.tsx": ["tokens.border-color.base"],
+  "src/frames/InspectorFrame.tsx": ["themes.border.default"],
   // NEED-c frame chrome text/surface component
-  "src/frames/app-frame-layout.ts": ["tokens.blur.glass", "tokens.surface-color.glass", "tokens.surface-color.raised"],
+  "src/frames/app-frame-layout.ts": ["tokens.blur.glass", "themes.background.default", "themes.card.default"],
   // NEED-c frame chrome text/surface component
-  "src/shell/NavDisclosure.tsx": ["tokens.accent-color.default", "tokens.brandmark-size.height-lg", "tokens.control-color.tonal-inverse-hover", "tokens.duration.fast", "tokens.easing.default", "tokens.surface-color.sunken", "tokens.text-color.on-inverse", "tokens.text-color.primary"],
+  "src/shell/NavDisclosure.tsx": ["themes.primary.default", "tokens.brandmark-size.height-lg", "themes.input.default", "tokens.duration.fast", "tokens.easing.default", "themes.muted.default", "themes.foreground.default", "themes.foreground.default"],
   // NEED-c frame chrome text/surface component
-  "src/shell/Shell.tsx": ["tokens.border-color.base", "tokens.surface-color.aside"],
+  "src/shell/Shell.tsx": ["themes.border.default", "themes.sidebar.default"],
   // NEED-c frame chrome text/surface component
-  "src/shell/SiteFooter.tsx": ["tokens.body-size.s", "tokens.border-color.base", "tokens.surface-color.base", "tokens.text-color.on-inverse", "tokens.typeface.body"],
+  "src/shell/SiteFooter.tsx": ["tokens.body-size.s", "themes.border.default", "themes.background.default", "themes.foreground.default", "themes.font-sans.default"],
   // NEED-c frame chrome text/surface component
-  "src/shell/SiteHeader.tsx": ["tokens.text-color.on-inverse", "tokens.text-color.primary"],
+  "src/shell/SiteHeader.tsx": ["themes.foreground.default", "themes.foreground.default"],
   // NEED-c frame chrome text/surface component
-  "src/shell/SkipLink.tsx": ["tokens.accent-color.default", "tokens.body-size.default", "tokens.control-radius.default", "tokens.text-color.on-accent"],
+  "src/shell/SkipLink.tsx": ["themes.primary.default", "tokens.body-size.default", "themes.radius.default", "themes.accent-foreground.default"],
   // NEED-c surface-ground: the packet admits only layout-geometry rows
-  "src/shell/internal/shell-ground.ts": ["tokens.border-color.base", "tokens.border-color.on-inverse", "tokens.surface-color.inverse", "tokens.surface-color.raised", "tokens.text-color.on-inverse", "tokens.text-color.on-inverse-muted", "tokens.text-color.primary", "tokens.text-color.secondary"],
+  "src/shell/internal/shell-ground.ts": ["themes.border.default", "themes.border.default", "themes.background.default", "themes.card.default", "themes.foreground.default", "themes.foreground.default", "themes.foreground.default", "themes.muted-foreground.default"],
 };
 const WL3_RESIDUAL = [
   // NEED-c direction provider component: AppFrame passes `dir` through ModalContext/PopoverContext.

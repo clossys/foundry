@@ -6,7 +6,7 @@ import { checkBoardColumns, rosterOffers, sourceRoster } from "./token-contract.
 describe("library roster presentation contract", () => {
   it("offers only Custom token proposals, preserving historical source data", () => {
     const catalog = loadCatalog();
-    for (const slot of catalog.slots.filter(slot => slot.layer === "tokens")) {
+    for (const slot of catalog.slots.filter(slot => slot.layer === "themes")) {
       expect(libraryRoster(slot.layer, slot.id).map(entry => entry.id)).toEqual(["custom"]);
     }
     expect(catalog.sources.some(source => source.id === "tailwind-default")).toBe(true);
@@ -32,8 +32,8 @@ describe("library roster presentation contract", () => {
       expect(roster.filter(id => never.has(id)), slot.id).toEqual([]);
       expect(libraryRoster(slot.layer, slot.id).some(entry => entry.role === "reference"), slot.id).toBe(false);
     }
-    expect(libraryColumns("tokens", ["tokens.color-ramp"], ["tailwind-default", "foundry", "example"], "example").map(column => column.source)).toEqual(["example"]);
-    expect(libraryColumns("tokens", ["tokens.color-ramp"], ["tailwind-default"], "example")).toEqual([]);
+    expect(libraryColumns("themes", ["tokens.color-ramp"], ["tailwind-default", "foundry", "example"], "example").map(column => column.source)).toEqual(["example"]);
+    expect(libraryColumns("themes", ["tokens.color-ramp"], ["tailwind-default"], "example")).toEqual([]);
     expect(libraryColumns("assets", ["assets.icon-home", "assets.icon-check"], ["lucide", "phosphor", "example"], "example").map(column => column.source)).toEqual(["lucide", "phosphor", "example"]);
     expect(libraryColumns("components", ["components.button"], ["base-ui", "rac-starter", "heroui-v3"], "example")).toEqual([]);
     expect(libraryColumns("components", ["components.button"], [], "example")).toEqual([]);
@@ -74,7 +74,7 @@ describe("library roster presentation contract", () => {
     const reset = tokenBaselineReset(catalog, "tokens.font-weight", "normal");
     expect(reset).toEqual({ op: "adopt", slot: "tokens.font-weight", source: "tailwind-default", members: ["tokens.font-weight.normal"] });
     expect(catalog).toEqual(before);
-    expect(tokenBaseline(catalog, "tokens.action-color", "made-up")).toBeUndefined();
-    expect(tokenBaselineReset(catalog, "tokens.action-color", "made-up")).toBeUndefined();
+    expect(tokenBaseline(catalog, "themes.primary", "made-up")).toBeUndefined();
+    expect(tokenBaselineReset(catalog, "themes.primary", "made-up")).toBeUndefined();
   });
 });

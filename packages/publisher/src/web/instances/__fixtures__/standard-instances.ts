@@ -1,3 +1,4 @@
+import { TAILWIND_BREAKPOINTS } from "@clossys/designer/catalog";
 import { LAYOUT_LEAVES } from "../../../layouts/resolve.js";
 import { FORMAT_LEAVES } from "../../../formats/index.js";
 import type { ConsumerInstanceLibrary, FlowInstanceBinding as InstanceBinding, InstanceRegistries, SectionFill } from "../../../core/instance-binding.js";
@@ -25,7 +26,7 @@ export const STANDARD_INSTANCE_FIXTURES: readonly InstanceBinding[] = pages.map(
   };
 });
 /** Actual layout and format registries only. Frame/section projections stay absent. */
-export const FIXTURE_INSTANCE_REGISTRIES: InstanceRegistries = { formats: FORMAT_LEAVES, frames: [], layouts: LAYOUT_LEAVES, sections: [], tokens: [] };
+export const FIXTURE_INSTANCE_REGISTRIES: InstanceRegistries = { formats: FORMAT_LEAVES, frames: [], layouts: LAYOUT_LEAVES, sections: [], themes: [] };
 /** Empty on purpose. Missing implementations, source, and content remain real refusals. */
 export const FIXTURE_INSTANCE_LIBRARY: ConsumerInstanceLibrary = { id: "fixture-library", role: "consumer", resolveFill: () => undefined, resolveContent: () => undefined };
-export const FIXTURE_BREAKPOINTS = { "tokens.breakpoint.mobile": 375, "tokens.breakpoint.mobile-lg": 480, "tokens.breakpoint.tablet": 768, "tokens.breakpoint.tablet-lg": 1024, "tokens.breakpoint.desktop": 1280, "tokens.breakpoint.wide": 1440 } as const;
+export const FIXTURE_BREAKPOINTS = { ...TAILWIND_BREAKPOINTS } as const;

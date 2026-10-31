@@ -26,9 +26,9 @@ describe("fresh check invocation context", () => {
 
   it.each(["light-value", "dark-css", "extra-member"] as const)("rejects forged C5 evidence: %s", damage => {
     const supplied = structuredClone(resolve({ catalog, library: complete }));
-    if (damage === "light-value") supplied.members["tokens.text-color.primary"]!.value.light = "#123456";
-    else if (damage === "dark-css") supplied.members["tokens.text-color.primary"]!.css.dark = "#123456";
-    else supplied.members["tokens.text-color.forged"] = structuredClone(supplied.members["tokens.text-color.primary"]!);
+    if (damage === "light-value") supplied.members["themes.foreground.default"]!.value.light = "#123456";
+    else if (damage === "dark-css") supplied.members["themes.foreground.default"]!.css.dark = "#123456";
+    else supplied.members["themes.foreground.default"] = structuredClone(supplied.members["themes.foreground.default"]!);
     expect(check({ catalog, library: complete, resolved: supplied }).findings.some(finding => finding.code === "C5" && finding.severity === "error")).toBe(true);
   });
 
@@ -63,7 +63,7 @@ describe("fresh check invocation context", () => {
   it("keeps dark input changes stale and rechecks mutable rule registration", () => {
     const c = structuredClone(catalog), library = structuredClone(complete);
     expect(errors(c, library)).toEqual([]);
-    const ink = tokenAt(library, "tokens.text-color.primary");
+    const ink = tokenAt(library, "themes.foreground.default");
     ink.$extensions!["com.clossys.modes"]!.dark = "#eeeeee";
     library.selection = generateSelection(library);
     expect(errors(c, library).some(finding => finding.code === "C10" && finding.message.includes("stale inputsHash"))).toBe(true);

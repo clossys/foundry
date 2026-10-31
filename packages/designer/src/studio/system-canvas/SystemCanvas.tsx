@@ -95,7 +95,7 @@ const MOVE = { duration: "var(--ui-duration-default)", easing: "var(--ease-decel
 const MOVE_TOKEN = "--ui-duration-default";
 /** How long the arrival ring stays (a dedicated arrival token is a recorded NEED). */
 const RING_TOKEN = "--ui-duration-deliberate";
-const THUMBNAIL_LAYERS: ReadonlySet<LayerId> = new Set(["tokens", "assets"]);
+const THUMBNAIL_LAYERS: ReadonlySet<LayerId> = new Set(["themes", "assets"]);
 
 function useReducedMotion(): boolean {
   const [reduced, setReduced] = useState(false);

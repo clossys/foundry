@@ -17,7 +17,7 @@ import type { CompositeCatalogData, CompositeLibraryData } from "../catalog-core
 /** Existing synthetic observations only; this corpus proves plumbing, never runtime conformance. */
 function sixRows() {
   const input = componentIntegration();
-  const valueRows = ["tokens.text-color", "tokens.surface-color", "tokens.focus-color"].map(slot => {
+  const valueRows = ["themes.foreground", "themes.background", "themes.ring"].map(slot => {
     const fill = input.library.values.fills.find(doc => doc.$extensions["com.clossys.fill"].slot === slot)!;
     return { slot, kind: "author" as const, value: Object.fromEntries(Object.entries(flatten(fill)).map(([id, token]) => [id.slice(slot.length + 1), tokenContent(token)])), note: "Synthetic fixture literal" };
   });
@@ -107,7 +107,7 @@ describe("offline library decisions", () => {
       const result = await writeCompositeLibrary(root, catalog, change, componentOptions);
       expect(compositeLibraryHash(await readLibrary(root, catalog))).toBe(compositeLibraryHash(result));
       await expect(writeCompositeLibrary(root, catalog, change, componentOptions)).rejects.toThrow(/baseHash/);
-      const invalid = decisionChangeSet(catalog, result, [{ slot: "tokens.text-color", kind: "author", value: { primary: { $type: "color", $value: "#ffffff" } }, note: "Synthetic failing contrast" }]);
+      const invalid = decisionChangeSet(catalog, result, [{ slot: "themes.foreground", kind: "author", value: { primary: { $type: "color", $value: "#ffffff" } }, note: "Synthetic failing contrast" }]);
       await expect(writeCompositeLibrary(root, catalog, invalid, componentOptions)).rejects.toThrow(/check failed/);
       expect(compositeLibraryHash(await readLibrary(root, catalog))).toBe(compositeLibraryHash(result));
       const inode = (await fs.stat(root)).ino;

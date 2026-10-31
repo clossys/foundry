@@ -49,7 +49,7 @@ describe("selected tooltip executable timing", () => {
     const { exports } = generated();
     const leaves = timing.tokens["behavior-timing"] as Record<string, { $value: { value: number; unit: "ms" | "s" } }>;
     const resolved = Object.fromEntries(tooltipExecutableReads.map(read => {
-      const leaf = read.replace(/^tokens\.behavior-timing\./, "");
+      const leaf = read.replace(/^themes\.behavior-timing\./, "");
       expect(leaves[leaf], read).toBeDefined();
       return [read, leaves[leaf]!.$value];
     }));
@@ -76,7 +76,7 @@ describe("selected tooltip executable timing", () => {
     const { result, files, source } = generated();
     const doc = result.fills.find(doc => doc.components.tooltip)!, fill = doc.components.tooltip!;
     expect(fill.pin!.files).toContainEqual({ path: "apps/v4/registry/bases/aria/ui/tooltip.tsx", sha256: "4cc80f882fec4abad1512f0d35d330603d653169ac210b27c12de10a09458d64" });
-    expect(fill.reads.tokens).toEqual(expect.arrayContaining(tooltipExecutableReads));
+    expect(fill.reads.themes).toEqual(expect.arrayContaining(tooltipExecutableReads));
     for (const file of files) expect(fill.outputSha256).toContainEqual({ path: file.path, sha256: sha256(file.content) });
     expect(files.find(file => file.path === fill.notice)!.content).toContain(read("LICENSE.md"));
     expect(doc.$extensions["com.clossys.fill"]).toMatchObject({ status: "draft", evidence: [], conforms: [] });

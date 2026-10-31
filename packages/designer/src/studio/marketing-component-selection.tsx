@@ -22,7 +22,7 @@ export function marketingComponentSelection(): ConsumerComponentSelection {
   if (retained) return retained;
   const catalog = loadCatalog();
   let values: LibraryData = { source: { kind: "consumer", author: "consumer", id: "marketing-specimens", license: "MIT" }, fills: [], adoptedAt: "2026-10-30" };
-  const changes = catalog.slots.filter(slot => slot.layer === "tokens").flatMap(slot => {
+  const changes = catalog.slots.filter(slot => slot.layer === "themes").flatMap(slot => {
     const offers = catalog.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot === slot.id && doc.$extensions["com.clossys.fill"].mode !== "reference");
     const chosen = offers.find(doc => doc.$extensions["com.clossys.fill"].source === "foundry") ?? offers[0];
     return chosen ? [{ op: "adopt" as const, slot: slot.id, source: chosen.$extensions["com.clossys.fill"].source }] : [];

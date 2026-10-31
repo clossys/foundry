@@ -34,15 +34,22 @@
         "scannedReads": {
           "assets": [],
           "components": [],
-          "tokens": [
-            "tokens.body-size",
-            "tokens.caption-size",
-            "tokens.duration",
-            "tokens.heading-size",
-            "tokens.spacing",
-            "tokens.status-color",
-            "tokens.text-color",
-            "tokens.typeface"
+          "themes": [
+            "themes.spacing",
+            "themes.destructive",
+            "themes.foreground",
+            "themes.card-foreground",
+            "themes.popover-foreground",
+            "themes.primary-foreground",
+            "themes.secondary-foreground",
+            "themes.accent-foreground",
+            "themes.muted-foreground",
+            "themes.sidebar-foreground",
+            "themes.sidebar-primary-foreground",
+            "themes.sidebar-accent-foreground",
+            "themes.font-sans",
+            "themes.font-heading",
+            "themes.font-mono"
           ]
         },
         "sourceFiles": [
@@ -126,15 +133,22 @@
       },
       "reads": {
         "assets": [],
-        "tokens": [
-          "tokens.body-size",
-          "tokens.caption-size",
-          "tokens.duration",
-          "tokens.heading-size",
-          "tokens.spacing",
-          "tokens.status-color",
-          "tokens.text-color",
-          "tokens.typeface"
+        "themes": [
+          "themes.spacing",
+          "themes.destructive",
+          "themes.foreground",
+          "themes.card-foreground",
+          "themes.popover-foreground",
+          "themes.primary-foreground",
+          "themes.secondary-foreground",
+          "themes.accent-foreground",
+          "themes.muted-foreground",
+          "themes.sidebar-foreground",
+          "themes.sidebar-primary-foreground",
+          "themes.sidebar-accent-foreground",
+          "themes.font-sans",
+          "themes.font-heading",
+          "themes.font-mono"
         ]
       },
       "slot": "sections.stats",

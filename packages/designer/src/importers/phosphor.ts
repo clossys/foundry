@@ -66,6 +66,6 @@ export function importPhosphor(): FillDoc[] {
   return roster.map(row => {
     const text = (raw as Record<string,string>)[row.upstream]!;
     if (sourceSha256(text) !== row.pin.sha256 || row.pin.commit !== PHOSPHOR_SOURCE.pin!.commit) throw new AssetValidationError('Phosphor source pin mismatch');
-    return {$extensions:{'com.clossys.fill':{id:`phosphor/${row.leaf}`,slot:row.leaf,source:'phosphor',mode:'implementation',sourceAddress:row.pin.url,relation:'same-contract',builtOn:[],conforms:[],evidence:[],author:'third-party',trust:'pinned-upstream',license:'MIT',pin:row.pin,status:'draft',reads:{tokens:[],assets:[]}}},assets:{[row.leaf.slice(7)]:{default:{$type:'glyph',$value:importPhosphorSvg(text)}}}};
+    return {$extensions:{'com.clossys.fill':{id:`phosphor/${row.leaf}`,slot:row.leaf,source:'phosphor',mode:'implementation',sourceAddress:row.pin.url,relation:'same-contract',builtOn:[],conforms:[],evidence:[],author:'third-party',trust:'pinned-upstream',license:'MIT',pin:row.pin,status:'draft',reads:{themes:[],assets:[]}}},assets:{[row.leaf.slice(7)]:{default:{$type:'glyph',$value:importPhosphorSvg(text)}}}};
   });
 }

@@ -66,7 +66,7 @@ export type SurfaceInputRef = {
     id: `components.${string}`;
 } | {
     kind: "value";
-    id: `tokens.${string}` | `assets.${string}`;
+    id: `themes.${string}` | `assets.${string}`;
 } | {
     kind: "surface";
     id: SurfaceSlot;
@@ -116,7 +116,7 @@ export interface SurfaceEntryBase {
     members: readonly string[];
     states: readonly string[];
     reads: {
-        tokens: readonly string[];
+        themes: readonly string[];
         assets: readonly string[];
     };
     composes: readonly string[];
@@ -189,7 +189,7 @@ export interface SurfacePackagePin {
 }
 /** A package-pointer descriptor exactly as the Foundry importers emit it; it carries no source bytes. */
 export interface SurfacePackageSectionEntry {
-    reads?: { tokens: readonly string[]; assets: readonly string[] };
+    reads?: { themes: readonly string[]; assets: readonly string[] };
     composes?: readonly string[];
     consumption?: SurfaceConsumptionMeasurement;
     slot: `sections.${string}`;
@@ -204,7 +204,7 @@ export interface SurfacePackageSectionEntry {
     notes: readonly string[];
 }
 export interface SurfacePackageFrameEntry {
-    reads?: { tokens: readonly string[]; assets: readonly string[] };
+    reads?: { themes: readonly string[]; assets: readonly string[] };
     composes?: readonly string[];
     consumption?: SurfaceConsumptionMeasurement;
     slot: `frames.${string}`;

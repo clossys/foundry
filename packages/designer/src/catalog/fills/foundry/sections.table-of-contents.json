@@ -34,19 +34,23 @@
         "scannedReads": {
           "assets": [],
           "components": [],
-          "tokens": [
-            "tokens.accent-color",
-            "tokens.body-size",
-            "tokens.border-color",
-            "tokens.border-width",
-            "tokens.brandmark-size",
-            "tokens.caption-size",
-            "tokens.radius",
-            "tokens.spacing",
-            "tokens.surface-radius",
-            "tokens.text-color",
-            "tokens.touch-target",
-            "tokens.z-index"
+          "themes": [
+            "themes.primary",
+            "themes.border",
+            "themes.input",
+            "themes.sidebar-border",
+            "themes.radius",
+            "themes.spacing",
+            "themes.foreground",
+            "themes.card-foreground",
+            "themes.popover-foreground",
+            "themes.primary-foreground",
+            "themes.secondary-foreground",
+            "themes.accent-foreground",
+            "themes.muted-foreground",
+            "themes.sidebar-foreground",
+            "themes.sidebar-primary-foreground",
+            "themes.sidebar-accent-foreground"
           ]
         },
         "sourceFiles": [
@@ -133,19 +137,23 @@
       },
       "reads": {
         "assets": [],
-        "tokens": [
-          "tokens.accent-color",
-          "tokens.body-size",
-          "tokens.border-color",
-          "tokens.border-width",
-          "tokens.brandmark-size",
-          "tokens.caption-size",
-          "tokens.radius",
-          "tokens.spacing",
-          "tokens.surface-radius",
-          "tokens.text-color",
-          "tokens.touch-target",
-          "tokens.z-index"
+        "themes": [
+          "themes.primary",
+          "themes.border",
+          "themes.input",
+          "themes.sidebar-border",
+          "themes.radius",
+          "themes.spacing",
+          "themes.foreground",
+          "themes.card-foreground",
+          "themes.popover-foreground",
+          "themes.primary-foreground",
+          "themes.secondary-foreground",
+          "themes.accent-foreground",
+          "themes.muted-foreground",
+          "themes.sidebar-foreground",
+          "themes.sidebar-primary-foreground",
+          "themes.sidebar-accent-foreground"
         ]
       },
       "slot": "sections.table-of-contents",

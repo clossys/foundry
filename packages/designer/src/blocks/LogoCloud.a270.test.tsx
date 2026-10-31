@@ -20,7 +20,7 @@ function selection(override = false): ConsumerComponentSelection {
   const profile = structuredClone(selected) as unknown as ResolvedComponents;
   const item = { slot: "components.item", originKind: "adopted" as const,
     origin: { kind: "adopted" as const, source: descriptor.source, fill: "shadcn@aria/components.item", pin: descriptor.pin, license: descriptor.license, sha256: componentDescriptorHash(descriptor), adoptedAt: "2026-10-30" },
-    impl: descriptor.impl as ResolvedComponents["components"][string]["impl"], propMap: descriptor.propMap, reads: { tokens: {}, assets: [], components: [] }, descriptor };
+    impl: descriptor.impl as ResolvedComponents["components"][string]["impl"], propMap: descriptor.propMap, reads: { themes: {}, assets: [], components: [] }, descriptor };
   const complete = { ...profile, components: { ...profile.components, "components.item": item }, files: [...profile.files, ...rail.files] };
   return { profile: { components: complete }, selectionHash: complete.selectionHash,
     descriptors: Object.fromEntries(Object.entries(complete.components).map(([id, value]) => [id, componentDescriptorHash(value.descriptor)])),

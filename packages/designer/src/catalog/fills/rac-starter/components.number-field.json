@@ -403,18 +403,10 @@
         "components": [
           "components.icon"
         ],
-        "tokens": [
-          "tokens.border-width.hairline",
-          "tokens.control-radius.default",
-          "tokens.duration.default",
-          "tokens.easing.default",
-          "tokens.font-size.sm",
-          "tokens.font-size.xs",
-          "tokens.font-weight.medium",
-          "tokens.spacing.lg",
-          "tokens.spacing.md",
-          "tokens.spacing.xs",
-          "tokens.typeface.body"
+        "themes": [
+          "themes.radius.default",
+          "themes.spacing.default",
+          "themes.font-sans.default"
         ]
       },
       "root": "rac:NumberField",
@@ -424,4 +416,3 @@
     }
   }
 }
-

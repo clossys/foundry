@@ -18,7 +18,7 @@
       },
       "reads": {
         "assets": [],
-        "tokens": []
+        "themes": []
       },
       "relation": "subset",
       "slot": "assets.image-ratio",

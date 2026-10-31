@@ -27,10 +27,10 @@ if (!["--check", "--write"].includes(mode) || extra.length) {
   const { runDogfood } = await import(pathToFileURL(resolve(src, "catalog-core/dogfood.ts")).href);
   const { dogfoodSources } = await import(pathToFileURL(resolve(src, "library-cli/cli.ts")).href);
   const { stableStringify } = await import(pathToFileURL(resolve(src, "catalog-core/stable.ts")).href);
-  const tokens = JSON.parse(readFileSync(resolve(src, "catalog/slots/tokens.json"), "utf8"));
+  const themes = JSON.parse(readFileSync(resolve(src, "catalog/slots/themes.json"), "utf8"));
   const themeCss = readFileSync(resolve(root, "styles/theme.css"), "utf8");
   const sources = await dogfoodSources([resolve(src, "studio")], root);
-  const report = runDogfood({ ...sources, tokens, themeCss, now: "2026-10-24" });
+  const report = runDogfood({ ...sources, themes, themeCss, now: "2026-10-24" });
   // No time-dependent exceptions or inferred clearances are supplied to this baseline.
   const output = stableStringify(report), path = resolve(src, "catalog/reports/page-dogfood.json");
   if (mode === "--write") { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, output); }

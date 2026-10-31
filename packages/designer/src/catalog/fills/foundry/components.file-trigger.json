@@ -77,7 +77,7 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": []
+        "themes": []
       },
       "root": "rac:FileTrigger",
       "slot": "components.file-trigger",

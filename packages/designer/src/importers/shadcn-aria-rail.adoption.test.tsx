@@ -33,7 +33,7 @@ const toggleLabel = draftResolver({ id: "st.qbaewx3e0y" }).text;
 
 function adoption() {
   const values = loadCatalog(), bundles = loadCatalogBundles(), registry = loadComponentRegistry();
-  const changes = values.slots.filter(slot => slot.layer === "tokens" || slot.id.startsWith("assets.icon-")).flatMap(slot => {
+  const changes = values.slots.filter(slot => slot.layer === "themes" || slot.id.startsWith("assets.icon-")).flatMap(slot => {
     const offers = values.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot === slot.id && doc.$extensions["com.clossys.fill"].mode !== "reference");
     const offer = ["foundry", "tailwind-default", "lucide"].flatMap(source => offers.filter(doc => doc.$extensions["com.clossys.fill"].source === source))[0] ?? offers[0];
     return offer ? [{ op: "adopt" as const, slot: slot.id, source: offer.$extensions["com.clossys.fill"].source }] : [];

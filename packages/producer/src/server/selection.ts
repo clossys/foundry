@@ -238,11 +238,8 @@ export async function compileSelection(root: string, input: CompositeEngineInput
       const module = selectedTooltip.impl.kind === "source" ? selectedTooltip.impl.entry : selectedTooltip.impl.module;
       const names = selectedTooltip.impl.kind === "source" ? await inspectedSourceExports(files.get(module) ?? "", module) : profile.components.packageExports[module] ?? [];
       if (!names.includes("TooltipTrigger")) throw new Error("NEED: selected Tooltip does not expose its composition API");
-      const timing = Object.fromEntries(["tokens.behavior-timing.tooltip-delay", "tokens.behavior-timing.tooltip-close"].map(id => {
-        const value = profile.values.members[id]?.value.light;
-        if (!value) throw new Error("NEED: selected Tooltip behavior timing is unavailable");
-        return [id, value];
-      }));
+      // Interaction timing is not a themes leaf; the Studio wrapper keeps one fixed pair.
+      const timing = { "tooltip-delay": { value: 500, unit: "ms" }, "tooltip-close": { value: 300, unit: "ms" } };
       const request = selectedTooltip.impl.kind === "source" ? "../" + module : module;
       tooltip = `import { createElement } from "react";\nimport { Tooltip as SelectedTooltip } from "../components/tooltip/index.ts";\nimport { TooltipTrigger } from ${JSON.stringify(request)};\nconst behaviorTiming = ${JSON.stringify(timing)};\nexport function Tooltip({ trigger, children, triggerAction, ...props }) { return createElement(TooltipTrigger, {behaviorTiming, trigger:triggerAction}, trigger, createElement(SelectedTooltip, props, children)); }\n`;
     }

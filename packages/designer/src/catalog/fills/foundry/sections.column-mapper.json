@@ -34,12 +34,26 @@
         "scannedReads": {
           "assets": [],
           "components": [],
-          "tokens": [
-            "tokens.body-size",
-            "tokens.caption-size",
-            "tokens.spacing",
-            "tokens.surface-color",
-            "tokens.text-color"
+          "themes": [
+            "themes.spacing",
+            "themes.background",
+            "themes.card",
+            "themes.popover",
+            "themes.secondary",
+            "themes.accent",
+            "themes.muted",
+            "themes.sidebar",
+            "themes.sidebar-accent",
+            "themes.foreground",
+            "themes.card-foreground",
+            "themes.popover-foreground",
+            "themes.primary-foreground",
+            "themes.secondary-foreground",
+            "themes.accent-foreground",
+            "themes.muted-foreground",
+            "themes.sidebar-foreground",
+            "themes.sidebar-primary-foreground",
+            "themes.sidebar-accent-foreground"
           ]
         },
         "sourceFiles": [
@@ -112,12 +126,26 @@
       "propMap": {},
       "reads": {
         "assets": [],
-        "tokens": [
-          "tokens.body-size",
-          "tokens.caption-size",
-          "tokens.spacing",
-          "tokens.surface-color",
-          "tokens.text-color"
+        "themes": [
+          "themes.spacing",
+          "themes.background",
+          "themes.card",
+          "themes.popover",
+          "themes.secondary",
+          "themes.accent",
+          "themes.muted",
+          "themes.sidebar",
+          "themes.sidebar-accent",
+          "themes.foreground",
+          "themes.card-foreground",
+          "themes.popover-foreground",
+          "themes.primary-foreground",
+          "themes.secondary-foreground",
+          "themes.accent-foreground",
+          "themes.muted-foreground",
+          "themes.sidebar-foreground",
+          "themes.sidebar-primary-foreground",
+          "themes.sidebar-accent-foreground"
         ]
       },
       "slot": "sections.column-mapper",

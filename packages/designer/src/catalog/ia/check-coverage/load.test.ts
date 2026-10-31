@@ -14,7 +14,7 @@ function setup() {
   const write = (path: string, data: unknown) => { mkdirSync(join(path, ".."), { recursive: true }); writeFileSync(path, JSON.stringify(data, null, 2)); };
   const base = fixture();
   for (const layer of layers) {
-    const contract = layer === "sections" ? { passageSchema: "passages.example", parts: ["components.example"] } : layer === "frames" ? { composes: ["sections.example", "assets.example"] } : { allowedReads: { tokens: ["tokens.example"] } };
+    const contract = layer === "sections" ? { passageSchema: "passages.example", parts: ["components.example"] } : layer === "frames" ? { composes: ["sections.example", "assets.example"] } : { allowedReads: { themes: ["tokens.example"] } };
     write(join(catalog, "slots", `${layer}.json`), [{ id: `${layer}.example`, layer, contract }]);
     write(join(catalog, "ia", `${layer}.json`), base.placements.find(row => row.layer === layer));
     write(join(catalog, "fills", "fixture", `${layer}.json`), { $extensions: { "com.clossys.fill": { id: `fixture/${layer}.example`, slot: `${layer}.example`, status: "stable" } } });

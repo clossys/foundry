@@ -5,6 +5,6 @@ export function importImageRatios(): FillDoc[] {
   return [{ $extensions: { "com.clossys.fill": {
     id: "foundry/assets.image-ratio", slot: "assets.image-ratio", source: "foundry", mode: "implementation",
     sourceAddress: "importers/image-ratio.ts", relation: "same-contract", builtOn: [], conforms: [], evidence: [],
-    author: "foundry", trust: "foundry", license: "MIT", status: "draft", reads: { tokens: [], assets: [] },
+    author: "foundry", trust: "foundry", license: "MIT", status: "draft", reads: { themes: [], assets: [] },
   } }, assets: { "image-ratio": Object.fromEntries(Object.entries(IMAGE_RATIOS).map(([name, ratio]) => [name, { $type: "rules", $value: { ...ratio } }])) } }];
 }

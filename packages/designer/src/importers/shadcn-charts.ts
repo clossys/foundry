@@ -64,7 +64,7 @@ export const SHADCN_CHART_CHROME = Object.freeze({
 const ALIAS_IMPORT = 'import { cn } from "cn"';
 const ALIAS_TARGET = 'import { cn } from "../_parts/utils/index"';
 const UTILS = 'import { clsx, type ClassValue } from "clsx"\nimport { twMerge } from "tailwind-merge"\nexport function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }\n';
-const READS = ["tokens.border-color", "tokens.categorical-color", "tokens.chart-color", "tokens.surface-color", "tokens.text-color"];
+const READS = ["themes.border", "themes.chart-1", "themes.background", "themes.foreground"];
 const DEPS = [
   { name: "react", version: "19.2.3", license: "MIT" },
   { name: "recharts", version: SHADCN_CHARTS_PIN.engine.version, license: "MIT" },
@@ -168,7 +168,7 @@ export function importShadcnCharts(input: ShadcnChartsInput): ShadcnChartsImport
       } as FillMeta },
       components: { [leaf.leaf]: {
         slot: slot.id, source: SHADCN_CHARTS_SOURCE, root: slot.contract.root, members, props: ["categoryKey", "className", "data", "initialDimension", "isAnimationActive", "series"], propMap,
-        reads: { tokens: READS, assets: [], components: [] }, composes: [],
+        reads: { themes: READS, assets: [], components: [] }, composes: [],
         impl: { kind: "source", entry: entry.path, export: leaf.exportName },
         license: "MIT", pin, notice: adapter.notice, transform: SHADCN_CHARTS_TRANSFORM, item: "chart",
         deps: DEPS, parts: [{ item: "utils" }], rendering: "client", outputSha256, blockers: [],

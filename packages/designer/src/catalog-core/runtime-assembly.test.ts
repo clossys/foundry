@@ -162,7 +162,7 @@ describe("SYNTHETIC runtime assembly unit corpus (not full-library proof)", () =
     expect(prepareRuntimeAssembly({ ...input, ports, assets: [{ id: "assets.logo", mediaType: "image/svg+xml", bytes: [60, 115, 118, 103, 62] }] }).status).toBe("ready");
     expect(prepareRuntimeAssembly({ ...input, ports: { ...input.ports, manifest: { ...input.ports.manifest, assetClosure: { complete: false, ids: [] } } } }).status).toBe("pending");
   });
-  it.each(["head", "tree", "library", "source", "content", "tokens", "css", "assets", "matrix", "selection"])("binds fresh %s bytes or identity", change => {
+  it.each(["head", "tree", "library", "source", "content", "themes", "css", "assets", "matrix", "selection"])("binds fresh %s bytes or identity", change => {
     const input = fixture(); const initial = prepareRuntimeAssembly(input); expect(initial.status).toBe("ready"); if (initial.status !== "ready") return;
     let changed = { ...input };
     if (change === "head") changed = { ...input, identity: { kind: "git", head: "3".repeat(40), tree: "2".repeat(40) } };
@@ -173,7 +173,7 @@ describe("SYNTHETIC runtime assembly unit corpus (not full-library proof)", () =
     if (change === "content") changed = { ...input, ports: { ...input.ports, resolveContent: ref => ({ reference: ref, value: "Fresh content", hash: runtimeHash("Fresh content") }) } };
     if (change === "selection") changed = { ...input, binding: { ...input.binding, id: "other-instance" } };
     if (change === "source") { const source = { ...input.layout.descriptor.renderer.source, files: { "synthetic.tsx": "new source" } }; changed = { ...input, layout: { ...input.layout, descriptor: { ...input.layout.descriptor, renderer: { ...input.layout.descriptor.renderer, source, sourceHash: runtimeHash(source) } } } }; }
-    if (change === "library" || change === "tokens") {
+    if (change === "library" || change === "themes") {
       let library = structuredClone(input.engine.library);
       if (change === "library") library.values.rationale = { changed: true };
       else library = applyLibraryChange(input.engine.catalog, library, { baseHash: libraryHash(library), changes: [{ portion: "values", change: { op: "author", slot: "tokens.breakpoint", tokens: { mobile: { $type: "dimension", $value: { value: 376, unit: "px" } } } } }] });

@@ -39,7 +39,7 @@ describe("Foundry source token reads", () => {
   });
   it("maps named utilities through their theme namespace, past variant prefixes", () => {
     expect(foundrySourceTokenReads("<Label className=\"text-caption font-body focus-visible:text-ink-primary rounded-control px-md\" />", index))
-      .toEqual(["tokens.caption-size", "tokens.control-radius", "tokens.spacing", "tokens.text-color", "tokens.typeface"]);
+      .toEqual(["tokens.caption-size", "themes.radius", "themes.spacing", "themes.foreground", "themes.font-sans"]);
   });
   it("reads the named control-height utilities as the control-size slot they consume (theme-keys @utility control-h-*)", () => {
     expect(foundrySourceTokenReads("<Tag className=\"control-h-md inline-flex\" />", index)).toEqual(["tokens.control-size"]);
@@ -48,16 +48,16 @@ describe("Foundry source token reads", () => {
   });
   it("declares every token a controls-group Foundry fill's source consumes: TagGroup reads its control height and focus outline", () => {
     const tagGroup = importFoundryComponents({ slots: componentSlots as unknown as readonly ComponentSlot[] }).fills.find(fill => fill.$extensions["com.clossys.fill"].slot === "components.tag-group")!;
-    const reads = Object.values(tagGroup.components)[0]!.reads.tokens;
+    const reads = Object.values(tagGroup.components)[0]!.reads.themes;
     for (const read of derived()["tag-group"]!) expect(reads).toContain(read);
-    expect(reads).toEqual(expect.arrayContaining(["tokens.control-size", "tokens.focus-outline", "tokens.focus-color"]));
+    expect(reads).toEqual(expect.arrayContaining(["tokens.control-size", "tokens.focus-outline", "themes.ring"]));
   });
   it("declares the control height DateField and SearchField consume through control-h-md, matching the other Foundry fields", () => {
     const fills = importFoundryComponents({ slots: componentSlots as unknown as readonly ComponentSlot[] }).fills;
     for (const leaf of ["date-field", "search-field"]) {
       expect(derived()[leaf]).toContain("tokens.control-size");
       const fill = fills.find(row => row.$extensions["com.clossys.fill"].slot === `components.${leaf}`)!;
-      expect(Object.values(fill.components)[0]!.reads.tokens).toContain("tokens.control-size");
+      expect(Object.values(fill.components)[0]!.reads.themes).toContain("tokens.control-size");
     }
   });
   it("commits the derivation for every mapped component (UPDATE_FOUNDRY_COMPONENT_FILLS=1 rewrites it)", () => {
@@ -68,19 +68,19 @@ describe("Foundry source token reads", () => {
   it("color-picker and number-field sources consume geometry, type and focus tokens their frozen reads carry, so neither offer is blocked", () => {
     const reads = derived();
     for (const leaf of ["color-picker", "number-field"]) {
-      expect(reads[leaf], leaf).toEqual(expect.arrayContaining(["tokens.control-size", "tokens.body-size", "tokens.caption-size", "tokens.typeface", "tokens.focus-shadow"]));
+      expect(reads[leaf], leaf).toEqual(expect.arrayContaining(["tokens.control-size", "tokens.body-size", "tokens.caption-size", "themes.font-sans", "tokens.focus-shadow"]));
       const doc = importFoundryComponents().fills.find(fill => fill.$extensions["com.clossys.fill"].slot === `components.${leaf}`)!;
       const candidate = Object.values(doc.components)[0]!;
-      expect(candidate.reads.tokens, leaf).toEqual(expect.arrayContaining(reads[leaf]!));
+      expect(candidate.reads.themes, leaf).toEqual(expect.arrayContaining(reads[leaf]!));
       expect(candidate.blockers, leaf).toBeUndefined();
     }
   });
   it("records, without blocking, a frozen read set that omits a token slot its source consumes", () => {
     const original = (componentSlots as unknown as ComponentSlot[]).find(row => row.id === "components.number-field")!;
     const slot = structuredClone(original);
-    (slot.contract as { allowedReads: { tokens: string[] } }).allowedReads.tokens = slot.contract.allowedReads.tokens.filter(read => read !== "tokens.control-size");
+    (slot.contract as { allowedReads: { themes: string[] } }).allowedReads.themes = slot.contract.allowedReads.themes.filter(read => read !== "tokens.control-size");
     const mappings = { "number-field": FOUNDRY_COMPONENT_MAP["number-field"]! };
-    const result = importFoundryComponents({ slots: [slot], mappings, sourceReads: { "number-field": ["tokens.control-size", "tokens.typeface"] } });
+    const result = importFoundryComponents({ slots: [slot], mappings, sourceReads: { "number-field": ["tokens.control-size", "themes.font-sans"] } });
     expect(result.coverage[0]!.notes).toContain("Frozen reads omit source-consumed tokens.control-size; the contract's allowedReads must widen before this is enforced.");
     expect(Object.values(result.fills[0]!.components)[0]!.blockers).toBeUndefined();
     const clean = importFoundryComponents({ slots: [structuredClone(original)], mappings, sourceReads: { "number-field": ["tokens.control-size"] } });
@@ -91,7 +91,7 @@ describe("Foundry source token reads", () => {
     // Slider (Foundry slot added by the slider mapping) and tag-group (mapped with its craft record) extend the ask list: their sources consume type, radius,
     // text-colour and focus tokens that the frozen contracts' allowedReads do not yet list. Both are genuine omissions of the same class as the rest.
     expect(Object.keys(omissions).sort()).toEqual(["chart-range", "chart-scatter", "chart-sparkline", "checkbox", "disclosure", "grid-list", "menu", "slider", "tabs", "toast", "tree"]);
-    expect(omissions["slider"]).toBe("tokens.body-size, tokens.radius, tokens.text-color, tokens.typeface");
+    expect(omissions["slider"]).toBe("tokens.body-size, themes.radius, themes.foreground, themes.font-sans");
     // tag-group: its contract now lists the control-size and focus-outline/colour its TagGroup source consumes.
     expect(omissions["tag-group"]).toBeUndefined();
     expect(omissions["color-picker"]).toBeUndefined();

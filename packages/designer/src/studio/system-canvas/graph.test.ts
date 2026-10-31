@@ -5,21 +5,21 @@ import { litSet, type UsageEdge } from "./graph.js";
 const edges: UsageEdge[] = [
   { from: "frames.shell", to: "sections.band" },
   { from: "sections.band", to: "components.button" },
-  { from: "components.button", to: "tokens.spacing" },
-  { from: "components.menu", to: "tokens.spacing" },
+  { from: "components.button", to: "themes.spacing" },
+  { from: "components.menu", to: "themes.spacing" },
 ];
 
 describe("system canvas lit set", () => {
   it("lights what the selection uses, transitively down [mutant: one hop]", () => {
-    expect([...litSet(edges, "frames.shell")].sort()).toEqual(["components.button", "frames.shell", "sections.band", "tokens.spacing"]);
+    expect([...litSet(edges, "frames.shell")].sort()).toEqual(["components.button", "frames.shell", "sections.band", "themes.spacing"]);
   });
 
   it("lights what uses the selection, transitively up [mutant: one hop]", () => {
-    expect([...litSet(edges, "tokens.spacing")].sort()).toEqual(["components.button", "components.menu", "frames.shell", "sections.band", "tokens.spacing"]);
+    expect([...litSet(edges, "themes.spacing")].sort()).toEqual(["components.button", "components.menu", "frames.shell", "sections.band", "themes.spacing"]);
   });
 
   it("lights both directions from a middle leaf but never a sibling reached down-then-up", () => {
-    expect([...litSet(edges, "components.button")].sort()).toEqual(["components.button", "frames.shell", "sections.band", "tokens.spacing"]);
+    expect([...litSet(edges, "components.button")].sort()).toEqual(["components.button", "frames.shell", "sections.band", "themes.spacing"]);
   });
 
   it("lights only the selection with no edges, and nothing with no selection", () => {

@@ -11,8 +11,8 @@ import {
 } from "react-aria-components"
 
 export type TooltipBehaviorTiming = Readonly<{
-  "tokens.behavior-timing.tooltip-delay": Readonly<{ value: number; unit: "ms" | "s" }>;
-  "tokens.behavior-timing.tooltip-close": Readonly<{ value: number; unit: "ms" | "s" }>;
+  "tooltip-delay": Readonly<{ value: number; unit: "ms" | "s" }>;
+  "tooltip-close": Readonly<{ value: number; unit: "ms" | "s" }>;
 }>;
 
 /** The caller supplies these values from its resolved consumer library. */
@@ -24,8 +24,8 @@ export function readTooltipTiming(behaviorTiming: TooltipBehaviorTiming): { dela
     return result;
   };
   return {
-    delay: milliseconds(behaviorTiming?.["tokens.behavior-timing.tooltip-delay"]),
-    closeDelay: milliseconds(behaviorTiming?.["tokens.behavior-timing.tooltip-close"]),
+    delay: milliseconds(behaviorTiming?.["tooltip-delay"]),
+    closeDelay: milliseconds(behaviorTiming?.["tooltip-close"]),
   };
 }
 

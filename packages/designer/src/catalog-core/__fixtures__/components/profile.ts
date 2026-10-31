@@ -5,27 +5,27 @@ import type { ComponentSlot } from "../../types.js";
 /** Synthetic checker corpus, not accessibility evidence for any shipped component. */
 export function componentProfile(): ComponentCheckInput {
   const tokens: ComponentCheckInput["tokens"] = {
-    "tokens.text-color.primary": { property: "--text", light: "#000000", dark: "#ffffff" },
-    "tokens.surface-color.base": { property: "--surface", light: "#ffffff", dark: "#000000" },
-    "tokens.focus-color.default": { property: "--focus", light: "#000000", dark: "#ffffff" },
-    "tokens.control-size.md": { property: "--control", light: "32px", dark: "32px" },
-    "tokens.body-size.default": { property: "--body", light: "16px" },
+    "themes.foreground.default": { property: "--text", light: "#000000", dark: "#ffffff" },
+    "themes.background.default": { property: "--surface", light: "#ffffff", dark: "#000000" },
+    "themes.ring.default": { property: "--focus", light: "#000000", dark: "#ffffff" },
+    "themes.spacing.default": { property: "--control", light: "32px", dark: "32px" },
+    "themes.font-sans.default": { property: "--body", light: "16px" },
   };
   const slot: ComponentSlot = { id: "components.button", layer: "components", status: "draft", requires: [], contract: {
     kind: "component", root: "rac:Button", members: { mode: "closed", names: ["variant.primary", "state.hover", "ground.base", "ground.inverse", "size.md"] }, props: ["children"],
-    allowedReads: { tokens: ["tokens.text-color", "tokens.surface-color", "tokens.focus-color", "tokens.control-size", "tokens.body-size"], assets: ["assets.icon-close"] },
+    allowedReads: { themes: ["themes.foreground", "themes.background", "themes.ring", "themes.spacing", "themes.font-sans"], assets: ["assets.icon-close"] },
   } };
   const fill: ComponentCheckFill = { slot: slot.id, source: "test-kit", root: slot.contract.root, members: [...(slot.contract.members.mode === "closed" ? slot.contract.members.names : [])], props: ["children"],
     propMap: { "variant.primary": "variant=primary", "state.hover": "state=hover", "ground.base": "ground=base", "ground.inverse": "ground=inverse", "size.md": "size=md" },
-    reads: { tokens: [...slot.contract.allowedReads.tokens], assets: ["assets.icon-close"], components: [] }, composes: [],
+    reads: { themes: [...slot.contract.allowedReads.themes], assets: ["assets.icon-close"], components: [] }, composes: [],
     impl: { kind: "package", module: "test-kit/components", export: "Button" }, license: "MIT", pin: { package: "test-kit", version: "1.0.0", export: "./components#Button" }, deps: [],
     rac: { range: "^1.19.0", peer: true, instance: "consumer-rac" },
   };
   const files = [{ path: "button.tsx", content: 'import {Button} from "react-aria-components"; export const Example = () => <Button style={{color:"var(--text)",background:"var(--surface)"}}>Continue</Button>;' }];
   const observation: ComponentObservation = { files, sourceHash: componentSourceHash(files), tokensHash: componentTokensHash(tokens), root: "rac:Button", forwardsRef: true, forwardsRenderProps: true,
-    rac: { version: "1.21.1", instance: "consumer-rac", dependency: "peer" }, calls: [], geometry: { "size.md": "tokens.control-size.md" }, measurements: ["light", "dark"].flatMap(mode => ["base", "inverse"].map(ground => ({
-      state: "hover", mode: mode as "light" | "dark", ground, roles: ["button"], keyboard: ["Enter", "Space"], axeViolations: [], focusTokens: ["tokens.focus-color.default"],
-      forcedColors: { foreground: "ButtonText", background: "ButtonFace" }, target: { width: 32, height: 32 }, contrast: [{ foreground: "tokens.text-color.primary", background: "tokens.surface-color.base", kind: "text" as const }],
+    rac: { version: "1.21.1", instance: "consumer-rac", dependency: "peer" }, calls: [], geometry: { "size.md": "themes.spacing.default" }, measurements: ["light", "dark"].flatMap(mode => ["base", "inverse"].map(ground => ({
+      state: "hover", mode: mode as "light" | "dark", ground, roles: ["button"], keyboard: ["Enter", "Space"], axeViolations: [], focusTokens: ["themes.ring.default"],
+      forcedColors: { foreground: "ButtonText", background: "ButtonFace" }, target: { width: 32, height: 32 }, contrast: [{ foreground: "themes.foreground.default", background: "themes.background.default", kind: "text" as const }],
     }))),
   };
   return { slots: [slot], fills: [fill], observations: { [fill.slot]: observation }, tokens, assets: ["assets.icon-close"], installedRac: { version: "1.21.1", instance: "consumer-rac" } };

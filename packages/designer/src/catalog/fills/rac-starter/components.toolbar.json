@@ -99,8 +99,8 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.spacing.sm"
+        "themes": [
+          "themes.spacing.default"
         ]
       },
       "root": "rac:Toolbar",
@@ -110,4 +110,3 @@
     }
   }
 }
-

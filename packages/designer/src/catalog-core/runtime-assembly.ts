@@ -7,6 +7,7 @@ import type { ConsumerRuntimePorts, RuntimeCell, RuntimeContent, RuntimeContentR
 import type { BuildCatalogData, CompositeEngineInput, CompositeResolved } from "./types.js";
 import type { CompositionBody, CanvasBody, FlowBody } from "./body-substrate.js";
 import { bodySubstrateFindings } from "./body-substrate.js";
+import { isTailwindBreakpoint, TAILWIND_BREAKPOINTS, type TailwindBreakpoint } from "./breakpoints.js";
 
 export interface RuntimeFillSelection {
   readonly leaf: `frames.${string}` | `sections.${string}`;
@@ -37,7 +38,7 @@ export interface RuntimeLayoutDescriptor {
   readonly config: string;
   readonly members: Readonly<Record<string, string>>;
   readonly slots: readonly { readonly id: string; readonly min: number; readonly max: number; readonly accepts: readonly `sections.${string}`[] }[];
-  readonly breakpoints: readonly `tokens.breakpoint.${string}`[];
+  readonly breakpoints: readonly TailwindBreakpoint[];
   readonly states: readonly string[];
   readonly renderer: RuntimeRendererDescriptor;
   /** Finite execution inputs projected from the canonical instance (e.g. tile
@@ -82,8 +83,6 @@ export interface RuntimeAssemblyBase<Node> {
   readonly themes: readonly string[];
   readonly states: readonly string[];
   /** Measured pixels for non-pixel consumer units; no assumed root font size. */
-  readonly breakpointPixels?: Readonly<Record<string, number>>;
-  readonly breakpointBasis?: { readonly renderer: RuntimeRendererDescriptor; readonly environment: RuntimeJson };
   readonly css: readonly { readonly id: string; readonly contents: string }[];
   readonly assets: readonly { readonly id: string; readonly mediaType: string; readonly bytes: readonly number[] }[];
   /** Explicit measurement implementation identity; the callback is supplied separately. */
@@ -137,20 +136,13 @@ function sectionHeaderFinding(value: RuntimeJson, slots: readonly { readonly nam
 }
 export function runtimeCellKey(cell: RuntimeCell): string { return JSON.stringify([cell.theme, cell.state, cell.width]); }
 
-/** 320 and every resolved consumer breakpoint ±1; never substitute catalog numbers. */
-export function runtimeAssemblyCells(profile: CompositeResolved, themes: readonly string[], states: readonly string[], requiredBreakpoints: readonly string[] = [], measuredPixels: Readonly<Record<string, number>> = {}): readonly RuntimeCell[] {
+/** 320 and every Tailwind screen ±1; screens are fixed, never consumer values. */
+export function runtimeAssemblyCells(themes: readonly string[], states: readonly string[], requiredBreakpoints: readonly string[] = []): readonly RuntimeCell[] {
   for (const [name, values] of [["themes", themes], ["states", states]] as const) if (!values.length || values.some(value => typeof value !== "string" || !value.trim()) || new Set(values).size !== values.length) fail("pending", `explicit unique ${name} required`);
-  const members = Object.entries(profile.values.members).filter(([id]) => id.startsWith("tokens.breakpoint."));
-  if (!members.length || requiredBreakpoints.some(id => !profile.values.members[id])) fail("pending", "consumer breakpoint values missing");
+  const unknown = requiredBreakpoints.find(id => !isTailwindBreakpoint(id));
+  if (unknown !== undefined) fail("refused", `unknown Tailwind breakpoint ${unknown}`);
   const widths = new Set([320]);
-  for (const [id, member] of members) {
-    const value = member.value.light;
-    if (!value || typeof value !== "object" || Array.isArray(value) || !("unit" in value) || !("value" in value) || typeof value.value !== "number" || !Number.isFinite(value.value) || value.value <= 0) fail("pending", `unresolved consumer breakpoint ${id}`);
-    const pixels = value.unit === "px" ? value.value : measuredPixels[id];
-    if (value.unit === "px" && measuredPixels[id] !== undefined && measuredPixels[id] !== pixels) fail("refused", `conflicting pixel breakpoint ${id}`);
-    if (typeof pixels !== "number" || !Number.isSafeInteger(pixels) || pixels <= 1 || pixels > 100000) fail("pending", `measured pixel breakpoint required: ${id}`);
-    for (const width of [pixels - 1, pixels, pixels + 1]) widths.add(width);
-  }
+  for (const pixels of Object.values(TAILWIND_BREAKPOINTS)) for (const width of [pixels - 1, pixels, pixels + 1]) widths.add(width);
   return runtimeSnapshot(themes.flatMap(theme => states.flatMap(state => [...widths].sort((a, b) => a - b).map(width => ({ theme, state, width })))));
 }
 /** Resolve and freeze all data before invoking renderer or runner callbacks. */
@@ -225,15 +217,8 @@ export function prepareRuntimeAssembly<Node>(input: RuntimeAssemblyInput<Node>):
       if (findings.length) fail("refused", findings.join("; "));
     }
     requiredBreakpoints.push(...frameContract.breakpoints);
-    const breakpointPixels = runtimeSnapshot(input.breakpointPixels ?? {});
-    const tokenBreakpoints = Object.fromEntries(Object.entries(profile.values.members).filter(([id]) => id.startsWith("tokens.breakpoint.")));
-    if (Object.entries(breakpointPixels).some(([id, pixels]) => !tokenBreakpoints[id] || !Number.isSafeInteger(pixels) || pixels <= 1 || pixels > 100000)) fail("refused", "unused or invalid measured breakpoint input");
-    if (Object.keys(breakpointPixels).length && (!input.breakpointBasis || runtimeSourceFindings(input.breakpointBasis.renderer).length)) fail("pending", "breakpoint measurement basis required");
-    const breakpoints = Object.fromEntries(Object.entries(tokenBreakpoints).map(([id, member]) => {
-      const value = member.value.light;
-      return [id, value && typeof value === "object" && "unit" in value && "value" in value && value.unit === "px" ? value.value : breakpointPixels[id]];
-    })) as Record<string, number>;
-    const cells = runtimeAssemblyCells(profile, runtimeSnapshot(input.themes), runtimeSnapshot(input.states), requiredBreakpoints, runtimeSnapshot(input.breakpointPixels ?? {}));
+    const breakpoints: Record<string, number> = { ...TAILWIND_BREAKPOINTS };
+    const cells = runtimeAssemblyCells(runtimeSnapshot(input.themes), runtimeSnapshot(input.states), requiredBreakpoints);
     if (layout && cells.some(cell => !layout.states.includes(cell.state))) fail("refused", "layout does not support requested state");
     const stageMeasurements = input.stageMeasurements && runtimeSnapshot(input.stageMeasurements);
     const stageWidths: Record<string, number> = {};
@@ -411,7 +396,7 @@ export function prepareRuntimeAssembly<Node>(input: RuntimeAssemblyInput<Node>):
     if (binding.body?.kind === "flow" && !stage && orderPending.length) fail("pending", "actual measured Stage width/order basis pending");
     const measuredPaths = ["frame", ...Object.keys(descriptors).filter(path => path !== "frame")];
     const data = runtimeSnapshot({ identity, library, wholeHash, selectionHash: profile.selectionHash, profile, manifest, binding, layout,
-      contracts: input.contracts, content: contentSnapshot, descriptors, css, assets, glyphs, breakpointPixels, breakpointBasis: input.breakpointBasis ?? null, breakpoints, cells, expectedOrder, measuredPaths, runner: input.runner ?? null, pageHeader: headerSnapshot, stage: stage ?? null, stageContent, stageMeasurements: stageMeasurements ?? null, query: query ?? null });
+      contracts: input.contracts, content: contentSnapshot, descriptors, css, assets, glyphs, breakpoints, cells, expectedOrder, measuredPaths, runner: input.runner ?? null, pageHeader: headerSnapshot, stage: stage ?? null, stageContent, stageMeasurements: stageMeasurements ?? null, query: query ?? null });
     const snapshot: RuntimeAssemblySnapshot = runtimeSnapshot({ version: 1, hash: runtimeHash(data), data: data as unknown as RuntimeJson, cells, breakpoints, expectedOrder, measuredPaths, ...(binding.body ? { stageWidths, orderPending, ...(stageMeasurements ? { stageBasisHash: runtimeHash(stageMeasurements) } : {}) } : {}) });
     const render = (cell: RuntimeCell): Node => {
       if (!cells.some(candidate => runtimeCellKey(candidate) === runtimeCellKey(cell))) throw new Error("runtime: cell outside bound matrix");

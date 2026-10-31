@@ -6,7 +6,7 @@
 import { sha256 } from "./digest.js";
 import { stableStringify } from "./stable.js";
 
-export type UsageLayer = "tokens" | "assets" | "components" | "sections" | "frames" | "pages";
+export type UsageLayer = "themes" | "assets" | "components" | "sections" | "frames" | "pages";
 export type UsageEdgeKind = "reads" | "composes" | "hosts" | "renders";
 export type UsageEvidence = "declared" | "scanned" | "runtime";
 export type UsageDirection = "uses" | "usedBy";
@@ -46,7 +46,7 @@ export interface UsageGraph {
   };
 }
 
-type Reads = Partial<Record<"tokens" | "assets", readonly string[]>>;
+type Reads = Partial<Record<"themes" | "assets", readonly string[]>>;
 /** A fill row as emitted by components consumption or buildSurfaceConsumption. */
 export interface UsageGraphFill {
   readonly id: string;
@@ -70,7 +70,7 @@ export interface UsageGraphInputs {
   /** Leaf -> selected fill id. Only selected fills contribute edges. */
   readonly selection: Readonly<Record<string, string>>;
   /** relationships.ts consumptionReport: token/asset reads. */
-  readonly consumption?: { readonly leaves: readonly { readonly id: string; readonly tokens: readonly string[]; readonly assets: readonly string[] }[] };
+  readonly consumption?: { readonly leaves: readonly { readonly id: string; readonly themes: readonly string[]; readonly assets: readonly string[] }[] };
   /** components-consumption.json: component reads and reverseComposes. */
   readonly components?: { readonly fills?: readonly UsageGraphFill[]; readonly reverseComposes?: UsageReverseComposes };
   /** buildSurfaceConsumption(): section/frame reads and reverseComposes. */
@@ -89,13 +89,13 @@ export interface UsageGraphFinding {
   readonly message: string;
 }
 
-const LAYERS: readonly UsageLayer[] = ["tokens", "assets", "components", "sections", "frames", "pages"];
+const LAYERS: readonly UsageLayer[] = ["themes", "assets", "components", "sections", "frames", "pages"];
 const KINDS: readonly UsageEdgeKind[] = ["reads", "composes", "hosts", "renders"];
 const EVIDENCE: readonly UsageEvidence[] = ["declared", "scanned", "runtime"];
 const compare = (a: string, b: string): number => a < b ? -1 : a > b ? 1 : 0;
 const digest = (value: unknown): string => `sha256:${sha256(stableStringify(value))}`;
 const layerOf = (id: string): UsageLayer | undefined => LAYERS.find(layer => id.startsWith(layer + "."));
-/** `tokens.region-width.aside` -> `tokens.region-width`; leaf names never contain dots. */
+/** `themes.chart-1.default` -> `themes.chart-1`; leaf names never contain dots. */
 const leafOf = (id: string): string => id.split(".").slice(0, 2).join(".");
 const slotOfFill = (fill: string): string => fill.includes("/") ? fill.slice(fill.indexOf("/") + 1) : fill;
 const sourceOfFill = (fill: string): string => fill.includes("/") ? fill.slice(0, fill.indexOf("/")) : fill;
@@ -120,12 +120,12 @@ export function buildUsageGraph(inputs: UsageGraphInputs): UsageGraph {
     edge.evidence.add(evidence); if (at) edge.at.set(stableStringify(at), at); edges.set(key, edge);
   };
   // Token/asset reads, already limited to selected fills by consumptionReport.
-  for (const leaf of inputs.consumption?.leaves ?? []) for (const target of [...leaf.tokens, ...leaf.assets]) add(leaf.id, target, "reads", "declared");
+  for (const leaf of inputs.consumption?.leaves ?? []) for (const target of [...leaf.themes, ...leaf.assets]) add(leaf.id, target, "reads", "declared");
   // Component, section and frame reads from the selected fill's declared contract and source scan.
   for (const fill of [...inputs.components?.fills ?? [], ...inputs.surfaces?.fills ?? []]) {
     if (!selected(fill.id)) continue;
     for (const [evidence, reads] of [["declared", fill.declaredReads], ["scanned", fill.scannedReads]] as const)
-      for (const target of [...reads?.tokens ?? [], ...reads?.assets ?? []]) add(fill.slot, target, "reads", evidence);
+      for (const target of [...reads?.themes ?? [], ...reads?.assets ?? []]) add(fill.slot, target, "reads", evidence);
   }
   // Composition, only through each producer's reverseComposes map.
   const observed = new Map<string, UsageEdgeSite[]>();
@@ -164,7 +164,7 @@ export function buildUsageGraph(inputs: UsageGraphInputs): UsageGraph {
   const normalized = {
     inventory: Object.fromEntries(LAYERS.filter(layer => layer !== "pages").map(layer => [layer, [...inputs.inventory[layer as Exclude<UsageLayer, "pages">] ?? []].sort(compare)])),
     selection: Object.fromEntries(Object.entries(selection).sort(([a], [b]) => compare(a, b))),
-    consumption: inputs.consumption && [...inputs.consumption.leaves].map(leaf => ({ id: leaf.id, tokens: [...leaf.tokens].sort(compare), assets: [...leaf.assets].sort(compare) })).sort((a, b) => compare(a.id, b.id)),
+    consumption: inputs.consumption && [...inputs.consumption.leaves].map(leaf => ({ id: leaf.id, themes: [...leaf.themes].sort(compare), assets: [...leaf.assets].sort(compare) })).sort((a, b) => compare(a.id, b.id)),
     components: inputs.components && normalizeSource(inputs.components),
     surfaces: inputs.surfaces && normalizeSource(inputs.surfaces),
     pages: inputs.pages && [...inputs.pages].sort((a, b) => compare(a.routeId, b.routeId)),
@@ -187,7 +187,7 @@ export function buildUsageGraph(inputs: UsageGraphInputs): UsageGraph {
 function normalizeSource(source: NonNullable<UsageGraphInputs["components"]>) {
   const list = (values: readonly string[] | undefined) => [...values ?? []].sort(compare);
   return {
-    fills: [...source.fills ?? []].map(fill => ({ id: fill.id, slot: fill.slot, scanStatus: fill.scanStatus, declaredReads: { tokens: list(fill.declaredReads?.tokens), assets: list(fill.declaredReads?.assets) }, scannedReads: fill.scannedReads && { tokens: list(fill.scannedReads.tokens), assets: list(fill.scannedReads.assets) },
+    fills: [...source.fills ?? []].map(fill => ({ id: fill.id, slot: fill.slot, scanStatus: fill.scanStatus, declaredReads: { themes: list(fill.declaredReads?.themes), assets: list(fill.declaredReads?.assets) }, scannedReads: fill.scannedReads && { themes: list(fill.scannedReads.themes), assets: list(fill.scannedReads.assets) },
       observedComposes: fill.observedComposes && [...fill.observedComposes].map(row => ({ file: row.file, line: row.line, slotId: row.slotId, tag: row.tag })).sort((a, b) => compare(stableStringify(a), stableStringify(b))) })).sort((a, b) => compare(a.id, b.id)),
     reverseComposes: source.reverseComposes && Object.fromEntries(Object.entries(source.reverseComposes).sort(([a], [b]) => compare(a, b)).map(([target, parents]) => [target, Array.isArray(parents) ? list(parents as readonly string[]) : { declared: list((parents as { declared?: readonly string[] }).declared), scanned: list((parents as { scanned?: readonly string[] }).scanned) }])),
   };

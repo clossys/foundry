@@ -20,7 +20,7 @@ const INK='#111111', ON_INVERSE='#ffffff';
 function base():LibraryData{
  let library:LibraryData={source:{id:'example',kind:'consumer',author:'consumer',license:'MIT',extends:'foundry'},fills:[],adoptedAt:'2026-10-23',rubricVersion:'test',strategy:{posture:'proven'},direction:{rule:'identity-mark@1'}};
  const token=(value:string,dark?:string):DtcgToken=>({$type:'color',$value:value,$extensions:{'com.clossys.css':{raw:value},...(dark?{'com.clossys.modes':{dark}}:{})}});
- library=applyLibraryChange(catalog,library,{baseHash:libraryHash(library),changes:[{op:'author',slot:'tokens.text-color',tokens:{primary:token(INK,ON_INVERSE),'on-inverse':token(ON_INVERSE),'on-accent':token(ON_INVERSE)}},{op:'author',slot:'tokens.surface-color',tokens:{base:token(ON_INVERSE,INK),inverse:token(INK)}},{op:'author',slot:'tokens.accent-color',tokens:{default:token('#2255aa')}},{op:'author',slot:'tokens.typeface',tokens:{display:{$type:'fontFamily',$value:['sans-serif']}}}]});
+ library=applyLibraryChange(catalog,library,{baseHash:libraryHash(library),changes:[{op:'author',slot:'themes.foreground',tokens:{primary:token(INK,ON_INVERSE),'on-inverse':token(ON_INVERSE),'on-accent':token(ON_INVERSE)}},{op:'author',slot:'themes.background',tokens:{base:token(ON_INVERSE,INK),inverse:token(INK)}},{op:'author',slot:'themes.primary',tokens:{default:token('#2255aa')}},{op:'author',slot:'themes.font-sans',tokens:{display:{$type:'fontFamily',$value:['sans-serif']}}}]});
  return library;
 }
 const spoke=(deg:number)=>`<rect x="-5.75" y="-32" width="11.5" height="32" transform="rotate(${deg})"/>`;
@@ -159,10 +159,10 @@ function kitLibrary():LibraryData{
  const color=(value:string,dark?:string):DtcgToken=>({$type:'color',$value:value,$extensions:{'com.clossys.css':{raw:value},...(dark?{'com.clossys.modes':{dark}}:{})}});
  const svg=(value:string):DtcgToken=>({$type:'svg',$value:value,$extensions:{'com.clossys.origin':{kind:'authored',license:'MIT',note:'Consumer identity seed'}}});
  library=applyLibraryChange(catalog,library,{baseHash:libraryHash(library),changes:[
-  {op:'author',slot:'tokens.text-color',tokens:{primary:color(K.primary,K.primaryDark),'on-inverse':color(K.onInverse,K.inverse),'on-accent':color(K.onInverse)}},
-  {op:'author',slot:'tokens.surface-color',tokens:{base:color(K.base,K.baseDark),inverse:color(K.inverse,K.primaryDark)}},
-  {op:'author',slot:'tokens.accent-color',tokens:{default:color('#6E3FC7')}},
-  {op:'author',slot:'tokens.typeface',tokens:{display:{$type:'fontFamily',$value:['sans-serif']}}},
+  {op:'author',slot:'themes.foreground',tokens:{primary:color(K.primary,K.primaryDark),'on-inverse':color(K.onInverse,K.inverse),'on-accent':color(K.onInverse)}},
+  {op:'author',slot:'themes.background',tokens:{base:color(K.base,K.baseDark),inverse:color(K.inverse,K.primaryDark)}},
+  {op:'author',slot:'themes.primary',tokens:{default:color('#6E3FC7')}},
+  {op:'author',slot:'themes.font-sans',tokens:{display:{$type:'fontFamily',$value:['sans-serif']}}},
   {op:'author',slot:'assets.mark',tokens:{positive:svg(KIT_MARK)}},
   {op:'author',slot:'assets.lockup',tokens:{positive:svg(KIT_LOCKUP)}},
  ]});

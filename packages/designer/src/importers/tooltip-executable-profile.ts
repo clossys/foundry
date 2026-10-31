@@ -4,9 +4,8 @@ import type { SourceFile } from "./rewrite.js";
 // Exact rewritten entry before this selected adaptation. Upstream bytes have
 // already been authenticated independently by importShadcnAriaComponents.
 const sourceHash = "07eeec7f086d838941487fe884ccd529938d7d6337f8b2d383a40e3b3639c0ce";
-export const tooltipExecutableReads = Object.freeze([
-  "tokens.behavior-timing.tooltip-close", "tokens.behavior-timing.tooltip-delay",
-]);
+/** Tooltip timing is a caller binding, not a themes leaf, so the adaptation adds no theme reads. */
+export const tooltipExecutableReads: readonly string[] = Object.freeze([]);
 export const tooltipExecutableProps = Object.freeze(["children", "className", "crossOffset", "offset", "placement", "ref", "style"]);
 
 /** Bind exact consumer duration values explicitly; never read an ambient theme or invent timing. */
@@ -19,8 +18,8 @@ export function tooltipExecutableSource(file: SourceFile): SourceFile {
   };
   replace("  Focusable,", "  composeRenderProps,\n  Focusable,");
   replace("function TooltipTrigger({", `export type TooltipBehaviorTiming = Readonly<{
-  "tokens.behavior-timing.tooltip-delay": Readonly<{ value: number; unit: "ms" | "s" }>;
-  "tokens.behavior-timing.tooltip-close": Readonly<{ value: number; unit: "ms" | "s" }>;
+  "tooltip-delay": Readonly<{ value: number; unit: "ms" | "s" }>;
+  "tooltip-close": Readonly<{ value: number; unit: "ms" | "s" }>;
 }>;
 
 /** The caller supplies these values from its resolved consumer library. */
@@ -32,8 +31,8 @@ export function readTooltipTiming(behaviorTiming: TooltipBehaviorTiming): { dela
     return result;
   };
   return {
-    delay: milliseconds(behaviorTiming?.["tokens.behavior-timing.tooltip-delay"]),
-    closeDelay: milliseconds(behaviorTiming?.["tokens.behavior-timing.tooltip-close"]),
+    delay: milliseconds(behaviorTiming?.["tooltip-delay"]),
+    closeDelay: milliseconds(behaviorTiming?.["tooltip-close"]),
   };
 }
 

@@ -53,7 +53,7 @@ export function loadPublisherIAInput(options: LoadOptions = {}): CoverageInput {
   const writerRoot = resolve(options.writerCatalog ?? packageCatalog("writer"));
   const aliases = new Map<string, string>();
   const leafOf = (value: string): string => value.split(".").slice(0, 2).join(".");
-  for (const layer of ["tokens", "assets", "components", "sections", "frames"]) {
+  for (const layer of ["themes", "assets", "components", "sections", "frames"]) {
     const path = join(designerRoot, "slots", `${layer}.json`);
     if (!existsSync(path)) { if (!input.unavailable.includes("designer")) input.unavailable.push("designer"); input.needs.push(`Designer registry unavailable: ${layer}`); continue; }
     for (const row of rows(read(path, `designer/slots/${layer}.json`), "Designer slots")) {

@@ -28,7 +28,7 @@ function writeFill(library: LibraryData, slot: string, values: Readonly<Record<s
   const metadata = previous ? structuredClone(metaOf(previous)) : { id: `${library.source.id}/${slot}`, slot, source: library.source.id, mode: "implementation" as const, sourceAddress: `fills/${slot}.json`, relation: "same-contract" as const, builtOn: [], conforms: [], evidence: [], author: library.source.author, trust: "consumer" as const, license: library.source.license, status: "draft" as const };
   if (slot.startsWith("assets.")) {
     const dependencies = new Set(Object.values(values).flatMap(token => references(token).map(leafOf)));
-    metadata.reads = { tokens: [...dependencies].filter(id => id.startsWith("tokens.")).sort(compare), assets: [...dependencies].filter(id => id.startsWith("assets.")).sort(compare) };
+    metadata.reads = { themes: [...dependencies].filter(id => id.startsWith("themes.")).sort(compare), assets: [...dependencies].filter(id => id.startsWith("assets.")).sort(compare) };
   }
   return { $extensions: { "com.clossys.fill": { ...metadata, id: `${library.source.id}/${slot}`, slot, source: library.source.id, mode: "implementation", originKinds } }, [slot.split(".")[0]!]: root } as unknown as FillDoc;
 }

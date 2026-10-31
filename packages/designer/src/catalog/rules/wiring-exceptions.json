@@ -9,7 +9,6 @@
       "reason": "WIRE-4 frame layout read: frame layout switch point read by the responsive frame logic.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.breakpoint.mobile-lg",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -21,7 +20,6 @@
       "reason": "WIRE-4 frame layout read: frame layout switch point read by the responsive frame logic.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.breakpoint.tablet-lg",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -33,7 +31,6 @@
       "reason": "WIRE-4 frame layout read: frame region width (resizable or responsive panel bounds).",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.region-width.sidebar",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -45,7 +42,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.md",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -57,7 +54,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.sm",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -69,7 +66,6 @@
       "reason": "WIRE-4 frame layout read: frame control hit-region minimum.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.touch-target.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -81,7 +77,6 @@
       "reason": "WIRE-4 frame layout read: frame stacking order between persistent chrome and overlays.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.z-index.shell",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -93,7 +88,6 @@
       "reason": "WIRE-4 frame layout read: frame stacking order between persistent chrome and overlays.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.z-index.sticky",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -105,7 +99,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.lg",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -117,7 +111,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.sm",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -129,7 +123,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.xl",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -141,7 +135,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.xs",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -153,7 +147,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.lg",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -165,7 +159,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.md",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -177,7 +171,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.sm",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -189,7 +183,6 @@
       "reason": "WIRE-4 frame layout read: frame layout switch point read by the responsive frame logic.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.breakpoint.tablet",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -201,7 +194,6 @@
       "reason": "WIRE-4 frame layout read: frame dock or content measure bound.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.content-size.dock-default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -213,7 +205,6 @@
       "reason": "WIRE-4 frame layout read: frame dock or content measure bound.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.content-size.dock-max",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -225,7 +216,6 @@
       "reason": "WIRE-4 frame layout read: frame dock or content measure bound.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.content-size.dock-min",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -237,7 +227,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.sm",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -249,7 +239,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.xs",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -261,7 +251,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.md",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -273,7 +263,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.sm",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -285,7 +275,6 @@
       "reason": "WIRE-4 frame layout read: frame region width (resizable or responsive panel bounds).",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.region-width.inspector",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -297,7 +286,6 @@
       "reason": "WIRE-4 frame layout read: frame region width (resizable or responsive panel bounds).",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.region-width.inspector-max",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -309,7 +297,6 @@
       "reason": "WIRE-4 frame layout read: frame region width (resizable or responsive panel bounds).",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.region-width.inspector-min",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -321,7 +308,6 @@
       "reason": "WIRE-4 frame layout read: frame region divider width.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.border-width.hairline",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -333,7 +319,6 @@
       "reason": "WIRE-4 frame layout read: frame dock or content measure bound.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.content-size.content",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -345,7 +330,6 @@
       "reason": "WIRE-4 frame layout read: frame page inset applied to full-bleed regions.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.gutter.page-x",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -357,7 +341,6 @@
       "reason": "WIRE-4 frame layout read: frame region width (resizable or responsive panel bounds).",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.region-width.aside",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -369,7 +352,6 @@
       "reason": "WIRE-4 frame layout read: frame region width (resizable or responsive panel bounds).",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.region-width.drawer",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -381,7 +363,6 @@
       "reason": "WIRE-4 frame layout read: frame control hit-region minimum.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.touch-target.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -393,7 +374,6 @@
       "reason": "WIRE-4 frame layout read: frame stacking order between persistent chrome and overlays.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.z-index.aside",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -405,7 +385,6 @@
       "reason": "WIRE-4 frame layout read: frame stacking order between persistent chrome and overlays.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.z-index.shell",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -417,7 +396,6 @@
       "reason": "WIRE-4 frame layout read: frame stacking order between persistent chrome and overlays.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.z-index.toast",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -429,7 +407,6 @@
       "reason": "WIRE-4 frame layout read: frame region divider width.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.border-width.hairline",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -441,7 +418,6 @@
       "reason": "WIRE-4 frame layout read: frame layout switch point read by the responsive frame logic.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.breakpoint.tablet",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -453,7 +429,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.sm",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -465,7 +441,6 @@
       "reason": "WIRE-4 frame layout read: frame control hit-region minimum.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.touch-target.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -477,7 +452,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.lg",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -489,7 +464,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.md",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -501,7 +476,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.sm",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -513,7 +488,6 @@
       "reason": "WIRE-4 frame layout read: frame region width (resizable or responsive panel bounds).",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.region-width.sidebar",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -525,7 +499,6 @@
       "reason": "WIRE-4 frame layout read: frame region width (resizable or responsive panel bounds).",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.region-width.sidebar-rail",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -537,7 +510,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.lg",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -549,7 +522,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.sm",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -561,7 +534,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.lg",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -573,7 +546,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.sm",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -585,7 +558,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.xs",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -597,7 +570,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.sm",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -609,7 +582,6 @@
       "reason": "WIRE-4 frame layout read: frame stacking order between persistent chrome and overlays.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.z-index.sticky",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -621,7 +593,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.md",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     },
@@ -633,7 +605,7 @@
       "reason": "WIRE-4 frame layout read: frame chrome spacing between regions; no frame-layout component carries it yet.",
       "owner": "designer-maintainers",
       "expiry": "2027-01-31",
-      "read": "tokens.spacing.sm",
+      "read": "themes.spacing.default",
       "reasonCode": "layout-geometry",
       "status": "proposed"
     }

@@ -21,7 +21,6 @@ export function resolveFrameHeaderOptions(frame: HeaderFrameId, instance: FrameH
     surface,
     /** Selected members stay separate from CSS fixed/relative legacy mechanisms. */
     members: { ...(position === undefined ? {} : { position }), ...(surface === undefined ? {} : { surface }) },
-    /** Position-dependent reads only, not a claim about the header's entire token closure. */
-    reads: effectivePosition === "sticky" ? ["tokens.z-index.sticky"] as const : [],
+    reads: [] as const,
   } as const;
 }

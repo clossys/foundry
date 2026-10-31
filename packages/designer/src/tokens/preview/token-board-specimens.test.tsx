@@ -65,7 +65,7 @@ it("shows resolved values with the alias as a name, never a var() string (studio
   expect(displayTokenValue("0 1px 0 var(--color-line-base, oklch(0.8761 0 0))")).toEqual({ text: "0 1px 0 oklch(0.8761 0 0)" });
   expect(displayTokenValue("cubic-bezier(.2, 0, 0, 1)")).toEqual({ text: "cubic-bezier(0.2, 0, 0, 1)" });
   const problems: string[] = [];
-  for (const slot of catalog.slots.filter(entry => entry.id.startsWith("tokens."))) {
+  for (const slot of catalog.slots.filter(entry => entry.id.startsWith("themes."))) {
     const candidate = selected(slot.id);
     if (!candidate) continue;
     for (const entry of candidate.members) {
@@ -87,7 +87,7 @@ it("sorts scale members by ordinal, then by value (studio-04)", () => {
   expect(keysOf("tokens.font-size")).toEqual(["xs", "sm", "base", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl", "7xl", "8xl", "9xl"]);
   expect(keysOf("tokens.display-size")).toEqual(["m", "l", "xl", "2xl"]);
   expect(keysOf("tokens.heading-size")).toEqual(["2xl", "h0", "h1", "h2", "h3"]);
-  expect(keysOf("tokens.spacing")).toEqual(["xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl"]);
+  expect(keysOf("themes.spacing")).toEqual(["xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl"]);
   const ramp = keysOf("tokens.color-ramp");
   expect(ramp.slice(0, 11)).toEqual(["50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"].map(step => `amber.${step}`));
   expect(ramp.indexOf("amber.950")).toBeLessThan(ramp.indexOf("blue.50"));

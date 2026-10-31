@@ -81,26 +81,14 @@
     }
   ],
   "reads": {
-    "tokens": [
-      "tokens.action-color.default",
-      "tokens.border-color.strong",
-      "tokens.border-width.hairline",
-      "tokens.border-width.rule",
-      "tokens.control-size.switch-thumb",
-      "tokens.duration.default",
-      "tokens.easing.default",
-      "tokens.focus-color.default",
-      "tokens.focus-outline.offset",
-      "tokens.focus-outline.width",
-      "tokens.spacing.2xl",
-      "tokens.spacing.lg",
-      "tokens.spacing.md",
-      "tokens.spacing.xl",
-      "tokens.state-opacity.disabled",
-      "tokens.status-color.danger",
-      "tokens.surface-color.base",
-      "tokens.text-color.on-action",
-      "tokens.text-color.primary"
+    "themes": [
+      "themes.primary.default",
+      "themes.ring.default",
+      "themes.spacing.default",
+      "themes.destructive.default",
+      "themes.background.default",
+      "themes.primary-foreground.default",
+      "themes.foreground.default"
     ],
     "assets": [],
     "components": []

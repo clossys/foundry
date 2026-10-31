@@ -12,7 +12,7 @@ import { libraryFiles, readLibrary } from "./fs-library.js";
 import { readSurfacePackageEvidence } from "./surface-package-evidence.js";
 import { verifySurfacePackageInputs } from "./surface-pin-context.js";
 
-const SLOT = /^(tokens|assets|components|sections|frames)\.[a-z][a-z0-9-]*$(?![\s\S])/;
+const SLOT = /^(themes|assets|components|sections|frames)\.[a-z][a-z0-9-]*$(?![\s\S])/;
 const object = (v: unknown): v is Record<string, any> => !!v && typeof v === "object" && !Array.isArray(v);
 const json = (v: unknown) => JSON.stringify(v, null, 2) + "\n";
 type Catalog = CatalogData | CompositeCatalogData;
@@ -148,7 +148,7 @@ async function projection(root: string, options: Options): Promise<Map<string, s
   for (const id of ids) delete rationale[id];
   for (const cell of cells) if (cell.rationale !== null) rationale[cell.id] = cell.rationale;
   if (Object.keys(rationale).length || valueMetadata.rationale !== undefined) valueMetadata.rationale = rationale;
-  const values = { ...valueMetadata, source: tree.meta.source, fills: cells.filter(cell => /^(tokens|assets)\./.test(cell.id)).map(cell => cell.fill) } as unknown as LibraryData;
+  const values = { ...valueMetadata, source: tree.meta.source, fills: cells.filter(cell => /^(themes|assets)\./.test(cell.id)).map(cell => cell.fill) } as unknown as LibraryData;
   values.selection = generateSelection(values);
   const catalog = options.catalog ?? defaultCatalog(composite);
   // Compilation projects authored data and the existing index. Runtime code emission

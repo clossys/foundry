@@ -4,7 +4,7 @@ import { matrixBoards, purePlacementTree, type MatrixRow } from "./matrix-model.
 import type { SlotTreeNode } from "./model.js";
 import { boardMatches, canvasDomains } from "./canvas-model.js";
 
-it.each(["tokens", "assets", "components", "sections", "frames"] as const)("carries real %s placements through Studio at exactly group > family > leaf depth", layer => {
+it.each(["themes", "assets", "components", "sections", "frames"] as const)("carries real %s placements through Studio at exactly group > family > leaf depth", layer => {
   const loaded = loadBuildCatalog();
   // Build-only layers supply real placements and leaf identities, without asking the runtime engine to evaluate them.
   const catalog = { ...loadCatalog(), placements: loaded.placements.filter(placement => placement.layer === layer) };
@@ -31,7 +31,7 @@ it.each(["tokens", "assets", "components", "sections", "frames"] as const)("carr
       }
     }
   }
-  if (layer === "tokens") {
+  if (layer === "themes") {
     expect(tree.map(node => node.id)).toEqual(["color", "type", "space", "shape", "depth", "motion", "interaction"].map(id => `tokens/${id}`));
     const tiers = loaded.slots.flatMap(slot => slot.contract.kind === "token" ? [slot.contract.tier] : []);
     expect(new Set(tiers)).toEqual(new Set(["scale", "role"]));
@@ -52,7 +52,7 @@ it.each(["tokens", "assets", "components", "sections", "frames"] as const)("carr
   expect(canvasDomains(catalog, boards).flatMap(domain => domain.boards)).toEqual(boards);
 });
 
-it.each(["tokens", "assets", "components", "sections", "frames"] as const)("groups a three-level %s placement generically and keeps board filters independent of candidate evaluation", layer => {
+it.each(["themes", "assets", "components", "sections", "frames"] as const)("groups a three-level %s placement generically and keeps board filters independent of candidate evaluation", layer => {
   const leaves = [`${layer}.first`, `${layer}.second`];
   const loaded = loadCatalog();
   const catalog = { ...loaded, placements: [{ layer, nodes: [{ id: "group", label: "Group", children: [{ id: "family", label: "Family", leaves }] }] }] };

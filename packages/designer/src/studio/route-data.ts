@@ -24,8 +24,6 @@ export interface DesignerRouteServerData extends NativeRouteFrameData {
   readonly contracts?: BuildCatalogData;
   readonly snapshot: WholeStudioInitialSnapshot;
   readonly initialSlotId?: string;
-  /** The selected profile member declaring the document root font size. */
-  readonly rootFontSizeToken?: string;
 }
 export interface DesignerRoutePageProps extends DesignerAgentData {
   /** Supplied by the client host; executable copy resolution is never serialized in serverData. */
@@ -61,22 +59,4 @@ export function checkedDesignerRouteData(data: DesignerRouteServerData, initialS
   const axes = finite.frame.members.map(member => member.split(".")[0]);
   if (new Set(axes).size !== axes.length || finite.frame.members.some(member => !descriptors[0]!.members.includes(member))) throw new TypeError("Route frame members differ from its selected descriptor");
   return { data: finite, catalog, contracts, profile };
-}
-/** No browser default root size is assumed. Only a named selected px token can
- * resolve rem on the server; actual browser measurements are supplied separately. */
-export function routeBreakpointPixels(profile: CompositeResolved, rootFontSizeToken?: string, measured: Readonly<Record<string, number>> = {}): Readonly<Record<string, number>> {
-  const root = rootFontSizeToken && profile.values.members[rootFontSizeToken]?.value.light;
-  const rootPx = root && typeof root === "object" && !Array.isArray(root) && "unit" in root && "value" in root && root.unit === "px" && typeof root.value === "number" && root.value > 0 ? root.value : undefined;
-  const pixels: Record<string, number> = {};
-  for (const [id, member] of Object.entries(profile.values.members).filter(([id]) => id.startsWith("tokens.breakpoint."))) {
-    const value = member.value.light;
-    if (!value || typeof value !== "object" || Array.isArray(value) || !("unit" in value) || !("value" in value) || typeof value.value !== "number") continue;
-    const px = value.unit === "px" ? value.value : value.unit === "rem" && rootPx !== undefined ? value.value * rootPx : measured[id];
-    if (typeof px === "number" && Number.isSafeInteger(px) && px > 1 && px <= 100000) pixels[id] = px;
-  }
-  return pixels;
-}
-export function routeBreakpointsReady(profile: CompositeResolved, values: Readonly<Record<string, number>>): boolean {
-  const ids = Object.keys(profile.values.members).filter(id => id.startsWith("tokens.breakpoint."));
-  return ids.length > 0 && ids.every(id => values[id] !== undefined);
 }

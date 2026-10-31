@@ -78,10 +78,8 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.icon-size",
-          "tokens.icon-stroke",
-          "tokens.spacing"
+        "themes": [
+          "themes.spacing"
         ]
       },
       "root": "presentational",

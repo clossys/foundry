@@ -30,7 +30,7 @@ describe("SYNTHETIC components through the public composite facade", () => {
     expect(client.check(input).ok).toBe(true);
     expect(profile.check.findings.some(f => f.code === "A6" && f.severity === "notice" && f.message.includes("optical"))).toBe(true);
     expect(profile.selectionHash).toBe(client.libraryHash(input.library));
-    expect(profile.components.components["components.button"]!.reads.tokens["tokens.text-color.primary"]).toBe(profile.values.members["tokens.text-color.primary"]!.emit);
+    expect(profile.components.components["components.button"]!.reads.themes["themes.foreground.default"]).toBe(profile.values.members["themes.foreground.default"]!.emit);
     expect(() => client.emit(profile, ["component-index"])).not.toThrow();
     const files = client.emit(profile, ["css-brand", "component-index", "components-consumption", "notices"]);
     for (const name of ["brand.css", "component-index.ts", "components/button/index.ts", "components-consumption.json", "notices.json", "notices/components.json", "adapters/glyphs.ts"]) expect(files.some(f => f.path === name), name).toBe(true);
@@ -65,7 +65,7 @@ describe("SYNTHETIC components through the public composite facade", () => {
   it("keeps all portions atomic on a late component failure and rejects member operations", () => {
     const input = componentIntegration(); const before = structuredClone(input.library);
     expect(() => client.applyLibraryChange(input.catalog, input.library, { baseHash: client.libraryHash(input.library), changes: [
-      { portion: "values", change: { op: "author", slot: "tokens.text-color", tokens: { primary: { $type: "color", $value: "#333333" } } } },
+      { portion: "values", change: { op: "author", slot: "themes.foreground", tokens: { default: { $type: "color", $value: "#333333" } } } },
       { ...adopt, change: { ...adopt.change, members: [] } },
     ] })).toThrow(/slot-scope/);
     expect(input.library).toEqual(before);
@@ -81,10 +81,10 @@ describe("SYNTHETIC components through the public composite facade", () => {
     const input = adoptedComponentIntegration();
     const initial = client.resolve(input);
     const candidates = structuredClone(input.catalog);
-    const candidate = candidates.values.fills.find(fill => metaOf(fill).slot === "tokens.text-color")!;
+    const candidate = candidates.values.fills.find(fill => metaOf(fill).slot === "themes.foreground")!;
     Object.values(flatten(candidate))[0]!.$value = "#ff00ff";
     expect(client.resolve({ ...input, catalog: candidates }).components.check).toEqual(initial.components.check);
-    const changed = client.applyLibraryChange(input.catalog, input.library, { baseHash: client.libraryHash(input.library), changes: [{ portion: "values", change: { op: "author", slot: "tokens.text-color", tokens: { primary: { $type: "color", $value: "#ffffff" } } } }] });
+    const changed = client.applyLibraryChange(input.catalog, input.library, { baseHash: client.libraryHash(input.library), changes: [{ portion: "values", change: { op: "author", slot: "themes.foreground", tokens: { default: { $type: "color", $value: "#ffffff" } } } }] });
     const result = client.check({ ...input, library: changed });
     expect(result.ok).toBe(false);
     expect(result.findings.some(f => f.code === "K5")).toBe(true);
@@ -98,27 +98,27 @@ describe("SYNTHETIC components through the public composite facade", () => {
   });
   it("uses resolved mode bindings for light aliases, explicit dark values and missing dark fallbacks", () => {
     const cases: { name: string; primary: client.DtcgToken; light: string; dark: string; throughLightOnly?: boolean }[] = [
-      { name: "light alias with explicit dark literal", primary: { $type: "color", $value: "{tokens.focus-color.default}", $extensions: { "com.clossys.modes": { dark: "#eeeeee" } } }, light: "#000000", dark: "#eeeeee" },
-      { name: "direct light with dark alias", primary: { $type: "color", $value: "#000000", $extensions: { "com.clossys.css": { raw: "#000000" }, "com.clossys.modes": { dark: "{tokens.focus-color.default}" } } }, light: "#000000", dark: "#ffffff" },
-      { name: "light alias without a dark override keeps requested mode", primary: { $type: "color", $value: "{tokens.focus-color.default}" }, light: "#000000", dark: "#ffffff" },
+      { name: "light alias with explicit dark literal", primary: { $type: "color", $value: "{themes.ring.default}", $extensions: { "com.clossys.modes": { dark: "#eeeeee" } } }, light: "#000000", dark: "#eeeeee" },
+      { name: "direct light with dark alias", primary: { $type: "color", $value: "#000000", $extensions: { "com.clossys.css": { raw: "#000000" }, "com.clossys.modes": { dark: "{themes.ring.default}" } } }, light: "#000000", dark: "#ffffff" },
+      { name: "light alias without a dark override keeps requested mode", primary: { $type: "color", $value: "{themes.ring.default}" }, light: "#000000", dark: "#ffffff" },
       { name: "direct literal without a dark override", primary: { $type: "color", $value: "#767676", $extensions: { "com.clossys.css": { raw: "#767676" } } }, light: "#767676", dark: "#767676" },
-      { name: "requested dark mode crosses a light-only alias contract", primary: { $type: "color", $value: "{tokens.focus-color.default}" }, light: "#000000", dark: "#eeeeee", throughLightOnly: true },
+      { name: "requested dark mode crosses a light-only alias contract", primary: { $type: "color", $value: "{themes.ring.default}" }, light: "#000000", dark: "#eeeeee", throughLightOnly: true },
     ];
     for (const item of cases) {
       const input = adoptedComponentIntegration();
-      if (item.throughLightOnly) input.catalog.values.slots = input.catalog.values.slots.map(slot => slot.id === "tokens.focus-color" && slot.contract.kind === "token" ? { ...slot, contract: { ...slot.contract, modes: ["light"] } } : slot);
+      if (item.throughLightOnly) input.catalog.values.slots = input.catalog.values.slots.map(slot => slot.id === "themes.ring" && slot.contract.kind === "token" ? { ...slot, contract: { ...slot.contract, modes: ["light"] } } : slot);
       const extra: client.CompositeLibraryOperation[] = item.throughLightOnly ? [
-        { portion: "values", change: { op: "author", slot: "tokens.focus-color", tokens: { default: { $type: "color", $value: "{tokens.surface-color.inverse}" } } } },
-        { portion: "values", change: { op: "author", slot: "tokens.surface-color", tokens: { inverse: { $type: "color", $value: "#000000", $extensions: { "com.clossys.css": { raw: "#000000" }, "com.clossys.modes": { dark: "#eeeeee" } } } } } },
+        { portion: "values", change: { op: "author", slot: "themes.ring", tokens: { default: { $type: "color", $value: "{themes.background.default}" } } } },
+        { portion: "values", change: { op: "author", slot: "themes.background", tokens: { default: { $type: "color", $value: "#000000", $extensions: { "com.clossys.css": { raw: "#000000" }, "com.clossys.modes": { dark: "#eeeeee" } } } } } },
       ] : [];
-      const library = client.applyLibraryChange(input.catalog, input.library, { baseHash: client.libraryHash(input.library), changes: [...extra, { portion: "values", change: { op: "author", slot: "tokens.text-color", tokens: { primary: item.primary } } }] });
+      const library = client.applyLibraryChange(input.catalog, input.library, { baseHash: client.libraryHash(input.library), changes: [...extra, { portion: "values", change: { op: "author", slot: "themes.foreground", tokens: { default: item.primary } } }] });
       const { source, adoptedAt, values } = library;
       const fresh = client.resolve({ catalog: input.catalog.values, library: { ...values, source, adoptedAt } });
-      const foreground = fresh.members["tokens.text-color.primary"]!;
+      const foreground = fresh.members["themes.foreground.default"]!;
       expect(foreground.value.light, item.name).toBe(item.light);
       expect(foreground.value.dark, item.name).toBe(item.dark);
       // Every aliased mode uses the engine's materialized value; direct CSS keeps its spelling.
-      const tokens = Object.fromEntries(Object.entries(fresh.members).filter(([id, member]) => id.startsWith("tokens.") && member.emit).map(([id, member]) => [id, {
+      const tokens = Object.fromEntries(Object.entries(fresh.members).filter(([id, member]) => id.startsWith("themes.") && member.emit).map(([id, member]) => [id, {
         property: member.emit!, light: member.alias.light ? cssText(member.$type, member.value.light) : member.css.light,
         ...(member.value.dark === undefined ? {} : { dark: member.alias.dark ? cssText(member.$type, member.value.dark) : member.css.dark! }),
       }]));

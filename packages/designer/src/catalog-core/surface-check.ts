@@ -1,5 +1,6 @@
 /** Surface diagnostics retain failed provenance, source, contract and evidence boundaries. */
 import { surfaceEntryOf, isSurfacePackageEntry, verifySurfacePackageProvenance, surfaceOf, surfacePrimary, canonicalSurfacePortion, surfaceDescriptorHash, surfaceDigest, sortedManifest, verifySurfaceFiles, verifySurfaceProvenance, surfaceInputs, surfaceDerivationHash, surfaceFault, assertSurfaceResolutionOptions } from "./surface-library.js";
+import { isTailwindBreakpoint } from "./breakpoints.js";
 import { bindSurfaceSource, surfaceDogfoodImportBindings } from "./surface-bindings.js";
 import { runtimeHash, runtimeSourceFindings, runtimeSnapshot } from "./runtime-ports.js";
 import { buildSurfaceConsumption } from "./surface-consumption.js";
@@ -37,7 +38,7 @@ function selectedSurfaceFindings(fill: Pick<SurfaceDefaultDescriptor, "slot" | "
             if (id.startsWith("components.") && !profile.components.components[id])
                 findings.push({ code: "S4", rule: "surfaces", severity: "error", subject: fill.slot, message: `selected component missing ${id}` });
     if (fill.reads)
-        for (const id of [...fill.reads.tokens, ...fill.reads.assets])
+        for (const id of [...fill.reads.themes, ...fill.reads.assets])
             if (!Object.keys(profile.values.members).some(member => member === id || member.startsWith(id + ".")))
                 findings.push({ code: "S5", rule: "surfaces", severity: "error", subject: fill.slot, message: `consumer read missing ${id}` });
     return findings;
@@ -114,7 +115,7 @@ export function resolveSurfaces(input: CompositeEngineInput, profile: CompositeR
             continue;
         }
         const contract = slot.contract;
-        for (const [label, actual, allowed] of [["members", fill.members, contract.members.names], ["states", fill.states.filter(state => state !== "default"), contract.kind === "section" ? contract.states ?? [] : contract.statePorts.map(port => port.id)], ["tokens", fill.reads.tokens, contract.allowedReads.tokens], ["assets", fill.reads.assets, contract.allowedReads.assets], ["composes", fill.composes, contract.kind === "section" ? [...contract.allowedComposes, ...contract.composes ?? [], ...contract.parts] : contract.composes ?? []], ["parts", fill.parts, contract.kind === "section" ? contract.parts : []]] as const)
+        for (const [label, actual, allowed] of [["members", fill.members, contract.members.names], ["states", fill.states.filter(state => state !== "default"), contract.kind === "section" ? contract.states ?? [] : contract.statePorts.map(port => port.id)], ["themes", fill.reads.themes, contract.allowedReads.themes], ["assets", fill.reads.assets, contract.allowedReads.assets], ["composes", fill.composes, contract.kind === "section" ? [...contract.allowedComposes, ...contract.composes ?? [], ...contract.parts] : contract.composes ?? []], ["parts", fill.parts, contract.kind === "section" ? contract.parts : []]] as const)
             if (actual.some(value => !allowed.some(option => option === value)))
                 add("S5", fill.slot, `unsupported ${label}`);
         const required = contract.kind === "section" ? contract.slots.filter(slot => slot.required).map(slot => slot.name) : contract.slots.filter(slot => slot.required).map(slot => slot.id);
@@ -129,9 +130,9 @@ export function resolveSurfaces(input: CompositeEngineInput, profile: CompositeR
         if (fill.kind === "frame" && contract.kind === "frame") {
             if (fill.rendering !== contract.rendering || Object.keys(fill.statePorts).some(key => !contract.statePorts.some(port => port.id === key)) || contract.statePorts.some(port => !fill.statePorts[port.id]))
                 add("S5", fill.slot, "frame rendering/state ownership differs");
-            for (const id of [...contract.breakpoints, ...contract.layers])
-                if (!profile.values.members[id] || !fill.reads.tokens.some(leaf => id === leaf || id.startsWith(leaf + ".")))
-                    add("S5", fill.slot, `frame value unavailable ${id}`);
+            for (const id of contract.breakpoints)
+                if (!isTailwindBreakpoint(id))
+                    add("S5", fill.slot, `frame breakpoint unknown ${id}`);
         }
         findings.push(...selectedSurfaceFindings(fill, profile));
         for (const blocker of fill.blockers)
@@ -148,7 +149,7 @@ export function resolveSurfaces(input: CompositeEngineInput, profile: CompositeR
         }
         if (!bound.proof.findings.length) {
             const themeCss = emitValues(profile.values, ["css-brand", "css-scales"], { header: false }).map(file => file.contents).join("\n");
-            const report = buildSurfaceConsumption({ tokens: input.catalog.values.slots.filter(slot => slot.layer === "tokens").map(slot => ({ id: slot.id, contract: { emit: "emit" in slot.contract ? slot.contract.emit : undefined } })), assets: input.catalog.values.slots.filter(slot => slot.layer === "assets"), components: input.catalog.components.slots, sections: slot.layer === "sections" ? [slot] : [], frames: slot.layer === "frames" ? [slot] : [], fills: [{ id: meta.id, slot: fill.slot, source: fill.source }], sourceScans: [{ fill: meta.id, files: owned.filter(file => /\.tsx?$/.test(file.path)), resolvedImports: surfaceDogfoodImportBindings(fill, bound) }], themeCss });
+            const report = buildSurfaceConsumption({ themes: input.catalog.values.slots.filter(slot => slot.layer === "themes").map(slot => ({ id: slot.id, contract: { emit: "emit" in slot.contract ? slot.contract.emit : undefined } })), assets: input.catalog.values.slots.filter(slot => slot.layer === "assets"), components: input.catalog.components.slots, sections: slot.layer === "sections" ? [slot] : [], frames: slot.layer === "frames" ? [slot] : [], fills: [{ id: meta.id, slot: fill.slot, source: fill.source }], sourceScans: [{ fill: meta.id, files: owned.filter(file => /\.tsx?$/.test(file.path)), resolvedImports: surfaceDogfoodImportBindings(fill, bound) }], themeCss });
             const actual = report.fills[0]!;
             for (const message of surfaceConsumptionFindings(slot, fill, { scanStatus: actual.scanStatus as "lower-bound" | "unavailable", sourceFiles: fill.outputSha256.filter(file => actual.sourceFiles.includes(file.path)), scannedReads: actual.scannedReads, scannedComposes: actual.scannedComposes }))
                 add(message.startsWith("S8") ? "S8" : "S5", fill.slot, message.slice(3));

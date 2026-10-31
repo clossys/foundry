@@ -202,11 +202,7 @@
       ],
       "reflow": [],
       "allowedReads": [
-        "tokens.spacing",
-        "tokens.gutter",
-        "tokens.content-size",
-        "tokens.region-width",
-        "tokens.breakpoint"
+        "themes.spacing"
       ]
     },
     "requires": [],
@@ -285,16 +281,12 @@
       ],
       "reflow": [
         {
-          "at": "tokens.breakpoint.tablet",
+          "at": "md",
           "columns": 2
         }
       ],
       "allowedReads": [
-        "tokens.spacing",
-        "tokens.gutter",
-        "tokens.content-size",
-        "tokens.region-width",
-        "tokens.breakpoint"
+        "themes.spacing"
       ]
     },
     "requires": [],
@@ -401,8 +393,8 @@
           "after"
         ],
         "breakpoint": [
-          "tablet",
-          "tablet-lg"
+          "md",
+          "lg"
         ]
       },
       "configs": [
@@ -413,7 +405,7 @@
             "aside-width": "third",
             "sticky": "none",
             "stacked-aside": "after",
-            "breakpoint": "tablet"
+            "breakpoint": "md"
           },
           "slotOverrides": {}
         },
@@ -424,7 +416,7 @@
             "aside-width": "region",
             "sticky": "aside",
             "stacked-aside": "before",
-            "breakpoint": "tablet-lg"
+            "breakpoint": "lg"
           },
           "slotOverrides": {
             "aside": {
@@ -437,16 +429,12 @@
       ],
       "reflow": [
         {
-          "at": "tokens.breakpoint.tablet-lg",
+          "at": "lg",
           "columns": 2
         }
       ],
       "allowedReads": [
-        "tokens.spacing",
-        "tokens.gutter",
-        "tokens.content-size",
-        "tokens.region-width",
-        "tokens.breakpoint"
+        "themes.spacing"
       ]
     },
     "requires": [],
@@ -517,27 +505,23 @@
       ],
       "reflow": [
         {
-          "at": "tokens.breakpoint.tablet",
+          "at": "md",
           "columns": 2,
           "spans": "clamp"
         },
         {
-          "at": "tokens.breakpoint.tablet-lg",
+          "at": "lg",
           "columns": 3,
           "spans": "clamp"
         },
         {
-          "at": "tokens.breakpoint.desktop",
+          "at": "xl",
           "columns": 4,
           "spans": "clamp"
         }
       ],
       "allowedReads": [
-        "tokens.spacing",
-        "tokens.gutter",
-        "tokens.content-size",
-        "tokens.region-width",
-        "tokens.breakpoint"
+        "themes.spacing"
       ],
       "requiresSection": {
         "container": "adaptive"
@@ -577,11 +561,7 @@
       "configs": [],
       "reflow": [],
       "allowedReads": [
-        "tokens.spacing",
-        "tokens.gutter",
-        "tokens.content-size",
-        "tokens.region-width",
-        "tokens.breakpoint"
+        "themes.spacing"
       ]
     },
     "requires": [],

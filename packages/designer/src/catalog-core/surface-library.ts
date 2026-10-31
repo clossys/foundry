@@ -86,7 +86,7 @@ function inputRef(value: unknown): void {
     object(value, ["kind", "id"]);
     string(value.id);
     choice(value.kind, ["component", "value", "surface", "dependency"]);
-    if (value.kind !== "dependency" && !(value.kind === "component" ? /^components\.[a-z][a-z0-9-]*$/ : value.kind === "surface" ? /^(sections|frames)\.[a-z][a-z0-9-]*$/ : /^(tokens|assets)\.[a-z][a-z0-9.-]*$/).test(value.id))
+    if (value.kind !== "dependency" && !(value.kind === "component" ? /^components\.[a-z][a-z0-9-]*$/ : value.kind === "surface" ? /^(sections|frames)\.[a-z][a-z0-9-]*$/ : /^(themes|assets)\.[a-z][a-z0-9.-]*$/).test(value.id))
         surfaceFault("S6 invalid input reference");
 }
 function binding(value: unknown): void { object(value, ["export", "path"]); if (!pascal(value.export))
@@ -150,8 +150,8 @@ export function assertSurfaceCandidate(value: unknown, installed = false): asser
         strings(field);
     if (!(value.states as string[]).includes("default"))
         surfaceFault("S1 default state required");
-    object(value.reads, ["tokens", "assets"]);
-    strings(value.reads.tokens);
+    object(value.reads, ["themes", "assets"]);
+    strings(value.reads.themes);
     strings(value.reads.assets);
     object(value.api, ["version", "exports"]);
     choice(value.api.version, [1]);
@@ -247,18 +247,18 @@ export function assertSurfacePackageEntry(value: unknown, pin: unknown, installe
         pointers(value.slots);
         pointers(value.statePorts);
     }
-    if (value.reads !== undefined) { object(value.reads, ["tokens", "assets"]); strings(value.reads.tokens); strings(value.reads.assets); }
+    if (value.reads !== undefined) { object(value.reads, ["themes", "assets"]); strings(value.reads.themes); strings(value.reads.assets); }
     if (value.composes !== undefined) strings(value.composes);
     if (value.consumption !== undefined) {
         const measured = value.consumption;
         object(measured, ["scanStatus", "sourceFiles", "scannedReads", "scannedComposes"], ["unresolved", "rawScannedReads", "privateInternalReads"]);
         choice(measured.scanStatus, ["lower-bound", "unavailable"]);
         list(measured.sourceFiles, row => { object(row, ["path", "sha256"]); string(row.path); surfacePath(row.path); hash(row.sha256); });
-        object(measured.scannedReads, ["tokens", "assets", "components"]);
-        strings(measured.scannedReads.tokens); strings(measured.scannedReads.assets); strings(measured.scannedReads.components);
+        object(measured.scannedReads, ["themes", "assets", "components"]);
+        strings(measured.scannedReads.themes); strings(measured.scannedReads.assets); strings(measured.scannedReads.components);
         if (measured.privateInternalReads !== undefined || measured.rawScannedReads !== undefined) {
-            object(measured.rawScannedReads, ["tokens", "assets", "components"]);
-            strings(measured.rawScannedReads.tokens); strings(measured.rawScannedReads.assets); strings(measured.rawScannedReads.components);
+            object(measured.rawScannedReads, ["themes", "assets", "components"]);
+            strings(measured.rawScannedReads.themes); strings(measured.rawScannedReads.assets); strings(measured.rawScannedReads.components);
             list(measured.privateInternalReads, row => {
                 object(row, ["target", "targetSha256", "file", "sourceSha256", "specifier", "line", "rawAssets"]);
                 string(row.target); surfacePath(row.target); hash(row.targetSha256);
@@ -274,7 +274,7 @@ export function assertSurfacePackageEntry(value: unknown, pin: unknown, installe
                 if (!(row.rawAssets as string[]).length || (row.rawAssets as string[]).some(id => !/^assets\.[a-z][a-z0-9-]*$/.test(id) || !(row.specifier as string).includes(id) || !(measured.rawScannedReads as Node).assets || !((measured.rawScannedReads as Node).assets as string[]).includes(id))) surfaceFault("S2 private internal raw reads differ");
             }, true);
             const raw = measured.rawScannedReads, observed = measured.scannedReads;
-            if (["tokens", "components"].some(layer => stableStringify(raw[layer]) !== stableStringify(observed[layer])) || (observed.assets as string[]).some(id => !(raw.assets as string[]).includes(id)) || (raw.assets as string[]).some(id => !(observed.assets as string[]).includes(id) && !(measured.privateInternalReads as Node[]).some(row => (row.rawAssets as string[]).includes(id)))) surfaceFault("S2 private internal read partition differs");
+            if (["themes", "components"].some(layer => stableStringify(raw[layer]) !== stableStringify(observed[layer])) || (observed.assets as string[]).some(id => !(raw.assets as string[]).includes(id)) || (raw.assets as string[]).some(id => !(observed.assets as string[]).includes(id) && !(measured.privateInternalReads as Node[]).some(row => (row.rawAssets as string[]).includes(id)))) surfaceFault("S2 private internal read partition differs");
         }
         strings(measured.scannedComposes);
         if (measured.unresolved !== undefined) list(measured.unresolved, row => {
@@ -361,7 +361,7 @@ function assertPackageContract(value: unknown, slot: string): asserts value is S
     });
     const contentSlots = (contract.slots as Node[]).map(port => port[section ? "name" : "id"]);
     if (new Set(contentSlots).size !== contentSlots.length) surfaceFault("S2 duplicate historical content slot");
-    object(contract.allowedReads, ["tokens", "assets"], section ? [] : ["privateInternal"]); strings(contract.allowedReads.tokens); strings(contract.allowedReads.assets);
+    object(contract.allowedReads, ["themes", "assets"], section ? [] : ["privateInternal"]); strings(contract.allowedReads.themes); strings(contract.allowedReads.assets);
     if (contract.allowedReads.privateInternal !== undefined) {
         strings(contract.allowedReads.privateInternal);
         for (const target of contract.allowedReads.privateInternal as string[]) { surfacePath(target); if (!/^packages\/[A-Za-z0-9_-]+\/src\/.+\/internal\/.+\.[cm]?tsx?$/.test(target)) surfaceFault("S1 private internal module path required"); }
@@ -455,7 +455,7 @@ export function surfacePackageDocument(library: CompositeLibraryData, fill: Surf
 }
 export const sortedManifest = (rows: readonly SurfaceFileHash[]): SurfaceFileHash[] => [...rows].sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
 export const surfaceManifest = (files: readonly SurfaceFile[]): SurfaceFileHash[] => sortedManifest(files.map(file => ({ path: file.path, sha256: sha256(file.content) })));
-function canonicalSurfaceEntry<T extends SurfaceCandidate>(entry: T): T { const fill = structuredClone(entry); const normalize = (values: readonly string[]) => [...values].sort(); fill.members = normalize(fill.members); fill.states = normalize(fill.states); fill.composes = normalize(fill.composes); fill.parts = normalize(fill.parts); fill.reads = { tokens: normalize(fill.reads.tokens), assets: normalize(fill.reads.assets) }; fill.api = { version: 1, exports: [...fill.api.exports].sort((a, b) => a.name < b.name ? -1 : 1) }; fill.bindings = [...fill.bindings].sort((a, b) => stableStringify([a.file, a.module, a.name, a.local, a.slot]) < stableStringify([b.file, b.module, b.name, b.local, b.slot]) ? -1 : 1); fill.dependencies = [...fill.dependencies].sort((a, b) => a.module < b.module ? -1 : 1); fill.outputSha256 = sortedManifest(fill.outputSha256); fill.pin = { ...fill.pin, files: sortedManifest(fill.pin.files) }; if (fill.kind === "section")
+function canonicalSurfaceEntry<T extends SurfaceCandidate>(entry: T): T { const fill = structuredClone(entry); const normalize = (values: readonly string[]) => [...values].sort(); fill.members = normalize(fill.members); fill.states = normalize(fill.states); fill.composes = normalize(fill.composes); fill.parts = normalize(fill.parts); fill.reads = { themes: normalize(fill.reads.themes), assets: normalize(fill.reads.assets) }; fill.api = { version: 1, exports: [...fill.api.exports].sort((a, b) => a.name < b.name ? -1 : 1) }; fill.bindings = [...fill.bindings].sort((a, b) => stableStringify([a.file, a.module, a.name, a.local, a.slot]) < stableStringify([b.file, b.module, b.name, b.local, b.slot]) ? -1 : 1); fill.dependencies = [...fill.dependencies].sort((a, b) => a.module < b.module ? -1 : 1); fill.outputSha256 = sortedManifest(fill.outputSha256); fill.pin = { ...fill.pin, files: sortedManifest(fill.pin.files) }; if (fill.kind === "section")
     fill.configs = Object.fromEntries(Object.entries(fill.configs).map(([id, config]) => [id, { ...config, members: normalize(config.members) }])); return fill; }
 export function surfaceDescriptorHash(fill: SurfaceCandidate): string { const { origin: _origin, ...descriptor } = canonicalSurfaceEntry(fill) as SurfaceCandidate & {
     origin?: SurfaceOrigin;

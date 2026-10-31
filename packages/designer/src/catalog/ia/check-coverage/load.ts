@@ -16,7 +16,7 @@ const object = (value: unknown): value is Record<string, unknown> => value !== n
 const records = (value: unknown): Record<string, unknown>[] => Array.isArray(value) ? value.filter(object) : [];
 const strings = (value: unknown): string[] => Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 const read = (path: string): unknown => JSON.parse(readFileSync(path, "utf8"));
-const leafOf = (id: string): string => /^(tokens|assets|components|sections|frames)\./.test(id) ? id.split(".").slice(0, 2).join(".") : id;
+const leafOf = (id: string): string => /^(themes|assets|components|sections|frames)\./.test(id) ? id.split(".").slice(0, 2).join(".") : id;
 function jsonFiles(root: string): string[] {
   if (!existsSync(root)) return [];
   return readdirSync(root, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name)).flatMap(entry =>

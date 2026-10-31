@@ -1,3 +1,4 @@
+import { isTailwindBreakpoint } from "@clossys/designer/catalog";
 import leaves from "./slots/layouts.json" with { type: "json" };
 import { isLayoutId } from "./ids.js";
 import type { LayoutConfig, LayoutLeaf, LayoutSlot, PageLayoutContract } from "./contract.js";
@@ -77,14 +78,9 @@ export function getEffectiveLayoutContract(
     : slots;
   // Preserve the existing Layout's inherited aside-width behavior in the one
   // effective contract, so Stage DOM order and CSS reflow share that choice.
-  const breakpoint = memberValues.breakpoint ?? (leaf.id === "layouts.sidebar-content" ? (memberValues["aside-width"] ?? contract.members["aside-width"]?.[0]) === "region" ? "tablet-lg" : "tablet" : undefined);
+  const breakpoint = memberValues.breakpoint ?? (leaf.id === "layouts.sidebar-content" ? (memberValues["aside-width"] ?? contract.members["aside-width"]?.[0]) === "region" ? "lg" : "md" : undefined);
   let at: PageLayoutContract["reflow"][number]["at"] | undefined;
-  if (breakpoint === "mobile") at = "tokens.breakpoint.mobile";
-  else if (breakpoint === "mobile-lg") at = "tokens.breakpoint.mobile-lg";
-  else if (breakpoint === "tablet") at = "tokens.breakpoint.tablet";
-  else if (breakpoint === "tablet-lg") at = "tokens.breakpoint.tablet-lg";
-  else if (breakpoint === "desktop") at = "tokens.breakpoint.desktop";
-  else if (breakpoint === "wide") at = "tokens.breakpoint.wide";
+  if (isTailwindBreakpoint(breakpoint)) at = breakpoint;
   else if (leaf.id === "layouts.sidebar-content" && breakpoint) throw new Error("Unknown layout breakpoint");
   const reflow = leaf.id === "layouts.sidebar-content" && at
     ? sourceReflow.map((step) => ({ ...step, at }))

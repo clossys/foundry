@@ -4,7 +4,7 @@ import { activeCandidateSource } from "./candidate-display.js";
 import { buildCandidates } from "./model.js";
 import { adopt, catalog, emptyLibrary } from "./__fixtures__/studio.js";
 
-function candidates(library = adopt()) { return buildCandidates({ catalog, library, working: library, slotId: "tokens.surface-color", scope: "slot", target: "tokens.surface-color" }); }
+function candidates(library = adopt()) { return buildCandidates({ catalog, library, working: library, slotId: "themes.background", scope: "slot", target: "themes.background" }); }
 it("displays one adopted provided source only when every current variant exactly matches it", () => {
  const rows = candidates();
  expect(rows.find(candidate => candidate.source === "foundry")!.usable).toBe(true);
@@ -13,7 +13,7 @@ it("displays one adopted provided source only when every current variant exactly
 });
 it("keeps authored or mixed variants in Custom", () => {
  const library = adopt();
- const authored = applyLibraryChange(catalog, library, { baseHash: libraryHash(library), changes: [{ op: "author", slot: "tokens.surface-color", tokens: { base: { $type: "color", $value: "#abcdef" } } }] });
+ const authored = applyLibraryChange(catalog, library, { baseHash: libraryHash(library), changes: [{ op: "author", slot: "themes.background", tokens: { default: { $type: "color", $value: "#abcdef" } } }] });
  expect(activeCandidateSource(candidates(authored))).toBe(authored.source.id);
  expect(activeCandidateSource(candidates(emptyLibrary()))).toBeNull();
 });

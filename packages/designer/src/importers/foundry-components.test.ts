@@ -187,7 +187,7 @@ it("stores the exact pending NativeAction draft with real exports, native states
   expect(fill.members).toEqual(["appearance.primary", "ground.base", "size.md", "state.disabled", "state.focus-visible", "state.hover", "state.pressed"]);
   expect(fill.deps.map(dep => dep.name)).toEqual(["react", "tailwind-merge"]);
   expect(fill.reads.assets).toEqual([]); expect(fill.reads.components).toEqual([]);
-  expect(fill.reads.tokens).toEqual(["tokens.action-color", "tokens.body-size", "tokens.control-radius", "tokens.duration", "tokens.easing", "tokens.focus-color", "tokens.focus-outline", "tokens.spacing", "tokens.state-opacity", "tokens.text-color", "tokens.typeface"]);
+  expect(fill.reads.themes).toEqual(["themes.primary", "tokens.body-size", "themes.radius", "tokens.duration", "tokens.easing", "themes.ring", "tokens.focus-outline", "themes.spacing", "tokens.state-opacity", "themes.foreground", "themes.font-sans"]);
   expect(doc.$extensions["com.clossys.fill"]).toMatchObject({ status: "draft", conforms: [], evidence: [] });
   const files = generatedFoundryComponentFiles({ exports });
   if (process.env.UPDATE_FOUNDRY_COMPONENT_FILLS === "1") writeFileSync(resolve(fillsDirectory, "components.native-action.json"), files["components.native-action.json"]!);

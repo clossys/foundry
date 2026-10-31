@@ -14,14 +14,14 @@ import { main } from "../library-cli/cli.js";
 function fixture(): UsageGraphInputs {
   return {
     inventory: {
-      tokens: ["tokens.color", "tokens.region-width", "tokens.spacing", "tokens.unused"],
+      tokens: ["tokens.color", "tokens.region-width", "themes.spacing", "tokens.unused"],
       assets: ["assets.icon-close"],
       components: ["components.button", "components.dialog", "components.icon"],
       sections: ["sections.band", "sections.form"],
       frames: ["frames.app-shell"],
     },
     selection: {
-      "tokens.color": "foundry/tokens.color", "tokens.region-width": "foundry/tokens.region-width", "tokens.spacing": "foundry/tokens.spacing", "tokens.unused": "foundry/tokens.unused",
+      "tokens.color": "foundry/tokens.color", "tokens.region-width": "foundry/tokens.region-width", "themes.spacing": "foundry/themes.spacing", "tokens.unused": "foundry/tokens.unused",
       "assets.icon-close": "lucide/assets.icon-close",
       "components.button": "shadcn@aria/components.button", "components.dialog": "shadcn@aria/components.dialog", "components.icon": "foundry/components.icon",
       "sections.form": "foundry/sections.form", "frames.app-shell": "foundry/frames.app-shell",
@@ -34,9 +34,9 @@ function fixture(): UsageGraphInputs {
     // components-consumption.json: fills plus reverseComposes keyed by the composed leaf.
     components: {
       fills: [
-        { id: "shadcn@aria/components.button", slot: "components.button", scanStatus: "lower-bound", declaredReads: { tokens: ["tokens.color", "tokens.spacing"], assets: [] }, scannedReads: { tokens: ["tokens.color"], assets: [] } },
-        { id: "foundry/components.button", slot: "components.button", scanStatus: "lower-bound", declaredReads: { tokens: ["tokens.region-width"], assets: [] }, scannedReads: { tokens: ["tokens.region-width"], assets: [] } },
-        { id: "foundry/components.icon", slot: "components.icon", scanStatus: "unavailable", declaredReads: { tokens: [], assets: ["assets.icon-close"] } },
+        { id: "shadcn@aria/components.button", slot: "components.button", scanStatus: "lower-bound", declaredReads: { themes: ["tokens.color", "themes.spacing"], assets: [] }, scannedReads: { themes: ["tokens.color"], assets: [] } },
+        { id: "foundry/components.button", slot: "components.button", scanStatus: "lower-bound", declaredReads: { themes: ["tokens.region-width"], assets: [] }, scannedReads: { themes: ["tokens.region-width"], assets: [] } },
+        { id: "foundry/components.icon", slot: "components.icon", scanStatus: "unavailable", declaredReads: { themes: [], assets: ["assets.icon-close"] } },
       ],
       reverseComposes: {
         "components.button": { declared: ["foundry/components.toast", "shadcn@aria/components.dialog"], scanned: ["shadcn@aria/components.dialog"] },
@@ -46,9 +46,9 @@ function fixture(): UsageGraphInputs {
     // buildSurfaceConsumption(): fills plus reverseComposes.
     surfaces: {
       fills: [
-        { id: "foundry/sections.form", slot: "sections.form", scanStatus: "lower-bound", declaredReads: { tokens: ["tokens.region-width"], assets: [] }, scannedReads: { tokens: ["tokens.region-width"], assets: [] },
+        { id: "foundry/sections.form", slot: "sections.form", scanStatus: "lower-bound", declaredReads: { themes: ["tokens.region-width"], assets: [] }, scannedReads: { themes: ["tokens.region-width"], assets: [] },
           observedComposes: [{ file: "src/blocks/Form.tsx", line: 12, slotId: "components.button", tag: "Button" }, { file: "src/blocks/Form.tsx", line: 3, slotId: "components.link", tag: "Link" }] },
-        { id: "foundry/frames.app-shell", slot: "frames.app-shell", scanStatus: "lower-bound", declaredReads: { tokens: [], assets: [] }, scannedReads: { tokens: [], assets: [] } },
+        { id: "foundry/frames.app-shell", slot: "frames.app-shell", scanStatus: "lower-bound", declaredReads: { themes: [], assets: [] }, scannedReads: { themes: [], assets: [] } },
       ],
       reverseComposes: {
         "components.button": { declared: ["foundry/sections.form"], scanned: ["foundry/sections.form"] },
@@ -72,7 +72,7 @@ describe("usage graph", () => {
     expect(rows(uses(graph, "components.button"))).toEqual([
       "components.button -composes/declared-> components.icon",
       "components.button -reads/declared+scanned-> tokens.color",
-      "components.button -reads/declared-> tokens.spacing",
+      "components.button -reads/declared-> themes.spacing",
     ]);
     expect(rows(usedBy(graph, "components.button"))).toEqual([
       "components.dialog -composes/declared+scanned-> components.button",
@@ -91,7 +91,7 @@ describe("usage graph", () => {
     expect(rows(usedBy(graph, "tokens.region-width.aside"))).toEqual(["sections.form -reads/declared+scanned-> tokens.region-width"]);
     expect(uses(graph, "components.unknown")).toEqual([]);
     expect(closure(graph, "tokens.color", "usedBy")).toEqual(["assets.icon-close", "components.button", "components.dialog", "components.icon", "frames.app-shell", "pages.home", "sections.form"]);
-    expect(closure(graph, "pages.home", "uses")).toEqual(["assets.icon-close", "components.button", "components.dialog", "components.icon", "frames.app-shell", "sections.band", "sections.form", "tokens.color", "tokens.missing", "tokens.region-width", "tokens.spacing"]);
+    expect(closure(graph, "pages.home", "uses")).toEqual(["assets.icon-close", "components.button", "components.dialog", "components.icon", "frames.app-shell", "sections.band", "sections.form", "tokens.color", "tokens.missing", "tokens.region-width", "themes.spacing"]);
     expect(closure(graph, "tokens.unused", "usedBy")).toEqual([]);
     expect(graph.nodes.find(node => node.id === "components.button")).toEqual({ id: "components.button", layer: "components", leaf: "components.button", fill: { id: "shadcn@aria/components.button", source: "shadcn@aria" }, origin: "inventory", scan: "lower-bound" });
     expect(graph.nodes.find(node => node.id === "pages.home")).toEqual({ id: "pages.home", layer: "pages", leaf: "pages.home", origin: "route" });
@@ -118,7 +118,7 @@ describe("usage graph", () => {
       "dangling-endpoint assets.icon-close -> tokens.missing",
       "unselected-endpoint sections.form -> sections.band",
       "unused-declaration components.button -> components.icon",
-      "unused-declaration components.button -> tokens.spacing",
+      "unused-declaration components.button -> themes.spacing",
       "unused-declaration sections.form -> sections.band",
       "used-nowhere tokens.unused",
     ]);
@@ -151,7 +151,7 @@ describe("designer-library graph", () => {
     const path = join(root, "usage-graph.json"), bytes = await fs.readFile(path, "utf8");
     const report = JSON.parse(bytes);
     expect(report.inputsHash).toMatch(/^sha256:/);
-    expect(report.edges.some((edge: { from: string; to: string; kind: string }) => edge.kind === "reads" && edge.from.startsWith("assets.") && edge.to.startsWith("tokens."))).toBe(true);
+    expect(report.edges.some((edge: { from: string; to: string; kind: string }) => edge.kind === "reads" && edge.from.startsWith("assets.") && edge.to.startsWith("themes."))).toBe(true);
     expect((await invoke("graph", "--root", root, "--check")).code).toBe(0);
     expect((await invoke("graph", "--root", root, "--write")).code).toBe(0);
     expect(await fs.readFile(path, "utf8")).toBe(bytes);

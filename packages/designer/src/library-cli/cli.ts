@@ -5,7 +5,7 @@ import { resolve as pathResolve, dirname, relative, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runDogfood, dogfoodSourceModules, DOGFOOD_PACKAGE_NAME, type DogfoodException, type NeedStatus } from "../catalog-core/dogfood.js";
 import { consumerDogfoodSources, parseConsumerDogfoodContract, runConsumerDogfood } from "./consumer-dogfood.js";
-import tokenSlots from "../catalog/slots/tokens.json" with { type: "json" };
+import themeSlots from "../catalog/slots/themes.json" with { type: "json" };
 import { libraryHash, loadCatalog, type CompositeFinding, type CompositeEmitTarget } from "../catalog-core/index.js";
 import type { CompositeEngineInput } from "../catalog-core/types.js";
 import { loadNativeCompositeCatalog } from "./native-catalog.js";
@@ -32,7 +32,7 @@ Commands:
   cells propose <slot> | activate <slot@version...> --confirm <ref> [--root <cell-root>]
   surfaces --refresh <surfaceId> [--observations <file>] [--json]  Refresh one held package surface from its same upstream.
   status [--json]                         Describe consumer-owned fills and baseHash.
-  check [--layer tokens|assets|components|sections|frames] [--observations <file>] [--json]
+  check [--layer themes|assets|components|sections|frames] [--observations <file>] [--json]
   emit [--check] [--target <target>] [--observations <file>]  Regenerate files, or fail on drift.
   apply --changeset <file> [--observations <file>] [--json]  Apply only explicitly instructed values.
   dogfood <path...> [--write-needs] [--json]  Derive surface findings; writes require the flag.
@@ -86,7 +86,7 @@ function parseArgs(argv: string[]): Args {
   const root = values.get("--root");
   if (!root) throw new LibraryInputError("--root is required");
   const layer = values.get("--layer"), changeset = values.get("--changeset");
-  if (layer && (command !== "check" || !["tokens", "assets", "components", "sections", "frames"].includes(layer))) throw new LibraryInputError("--layer requires check and a known layer");
+  if (layer && (command !== "check" || !["themes", "assets", "components", "sections", "frames"].includes(layer))) throw new LibraryInputError("--layer requires check and a known layer");
   if ((command === "apply") !== !!changeset) throw new LibraryInputError("apply requires --changeset; other commands do not accept it");
   if ((toggles.has("--check") && command !== "emit" && command !== "graph") || (targets.length && command !== "emit")) throw new LibraryInputError("--check requires emit or graph; --target requires emit");
   if (toggles.has("--write") && !["graph", "reselect", "generate-starter", "select"].includes(command!)) throw new LibraryInputError("--write requires graph, reselect, generate-starter or select");
@@ -115,7 +115,7 @@ function layerFindings(findings: readonly CompositeFinding[], layer?: string): r
   if (!layer) return findings;
   if(layer==="sections"||layer==="frames")return findings.filter(finding=>finding.rule!=="surfaces"||finding.subject.startsWith(layer+".")||!finding.subject.match(/^(sections|frames)\./));
   if (layer === "components") return findings.filter(finding => finding.code.startsWith("K") || finding.rule === "components" || finding.subject.startsWith("components."));
-  const other = layer === "tokens" ? "assets" : "tokens";
+  const other = layer === "themes" ? "assets" : "themes";
   return findings.filter(finding => {
     if (finding.code.startsWith("K") || finding.rule === "components") return false;
     if (finding.code.startsWith("A")) return layer === "assets";
@@ -206,15 +206,15 @@ async function libraryUsageGraphInputs(root: string, catalog: ReturnType<typeof 
   for (const meta of [...(composite?.components.fills ?? []).map(fill => fill.$extensions["com.clossys.fill"]), ...surfaceFills]) selection[meta.slot] = meta.id;
   const layer = (name: string) => catalog.slots.filter(slot => slot.layer === name);
   const surfaceSlots = composite?.surfaces ? compositeCatalog.surfaces.slots : [];
-  const emitted = composite ? await readOptionalJson(pathResolve(root, "components-consumption.json")) as { leaves?: { slot: string; reads?: { tokens?: Readonly<Record<string, string>>; assets?: string[] } }[]; reverseComposes?: Record<string, string[]> } | undefined : undefined;
-  // emitComponents writes each leaf's token reads as { memberId: cssProperty } (ResolvedComponent.reads.tokens); the graph needs the member ids.
+  const emitted = composite ? await readOptionalJson(pathResolve(root, "components-consumption.json")) as { leaves?: { slot: string; reads?: { themes?: Readonly<Record<string, string>>; assets?: string[] } }[]; reverseComposes?: Record<string, string[]> } | undefined : undefined;
+  // emitComponents writes each leaf's token reads as { memberId: cssProperty } (ResolvedComponent.reads.themes); the graph needs the member ids.
   const tokenReads = (tokens: unknown): string[] => {
     if (tokens === undefined) return [];
     if (!tokens || typeof tokens !== "object" || Array.isArray(tokens)) throw new LibraryInputError("components-consumption.json leaf token reads must map member ids to properties");
     return Object.keys(tokens).sort();
   };
   const surfaces = composite?.surfaces ? buildSurfaceConsumption({
-    tokens: layer("tokens").map(slot => ({ id: slot.id, contract: { emit: "emit" in slot.contract ? slot.contract.emit : undefined } })) as Parameters<typeof buildSurfaceConsumption>[0]["tokens"],
+    themes: layer("themes").map(slot => ({ id: slot.id, contract: { emit: "emit" in slot.contract ? slot.contract.emit : undefined } })) as Parameters<typeof buildSurfaceConsumption>[0]["themes"],
     assets: layer("assets"), components: compositeCatalog.components.slots,
     sections: surfaceSlots.filter(slot => slot.layer === "sections") as unknown as Parameters<typeof buildSurfaceConsumption>[0]["sections"],
     frames: surfaceSlots.filter(slot => slot.layer === "frames") as unknown as Parameters<typeof buildSurfaceConsumption>[0]["frames"],
@@ -223,13 +223,13 @@ async function libraryUsageGraphInputs(root: string, catalog: ReturnType<typeof 
   }) : undefined;
   return {
     inventory: {
-      tokens: layer("tokens").map(slot => slot.id), assets: layer("assets").map(slot => slot.id),
+      themes: layer("themes").map(slot => slot.id), assets: layer("assets").map(slot => slot.id),
       ...(composite ? { components: compositeCatalog.components.slots.map(slot => slot.id) } : {}),
       ...(composite?.surfaces ? { sections: surfaceSlots.filter(slot => slot.layer === "sections").map(slot => slot.id), frames: surfaceSlots.filter(slot => slot.layer === "frames").map(slot => slot.id) } : {}),
     },
     selection,
     consumption: { leaves: consumptionReport(tokenLibrary).leaves },
-    ...(emitted ? { components: { fills: (emitted.leaves ?? []).filter(leaf => selection[leaf.slot]).map(leaf => ({ id: selection[leaf.slot]!, slot: leaf.slot, declaredReads: { tokens: tokenReads(leaf.reads?.tokens), assets: leaf.reads?.assets ?? [] } })), reverseComposes: emitted.reverseComposes ?? {} } } : {}),
+    ...(emitted ? { components: { fills: (emitted.leaves ?? []).filter(leaf => selection[leaf.slot]).map(leaf => ({ id: selection[leaf.slot]!, slot: leaf.slot, declaredReads: { themes: tokenReads(leaf.reads?.themes), assets: leaf.reads?.assets ?? [] } })), reverseComposes: emitted.reverseComposes ?? {} } } : {}),
     ...(surfaces ? { surfaces: { fills: surfaces.fills, reverseComposes: surfaces.reverseComposes } } : {}),
   };
 }
@@ -302,7 +302,7 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
       let exceptions: DogfoodException[] = [];
       try { const value: unknown = args.contract ? [] : JSON.parse(await readRegularText(pathResolve(args.root, "dogfood-exceptions.json"))); if (!Array.isArray(value) || value.some(row => !row || typeof row !== "object" || !["name", "file", "elementId", "hash", "reason", "owner", "expiry"].every(key => typeof row[key] === "string"))) throw new LibraryInputError("Invalid dogfood exception manifest"); exceptions = value; }
       catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
-      const tokens = tokenSlots.map(slot => ({ id: slot.id, contract: { emit: Object.fromEntries(Object.entries(slot.contract.emit ?? {}).filter(([, property]) => typeof property === "string")) } }));
+      const tokens = themeSlots.map(slot => ({ id: slot.id, contract: { emit: Object.fromEntries(Object.entries(slot.contract.emit ?? {}).filter(([, property]) => typeof property === "string")) } }));
       let tokenLibrary: EngineInput | undefined;
       if (consumerSources) {
         let metadata: { format?: string } | undefined;
@@ -313,7 +313,7 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
           tokenLibrary = { catalog, library: { ...library.values, source: library.source, adoptedAt: library.adoptedAt } };
         } else if (metadata !== undefined) tokenLibrary = { catalog, library: await readLibrary(args.root, catalog) };
       }
-      const report = consumerSources ? runConsumerDogfood({ ...consumerSources, needs, tokens, themeCss, tokenLibrary }) : runDogfood({ ...sources, needs, tokens, themeCss, exceptions });
+      const report = consumerSources ? runConsumerDogfood({ ...consumerSources, needs, themes: tokens, themeCss, tokenLibrary }) : runDogfood({ ...sources, needs, themes: tokens, themeCss, exceptions });
       if (args.writeNeeds) {
         const written = await writeNeeds(args.root, report.findings, undefined, { command: "designer-library dogfood --write-needs", inputs: { paths: args.paths } });
         for (const finding of report.findings) { const need = written.find(row => row.raisedBy === finding.raisedBy && row.missing === finding.missing); if (need) finding.needId = need.id; }

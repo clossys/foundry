@@ -1,0 +1,56 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "example/themes.animate-marquee",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "relation": "same-contract",
+      "slot": "themes.animate-marquee",
+      "source": "example",
+      "sourceAddress": "src/catalog/fills/foundry/themes.animate-marquee.json",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "themes": {
+    "animate-marquee": {
+      "default": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "marquee var(--duration) infinite linear"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/themes.animate-marquee",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "themes.animate-marquee.default",
+            "sha256": "6e3fff38b16b6939c86964fb85825d6fc47f087251b446de9bb4346ee4d30994",
+            "source": "foundry"
+          }
+        },
+        "$type": "duration",
+        "$value": "marquee var(--duration) infinite linear"
+      }
+    }
+  }
+}

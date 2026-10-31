@@ -1,4 +1,4 @@
-import tokenSlots from '../catalog/slots/tokens.json' with { type: 'json' };
+import themeSlots from '../catalog/slots/themes.json' with { type: 'json' };
 import type { Resolved, ResolvedMember, Slot, TokenContract } from './types.js';
 
 /** Studio infrastructure identities are separate from consumer design leaves. */
@@ -27,7 +27,7 @@ export type StudioTokenReference = { readonly [referenceBrand]: true };
 type Mode = 'light' | 'dark';
 interface ReferenceFact { readonly values: Resolved; readonly selectionHash: string; readonly member: ResolvedMember; readonly memberId: string; readonly mode: Mode; readonly property: string }
 const references = new WeakMap<object, ReferenceFact>();
-const registry = tokenSlots as readonly Slot<TokenContract>[];
+const registry = themeSlots as unknown as readonly Slot<TokenContract>[];
 
 function registered(values: Resolved, memberId: string, mode: Mode, types: readonly string[] = ['color', 'gradient']) {
   const member = values.members[memberId], slot = registry.find(slot => slot.id === member?.slot);
@@ -68,7 +68,7 @@ export function studioSpecimenTokenStyle(part: 'studio.specimen-contrast', value
 export function studioSpecimenTokenStyle(part: StudioSpecimenHostPartId, values: Resolved, input: SwatchInput | ContrastInput, refs: SwatchReferences | ContrastReferences) {
   if (part === 'studio.specimen-swatch') {
     const request = input as SwatchInput, references = refs as SwatchReferences;
-    const width = registered(values, 'tokens.spacing.5xl', 'light', ['dimension']), height = registered(values, 'tokens.spacing.4xl', 'light', ['dimension']);
+    const width = registered(values, 'themes.spacing.default', 'light', ['dimension']), height = registered(values, 'themes.spacing.default', 'light', ['dimension']);
     if (width.property !== '--spacing-5xl' || height.property !== '--spacing-4xl') throw new Error('NEED: the Studio swatch layout token mapping differs.');
     return { display: 'inline-block' as const, inlineSize: 'var(--spacing-5xl)', blockSize: 'var(--spacing-4xl)', background: read(values, request.memberId, request.mode, references.member) };
   }

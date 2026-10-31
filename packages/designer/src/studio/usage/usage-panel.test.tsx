@@ -34,14 +34,14 @@ const inputs: UsageGraphInputs = {
   inventory: { tokens: ["tokens.color", "tokens.unused"], components: ["components.button", "components.icon"], sections: ["sections.hero"], frames: ["frames.app-shell"] },
   selection: { "tokens.color": "foundry/tokens.color", "tokens.unused": "foundry/tokens.unused", "components.button": "foundry/components.button", "components.icon": "lucide/components.icon", "sections.hero": "foundry/sections.hero", "frames.app-shell": "foundry/frames.app-shell" },
   components: {
-    fills: [{ id: "foundry/components.button", slot: "components.button", scanStatus: "lower-bound", declaredReads: { tokens: ["tokens.color"], assets: [] }, scannedReads: { tokens: ["tokens.color"], assets: [] } }],
+    fills: [{ id: "foundry/components.button", slot: "components.button", scanStatus: "lower-bound", declaredReads: { themes: ["tokens.color"], assets: [] }, scannedReads: { themes: ["tokens.color"], assets: [] } }],
     reverseComposes: { "components.icon": { declared: ["foundry/components.button"], scanned: [] } },
   },
   surfaces: {
     fills: [
-      { id: "foundry/sections.hero", slot: "sections.hero", scanStatus: "lower-bound", declaredReads: { tokens: [], assets: [] }, scannedReads: { tokens: [], assets: [] },
+      { id: "foundry/sections.hero", slot: "sections.hero", scanStatus: "lower-bound", declaredReads: { themes: [], assets: [] }, scannedReads: { themes: [], assets: [] },
         observedComposes: [{ file: "src/blocks/Hero.tsx", line: 4, slotId: "components.button", tag: "Button" }, { file: "src/blocks/Hero.tsx", line: 9, slotId: "components.button", tag: "Button" }] },
-      { id: "foundry/frames.app-shell", slot: "frames.app-shell", scanStatus: "lower-bound", declaredReads: { tokens: [], assets: [] }, scannedReads: { tokens: [], assets: [] } },
+      { id: "foundry/frames.app-shell", slot: "frames.app-shell", scanStatus: "lower-bound", declaredReads: { themes: [], assets: [] }, scannedReads: { themes: [], assets: [] } },
     ],
     reverseComposes: { "components.button": { declared: ["foundry/sections.hero", "foundry/frames.app-shell"], scanned: ["foundry/sections.hero"] } },
   },
@@ -73,7 +73,7 @@ describe("UsagePanel", () => {
     const hero = usedWhere.querySelector<HTMLElement>('[data-usage-row="sections.hero"]')!;
     for (const text of ["sections.hero", "foundry", "U-k-composes", "U-e-declared", "U-e-scanned", "U-count 2"]) expect(within(hero).getByText(text)).toBeInTheDocument();
     // Using what, below first: the token it reads, then the component it composes.
-    expect(layers(list("U-using"))).toEqual(["tokens", "components"]);
+    expect(layers(list("U-using"))).toEqual(["themes", "components"]);
     expect(rowIds(list("U-reads"))).toEqual(["tokens.color"]);
     expect(rowIds(list("U-composes"))).toEqual(["components.icon"]);
 

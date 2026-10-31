@@ -10,7 +10,7 @@ export function importOpenPropsImageRatio(): FillDoc[] {
       id: 'open-props/assets.image-ratio', slot: 'assets.image-ratio', source: 'open-props',
       mode: 'implementation', sourceAddress: source.pin.url, relation: 'subset',
       builtOn: [], conforms: [], evidence: [], author: 'third-party', trust: 'pinned-upstream',
-      license: 'MIT', pin: structuredClone(source.pin), status: 'draft', reads: { tokens: [], assets: [] },
+      license: 'MIT', pin: structuredClone(source.pin), status: 'draft', reads: { themes: [], assets: [] },
     } },
     assets: { 'image-ratio': Object.fromEntries(roster.map(row => [row.member, {
       $type: 'rules', $value: { width: row.width, height: row.height },

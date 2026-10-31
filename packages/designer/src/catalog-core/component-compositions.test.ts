@@ -115,9 +115,9 @@ describe("production date-picker composition", () => {
     const childFiles = [{ path: "DateField.tsx", content: 'import {DateField} from "react-aria-components";' }];
     const child = { ...observation, files: childFiles, sourceHash: componentSourceHash(childFiles), root: "rac:DateField" as const, memberObservations: undefined, measurements: [measurement, { ...measurement, mode: "dark" as const }].map(value => ({ ...value, focusOwner: undefined, focusTokens: ["tokens.focus-ring.default"] })) };
     const input = { slots: catalog.slots, fills: installed.fills.map(componentOf), observations: { "components.date-picker": observation, "components.date-field": child }, tokens, assets: ["assets.icon-date"], installedRac: { version: "1.21.1", instance: "test" }, compositions: { rules: catalog.rules!, library: installed } };
-    const field = input.fills.find(fill => fill.slot === "components.date-field")!; field.reads.tokens = [...field.reads.tokens, "tokens.focus-ring"];
+    const field = input.fills.find(fill => fill.slot === "components.date-field")!; field.reads.themes = [...field.reads.themes, "tokens.focus-ring"];
     // Keep the current consumer descriptor in the exact provenance domain.
-    componentOf(installed.fills.find(doc => componentOf(doc).slot === field.slot)!).reads.tokens = field.reads.tokens;
+    componentOf(installed.fills.find(doc => componentOf(doc).slot === field.slot)!).reads.themes = field.reads.themes;
     const picker = input.fills.find(fill => fill.slot === "components.date-picker")!;
     (picker as typeof picker & { origin: { inputsHash: string } }).origin.inputsHash = componentInputsHash(installed, direct);
     const focusErrors = () => checkComponentProfile(input).findings.filter(f => f.subject === "components.date-picker" && /Focus-visible/.test(f.message));

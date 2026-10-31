@@ -7,9 +7,9 @@ import { applyAgentChange } from "./reselect.js";
 import { loadNativeCompositeCatalog, loadNativeDefaultSources } from "./native-catalog.js";
 
 const requestedTokens = [
-  "blur", "body-size", "border-color", "border-width", "breakpoint", "caption-size", "content-size", "control-radius",
-  "letter-spacing", "line-height", "spacing", "status-color", "surface-color", "touch-target", "typeface", "z-index",
-].map(leaf => `tokens.${leaf}`);
+  "accent", "background", "border", "card", "chart-1", "destructive", "foreground", "input",
+  "muted", "primary", "primary-foreground", "radius", "ring", "secondary", "sidebar", "sidebar-ring",
+].map(leaf => `themes.${leaf}`);
 const empty = (): LibraryData => ({
   source: { id: "candidate-consumer", kind: "consumer", author: "consumer", license: "UNLICENSED" },
   adoptedAt: "2026-10-30", fills: [],
@@ -18,9 +18,9 @@ const empty = (): LibraryData => ({
 it.each(requestedTokens)("reselects %s from the requested source with native member coverage", async leaf => {
   const catalog = loadNativeCompositeCatalog();
   let library = empty();
-  // Status tints are translucent; the native contrast checker needs their real surface backdrop.
-  if (leaf === "tokens.status-color") library = applyLibraryChange(catalog.values, library, {
-    baseHash: libraryHash(library), changes: [{ op: "adopt", slot: "tokens.surface-color", source: "shadcn@aria" }],
+  // The native contrast checker reads destructive against its real surface backdrop.
+  if (leaf === "themes.destructive") library = applyLibraryChange(catalog.values, library, {
+    baseHash: libraryHash(library), changes: [{ op: "adopt", slot: "themes.background", source: "shadcn@aria" }],
   });
   const prior = structuredClone(library);
   const result = await applyAgentChange(
@@ -43,23 +43,22 @@ it.each(requestedTokens)("reselects %s from the requested source with native mem
   }
 });
 
-it("preserves approved authored semantic roles and aliases beside upstream scale values", () => {
-  const catalog = loadNativeCompositeCatalog(), library = empty();
+it("adopts each theme from its single native source with aliases and upstream values intact", () => {
+  const catalog = loadNativeCompositeCatalog(), library = empty(), policy = loadNativeDefaultSources(loadBuildCatalog());
+  const slots = ["themes.font-sans", "themes.font-heading", "themes.spacing", "themes.radius", "themes.animate-marquee"];
   const adopted = applyLibraryChange(catalog.values, library, {
-    baseHash: libraryHash(library), changes: ["tokens.typeface", "tokens.content-size", "tokens.breakpoint", "tokens.blur", "tokens.spacing"].map(slot => ({ op: "adopt" as const, slot, source: "shadcn@aria" })),
+    baseHash: libraryHash(library), changes: slots.map(slot => ({ op: "adopt" as const, slot, source: policy[slot]! })),
   });
   const members = Object.assign({}, ...adopted.fills.map(flatten));
-  expect(members["tokens.typeface.display"].$value).toBe("{tokens.typeface.body}");
-  expect(members["tokens.content-size.display"].$value).toBe("{tokens.content-size.wide}");
-  expect(members["tokens.content-size.dock-default"].$value).toEqual({ unit: "px", value: 240 });
-  expect(members["tokens.breakpoint.mobile"].$value).toEqual({ unit: "px", value: 375 });
-  expect(members["tokens.blur.glass"].$value).toEqual({ unit: "px", value: 20 });
-  expect(members["tokens.blur.glass"].$extensions["com.clossys.provenance"].sourceLabel).toBe("Foundry-authored");
-  expect(members["tokens.spacing.md"].$extensions["com.clossys.provenance"].sourceLabel).toBe("Tailwind4.3.3");
+  expect(members["themes.font-heading.default"].$value).toBe("{themes.font-sans.default}");
+  expect(members["themes.spacing.default"].$value).toEqual({ unit: "rem", value: 0.25 });
+  expect(members["themes.radius.default"].$value).toEqual({ unit: "rem", value: 0.625 });
+  expect(members["themes.animate-marquee.default"].$extensions["com.clossys.origin"]).toMatchObject({ kind: "adopted", source: "foundry" });
+  expect(members["themes.radius.default"].$extensions["com.clossys.provenance"].sourceLabel).toBe("shadcn");
 });
 
 it("reselects an existing known source through the shared native catalog without changing the input", async () => {
-  const leaf = "tokens.blur", source = "foundry";
+  const leaf = "themes.animate-marquee", source = "foundry";
   const catalog = loadNativeCompositeCatalog();
   const library: LibraryData = {
     source: { id: "candidate-consumer", kind: "consumer", author: "consumer", license: "UNLICENSED" },
@@ -87,10 +86,13 @@ it("reads explicit native source policy and leaves ambiguous or absent policy un
   expect(policy["components.rich-text"]).toBe("shadcn@aria");
   expect(policy["components.semantic-content"]).toBe("foundry");
   expect(policy["components.native-action"]).toBe("foundry");
-  expect(policy["tokens.spacing"]).toBe("shadcn@aria");
-  expect(policy["tokens.content-size"]).toBe("shadcn@aria");
+  expect(policy["themes.background"]).toBe("shadcn@aria");
+  expect(policy["themes.radius"]).toBe("shadcn@aria");
+  expect(policy["themes.spacing"]).toBe("tailwind-default");
+  expect(policy["themes.shadow"]).toBe("tailwind-default");
+  expect(policy["themes.animate-marquee"]).toBe("foundry");
   expect(policy["assets.icon-home"]).toBeUndefined();
-  expect(policy["tokens.unknown"]).toBeUndefined();
+  expect(policy["themes.unknown"]).toBeUndefined();
 });
 
 it("adopts and reselects the existing RichText package candidate with its source attribution", () => {

@@ -45,14 +45,12 @@ export function surfaceSpecimenItems(context: DesignerSpecimenContext, leaf: str
   const selected = context.profile.surfaces?.fills[leaf as `sections.${string}` | `frames.${string}`];
   if (!selected) return { items: [], axes: [] };
   const states = context.surfaces?.[leaf]?.states ?? ["default"];
-  const mobileEmit = context.profile.values.members["tokens.breakpoint.mobile"]?.emit, desktopEmit = context.profile.values.members["tokens.breakpoint.desktop"]?.emit;
-  if (mobileEmit !== "--breakpoint-mobile" || desktopEmit !== "--breakpoint-desktop") return { items: [], axes: [] };
   const axes: SpecimenAxis[] = [
     { id: "surface", label: "Surface", values: [{ id: leaf, label: leaf }] },
     { id: leaf.startsWith("frames.") ? "state" : "width", label: leaf.startsWith("frames.") ? "Panel state" : "Viewport", values: leaf.startsWith("frames.") ? states.map(id => ({ id, label: id })) : [{ id: "1280", label: "Desktop" }, { id: "375", label: "Mobile" }] },
   ];
   return { axes, items: axes[1]!.values.map(axis => {
-    const width: SpecimenBreakpointReference = `var(${leaf.startsWith("frames.") || axis.id === "1280" ? desktopEmit : mobileEmit})`, state = leaf.startsWith("frames.") ? axis.id : "default";
+    const width: SpecimenBreakpointReference = leaf.startsWith("frames.") || axis.id === "1280" ? "var(--breakpoint-desktop)" : "var(--breakpoint-mobile)", state = leaf.startsWith("frames.") ? axis.id : "default";
     return { id: `${leaf}/${axis.id}`, label: `${leaf} ${axis.label}`, coordinates: { surface: leaf, [axes[1]!.id]: axis.id }, value: { leaf, width, state } };
   }) };
 }
@@ -83,7 +81,7 @@ function ComponentItem({ item, context, need, renderParts }: { item: SpecimenIte
 
 function SurfaceItem({ item, context, need, expanded, renderParts }: { item: SpecimenItem; context: DesignerSpecimenContext; need: SpecimenLeafProps["need"]; expanded?: boolean; renderParts: SpecimenLeafProps["renderParts"] }): ReactNode {
   const value = item.value as SurfaceViewportItem;
-  const tokenWidths = new Set(Object.values(context.profile.values.members).filter(member => member.slot === "tokens.breakpoint" && member.emit).map(member => `var(${member.emit})`));
+  const tokenWidths = new Set<string>(["var(--breakpoint-mobile)", "var(--breakpoint-desktop)"]);
   const validWidth = typeof value?.width === "number" ? Number.isFinite(value.width) && value.width > 0 : typeof value?.width === "string" && tokenWidths.has(value.width);
   if (!value || typeof value.leaf !== "string" || !validWidth || typeof value.state !== "string") return need({ leaf: "sections.specimen-section-viewports", reason: "Invalid surface viewport data." });
   const selected = context.profile.surfaces?.fills[value.leaf as `sections.${string}` | `frames.${string}`], surface = context.surfaces?.[value.leaf];

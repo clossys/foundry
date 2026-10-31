@@ -128,11 +128,11 @@ const presetSwatch = (slot: string, member: string, theme: "light" | "dark" = "l
   const encode = (linear: number) => Math.round(255 * (linear <= 0.0031308 ? 12.92 * linear : 1.055 * linear ** (1 / 2.4) - 0.055));
   return `#${oklchToLinearSRGB(parseOklch(presetInk(slot, member, theme))).map(channel => encode(channel).toString(16).padStart(2, "0")).join("")}`;
 };
-const chartSwatches = ["1", "2", "3"].map(member => presetSwatch("tokens.categorical-color", member));
+const chartSwatches = ["1", "2", "3"].map(n => presetSwatch(`themes.chart-${n}`, "default"));
 const brandMark = identityStarterSeeds({ name: brandName }, {
-  ink: presetInk("tokens.text-color", "primary"), onInverse: presetInk("tokens.text-color", "on-inverse"),
-  surfaceBase: presetInk("tokens.surface-color", "base"), surfaceInverse: presetInk("tokens.surface-color", "inverse"),
-  accent: presetInk("tokens.accent-color", "default"), onAccent: presetInk("tokens.text-color", "on-accent"), fontFamily: "sans-serif",
+  ink: presetInk("themes.foreground", "default"), onInverse: presetInk("themes.primary-foreground", "default"),
+  surfaceBase: presetInk("themes.background", "default"), surfaceInverse: presetInk("themes.primary", "default"),
+  accent: presetInk("themes.primary", "default"), onAccent: presetInk("themes.primary-foreground", "default"), fontFamily: "sans-serif",
 }).mark;
 
 const selectOptions: readonly SelectOption[] = [
@@ -156,17 +156,7 @@ const tokens = {
   unit: "px",
   /** A 256px track drawn at a fixed scale per size leaf; the bar is the member's own length times `factor`. */
   rulers: {
-    "tokens.breakpoint": { scale: "1:6.25", factor: 0.16, ticks: [0, 400, 800, 1200, 1600] },
-    "tokens.content-size": { scale: "1:5", factor: 0.2, ticks: [0, 320, 640, 960, 1280] },
-    "tokens.region-width": { scale: "1:1.5625", factor: 0.64, ticks: [0, 100, 200, 300, 400] },
-    "tokens.container-width": { scale: "1:5", factor: 0.2, ticks: [0, 320, 640, 960, 1280] },
-    "tokens.control-size": { scale: "4:1", factor: 4, ticks: [0, 16, 32, 48, 64] },
-    "tokens.spacing": { scale: "2:1", factor: 2, ticks: [0, 32, 64, 96, 128] },
-    "tokens.gutter": { scale: "4:1", factor: 4, ticks: [0, 16, 32, 48, 64] },
-    "tokens.touch-target": { scale: "4:1", factor: 4, ticks: [0, 16, 32, 48, 64] },
-    "tokens.brandmark-size": { scale: "4:1", factor: 4, ticks: [0, 16, 32, 48, 64] },
-    "tokens.shift-distance": { scale: "16:1", factor: 16, ticks: [0, 4, 8, 12, 16] },
-    "tokens.border-width": { scale: "16:1", factor: 16, ticks: [0, 4, 8, 12, 16] },
+    "themes.spacing": { scale: "2:1", factor: 2, ticks: [0, 32, 64, 96, 128] },
   } as Readonly<Record<string, { readonly scale: string; readonly factor: number; readonly ticks: readonly number[] }>>,
 } as const;
 
@@ -700,10 +690,10 @@ export type SpecimenDataset = typeof specimenDataset;
 
 /** Fixed preset values per theme; changing the Studio theme never mutates a shared specimen. */
 export const specimenThemeValues = Object.fromEntries((["light", "dark"] as const).map(theme => [theme, {
-  ink: presetInk("tokens.text-color", "primary", theme),
-  surface: presetInk("tokens.surface-color", "base", theme),
-  accent: presetInk("tokens.accent-color", "default", theme),
-  swatches: ["1", "2", "3"].map(member => presetSwatch("tokens.categorical-color", member, theme)),
+  ink: presetInk("themes.foreground", "default", theme),
+  surface: presetInk("themes.background", "default", theme),
+  accent: presetInk("themes.primary", "default", theme),
+  swatches: ["1", "2", "3"].map(n => presetSwatch(`themes.chart-${n}`, "default", theme)),
 }])) as Record<"light" | "dark", { ink: string; surface: string; accent: string; swatches: string[] }>;
 
 /** Reproducible interaction fixtures share the same dates, people and labels in both themes. */

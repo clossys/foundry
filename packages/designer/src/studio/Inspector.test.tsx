@@ -12,12 +12,12 @@ const labels = { resetToDefault: "Reset", inspector: { source: "Source", represe
 afterEach(cleanup);
 /** Used by is read from the usage graph (B5): one component reads the accent token. */
 const graph = buildUsageGraph({
-  inventory: { tokens: ["tokens.accent-color"], components: ["components.button"] },
-  selection: { "tokens.accent-color": "foundry/tokens.accent-color", "components.button": "foundry/components.button" },
-  components: { fills: [{ id: "foundry/components.button", slot: "components.button", scanStatus: "lower-bound", declaredReads: { tokens: ["tokens.accent-color"], assets: [] }, scannedReads: { tokens: [], assets: [] } }], reverseComposes: {} },
+  inventory: { tokens: ["themes.primary"], components: ["components.button"] },
+  selection: { "themes.primary": "foundry/themes.primary", "components.button": "foundry/components.button" },
+  components: { fills: [{ id: "foundry/components.button", slot: "components.button", scanStatus: "lower-bound", declaredReads: { themes: ["themes.primary"], assets: [] }, scannedReads: { themes: [], assets: [] } }], reverseComposes: {} },
 });
 it("shows plain definitions, actual metadata and only the graph's consumers for role members", async () => {
-  const candidate = buildCandidates({ catalog: DEMO_CATALOG, library: DEMO_LIBRARY, working: DEMO_SELECTION, slotId: "tokens.accent-color", scope: "slot", target: "tokens.accent-color" }).find(candidate => candidate.source === "foundry")!;
+  const candidate = buildCandidates({ catalog: DEMO_CATALOG, library: DEMO_LIBRARY, working: DEMO_SELECTION, slotId: "themes.primary", scope: "slot", target: "themes.primary" }).find(candidate => candidate.source === "foundry")!;
   const view = render(<Inspector candidate={candidate} labels={labels} tier="role" graph={graph} />);
   expect(view.container.querySelector("table")).toBeNull();
   expect(screen.getByText("Represented leaf")).toBeInTheDocument();
@@ -32,7 +32,7 @@ it("shows plain definitions, actual metadata and only the graph's consumers for 
 });
 
 it("preserves distinct actual light and dark aliases instead of choosing one mode", () => {
-  const original = buildCandidates({ catalog: DEMO_CATALOG, library: DEMO_LIBRARY, working: DEMO_SELECTION, slotId: "tokens.accent-color", scope: "slot", target: "tokens.accent-color" }).find(candidate => candidate.source === "foundry")!;
+  const original = buildCandidates({ catalog: DEMO_CATALOG, library: DEMO_LIBRARY, working: DEMO_SELECTION, slotId: "themes.primary", scope: "slot", target: "themes.primary" }).find(candidate => candidate.source === "foundry")!;
   const member = original.members[0]!;
   const candidate = { ...original, members: [{ ...member, member: { ...member.member, alias: { light: "tokens.color-ramp.slate.500", dark: "tokens.color-ramp.violet.400" } } }] };
   const view = render(<Inspector candidate={candidate} labels={labels} tier="role" />);

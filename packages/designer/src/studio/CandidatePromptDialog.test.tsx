@@ -8,7 +8,7 @@ import { labels } from "./__fixtures__/studio.js";
 import type { StudioCandidateWorkflow } from "./types.js";
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
-const data: CandidatePromptData = { consumer: "sample", board: { id: "tokens/color", label: "Color" }, slot: { id: "tokens.surface-color", label: "Surface" }, variants: ["tokens.surface-color.base", "tokens.surface-color.raised"], tokens: [{ id: "tokens.space.base", value: "8px" }], siblings: [{ id: "tokens.text-color", source: "foundry" }], currentCandidate: { id: "custom-fill", source: "sample", variants: ["tokens.surface-color.base"] }, returnStep: "Return here and check new candidates." };
+const data: CandidatePromptData = { consumer: "sample", board: { id: "tokens/color", label: "Color" }, slot: { id: "themes.background", label: "Surface" }, variants: ["themes.background.default", "themes.card.default"], tokens: [{ id: "tokens.space.base", value: "8px" }], siblings: [{ id: "themes.foreground", source: "shadcn@aria" }], currentCandidate: { id: "custom-fill", source: "sample", variants: ["themes.background.default"] }, returnStep: "Return here and check new candidates." };
 const open = async (workflow?: StudioCandidateWorkflow) => {
   const user = userEvent.setup();
   render(<CandidatePromptDialog trigger={<Button>Refresh custom</Button>} data={data} labels={labels} workflow={workflow} />);

@@ -7,7 +7,7 @@ import { studioEngine, type StudioEngine } from "./engine.js";
 import { evaluationFor, type StudioEvaluation } from "./evaluation.js";
 
 /** The slot the Studio opens on when the host names none. */
-export const DEFAULT_SLOT_ID = "tokens.accent-color";
+export const DEFAULT_SLOT_ID = "themes.primary";
 
 /** The status tone of a card from its check counts. */
 export const toneOf = (errors: number, notices: number): "danger" | "warning" | "success" => (errors > 0 ? "danger" : notices > 0 ? "warning" : "success");
@@ -66,7 +66,7 @@ export function scopeTargets(input: { catalog: CatalogData; library: LibraryData
       else if (child && typeof child === "object") visit(child, `${path}.${key}`);
     }
   };
-  for (const doc of [...catalog.fills, ...library.fills]) if (doc.$extensions["com.clossys.fill"].slot === slotId) visit(doc.tokens ?? doc.assets ?? {}, slotId.split(".")[0]!);
+  for (const doc of [...catalog.fills, ...library.fills]) if (doc.$extensions["com.clossys.fill"].slot === slotId) visit(doc.themes ?? doc.assets ?? {}, slotId.split(".")[0]!);
   return [...ids].filter((id) => isPrefixOf(slotId, id)).sort(byCodeUnit);
 }
 
@@ -90,7 +90,7 @@ export function sourcesAt(library: LibraryData, scope: Scope, target: string): s
       } else if (value && typeof value === "object") visit(value, id);
     }
   };
-  for (const fill of library.fills) visit(fill.tokens ?? fill.assets ?? {}, metaOf(fill).slot.split(".")[0]!);
+  for (const fill of library.fills) visit(fill.themes ?? fill.assets ?? {}, metaOf(fill).slot.split(".")[0]!);
   return [...sources].sort(byCodeUnit);
 }
 

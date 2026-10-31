@@ -114,7 +114,7 @@ export function prepareConstructRendering(constructs: ContentMapConstructs, inpu
         // scale outputs are not extra overrides to that renderer's contract.
         const emitted = [...emittedTokenProperties(profile)];
         const tokenOverrides = Object.fromEntries(emitted.filter(([, output]) => TOKENS[output.property]?.brandable === true).map(([id, output]) => [output.property, profile.members[id]!.css[cell.theme as "light" | "dark"] ?? profile.members[id]!.css.light]));
-        const slides = sections.map(row => slide(row.key, row.construct, row.input, prepared.assembly.snapshot.breakpoints["tokens.breakpoint.tablet"]!));
+        const slides = sections.map(row => slide(row.key, row.construct, row.input, prepared.assembly.snapshot.breakpoints.md!));
         for (const role of new Set(slides.flatMap(document => document.layout!.slots.map(slot => slot.style!.typography!)))) {
           const token = TOKENS[role as keyof typeof TOKENS], output = emitted.find(([, output]) => output.property === role);
           if (!token || !output) fail("selected typography role is unavailable");

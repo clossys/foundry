@@ -134,19 +134,5 @@
         }
       ]
     }
-  ],
-  "crossReferences": [
-    {
-      "node": "icons",
-      "leaves": [
-        "tokens.icon-stroke"
-      ]
-    },
-    {
-      "node": "logo-artwork",
-      "leaves": [
-        "tokens.brandmark-size"
-      ]
-    }
   ]
 }

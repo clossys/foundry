@@ -30,9 +30,8 @@
         "scannedReads": {
           "assets": [],
           "components": [],
-          "tokens": [
-            "tokens.breakpoint",
-            "tokens.spacing"
+          "themes": [
+            "themes.spacing"
           ]
         },
         "sourceFiles": [
@@ -111,9 +110,8 @@
       },
       "reads": {
         "assets": [],
-        "tokens": [
-          "tokens.breakpoint",
-          "tokens.spacing"
+        "themes": [
+          "themes.spacing"
         ]
       },
       "slot": "frames.sheet",

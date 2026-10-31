@@ -53,7 +53,7 @@ export function isLibraryChangeSet(value: unknown, catalog: CatalogData): value 
       case "remove": return exactKeys(change, ["op", "slot"]);
       case "adopt": return exactKeys(change, ["op", "slot", "source"], ["members"]) && typeof change.source === "string" && catalog.sources.some(source => source.id === change.source) && (change.members === undefined || Array.isArray(change.members) && change.members.length > 0 && change.members.every(safeMember));
       case "author": return exactKeys(change, ["op", "slot", "tokens"]) && record(change.tokens) && Object.keys(change.tokens).length > 0 && Object.entries(change.tokens).every(([member, token]) => safeMember(member) && record(token) && typeof token.$type === "string" && Object.hasOwn(token, "$value"));
-      case "derive": return exactKeys(change, ["op", "slot", "rule", "inputs"]) && typeof change.rule === "string" && Array.isArray(change.inputs) && change.inputs.every(id => safeMember(id) && /^(tokens|assets)\.[a-z0-9-]+\./.test(id));
+      case "derive": return exactKeys(change, ["op", "slot", "rule", "inputs"]) && typeof change.rule === "string" && Array.isArray(change.inputs) && change.inputs.every(id => safeMember(id) && /^(themes|assets)\.[a-z0-9-]+\./.test(id));
       default: return false;
     }
   });
@@ -133,7 +133,7 @@ export function libraryFiles(catalog: CatalogData | CompositeCatalogData, input:
   const ids = new Set(catalog.slots.map(slot => slot.id));
   const fills = [...copy.fills].sort((a, b) => a.$extensions["com.clossys.fill"].slot < b.$extensions["com.clossys.fill"].slot ? -1 : 1);
   const names = fills.map(fill => fill.$extensions["com.clossys.fill"].slot);
-  if (new Set(names).size !== names.length || names.some(id => !ids.has(id) || !/^(tokens|assets)\.[a-z][a-z0-9-]*$/.test(id))) throw new LibraryInputError("Invalid library slots");
+  if (new Set(names).size !== names.length || names.some(id => !ids.has(id) || !/^(themes|assets)\.[a-z][a-z0-9-]*$/.test(id))) throw new LibraryInputError("Invalid library slots");
   const library = { ...copy, fills, selection: generateSelection(copy) };
   const { source, selection, ...rest } = library;
   const metadata: Partial<LibraryData> = { ...rest }; delete metadata.fills;

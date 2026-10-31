@@ -135,7 +135,7 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": []
+        "themes": []
       },
       "root": "presentational",
       "slot": "components.semantic-content",

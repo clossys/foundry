@@ -16,12 +16,8 @@ import { LayoutPreview, LayoutPreviewMatrix } from "./preview/LayoutPreview.js";
 import type { BreakpointValues } from "../../core/flow-stage.js";
 import { breakpoint, columnsAt, planFlowStage, flowStageStyleSheet } from "../../core/flow-stage.js";
 
-// Explicit fixture values model a host's resolved consumer library.
-const breakpointValues: BreakpointValues = {
-  "tokens.breakpoint.mobile": 375, "tokens.breakpoint.mobile-lg": 480,
-  "tokens.breakpoint.tablet": 768, "tokens.breakpoint.tablet-lg": 1024,
-  "tokens.breakpoint.desktop": 1280, "tokens.breakpoint.wide": 1440,
-};
+// Explicit fixture values are Tailwind's fixed screens.
+const breakpointValues: BreakpointValues = { sm: 640, md: 768, lg: 1024, xl: 1280, "2xl": 1536 };
 
 function dom(element: React.ReactElement) {
   const host = document.createElement("div");
@@ -44,13 +40,13 @@ describe("page layout reading order and token reflow", () => {
   });
   it("changes sidebar DOM order with the token boundary and stacks per member", () => {
     const slots = { lead: [fill("lead")], main: [fill("main")], aside: [fill("aside")] };
-    const members = { side: "start", "stacked-aside": "after", breakpoint: "tablet-lg" };
-    const threshold = breakpoint("tokens.breakpoint.tablet-lg", breakpointValues);
+    const members = { side: "start", "stacked-aside": "after", breakpoint: "lg" };
+    const threshold = breakpoint("lg", breakpointValues);
     expect(readOrder(dom(<SidebarContent  stage={planFlowStage("layouts.sidebar-content", undefined, members, threshold - 1, breakpointValues)} slots={slots} members={members} />))).toEqual(["lead", "main", "aside"]);
     expect(readOrder(dom(<SidebarContent  stage={planFlowStage("layouts.sidebar-content", undefined, members, threshold, breakpointValues)} slots={slots} members={members} />))).toEqual(["lead", "aside", "main"]);
     expect(readOrder(dom(<SidebarContent  stage={planFlowStage("layouts.sidebar-content", undefined, { ...members, "stacked-aside": "before" }, 320, breakpointValues)} slots={slots} members={{ ...members, "stacked-aside": "before" }} />))).toEqual(["lead", "aside", "main"]);
   });
-  it("resolves every reflow step from registered breakpoint tokens", () => {
+  it("resolves every reflow step from Tailwind breakpoints", () => {
     for (const leaf of LAYOUT_LEAVES.filter(leaf => leaf.status !== "held")) {
       let previous = 1;
       for (const step of leaf.contract.reflow) {
@@ -68,24 +64,24 @@ describe("page layout reading order and token reflow", () => {
     expect([...host.querySelectorAll("[data-span]")].map(node => node.getAttribute("data-span"))).toEqual(["2x2", "1x1", "2x1", "1x2"]);
     expect(host.querySelector("[style]")).toBeNull();
   });
-  it("projects exact Stage DOM order and emits container-query thresholds through the canonical consumer CSS pipeline", () => {
-    const consumerValues = { ...breakpointValues, "tokens.breakpoint.tablet": 1100, "tokens.breakpoint.tablet-lg": 1200 };
+  it("projects exact Stage DOM order and emits fixed Tailwind container-query thresholds", () => {
+    const consumerValues = { ...breakpointValues, md: 1100, lg: 1200 };
     const profile = (values: BreakpointValues) => ({ values: { consumer: "synthetic", selectionHash: "fnv1a64:0000000000000000", members: Object.fromEntries(Object.entries(values).map(([id, value]) => [id, { value: { light: { value, unit: "px" } }, css: { light: `${value}px` } }])) } }) as never;
     const css = (leaf: "layouts.split" | "layouts.bento", values: BreakpointValues) => flowStageStyleSheet(profile(values), leaf);
-    expect(css("layouts.split", breakpointValues)).toContain("@container publisher-stage (min-width:768px)");
-    expect(css("layouts.split", consumerValues)).toContain("@container publisher-stage (min-width:1100px)");
+    expect(css("layouts.split", breakpointValues)).toContain("@container publisher-stage (min-width:48rem)");
+    expect(css("layouts.split", consumerValues)).toBe(css("layouts.split", breakpointValues));
     expect(planFlowStage("layouts.bento", undefined, undefined, 900, breakpointValues).columns).toBe(2);
     expect(planFlowStage("layouts.bento", undefined, undefined, 900, consumerValues).columns).toBe(1);
     expect(css("layouts.bento", consumerValues)).toContain("grid-template-columns:repeat(2,minmax(0,1fr))");
-    const members = { breakpoint: "tablet", side: "start", "stacked-aside": "after" };
+    const members = { breakpoint: "md", side: "start", "stacked-aside": "after" };
     expect(planFlowStage("layouts.sidebar-content", undefined, members, 900, breakpointValues).slotOrder).toEqual(["lead", "aside", "main"]);
     expect(planFlowStage("layouts.sidebar-content", undefined, members, 900, consumerValues).slotOrder).toEqual(["lead", "main", "aside"]);
     expect(css("layouts.split", consumerValues)).not.toMatch(/order:|var\(--breakpoint|@media/);
   });
   it.each([undefined, NaN, Infinity, 0, -1])("fails closed on missing or invalid used breakpoint %s", value => {
-    const values = { ...breakpointValues, "tokens.breakpoint.tablet": value };
-    expect(() => dom(<Split stage={planFlowStage("layouts.split", undefined, undefined, 900, values)}  slots={{ start: [fill("start")], end: [fill("end")] }} />)).toThrow("Unresolved layout breakpoint: tokens.breakpoint.tablet");
-    expect(() => dom(<LayoutPreview leaf="layouts.split" width={900} theme="light" breakpointValues={values} />)).toThrow("Unresolved layout breakpoint: tokens.breakpoint.tablet");
+    const values = { ...breakpointValues, md: value };
+    expect(() => dom(<Split stage={planFlowStage("layouts.split", undefined, undefined, 900, values)}  slots={{ start: [fill("start")], end: [fill("end")] }} />)).toThrow("Unresolved layout breakpoint: md");
+    expect(() => dom(<LayoutPreview leaf="layouts.split" width={900} theme="light" breakpointValues={values} />)).toThrow("Unresolved layout breakpoint: md");
   });
   it("enforces closed members, configs, slots and spans", () => {
     const slots = { start: [fill("s")], end: [fill("e")] };

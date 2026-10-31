@@ -23,7 +23,7 @@ const isWaveOne = (slot: { id: string }) => waveOneIds.includes(slot.id);
 const withoutExpressiveMotionReads = (slots: SectionRegistry["slots"]): SectionRegistry["slots"] => slots.map(slot => ({
   ...slot, contract: { ...slot.contract, allowedReads: {
     ...slot.contract.allowedReads,
-    tokens: slot.contract.allowedReads.tokens.filter(read => read !== "tokens.animation" && read !== "tokens.shift-distance"),
+    tokens: slot.contract.allowedReads.themes.filter(read => read !== "themes.animate-marquee" && read !== "tokens.shift-distance"),
   } },
 }));
 const inventory = Object.values(families).flat().map(id).sort();
@@ -218,7 +218,7 @@ describe("section build IA registry", () => {
         }
       }
       for (const target of contract.allowedComposes) expect(componentIds.has(target), `${slot.id} composes ${target}`).toBe(true);
-      for (const target of contract.allowedReads.tokens) expect(lowerIds.has(target), `${slot.id} reads ${target}`).toBe(true);
+      for (const target of contract.allowedReads.themes) expect(lowerIds.has(target), `${slot.id} reads ${target}`).toBe(true);
       for (const target of contract.allowedReads.assets) {
         // Families are contract permissions, not assertions that an illustration fill exists.
         expect(target.endsWith("*") ? ["assets.icon-*", "assets.illustration-*"].includes(target) : lowerIds.has(target), `${slot.id} reads ${target}`).toBe(true);

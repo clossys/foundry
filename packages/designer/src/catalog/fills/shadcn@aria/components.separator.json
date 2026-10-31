@@ -110,9 +110,8 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.border-color.base",
-          "tokens.border-width.hairline"
+        "themes": [
+          "themes.border.default"
         ]
       },
       "root": "rac:Separator",

@@ -14,11 +14,11 @@
       "pin": {
         "export": "PATTERN_RECIPES",
         "file": "src/tokens/pattern.ts",
-        "sha256": "ef37d1918b7b96fee413d4c67229019d1a9f4d7e51905831ce9c34e06d871afb"
+        "sha256": "5cde189c7941f787042b61fe3ac9575b9d34918fa0d20d3f7740548d10aa5852"
       },
       "reads": {
         "assets": [],
-        "tokens": []
+        "themes": []
       },
       "relation": "same-contract",
       "slot": "assets.pattern",
@@ -41,16 +41,41 @@
             "pin": {
               "export": "PATTERN_RECIPES",
               "file": "src/tokens/pattern.ts",
-              "sha256": "ef37d1918b7b96fee413d4c67229019d1a9f4d7e51905831ce9c34e06d871afb"
+              "sha256": "5cde189c7941f787042b61fe3ac9575b9d34918fa0d20d3f7740548d10aa5852"
             },
-            "sha256": "37f675c302d82fae5566e8c5f80f5b6438ddb0458debb12260f5317b91353676",
+            "sha256": "7dc3d8bdbf6e73ed061fc290bf1ce5d47648abefde6ce88f45144b5c8a9c0f0e",
             "source": "foundry"
           }
         },
         "$type": "rules",
         "$value": {
-          "ink": "--color-line-base",
+          "ink": "--color-line-strong",
           "shape": "dots",
+          "tile": "--spacing-xl",
+          "weight": "--ui-border-hairline"
+        }
+      },
+      "grain": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/assets.pattern",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "assets.pattern.grain",
+            "pin": {
+              "export": "PATTERN_RECIPES",
+              "file": "src/tokens/pattern.ts",
+              "sha256": "5cde189c7941f787042b61fe3ac9575b9d34918fa0d20d3f7740548d10aa5852"
+            },
+            "sha256": "b3dc9ef7ad2a92c0fcc1c96ef0f393a14111c1e736f9b7c5e896ebcc26a2619a",
+            "source": "foundry"
+          }
+        },
+        "$type": "rules",
+        "$value": {
+          "ink": "--color-line-strong",
+          "shape": "grain",
           "tile": "--spacing-xl",
           "weight": "--ui-border-hairline"
         }
@@ -66,15 +91,15 @@
             "pin": {
               "export": "PATTERN_RECIPES",
               "file": "src/tokens/pattern.ts",
-              "sha256": "ef37d1918b7b96fee413d4c67229019d1a9f4d7e51905831ce9c34e06d871afb"
+              "sha256": "5cde189c7941f787042b61fe3ac9575b9d34918fa0d20d3f7740548d10aa5852"
             },
-            "sha256": "762733c9715311dddf96e1bf813095cd9ae694e738c7b68a86232b9336b9cac3",
+            "sha256": "d61a149826ab969920e8a687309991f32ce85760c37a6d2177b2ca9ecd05329c",
             "source": "foundry"
           }
         },
         "$type": "rules",
         "$value": {
-          "ink": "--color-line-base",
+          "ink": "--color-line-strong",
           "shape": "grid",
           "tile": "--spacing-xl",
           "weight": "--ui-border-hairline"
@@ -91,16 +116,66 @@
             "pin": {
               "export": "PATTERN_RECIPES",
               "file": "src/tokens/pattern.ts",
-              "sha256": "ef37d1918b7b96fee413d4c67229019d1a9f4d7e51905831ce9c34e06d871afb"
+              "sha256": "5cde189c7941f787042b61fe3ac9575b9d34918fa0d20d3f7740548d10aa5852"
             },
-            "sha256": "5f151e6a2f43e8281906e76a1928b5c47abae2f28c20382d9d52bf4173e507ad",
+            "sha256": "77e1e66fa7ee94c37b0499e56723bf4ed3a1eef67a5cc1423089466658fda93f",
             "source": "foundry"
           }
         },
         "$type": "rules",
         "$value": {
-          "ink": "--color-line-base",
+          "ink": "--color-line-strong",
           "shape": "lines",
+          "tile": "--spacing-xl",
+          "weight": "--ui-border-hairline"
+        }
+      },
+      "noise": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/assets.pattern",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "assets.pattern.noise",
+            "pin": {
+              "export": "PATTERN_RECIPES",
+              "file": "src/tokens/pattern.ts",
+              "sha256": "5cde189c7941f787042b61fe3ac9575b9d34918fa0d20d3f7740548d10aa5852"
+            },
+            "sha256": "404290ff28f06f3c1579f74f3d3b9b770f1a6b451d54bc04428edde93805cd64",
+            "source": "foundry"
+          }
+        },
+        "$type": "rules",
+        "$value": {
+          "ink": "--color-line-strong",
+          "shape": "noise",
+          "tile": "--spacing-xl",
+          "weight": "--ui-border-hairline"
+        }
+      },
+      "topo": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/assets.pattern",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "assets.pattern.topo",
+            "pin": {
+              "export": "PATTERN_RECIPES",
+              "file": "src/tokens/pattern.ts",
+              "sha256": "5cde189c7941f787042b61fe3ac9575b9d34918fa0d20d3f7740548d10aa5852"
+            },
+            "sha256": "c64ea1a22cac082667e10733bbd6bc453bf350e8a827a6682d0eec45d415e3d8",
+            "source": "foundry"
+          }
+        },
+        "$type": "rules",
+        "$value": {
+          "ink": "--color-line-strong",
+          "shape": "topo",
           "tile": "--spacing-xl",
           "weight": "--ui-border-hairline"
         }

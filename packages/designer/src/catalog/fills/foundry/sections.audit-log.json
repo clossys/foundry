@@ -34,8 +34,8 @@
         "scannedReads": {
           "assets": [],
           "components": [],
-          "tokens": [
-            "tokens.spacing"
+          "themes": [
+            "themes.spacing"
           ]
         },
         "sourceFiles": [
@@ -102,8 +102,8 @@
       "propMap": {},
       "reads": {
         "assets": [],
-        "tokens": [
-          "tokens.spacing"
+        "themes": [
+          "themes.spacing"
         ]
       },
       "slot": "sections.audit-log",

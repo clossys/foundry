@@ -103,7 +103,7 @@ describe("main — real runs", () => {
 // `dist/tokens/cli.js` with its working directory set to a product root, so
 // the default `brand/brand.css` and `apps/` are resolved the way a consumer's
 // CI resolves them. `dist/` is built once by the package's vitest globalSetup.
-const CLI_PATH = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "dist", "tokens", "cli.js");
+const CLI_PATH = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "dist", "themes", "cli.js");
 
 function runCli(args: string[]): { status: number | null; stdout: string; stderr: string } {
   const result = spawnSync(process.execPath, [CLI_PATH, ...args], { cwd: dir, encoding: "utf8", timeout: 30_000 });

@@ -44,7 +44,7 @@ export function assertLibraryBoardRecords(value: unknown): asserts value is Libr
   assertRuntimeSnapshot(value);
   const top = record(value, ['columns','rows','controls']);
   const columns = record(top.columns, ['version','items']), rows = record(top.rows, ['version','layer','boardId','label','items']), controls = record(top.controls, ['version','mode','canSave','pending']);
-  if (columns.version !== 1 || rows.version !== 1 || controls.version !== 1 || !['view','edit'].includes(String(controls.mode)) || typeof controls.canSave !== 'boolean' || typeof controls.pending !== 'boolean' || !['tokens','assets','components','sections','frames'].includes(String(rows.layer))) throw new TypeError('Unsupported library board record version or mode');
+  if (columns.version !== 1 || rows.version !== 1 || controls.version !== 1 || !['view','edit'].includes(String(controls.mode)) || typeof controls.canSave !== 'boolean' || typeof controls.pending !== 'boolean' || !['themes','assets','components','sections','frames'].includes(String(rows.layer))) throw new TypeError('Unsupported library board record version or mode');
   text(rows.boardId); text(rows.label);
   if (!Array.isArray(columns.items) || !Array.isArray(rows.items)) throw new TypeError('Library board items required');
   const sources = new Set<string>();

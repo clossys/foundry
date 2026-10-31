@@ -78,11 +78,11 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.accent-color",
-          "tokens.border-color",
-          "tokens.border-width",
-          "tokens.touch-target"
+        "themes": [
+          "themes.primary",
+          "themes.border",
+          "themes.input",
+          "themes.sidebar-border"
         ]
       },
       "root": "engine:none",

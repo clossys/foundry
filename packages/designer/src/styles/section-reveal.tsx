@@ -1,5 +1,3 @@
-import animation from "../catalog/fills/foundry/tokens.animation.json" with { type: "json" };
-
 /** Shared, opt-in section reveal. Content is visible unless motion is permitted. */
 export const SECTION_REVEAL_ATTRIBUTE = "data-designer-reveal";
 export const SECTION_REVEAL_CSS = `
@@ -9,7 +7,7 @@ export const SECTION_REVEAL_CSS = `
   to { opacity: 1; transform: none; }
 }
 @media (prefers-reduced-motion: no-preference) {
-  [data-designer-reveal] { animation: var(--animate-reveal, ${animation.tokens.animation.reveal.$value}); }
+  [data-designer-reveal] { animation: var(--animate-reveal, reveal 600ms cubic-bezier(0, 0, 0.2, 1) both); }
 }
 @media (prefers-reduced-motion: reduce) {
   [data-designer-reveal] { animation: none; transform: none; opacity: 1; }

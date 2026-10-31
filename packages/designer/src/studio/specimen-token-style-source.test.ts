@@ -21,19 +21,19 @@ it("preserves the typography classifier including unanchored prefixes and final 
   const compiled = ts.transpile(source, { target: ts.ScriptTarget.ES2022 });
   const classify = new Function(`${compiled}; return typeStyle;`)() as (member: { slot: string; $type: string; css: { light?: string } }) => unknown;
   const slots = ["font-size", "body-size", "heading-size", "display-size", "caption-size", "code-size", "font-sizes", "line-height", "letter-spacing", ""];
-  const prefixes = ["", "tokens.", "other.", "unknown-", "x", "\n", "\uD800", "\uDFFF", "\0"];
+  const prefixes = ["", "themes.", "other.", "unknown-", "x", "\n", "\uD800", "\uDFFF", "\0"];
   const endings = ["", "\n", "\r", "\r\n", "\u2028", "\u2029", "x", "-size", "\0"];
   const types = ["dimension", "fontFamily", "fontWeight", "color", "unknown"];
   const compare = (slot: string, type: string, css: string | undefined) => {
     const expected = type === "fontFamily" ? { fontFamily: css }
       : type === "fontWeight" ? { fontWeight: css }
       : slot === "tokens.line-height" ? { lineHeight: css }
-      : slot === "tokens.letter-spacing" ? { letterSpacing: css }
+      : slot === "themes.tracking-tight" ? { letterSpacing: css }
       : type === "dimension" && /(?:font|body|heading|display|caption)-size$/.test(slot) ? { fontSize: css }
       : undefined;
     expect(classify({ slot, $type: type, css: { light: css } })).toEqual(expected);
   };
   for (const prefix of prefixes) for (const slot of slots) for (const ending of endings) for (const type of types)
     for (const css of ["var(--font-size)", "custom-value", undefined]) compare(prefix + slot + ending, type, css);
-  for (const slot of ["tokens.line-height", "tokens.letter-spacing"]) for (const type of ["dimension", "fontFamily", "fontWeight", "unknown"]) compare(slot, type, "custom");
+  for (const slot of ["tokens.line-height", "themes.tracking-tight"]) for (const type of ["dimension", "fontFamily", "fontWeight", "unknown"]) compare(slot, type, "custom");
 });

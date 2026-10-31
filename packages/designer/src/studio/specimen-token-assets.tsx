@@ -54,8 +54,7 @@ function typeStyle(member: ResolvedMember): CSSProperties | undefined {
   const css = member.css.light;
   if (member.$type === "fontFamily") return { fontFamily: css };
   if (member.$type === "fontWeight") return { fontWeight: css };
-  if (member.slot === "tokens.line-height") return { lineHeight: css };
-  if (member.slot === "tokens.letter-spacing") return { letterSpacing: css };
+  if (member.slot === "themes.tracking-tight") return { letterSpacing: css };
   if (member.$type === "dimension" && (member.slot.endsWith("font-size") || member.slot.endsWith("body-size") || member.slot.endsWith("heading-size") || member.slot.endsWith("display-size") || member.slot.endsWith("caption-size"))) return { fontSize: css };
   return undefined;
 }
@@ -72,11 +71,11 @@ export function colorRampSpecimenItems(context: DesignerSpecimenContext, leaf: s
 type Mode = "swatch" | "color-ramp" | "type-ladder" | "spacing-ladder" | "radius-ladder" | "motion-player" | "asset-grid" | "icon-grid";
 function chromeNeeds(mode: Mode, context: DesignerSpecimenContext): readonly string[] {
   const dimensions = mode === "swatch" || mode === "color-ramp"
-    ? [["tokens.spacing.5xl", "--spacing-5xl"], ["tokens.spacing.4xl", "--spacing-4xl"]] as const
-    : mode === "motion-player" ? [["tokens.spacing.4xl", "--spacing-4xl"]] as const : [];
+    ? [["themes.spacing.default", "--spacing-5xl"], ["themes.spacing.default", "--spacing-4xl"]] as const
+    : mode === "motion-player" ? [["themes.spacing.default", "--spacing-4xl"]] as const : [];
   const colors = mode === "asset-grid" || mode === "icon-grid" ? [
-    ["tokens.surface-color.raised", "--color-surface-raised"], ["tokens.surface-color.inverse", "--color-surface-inverse"],
-    ["tokens.text-color.primary", "--color-ink-primary"], ["tokens.text-color.on-inverse", "--color-ink-on-inverse"],
+    ["themes.card.default", "--color-surface-raised"], ["themes.foreground.default", "--color-surface-inverse"],
+    ["themes.foreground.default", "--color-ink-primary"], ["themes.background.default", "--color-ink-on-inverse"],
   ] as const : [];
   return [...dimensions.map(([id, emit]) => ({ id, emit, type: "dimension" })), ...colors.map(([id, emit]) => ({ id, emit, type: "color" }))].flatMap(({ id, emit, type }) => {
     const member = context.profile.values.members[id];
@@ -194,7 +193,7 @@ function renderItem(mode: Mode, item: SpecimenItem, props: SpecimenLeafProps): R
     {mode === "icon-grid" ? <Icon glyph={member.value.light as IconNode} decorative={false} label={`${id} ${ground}`} /> : typeof member.value.light === "string" ? <Logomark src={`data:image/svg+xml,${encodeURIComponent(member.value.light)}`} size="lg" title={id} /> : null}
   </Content>)}</>;
 }
-function definition(mode: Mode, kind: string, layout: SpecimenLayout, layer: "tokens" | "assets", span: SpecimenSpan): TokenAssetSpecimenDefinition {
+function definition(mode: Mode, kind: string, layout: SpecimenLayout, layer: "themes" | "assets", span: SpecimenSpan): TokenAssetSpecimenDefinition {
   const id: SpecimenLeafId = `sections.specimen-${mode}`;
   const requiredLeaves = [...requirements(mode), "components.grid-list", "components.disclosure"];
   return {
@@ -210,9 +209,9 @@ function definition(mode: Mode, kind: string, layout: SpecimenLayout, layer: "to
 function ContentNeed({ need, render }: { need: DesignerSpecimenNeed; render: SpecimenLeafProps["need"] }): ReactNode { return render(need); }
 /** Concrete executable cohort registry; the aggregate imports this array rather than reconstructing metadata. */
 export const tokenAssetSpecimenLeaves: readonly TokenAssetSpecimenDefinition[] = [
-  definition("swatch", "color", "grid", "tokens", "third"), definition("color-ramp", "color-ramp", "grid", "tokens", "full"),
-  definition("type-ladder", "type", "ladder", "tokens", "full"), definition("spacing-ladder", "spacing", "ladder", "tokens", "full"),
-  definition("radius-ladder", "radius", "ladder", "tokens", "full"), definition("motion-player", "motion", "ladder", "tokens", "full"),
+  definition("swatch", "color", "grid", "themes", "third"), definition("color-ramp", "color-ramp", "grid", "themes", "full"),
+  definition("type-ladder", "type", "ladder", "themes", "full"), definition("spacing-ladder", "spacing", "ladder", "themes", "full"),
+  definition("radius-ladder", "radius", "ladder", "themes", "full"), definition("motion-player", "motion", "ladder", "themes", "full"),
   definition("asset-grid", "asset", "grid", "assets", "third"), definition("icon-grid", "icon", "grid", "assets", "third"),
 ];
 export const SpecimenSwatch = tokenAssetSpecimenLeaves[0]!.render;

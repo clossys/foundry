@@ -8,9 +8,9 @@ import { CompactPreview, SlotPreview, PREVIEW_LIMIT, isFontDeclared } from "./pr
 import { catalog, emptyLibrary, adopt, labels } from "./__fixtures__/studio.js";
 afterEach(cleanup);
 it("uses actual resolved token previews and caps member rows", () => {
- const library=adopt(); const candidate=buildCandidates({catalog,library,working:library,slotId:"tokens.surface-color",scope:"slot",target:"tokens.surface-color"})[0]!;
+ const library=adopt(); const candidate=buildCandidates({catalog,library,working:library,slotId:"themes.background",scope:"slot",target:"themes.background"})[0]!;
  const view=render(<SlotPreview members={candidate.members} labels={labels}/>); expect(view.container.querySelectorAll("figure").length).toBeGreaterThan(0);
- const members=Array.from({length:PREVIEW_LIMIT+6},(_,i)=>({...candidate.members[0]!,id:`tokens.surface-color.test${i}`})); const capped=render(<SlotPreview members={members} labels={labels}/>); expect(capped.container.querySelectorAll("li")).toHaveLength(24); expect(capped.container.querySelector("[data-preview-more]")).toHaveTextContent("+6");
+ const members=Array.from({length:PREVIEW_LIMIT+6},(_,i)=>({...candidate.members[0]!,id:`themes.background.default${i}`})); const capped=render(<SlotPreview members={members} labels={labels}/>); expect(capped.container.querySelectorAll("li")).toHaveLength(24); expect(capped.container.querySelector("[data-preview-more]")).toHaveTextContent("+6");
 });
 it("does not claim an undeclared page font is loaded",()=>{expect(isFontDeclared("Unknown Font")).toBe(false);});
 it("renders checked SVG assets through the existing image route rather than a token sample", () => {
@@ -22,7 +22,7 @@ it("renders checked SVG assets through the existing image route rather than a to
  expect(view.container.querySelector("svg")).toBeNull();
 });
 it("shows canonical Tailwind achromatic OKLCH none as a strict swatch with labelled channels and the exact source kept for copy", () => {
- const doc = catalog.fills.find(doc => doc.$extensions["com.clossys.fill"].slot.startsWith("tokens.") && doc.$extensions["com.clossys.fill"].source.includes("tailwind") && JSON.stringify(doc).includes(" none)"))!;
+ const doc = catalog.fills.find(doc => doc.$extensions["com.clossys.fill"].slot.startsWith("themes.") && doc.$extensions["com.clossys.fill"].source.includes("tailwind") && JSON.stringify(doc).includes(" none)"))!;
  expect(doc).toBeDefined();
  const meta = doc.$extensions["com.clossys.fill"], library = emptyLibrary();
  const candidate = buildCandidates({ catalog, library, working: library, slotId: meta.slot, scope: "slot", target: meta.slot }).find(candidate => candidate.source === meta.source)!;
@@ -125,8 +125,8 @@ it("z-index shows the 11 registered layers as a fan stack in rank order with the
 });
 
 it.each([
- ["tokens.radius", "radius"], ["tokens.shadow", "shadow"], ["tokens.blur", "blur"],
- ["tokens.font-size", "text-metric"], ["tokens.font-weight", "text-metric"], ["tokens.letter-spacing", "text-metric"], ["tokens.line-height", "text-metric"],
+ ["themes.radius", "radius"], ["themes.shadow", "shadow"], ["tokens.blur", "blur"],
+ ["tokens.font-size", "text-metric"], ["tokens.font-weight", "text-metric"], ["themes.tracking-tight", "text-metric"], ["tokens.line-height", "text-metric"],
  ["tokens.density", "density"], ["tokens.focus-outline", "focus"],
 ] as const)("every member of %s shows the same %s specimen bound to its own value", (slotId, kind) => {
  const shapes = new Set<string>();

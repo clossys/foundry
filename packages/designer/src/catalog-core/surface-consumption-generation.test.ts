@@ -18,7 +18,7 @@ function fixture() {
   json("src/catalog/slots/tokens.json", [{ id: "tokens.ink", contract: { emit: { primary: "--color-ink" } } }]);
   json("src/catalog/slots/assets.json", []);
   json("src/catalog/slots/components.json", [{ id: "components.button" }]);
-  json("src/catalog/slots/sections.json", [{ id: "sections.example", contract: { allowedReads: { tokens: ["tokens.ink", "tokens.unused"], assets: [] }, allowedComposes: ["components.button", "components.unused"], parts: [] } }]);
+  json("src/catalog/slots/sections.json", [{ id: "sections.example", contract: { allowedReads: { themes: ["tokens.ink", "tokens.unused"], assets: [] }, allowedComposes: ["components.button", "components.unused"], parts: [] } }]);
   json("src/catalog/slots/frames.json", []);
   const doc = (slot: string, pointer: string) => ({ $extensions: { "com.clossys.fill": { id: `synthetic/${slot}`, slot, source: "synthetic", pin: { package: "@example/designer", version: "1.0.0", export: pointer } } }, [slot.split(".")[0]!]: { example: { propMap: {} } } });
   json("src/catalog/fills/foundry/components.button.json", doc("components.button", "./components#Button"));
@@ -62,7 +62,7 @@ const privateTarget = "packages/designer/src/blocks/internal/assets.ts";
 function privateFixture(extra = "", declaration: unknown = [privateTarget], importText = 'import { value } from "./internal/assets.js";') {
   const test = fixture();
   test.json("src/catalog/slots/sections.json", []);
-  test.json("src/catalog/slots/frames.json", [{ id: "frames.example", contract: { allowedReads: { tokens: [], assets: [], privateInternal: declaration }, composes: [] } }]);
+  test.json("src/catalog/slots/frames.json", [{ id: "frames.example", contract: { allowedReads: { themes: [], assets: [], privateInternal: declaration }, composes: [] } }]);
   rmSync(join(test.root, "src/catalog/fills/foundry/sections.example.json"));
   test.json("src/catalog/fills/foundry/frames.example.json", { $extensions: { "com.clossys.fill": { id: "synthetic/frames.example", slot: "frames.example", source: "synthetic", pin: { package: "@example/designer", version: "1.0.0", export: "./blocks#Example" } } }, frames: { example: {} } });
   test.write("src/blocks/internal/assets.ts", "export const value = 1;");

@@ -20,7 +20,7 @@ export interface RewriteResult {
   transform: "shadcn-aria-rewrite@1" | "shadcn-aria-rewrite@2";
   files: readonly SourceFile[];
   outputSha256: readonly { path: string; sha256: string }[];
-  reads: { tokens: readonly string[]; assets: readonly string[]; components: readonly string[] };
+  reads: { themes: readonly string[]; assets: readonly string[]; components: readonly string[] };
   parts: readonly string[];
   issues: readonly RewriteIssue[];
 }
@@ -38,12 +38,12 @@ export interface RewriteInput {
 const FOREIGN_ICON_MODULES = ["lucide-react", "@phosphor-icons/react", "react-icons"];
 const FOREIGN_ICONS = new RegExp("^(?:" + FOREIGN_ICON_MODULES.join("|") + ")(?:/|$)");
 const adapter = adapterData as {
-  bindings: Record<string, { member: string; property: string }>;
+  bindings: Record<string, { member?: string; property: string }>;
   glyphs: Record<string, string>; spacing: Record<string, string>;
   controlSizes: Record<string, string>; controlProperties: Record<string, string>;
   spacingProperties: Record<string, string>; fontSizes: Record<string, string>;
-  fieldTypography: Record<string, { member: string; property: string }>;
-  sizeLengths: Record<string, { member: string; property: string }>; sizeSteps: Record<string, string>;
+  fieldTypography: Record<string, { member?: string; property: string }>;
+  sizeLengths: Record<string, { member?: string; property: string }>; sizeSteps: Record<string, string>;
 };
 const sorted = (values: Iterable<string>): string[] => [...new Set(values)].sort();
 /**
@@ -118,47 +118,44 @@ const focusOutline = (prefix: string, paint: string): string =>
   ["outline-solid", `outline-${styleRead("--ui-border-focus", "ring-3", "length")}`, "outline-offset-(--ui-focus-offset)", `outline-(${paint})`].map(atom => prefix + atom).join(" ");
 
 /** Exact selected source bindings; unmatched spellings remain findings. */
-const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output: string; tokens: readonly string[]; note: string }>>>> = {
+const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output: string; themes: readonly string[]; note: string }>>>> = {
   "avatar": {
     "*:data-[slot=avatar]:ring-2": {
       "output": "*:data-[slot=avatar]:ring-(length:--ui-border-rule)",
-      "tokens": [
-        "tokens.border-width.rule"
+      "themes": [
       ],
       "note": "Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance."
     },
     "data-[size=lg]:size-10": {
       "output": "data-[size=lg]:size-[var(--spacing-3xl)]",
-      "tokens": [
-        "tokens.spacing.3xl"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 40.0px to 48px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "group-has-data-[size=lg]/avatar-group:[&>svg]:size-5": {
       "output": "group-has-data-[size=lg]/avatar-group:[&>svg]:size-[var(--spacing-xl)]",
-      "tokens": [
-        "tokens.spacing.xl"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 20.0px to 24px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "group-has-data-[size=lg]/avatar-group:size-10": {
       "output": "group-has-data-[size=lg]/avatar-group:size-[var(--spacing-3xl)]",
-      "tokens": [
-        "tokens.spacing.3xl"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 40.0px to 48px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "ring-2": {
       "output": "ring-(length:--ui-border-rule)",
-      "tokens": [
-        "tokens.border-width.rule"
+      "themes": [
       ],
       "note": "Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance."
     },
     "z-10": {
       "output": "z-(--ui-z-sticky)",
-      "tokens": [
-        "tokens.z-index.sticky"
+      "themes": [
       ],
       "note": "Exact existing layer value; new component read only where absent."
     }
@@ -166,15 +163,15 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   "badge": {
     "h-5": {
       "output": "h-[var(--spacing-xl)]",
-      "tokens": [
-        "tokens.spacing.xl"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 20.0px to 24px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "py-0.5": {
       "output": "py-[var(--spacing-xs)]",
-      "tokens": [
-        "tokens.spacing.xs"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact."
     }
@@ -182,22 +179,22 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   "banner": {
     "*:[svg]:translate-y-0.5": {
       "output": "*:[svg]:translate-y-[var(--spacing-xs)]",
-      "tokens": [
-        "tokens.spacing.xs"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "gap-0.5": {
       "output": "gap-[var(--spacing-xs)]",
-      "tokens": [
-        "tokens.spacing.xs"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "has-data-[slot=alert-action]:pr-18": {
       "output": "has-data-[slot=alert-action]:pr-[var(--spacing-4xl)]",
-      "tokens": [
-        "tokens.spacing.4xl"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 72.0px to 64px using the existing spacing scale; variants and branch ownership remain exact."
     }
@@ -205,8 +202,8 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   "breadcrumbs": {
     "size-5": {
       "output": "size-[var(--spacing-xl)]",
-      "tokens": [
-        "tokens.spacing.xl"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 20.0px to 24px using the existing spacing scale; variants and branch ownership remain exact."
     }
@@ -214,29 +211,27 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   "button": {
     "active:not-aria-[haspopup]:translate-y-px": {
       "output": "active:not-aria-[haspopup]:translate-y-(--ui-border-hairline)",
-      "tokens": [
-        "tokens.border-width.hairline"
+      "themes": [
       ],
       "note": "Preserve one-hairline press displacement; use existing exact 1px member with explicit geometric read."
     },
     "rounded-[min(var(--radius-md),10px)]": {
       "output": "rounded-(--radius-control)",
-      "tokens": [
-        "tokens.control-radius.default"
+      "themes": [
+        "themes.radius.default"
       ],
       "note": "Remove literal 10/12px cap and use the consumer control radius directly; preserves every size/state prefix."
     },
     "rounded-[min(var(--radius-md),12px)]": {
       "output": "rounded-(--radius-control)",
-      "tokens": [
-        "tokens.control-radius.default"
+      "themes": [
+        "themes.radius.default"
       ],
       "note": "Remove literal 10/12px cap and use the consumer control radius directly; preserves every size/state prefix."
     },
     "text-[0.8rem]": {
       "output": "text-(length:--text-caption)",
-      "tokens": [
-        "tokens.caption-size.default"
+      "themes": [
       ],
       "note": "Restyle 12.8px small control/calendar typography to existing caption 12px; no token value change."
     }
@@ -244,43 +239,37 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   "calendar": {
     "group-data-[focused=true]/day:z-10": {
       "output": "group-data-[focused=true]/day:z-(--ui-z-sticky)",
-      "tokens": [
-        "tokens.z-index.sticky"
+      "themes": [
       ],
       "note": "Exact existing layer value; new component read only where absent."
     },
     "leading-none": {
       "output": "leading-(--leading-heading)",
-      "tokens": [
-        "tokens.line-height.heading"
+      "themes": [
       ],
       "note": "Restyle unit line height to existing compact heading line height 1.15; do not alias a font-size-specific 5xl line-height member."
     },
     "text-[0.8rem]": {
       "output": "text-(length:--text-caption)",
-      "tokens": [
-        "tokens.caption-size.default"
+      "themes": [
       ],
       "note": "Restyle 12.8px small control/calendar typography to existing caption 12px; no token value change."
     },
     "z-0": {
       "output": "z-(--ui-z-base)",
-      "tokens": [
-        "tokens.z-index.base"
+      "themes": [
       ],
       "note": "Exact existing layer value; new component read only where absent."
     },
     "z-10": {
       "output": "z-(--ui-z-sticky)",
-      "tokens": [
-        "tokens.z-index.sticky"
+      "themes": [
       ],
       "note": "Exact existing layer value; new component read only where absent."
     },
     "[--cell-size:--spacing(7)]": {
       "output": "[--cell-size:var(--ui-control-h-sm)]",
-      "tokens": [
-        "tokens.control-size.h-sm"
+      "themes": [
       ],
       "note": "Restyle28px calendar cell to existing32px small control; local alias remains defined and all references bound."
     }
@@ -288,15 +277,13 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   "card": {
     "leading-snug": {
       "output": "leading-(--leading-heading)",
-      "tokens": [
-        "tokens.line-height.heading"
+      "themes": [
       ],
       "note": "Bind compact card heading typography to the existing consumer heading line-height token."
     },
     "ring-1": {
       "output": "ring-(length:--ui-border-hairline)",
-      "tokens": [
-        "tokens.border-width.hairline"
+      "themes": [
       ],
       "note": "Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance."
     }
@@ -304,86 +291,84 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   "combo-box": {
     "h-[calc(--spacing(5.25))]": {
       "output": "h-(--spacing-xl)",
-      "tokens": [
-        "tokens.spacing.xl"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 21px chip height to existing xl24px; remove unbound spacing macro."
     },
     "h-px": {
       "output": "h-(--ui-border-hairline)",
-      "tokens": [
-        "tokens.border-width.hairline"
+      "themes": [
       ],
       "note": "Exact separator rule thickness 1px; permission explicitly recorded."
     },
     "max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))]": {
       "output": "max-h-[min(calc(var(--spacing-6xl)*2-var(--spacing-2xl)),calc(var(--available-height)-var(--spacing-2xl)))]",
-      "tokens": [
-        "tokens.spacing.6xl",
-        "tokens.spacing.2xl"
+      "themes": [
+        "themes.spacing.default",
+        "themes.spacing.default"
       ],
       "note": "Retain RAC available-height clamp; restyle 288/36px constants to 256/32px existing scale."
     },
     "max-h-72": {
       "output": "max-h-[calc(var(--spacing-6xl)*2)]",
-      "tokens": [
-        "tokens.spacing.6xl"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 288.0px to 256px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "min-w-36": {
       "output": "min-w-[var(--spacing-6xl)]",
-      "tokens": [
-        "tokens.spacing.6xl"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 144.0px to 128px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "ring-1": {
       "output": "ring-(length:--ui-border-hairline)",
-      "tokens": [
-        "tokens.border-width.hairline"
+      "themes": [
       ],
       "note": "Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance."
     },
     "[&>kbd]:rounded-[calc(var(--radius)-5px)]": {
       "output": "[&>kbd]:rounded-(--radius-subtle)",
-      "tokens": [
-        "tokens.radius.subtle"
+      "themes": [
+        "themes.radius.default"
       ],
       "note": "Use actual subtle 2px radius for nested keyboard corners, replacing private-radius-minus-5 geometry."
     },
     "has-[>button]:ml-[-0.3rem]": {
       "output": "has-[>button]:ml-[calc(var(--spacing-xs)*-1)]",
-      "tokens": [
-        "tokens.spacing.xs"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors."
     },
     "has-[>button]:mr-[-0.3rem]": {
       "output": "has-[>button]:mr-[calc(var(--spacing-xs)*-1)]",
-      "tokens": [
-        "tokens.spacing.xs"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors."
     },
     "has-[>kbd]:ml-[-0.15rem]": {
       "output": "has-[>kbd]:ml-[calc(var(--spacing-xs)*-1)]",
-      "tokens": [
-        "tokens.spacing.xs"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors."
     },
     "has-[>kbd]:mr-[-0.15rem]": {
       "output": "has-[>kbd]:mr-[calc(var(--spacing-xs)*-1)]",
-      "tokens": [
-        "tokens.spacing.xs"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors."
     },
     "rounded-[calc(var(--radius)-3px)]": {
       "output": "rounded-(--radius-default)",
-      "tokens": [
-        "tokens.radius.default"
+      "themes": [
+        "themes.radius.default"
       ],
       "note": "Use actual adopted default 4px radius for inset control rather than an offset from control radius."
     }
@@ -391,22 +376,19 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   "dialog": {
     "bg-black/10": {
       "output": "bg-(--color-overlay-scrim)",
-      "tokens": [
-        "tokens.scrim-color.default"
+      "themes": [
       ],
       "note": "Use the consumer modal scrim role (existing default40% and mode binding), replacing literal black10%; contrast thresholds stay unchanged."
     },
     "leading-none": {
       "output": "leading-(--leading-heading)",
-      "tokens": [
-        "tokens.line-height.heading"
+      "themes": [
       ],
       "note": "Restyle unit line height to existing compact heading line height 1.15; do not alias a font-size-specific 5xl line-height member."
     },
     "ring-1": {
       "output": "ring-(length:--ui-border-hairline)",
-      "tokens": [
-        "tokens.border-width.hairline"
+      "themes": [
       ],
       "note": "Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance."
     }
@@ -414,15 +396,15 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   "keyboard": {
     "h-5": {
       "output": "h-[var(--spacing-xl)]",
-      "tokens": [
-        "tokens.spacing.xl"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 20.0px to 24px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "min-w-5": {
       "output": "min-w-[var(--spacing-xl)]",
-      "tokens": [
-        "tokens.spacing.xl"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 20.0px to 24px using the existing spacing scale; variants and branch ownership remain exact."
     }
@@ -430,36 +412,34 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   "menu": {
     "data-inset:pl-7": {
       "output": "data-inset:pl-[var(--spacing-2xl)]",
-      "tokens": [
-        "tokens.spacing.2xl"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 28.0px to 32px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "h-px": {
       "output": "h-(--ui-border-hairline)",
-      "tokens": [
-        "tokens.border-width.hairline"
+      "themes": [
       ],
       "note": "Exact separator rule thickness 1px; permission explicitly recorded."
     },
     "max-h-72": {
       "output": "max-h-[calc(var(--spacing-6xl)*2)]",
-      "tokens": [
-        "tokens.spacing.6xl"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 288.0px to 256px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "ring-1": {
       "output": "ring-(length:--ui-border-hairline)",
-      "tokens": [
-        "tokens.border-width.hairline"
+      "themes": [
       ],
       "note": "Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance."
     },
     "tracking-widest": {
       "output": "tracking-(--tracking-label)",
-      "tokens": [
-        "tokens.letter-spacing.label"
+      "themes": [
+        "themes.tracking-tight.default"
       ],
       "note": "Bind menu shortcut label tracking to the existing consumer label letter-spacing token."
     }
@@ -467,22 +447,21 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   "popover": {
     "gap-0.5": {
       "output": "gap-[var(--spacing-xs)]",
-      "tokens": [
-        "tokens.spacing.xs"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "ring-1": {
       "output": "ring-(length:--ui-border-hairline)",
-      "tokens": [
-        "tokens.border-width.hairline"
+      "themes": [
       ],
       "note": "Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance."
     },
     "w-72": {
       "output": "w-[calc(var(--spacing-6xl)*2)]",
-      "tokens": [
-        "tokens.spacing.6xl"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 288.0px to 256px using the existing spacing scale; variants and branch ownership remain exact."
     }
@@ -490,71 +469,69 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   "select": {
     "data-[size=sm]:rounded-[min(var(--radius-md),10px)]": {
       "output": "data-[size=sm]:rounded-(--radius-control)",
-      "tokens": [
-        "tokens.control-radius.default"
+      "themes": [
+        "themes.radius.default"
       ],
       "note": "Remove literal 10/12px cap and use the consumer control radius directly; preserves every size/state prefix."
     },
     "h-px": {
       "output": "h-(--ui-border-hairline)",
-      "tokens": [
-        "tokens.border-width.hairline"
+      "themes": [
       ],
       "note": "Exact separator rule thickness 1px; permission explicitly recorded."
     },
     "min-w-36": {
       "output": "min-w-[var(--spacing-6xl)]",
-      "tokens": [
-        "tokens.spacing.6xl"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 144.0px to 128px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "ring-1": {
       "output": "ring-(length:--ui-border-hairline)",
-      "tokens": [
-        "tokens.border-width.hairline"
+      "themes": [
       ],
       "note": "Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance."
     },
     "[&>kbd]:rounded-[calc(var(--radius)-5px)]": {
       "output": "[&>kbd]:rounded-(--radius-subtle)",
-      "tokens": [
-        "tokens.radius.subtle"
+      "themes": [
+        "themes.radius.default"
       ],
       "note": "Use actual subtle 2px radius for nested keyboard corners, replacing private-radius-minus-5 geometry."
     },
     "has-[>button]:ml-[-0.3rem]": {
       "output": "has-[>button]:ml-[calc(var(--spacing-xs)*-1)]",
-      "tokens": [
-        "tokens.spacing.xs"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors."
     },
     "has-[>button]:mr-[-0.3rem]": {
       "output": "has-[>button]:mr-[calc(var(--spacing-xs)*-1)]",
-      "tokens": [
-        "tokens.spacing.xs"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors."
     },
     "has-[>kbd]:ml-[-0.15rem]": {
       "output": "has-[>kbd]:ml-[calc(var(--spacing-xs)*-1)]",
-      "tokens": [
-        "tokens.spacing.xs"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors."
     },
     "has-[>kbd]:mr-[-0.15rem]": {
       "output": "has-[>kbd]:mr-[calc(var(--spacing-xs)*-1)]",
-      "tokens": [
-        "tokens.spacing.xs"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors."
     },
     "rounded-[calc(var(--radius)-3px)]": {
       "output": "rounded-(--radius-default)",
-      "tokens": [
-        "tokens.radius.default"
+      "themes": [
+        "themes.radius.default"
       ],
       "note": "Use actual adopted default 4px radius for inset control rather than an offset from control radius."
     }
@@ -562,22 +539,19 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   "separator": {
     "[:is(hr)]:h-px": {
       "output": "[:is(hr)]:h-(--ui-border-hairline)",
-      "tokens": [
-        "tokens.border-width.hairline"
+      "themes": [
       ],
       "note": "Exact separator rule thickness 1px; permission explicitly recorded."
     },
     "aria-[orientation=horizontal]:h-px": {
       "output": "aria-[orientation=horizontal]:h-(--ui-border-hairline)",
-      "tokens": [
-        "tokens.border-width.hairline"
+      "themes": [
       ],
       "note": "Exact separator rule thickness 1px; permission explicitly recorded."
     },
     "aria-[orientation=vertical]:w-px": {
       "output": "aria-[orientation=vertical]:w-(--ui-border-hairline)",
-      "tokens": [
-        "tokens.border-width.hairline"
+      "themes": [
       ],
       "note": "Exact separator rule thickness 1px; permission explicitly recorded."
     }
@@ -585,15 +559,15 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   "slider": {
     "bg-white": {
       "output": "bg-(--color-surface-raised)",
-      "tokens": [
-        "tokens.surface-color.raised"
+      "themes": [
+        "themes.card.default"
       ],
       "note": "Use selected raised thumb surface in both modes, replacing unconditional white."
     },
     "data-vertical:min-h-40": {
       "output": "data-vertical:min-h-[var(--spacing-6xl)]",
-      "tokens": [
-        "tokens.spacing.6xl"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 160.0px to 128px using the existing spacing scale; variants and branch ownership remain exact."
     }
@@ -601,36 +575,31 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   "switch": {
     "data-[size=default]:h-[18.4px]": {
       "output": "data-[size=default]:h-(--ui-control-switch-thumb)",
-      "tokens": [
-        "tokens.control-size.switch-thumb"
+      "themes": [
       ],
       "note": "Use actual existing switch-thumb role 14px instead of source 18.4px."
     },
     "group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-2px)]": {
       "output": "group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-var(--ui-border-rule))]",
-      "tokens": [
-        "tokens.border-width.rule"
+      "themes": [
       ],
       "note": "Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read."
     },
     "group-data-[size=default]/switch:data-selected:translate-x-[calc(100%-2px)]": {
       "output": "group-data-[size=default]/switch:data-selected:translate-x-[calc(100%-var(--ui-border-rule))]",
-      "tokens": [
-        "tokens.border-width.rule"
+      "themes": [
       ],
       "note": "Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read."
     },
     "group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-2px)]": {
       "output": "group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-var(--ui-border-rule))]",
-      "tokens": [
-        "tokens.border-width.rule"
+      "themes": [
       ],
       "note": "Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read."
     },
     "group-data-[size=sm]/switch:data-selected:translate-x-[calc(100%-2px)]": {
       "output": "group-data-[size=sm]/switch:data-selected:translate-x-[calc(100%-var(--ui-border-rule))]",
-      "tokens": [
-        "tokens.border-width.rule"
+      "themes": [
       ],
       "note": "Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read."
     }
@@ -638,8 +607,8 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   "table": {
     "h-10": {
       "output": "h-[var(--spacing-3xl)]",
-      "tokens": [
-        "tokens.spacing.3xl"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 40.0px to 48px using the existing spacing scale; variants and branch ownership remain exact."
     }
@@ -647,43 +616,42 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   "tabs": {
     "group-data-horizontal/tabs:after:bottom-[-5px]": {
       "output": "group-data-horizontal/tabs:after:bottom-[calc(var(--spacing-xs)*-1)]",
-      "tokens": [
-        "tokens.spacing.xs"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle selected indicator offset -5 to -4px existing spacing."
     },
     "group-data-horizontal/tabs:after:h-0.5": {
       "output": "group-data-horizontal/tabs:after:h-[var(--spacing-xs)]",
-      "tokens": [
-        "tokens.spacing.xs"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "group-data-vertical/tabs:after:w-0.5": {
       "output": "group-data-vertical/tabs:after:w-[var(--spacing-xs)]",
-      "tokens": [
-        "tokens.spacing.xs"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "h-[calc(100%-1px)]": {
       "output": "h-[calc(100%-var(--ui-border-hairline))]",
-      "tokens": [
-        "tokens.border-width.hairline"
+      "themes": [
       ],
       "note": "Preserve relative height minus exact hairline."
     },
     "p-[3px]": {
       "output": "p-(--spacing-xs)",
-      "tokens": [
-        "tokens.spacing.xs"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle3px tabs padding to existing4px xs spacing."
     },
     "py-0.5": {
       "output": "py-[var(--spacing-xs)]",
-      "tokens": [
-        "tokens.spacing.xs"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact."
     }
@@ -691,29 +659,28 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   "toggle-button": {
     "min-w-7": {
       "output": "min-w-[var(--spacing-2xl)]",
-      "tokens": [
-        "tokens.spacing.2xl"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 28.0px to 32px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "min-w-9": {
       "output": "min-w-[var(--spacing-2xl)]",
-      "tokens": [
-        "tokens.spacing.2xl"
+      "themes": [
+        "themes.spacing.default"
       ],
       "note": "Restyle 36.0px to 32px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "rounded-[min(var(--radius-md),12px)]": {
       "output": "rounded-(--radius-control)",
-      "tokens": [
-        "tokens.control-radius.default"
+      "themes": [
+        "themes.radius.default"
       ],
       "note": "Remove literal 10/12px cap and use the consumer control radius directly; preserves every size/state prefix."
     },
     "text-[0.8rem]": {
       "output": "text-(length:--text-caption)",
-      "tokens": [
-        "tokens.caption-size.default"
+      "themes": [
       ],
       "note": "Restyle 12.8px small control/calendar typography to existing caption 12px; no token value change."
     }
@@ -721,22 +688,20 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   "toggle-group": {
     "data-[size=sm]:rounded-[min(var(--radius-md),10px)]": {
       "output": "data-[size=sm]:rounded-(--radius-control)",
-      "tokens": [
-        "tokens.control-radius.default"
+      "themes": [
+        "themes.radius.default"
       ],
       "note": "Remove literal 10/12px cap and use the consumer control radius directly; preserves every size/state prefix."
     },
     "focus-visible:z-10": {
       "output": "focus-visible:z-(--ui-z-sticky)",
-      "tokens": [
-        "tokens.z-index.sticky"
+      "themes": [
       ],
       "note": "Exact existing layer value; new component read only where absent."
     },
     "focus:z-10": {
       "output": "focus:z-(--ui-z-sticky)",
-      "tokens": [
-        "tokens.z-index.sticky"
+      "themes": [
       ],
       "note": "Exact existing layer value; new component read only where absent."
     }
@@ -744,15 +709,14 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   "tooltip": {
     "rounded-[2px]": {
       "output": "rounded-(--radius-subtle)",
-      "tokens": [
-        "tokens.radius.subtle"
+      "themes": [
+        "themes.radius.default"
       ],
       "note": "Exact existing subtle radius 2px."
     },
     "translate-y-[calc(-50%-2px)]": {
       "output": "translate-y-[calc(-50%-var(--ui-border-rule))]",
-      "tokens": [
-        "tokens.border-width.rule"
+      "themes": [
       ],
       "note": "Preserve tooltip arrow centering and exact2px edge offset using existing rule width; explicit edge-geometry read."
     }
@@ -807,7 +771,7 @@ function rewriteSource(input: RewriteInput): RewriteResult {
   const issues: RewriteIssue[] = [], notes: RewriteNote[] = [];
   const fieldControl = ["select", "combo-box"].includes(input.leaf);
   const contextualInputs = new Set<string>();
-  const allowedTokens = componentSlots.find(slot => slot.id === `components.${input.leaf}`)?.contract.allowedReads.tokens ?? [];
+  const allowedTokens = componentSlots.find(slot => slot.id === `components.${input.leaf}`)?.contract.allowedReads.themes ?? [];
   // Geometry is supplied by the named runtime, independently of consumer design tokens.
   const engineVariables = new Map(input.files.map(file => {
     const code = file.content.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, "");
@@ -820,7 +784,7 @@ function rewriteSource(input: RewriteInput): RewriteResult {
   const add = (code: RewriteIssue["code"], file: string, value: string, message: string): void => { issues.push({ code, file, value, message }); };
   const bind = (name: string): string | undefined => {
     const binding = adapter.bindings[name]; if (!binding) return;
-    tokens.add(binding.member); return binding.property;
+    { if (binding.member) tokens.add(binding.member); }; return binding.property;
   };
   // Card children inherit both the base and small-size consumer bindings.
   // A missing definition must leave every private alias unresolved.
@@ -904,15 +868,13 @@ function rewriteSource(input: RewriteInput): RewriteResult {
         || input.item === "select" && expressionSourceTerms.join(" ") === "group/select-list max-h-[inherit] overflow-x-hidden overflow-y-auto p-0 outline-hidden"
         || input.item === "combobox" && expressionSourceTerms.join(" ") === "cn-combobox-chip-input min-w-16 flex-1 outline-none"
         || input.item === "tabs" && expressionSourceTerms.join(" ") === "cn-tabs-content flex-1 outline-none");
-      if (ownFocus) {
-        tokens.add("tokens.focus-outline.width"); tokens.add("tokens.focus-outline.offset"); tokens.add("tokens.focus-color.default");
+      if (ownFocus) { tokens.add("themes.ring.default");
         notes.push({ file, value, message: "Restyled selected focusable surface: replace outline suppression with its own existing token-bound keyboard outline" });
         return focusOutline("focus-visible:", "--color-focus-ring");
       }
       if (input.item === "accordion" && stack.includes("cn-accordion-content")
         && ["data-open:animate-accordion-down", "data-closed:animate-accordion-up"].includes(value)) {
         const direction = prefix === "data-open:" ? "enter" : "exit";
-        tokens.add("tokens.duration.fast"); tokens.add(`tokens.transition-easing.${direction}`);
         notes.push({ file, value, message: "Restyled selected disclosure height animation to the existing reduced-motion-aware fade; the peer retains open/close and intrinsic height ownership" });
         return `${prefix}library-${direction} ${prefix}library-fade`;
       }
@@ -921,46 +883,43 @@ function rewriteSource(input: RewriteInput): RewriteResult {
         return "";
       }
       if (input.item === "slider" && stack.includes("cn-slider-thumb") && ["hover:ring-3", "active:ring-3"].includes(value)) {
-        tokens.add("tokens.border-width.rule");
         notes.push({ file, value, message: "Restyled selected decorative thumb ring from 3px to existing 2px rule width; independent keyboard focus remains token bound" });
         return `${prefix}ring-${styleRead("--ui-border-rule", "ring-3", "length")}`;
       }
     }
     if (input.transformVersion === 2) {
-      const bindV2 = (member: string, output: string): string => { tokens.add(member); return prefix + output; };
+      const bindV2 = (member: string | undefined, output: string): string => { if (member) tokens.add(member); return prefix + output; };
       if (["border-dashed", "border-transparent", "border-inherit", "border-0", "ring-0", "opacity-0", "opacity-100"].includes(base)) return value;
-      if (["outline-none", "outline-hidden"].includes(base)) {
-        tokens.add("tokens.focus-outline.width"); tokens.add("tokens.focus-outline.offset"); tokens.add("tokens.focus-color.default");
+      if (["outline-none", "outline-hidden"].includes(base)) { tokens.add("themes.ring.default");
         return focusOutline("focus-visible:", "--color-focus-ring");
       }
 
       if (base === "animate-pulse") { notes.push({ file, value, message: "Restyled loading indicator to its static token-bound shape" }); return ""; }
-      if (/^rounded-\[calc\(var\(--radius\)-[35]px\)\]$/.test(base)) return bindV2("tokens.radius.default", "rounded-(--radius-default)");
+      if (/^rounded-\[calc\(var\(--radius\)-[35]px\)\]$/.test(base)) return bindV2("themes.radius.default", "rounded-(--radius-default)");
       const inset = /^(m[lr])-\[-0\.(?:3|15)rem\]$/.exec(base);
-      if (inset) return bindV2("tokens.spacing.xs", `-${inset[1]}-(--spacing-xs)`);
-      if (base === "pl-7") return bindV2("tokens.spacing.xl", "pl-(--spacing-xl)");
-      if (base === "min-w-[96px]") return bindV2("tokens.spacing.6xl", "min-w-(--spacing-6xl)");
+      if (inset) return bindV2("themes.spacing.default", `-${inset[1]}-(--spacing-xs)`);
+      if (base === "pl-7") return bindV2("themes.spacing.default", "pl-(--spacing-xl)");
+      if (base === "min-w-[96px]") return bindV2("themes.spacing.default", "min-w-(--spacing-6xl)");
       const fixed = railTokenBindings.utilities.find(row => row.utility === base);
       if (fixed) return bindV2(fixed.member, fixed.output);
-      if (base === "text-sm/relaxed") { tokens.add("tokens.line-height.heading"); return bindV2("tokens.font-size.sm", "text-(length:--text-sm) leading-(--leading-heading)"); }
+      if (base === "text-sm/relaxed") return prefix + "text-(length:--text-sm) leading-(--leading-heading)";
       const near = /^((?:h|w|min-w|size|mx|top|py|gap|translate-y))-([057]|3\.5|10|0\.5)$/.exec(base);
-      if (near) { const member = ({ "0.5": "xs", "3.5": "lg", "5": "xl", "7": "xl", "10": "2xl" } as Record<string,string>)[near[2]!]; if (member) return bindV2(`tokens.spacing.${member}`, `${near[1]}-(${adapter.spacingProperties[member]})`); }
+      if (near) { const member = ({ "0.5": "xs", "3.5": "lg", "5": "xl", "7": "xl", "10": "2xl" } as Record<string,string>)[near[2]!]; if (member) return bindV2("themes.spacing.default", `${near[1]}-(${adapter.spacingProperties[member]})`); }
       const slide = /^translate-([xy])-\[(-?)2\.5rem\]$/.exec(base);
-      if (slide) return bindV2("tokens.spacing.2xl", `${slide[2] ? "-" : ""}translate-${slide[1]}-(--spacing-2xl)`);
+      if (slide) return bindV2("themes.spacing.default", `${slide[2] ? "-" : ""}translate-${slide[1]}-(--spacing-2xl)`);
       if (base.includes("--spacing(4)")) {
-        tokens.add("tokens.spacing.lg"); tokens.add("tokens.region-width.sidebar-rail");
+        tokens.add("themes.spacing.default");
         let output = base.replaceAll("--spacing(4)", "var(--spacing-lg)");
-        if (output.includes("+2px")) { tokens.add("tokens.border-width.rule"); output = output.replaceAll("+2px", "+var(--ui-border-rule)"); }
+        if (output.includes("+2px")) { output = output.replaceAll("+2px", "+var(--ui-border-rule)"); }
         return prefix + output;
       }
       if (/^transition(?:-(?:all|colors|opacity|shadow|transform|\[[a-z-]+(?:,[a-z-]+)*\]))?$/.test(base)) {
-        tokens.add("tokens.duration.default"); tokens.add("tokens.easing.default");
         return `${value} ${prefix}duration-(--ui-duration-default) ${prefix}ease-(--ease-default)`;
       }
     }
     const selected = selectedBindings[input.leaf]?.[value];
     if (selected) {
-      for (const member of selected.tokens) tokens.add(member);
+      for (const member of selected.themes) tokens.add(member);
       notes.push({ file, value, message: `Restyled source: ${selected.note}` });
       return selected.output;
     }
@@ -997,21 +956,20 @@ function rewriteSource(input: RewriteInput): RewriteResult {
       const expanded = rule.split(/\s+/).map(term => {
         const [variants, atom] = variantParts(term);
         if (mark && atom === mark) {
-          tokens.add("tokens.control-size.mark");
           return `${prefix}${variants}size-${styleRead(adapter.controlProperties.mark!, mark)}`;
         }
         const size = /^(h|size)-(7|8|9)$/.exec(atom);
         if (control && size) {
-          const member = adapter.controlSizes[size[2]!]!; tokens.add(`tokens.control-size.${member}`);
+          const member = adapter.controlSizes[size[2]!]!;
           return `${prefix}${variants}${size[1]}-${styleRead(adapter.controlProperties[member]!, `h-${size[2]}`)}`;
         }
         return utility(prefix + term, file, [...stack, base]);
       }).join(" ");
       if (fieldControl && ["cn-select-label", "cn-combobox-label", "cn-select-trigger", "cn-input-group"].includes(base)) {
         const family = adapter.fieldTypography.family!;
-        tokens.add(family.member);
+        { if (family.member) tokens.add(family.member); };
         const body = base === "cn-input-group" ? adapter.fieldTypography.sm : undefined;
-        if (body) tokens.add(body.member);
+        if (body) { if (body.member) tokens.add(body.member); };
         return `${expanded}${body ? ` text-(length:${body.property})` : ""} font-(family-name:${family.property})`;
       }
       return expanded;
@@ -1023,7 +981,7 @@ function rewriteSource(input: RewriteInput): RewriteResult {
     }
     // The two link variants use upstream primary as link ink, rather than action fill.
     if (base === "text-primary" && stack.some(rule => rule === "cn-button-variant-link" || rule === "cn-badge-variant-link")) {
-      tokens.add("tokens.accent-color.text"); return `${prefix}text-(--color-accent-text)`;
+      tokens.add("themes.accent-foreground.default"); return `${prefix}text-(--color-accent-text)`;
     }
     // Explicit zero-width adjacency and on/off visibility do not introduce a
     // positive design value. Keep the selector and require its structural peer.
@@ -1088,8 +1046,7 @@ function rewriteSource(input: RewriteInput): RewriteResult {
       const [paintPrefix, paint] = variantParts(term);
       return (paintPrefix === prefix || !paintPrefix) && /^ring-destructive(?:\/(?:20|40))?$/.test(paint);
     });
-    if ((invalidRing || interactiveDangerRing) && expressionTerms.includes(prefix + "ring-3") && /^(?:ring-3|ring-destructive(?:\/(?:20|40))?)$/.test(base)) {
-      tokens.add("tokens.focus-outline.width"); tokens.add("tokens.focus-outline.offset"); tokens.add("tokens.status-color.danger");
+    if ((invalidRing || interactiveDangerRing) && expressionTerms.includes(prefix + "ring-3") && /^(?:ring-3|ring-destructive(?:\/(?:20|40))?)$/.test(base)) { tokens.add("themes.destructive.default");
       return focusOutline(prefix, "--color-status-danger");
     }
     if (base === "border-collapse") return value;
@@ -1097,98 +1054,88 @@ function rewriteSource(input: RewriteInput): RewriteResult {
       const assignment = /^\[--card-spacing:--spacing\(([34])\)\]$/.exec(base);
       if (assignment) {
         const member = assignment[1] === "4" ? "lg" : "md";
-        tokens.add(`tokens.spacing.${member}`);
+        tokens.add("themes.spacing.default");
         return `${prefix}[--card-spacing:var(--spacing-${member})]`;
       }
       if (/^(?:gap(?:-[xy])?|p[trblxy]?)-\(--card-spacing\)$/.test(base)) return value;
     }
-    if (base === "rounded-[4px]" && allowedTokens.includes("tokens.radius")) {
-      tokens.add("tokens.radius.default"); return `${prefix}rounded-(--radius-default)`;
+    if (base === "rounded-[4px]" && allowedTokens.includes("themes.radius")) {
+      tokens.add("themes.radius.default"); return `${prefix}rounded-(--radius-default)`;
     }
-    if (base === "min-w-[96px]" && allowedTokens.includes("tokens.spacing")) {
-      tokens.add("tokens.spacing.5xl"); return `${prefix}min-w-(--spacing-5xl)`;
+    if (base === "min-w-[96px]" && allowedTokens.includes("themes.spacing")) {
+      tokens.add("themes.spacing.default"); return `${prefix}min-w-(--spacing-5xl)`;
     }
-    if (base === "max-w-[calc(100%-2rem)]" && allowedTokens.includes("tokens.spacing")) {
-      tokens.add("tokens.spacing.2xl"); return `${prefix}max-w-[calc(100%-var(--spacing-2xl))]`;
+    if (base === "max-w-[calc(100%-2rem)]" && allowedTokens.includes("themes.spacing")) {
+      tokens.add("themes.spacing.default"); return `${prefix}max-w-[calc(100%-var(--spacing-2xl))]`;
     }
     const decorativeRing = /^ring-([12])$/.exec(base);
-    if (decorativeRing && allowedTokens.includes("tokens.border-width")) {
+    if (decorativeRing) {
       const member = decorativeRing[1] === "1" ? "hairline" : "rule";
-      tokens.add(`tokens.border-width.${member}`);
       return `${prefix}ring-(length:--ui-border-${member})`;
     }
     // A size role may bind only size utilities, never padding or spacing.
     const exactSize = /^(h|w|size|min-h|min-w|max-h|max-w)-(?:\[([0-9.]+px)\]|([0-9.]+))$/.exec(base);
     if (exactSize) {
       const binding = adapter.sizeLengths[exactSize[2] ?? adapter.sizeSteps[exactSize[3]!]!];
-      if (binding) { tokens.add(binding.member); return `${prefix}${exactSize[1]}-${styleRead(binding.property, base)}`; }
+      if (binding) { { if (binding.member) tokens.add(binding.member); }; return `${prefix}${exactSize[1]}-${styleRead(binding.property, base)}`; }
     }
     // Focus width and paint form one solid outline. Invalid-state rings and decorative
     // borders remain separate; they must not accidentally count as focus clearance.
     const focus = /(?:focus-visible|focus-within|has-focus)/.test(prefix) || prefix === "group-data-[focused=true]/day:";
-    if ((focus && /^ring-(?:3|ring(?:\/50)?|destructive\/(?:20|40))$/.test(base)) || (!prefix && /^(?:ring-3|ring-ring\/50)$/.test(base))) {
-      tokens.add("tokens.focus-outline.width"); tokens.add("tokens.focus-outline.offset"); tokens.add("tokens.focus-color.default");
+    if ((focus && /^ring-(?:3|ring(?:\/50)?|destructive\/(?:20|40))$/.test(base)) || (!prefix && /^(?:ring-3|ring-ring\/50)$/.test(base))) { tokens.add("themes.ring.default");
       return focusOutline(prefix, "--color-focus-ring");
     }
     const elevation = /^shadow-(none|xs|sm|md|lg|xl|2xl)(!)?$/.exec(base);
     if (elevation) {
       const member = elevation[1] === "none" ? "none" : ["xs", "sm"].includes(elevation[1]!) ? "raised" : "floating";
-      tokens.add(`tokens.elevation.${member}`);
+      if (member !== "none") tokens.add(`themes.shadow.${elevation[1]}`);
       return `${prefix}shadow-(--ui-elevation-${member})${elevation[2] ?? ""}`;
     }
     const motion = /^(animate-(in|out)|fade-(in|out)-0|zoom-(in|out)-95|slide-in-from-(top|bottom|left|right)-2)$/.exec(base);
     if (motion) {
       if (base.startsWith("animate-")) {
         const direction = base === "animate-in" ? "enter" : "exit";
-        tokens.add("tokens.duration.fast"); tokens.add(`tokens.transition-easing.${direction}`);
         return `${prefix}library-${direction}`;
       }
       if (base.startsWith("fade-")) return `${prefix}library-fade`;
       if (base.startsWith("zoom-")) return `${prefix}library-zoom`;
-      tokens.add("tokens.shift-distance.default");
       return `${prefix}library-slide-${motion[5]}`;
     }
-    if (base === "duration-100") {
-      tokens.add("tokens.duration.fast"); return `${prefix}duration-${styleRead("--ui-duration-fast", base)}`;
+    if (base === "duration-100") { return `${prefix}duration-${styleRead("--ui-duration-fast", base)}`;
     }
-    if (styleDefaults && base === "duration-200") {
-      tokens.add("tokens.duration.default"); return `${prefix}duration-${styleRead("--ui-duration-default", base)}`;
+    if (styleDefaults && base === "duration-200") { return `${prefix}duration-${styleRead("--ui-duration-default", base)}`;
     }
     const opacity = /^opacity-(50|70)$/.exec(base);
     if (opacity) {
       const member = opacity[1] === "50" ? "disabled" : "stale";
-      tokens.add(`tokens.state-opacity.${member}`);
       return `${prefix}opacity-${styleRead(`--ui-alpha-${member}`, base)}`;
     }
     const z = /^z-(0|10|20|30|40|50|60|70|80|90|100)$/.exec(base);
-    if (z && allowedTokens.includes("tokens.z-index")) {
-      const member = ({ "0": "base", "10": "sticky", "20": "shell", "30": "aside", "40": "notice", "50": "modal", "60": "toast", "70": "palette", "80": "tooltip", "90": "progress", "100": "skip-link" } as Record<string, string>)[z[1]!]!;
-      tokens.add(`tokens.z-index.${member}`); return `${prefix}z-${styleRead(`--ui-z-${member}`, base)}`;
+    if (z) {
+      const member = ({ "0": "base", "10": "sticky", "20": "shell", "30": "aside", "40": "notice", "50": "modal", "60": "toast", "70": "palette", "80": "tooltip", "90": "progress", "100": "skip-link" } as Record<string, string>)[z[1]!]!; return `${prefix}z-${styleRead(`--ui-z-${member}`, base)}`;
     }
     if (base === "font-sans") {
       const family = adapter.fieldTypography.family!;
-      tokens.add(family.member); return `${prefix}font-(family-name:${family.property})`;
+      { if (family.member) tokens.add(family.member); }; return `${prefix}font-(family-name:${family.property})`;
     }
     const weight = /^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black)$/.exec(base);
-    if (weight) { tokens.add(`tokens.font-weight.${weight[1]}`); return `${prefix}font-(weight:--font-weight-${weight[1]})`; }
+    if (weight) { return `${prefix}font-(weight:--font-weight-${weight[1]})`; }
     const duration = /^duration-(80|160|240|500|1200)$/.exec(base);
     if (duration) {
-      const member = ({ "80": "instant", "160": "fast", "240": "default", "500": "deliberate", "1200": "flash" } as Record<string, string>)[duration[1]!]!;
-      tokens.add(`tokens.duration.${member}`); return `${prefix}duration-(--ui-duration-${member})`;
+      const member = ({ "80": "instant", "160": "fast", "240": "default", "500": "deliberate", "1200": "flash" } as Record<string, string>)[duration[1]!]!; return `${prefix}duration-(--ui-duration-${member})`;
     }
     const easing = /^ease-(in|out)$/.exec(base);
     if (easing) {
-      const member = easing[1] === "in" ? "accelerate" : "decelerate";
-      tokens.add(`tokens.easing.${member}`); return `${prefix}ease-(--ease-${member})`;
+      const member = easing[1] === "in" ? "accelerate" : "decelerate"; return `${prefix}ease-(--ease-${member})`;
     }
     // Property lists are structural; both otherwise implicit timing defaults are bound.
     if (/^transition(?:-(?:all|colors|opacity|shadow|transform|\[[a-z-]+(?:,[a-z-]+)*\]))?$/.test(base)) {
       const output = [`${prefix}${base}`];
       let ambiguous = false;
-      for (const [kind, member, property] of [["duration", "tokens.duration.default", "--ui-duration-default"], ["ease", "tokens.easing.default", styleDefaults ? "--default-transition-timing-function" : "--ease-default"]]) {
+      for (const [kind, property] of [["duration", "--ui-duration-default"], ["ease", styleDefaults ? "--default-transition-timing-function" : "--ease-default"]]) {
         if (!explicitTiming.has(`${kind}:${prefix}`) && !explicitTiming.has(`${kind}:`)) {
           if ((activeTiming ?? fileTiming.get(file))?.has(`${kind}:${prefix}`) || (activeTiming ?? fileTiming.get(file))?.has(`${kind}:`)) { ambiguous = true; continue; }
-          tokens.add(member!); output.push(`${prefix}${kind}-(${property})`);
+          output.push(`${prefix}${kind}-(${property})`);
         }
       }
       if (ambiguous) add("K4", file, value, "Transition timing split across class expressions needs an explicit binding");
@@ -1196,14 +1143,13 @@ function rewriteSource(input: RewriteInput): RewriteResult {
     }
     if (base === "transition-none") return value;
     const border = /^(border(?:-[trblxyse])?)(?:-1|-\[1px\])?$/.exec(base);
-    if (border) {
-      tokens.add("tokens.border-width.hairline"); return `${prefix}${border[1]}-${styleRead("--ui-border-hairline", base, "length")}`;
+    if (border) { return `${prefix}${border[1]}-${styleRead("--ui-border-hairline", base, "length")}`;
     }
     // Rewrite every upstream theme reference, including references in color-mix().
     let next = base.replace(/--([a-z][a-z0-9-]*)/g, (all, name: string) => {
       if (input.transformVersion === 2) {
-        const role = ({ "sidebar-width": ["tokens.region-width.sidebar", "--sidebar-width"], "sidebar-width-icon": ["tokens.region-width.sidebar-rail", "--sidebar-width-icon"], "skeleton-width": ["tokens.content-size.notice", "--ui-width-notice-max"], "spacing": ["tokens.spacing.xs", "--spacing-xs"], "color-border": ["tokens.border-color.base", "--color-line-base"] } as Record<string, [string, string]>)[name];
-        if (role) { tokens.add(role[0]); return role[1]; }
+        const role = ({ "sidebar-width": ["", "--sidebar-width"], "sidebar-width-icon": ["", "--sidebar-width-icon"], "skeleton-width": ["", "--ui-width-notice-max"], "spacing": ["themes.spacing.default", "--spacing-xs"], "color-border": ["themes.border.default", "--color-line-base"] } as Record<string, [string, string]>)[name];
+        if (role) { if (role[0]) tokens.add(role[0]); return role[1]; }
       }
       const radius = /^radius-(?:xs|sm|md|lg|xl|2xl)$/.test(name) ? "radius" : name;
       return bind(radius) ?? all;
@@ -1215,27 +1161,26 @@ function rewriteSource(input: RewriteInput): RewriteResult {
     }
     const font = /^text-(xs|sm|base|lg|xl|[2-9]xl)$/.exec(next);
     if (font && input.leaf === "keyboard" && font[1] === "xs") {
-      tokens.add("tokens.code-size.block");
       notes.push({ file, value, message: "Restyled source: keyboard 12px to existing code-size.block 13px" });
       return `${prefix}text-(length:--text-code-block)`;
     }
     if (font && fieldControl && ["xs", "sm"].includes(font[1]!)) {
       const binding = adapter.fieldTypography[font[1]!]!;
-      tokens.add(binding.member); return `${prefix}text-(length:${binding.property})`;
+      { if (binding.member) tokens.add(binding.member); }; return `${prefix}text-(length:${binding.property})`;
     }
-    if (font) { tokens.add(`tokens.font-size.${font[1]}`); return `${prefix}text-(length:${adapter.fontSizes[font[1]!]})`; }
+    if (font) { return `${prefix}text-(length:${adapter.fontSizes[font[1]!]})`; }
     const radius = /^rounded(?:-[trbl]{1,2})?-(?:xs|sm|md|lg|xl|2xl)$/.exec(next);
     if (radius) return `${prefix}${next.replace(/-(?:xs|sm|md|lg|xl|2xl)$/, `-(${bind("radius")})`)}`;
     const space = /^(-?(?:h|w|size|min-h|min-w|max-h|max-w|p[trblxy]?|m[trblxy]?|gap(?:-[xy])?|space-[xy]|top|bottom|left|right|inset|translate-[xy]|underline-offset))-(\d+(?:\.\d+)?|px)$/.exec(next);
     if (space && space[2] !== "0") {
       const restyle = ({ "1.5": "sm", "2.5": "md" } as Record<string,string>)[space[2]!];
       if (restyle) {
-        tokens.add(`tokens.spacing.${restyle}`);
+        tokens.add("themes.spacing.default");
         notes.push({ file, value, message: `Restyled source: ${space[2] === "1.5" ? "6px to spacing.sm 8px" : "10px to spacing.md 12px"}` });
         return `${prefix}${space[1]}-(${adapter.spacingProperties[restyle]})`;
       }
       const member = adapter.spacing[space[2]!];
-      if (member) { tokens.add(`tokens.spacing.${member}`); return `${prefix}${space[1]}-${/^(?:h|size)$/.test(space[1]!) ? styleRead(adapter.spacingProperties[member]!, `${space[1]}-${space[2]}`) : `(${adapter.spacingProperties[member]})`}`; }
+      if (member) { tokens.add("themes.spacing.default"); return `${prefix}${space[1]}-${/^(?:h|size)$/.test(space[1]!) ? styleRead(adapter.spacingProperties[member]!, `${space[1]}-${space[2]}`) : `(${adapter.spacingProperties[member]})`}`; }
       add("K4", file, value, "No spacing member has the exact source length");
     }
     if (/(?:#[\da-f]{3,8}\b|\d*\.?\d+(?:px|rem|em)\b|--spacing\()/i.test(next)) add("K4", file, value, "Literal colour or length remains after rewriting");
@@ -1311,14 +1256,13 @@ function rewriteSource(input: RewriteInput): RewriteResult {
     }
     if (consumerVariables.get(file.path)?.has("--gap")) {
       content = content.replace('"--gap": `calc(var(--spacing) * ${spacing})`', '"--gap": `calc(var(--spacing-xs) * ${spacing})`');
-      tokens.add("tokens.spacing.xs");
+      tokens.add("themes.spacing.default");
       notes.push({ file: file.path, value: "style --gap = calc(var(--spacing) * spacing)", message: "Restyled source: bind the public spacing multiplier to the existing spacing.xs unit; preserve caller value and default" });
     }
     if (input.item === "select" && input.leaf === "select" && !inPart) {
       content = content.replace('size?: "sm" | "default"', 'size?: "sm" | "default" | "lg"');
       if (content.includes("cn-select-trigger flex")) {
         content = content.replace("cn-select-trigger flex", "cn-select-trigger data-[size=lg]:h-(--ui-control-h-lg) flex");
-        tokens.add("tokens.control-size.h-lg");
       }
     }
     // InputGroup is already inside SearchField/ComboBox. A full TextField would
@@ -1408,7 +1352,7 @@ function rewriteSource(input: RewriteInput): RewriteResult {
       return quoted[0] + inner.split(/\s+/).map(term => utility(term, file.path)).filter(Boolean).join(" ") + quoted[0];
     });
     if (input.transformVersion === 2) {
-      for (const row of railTokenBindings.variables) if (content.includes(row.input)) { tokens.add(row.member); content = content.replaceAll(row.input, row.property); }
+      for (const row of railTokenBindings.variables) if (content.includes(row.input)) { content = content.replaceAll(row.input, row.property); }
       content = adaptRailClasses(content, input.item === "sidebar");
       content = content.replace(/<LibraryIcon asset="(assets\.icon-(?:chevron-(?:left|right)|arrow-right|panel-left))"([^>]*?)\/>/g,
         (_match, asset: string, attributes: string) => `<LibraryIcon asset="${asset}" mirrorInRtl${attributes} />`);
@@ -1419,5 +1363,5 @@ function rewriteSource(input: RewriteInput): RewriteResult {
     return { path: inPart ? file.path : `components/${input.leaf}/${name}`, content };
   }).sort((a, b) => a.path.localeCompare(b.path));
   const unique = [...new Map(issues.map(issue => [JSON.stringify(issue), issue])).values()].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
-  return { transform: input.transformVersion === 2 ? "shadcn-aria-rewrite@2" : "shadcn-aria-rewrite@1", ...(contextualInputs.size ? { contextualInputs: sorted(contextualInputs) } : {}), ...(notes.length ? { notes: [...new Map(notes.map(note => [JSON.stringify(note), note])).values()].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))) } : {}), files, outputSha256: files.map(file => ({ path: file.path, sha256: sha256(file.content) })), reads: { tokens: sorted(tokens), assets: sorted(assets), components: sorted(components) }, parts: sorted(parts), issues: unique };
+  return { transform: input.transformVersion === 2 ? "shadcn-aria-rewrite@2" : "shadcn-aria-rewrite@1", ...(contextualInputs.size ? { contextualInputs: sorted(contextualInputs) } : {}), ...(notes.length ? { notes: [...new Map(notes.map(note => [JSON.stringify(note), note])).values()].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))) } : {}), files, outputSha256: files.map(file => ({ path: file.path, sha256: sha256(file.content) })), reads: { themes: sorted(tokens), assets: sorted(assets), components: sorted(components) }, parts: sorted(parts), issues: unique };
 }

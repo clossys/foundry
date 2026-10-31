@@ -18,7 +18,7 @@ function fixture(statuses, candidateStatus = 0) {
     if (statuses[index] === null) return;
     fs.writeFileSync(path.join(scripts, name), `import fs from 'node:fs';fs.writeFileSync(${JSON.stringify(path.join(root, `gate-${index}-ran`))},'ran');console.log(JSON.stringify({gate:'fixture-${index}',inputHead:${JSON.stringify(head)},violations:[],unverified:[]}));process.exitCode=${statuses[index]};\n`);
   });
-  fs.writeFileSync(path.join(scripts, "check-default-candidates.mjs"), `import fs from 'node:fs';fs.appendFileSync(${JSON.stringify(path.join(root, "default-runs"))},'ran\\n');console.log(JSON.stringify({schemaVersion:1,sourceHead:${JSON.stringify(head)},status:${JSON.stringify(["complete", "missing-candidates", "invalid-input"][candidateStatus])},missing:${JSON.stringify(candidateStatus === 1 ? [{slot:"tokens.spacing",reasons:["no implementation candidate in the default source"]}] : [])},invalid:${JSON.stringify(candidateStatus === 2 ? ["Invalid native policy"] : [])}}));process.exitCode=${candidateStatus};\n`);
+  fs.writeFileSync(path.join(scripts, "check-default-candidates.mjs"), `import fs from 'node:fs';fs.appendFileSync(${JSON.stringify(path.join(root, "default-runs"))},'ran\\n');console.log(JSON.stringify({schemaVersion:1,sourceHead:${JSON.stringify(head)},status:${JSON.stringify(["complete", "missing-candidates", "invalid-input"][candidateStatus])},missing:${JSON.stringify(candidateStatus === 1 ? [{slot:"themes.spacing",reasons:["no implementation candidate in the default source"]}] : [])},invalid:${JSON.stringify(candidateStatus === 2 ? ["Invalid native policy"] : [])}}));process.exitCode=${candidateStatus};\n`);
   return { root, run: (extra = []) => spawnSync(process.execPath, [path.join(scripts, "check-process-gates.mjs"), ...extra], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }) };
 }
 test("collects every gate after nonzero results and fails closed", () => {
@@ -62,7 +62,7 @@ test("default completeness failures retain slot evidence and run after every PRO
   assert.equal(child.status, 2);
   const defaults = report.gates.find(row => row.gate === "default-candidates");
   assert.equal(defaults.exitStatus, 1);
-  assert.equal(defaults.missing[0].slot, "tokens.spacing");
+  assert.equal(defaults.missing[0].slot, "themes.spacing");
   assert.deepEqual(defaults.invalid, []);
   assert.equal(fs.readFileSync(path.join(root, "default-runs"), "utf8"), "ran\n");
 });
@@ -93,7 +93,7 @@ test("compose checks default completeness exactly once through process before in
 test("default child cannot report complete with unresolved candidates", () => {
   const { root, run } = fixture([0, 0, 0]);
   const script = path.join(root, "packages/designer/scripts/check-default-candidates.mjs");
-  fs.writeFileSync(script, `console.log(JSON.stringify({schemaVersion:1,sourceHead:${JSON.stringify(head)},status:'complete',missing:[{slot:'tokens.spacing'}],invalid:[]}));\n`);
+  fs.writeFileSync(script, `console.log(JSON.stringify({schemaVersion:1,sourceHead:${JSON.stringify(head)},status:'complete',missing:[{slot:'themes.spacing'}],invalid:[]}));\n`);
   const child = run();
   assert.equal(child.status, 2);
   assert.equal(JSON.parse(child.stdout).gates[3].exitStatus, 2);
@@ -117,7 +117,7 @@ test('Studio reports retain all strict PROC and DF failures without blocking ren
   assert.equal(report.exitStatus, 2);
   assert.deepEqual(report.gates.map(row => row.exitStatus), [1, 2, 1, 1]);
   assert.ok(report.gates.every(row => row.blocking === false && row.report));
-  assert.equal(report.gates[3].report.missing[0].slot, 'tokens.spacing');
+  assert.equal(report.gates[3].report.missing[0].slot, 'themes.spacing');
 });
 
 test('Studio preserves missing legacy check diagnostics without a fabricated pass', () => {

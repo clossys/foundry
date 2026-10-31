@@ -93,7 +93,7 @@ describe("shadcn-aria-rewrite@1", () => {
     expect(code).toContain("dark:hover:bg-(--color-action)/80");
     expect(code).toContain("text-(length:--text-sm)");
     expect(code).toContain("px-(--spacing-sm)");
-    expect(result.reads.tokens).toEqual(expect.arrayContaining(["tokens.action-color.default", "tokens.font-size.sm", "tokens.spacing.sm", "tokens.control-radius.default"]));
+    expect(result.reads.themes).toEqual(expect.arrayContaining(["themes.primary.default", "themes.radius.default", "themes.spacing.default"]));
     expect(result.issues).toEqual([]);
     expect(code).toContain("gap-(--spacing-sm)");
     expect(result.notes).toContainEqual(expect.objectContaining({value:"gap-1.5",message:expect.stringContaining("Restyled source:")}));
@@ -101,7 +101,7 @@ describe("shadcn-aria-rewrite@1", () => {
   it("binds semantic button control heights instead of retaining the upstream fixed height", () => {
     const result = rewrite('const value = "cn-button-size-default"', ".cn-button-size-default { @apply h-8 px-2; }");
     expect(result.files[0]!.content).toContain("h-(--ui-control-h-md)");
-    expect(result.reads.tokens).toContain("tokens.control-size.h-md");
+    expect(result.reads.themes).toEqual(["themes.spacing.default"]);
   });
   it("rewrites IconPlaceholder to the consumer icon leaf and rejects an unknown glyph", () => {
     const result = rewrite('import { IconPlaceholder } from "@/app/(create)/components/icon-placeholder"\nconst value = <IconPlaceholder lucide="CheckIcon" tabler="IconCheck" className="size-4" />');
@@ -114,7 +114,7 @@ describe("shadcn-aria-rewrite@1", () => {
   it("canonicalizes inherited paint syntax without choosing a consumer colour", async () => {
     const result = rewrite('const value = "text-[inherit] hover:text-[inherit] text-[red]"');
     expect(result.files[0]!.content).toContain("text-inherit hover:text-inherit text-[red]");
-    expect(result.reads.tokens).toEqual([]);
+    expect(result.reads.themes).toEqual([]);
     expect(result.issues.filter(issue => issue.value.includes("inherit"))).toEqual([]);
     expect(result.issues).toContainEqual(expect.objectContaining({ code: "K4", value: "text-[red]" }));
     const { css } = await generateCompiledCss({ stylesDir: resolve(import.meta.dirname, "../../styles"), candidates: ["text-inherit", "hover:text-inherit"] });
@@ -124,7 +124,7 @@ describe("shadcn-aria-rewrite@1", () => {
     const result = rewrite('const value = "cn-nested h-(--private-size)"', ".cn-nested { &:hover { @apply bg-primary; } }");
     expect(result.issues).toContainEqual(expect.objectContaining({ code: "K4", value: "cn-nested" }));
     expect(result.issues).toContainEqual(expect.objectContaining({ code: "K4", value: "--private-size" }));
-    expect(result.reads.tokens).toEqual([]);
+    expect(result.reads.themes).toEqual([]);
   });
   it("rewrites a static named Lucide import and reports an unmapped binding", () => {
     const result = rewrite('import { Check as Tick } from "lucide-react"\nconst glyph = <Tick className="size-4" />');
@@ -156,7 +156,7 @@ describe("shadcn-aria-rewrite@1", () => {
     expect(result.files[0]!.content).toContain("text-(--color-accent-text)");
     expect(result.files[0]!.content).toContain("hover:text-(--color-accent-text)");
     expect(result.files[0]!.content).toContain("bg-(--color-action)");
-    expect(result.reads.tokens).toEqual(["tokens.accent-color.text", "tokens.action-color.default"]);
+    expect(result.reads.themes).toEqual(["themes.accent-foreground.default", "themes.primary.default"]);
   });
   it.each(["focus-visible:", "data-focus-visible:", "focus-within:", "has-[>input:focus-visible]:"])("replaces %s ring paint and width with a solid token outline", prefix => {
     const result = rewrite(`const value = "${prefix}ring-3 ${prefix}ring-ring/50"`);
@@ -164,7 +164,7 @@ describe("shadcn-aria-rewrite@1", () => {
     expect(code).not.toContain("ring-3");
     expect(code).not.toContain("/50");
     for (const atom of ["outline-solid", "outline-(length:--ui-border-focus)", "outline-offset-(--ui-focus-offset)", "outline-(--color-focus-ring)"]) expect(code).toContain(prefix + atom);
-    expect(result.reads.tokens).toEqual(["tokens.focus-color.default", "tokens.focus-outline.offset", "tokens.focus-outline.width"]);
+    expect(result.reads.themes).toEqual(["themes.ring.default"]);
     expect(result.issues).toEqual([]);
   });
   it.each(["outline-none", "outline-hidden", "ring-0", "border-transparent", "group-has-[:focus-visible]/field-label:ring-0", "group-has-[:focus-visible]/field-label:border-transparent", "focus-visible:outline-hidden"])("removes %s only beside an expanded focus owner binding", suppression => {
@@ -193,19 +193,19 @@ describe("shadcn-aria-rewrite@1", () => {
   it.each(["aria-invalid:", "data-invalid:", "hover:", "active:"])("binds %s danger ring width and paint to the solid existing token shape", prefix => {
     const result = rewrite(`const value = "${prefix}ring-3 ${prefix}ring-destructive/20"`);
     for (const atom of ["outline-solid", "outline-(length:--ui-border-focus)", "outline-offset-(--ui-focus-offset)", "outline-(--color-status-danger)"]) expect(result.files[0]!.content).toContain(prefix + atom);
-    expect(result.reads.tokens).toEqual(["tokens.focus-outline.offset", "tokens.focus-outline.width", "tokens.status-color.danger"]);
+    expect(result.reads.themes).toEqual(["themes.destructive.default"]);
     expect(result.issues).toEqual([]);
   });
   it("keeps danger paint alone from manufacturing a ring width", () => {
     const result = rewrite('const value = "aria-invalid:ring-destructive/20"');
     expect(result.files[0]!.content).toContain("aria-invalid:ring-(--color-status-danger)/20");
     expect(result.files[0]!.content).not.toContain("outline-solid");
-    expect(result.reads.tokens).toEqual(["tokens.status-color.danger"]);
+    expect(result.reads.themes).toEqual(["themes.destructive.default"]);
   });
   it("retains hover and active ring widths when the source paint is a different role", () => {
     const result = rewrite('const value = "ring-ring/50 hover:ring-3 active:ring-3"');
     for (const value of ["hover:ring-3", "active:ring-3"]) expect(result.issues).toContainEqual(expect.objectContaining({ code: "K4", value }));
-    expect(result.reads.tokens).not.toContain("tokens.status-color.danger");
+    expect(result.reads.themes).not.toContain("themes.destructive.default");
   });
   it("binds exact existing size members without treating them as spacing", () => {
     const result = rewrite('const value = "[&>svg]:size-3.5 data-small:h-[14px] w-[24px] dark:w-[32px]"');
@@ -213,11 +213,11 @@ describe("shadcn-aria-rewrite@1", () => {
     expect(result.files[0]!.content).toContain("data-small:h-(--ui-control-switch-thumb)");
     expect(result.files[0]!.content).toContain("w-(--spacing-xl)");
     expect(result.files[0]!.content).toContain("dark:w-(--spacing-2xl)");
-    expect(result.reads.tokens).toEqual(["tokens.control-size.switch-thumb", "tokens.spacing.2xl", "tokens.spacing.xl"]);
+    expect(result.reads.themes).toEqual(["themes.spacing.default"]);
     expect(result.issues).toEqual([]);
     const radius = rewrite('const value = "rounded-[4px]"');
     expect(radius.files[0]!.content).toBe('const value = "rounded-(--radius-default)"');
-    expect(radius.reads.tokens).toEqual(["tokens.radius.default"]);
+    expect(radius.reads.themes).toEqual(["themes.radius.default"]);
     expect(radius.issues).toEqual([]);
     for (const value of ["p-3.5", "h-[18.4px]", "min-h-40", "rounded-[5px]", "translate-x-[calc(100%-2px)]", "h-[14.1px]"]) expect(rewrite(`const value = "${value}"`).issues).toContainEqual(expect.objectContaining({ code: "K4", value }));
   });
@@ -240,7 +240,7 @@ describe("shadcn-aria-rewrite@1", () => {
     const result = rewrite('const value = "shadow-md data-entering:animate-in data-entering:fade-in-0 data-entering:zoom-in-95 data-exiting:animate-out data-exiting:fade-out-0 duration-100"');
     expect(result.files[0]!.content).toContain("shadow-(--ui-elevation-floating)");
     expect(result.files[0]!.content).toContain("data-entering:library-enter data-entering:library-fade data-entering:library-zoom data-exiting:library-exit");
-    expect(result.reads.tokens).toEqual(["tokens.duration.fast", "tokens.elevation.floating", "tokens.transition-easing.enter", "tokens.transition-easing.exit"]);
+    expect(result.reads.themes).toEqual(["themes.shadow.md"]);
     expect(result.issues).toEqual([]);
   });
   it("refuses unknown animation, focus width, literal control sizes and raw arbitrary paint", () => {
@@ -265,39 +265,36 @@ describe("shadcn-aria-rewrite@1", () => {
   });
 
   it.each([
-    ['opacity', 'disabled:opacity-50', 'disabled:opacity-(--ui-alpha-disabled)', 'tokens.state-opacity.disabled'],
-    ['stale-opacity', 'opacity-70', 'opacity-(--ui-alpha-stale)', 'tokens.state-opacity.stale'],
-    ['font-weight', 'font-medium', 'font-(weight:--font-weight-medium)', 'tokens.font-weight.medium'],
-    ['duration', 'duration-160', 'duration-(--ui-duration-fast)', 'tokens.duration.fast'],
-    ['easing', 'ease-in', 'ease-(--ease-accelerate)', 'tokens.easing.accelerate'],
-    ['transition', 'hover:transition-colors', 'hover:duration-(--ui-duration-default)', 'tokens.duration.default'],
-    ['border-bare', 'border', 'border-(length:--ui-border-hairline)', 'tokens.border-width.hairline'],
-    ['border-width', 'border-t', 'border-t-(length:--ui-border-hairline)', 'tokens.border-width.hairline'],
-  ])('binds the %s family to an existing member', (_family, value, expected, member) => {
+    ['opacity', 'disabled:opacity-50', 'disabled:opacity-(--ui-alpha-disabled)'],
+    ['stale-opacity', 'opacity-70', 'opacity-(--ui-alpha-stale)'],
+    ['font-weight', 'font-medium', 'font-(weight:--font-weight-medium)'],
+    ['duration', 'duration-160', 'duration-(--ui-duration-fast)'],
+    ['easing', 'ease-in', 'ease-(--ease-accelerate)'],
+    ['transition', 'hover:transition-colors', 'hover:duration-(--ui-duration-default)'],
+    ['border-bare', 'border', 'border-(length:--ui-border-hairline)'],
+    ['border-width', 'border-t', 'border-t-(length:--ui-border-hairline)'],
+  ])('binds the %s family without a themes read', (_family, value, expected) => {
     const result = rewrite(`const value = "${value}"`);
     expect(result.files[0]!.content).toContain(expected);
-    expect(result.reads.tokens).toContain(member);
+    expect(result.reads.themes).toEqual([]);
     expect(result.issues).toEqual([]);
   });
-  it('binds z-index only inside the leaf contract permission', () => {
-    const input = { item: 'tooltip', leaf: 'tooltip', files: [{ path: 'tooltip.tsx', content: 'const value = "z-50"' }], styles: '', leafByItem: {} };
-    const permitted = rewriteShadcnAria(input);
-    expect(permitted.files[0]!.content).toContain('z-(--ui-z-modal)');
-    expect(permitted.reads.tokens).toEqual(['tokens.z-index.modal']);
-    expect(permitted.issues).toEqual([]);
-    const refused = rewriteShadcnAria({ ...input, leaf: 'checkbox' });
-    expect(refused.files[0]!.content).toContain('z-50');
-    expect(refused.reads.tokens).toEqual([]);
-    expect(refused.issues).toContainEqual(expect.objectContaining({ code: 'K4', value: 'z-50' }));
+  it('binds z-index to the runtime layer variable for any leaf, without a themes read', () => {
+    for (const leaf of ['tooltip', 'checkbox']) {
+      const result = rewriteShadcnAria({ item: leaf, leaf, files: [{ path: `${leaf}.tsx`, content: 'const value = "z-50"' }], styles: '', leafByItem: {} });
+      expect(result.files[0]!.content).toContain('z-(--ui-z-modal)');
+      expect(result.reads.themes).toEqual([]);
+      expect(result.issues).toEqual([]);
+    }
   });
   it('keeps fractional spacing exact and unsupported family values unresolved', () => {
     for (const [value, output, token, note] of [
-      ["px-1.5", "px-(--spacing-sm)", "tokens.spacing.sm", "6px to spacing.sm 8px"],
-      ["gap-2.5", "gap-(--spacing-md)", "tokens.spacing.md", "10px to spacing.md 12px"],
+      ["px-1.5", "px-(--spacing-sm)", "themes.spacing.default", "6px to spacing.sm 8px"],
+      ["gap-2.5", "gap-(--spacing-md)", "themes.spacing.default", "10px to spacing.md 12px"],
     ]) {
       const result = rewrite(`const value = "${value}"`);
       expect(result.files[0]!.content).toBe(`const value = "${output}"`);
-      expect(result.reads.tokens).toEqual([token]);
+      expect(result.reads.themes).toEqual([token]);
       expect(result.notes).toContainEqual(expect.objectContaining({ value, message: expect.stringContaining(note!) }));
       expect(result.issues).toEqual([]);
     }
@@ -305,7 +302,7 @@ describe("shadcn-aria-rewrite@1", () => {
       const result = rewrite(`const value = "${value}"`);
       expect(result.files[0]!.content, value).toContain(value);
       expect(result.issues, value).toContainEqual(expect.objectContaining({ code: 'K4', value }));
-      expect(result.reads.tokens, value).toEqual([]);
+      expect(result.reads.themes, value).toEqual([]);
     }
   });
   it('removes absent marker classes with notes while retaining defined and cyclic styles', () => {
@@ -325,7 +322,7 @@ describe("shadcn-aria-rewrite@1", () => {
     const result = rewrite(`import { Popover as Overlay } from "react-aria-components"\nconst value = "${classes}"`);
     expect(result.files[0]!.content).toContain(classes);
     expect(result.issues).toEqual([]);
-    expect(result.reads.tokens).toEqual([]);
+    expect(result.reads.themes).toEqual([]);
     for (const content of [`const value = "${classes}"`, `import { Button } from "react-aria-components"\nconst value = "${classes}"`]) {
       expect(rewrite(content).issues.filter(issue => issue.message.includes('Private CSS'))).toHaveLength(3);
     }
@@ -337,7 +334,7 @@ describe("shadcn-aria-rewrite@1", () => {
   it('makes transition timing explicit and keeps structural no-transition unchanged', () => {
     const result = rewrite('const value = "transition-[color,box-shadow] transition-none"');
     expect(result.files[0]!.content).toContain('transition-[color,box-shadow] duration-(--ui-duration-default) ease-(--ease-default) transition-none');
-    expect(result.reads.tokens).toEqual(['tokens.duration.default', 'tokens.easing.default']);
+    expect(result.reads.themes).toEqual([]);
     expect(result.issues).toEqual([]);
   });
   it('compiles generic family bindings to the declared CSS properties', async () => {
@@ -352,7 +349,7 @@ describe("shadcn-aria-rewrite@1", () => {
       const result = rewrite(`const value = "${value}"`, '.cn-timed { @apply transition-colors duration-160 ease-in; }');
       expect(result.files[0]!.content).not.toContain('--ui-duration-default');
       expect(result.files[0]!.content).not.toContain('--ease-default');
-      expect(result.reads.tokens).toEqual(['tokens.duration.fast', 'tokens.easing.accelerate']);
+      expect(result.reads.themes).toEqual([]);
       expect(result.issues).toEqual([]);
       const candidates = result.files[0]!.content.match(/"([^"]+)"/)![1]!.split(/\s+/);
       const { css } = await generateCompiledCss({ stylesDir: resolve(import.meta.dirname, '../../styles'), candidates });
@@ -391,7 +388,7 @@ describe("shadcn-aria-rewrite@1", () => {
     expect(input.styles.content).toMatch(/\.cn-kbd\s*\{[^}]*font-sans/s);
     const result = rewriteShadcnAria({ item: "kbd", leaf: "keyboard", files: [kbd], styles: input.styles.content, leafByItem: {} });
     expect(result.files[0]!.content).not.toContain("font-sans");
-    expect(result.reads.tokens).toContain("tokens.typeface.body");
+    expect(result.reads.themes).toContain("themes.font-sans.default");
     expect(result.issues.some(issue => issue.value === "font-sans")).toBe(false);
     const variant = rewrite('const value = "dark:hover:font-sans"');
     expect(variant.files[0]!.content).toContain("dark:hover:font-(family-name:--font-body)");
@@ -426,7 +423,7 @@ describe("shadcn-aria-rewrite@1", () => {
   });
   it("binds keyboard type and collapsed breadcrumbs only to the approved existing members", () => {
     const kbd=rewriteShadcnAria({item:"kbd",leaf:"keyboard",files:[{path:"kbd.tsx",content:'const value="text-xs shadow-none"'}],styles:"",leafByItem:{}});
-    expect(kbd.reads.tokens).toEqual(["tokens.code-size.block","tokens.elevation.none"]);
+    expect(kbd.reads.themes).toEqual([]);
     expect(kbd.files[0]!.content).toContain("text-(length:--text-code-block) shadow-(--ui-elevation-none)");
     const source='<IconPlaceholder lucide="MoreHorizontalIcon" aria-hidden="true" />';
     const breadcrumb=rewriteShadcnAria({item:"breadcrumb",leaf:"breadcrumbs",files:[{path:"breadcrumb.tsx",content:source}],styles:"",leafByItem:{}});
@@ -439,19 +436,20 @@ describe("shadcn-aria-rewrite@1", () => {
   it("binds exact structural and geometry families without admitting unknown design values", async () => {
     const separator = rewrite('const value = "border-collapse max-w-[calc(100%-2rem)] rounded-[4px] min-w-[96px]"');
     expect(separator.files[0]!.content).toContain("border-collapse max-w-[calc(100%-var(--spacing-2xl))] rounded-(--radius-default) min-w-(--spacing-5xl)");
-    expect(separator.reads.tokens).toEqual(["tokens.radius.default", "tokens.spacing.2xl", "tokens.spacing.5xl"]);
+    expect(separator.reads.themes).toEqual(["themes.radius.default", "themes.spacing.default"]);
     expect(separator.issues).toEqual([]);
     expect(rewrite('const value = "rounded-[5px] min-w-[97px] border-unbound"').issues).toHaveLength(3);
     const { css } = await generateCompiledCss({ stylesDir: resolve(import.meta.dirname, "../../styles"), candidates: ["border-collapse", "max-w-[calc(100%-var(--spacing-2xl))]", "rounded-(--radius-default)", "min-w-(--spacing-5xl)"] });
     for (const declaration of ["border-collapse: collapse", "max-width: calc(100% - var(--spacing-2xl))", "border-radius: var(--radius-default)", "min-width: var(--spacing-5xl)"]) expect(css).toContain(declaration);
   });
-  it("preserves decorative ring semantics only with the existing exact read permission", async () => {
+  it("preserves decorative ring semantics without a deleted width read", async () => {
     const avatar = rewriteShadcnAria({item:"avatar",leaf:"avatar",files:[{path:"avatar.tsx",content:'const value="ring-1 hover:ring-2 ring-3"'}],styles:"",leafByItem:{}});
     expect(avatar.files[0]!.content).toContain("ring-(length:--ui-border-hairline) hover:ring-(length:--ui-border-rule)");
-    expect(avatar.reads.tokens).toContain("tokens.border-width.rule");
+    expect(avatar.reads.themes).toEqual(["themes.ring.default"]);
     expect(avatar.files[0]!.content).not.toContain("hover:outline");
     const menu = rewriteShadcnAria({item:"kbd",leaf:"keyboard",files:[{path:"kbd.tsx",content:'const value="ring-1"'}],styles:"",leafByItem:{}});
-    expect(menu.issues).toContainEqual(expect.objectContaining({code:"K4",value:"ring-1"}));
+    expect(menu.files[0]!.content).toContain("ring-(length:--ui-border-hairline)");
+    expect(menu.issues).toEqual([]);
     const {css} = await generateCompiledCss({stylesDir:resolve(import.meta.dirname,"../../styles"),candidates:["ring-(length:--ui-border-hairline)"]});
     expect(css).toContain("var(--ui-border-hairline)");
     expect(css).toContain("--tw-ring-shadow");
@@ -462,7 +460,7 @@ describe("shadcn-aria-rewrite@1", () => {
     const result=run(styles);
     expect(result.files[0]!.content).toContain("[--card-spacing:var(--spacing-lg)] data-[size=sm]:[--card-spacing:var(--spacing-md)]");
     expect(result.files[0]!.content).toContain("px-(--card-spacing)");
-    expect(result.reads.tokens).toEqual(["tokens.spacing.lg","tokens.spacing.md"]);
+    expect(result.reads.themes).toEqual(["themes.spacing.default"]);
     expect(result.issues).toEqual([]);
     expect(run(styles.replace("[--card-spacing:--spacing(4)]","")).issues).toContainEqual(expect.objectContaining({code:"K4",value:"--card-spacing"}));
   });
@@ -481,7 +479,7 @@ describe("shadcn-aria-rewrite@1", () => {
     for(const prefix of ["has-aria-invalid:","has-[[data-slot][aria-invalid=true]]:"]){
       const result=rewrite(`const value="${prefix}ring-3 ${prefix}ring-destructive/20"`);
       expect(result.issues).toEqual([]);
-      expect(result.reads.tokens).toEqual(["tokens.focus-outline.offset","tokens.focus-outline.width","tokens.status-color.danger"]);
+      expect(result.reads.themes).toEqual(["themes.destructive.default"]);
       expect(rewrite(`const value="${prefix}ring-3 hover:ring-destructive/20"`).issues).toContainEqual(expect.objectContaining({value:prefix+"ring-3"}));
     }
   });
@@ -586,12 +584,12 @@ describe("shadcn-aria-rewrite@1", () => {
       }
       if (["dialog", "menu", "popover", "select", "combo-box", "tabs"].includes(leaf)) {
         expect(result.files[0]!.content).toContain("focus-visible:outline-(length:--ui-border-focus)");
-        expect(result.reads.tokens).toEqual(expect.arrayContaining(["tokens.focus-outline.width", "tokens.focus-outline.offset", "tokens.focus-color.default"]));
+        expect(result.reads.themes).toEqual(expect.arrayContaining(["themes.ring.default"]));
       }
       if (item === "accordion") {
         expect(result.files[0]!.content).toContain("data-open:library-enter data-open:library-fade");
         expect(result.files[0]!.content).toContain("data-closed:library-exit data-closed:library-fade");
-        expect(result.reads.tokens).toEqual(expect.arrayContaining(["tokens.duration.fast", "tokens.transition-easing.enter", "tokens.transition-easing.exit"]));
+        expect(result.reads.themes).toEqual(expect.arrayContaining([]));
       }
       if (item === "skeleton") expect(result.files[0]!.content).not.toContain("animate-pulse");
       if (item === "slider") {

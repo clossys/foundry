@@ -86,7 +86,7 @@
         "components": [
           "components.button"
         ],
-        "tokens": []
+        "themes": []
       },
       "root": "rac:UNSTABLE_Toast",
       "slot": "components.toast",

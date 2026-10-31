@@ -19,7 +19,7 @@ describe("offline catalog candidate bundle", () => {
     const pkg = JSON.parse(readFileSync(resolve(import.meta.dirname, "../package.json"), "utf8"));
     expect(bundle.package).toEqual({ name: pkg.name, version: pkg.version });
     expect(bundle.valueFills.filter(doc => doc.$extensions["com.clossys.fill"].source === "phosphor")).toHaveLength(40);
-    expect(bundle.valueFills.some(doc => doc.$extensions["com.clossys.fill"].slot === "tokens.action-color")).toBe(true);
+    expect(bundle.valueFills.some(doc => doc.$extensions["com.clossys.fill"].slot === "themes.primary")).toBe(true);
     expect(bundle.valueFills.some(doc => doc.$extensions["com.clossys.fill"].slot === "assets.image-ratio")).toBe(true);
     const foundry = bundle.componentFills.filter(doc => doc.$extensions["com.clossys.fill"].source === "foundry");
     const foundrySlots = foundry.map(doc => doc.$extensions["com.clossys.fill"].slot);

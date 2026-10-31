@@ -30,9 +30,9 @@ function measuredSummary(): MatrixSummary {
       { id: "coverage", supported: false, codes: [] },
     ],
     issues: [
-      { finding: { code: "C1", severity: "error", subject: "tokens.surface-color", message: "Choose a surface" }, slotId: "tokens.surface-color" },
+      { finding: { code: "C1", severity: "error", subject: "themes.background", message: "Choose a surface" }, slotId: "themes.background" },
       { finding: { code: "C1", severity: "notice", subject: "library", message: "Inspect library evidence" } },
-      { finding: { code: "C1", severity: "notice", subject: "tokens.spacing", message: "Inspect spacing" }, slotId: "tokens.spacing" },
+      { finding: { code: "C1", severity: "notice", subject: "themes.spacing", message: "Inspect spacing" }, slotId: "themes.spacing" },
     ],
   };
 }
@@ -80,13 +80,13 @@ it("reveals only actual mapped issue slots and keeps unmapped issues disabled", 
   render(<Scorecard summary={measuredSummary()} labels={labels} onClose={() => {}} onIssue={onIssue} />);
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Choose a surface" }));
-  expect(onIssue).toHaveBeenLastCalledWith("tokens.surface-color");
+  expect(onIssue).toHaveBeenLastCalledWith("themes.background");
   const unmapped = screen.getByRole("button", { name: "Inspect library evidence" });
   expect(unmapped).toBeDisabled();
   await user.click(unmapped);
   expect(onIssue).toHaveBeenCalledTimes(1);
   await user.click(screen.getByRole("button", { name: "Inspect spacing" }));
-  expect(onIssue.mock.calls).toEqual([["tokens.surface-color"], ["tokens.spacing"]]);
+  expect(onIssue.mock.calls).toEqual([["themes.background"], ["themes.spacing"]]);
 });
 
 it("closes from a keyboard-focused category or the close action without leaking Escape", async () => {

@@ -53,8 +53,8 @@ export function pendingReason(fill: DiskFill): string | undefined {
 
 /** Fills with neither a seat nor a pending-replacement record. */
 export function unseatedFills(fills: readonly DiskFill[], roster: SourceRoster = sourceRoster): readonly string[] {
-  const tokenSources = new Set(roster.tokens.presets.flatMap(preset => [preset.theme.source, preset.namespace.source]));
-  const seated = (fill: DiskFill) => fill.slot.startsWith("tokens.") ? tokenSources.has(fill.source) : rosterOffers(roster, fill.slot).includes(fill.source);
+  const tokenSources = new Set(roster.themes.presets.flatMap(preset => [preset.theme.source, preset.namespace.source]));
+  const seated = (fill: DiskFill) => fill.slot.startsWith("themes.") ? tokenSources.has(fill.source) : rosterOffers(roster, fill.slot).includes(fill.source);
   return fills.filter(fill => !seated(fill) && pendingReason(fill) === undefined).map(fill => fill.id).sort();
 }
 

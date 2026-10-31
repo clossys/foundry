@@ -43,7 +43,7 @@ function nativeFixture(label) {
   let native = { source: { kind: "consumer", author: "consumer", id: "import-check-fixture", license: "MIT" }, fills: [], files: [], adoptedAt: "2026-10-30" };
   native = applyComponentLibraryChange(catalog, native, { baseHash: componentLibraryHash(native), changes: [{ op: "adopt", slot: "components.card", source: "shadcn@aria" }] }, bundles.sourceBundles);
   const descriptor = Object.values(native.fills[0].components)[0];
-  const tokens = Object.fromEntries(descriptor.reads.tokens.map((id, index) => [id, { property: `--fixture-${index}`, light: "1rem" }]));
+  const tokens = Object.fromEntries(descriptor.reads.themes.map((id, index) => [id, { property: `--fixture-${index}`, light: "1rem" }]));
   const profile = resolveComponents({ catalog, library: native, values: { tokens, assets: [] }, packageExports, evidence: { observations: {}, installedRac: { version: "1.19.0", instance: "react-aria-components" } } });
   assert.equal(profile.check.ok, true, JSON.stringify(profile.check.findings));
   for (const file of emitComponents(profile, ["component-index"])) write(library, file.path, file.content);

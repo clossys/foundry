@@ -42,7 +42,7 @@ export function measureFoundrySurfaces(root, buildSurfaceConsumption) {
   const repo = resolve(root, "../.."), src = resolve(root, "src");
   const read = path => readFileSync(resolve(root, path), "utf8");
   const json = path => JSON.parse(read(path));
-  const inventory = Object.fromEntries(["tokens", "assets", "components", "sections", "frames"].map(layer => [layer, json(`src/catalog/slots/${layer}.json`)]));
+  const inventory = Object.fromEntries(["themes", "assets", "components", "sections", "frames"].map(layer => [layer, json(`src/catalog/slots/${layer}.json`)]));
   const docs = readdirSync(resolve(src, "catalog/fills/foundry")).filter(file => /^(?:components|sections|frames)\.(?!coverage\.)[^/]+\.json$/.test(file)).sort().map(file => json(`src/catalog/fills/foundry/${file}`));
   const metadata = doc => doc.$extensions["com.clossys.fill"];
   const packageRoots = ["designer", "publisher"].map(name => ({ name: JSON.parse(readFileSync(resolve(repo, `packages/${name}/package.json`), "utf8")).name, root: `packages/${name}/src` }));

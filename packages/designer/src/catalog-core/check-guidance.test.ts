@@ -29,7 +29,7 @@ describe("consumer check guidance", () => {
 
   it("keeps the read-only check procedure honest about unsupported layers and human writes", () => {
     const guide = readFileSync(new URL("../../skill/library-check.md", import.meta.url), "utf8");
-    expect(guide).toContain("--layer tokens --json");
+    expect(guide).toContain("--layer themes --json");
     expect(guide).toContain("--layer assets --json");
     expect(guide).toContain("requesting those layers exits 2");
     expect(guide).toContain("Scale and role are leaf metadata only");

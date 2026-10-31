@@ -10,7 +10,7 @@ afterEach(cleanup);
 
 const unobserved: ComponentCheckFill = {
   slot: "components.semantic-content", source: "foundry", root: "presentational", members: [], props: [], propMap: {},
-  reads: { tokens: [], assets: [], components: [] }, composes: [], impl: { kind: "package", module: "x", export: "Button" },
+  reads: { themes: [], assets: [], components: [] }, composes: [], impl: { kind: "package", module: "x", export: "Button" },
   license: "MIT", pin: { package: "x", version: "1.0.0", export: "Button" }, deps: [],
 };
 

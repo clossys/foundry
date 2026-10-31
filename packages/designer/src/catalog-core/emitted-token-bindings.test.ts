@@ -8,12 +8,12 @@ import * as publicCatalog from "@clossys/designer/catalog";
 import * as publicServer from "@clossys/designer/catalog/server";
 
 const empty = (): client.LibraryData => ({ source: { id: "example", kind: "consumer", author: "consumer", license: "UNLICENSED" }, adoptedAt: "2026-10-25", fills: [] });
-function selected(reads = ["tokens.line-height.snug", "tokens.letter-spacing.widest"]) {
+function selected(reads = ["tokens.line-height.snug", "themes.tracking-tight.default"]) {
   const input = componentIntegration();
-  input.catalog.components.fills[0]!.components.button!.reads.tokens = reads;
+  input.catalog.components.fills[0]!.components.button!.reads.themes = reads;
   input.library = client.applyLibraryChange(input.catalog, input.library, { baseHash: client.libraryHash(input.library), changes: [
     { portion: "values", change: { op: "adopt", slot: "tokens.line-height", source: "tailwind-default", members: ["snug"] } },
-    { portion: "values", change: { op: "adopt", slot: "tokens.letter-spacing", source: "tailwind-default", members: ["widest"] } },
+    { portion: "values", change: { op: "adopt", slot: "themes.tracking-tight", source: "tailwind-default", members: ["widest"] } },
     { portion: "components", change: { op: "adopt", slot: "components.button", source: "test-kit" } },
   ] });
   return input;
@@ -26,20 +26,20 @@ describe("selected emitted token bindings (SYNTHETIC component, real value catal
     const outputs = publicCatalog.emittedTokenProperties(profile.values);
     expect([...outputs]).toEqual([...client.emittedTokenProperties(profile.values)]);
     expect(outputs.get("tokens.line-height.snug")).toEqual({ property: "--leading-snug", theme: "--leading-snug" });
-    expect(outputs.get("tokens.letter-spacing.widest")).toEqual({ property: "--tracking-widest", theme: "--tracking-widest" });
-    const observed = { "tokens.line-height.snug": { property: outputs.get("tokens.line-height.snug")!.property, light: "1.375" }, "tokens.letter-spacing.widest": { property: outputs.get("tokens.letter-spacing.widest")!.property, light: "0.1em" } };
+    expect(outputs.get("themes.tracking-tight.default")).toEqual({ property: "--tracking-widest", theme: "--tracking-widest" });
+    const observed = { "tokens.line-height.snug": { property: outputs.get("tokens.line-height.snug")!.property, light: "1.375" }, "themes.tracking-tight.default": { property: outputs.get("themes.tracking-tight.default")!.property, light: "0.1em" } };
     expect(publicCatalog.componentTokensHash(observed)).not.toBe(publicCatalog.componentTokensHash({}));
     expect(profile.values.members["tokens.line-height.snug"]!.emit).toBeUndefined();
     const manifest = publicCatalog.emittedTokenManifest(profile.values, ["tailwind-theme"]);
     expect(manifest.tokens.find(row => row.id === "tokens.line-height.snug")).toMatchObject({ outputs: ["--leading-snug"], values: { light: "1.375", dark: "1.375" } });
-    expect(manifest.tokens.find(row => row.id === "tokens.letter-spacing.widest")).toMatchObject({ outputs: ["--tracking-widest"], values: { light: "0.1em", dark: "0.1em" } });
+    expect(manifest.tokens.find(row => row.id === "themes.tracking-tight.default")).toMatchObject({ outputs: ["--tracking-widest"], values: { light: "0.1em", dark: "0.1em" } });
   });
   it("emits the owner-signed container-width and animation leaves into their Tailwind namespaces", () => {
     const catalog = client.loadCatalog();
     const library = completedTokenLibrary(catalog, { id: "example", kind: "consumer", author: "consumer", license: "UNLICENSED" }, "2026-10-26");
     const outputs = client.emittedTokenProperties(client.resolve({ catalog, library }));
     expect(outputs.get("tokens.container-width.sm")).toEqual({ property: "--container-sm", theme: "--container-sm" });
-    expect(outputs.get("tokens.animation.spin")).toEqual({ property: "--animate-spin", theme: "--animate-spin" });
+    expect(outputs.get("themes.animate-marquee.default")).toEqual({ property: "--animate-spin", theme: "--animate-spin" });
   });
   it("checks the public full value catalog with an empty consumer without C4 errors", () => {
     expect(Object.keys(TOKENS)).toHaveLength(232);
@@ -50,9 +50,9 @@ describe("selected emitted token bindings (SYNTHETIC component, real value catal
     const css = client.emit(profile.values, ["tailwind-theme"], { header: false })[0]!.contents;
     expect(css).toContain("--leading-snug: 1.375;");
     expect(css).toContain("--tracking-widest: 0.1em;");
-    expect(profile.components.components["components.button"]!.reads.tokens).toEqual({ "tokens.line-height.snug": "--leading-snug", "tokens.letter-spacing.widest": "--tracking-widest" });
+    expect(profile.components.components["components.button"]!.reads.themes).toEqual({ "tokens.line-height.snug": "--leading-snug", "themes.tracking-tight.default": "--tracking-widest" });
     expect(profile.values.members["tokens.line-height.snug"]!.emit).toBeUndefined();
-    expect(profile.values.members["tokens.letter-spacing.widest"]!.emit).toBeUndefined();
+    expect(profile.values.members["themes.tracking-tight.default"]!.emit).toBeUndefined();
     expect(css).not.toContain("--leading-snug: 1.15");
     expect(css).not.toContain("--tracking-widest: 0.18");
   });
@@ -67,7 +67,7 @@ describe("selected emitted token bindings (SYNTHETIC component, real value catal
   it("keeps unknown, missing, and duplicate shipped bindings failing C4", () => {
     for (const fault of ["unknown", "missing", "duplicate"] as const) {
       const catalog = client.loadCatalog();
-      const slot = catalog.slots.find(s => s.id === "tokens.letter-spacing")!;
+      const slot = catalog.slots.find(s => s.id === "themes.tracking-tight")!;
       if (slot.contract.kind !== "token") throw new Error("fixture contract");
       const emit = { ...slot.contract.emit };
       if (fault === "unknown") emit.widest = "--tracking-widest";
@@ -89,7 +89,7 @@ describe("selected emitted token bindings (SYNTHETIC component, real value catal
     const slot = input.catalog.values.slots.find(s => s.id === "tokens.line-height")!;
     if (slot.contract.kind !== "token") throw new Error("fixture contract");
     slot.contract = { ...slot.contract, emit: { ...slot.contract.emit, snug: "--tracking-tight" } };
-    input.library = client.applyLibraryChange(input.catalog, input.library, { baseHash: client.libraryHash(input.library), changes: [{ portion: "values", change: { op: "adopt", slot: "tokens.letter-spacing", source: "tailwind-default", members: ["tight"] } }] });
+    input.library = client.applyLibraryChange(input.catalog, input.library, { baseHash: client.libraryHash(input.library), changes: [{ portion: "values", change: { op: "adopt", slot: "themes.tracking-tight", source: "tailwind-default", members: ["tight"] } }] });
     expect(() => client.resolve(input)).toThrow(/output.*colli|duplicate.*output/i);
   });
   it("refuses mismatched or unresolved selected aliases instead of using candidate or legacy values", () => {

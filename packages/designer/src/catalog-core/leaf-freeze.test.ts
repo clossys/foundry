@@ -17,7 +17,7 @@ import { checkFrozenLeafSets, assertFrozenLeafSets, type FrozenLeafLayer } from 
 import { loadBuildCatalog, loadCatalog, loadComponentRegistry, type Placement } from "./index.js";
 
 const fixtures = [
-  { layer: "tokens", ia: tokenIA, slots: tokenSlots, freeze: tokenFreeze, count: 53, digest: "4def8821fd3a0304e559e73830eec4664ab69f3f841661e8cc7656d1aaef9e19" },
+  { layer: "themes", ia: tokenIA, slots: tokenSlots, freeze: tokenFreeze, count: 53, digest: "4def8821fd3a0304e559e73830eec4664ab69f3f841661e8cc7656d1aaef9e19" },
   { layer: "assets", ia: assetIA, slots: assetSlots, freeze: assetFreeze, count: 45, digest: "dc3c75b4dee91fb500da9548a147fa0bf530215764b58df7a9ec12b2a966ae54" },
   { layer: "components", ia: componentIA, slots: componentSlots, freeze: componentFreeze, count: 57, digest: "ec9ed90570c757ff9891e5d04bded6339c26e87165a43fbdc4024607410c1185" },
 ] as const;
@@ -105,7 +105,7 @@ describe("owner-signed leaf membership", () => {
   });
   it("keeps Sections/Frames unsigned and build readiness unchanged", () => {
     const build = loadBuildCatalog();
-    const layers: FrozenLeafLayer[] = ["tokens", "assets", "components"];
+    const layers: FrozenLeafLayer[] = ["themes", "assets", "components"];
     expect(build.registryStatus).toBe("build-unfrozen");
     expect(checkFrozenLeafSets(build.placements, build.slots, layers)).toEqual([]);
     const altered = build.slots.map(slot => slot.layer === "sections" || slot.layer === "frames" ? { ...slot, id: `${slot.layer}.still-unsigned` } : slot);
@@ -140,9 +140,9 @@ describe("owner-signed Media leaf amendment", () => {
 
 describe("owner-signed token leaf amendment", () => {
   const signed = "OWNER 2026-10-26T18:03Z ledger #44";
-  const added = ["tokens.container-width", "tokens.animation"];
+  const added = ["tokens.container-width", "themes.animate-marquee"];
   it("retains two signed additions and one pending leaf above the unchanged 53 signed IDs: 56 leaves, 0 removals", () => {
-    expect(tokenAmendments).toMatchObject({ schemaVersion: 1, layer: "tokens", baseSignedHead: tokenFreeze.signedHead, status: "owner-signed" });
+    expect(tokenAmendments).toMatchObject({ schemaVersion: 1, layer: "themes", baseSignedHead: tokenFreeze.signedHead, status: "owner-signed" });
     expect(tokenAmendments.addedLeaves).toEqual(added.map(id => expect.objectContaining({ id, signed })));
     expect(tokenAmendments.recorded).toEqual([expect.objectContaining({ id: "tokens.scrim-color", change: "none", signed })]);
     expect(tokenFreeze.leafIds).toHaveLength(53);
@@ -151,22 +151,22 @@ describe("owner-signed token leaf amendment", () => {
     expect(ids).toHaveLength(56);
     expect(tokenFreeze.leafIds.filter(id => !ids.includes(id))).toEqual([]);
     expect(ids.filter(id => !tokenFreeze.leafIds.includes(id)).sort()).toEqual([...added, ...tokenAmendments.pending.addedLeafIds].sort());
-    expect(checkFrozenLeafSets([tokenIA as Placement], tokenSlots, ["tokens"])).toEqual([]);
+    expect(checkFrozenLeafSets([tokenIA as Placement], tokenSlots, ["themes"])).toEqual([]);
   });
   it("refuses a third unsigned token leaf and a missing signed addition", () => {
     const slots = structuredClone(tokenSlots);
     slots.push({ ...slots[0]!, id: "tokens.spring" });
-    expect(checkFrozenLeafSets([tokenIA as Placement], slots, ["tokens"])).toEqual([expect.objectContaining({ source: "slots", unexpected: ["tokens.spring"], missing: [] })]);
+    expect(checkFrozenLeafSets([tokenIA as Placement], slots, ["themes"])).toEqual([expect.objectContaining({ source: "slots", unexpected: ["tokens.spring"], missing: [] })]);
     for (const id of added) {
       const without = structuredClone(tokenSlots).filter(slot => slot.id !== id);
-      expect(checkFrozenLeafSets([tokenIA as Placement], without, ["tokens"])).toEqual([expect.objectContaining({ source: "slots", missing: [id], unexpected: [] })]);
+      expect(checkFrozenLeafSets([tokenIA as Placement], without, ["themes"])).toEqual([expect.objectContaining({ source: "slots", missing: [id], unexpected: [] })]);
     }
   });
   for (const [label, edit] of [
     ["an addition without signed", (value: typeof tokenAmendments) => { delete (value.addedLeaves[0] as { signed?: string }).signed; }],
     ["an addition with a different signature", (value: typeof tokenAmendments) => { value.addedLeaves[1]!.signed = "OWNER unsigned"; }],
     ["a recorded row without signed", (value: typeof tokenAmendments) => { delete (value.recorded[0] as { signed?: string }).signed; }],
-    ["an addition that is already a signed leaf", (value: typeof tokenAmendments) => { value.addedLeaves[0]!.id = "tokens.radius"; }],
+    ["an addition that is already a signed leaf", (value: typeof tokenAmendments) => { value.addedLeaves[0]!.id = "themes.radius"; }],
     ["a duplicate addition", (value: typeof tokenAmendments) => { value.addedLeaves[1]!.id = value.addedLeaves[0]!.id; }],
   ] as const) it(`refuses to load ${label}`, async () => {
     const value = structuredClone(tokenAmendments);

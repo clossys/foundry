@@ -70,7 +70,7 @@ describe("designer-library CLI", () => {
   });
 
   it("checks the full library and each supported layer", async () => {
-    for (const layer of [undefined, "tokens", "assets", "components"]) {
+    for (const layer of [undefined, "themes", "assets", "components"]) {
       const result = await run("check", "--json", ...(layer ? ["--layer", layer] : []));
       expect(result.code).toBe(0); expect(JSON.parse(result.out).ok).toBe(true);
     }
@@ -80,7 +80,7 @@ describe("designer-library CLI", () => {
     const damaged = { ...fixture, fills: fixture.fills.filter(fill => fill.$extensions["com.clossys.fill"].slot !== "tokens.blur") };
     await fs.unlink(join(root, "fills/tokens.blur.json"));
     await fs.writeFile(join(root, "selection.json"), stableStringify(generateSelection(damaged)));
-    const result = await run("check", "--layer", "tokens", "--json");
+    const result = await run("check", "--layer", "themes", "--json");
     expect(result.code).toBe(1);
     expect(JSON.parse(result.out)).toMatchObject({ ok: false, findings: expect.arrayContaining([expect.objectContaining({ severity: "error", subject: expect.stringContaining("tokens.blur") })]) });
     const compiled = spawnSync(process.execPath, [bin, "check", "--root", root], { encoding: "utf8" });

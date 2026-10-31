@@ -116,7 +116,7 @@ describe("draft frame registry", () => {
         slots: [{ id: "skip-link", required: true, accepts: "host-node" }, { id: "main", required: true, accepts: "view" }],
         members: { mode: "closed", names: [] }, statePorts: [], rendering: "server", breakpoints: [],
         layers: ["tokens.z-index.skip-link"],
-        allowedReads: { tokens: ["tokens.spacing", "tokens.gutter", "tokens.container-width", "tokens.surface-color", "tokens.text-color", "tokens.z-index"], assets: [] },
+        allowedReads: { themes: ["themes.spacing", "tokens.gutter", "tokens.container-width", "themes.background", "themes.foreground", "tokens.z-index"], assets: [] },
         composes: [], skipTarget: "main-content",
       },
     });
@@ -201,9 +201,9 @@ describe("draft frame registry", () => {
   it("references existing token leaves and declares host state ports", () => {
     const tokenIds = new Set(tokenSlots.map(slot => slot.id));
     for (const { contract } of slots) {
-      for (const token of contract.allowedReads.tokens) expect(tokenIds.has(token)).toBe(true);
-      for (const member of contract.breakpoints) expect(member).toMatch(/^tokens\.breakpoint\.[a-z][a-z0-9-]*$/);
-      for (const member of contract.layers) expect(member).toMatch(/^tokens\.z-index\.[a-z][a-z0-9-]*$/);
+      for (const token of contract.allowedReads.themes) expect(tokenIds.has(token)).toBe(true);
+      for (const member of contract.breakpoints) expect(member).toMatch(/^themes\.breakpoint\.[a-z][a-z0-9-]*$/);
+      for (const member of contract.layers) expect(member).toMatch(/^themes\.z-index\.[a-z][a-z0-9-]*$/);
       expect(new Set(contract.statePorts.map(port => port.id)).size).toBe(contract.statePorts.length);
       for (const port of contract.statePorts) expect(["boolean", "number", "string"]).toContain(port.type);
     }

@@ -1,3 +1,4 @@
+import { isTailwindBreakpoint, type TailwindBreakpoint } from "./breakpoints.js";
 /** Serializable body contracts. The Frame owns the only stage; Sections own their content. */
 export type BodySubstrate = "flow" | "canvas";
 export interface FrameStageContract {
@@ -45,8 +46,8 @@ export interface CanvasBody<Section> {
   readonly source: BodySource;
   readonly boards: readonly CanvasBoard<Section>[];
   readonly arrangement: CanvasArrangement;
-  /** Resolve this existing token against the consumer; compare the measured stage width. */
-  readonly collapseBelow: `tokens.breakpoint.${string}`;
+  /** The Tailwind screen below which the canvas collapses; compare the measured stage width. */
+  readonly collapseBelow: TailwindBreakpoint;
 }
 export type CompositionBody<Section> = FlowBody<Section> | CanvasBody<Section>;
 export interface CanvasPlacement extends CanvasPosition, CanvasSize { readonly id: string }
@@ -187,7 +188,7 @@ export function bodySubstrateFindings<Section>(body: CompositionBody<Section>, s
   } else {
     if (!Array.isArray(body.boards)) return [...findings, "canvas body requires boards"];
     if (own(body, "sections")) findings.push("canvas body cannot carry a flow section list");
-    if (typeof body.collapseBelow !== "string" || !/^tokens\.breakpoint\.[a-z][a-z0-9-]*$/.test(body.collapseBelow)) findings.push("canvas fallback requires an explicit consumer breakpoint token");
+    if (!isTailwindBreakpoint(body.collapseBelow)) findings.push("canvas fallback requires an explicit Tailwind breakpoint");
     try { assertCanvasArrangement(body.boards, body.arrangement); } catch (error) { return [...findings, error instanceof Error ? error.message : "invalid canvas arrangement"]; }
   }
   const sections = body.kind === "flow" ? body.sections : body.boards.map(board => board.section);

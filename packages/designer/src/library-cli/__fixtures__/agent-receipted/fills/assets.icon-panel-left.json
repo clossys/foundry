@@ -1,0 +1,76 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "example/assets.icon-panel-left",
+      "license": "ISC",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "file": "src/icons/PanelLeft.ts",
+        "package": "lucide-react",
+        "sha256": "dd3c0b171cb38e6c3c773aa6e1d9eb5eaf2d84f7ab983abb6dbef6bfa4d4e512",
+        "version": "1.24.0"
+      },
+      "reads": {
+        "assets": [],
+        "themes": []
+      },
+      "relation": "same-contract",
+      "slot": "assets.icon-panel-left",
+      "source": "example",
+      "sourceAddress": "lucide-react@1.24.0/dist/esm/icons/panel-left.js",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "assets": {
+    "icon-panel-left": {
+      "default": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "lucide/assets.icon-panel-left",
+            "kind": "adopted",
+            "license": "ISC",
+            "member": "assets.icon-panel-left.default",
+            "pin": {
+              "file": "src/icons/PanelLeft.ts",
+              "package": "lucide-react",
+              "sha256": "dd3c0b171cb38e6c3c773aa6e1d9eb5eaf2d84f7ab983abb6dbef6bfa4d4e512",
+              "version": "1.24.0"
+            },
+            "sha256": "5d52e6b896c4396b6ab1222764cf898127f3aa043e31d39e863a078b577f868c",
+            "source": "lucide"
+          }
+        },
+        "$type": "glyph",
+        "$value": [
+          [
+            "rect",
+            {
+              "height": "18",
+              "key": "afitv7",
+              "rx": "2",
+              "width": "18",
+              "x": "3",
+              "y": "3"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M9 3v18",
+              "key": "fh3hqa"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

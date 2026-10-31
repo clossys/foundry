@@ -75,9 +75,11 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.border-color",
-          "tokens.spacing"
+        "themes": [
+          "themes.border",
+          "themes.input",
+          "themes.sidebar-border",
+          "themes.spacing"
         ]
       },
       "root": "rac:Toolbar",

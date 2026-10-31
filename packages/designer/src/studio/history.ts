@@ -12,7 +12,7 @@ function tokensOf(doc: FillDoc, leaf: string): Record<string, DtcgToken> {
     if ("$value" in value) { tokens[path] = value as DtcgToken; return; }
     for (const [key, child] of Object.entries(value)) if (!key.startsWith("$")) visit(child, path ? `${path}.${key}` : key);
   };
-  visit(doc[leaf.startsWith("tokens.") ? "tokens" : "assets"], leaf.split(".")[0]!);
+  visit(doc[leaf.startsWith("themes.") ? "themes" : "assets"], leaf.split(".")[0]!);
   return tokens;
 }
 /** Existing operations only. Exact equality is the acceptance condition, never inferred provenance. */
@@ -73,7 +73,7 @@ export function compositeHistoryChanges(catalog: CompositeCatalogData, current: 
   const baseHash = libraryHash(current.library);
   let changes: CompositeChangeSet;
   let expectedLibrary: CompositeLibraryData;
-  if (leaf.startsWith("tokens.") || leaf.startsWith("assets.")) {
+  if (leaf.startsWith("themes.") || leaf.startsWith("assets.")) {
     const inverse = valueHistoryChanges(catalog.values, valuePortion(current.library), valuePortion(target.library), leaf, valuePortion(expected.library));
     changes = { baseHash, changes: inverse.changes.map(change => ({ portion: "values", change })) };
     const values = applyLibraryChange(catalog.values, valuePortion(current.library), inverse);

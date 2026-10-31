@@ -28,8 +28,8 @@ const RAC = JSON.parse(readFileSync(join(src, "..", "..", "..", "node_modules", 
 /** A consumer's realpath-resolved singleton: a descriptor can only name the package, never this path. */
 const INSTALLED_RAC = { version: RAC.version, instance: "/consumer/app/node_modules/react-aria-components" };
 /** Fixture contracts read exactly these token leaves; real contract read gaps are reported separately, not hidden here. */
-const READS = ["tokens.text-color", "tokens.surface-color", "tokens.focus-color", "tokens.control-size", "tokens.body-size"];
-const TEXT = "tokens.text-color.primary", SURFACE = "tokens.surface-color.base", FOCUS = "tokens.focus-color.default", CONTROL = "tokens.control-size.h-md";
+const READS = ["themes.foreground", "themes.background", "themes.ring", "themes.spacing", "themes.font-sans"];
+const TEXT = "themes.foreground.default", SURFACE = "themes.background.default", FOCUS = "themes.ring.default", CONTROL = "themes.spacing.default";
 const KITS = ["@fixture/kit-a", "@fixture/kit-b"] as const;
 /** Half of the controls group comes from the second kit, so controls mix sources and K11 geometry parity is load-bearing. */
 const SECOND_KIT = new Set(["text-field", "checkbox", "switch", "combo-box", "tag-group", "slider"].map(leaf => `components.${leaf}`));
@@ -55,7 +55,7 @@ function consumer() {
 
 /** The registered component contracts with fixture token reads. Roots, member roots, members and props stay canonical. */
 function fixtureSlots(): ComponentSlot[] {
-  return loadComponentRegistry().slots.map(slot => ({ ...structuredClone(slot), contract: { ...structuredClone(slot.contract), allowedReads: { tokens: [...READS], assets: [] } } }));
+  return loadComponentRegistry().slots.map(slot => ({ ...structuredClone(slot), contract: { ...structuredClone(slot.contract), allowedReads: { themes: [...READS], assets: [] } } }));
 }
 const contractMembers = (contract: ComponentContract): string[] => contract.members.mode === "closed" ? [...contract.members.names] : [...(contract.members.required ?? [])];
 
@@ -77,7 +77,7 @@ function candidateDocument(slot: ComponentSlot): ComponentCandidateDocument {
   const fill = {
     slot: slot.id, source, root: slot.contract.root, members, props: [...slot.contract.props],
     propMap: Object.fromEntries(members.map(member => [member, `./components#${name}.${member.replace(".", "=")}`])),
-    reads: { tokens: [...READS], assets: [], components: [] }, composes: [],
+    reads: { themes: [...READS], assets: [], components: [] }, composes: [],
     impl: { kind: "package" as const, module: `${kit}/components`, export: name }, license: "MIT",
     pin: { package: kit, version: "1.0.0", export: `./components#${name}` }, deps: [],
   } as unknown as ComponentCandidate;
@@ -107,7 +107,7 @@ function measure(contract: ComponentContract, root: string): ComponentMeasuremen
 }
 
 /** One per-slot browser artifact generated from the adopted descriptor, observed source bytes, consumer tokens and installed RAC. */
-function artifactFor(fill: ComponentCandidate, slot: ComponentSlot, files: readonly ComponentSourceFile[], tokens: ComponentObservationInput["tokens"]): ComponentBrowserArtifact {
+function artifactFor(fill: ComponentCandidate, slot: ComponentSlot, files: readonly ComponentSourceFile[], tokens: ComponentObservationInput["themes"]): ComponentBrowserArtifact {
   const sizes = fill.members.filter(member => member.startsWith("size."));
   const memberRoots = Object.entries(slot.contract.memberRoots ?? {});
   return {
@@ -193,7 +193,7 @@ describe("component qualification join (SYNTHETIC fixture library)", () => {
 
   it("refuses tampered geometry at the artifact and at the check", () => {
     const { observe, accept, artifacts } = fixture();
-    for (const forged of ["tokens.control-size.absent", "tokens.text-color.primary", "--ui-control-h-md"]) {
+    for (const forged of ["themes.spacing.absent", "themes.foreground.default", "--spacing"]) {
       const supplied = artifacts(); supplied["components.select"] = { ...supplied["components.select"]!, geometry: Object.fromEntries(Object.keys(supplied["components.select"]!.geometry!).map(size => [size, forged])) };
       const observed = observe({ artifacts: supplied });
       expect(observed.refused).toEqual([{ slot: "components.select", reason: expect.stringMatching(/geometry/) }]);

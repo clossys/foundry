@@ -101,8 +101,8 @@ function collisionFixture() {
   json("package.json", { name: "@example/designer" });
   mkdirSync(join(repo, "packages/publisher"), { recursive: true });
   writeFileSync(join(repo, "packages/publisher/package.json"), JSON.stringify({ name: "@example/publisher" }));
-  for (const layer of ["tokens", "assets", "components", "frames"]) json(`src/catalog/slots/${layer}.json`, []);
-  const contract = { allowedReads: { tokens: [], assets: [] }, allowedComposes: [], composes: ["sections.empty-state"], parts: [] };
+  for (const layer of ["themes", "assets", "components", "frames"]) json(`src/catalog/slots/${layer}.json`, []);
+  const contract = { allowedReads: { themes: [], assets: [] }, allowedComposes: [], composes: ["sections.empty-state"], parts: [] };
   json("src/catalog/slots/sections.json", ["resource-list", "empty-state", "boundary-message", "other-native"].map(leaf => ({ id: `sections.${leaf}`, contract })));
   const doc = (leaf: string, name: string) => json(`src/catalog/fills/foundry/sections.${leaf}.json`, { $extensions: { "com.clossys.fill": { id: `foundry/sections.${leaf}`, slot: `sections.${leaf}`, source: "foundry", pin: { package: "@example/designer", version: "1.0.0", export: `./blocks#${name}` } } }, sections: { [leaf]: { propMap: {} } } });
   doc("resource-list", "ResourceList"); doc("empty-state", "EmptyState"); doc("boundary-message", "EmptyState");

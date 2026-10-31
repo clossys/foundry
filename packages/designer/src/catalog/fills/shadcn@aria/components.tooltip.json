@@ -116,22 +116,11 @@
       "reads": {
         "assets": [],
         "components": [],
-        "tokens": [
-          "tokens.behavior-timing.tooltip-close",
-          "tokens.behavior-timing.tooltip-delay",
-          "tokens.border-width.rule",
-          "tokens.control-radius.default",
-          "tokens.duration.fast",
-          "tokens.font-size.xs",
-          "tokens.radius.subtle",
-          "tokens.shift-distance.default",
-          "tokens.spacing.md",
-          "tokens.spacing.sm",
-          "tokens.surface-color.base",
-          "tokens.text-color.primary",
-          "tokens.transition-easing.enter",
-          "tokens.transition-easing.exit",
-          "tokens.z-index.modal"
+        "themes": [
+          "themes.radius.default",
+          "themes.spacing.default",
+          "themes.background.default",
+          "themes.foreground.default"
         ]
       },
       "root": "rac:Tooltip",

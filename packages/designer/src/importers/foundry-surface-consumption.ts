@@ -4,7 +4,7 @@ import type { SurfaceConsumptionMeasurement } from "../catalog-core/surface-cons
 import type { SurfacePackagePin } from "../catalog-core/surface-types.js";
 
 export interface FoundrySurfaceConsumption {
-  reads: { tokens: readonly string[]; assets: readonly string[] };
+  reads: { themes: readonly string[]; assets: readonly string[] };
   composes: readonly string[];
   consumption: SurfaceConsumptionMeasurement;
 }
@@ -23,5 +23,5 @@ export function measuredSurfaceConsumption(slot: string, pin: SurfacePackagePin)
   const row = (measurements as unknown as Record<string, { pin: SurfacePackagePin; consumption: SurfaceConsumptionMeasurement }>)[slot];
   if (!row || row.pin.package !== pin.package || row.pin.version !== pin.version || row.pin.export !== pin.export || row.consumption.scanStatus !== "lower-bound" || !row.consumption.sourceFiles.length)
     throw new Error(`surface consumption measurement unavailable for ${slot}`);
-  return { reads: { tokens: [...row.consumption.scannedReads.tokens], assets: [...row.consumption.scannedReads.assets] }, composes: [...row.consumption.scannedComposes], consumption: structuredClone(row.consumption) };
+  return { reads: { themes: [...row.consumption.scannedReads.themes], assets: [...row.consumption.scannedReads.assets] }, composes: [...row.consumption.scannedComposes], consumption: structuredClone(row.consumption) };
 }

@@ -9,7 +9,7 @@ const NOW = "2026-10-26";
 const SECTION = "packages/example/sections/aside-band.tsx";
 const tokens = [
   { id: "tokens.region-width", contract: { emit: { aside: "--ui-layout-aside-w" } } },
-  { id: "tokens.surface-color", contract: { emit: { canvas: "--ui-surface-canvas" } } },
+  { id: "themes.background", contract: { emit: { canvas: "--ui-surface-canvas" } } },
 ];
 const frame = (content: string, path = "packages/example/frames/frame.tsx"): WiringSource => ({ path, content, layer: "frames" });
 const run = (input: Partial<WiringInput>) => checkWiring({ sources: [], tokens, now: NOW, ...input });
@@ -32,7 +32,7 @@ describe("checkWiring static codes", () => {
   });
 
   it("WL2: surfaces fills of sections/frames slots report scanned members not covered by an exception", () => {
-    const fill = { id: "fill-aside", slot: "sections.aside-band", sourceFiles: [SECTION], scannedReads: { tokens: ["tokens.region-width"], assets: ["assets.mark"] }, scannedTokenMembers: ["tokens.region-width.aside"] };
+    const fill = { id: "fill-aside", slot: "sections.aside-band", sourceFiles: [SECTION], scannedReads: { themes: ["tokens.region-width"], assets: ["assets.mark"] }, scannedTokenMembers: ["tokens.region-width.aside"] };
     const other = { ...fill, id: "fill-button", slot: "components.button" };
     const result = run({ surfaces: { fills: [fill, other] } });
     expect(result.findings.map(row => [row.code, row.subject, row.evidence.split(" ")[2]])).toEqual([["WL2", "sections.aside-band", "assets.mark"], ["WL2", "sections.aside-band", "tokens.region-width.aside"]]);

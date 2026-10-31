@@ -98,38 +98,38 @@ describe("SystemCanvas", () => {
   it("snaps with reduced motion: no transition, the new detail at once", () => {
     media.matches = true;
     const { world, navigate, tiers } = setup();
-    navigate({ layer: "tokens", l1: "color" });
+    navigate({ layer: "themes", l1: "color" });
     expect(world).not.toHaveClass("transition-transform");
     expect(world.style.transitionDuration).toBe("0s");
-    expect(tiers()).toContainEqual(["tokens.status-color", "near"]);
+    expect(tiers()).toContainEqual(["themes.destructive", "near"]);
   });
 
   it("eases one move with the motion tokens and swaps detail only when the move ends", () => {
     const { world, navigate, tiers } = setup();
-    navigate({ layer: "tokens", l1: "color" });
+    navigate({ layer: "themes", l1: "color" });
     expect(world).toHaveClass("transition-transform");
     expect(world.style.transitionDuration).toBe("var(--ui-duration-default)");
     expect(world.style.transitionTimingFunction).toBe("var(--ease-decelerate)");
-    expect(tiers()).toContainEqual(["tokens.status-color", "mid"]);
+    expect(tiers()).toContainEqual(["themes.destructive", "mid"]);
     fireEvent.transitionEnd(world);
     expect(world).not.toHaveClass("transition-transform");
-    expect(tiers()).toContainEqual(["tokens.status-color", "near"]);
+    expect(tiers()).toContainEqual(["themes.destructive", "near"]);
   });
 
   it("releases the held detail on a fallback timer when the transition never reports its end", () => {
     vi.useFakeTimers();
     const { navigate, tiers } = setup();
-    navigate({ layer: "tokens", l1: "color" });
-    expect(tiers()).toContainEqual(["tokens.status-color", "mid"]);
+    navigate({ layer: "themes", l1: "color" });
+    expect(tiers()).toContainEqual(["themes.destructive", "mid"]);
     act(() => { vi.advanceTimersByTime(1000); });
-    expect(tiers()).toContainEqual(["tokens.status-color", "near"]);
+    expect(tiers()).toContainEqual(["themes.destructive", "near"]);
   });
 
   it("does not move when the target is already on screen at its stop", () => {
     const { world, navigate } = setup();
-    navigate({ layer: "tokens", l1: "color" }); fireEvent.transitionEnd(world);
+    navigate({ layer: "themes", l1: "color" }); fireEvent.transitionEnd(world);
     const transform = world.style.transform;
-    navigate({ layer: "tokens", l1: "color" });
+    navigate({ layer: "themes", l1: "color" });
     expect(world).not.toHaveClass("transition-transform");
     expect(world.style.transform).toBe(transform);
   });
@@ -138,8 +138,8 @@ describe("SystemCanvas", () => {
     vi.useFakeTimers();
     const onSelect = vi.fn();
     const { container, navigate } = setup({ onSelect });
-    navigate({ layer: "tokens", leaf: "tokens.status-color" });
-    expect(onSelect).toHaveBeenCalledWith("tokens.status-color");
+    navigate({ layer: "themes", leaf: "themes.destructive" });
+    expect(onSelect).toHaveBeenCalledWith("themes.destructive");
     expect(container.querySelector("[data-system-ring]")).not.toBeNull();
     act(() => { vi.advanceTimersByTime(1000); });
     expect(container.querySelector("[data-system-ring]")).toBeNull();
@@ -151,16 +151,16 @@ describe("SystemCanvas", () => {
     navigate({ layer: "sections", l1: "parts" });
     expect(container.querySelector('[data-system-board="sections/parts"]')).not.toBeNull();
     expect(container.querySelector('[data-system-board="tokens/color"]')).toBeNull();
-    expect(container.querySelector('[data-system-cell="tokens.status-color"]')).toBeNull();
+    expect(container.querySelector('[data-system-cell="themes.destructive"]')).toBeNull();
   });
 
   it("mounts live specimens only for near Tokens, Assets and Components cells; Sections and Frames never mount live", () => {
     media.matches = true;
     const renderSpecimen = vi.fn((leaf: string) => <span data-live={leaf}>{leaf}</span>);
     const { container, navigate, tiers } = setup({ viewSize: large, renderSpecimen });
-    navigate({ layer: "tokens", l1: "color" });
-    expect(container.querySelector('[data-live="tokens.status-color"]')).not.toBeNull();
-    expect(tiers()).toContainEqual(["tokens.status-color", "near"]);
+    navigate({ layer: "themes", l1: "color" });
+    expect(container.querySelector('[data-live="themes.destructive"]')).not.toBeNull();
+    expect(tiers()).toContainEqual(["themes.destructive", "near"]);
     navigate({ layer: "sections", l1: "parts" });
     navigate({ layer: "frames", l1: "page-shells" });
     expect(renderSpecimen.mock.calls.map(call => call[0]).filter(leaf => /^(sections|frames)\./.test(leaf))).toEqual([]);
@@ -171,14 +171,14 @@ describe("SystemCanvas", () => {
   it("shows the Layer > L1 > L2 breadcrumb for the viewport", () => {
     media.matches = true;
     const { navigate } = setup({ viewSize: large });
-    navigate({ layer: "tokens", l1: "color", l2: "color-palettes" });
+    navigate({ layer: "themes", l1: "color", l2: "color-palettes" });
     const trail = screen.getByRole("navigation", { name: "Canvas position" });
     expect(trail).toHaveTextContent(/Tokens.*Color.*Palettes/);
   });
 
   it("dims leaves outside the selection's lit set", () => {
     media.matches = true;
-    const { container, navigate } = setup({ viewSize: large, selectedLeaf: "components.button", edges: [{ from: "components.button", to: "tokens.spacing" }] });
+    const { container, navigate } = setup({ viewSize: large, selectedLeaf: "components.button", edges: [{ from: "components.button", to: "themes.spacing" }] });
     navigate({ layer: "components", l1: "actions" });
     const cell = (leaf: string) => container.querySelector<HTMLElement>(`[data-system-cell="${leaf}"]`)!;
     expect(cell("components.menu").style.opacity).not.toBe("");
@@ -189,10 +189,10 @@ describe("SystemCanvas", () => {
     media.matches = true;
     const onSelect = vi.fn();
     const { navigate } = setup({ onSelect });
-    navigate({ layer: "tokens", l1: "color" });
+    navigate({ layer: "themes", l1: "color" });
     onSelect.mockClear();
-    fireEvent.click(screen.getByRole("button", { name: "tokens.accent-color" }));
-    expect(onSelect).toHaveBeenCalledWith("tokens.accent-color");
+    fireEvent.click(screen.getByRole("button", { name: "themes.primary" }));
+    expect(onSelect).toHaveBeenCalledWith("themes.primary");
   });
 });
 
@@ -231,7 +231,7 @@ it("mounts the measured SystemCanvas without ref loops and ignores unchanged res
   for (let index = 0; index < 3; index++) notify();
   expect(commits).toBe(idleCommits);
 
-  result.rerender(canvas("tokens.spacing"));
+  result.rerender(canvas("themes.spacing"));
   expect(observers).toHaveLength(active.length);
   expect(active.every(observer => observer.disconnect.mock.calls.length === 0)).toBe(true);
   width = 640; notify();

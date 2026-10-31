@@ -43,7 +43,7 @@ function consumerValues() {
   const values = loadCatalog();
   const order = ["foundry", "tailwind-default"];
   const offers = (slot: string) => values.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot === slot && doc.$extensions["com.clossys.fill"].mode !== "reference").map(doc => doc.$extensions["com.clossys.fill"].source);
-  const changes = values.slots.filter(slot => slot.layer === "tokens" || slot.id.startsWith("assets.icon-")).flatMap(slot => {
+  const changes = values.slots.filter(slot => slot.layer === "themes" || slot.id.startsWith("assets.icon-")).flatMap(slot => {
     const sources = offers(slot.id); const source = order.find(name => sources.includes(name)) ?? sources[0];
     return source ? [{ op: "adopt" as const, slot: slot.id, source }] : [];
   });

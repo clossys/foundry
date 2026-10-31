@@ -24,10 +24,10 @@ const leafTexts = (root: Element, text: string): Element[] =>
 
 const cases: Array<[kind: string, slotId: string, $type: string]> = [
   ["color", "tokens.scrim-color", "color"],
-  ["bound dimension", "tokens.spacing", "dimension"],
+  ["bound dimension", "themes.spacing", "dimension"],
   ["open dimension", "tokens.region-width", "dimension"],
   ["fontWeight", "tokens.font-weight", "fontWeight"],
-  ["fontFamily", "tokens.typeface", "fontFamily"],
+  ["fontFamily", "themes.font-sans", "fontFamily"],
 ];
 
 it.each(cases)("%s members show one visible key and one separate value (%s)", (_kind, slotId, $type) => {

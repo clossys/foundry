@@ -1,3 +1,4 @@
+import { isTailwindBreakpoint } from "@clossys/designer/catalog";
 import type { PageLayoutContract } from "../layouts/contract.js";
 import type { BindingToken, LayoutRendererSource } from "./instance-binding.js";
 
@@ -56,10 +57,10 @@ function styleValue(value: Value, contract: PageLayoutContract, tokens: readonly
 }
 function classToken(value: string, contract: PageLayoutContract, tokens: readonly BindingToken[]): boolean {
   const parts = value.split(":"), utility = parts.pop()!;
-  if (parts.some(part => !readToken(`tokens.breakpoint.${part}`, contract, tokens) && !/^(?:hover|focus|focus-visible|motion-safe|motion-reduce|forced-colors|aria-[a-z-]+|data-[a-z-]+)$/.test(part))) return false;
+  if (parts.some(part => !isTailwindBreakpoint(part) && !/^(?:hover|focus|focus-visible|motion-safe|motion-reduce|forced-colors|aria-[a-z-]+|data-[a-z-]+)$/.test(part))) return false;
   if (/^(?:block|inline-block|inline-flex|flex|grid|contents|hidden|sr-only|not-sr-only|flex-(?:row|col|wrap|1|none|auto)|grow|shrink-0|basis-(?:0|auto|full)|grid-cols-[1-4]|col-span-[1-4]|row-span-[1-4]|(?:items|justify|self|place-items|place-content|content)-(?:start|end|center|between|around|evenly|stretch|baseline)|text-(?:start|center|end)|(?:w|h|min-w|min-h|max-w|max-h|size)-(?:full|auto|min|max|fit|screen|dvh|0)|static|relative|absolute|fixed|sticky|isolate|z-0|overflow(?:-x|-y)?-(?:hidden|auto|scroll|visible|clip)|truncate|whitespace-(?:normal|nowrap|pre|pre-wrap)|break-(?:normal|words|all|keep)|list-none|pointer-events-(?:none|auto)|select-(?:none|text|all|auto))$/.test(utility)) return true;
   const spacing = /^(gap(?:-x|-y)?|p[xytsbelr]?|m[xytsbelr]?|scroll-mt|scroll-m|inset|top|bottom|start|end)-(.+)$/.exec(utility);
-  if (spacing && (spacing[2] === "0" || spacing[2] === "auto" && spacing[1]!.startsWith("m") || readToken(`--spacing-${spacing[2]}`, contract, tokens))) return true;
+  if (spacing && (spacing[2] === "0" || spacing[2] === "auto" && spacing[1]!.startsWith("m") || /^\d+(?:\.5)?$/.test(spacing[2]!) && readToken("--spacing", contract, tokens))) return true;
   const variable = /^(?:w|h|min-w|min-h|max-w|max-h|size|gap(?:-x|-y)?|p[xytsbelr]?|m[xytsbelr]?|inset|top|bottom|start|end)-\[var\((--[a-z0-9-]+)\)\]$/.exec(utility);
   return !!variable && readToken(variable[1]!, contract, tokens);
 }

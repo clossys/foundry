@@ -44,9 +44,8 @@
         "scannedReads": {
           "assets": [],
           "components": [],
-          "tokens": [
-            "tokens.heading-size",
-            "tokens.spacing"
+          "themes": [
+            "themes.spacing"
           ]
         },
         "sourceFiles": [
@@ -97,9 +96,8 @@
       "propMap": {},
       "reads": {
         "assets": [],
-        "tokens": [
-          "tokens.heading-size",
-          "tokens.spacing"
+        "themes": [
+          "themes.spacing"
         ]
       },
       "slot": "sections.page-header",

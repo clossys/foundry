@@ -14,7 +14,7 @@ import { readStudioMessage, type StudioCopyBinding } from "../copy-binding.js";
 /** IA only: paths label branches, leaf identity is the opaque catalog id. */
 export function useExplorerPlacements(): readonly Placement[] {
   const state = useOptionalStudioSession(), whole = useWholeStudio();
-  return useMemo(() => whole ? [...(state?.catalog.placements ?? []).filter(p => p.layer === "tokens" || p.layer === "assets"), ...whole.contracts.placements.filter(p => p.layer !== "tokens" && p.layer !== "assets")] : state?.catalog.placements ?? [], [state?.catalog, whole?.contracts]);
+  return useMemo(() => whole ? [...(state?.catalog.placements ?? []).filter(p => p.layer === "themes" || p.layer === "assets"), ...whole.contracts.placements.filter(p => p.layer !== "themes" && p.layer !== "assets")] : state?.catalog.placements ?? [], [state?.catalog, whole?.contracts]);
 }
 interface ExplorerProps {
   readonly query?: string; readonly placements?: readonly Placement[]; readonly labels?: StudioLabels;

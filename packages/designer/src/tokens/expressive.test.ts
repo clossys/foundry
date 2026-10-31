@@ -12,7 +12,7 @@ function adopt(slot: string): LibraryData {
   const library = empty();
   return applyLibraryChange(catalog, library, { baseHash: libraryHash(library), changes: [{ op: "adopt", slot, source: "foundry" }] });
 }
-const stops = (a = "{tokens.surface-color.base}", b = "{tokens.surface-color.raised}"): DtcgValue => [{ color: a, position: 0 }, { color: b, position: 1 }];
+const stops = (a = "{themes.background.default}", b = "{themes.card.default}"): DtcgValue => [{ color: a, position: 0 }, { color: b, position: 1 }];
 function changedGradient(token: DtcgToken): LibraryData {
   const library = adopt("tokens.gradient");
   return applyLibraryChange(catalog, library, { baseHash: libraryHash(library), changes: [{ op: "author", slot: "tokens.gradient", tokens: { wash: token } }] });
@@ -40,7 +40,7 @@ describe("typed gradient colour roles", () => {
   it("follows the selected colour-role value in each mode", () => {
     const library = adopt("tokens.gradient");
     const red = { colorSpace: "srgb", components: [1, 0, 0] }, blue = { colorSpace: "srgb", components: [0, 0, 1] };
-    const custom = applyLibraryChange(catalog, library, { baseHash: libraryHash(library), changes: [{ op: "author", slot: "tokens.surface-color", tokens: { base: { $type: "color", $value: red, $extensions: { "com.clossys.modes": { dark: blue } } } } }] });
+    const custom = applyLibraryChange(catalog, library, { baseHash: libraryHash(library), changes: [{ op: "author", slot: "themes.background", tokens: { default: { $type: "color", $value: red, $extensions: { "com.clossys.modes": { dark: blue } } } } }] });
     const member = resolve({ catalog, library: custom }).members["tokens.gradient.wash"]!;
     expect((member.value.light as { color: unknown }[])[0]!.color).toEqual(red);
     expect((member.value.dark as { color: unknown }[])[1]!.color).toEqual(blue);
@@ -48,15 +48,15 @@ describe("typed gradient colour roles", () => {
     expect(member.css.dark).toContain("var(--color-surface-base, color(srgb 0 0 1))");
   });
   it("reports a missing role and rejects non-colour aliases, malformed stops and unsafe nested fields", () => {
-    const missing = changedGradient({ $type: "gradient", $value: stops("{tokens.surface-color.missing}") });
+    const missing = changedGradient({ $type: "gradient", $value: stops("{themes.background.default}") });
     expect(resolve({ catalog, library: missing }).members["tokens.gradient.wash"]).toBeUndefined();
     expect(relevant(missing).some(row => row.code === "C2")).toBe(true);
     const invalid: DtcgValue[] = [
-      stops("{tokens.spacing.md}"), [{ color: "{tokens.surface-color.base}", position: -1 }, { color: "{tokens.surface-color.raised}", position: 1 }],
-      [{ color: "{tokens.surface-color.base}", position: 1 }, { color: "{tokens.surface-color.raised}", position: 0 }],
-      [{ color: "{tokens.surface-color.base}", position: 0 }],
-      [{ color: "{tokens.surface-color.base}", position: 0, extra: "red; display:none" }, { color: "{tokens.surface-color.raised}", position: 1 }],
-      [{ color: "{tokens.surface-color.base};display:none", position: 0 }, { color: "{tokens.surface-color.raised}", position: 1 }],
+      stops("{themes.spacing.default}"), [{ color: "{themes.background.default}", position: -1 }, { color: "{themes.card.default}", position: 1 }],
+      [{ color: "{themes.background.default}", position: 1 }, { color: "{themes.card.default}", position: 0 }],
+      [{ color: "{themes.background.default}", position: 0 }],
+      [{ color: "{themes.background.default}", position: 0, extra: "red; display:none" }, { color: "{themes.card.default}", position: 1 }],
+      [{ color: "{themes.background.default};display:none", position: 0 }, { color: "{themes.card.default}", position: 1 }],
     ];
     for (const value of invalid) {
       expect(malformed("gradient", value)).toBe(true);
@@ -66,14 +66,14 @@ describe("typed gradient colour roles", () => {
   it("rejects cycles and a colour-shaped alias whose declared target type is different", () => {
     for (const type of ["dimension", "color"] as const) {
       const library = adopt("tokens.gradient");
-      const owner = library.fills.find(fill => fill.$extensions["com.clossys.fill"].slot === "tokens.surface-color")!;
-      const value = flatten(owner)["tokens.surface-color.base"]!;
+      const owner = library.fills.find(fill => fill.$extensions["com.clossys.fill"].slot === "themes.background")!;
+      const value = flatten(owner)["themes.background.default"]!;
       value.$type = type;
       value.$value = type === "color" ? "{tokens.gradient.wash}" : { unit: "px", value: 1 };
       expect(resolve({ catalog, library }).members["tokens.gradient.wash"]).toBeUndefined();
       expect(check({ catalog, library }).findings).toEqual(expect.arrayContaining([expect.objectContaining({
         code: type === "color" ? "C2" : "C1", rule: type === "color" ? "reads" : "contract",
-        message: expect.stringContaining(type === "color" ? "cycle tokens.gradient.wash" : "member tokens.surface-color.base has $type dimension"),
+        message: expect.stringContaining(type === "color" ? "cycle tokens.gradient.wash" : "member themes.background.default has $type dimension"),
       })]));
     }
   });
@@ -83,8 +83,8 @@ describe("typed gradient colour roles", () => {
     expect(malformed("gradient", token.$value, raw)).toBe(true);
     expect(cssText("gradient", [{ color: { colorSpace: "srgb", components: [1, 0, 0] }, position: 0 }, { color: { colorSpace: "srgb", components: [0, 0, 1] }, position: 1 }], token)).toBe("linear-gradient(180deg, color(srgb 1 0 0) 0%, color(srgb 0 0 1) 100%)");
     expect(relevant(changedGradient(token)).some(row => row.code === "C1")).toBe(true);
-    expect(gradientColorAlias("{tokens.surface-color.base}")).toBe("tokens.surface-color.base");
-    expect(gradientColorAlias("{tokens.spacing.md}")).toBeUndefined();
+    expect(gradientColorAlias("{themes.background.default}")).toBe("themes.background.default");
+    expect(gradientColorAlias("{themes.spacing.default}")).toBeUndefined();
     expect(gradientStops(stops())).toBe(true);
   });
   it("normalizes legacy border-role dark colours without admitting CSS strings as stops", () => {
@@ -113,30 +113,30 @@ describe("bounded fluid dimensions and expressive members", () => {
   });
   it("loads the added type, reveal-distance and open animation members through real adoption", () => {
     for (const leaf of ["display-size", "heading-size"]) {
-      const library = adopt(`tokens.${leaf}`);
-      const value = resolve({ catalog, library }).members[`tokens.${leaf}.2xl`]!;
+      const library = adopt(`themes.${leaf}`);
+      const value = resolve({ catalog, library }).members[`themes.${leaf}.2xl`]!;
       expect(isFluidDimension(value.value.light)).toBe(true);
       expect(check({ catalog, library }).findings.filter(row => row.severity === "error" && row.subject.includes(leaf))).toEqual([]);
     }
-    const face = resolve({ catalog, library: adopt("tokens.display-face") }).members["tokens.display-face.optical-size"]!;
+    const face = resolve({ catalog, library: adopt("themes.font-heading") }).members["themes.font-heading.default"]!;
     expect(face).toMatchObject({ $type: "number", value: { light: 72 } });
     expect(resolve({ catalog, library: adopt("tokens.shift-distance") }).members["tokens.shift-distance.reveal"]!.value.light).toEqual({ unit: "px", value: 24 });
-    const animation = catalog.slots.find(row => row.id === "tokens.animation")!;
+    const animation = catalog.slots.find(row => row.id === "themes.animate-marquee")!;
     expect(animation.contract.members.mode).toBe("open");
-    const motion = resolve({ catalog, library: adopt("tokens.animation") });
-    expect(Object.keys(motion.members).filter(id => id.startsWith("tokens.animation.")).sort()).toEqual(["count", "marquee", "reveal", "scroll-reveal", "scroll-sticky", "stagger"].map(name => `tokens.animation.${name}`));
+    const motion = resolve({ catalog, library: adopt("themes.animate-marquee") });
+    expect(Object.keys(motion.members).filter(id => id.startsWith("themes.animate-marquee.")).sort()).toEqual(["count", "marquee", "reveal", "scroll-reveal", "scroll-sticky", "stagger"].map(name => `themes.animate-marquee.${name}`));
   });
   it("allows only motion-read additions to existing section contracts", () => {
     const sections = loadBuildCatalog().slots.filter(slot => slot.layer === "sections");
     expect(sections.length).toBeGreaterThan(0);
-    for (const section of sections) expect((section.contract as { allowedReads: { tokens: readonly string[] } }).allowedReads.tokens).toEqual(expect.arrayContaining(["tokens.animation", "tokens.shift-distance"]));
+    for (const section of sections) expect((section.contract as { allowedReads: { themes: readonly string[] } }).allowedReads.themes).toEqual(expect.arrayContaining(["themes.animate-marquee", "tokens.shift-distance"]));
   });
 });
 
 describe("pending expressive leaf amendment", () => {
   it("preserves original signatures and records exactly the new draft leaf as pending", () => {
     expect(tokenAmendments.status).toBe("owner-signed");
-    expect(tokenAmendments.addedLeaves.map(row => row.id)).toEqual(["tokens.container-width", "tokens.animation"]);
+    expect(tokenAmendments.addedLeaves.map(row => row.id)).toEqual(["tokens.container-width", "themes.animate-marquee"]);
     expect(tokenAmendments.pending).toMatchObject({ status: "pending-owner-ratification", source: "workspace#45 A131/A132 AUTO-DECIDED 2026-10-28", addedLeafIds: ["tokens.gradient"] });
   });
   it.each(["source", "status", "extra", "duplicate", "missing"])("refuses a changed pending %s", async edit => {

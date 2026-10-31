@@ -23,7 +23,7 @@ export function foundryAccessMatrixTransform(input: AccessMatrixRecipeInput): Su
         surfaceFault("S2 exact AccessMatrix upstream closure required");
     if (input.tailwindMerge.module !== "tailwind-merge" || !input.tailwindMerge.values.includes("extendTailwindMerge") || !/^[a-f0-9]{64}$/.test(input.tailwindMerge.artifactSha256) || !/^\d+\.\d+\.\d+$/.test(input.tailwindMerge.version))
         surfaceFault("S4 inspected installed tailwind-merge artifact required");
-    if (!input.scales.length || new Set(input.scales.map(row => row.member)).size !== input.scales.length || new Set(input.scales.map(row => row.property)).size !== input.scales.length || input.scales.some(row => !/^tokens\.[a-z0-9.-]+$/.test(row.member) || !/^--[a-z0-9-]+$/.test(row.property) || !/^sha256:[a-f0-9]{64}$/.test(row.valueHash)))
+    if (!input.scales.length || new Set(input.scales.map(row => row.member)).size !== input.scales.length || new Set(input.scales.map(row => row.property)).size !== input.scales.length || input.scales.some(row => !/^themes\.[a-z0-9.-]+$/.test(row.member) || !/^--[a-z0-9-]+$/.test(row.property) || !/^sha256:[a-f0-9]{64}$/.test(row.valueHash)))
         surfaceFault("S6 authenticated consumer scale table required");
     const ordered = { ...input, upstream: [...input.upstream].sort((a, b) => a.path < b.path ? -1 : 1), scales: [...input.scales].sort((a, b) => a.member < b.member ? -1 : 1) };
     // This registered rule source records every semantic normalization input.

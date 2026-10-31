@@ -12,7 +12,7 @@ export function studioProjectionFiles(projection: StudioSelectionProjection): Ma
   const selected = new Set<string>();
   for (const document of documents) {
     const slot = document.$extensions["com.clossys.fill"].slot;
-    if (!/^(tokens|assets|components|sections|frames)\.[a-z][a-z0-9-]*$/.test(slot) || selected.has(slot)) throw new Error("Studio projection has an invalid or duplicate selected document");
+    if (!/^(themes|assets|components|sections|frames)\.[a-z][a-z0-9-]*$/.test(slot) || selected.has(slot)) throw new Error("Studio projection has an invalid or duplicate selected document");
     selected.add(slot);
     files.set(`fills/${slot}.json`, stableStringify(document));
   }

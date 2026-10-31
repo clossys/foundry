@@ -39,7 +39,7 @@ describe("native default candidate input integration", () => {
     expect(checkDefaultCandidates(input).report.missing.some(row => row.slot === "components.sheet")).toBe(false);
   });
   it("detects deletion of the native spacing default while retaining other sources and restores the exact baseline", () => {
-    const input = nativeInput(), original = input.catalog.values.fills, baseline = checkDefaultCandidates(input), slot = "tokens.spacing", source = input.defaultSources[slot];
+    const input = nativeInput(), original = input.catalog.values.fills, baseline = checkDefaultCandidates(input), slot = "themes.spacing", source = input.defaultSources[slot];
     const defaults = original.filter(doc => doc.$extensions["com.clossys.fill"].slot === slot && doc.$extensions["com.clossys.fill"].source === source);
     expect(defaults).toHaveLength(1);
     expect(original.some(doc => doc.$extensions["com.clossys.fill"].slot === slot && doc.$extensions["com.clossys.fill"].source !== source)).toBe(true);
@@ -68,8 +68,8 @@ describe("native default candidate input integration", () => {
   });
   it("exposes missing default policy as invalid input", () => {
     const input = nativeInput();
-    input.defaultSources = { ...input.defaultSources, "tokens.spacing": undefined };
-    expect(checkDefaultCandidates(input)).toMatchObject({ exitCode: 2, report: { invalid: expect.arrayContaining(["MISSING_POLICY tokens.spacing: default source definition is missing"]) } });
+    input.defaultSources = { ...input.defaultSources, "themes.spacing": undefined };
+    expect(checkDefaultCandidates(input)).toMatchObject({ exitCode: 2, report: { invalid: expect.arrayContaining(["MISSING_POLICY themes.spacing: default source definition is missing"]) } });
   });
   it("retains the explicit rich-text policy when its existing native candidate is removed", () => {
     const input = nativeInput(), original = input.catalog.components.fills, baseline = checkDefaultCandidates(input), slot = "components.rich-text";

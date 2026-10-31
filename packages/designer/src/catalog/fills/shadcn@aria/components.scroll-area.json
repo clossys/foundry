@@ -31,11 +31,9 @@
       "props": [],
       "propMap": {},
       "reads": {
-        "tokens": [
-          "tokens.border-color.base",
-          "tokens.focus-color.default",
-          "tokens.focus-outline.offset",
-          "tokens.focus-outline.width"
+        "themes": [
+          "themes.border.default",
+          "themes.ring.default"
         ],
         "assets": [],
         "components": []

@@ -42,7 +42,7 @@ function useStudioState({ catalog: catalogProp, adapter, labels, initialSlotId: 
   const initialSlotId = initialLeaf ?? initialSlotProp;
   const [phase, setPhase] = useState<Phase>({ status: "loading" });
   const [slotId, setSlotId] = useState(initialSlotId);
-  const [localLayer, setLocalLayer] = useState<LayerId>(() => initial.layer ?? catalog.slots.find(slot => slot.id === initialSlotId)?.layer ?? catalog.placements[0]?.layer ?? "tokens");
+  const [localLayer, setLocalLayer] = useState<LayerId>(() => initial.layer ?? catalog.slots.find(slot => slot.id === initialSlotId)?.layer ?? catalog.placements[0]?.layer ?? "themes");
   const [localSelected, setLocalSelected] = useState<string | undefined>(initialLeaf);
   const layer = sharedLayer?.layer ?? localLayer;
   const selected = sharedLayer?.select ? sharedLayer.selected : localSelected;

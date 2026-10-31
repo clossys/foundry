@@ -50,7 +50,7 @@ describe("generateUtilitiesCss", () => {
     expect(covered("tokens/preview/index.tsx")).toBe(true);
     expect(covered("tokens/preview-other/index.tsx")).toBe(false);
     expect(covered("tokens/other.tsx")).toBe(false);
-    expect([...UTILITIES_SOURCE_DIRS]).not.toContain("tokens");
+    expect([...UTILITIES_SOURCE_DIRS]).not.toContain("themes");
   });
 
   it("importing styles/utilities.css after theme.css generates this package's utilities with no path @source", async () => {

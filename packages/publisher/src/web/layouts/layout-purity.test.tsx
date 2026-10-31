@@ -25,7 +25,7 @@ function findings(source: string): string[] {
     if (ts.isJsxAttribute(node) && node.name.getText(ast) === "className") {
       const check = (value: ts.Node) => {
         if (ts.isStringLiteral(value)) for (const token of value.text.split(/\s+/)) {
-          if (!/^(?:grid|flex|flex-col|content-center|content-start|gap-(?:md|lg|xl)|grid-cols-[1-4]|(?:col|row)-span-[1-4])$/.test(token)) failures.push(`class: ${token}`);
+          if (!/^(?:grid|flex|flex-col|content-center|content-start|gap-(?:3|4|6)|grid-cols-[1-4]|(?:col|row)-span-[1-4])$/.test(token)) failures.push(`class: ${token}`);
         }
         else if (ts.isJsxExpression(value) && value.expression) check(value.expression);
         else if (ts.isConditionalExpression(value)) { check(value.whenTrue); check(value.whenFalse); }
