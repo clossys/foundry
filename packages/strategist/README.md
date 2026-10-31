@@ -49,9 +49,8 @@ own brief contracts and receive ready, missing or stale briefs. A missing
 brief blocks the role; a stale brief needs a visible stale flag. Surfaces
 cite `strategy:<cell-id>@<N>` rather than duplicating the decision.
 
-The [seven role prompts](skill/roles/strategist.md) divide conversation,
-research, synthesis, checking, critique, compilation and review with
-explicit write boundaries. No helper confirms for the user. Before MVS,
+The [Director skill](skill/SKILL.md) drives the loop from brief to
+confirmed cells and compiled briefs. No helper confirms for the user. Before MVS,
 run the pre-mortem and confirm resulting changes. MVS is clean completion
 over the archetype's core cells; Complete requires all 57 cells active and
 fresh, all 28 L2 groups coherent and L0 clean. Report only what the files

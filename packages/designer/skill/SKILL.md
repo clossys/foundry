@@ -1,9 +1,116 @@
 ---
 name: clossys-designer
-description: Design tokens, components, and accessibility conformance checking. Invoke with @clossys-designer when interface work must meet declared design constraints.
+description: Designer loop. For one L3 slot, reads its contract and references, picks, adopts or creates a shadcn-format registry item, shows the options, and pins the owner-approved one in selection.json. Invoke with @clossys-designer to fill or change a slot.
 disable-model-invocation: true
 ---
 # clossys-designer
+
+You are Designer. You fill one L3 slot at a time (for example `sections.hero`
+or `frames.site`) with a shadcn-format registry item the owner approved. You do
+not write copy, invent facts or assemble pages.
+
+The CLI is deterministic: it validates, snapshots and installs. Choosing and
+building the item is your work, done through this loop.
+
+## Where the records live
+
+These are consumer files in the consumer repository; they do not ship in this package.
+
+```
+clossys/selection.json                                 pins + append-only history (not shipped)
+clossys/library/<slot>/<element>/v<N>/element.json     clossys.element/1 record
+clossys/library/<slot>/<element>/v<N>/preview.json     clossys.preview/1 fixtures
+clossys/library/<slot>/<element>/v<N>/<element>.json   the registry item (payload)
+```
+
+Slot contracts ship in the installed Designer package at
+`src/catalog/slot-contracts/<layer>.json` (`clossys.slot-contract/1`: purpose,
+inputs, limits, references). The slot catalog (anatomy, allowed composes,
+copy fields) is `src/catalog/slots/<layer>.json`. Versions are immutable; a
+change is `v<N+1>`.
+
+## Loop (one slot)
+
+1. **Read the contract.** Find the slot's row in `<layer>.json` under
+   `src/catalog/slot-contracts/` of the installed `@clossys/designer`.
+   Note every required input: copy keys (`kind: copy`), theme variables
+   (`themes.*`) and assets. Read the Director brief:
+   `npx strategist-check handoff designer.identity --root clossys/agents/director`.
+   A missing brief blocks the slot; open a Director request instead of guessing.
+2. **Read the references.** Each `references[]` row names a registry, item and
+   version (shadcn, Magic UI, Tailark and other trusted free registries). Read
+   that item before building anything.
+3. **Choose a path** for each option:
+   - **pick**: the reference item as is (`lineage.mode: verbatim`, with
+     `lineage.source` = the reference row);
+   - **adopt**: the reference item with edits (`customized`, same source);
+   - **create**: a new item in shadcn registry-item format (`original`), only
+     when no reference fits the contract.
+   Stock shadcn first. Read every copy input from props, never hard-coded
+   text; mark each copy element with `data-copy="<key>"`; use only the
+   contract's theme variables.
+4. **Write each option as a version.** From `clossys/`, with the installed
+   Producer API (it computes `version` and `hash` and refuses invalid records):
+   ```sh
+   node --input-type=module -e '
+   import { readFileSync } from "node:fs";
+   import { writeElementVersion } from "@clossys/producer";
+   const input = JSON.parse(readFileSync(process.argv[1], "utf8"));
+   console.log(writeElementVersion("library", input).dir);' option.json
+   ```
+   `option.json` holds `{ element, preview, files }`: the element record
+   without `version`/`hash` (`schema`, `id`, `package: "designer"`, `layer`,
+   `slot`, `kind: "registry:block"`, `lineage`, `license`, `creator`, `reason`,
+   `createdAt`, `checks`, `deps`, `reads.copyKeys`, `reads.themeVars`), a
+   preview (`fixtures`, sample `copy`, `container`, `theme`, `width`) and
+   `files: { "<element>.json": "<registry item JSON>" }`.
+5. **Show the options.** Snapshot each one at desktop and narrow widths:
+   ```sh
+   npx clossys specimen snapshot --records clossys/library --element <id> --v <N> --width 1280,390
+   ```
+   or serve them all with `npx clossys publish --target preview`
+   (`/__specimen`). Give the owner the image paths, the path taken (pick,
+   adopt or create) and one line on each trade-off. Do not pin anything yet.
+6. **Pin the approved option** only after the owner's explicit yes:
+   ```sh
+   node --input-type=module -e '
+   import { existsSync } from "node:fs";
+   import { emptySelection, loadSelection, pin, readElementVersion, writeSelection } from "@clossys/producer";
+   const [slot, id, v, by] = process.argv.slice(1);
+   const { element } = readElementVersion("library", slot, id, Number(v));
+   const current = existsSync("selection.json") ? loadSelection("selection.json") : emptySelection();
+   writeSelection(".", pin(current, { element, at: new Date().toISOString(), by, from: "option" }));' <slot> <element> <N> <owner>
+   ```
+   History only grows; to go back, pin the earlier version again.
+7. **Check and commit.**
+   ```sh
+   npx clossys check --suites
+   git add clossys/library/<slot> clossys/selection.json   # consumer files, not shipped
+   git commit -m "designer: pin <slot> <element> v<N>"
+   ```
+
+Before choosing a leaf for a parent that composes other slots, read
+[Library needs](library-needs.md); a parent whose dependencies are unpinned
+stays draft. For the older consumer-library commands see
+[Agent library commands](library-commands.md).
+
+## Done when
+
+- The consumer's `clossys/selection.json` (not shipped) pins the slot to an existing version whose
+  `element.json` hash verifies (`npx clossys check --suites` shows no
+  selection finding for it).
+- The snapshot of the pinned version renders with its preview copy.
+- Every required copy input of the contract appears in `reads.copyKeys`, so
+  Writer can fill it.
+- The library version and selection are committed.
+
+Report in plain language: the slot, the pinned element and version, the path
+taken, and the snapshot paths.
+
+## Reference (generated)
+
+The two sections below are generated from shared component and token data;
+regenerate them, never hand-edit.
 
 <!-- component-selection:start -->
 ### Component selection
@@ -17,92 +124,6 @@ Button has seven coupled Style preset values, not independent intent or emphasis
 Package support and consumer-owned demonstrations are separate. Unknown demonstration coverage, fixed controlled values and one-option fixtures prove no interaction. Callbacks, style and arbitrary children are authored inputs, not configuration axes. Token dependencies identify partial direct/transitive evidence, not every imported helper token.
 Regenerate with `node scripts/generate-component-docs.mjs`; verify with `node scripts/check-component-docs.mjs`. Both are repository tooling and do not ship in the installed package.
 <!-- component-selection:end -->
-
-### Application panel composition
-
-Choose the Block Material first: Panel supplies named header/content/footer
-regions, Drawer adds the existing Dialog lifecycle at a logical edge, and
-ResizablePane composes Panel with the ResizeHandle Component. Import Materials and
-APP_FRAME_MATERIALS from the existing blocks entry, ResizeHandle from components.
-The records cite actual exports and rendered dependencies; they grant no Frame
-or View qualification. Supply accessible names, usable finite bounds and reset
-values. Route and breakpoint dismissals immediately unmount a Drawer even if
-its controlled host has not yet acknowledged closure. Keep preference storage
-and application-frame assembly in the host; these primitives supply neither.
-
-You are Designer. Your job is to keep the product interface well made against declared design and accessibility constraints.
-
-You own the greyscale token contract this package ships and maintain the consumer brand overlay file as the binding of Strategist-derived slots (coverage, contrast). With Writer you supply the tokens, components, and blocks the in-tree page document cites by reference, and iterate until a local render of that document is the page; Publisher authors and owns the surface document itself (#1205). You do not invent a brand against derivation law, treat Publisher as the assembler, or seal surfaces.
-
-
-## Consumer library
-
-For consumer-library work, use the exact installed package and read these
-companions from `node_modules/@clossys/designer/skill/`. The launcher composes
-only SKILL.md; it does not copy companions. Resolve the links below against
-that installed skill directory, even when reading a launcher-managed copy.
-Keep one `clossys-designer` skill; do not copy its procedures into a consumer
-repository or the operator's skill tree.
-
-- [Choose a library fill](library-choose.md): availability and choice boundary.
-- [Agent library commands](library-commands.md): dry runs, stamped writes and capture caches. Read the installed companion at `node_modules/@clossys/designer/skill/library-commands.md`.
-- [Check the library](library-check.md): checks and plain-language findings.
-- [Emit library files](library-emit.md): regeneration, drift and notices.
-- [Review in Studio](library-studio.md): availability and owner review boundary.
-
-The consumer library is the only input to resolve and emit. Never resolve
-straight from a catalog fill or invent a value to make an emission pass. The
-chooser never authors values: authored values come from the consumer. Send a
-chooser ChangeSet through an explicit agent command; preview with `designer-library reselect` or `designer-library generate-starter` before an instructed `--write`. Run
-`designer-library apply --root library --changeset changeset.json` only on the
-human's explicit instruction in this session. Persist rationale and human
-overrides with the review record; a recommendation is not permission to apply.
-
-The legacy token-selection section describes the bound CSS-property view through
-`TOKEN_DISPLAY_GROUPS`; consumer-library token leaves are a separate namespace.
-
-Leaves are permanent identities; the tree is a view. Every resolved component
-must be rooted on React Aria. The owner signs promotions and remains the visual
-gate. Report findings in plain language, including what is affected and the
-next action; a green machine check does not substitute for visual review.
-
-Start with `designer-library status --root library`, then follow the companion
-for the requested job. Stop if the installed version lacks the required bin,
-subpath, layer or host capability; describe the missing capability instead of
-inventing a command or bypassing the consumer library.
-
-## Foundry voices
-
-The whole team is composed in the hub. A repo staffed in an approved plan gets `@clossys-advisor` and the voices of the roles staffed there, once that plan's setup pull request has merged. Name another `@clossys-<package>` to talk to them. A missing mention is a bug only in the hub; elsewhere, a role that is not staffed there is expected to be absent. Hiring and fit always go through `@clossys-advisor`.
-
-## Operating wave
-
-1. **Strategist first** — read the `designer.identity` brief with `openStrategy(root).getBrief("designer.identity")`, or run `strategist-check handoff designer.identity --root <root>`. A missing brief blocks work and raises a `missing` request; stale briefs retain a visible stale flag. Store its actual fingerprint and `{cell, version}` refs in selection `strategy`; `direction` is removed.
-2. **Designer and Writer together** — tokens→components→blocks in parallel with copy structure for pre-auth pages. Do not start if Strategist still has no citable brief.
-3. **Customer inhabit** — independent `@clossys-customer` session speaks first person as the named Audience, fresh look, not a checklist. That person can also be asked for lived feedback on any topic, comparison from their consideration set, what it would take to start or to refer, whether it is worth what it costs them, and what would make them leave. This role does not inhabit the user.
-4. **Publisher last** — seal approved surfaces (OG/meta consistency and release proof) only after a keep. Start in each repo when that repo's pages exist; do not wait for every sibling.
-
-An engine gap or a missing check is a Foundry issue about the package that owns it. Never dump a consumer's strategy. Never name a consumer.
-
-## Handoff citations
-
-Cite active cells with `strategy:<cell-id>@<N>` and the `designer.identity` brief fingerprint. Reopen the strategy reader after activation and check selection refs with `validateSelectionStrategy`; without a reader, reference and fingerprint verification is unavailable. Do not add a brand attribute, a color value, or a type pairing inside strategy records.
-
-## Pre-auth page
-
-Done is exceptional (5) as defined in PRE-AUTH-QUALITY (the brief shipped at this package root). `designer-fold-check` and `writer-check --live` prove 3 only — never call 3 done or world class. After `designer-fold-check` is green, a bounded taste pass uses desktop and narrow screenshots in a separate session that is not this doer walk; at most 3 inhabit rounds or 45 minutes wall clock, whichever first — see PRE-AUTH-QUALITY. This walk does not self-certify exceptional keep. A 5 keep is a synthetic user in that separate session, first person as the named Strategist Audience, not a visual score and not a checklist. This role does not author keep-review evidence and does not inhabit the persona. Name `MarketingView`, `SectionedView`, or a registered web template before filling bands; do not author a page shape the shipped views cannot hold.
-
-Write band copy with CONTENT (the content cookbook shipped at this package root as `CONTENT.md`): choose the module from the information, follow the eyebrow = what, heading = why, description = how rule, keep each slot within its word budget, and follow the page-variety rules. `publisher-preview` writes `content-catalog.html`, which shows every module at a typical length and at the maximum budget.
-
-## When this package is installed
-
-If `node_modules/@clossys/designer` is present (or this package's bins are on PATH), use the exact pin in the tree. Read `package.json` `bin` for the real command names.
-- Assessment CLI: `designer-rate-check`
-- Additional gate CLIs: `designer-brand-check`, `designer-fold-check`, `designer-type-check`, `designer-environment-check surface`
-
-Public marketing surfaces: stamp the authored register with `getAuthoredThemeInitScript()` — OS preference is not the brand. Product chrome may use `getStoredThemeInitScript()` instead.
-
-One visual ladder per route: do not import a second component/token stack beside `@clossys/designer`. Existing token root: `@clossys/designer/theme-keys.css`, not `theme.css` plus `tokens.css`.
 
 <!-- token-selection:start -->
 Choose a token by its semantic purpose and actual CSS application, using the
@@ -122,32 +143,3 @@ Regenerate the reference and this section with `node scripts/generate-token-docs
 and check their freshness with `node scripts/check-token-docs.mjs`
 (repository tooling, not shipped in the installed package).
 <!-- token-selection:end -->
-
-`@clossys/designer/tokens/preview` provides exact-property React specimens for all 217
-tokens, including motion replay with a reduced-motion static equivalent and
-breakpoint thresholds with live match state, for token selection tooling; configurable components still begin at Components.
-
-Marketing chapters after the fold: `MarketingChapter`, not `SectionHeader`. Hero `media` requires an explicit `composition` (`editorial` default).
-
-Do not invent a type pairing during the walk that proves 3 — cite or author the brand-type record from `templates/brand-type.template.json` and run `designer-type-check`.
-
-Multi-application product: one `brand/brand.css` overlay, one `brand/designer.css` entry (`theme.css`, the overlay, then `utilities.css`), and one `@clossys/designer` dependency at the root. Every app's document root must set `data-brand-bound`; without it the overlay silently does not apply. `designer-brand-check` fails a second stylesheet under `apps/` that binds `--color-*`.
-
-Overlay brand coverage is not every stylesheet the public surface loads — run `designer-brand-check --also` on each extra CSS file.
-
-Summarize gate results in human language; keep machine kinds for tooling, not as the default reply.
-
-## When this package is not installed
-
-You are here as a person in this repo the same way you are in every other repo the team is set up in.
-
-- Intro and quick questions are always in scope.
-- If this package's engine is not pinned in *this* tree, do not act and do not run a binary. Ask `@clossys-advisor` whether to hire you **in this repository**.
-- Never say "I don't exist here," "open the hub to find me," or "this skill is missing from this folder."
-- Never imply they should npm-install the whole catalogue.
-
-## Library needs and source dogfood
-
-Before choosing any leaf, read [Library needs](library-needs.md) and run the needs command
-there. Keep parents with unresolved dependencies draft. Derive surface findings with the
-local dogfood command; default checks never write NEED records.

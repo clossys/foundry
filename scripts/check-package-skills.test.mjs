@@ -534,116 +534,21 @@ I am the named Audience. Invoke @clossys-customer before seal. I am not a review
   assert.ok(missingDial.findings.some((f) => f.rule === "customer-speed-dial-intents"));
 });
 
-test("expression-wave skills must name clossys-customer", () => {
-  const result = evaluatePackageSkills([
-    {
-      packageDir: "designer",
-      skillPath: "/tmp/ignored",
-      expectedName: "clossys-designer",
-      skillText: validSkill("clossys-designer", "Design tokens."),
-    },
-  ]);
-  assert.equal(result.exitCode, 1);
-  assert.ok(result.findings.some((f) => f.rule === "expression-customer-session"));
+test("content-agent skills need a Loop and a Done when section", () => {
+  for (const [packageDir, expectedName] of [["strategist", "clossys-strategist"], ["designer", "clossys-designer"], ["writer", "clossys-writer"], ["publisher", "clossys-publisher"]]) {
+    const result = evaluatePackageSkills([{ packageDir, skillPath: "/tmp/ignored", expectedName, skillText: validSkill(expectedName, "Agent loop.") }]);
+    assert.equal(result.exitCode, 1, packageDir);
+    assert.ok(result.findings.some((f) => f.rule === "content-agent-loop"), packageDir);
+    assert.ok(result.findings.some((f) => f.rule === "content-agent-done"), packageDir);
+    const complete = `${validSkill(expectedName, "Agent loop.")}\n## Loop\n\n1. Step.\n\n## Done when\n\n- Check exits 0.\n`;
+    const passing = evaluatePackageSkills([{ packageDir, skillPath: "/tmp/ignored", expectedName, skillText: complete }]);
+    assert.ok(!passing.findings.some((f) => f.rule.startsWith("content-agent-")), packageDir);
+  }
 });
 
-test("publisher pre-auth section must name MarketingView", () => {
-  const result = evaluatePackageSkills([
-    {
-      packageDir: "publisher",
-      skillPath: "/tmp/ignored",
-      expectedName: "clossys-publisher",
-      skillText: `---
-name: clossys-publisher
-description: Publisher skill.
-disable-model-invocation: true
----
-
-## Pre-auth page
-
-SectionedView only.
-`,
-    },
-  ]);
-  assert.equal(result.exitCode, 1);
-  assert.ok(result.findings.some((f) => f.rule === "publisher-pre-auth-marketing-view"));
-});
-
-test("expression-wave skills without Pre-auth page heading fail", () => {
-  const result = evaluatePackageSkills([
-    {
-      packageDir: "designer",
-      skillPath: "/tmp/ignored",
-      expectedName: "clossys-designer",
-      skillText: validSkill("clossys-designer", "Design tokens and components."),
-    },
-  ]);
-  assert.equal(result.exitCode, 1);
-  assert.ok(result.findings.some((f) => f.rule === "pre-auth-page-heading"));
-});
-
-test("expression-wave skills must cap taste after fold-check green and forbid self-certify", () => {
-  const result = evaluatePackageSkills([
-    {
-      packageDir: "designer",
-      skillPath: "/tmp/ignored",
-      expectedName: "clossys-designer",
-      skillText: `---
-name: clossys-designer
-description: Design tokens.
-disable-model-invocation: true
----
-
-## Pre-auth page
-
-PRE-AUTH-QUALITY exceptional synthetic user does not author keep-review evidence.
-`,
-    },
-  ]);
-  assert.equal(result.exitCode, 1);
-  assert.ok(result.findings.some((f) => f.rule === "pre-auth-taste-fold-precondition"));
-  assert.ok(result.findings.some((f) => f.rule === "pre-auth-taste-bound"));
-  assert.ok(result.findings.some((f) => f.rule === "pre-auth-no-self-certify"));
-});
-
-test("strategist skill must state brand-coverage is necessary not sufficient, not keep without do-nots, and name --surfaces", () => {
-  const result = evaluatePackageSkills([
-    {
-      packageDir: "strategist",
-      skillPath: "/tmp/ignored",
-      expectedName: "clossys-strategist",
-      skillText: validSkill("clossys-strategist", "Strategy traceability."),
-    },
-  ]);
-  assert.equal(result.exitCode, 1);
-  assert.ok(result.findings.some((f) => f.rule === "strategist-brand-coverage-necessary"));
-  assert.ok(result.findings.some((f) => f.rule === "strategist-brand-surfaces-do-not"));
-  assert.ok(result.findings.some((f) => f.rule === "strategist-brand-not-keep"));
-});
-
-test("expression-wave skills must reference PRE-AUTH-QUALITY, exceptional, synthetic user, and not author keep-review", () => {
-  const result = evaluatePackageSkills([
-    {
-      packageDir: "writer",
-      skillPath: "/tmp/ignored",
-      expectedName: "clossys-writer",
-      skillText: `---
-name: clossys-writer
-description: Copy gates.
-disable-model-invocation: true
----
-
-## Pre-auth page
-
-Fill MarketingView slots only.
-`,
-    },
-  ]);
-  assert.equal(result.exitCode, 1);
-  assert.ok(result.findings.some((f) => f.rule === "pre-auth-quality-ref"));
-  assert.ok(result.findings.some((f) => f.rule === "pre-auth-exceptional"));
-  assert.ok(result.findings.some((f) => f.rule === "pre-auth-synthetic-user"));
-  assert.ok(result.findings.some((f) => f.rule === "pre-auth-no-author-keep"));
+test("the loop rule applies to the four content agents only", () => {
+  const result = evaluatePackageSkills([{ packageDir: "alpha", skillPath: "/tmp/ignored", expectedName: "clossys-alpha", skillText: validSkill("clossys-alpha", "Other role.") }]);
+  assert.ok(!result.findings.some((f) => f.rule.startsWith("content-agent-")));
 });
 
 test("launcher catalogue drift is a finding", () => {
@@ -664,35 +569,6 @@ test("strategist package.json files includes skill for npm pack", () => {
   const manifest = JSON.parse(readFileSync(join(repoRoot, "packages/strategist/package.json"), "utf8"));
   assert.ok(Array.isArray(manifest.files), "strategist package.json must declare files");
   assert.ok(manifest.files.includes("skill"), "strategist tarball must pack skill/SKILL.md");
-});
-
-test("strategist skill must not treat gate-green as keep", () => {
-  const result = evaluatePackageSkills([
-    {
-      packageDir: "strategist",
-      skillPath: "/tmp/ignored",
-      expectedName: "clossys-strategist",
-      skillText: validSkill("clossys-strategist", "Strategy traceability and direction currency."),
-    },
-  ]);
-  assert.equal(result.exitCode, 1);
-  assert.ok(result.findings.some((f) => f.rule === "strategist-pre-auth-quality-ref"));
-  assert.ok(result.findings.some((f) => f.rule === "strategist-no-gate-keep"));
-  assert.ok(result.findings.some((f) => f.rule === "strategist-gates-prove-3"));
-});
-
-test("strategist skill must list directory output files and handoff", () => {
-  const result = evaluatePackageSkills([
-    {
-      packageDir: "strategist",
-      skillPath: "/tmp/ignored",
-      expectedName: "clossys-strategist",
-      skillText: validSkill("clossys-strategist", "Strategy traceability."),
-    },
-  ]);
-  assert.equal(result.exitCode, 1);
-  assert.ok(result.findings.some((f) => f.rule === "strategist-output-files"));
-  assert.ok(result.findings.some((f) => f.rule === "strategist-handoff-subcommand"));
 });
 
 test("live repository package skills pass", () => {
