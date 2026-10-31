@@ -1,0 +1,8 @@
+{
+  "packId": "example-site",
+  "app": "apps/site",
+  "routes": [
+    { "instanceId": "home", "path": "/", "slots": [{ "section": "sections.hero", "state": "active" }] },
+    { "instanceId": "about", "path": "/about", "slots": [{ "section": "sections.hero", "state": "active" }] }
+  ]
+}

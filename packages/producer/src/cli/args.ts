@@ -24,6 +24,12 @@ export interface CliArgs {
   install: boolean;
   /** publish --install: the page record file. */
   page?: string;
+  /** publish --install: the route pack / content map id to install as one routed site. */
+  site?: string;
+  /** publish --install --site: the deployment origin (target config). */
+  origin?: string;
+  /** publish --install --site: run the substrate's Vite build. */
+  build: boolean;
 }
 
 export class CliUsageError extends Error {
@@ -31,13 +37,14 @@ export class CliUsageError extends Error {
 }
 
 export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check> [--check] [--root <dir>] [--json]\n"
-  + "Options: --help; produce --once --port <0-65535> --no-open [--out <install out folder>]; publish --install --page <id> [--out <dir>]\n"
+  + "Options: --help; produce --once --port <0-65535> --no-open [--out <install out folder>]; publish --install --page <id> | --site <pack id> [--origin <url>] [--build] [--out <dir>]\n"
   + "Page check: clossys check --pages <generated-manifest.json> --report <report.json> [--json]\n"
   + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root)\n"
-  + "Install: clossys publish --install --page <page id | page record.json> [--out <dir>] [--records <library dir>]...";
+  + "Install: clossys publish --install --page <page id | page record.json> [--out <dir>] [--records <library dir>]...\n"
+  + "Site: clossys publish --install --site <route pack id> [--origin <deployment origin>] [--build] [--out <dir>] [--records <library dir>]... (one routed app: content-map paths, route-pack slots, one frame)";
 
 export function parseArgs(argv: readonly string[]): CliArgs {
-  const args: CliArgs = { help: false, check: false, json: false, once: false, noOpen: false, suites: false, strict: false, records: [], install: false };
+  const args: CliArgs = { help: false, check: false, json: false, once: false, noOpen: false, suites: false, strict: false, records: [], install: false, build: false };
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index]!;
     const value = (): string => {
@@ -60,6 +67,9 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       case "--records": args.records.push(value()); break;
       case "--install": args.install = true; break;
       case "--page": args.page = value(); break;
+      case "--site": args.site = value(); break;
+      case "--build": args.build = true; break;
+      case "--origin": args.origin = value(); break;
       case "--port": {
         const port = value();
         if (!/^\d+$/.test(port) || Number(port) > 65535) throw new CliUsageError("--port must be an integer from 0 to 65535");
@@ -79,9 +89,11 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   }
   if ((args.suites || args.strict) && args.verb !== "check") throw new CliUsageError("--suites and --strict require check");
   if (args.records.length && args.verb !== "publish") throw new CliUsageError("--records requires publish");
-  if ((args.install || args.page !== undefined) && args.verb !== "publish") throw new CliUsageError("--install and --page require publish");
-  if (args.install && args.page === undefined && !args.help) throw new CliUsageError("publish --install requires --page <page id | page record.json>");
-  if (args.page !== undefined && !args.install) throw new CliUsageError("--page requires --install");
+  if ((args.install || args.page !== undefined || args.site !== undefined || args.build || args.origin !== undefined) && args.verb !== "publish") throw new CliUsageError("--install, --page, --site, --origin and --build require publish");
+  if (args.page !== undefined && args.site !== undefined) throw new CliUsageError("publish --install takes --page or --site, not both");
+  if (args.install && args.page === undefined && args.site === undefined && !args.help) throw new CliUsageError("publish --install requires --page <page id | page record.json> or --site <route pack id>");
+  if ((args.page !== undefined || args.site !== undefined) && !args.install) throw new CliUsageError("--page and --site require --install");
+  if ((args.build || args.origin !== undefined) && args.site === undefined) throw new CliUsageError("--build and --origin require --site");
   if (!args.verb && !args.help) throw new CliUsageError("A verb is required");
   if (args.verb === "check" && !args.help) {
     const page = args.pages !== undefined || args.report !== undefined;
