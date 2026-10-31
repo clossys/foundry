@@ -27,6 +27,7 @@ const HOSTS = new Map([
   ["ui.shadcn.com", "shadcn"],
   ["magicui.design", "magicui"],
   ["diceui.com", "diceui"],
+  ["r.assistant-ui.com", "assistant-ui"],
 ]);
 
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");

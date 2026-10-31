@@ -452,6 +452,11 @@
         "required": true
       },
       {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
         "name": "themes.muted",
         "kind": "theme",
         "required": true
@@ -463,6 +468,11 @@
       },
       {
         "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
         "kind": "theme",
         "required": true
       },
@@ -501,6 +511,12 @@
         "item": "mist-comparator-1",
         "version": "8139698",
         "hash": "sha256:32ac76cf078ea4021d1cbf1e6ee48c4973f044e3c764cb1112b8694d03676653"
+      },
+      {
+        "registry": "assistant-ui",
+        "item": "elements-comparison-card",
+        "version": "ff654d8",
+        "hash": "sha256:636d63e751c3ff2077a4674be813b01d060cd1332d093c9eb3b9759a59ce8fa3"
       }
     ],
     "checkSuite": "designer.slot-contracts.sections",

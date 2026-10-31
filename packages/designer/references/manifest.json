@@ -81,9 +81,26 @@
       "licenseFiles": [
         "fontsource/LICENSE"
       ]
+    },
+    "assistant-ui": {
+      "namespace": "@assistant-ui",
+      "source": "https://r.assistant-ui.com/{name}.json",
+      "version": "ff654d8",
+      "versionBasis": "registry endpoint served at fetchedAt; upstream HEAD commit at fetch time",
+      "upstream": "github.com/assistant-ui/assistant-ui@ff654d8156680b839774296ef644b57ab1078425",
+      "license": "MIT",
+      "licenseFiles": [
+        "assistant-ui/LICENSE"
+      ]
     }
   },
   "licenses": [
+    {
+      "path": "assistant-ui/LICENSE",
+      "sha256": "eafb05991a572efa34097474b31fef45b14a8879ed1d1a8fd77de62e6fa7d275",
+      "bytes": 1073,
+      "sourceUrl": "https://raw.githubusercontent.com/assistant-ui/assistant-ui/ff654d8156680b839774296ef644b57ab1078425/LICENSE"
+    },
     {
       "path": "diceui/LICENSE",
       "sha256": "798456e9f649d796bad55d80f9ee50a71eb2d16920300a66a8221b70123e40db",
@@ -128,6 +145,78 @@
     }
   ],
   "items": [
+    {
+      "registry": "assistant-ui",
+      "name": "elements-comparison-card",
+      "version": "ff654d8",
+      "dir": "assistant-ui/elements-comparison-card@ff654d8",
+      "type": "registry:component",
+      "sourceUrl": "https://r.assistant-ui.com/elements-comparison-card.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.comparison"
+      ],
+      "registryDependencies": [
+        "https://r.assistant-ui.com/elements-surfaces.json"
+      ],
+      "dependencies": [
+        "lucide-react"
+      ],
+      "hash": "sha256:636d63e751c3ff2077a4674be813b01d060cd1332d093c9eb3b9759a59ce8fa3",
+      "files": [
+        {
+          "path": "components/assistant-ui/elements/comparison-card.tsx",
+          "sha256": "0803c0f4e746bf0d8dd046341512319d5a42711450ecd769be57a8f6f5f5fb52",
+          "bytes": 3307,
+          "origin": "elements-comparison-card.json#files[0].content"
+        },
+        {
+          "path": "elements-comparison-card.json",
+          "sha256": "2b44deed04461649c699cc72f2cc97b52ec2c97396e991723921f394aaa08804",
+          "bytes": 4109,
+          "origin": "https://r.assistant-ui.com/elements-comparison-card.json"
+        }
+      ]
+    },
+    {
+      "registry": "assistant-ui",
+      "name": "elements-surfaces",
+      "version": "ff654d8",
+      "dir": "assistant-ui/elements-surfaces@ff654d8",
+      "type": "registry:component",
+      "sourceUrl": "https://r.assistant-ui.com/elements-surfaces.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "dependencies": [
+        "tw-shimmer@^0.4.14"
+      ],
+      "hash": "sha256:fd73d7fea6a5e522944a51db93494cf13518440b22070714576c11143d600350",
+      "files": [
+        {
+          "path": "components/assistant-ui/elements/surfaces.tsx",
+          "sha256": "5d81fbb669e67ae20026cd30ed57efc51a5e3ee0f4f5d265e1723de75359b8fa",
+          "bytes": 4462,
+          "origin": "elements-surfaces.json#files[0].content"
+        },
+        {
+          "path": "components/assistant-ui/utils/useIsomorphicLayoutEffect.ts",
+          "sha256": "8db117d730e640655e5099e086af4e00d545c283839d9ef5885ca93419d51893",
+          "bytes": 250,
+          "origin": "elements-surfaces.json#files[1].content"
+        },
+        {
+          "path": "elements-surfaces.json",
+          "sha256": "b15a3c3d7a7a7b74fbde133dc2f0ec9f4120d6332040144a5239e7c771ca7d1d",
+          "bytes": 5781,
+          "origin": "https://r.assistant-ui.com/elements-surfaces.json"
+        }
+      ],
+      "requiredBy": [
+        "@assistant-ui/elements-comparison-card"
+      ]
+    },
     {
       "registry": "diceui",
       "name": "color-picker",
