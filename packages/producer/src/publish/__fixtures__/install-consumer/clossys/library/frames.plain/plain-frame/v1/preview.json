@@ -1,0 +1,14 @@
+{
+  "schema": "clossys.preview/1",
+  "fixtures": {
+    "title": {
+      "$copy": "frame.title"
+    }
+  },
+  "copy": {
+    "frame.title": "Sample site"
+  },
+  "container": "page",
+  "theme": "light",
+  "width": 1280
+}
