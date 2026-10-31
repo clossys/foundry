@@ -310,6 +310,27 @@
           ]
         }
       }
+    },
+    "fontsource": {
+      "namespace": "@fontsource-variable",
+      "kind": "github-files",
+      "source": "https://cdn.jsdelivr.net/npm/@fontsource-variable/inter-tight@5.3.0/{path}",
+      "version": "5.3.0",
+      "versionBasis": "npm package @fontsource-variable/inter-tight@5.3.0 (immutable npm version, served by jsDelivr); Fontsource self-hosts the Google Fonts family",
+      "upstream": "github.com/fontsource/font-files (fonts/variable/inter-tight, npm publishHash eb0ef990773f983b)",
+      "license": "OFL-1.1",
+      "licenseFiles": {
+        "LICENSE": "https://cdn.jsdelivr.net/npm/@fontsource-variable/inter-tight@5.3.0/LICENSE"
+      },
+      "items": {
+        "inter-tight": {
+          "type": "registry:font",
+          "files": [
+            "package.json",
+            "metadata.json"
+          ]
+        }
+      }
     }
   },
   "direct": [
@@ -1227,6 +1248,13 @@
       "name": "typography",
       "slots": [
         "sections.legal-prose"
+      ]
+    },
+    {
+      "registry": "fontsource",
+      "name": "inter-tight",
+      "slots": [
+        "themes.font-heading"
       ]
     }
   ],

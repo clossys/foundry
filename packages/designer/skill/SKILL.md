@@ -44,9 +44,15 @@ change is `v<N+1>`.
    - **pick**: the reference item as is (`lineage.mode: verbatim`, with
      `lineage.source` = the reference row);
    - **adopt**: the reference item with edits (`customized`, same source);
-   - **create**: a new item in shadcn registry-item format (`original`), only
-     when no reference fits the contract.
-   Stock shadcn first. Read every copy input from props, never hard-coded
+   - **create**: customize the closest trusted reference into a new item
+     (`customized`, `lineage.source` = that reference). Create never starts
+     from nothing.
+   `original` is allowed only in a consumer-asset slot (the logo, brand marks
+   and the consumer's own images and video; the list is `consumerAssets` in
+   `src/catalog/rules/provenance.json`). When no trusted reference fits the
+   contract, raise a NEED for the owner ([Library needs](library-needs.md))
+   naming the slot and the missing reference, and leave the slot as it is;
+   never invent an item. Stock shadcn first. Read every copy input from props, never hard-coded
    text; mark each copy element with `data-copy="<key>"`; use only the
    contract's theme variables.
 4. **Write each option as a version.** From `clossys/`, with the installed
@@ -71,7 +77,13 @@ change is `v<N+1>`.
    or browse them all in Studio with `npx clossys produce`
    (`/__specimen`). Give the owner the image paths, the path taken (pick,
    adopt or create) and one line on each trade-off. Do not pin anything yet.
-6. **Pin the approved option** only after the owner's explicit yes:
+6. **Pin the approved option** only after the owner's explicit yes, and only
+   when its provenance passes. Run the gate first; a non-zero exit means do
+   not pin (re-source the item from a trusted reference or raise a NEED):
+   ```sh
+   npx designer-provenance-check --root clossys --element <slot>/<element>/v<N>
+   ```
+   Then pin:
    ```sh
    node --input-type=module -e '
    import { existsSync } from "node:fs";
@@ -88,6 +100,29 @@ change is `v<N+1>`.
    git add clossys/library/<slot> clossys/selection.json   # consumer files, not shipped
    git commit -m "designer: pin <slot> <element> v<N>"
    ```
+
+## Provenance rule (every item)
+
+Everything Designer pins comes from the shadcn universe: the trusted
+registries are the `registries` of the package's `references/manifest.json`
+(shadcn, Magic UI, Dice UI, Tailark OSS, lucide, Tailwind Typography and the
+Fontsource font provider). The rule is `src/catalog/rules/provenance.json`.
+
+- Every item version records `lineage.source` with `registry`, `item`,
+  `version` and `hash`, and that row exists in the manifest with the same hash.
+- A font (`themes.font-*`) comes from a `registry:font` reference: a shadcn
+  font item or the Fontsource package of the Google Fonts family, so the
+  family and version are recorded.
+- A theme (`themes.*`) customizes a shadcn theme preset (`shadcn/neutral`, or
+  a `registry:theme`/`registry:style` reference) with the brand tokens.
+- `original` only in a consumer-asset slot.
+
+```sh
+npx designer-provenance-check --root clossys   # pins and pending options; exit 1 on a violation
+```
+
+A pinned violator whose slot has a passing option is listed as pending
+replacement; the owner's pin of the option clears it.
 
 ## Section rules (every section and site frame)
 
@@ -145,6 +180,7 @@ stays draft. For the older consumer-library commands see
   `element.json` hash verifies (`npx clossys check --suites` shows no
   selection finding for it).
 - The snapshot of the pinned version renders with its preview copy.
+- `designer-provenance-check --element` passed for the pinned version.
 - Every required copy input of the contract appears in `reads.copyKeys`, so
   Writer can fill it.
 - `check-section-tokens.mjs` reports nothing for the consumer, and every page

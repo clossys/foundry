@@ -161,7 +161,8 @@
     "designer-type-check": "dist/type-record/type-record-cli.js",
     "designer-rate-check": "dist/design-conformance-rate-cli.js",
     "designer-section-check": "scripts/check-section-tokens.mjs",
-    "designer-overflow-check": "scripts/check-page-overflow.mjs"
+    "designer-overflow-check": "scripts/check-page-overflow.mjs",
+    "designer-provenance-check": "scripts/check-provenance.mjs"
   },
   "foundry": {
     "assessment": {
@@ -347,6 +348,8 @@
     "skill",
     "scripts/check-section-tokens.mjs",
     "scripts/check-page-overflow.mjs",
+    "scripts/check-provenance.mjs",
+    "references/manifest.json",
     "THIRD-PARTY-NOTICES.md",
     "fit-signal-declarations.json",
     "strategy-brief.json",
@@ -373,6 +376,7 @@
     "check:slot-contracts": "node scripts/slot-contracts.mjs --check",
     "check:section-tokens": "node scripts/check-section-tokens.mjs --root",
     "check:page-overflow": "node scripts/check-page-overflow.mjs",
+    "check:provenance": "node scripts/check-provenance.mjs --scan ..",
     "test:section-tokens": "node --test scripts/check-section-tokens.test.mjs",
     "test:references": "node --test scripts/check-references.test.mjs",
     "fetch:references": "node scripts/fetch-references.mjs",
