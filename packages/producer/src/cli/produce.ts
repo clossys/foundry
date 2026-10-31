@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { resolve } from "node:path";
 import { compileCells } from "../server/cells.js";
 import { startProducerServer } from "../server/index.js";
 import type { CliArgs } from "./args.js";
@@ -15,7 +16,7 @@ export async function runProduce(args: CliArgs, root: string): Promise<CliResult
   const compiled = await compileCells(root, args.check);
   const status = compiled.map(result => `${result.agent}: ${result.state}`).join(", ");
   if (args.once || args.check) return { exitCode: compiled.every(result => result.state === "compiled") ? 0 : 2, verb: "produce", root, check: args.check, message: status };
-  const server = await startProducerServer({ root, port: args.port, compilation: compiled });
+  const server = await startProducerServer({ root, port: args.port, compilation: compiled, ...(args.out ? { installOut: resolve(args.out) } : {}) });
   // JSON output is emitted once on shutdown, keeping the CLI result contract.
   if (!args.json) console.log(`Producer Studio: ${server.url}`);
   if (!args.noOpen) openBrowser(server.url);

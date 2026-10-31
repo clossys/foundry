@@ -1,8 +1,9 @@
-import { readdir } from "node:fs/promises";
+import { readdir, realpath, stat } from "node:fs/promises";
 import type { ServerResponse } from "node:http";
 import { extname, join } from "node:path";
 import { confinedPreviewFile, generatedBody, previewSource, renderNativePreview } from "./publisher-preview-render.js";
 import { inventory } from "./cells.js";
+import { INSTALL_MARKER, installOutRoot } from "../publish/install-out.js";
 
 export const PREVIEW_PREFIX = "/preview/";
 export const PREVIEW_COMMAND = "clossys publish --install --page <page id>";
@@ -52,11 +53,12 @@ async function descriptor(root: string, publication: string): Promise<Publicatio
   const source = await previewSource(previewRoot(root, publication), "preview.json");
   return parsePublicationManifest(JSON.parse(generatedBody(source.toString("utf8"))), publication);
 }
-export async function publication(root: string, requested?: string): Promise<PublicationResponse> {
+export async function publication(root: string, requested?: string, installOut?: string): Promise<PublicationResponse> {
   try {
     if (requested !== undefined && !identity(requested)) throw new Error("Invalid publication identity");
-    const entries = await readdir(previewRoot(root), { withFileTypes: true });
+    const entries = await readdir(previewRoot(root), { withFileTypes: true }).catch(error => { if ((error as NodeJS.ErrnoException).code === "ENOENT") return []; throw error; });
     const publications = entries.filter(entry => entry.isDirectory() && identity(entry.name)).map(entry => entry.name).sort();
+    if (!publications.length) return await installPublication(root, requested, installOut);
     const selected = requested ?? publications[0];
     if (!selected) return { state: "missing", message: "Not published yet", command: PREVIEW_COMMAND };
     const manifest = await descriptor(root, selected);
@@ -81,13 +83,71 @@ export async function publication(root: string, requested?: string): Promise<Pub
     return { state: "error", message: "Publication preview could not be read; publish a valid browser preview", command: PREVIEW_COMMAND };
   }
 }
+/** One page written by `clossys publish --install` (paths relative to the install out root). */
+interface InstallPage { id: string; html?: string; css: string[]; written: number }
+interface InstallPublication { base: string; manifest: PublicationManifest; pages: PublicationPage[]; installs: InstallPage[] }
+const blockingFinding = (finding: unknown) => object(finding) && finding.severity !== "info";
+/** The install out root holds one dir per page (`install-<id>` by default, or each `--out`). */
+async function installPages(base: string): Promise<InstallPage[]> {
+  const found = new Map<string, InstallPage>();
+  for (const entry of await readdir(base, { withFileTypes: true })) {
+    if (!entry.isDirectory() || entry.name.startsWith(".") || /[\\\x00-\x1f%?#]/.test(entry.name)) continue;
+    const dir = entry.name;
+    try {
+      await confinedPreviewFile(base, `${dir}/${INSTALL_MARKER}`);
+      const reportFile = `${dir}/install-report.json`;
+      const report = JSON.parse((await previewSource(base, reportFile)).toString("utf8"));
+      if (!object(report) || typeof report.page !== "string" || !identity(report.page)) continue;
+      const written = (await stat(await confinedPreviewFile(base, reportFile))).mtimeMs;
+      if ((found.get(report.page)?.written ?? -1) > written) continue;
+      let html: string | undefined = `${dir}/site/${report.page}/index.html`;
+      // A failed rerun leaves the last page on disk; its report decides whether it is current.
+      try { await confinedPreviewFile(base, html); } catch { html = undefined; }
+      if (Array.isArray(report.findings) && report.findings.some(blockingFinding)) html = undefined;
+      const css: string[] = [];
+      try { for (const file of (await readdir(join(base, dir, "substrate", "dist", "assets"))).sort()) if (file.endsWith(".css")) css.push(`${dir}/substrate/dist/assets/${file}`); } catch { /* Unbuilt substrate: the page is served unstyled. */ }
+      found.set(report.page, { id: report.page, ...(html ? { html } : {}), css, written });
+    } catch { /* Not a readable install out dir. */ }
+  }
+  return [...found.values()];
+}
+async function readInstallPublication(root: string, installOut?: string): Promise<InstallPublication | undefined> {
+  let base: string;
+  try { base = await realpath(installOut ?? installOutRoot(root)); } catch { return undefined; }
+  const installs = await installPages(base);
+  if (!installs.length) return undefined;
+  const publisher = await inventory(root, "publisher");
+  const meta = publisher.tree?.meta as Record<string, unknown> | undefined;
+  const declared = (Array.isArray(meta?.publications) ? meta.publications : []).find((value: any) => object(value?.entryIds) && identity(String(value.id)) && installs.some(page => Object.values(value.entryIds).includes(page.id))) as Record<string, any> | undefined;
+  const id = typeof declared?.id === "string" ? declared.id : "site";
+  const order: string[] = Array.isArray(declared?.entryOrder) ? declared.entryOrder : [];
+  installs.sort((a, b) => ((order.indexOf(a.id) + 1) || Infinity) - ((order.indexOf(b.id) + 1) || Infinity) || a.id.localeCompare(b.id));
+  const pages = installs.map(install => {
+    const cellId = object(declared?.entryIds) ? Object.entries(declared.entryIds).find(([, entry]) => entry === install.id)?.[0] : publisher.cells.find(cell => cell.id === `page.${install.id}`)?.id;
+    const path = publisher.cells.find(cell => cell.id === cellId)?.fields.path;
+    return { id: install.id, route: typeof path === "string" && path.startsWith("/") ? path : install.id === "home" ? "/" : `/${install.id}`, emitted: !!install.html,
+      previewUrl: `${PREVIEW_PREFIX}${encodeURIComponent(id)}/pages/${encodeURIComponent(install.id)}.html`, title: install.id, ...(cellId === undefined ? {} : { cellId }) } as PublicationPage;
+  });
+  const manifest: PublicationManifest = {
+    schemaVersion: 1, publication: id, sourceApp: typeof declared?.routePack?.app === "string" ? declared.routePack.app : "clossys publish --install", format: "web.page.responsive",
+    routes: pages.map(page => ({ id: page.id, path: page.route, source: { file: installs.find(install => install.id === page.id)!.html ?? `${page.id}.html`, export: "default" } })),
+    contentMap: { version: 1, publicationId: id, entries: pages.map(page => ({ id: page.id, title: page.title!, kind: "page", path: page.route })) },
+  };
+  return { base, manifest, pages, installs };
+}
+/** Studio's publication view over `clossys publish --install` output. */
+async function installPublication(root: string, requested?: string, installOut?: string): Promise<PublicationResponse> {
+  const found = await readInstallPublication(root, installOut);
+  if (!found || (requested !== undefined && requested !== found.manifest.publication)) return { state: "missing", message: "Not published yet", command: PREVIEW_COMMAND };
+  return { state: "ready", publication: found.manifest.publication, manifest: found.manifest, pages: found.pages, publications: [found.manifest.publication] };
+}
 const SECURITY = {
   "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff",
   "Content-Security-Policy": "sandbox; default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; frame-ancestors 'self'; base-uri 'none'; form-action 'none'; connect-src 'none'",
   "Referrer-Policy": "no-referrer", "Cross-Origin-Resource-Policy": "same-origin",
 };
 /** Called after the server's existing Host, Origin and run-token guards. */
-export async function servePreview(root: string, pathname: string, method: string, response: ServerResponse): Promise<void> {
+export async function servePreview(root: string, pathname: string, method: string, response: ServerResponse, installOut?: string): Promise<void> {
   const fail = (status: number, message: string) => { response.writeHead(status, { ...SECURITY, "Content-Type": "text/plain; charset=utf-8" }); response.end(message); };
   if (method !== "GET" && method !== "HEAD") { fail(405, "Publication preview is read-only"); return; }
   const match = /^\/preview\/([^/]+)\/(pages|assets)\/(.+)$/.exec(pathname);
@@ -96,6 +156,7 @@ export async function servePreview(root: string, pathname: string, method: strin
   try {
     let type: string, bytes: Buffer;
     const base = previewRoot(root, selected);
+    if (!await stat(base).then(() => true, () => false)) { await serveInstall(root, selected, kind, file, method, response, fail, installOut); return; }
     if (kind === "pages") {
       const manifest = await descriptor(root, selected);
       const route = manifest.routes.find(route => `${route.id}.html` === file);
@@ -112,4 +173,26 @@ export async function servePreview(root: string, pathname: string, method: strin
     response.writeHead(200, { ...SECURITY, "Content-Type": type, "Content-Length": bytes.length });
     response.end(method === "HEAD" ? undefined : bytes);
   } catch (error) { fail((error as NodeJS.ErrnoException).code === "ENOENT" ? 404 : 403, "Publication preview could not be rendered"); }
+}
+
+/** Install output: the page's static HTML with its own substrate build's stylesheets, and those build assets. */
+async function serveInstall(root: string, selected: string, kind: string, file: string, method: string, response: ServerResponse, fail: (status: number, message: string) => void, installOut?: string): Promise<void> {
+  const found = await readInstallPublication(root, installOut);
+  if (!found || found.manifest.publication !== selected) { fail(404, "Publication preview is unavailable"); return; }
+  let type: string, bytes: Buffer;
+  if (kind === "pages") {
+    const install = found.installs.find(page => `${page.id}.html` === file);
+    if (!install?.html) { fail(404, "Publication page is unavailable"); return; }
+    const links = install.css.map(css => `<link rel="stylesheet" href="${PREVIEW_PREFIX}${encodeURIComponent(selected)}/assets/${css.split("/").map(encodeURIComponent).join("/")}">`).join("");
+    const html = (await previewSource(found.base, install.html)).toString("utf8");
+    type = TYPES[".html"]!;
+    bytes = Buffer.from(links && html.includes("</head>") ? html.replace("</head>", `${links}</head>`) : html);
+  } else {
+    type = TYPES[extname(file).toLowerCase()] ?? "";
+    if (!type || file.split("/").some(part => part.startsWith("."))) { fail(415, "Unsupported preview content type"); return; }
+    if (!/^[^/]+\/substrate\/dist\/assets\/[^/]+$/.test(file)) { fail(404, "Publication asset is unavailable"); return; }
+    bytes = await previewSource(found.base, file);
+  }
+  response.writeHead(200, { ...SECURITY, "Content-Type": type, "Content-Length": bytes.length });
+  response.end(method === "HEAD" ? undefined : bytes);
 }

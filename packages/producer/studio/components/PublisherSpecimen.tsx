@@ -11,7 +11,7 @@ type Resource = { state: 'loading' } | { state: 'error'; message: string } | { s
 
 function NotPublished({ ui, message }: { ui: UI; message?: string }) {
   const { EmptyState } = ui;
-  return <EmptyState title="Not published yet" description={`${message ? `${message}. ` : ''}Run ${PUBLISH_PREVIEW_COMMAND} to create the publication preview.`} />;
+  return <EmptyState title="Not published yet" description={`${message ? `${message}. ` : ''}Run ${PUBLISH_PREVIEW_COMMAND} for each page; Studio previews its install output. If you published with --out, start produce with --out set to the folder that holds those out dirs.`} />;
 }
 function PublisherSelectionNeeds({ ui }: { ui: UI }) {
   const { selection, ContentSection, SectionHeader, Badge } = ui;

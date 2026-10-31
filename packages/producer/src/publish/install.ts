@@ -17,7 +17,6 @@ import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { createRequire, isBuiltin } from "node:module";
-import { tmpdir } from "node:os";
 import { join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { installAndBind, isBlocking, substrateDependencies, type BoundPage, type InstallFinding, type InstallPageRecord, type InstallPins, type InstallResult, type ShadcnRunner } from "@clossys/publisher/install";
@@ -25,8 +24,9 @@ import { loadSelection, SELECTION_FILE } from "../records/index.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
 import { readWriter } from "./site-source.js";
 import { specimenRoots } from "./publish.js";
+import { defaultInstallOut, INSTALL_MARKER } from "./install-out.js";
 
-const MARKER = ".clossys-publish-install";
+const MARKER = INSTALL_MARKER;
 const requireHere = createRequire(import.meta.url);
 
 export interface PublishInstallOptions {
@@ -304,7 +304,7 @@ export async function publishInstall(options: PublishInstallOptions): Promise<Pu
     ? await pageRecordFromCell(root, options.page, pins)
     : JSON.parse(await readFile(file, "utf8")) as InstallPageRecord;
   if (typeof page?.id !== "string" || !/^[a-z0-9][a-z0-9-]*$/.test(page.id)) throw new Error(`publish --install: ${options.page} needs a page id ([a-z0-9-])`);
-  const out = resolve(options.out ?? join(tmpdir(), "clossys-publish", createHash("sha256").update(root).digest("hex").slice(0, 12), `install-${page.id}`));
+  const out = resolve(options.out ?? defaultInstallOut(root, page.id));
   if (existsSync(out) && !existsSync(join(out, MARKER))) throw new Error(`publish: ${out} exists and was not written by clossys publish --install`);
   await mkdir(out, { recursive: true });
   await writeFile(join(out, MARKER), "clossys publish --install output\n");

@@ -12,6 +12,7 @@ export interface CliArgs {
   noOpen: boolean;
   pages?: string;
   report?: string;
+  /** publish: the install out dir; produce: the folder of install out dirs Studio previews. */
   out?: string;
   /** check: run the record suites (archetypes, Writer/Director slots, slot contracts). */
   suites: boolean;
@@ -30,7 +31,7 @@ export class CliUsageError extends Error {
 }
 
 export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check> [--check] [--root <dir>] [--json]\n"
-  + "Options: --help; produce --once --port <0-65535> --no-open; publish --install --page <id> [--out <dir>]\n"
+  + "Options: --help; produce --once --port <0-65535> --no-open [--out <install out folder>]; publish --install --page <id> [--out <dir>]\n"
   + "Page check: clossys check --pages <generated-manifest.json> --report <report.json> [--json]\n"
   + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root)\n"
   + "Install: clossys publish --install --page <page id | page record.json> [--out <dir>] [--records <library dir>]...";
@@ -72,7 +73,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   }
   if ((args.once || args.noOpen) && args.verb !== "produce") throw new CliUsageError("--once and --no-open require produce");
   if (args.port !== undefined && args.verb !== "produce") throw new CliUsageError("--port requires produce");
-  if (args.out !== undefined && args.verb !== "publish") throw new CliUsageError("--out requires publish");
+  if (args.out !== undefined && args.verb !== "publish" && args.verb !== "produce") throw new CliUsageError("--out requires publish or produce");
   if ((args.pages !== undefined || args.report !== undefined) && args.verb !== "check") {
     throw new CliUsageError("--pages and --report require check");
   }

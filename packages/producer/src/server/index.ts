@@ -31,6 +31,8 @@ export interface ProducerServerOptions {
   compilation?: CompileResult[];
   /** Workspace holding `library/`, `selection.json` and `releases/` for the Designer gallery; defaults to `<root>/clossys`. */
   library?: string;
+  /** Folder of `clossys publish --install` out dirs read by `/api/publication`; defaults to the install pipeline's own default. */
+  installOut?: string;
 }
 export interface ProducerServer {
   port: number; url: string; closed: Promise<void>; close: () => Promise<void>;
@@ -179,7 +181,7 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
         const gateReports: StudioGateReport[] = [];
         json(response, 200, { agents: await Promise.all(AGENT_KINDS.map(agent => inventory(options.root, agent, finding => gateReports.push(finding)))), gateReports }); return;
       }
-      if (pathname === "/api/publication") { json(response, 200, await publication(options.root, new URL(raw, origin).searchParams.get("publication") ?? undefined)); return; }
+      if (pathname === "/api/publication") { json(response, 200, await publication(options.root, new URL(raw, origin).searchParams.get("publication") ?? undefined, options.installOut)); return; }
       if (pathname === "/api/apps") { json(response, 200, await consumerApps(options.root)); return; }
       if (pathname === "/api/checks") {
         const requested = new URL(raw, origin).searchParams.get("agent");
@@ -219,7 +221,7 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
       if (request.method !== "GET" && request.method !== "HEAD") { json(response, 405, { error: "Specimens are read-only" }); return; }
       if (await specimen(request, response)) return;
     }
-    if (pathname === "/preview" || pathname.startsWith("/preview/")) { await servePreview(options.root, pathname, request.method ?? "", response); return; }
+    if (pathname === "/preview" || pathname.startsWith("/preview/")) { await servePreview(options.root, pathname, request.method ?? "", response, options.installOut); return; }
     if (!child) { json(response, 503, { error: "Studio child is not ready" }); return; }
     const headers = cleanHeaders(request.headers); headers.host = `127.0.0.1:${child.port}`;
     const upstream = httpRequest({ hostname: "127.0.0.1", port: child.port, path: raw, method: request.method, headers }, upstreamResponse => {
