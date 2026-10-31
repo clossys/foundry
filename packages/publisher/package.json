@@ -44,6 +44,10 @@
       "types": "./dist/content-map/cells.d.ts",
       "node": "./dist/content-map/cells.js"
     },
+    "./archetypes": {
+      "types": "./dist/archetypes/index.d.ts",
+      "import": "./dist/archetypes/index.js"
+    },
     "./core": {
       "types": "./dist/core/index.d.ts",
       "import": "./dist/core/index.js"

@@ -1,0 +1,61 @@
+{
+  "contentMap": {
+    "version": 1,
+    "publicationId": "example.site",
+    "format": "web.page.responsive",
+    "entries": [
+      { "id": "home", "order": 0, "title": "example.site.nav-home", "kind": "page", "path": "/", "pin": { "nav": true },
+        "source": { "frameId": "frames.site-shell", "sectionIds": ["sections.hero", "sections.features", "sections.steps", "sections.comparison", "sections.pricing", "sections.call-to-action"] } },
+      { "id": "contact", "order": 1, "title": "example.site.nav-contact", "kind": "page", "path": "/contact", "pin": { "nav": true },
+        "source": { "frameId": "frames.site-shell", "sectionIds": ["sections.page-header", "sections.form"] } },
+      { "id": "terms", "order": 2, "title": "example.site.nav-terms", "kind": "page", "path": "/terms",
+        "source": { "frameId": "frames.site-shell", "sectionIds": ["sections.legal-prose"] } },
+      { "id": "privacy", "order": 3, "title": "example.site.nav-privacy", "kind": "page", "path": "/privacy",
+        "source": { "frameId": "frames.site-shell", "sectionIds": ["sections.legal-prose"] } }
+    ]
+  },
+  "routePack": {
+    "packId": "example.site",
+    "routes": [
+      { "instanceId": "home", "path": "/", "slots": [
+        { "section": "sections.hero", "config": "home.hero", "data": { "actions.primary.href": "/contact" } },
+        { "section": "sections.features", "config": "home.features" },
+        { "section": "sections.steps", "config": "home.steps" },
+        { "section": "sections.comparison", "config": "home.comparison" },
+        { "section": "sections.pricing", "config": "home.pricing" },
+        { "section": "sections.call-to-action", "config": "home.closing", "data": { "actions.primary.href": "/contact" } }
+      ] },
+      { "instanceId": "contact", "path": "/contact", "slots": [
+        { "section": "sections.page-header", "config": "contact.header" },
+        { "section": "sections.form", "config": "contact.form" }
+      ] },
+      { "instanceId": "terms", "path": "/terms", "slots": [{ "section": "sections.legal-prose", "config": "legal.terms" }] },
+      { "instanceId": "privacy", "path": "/privacy", "slots": [{ "section": "sections.legal-prose", "config": "legal.privacy" }] }
+    ]
+  },
+  "sectionBindings": [
+    { "sectionId": "sections.hero", "configId": "home.hero", "fields": [{ "key": "header.heading", "ref": { "id": "example.home.hero-heading" } }] },
+    { "sectionId": "sections.features", "configId": "home.features", "fields": [{ "key": "items[0].title", "ref": { "id": "example.home.feature-one" } }] },
+    { "sectionId": "sections.steps", "configId": "home.steps", "fields": [{ "key": "steps[0].title", "ref": { "id": "example.home.step-one" } }] },
+    { "sectionId": "sections.comparison", "configId": "home.comparison", "fields": [{ "key": "columns[0].label", "ref": { "id": "example.home.column-one" } }] },
+    { "sectionId": "sections.pricing", "configId": "home.pricing", "fields": [{ "key": "plans[0].name", "ref": { "id": "example.home.plan-one" } }] },
+    { "sectionId": "sections.call-to-action", "configId": "home.closing", "fields": [{ "key": "header.heading", "ref": { "id": "example.home.closing-heading" } }] },
+    { "sectionId": "sections.page-header", "configId": "contact.header", "fields": [{ "key": "title", "ref": { "id": "example.contact.title" } }] },
+    { "sectionId": "sections.form", "configId": "contact.form", "fields": [{ "key": "submit.label", "ref": { "id": "example.contact.submit" } }] },
+    { "sectionId": "sections.legal-prose", "configId": "legal.terms", "fields": [{ "key": "heading", "ref": { "id": "example.legal.terms-heading" } }] },
+    { "sectionId": "sections.legal-prose", "configId": "legal.privacy", "fields": [{ "key": "heading", "ref": { "id": "example.legal.privacy-heading" } }] }
+  ],
+  "pageCopy": {
+    "home": { "meta-title": "example.home.meta-title", "meta-description": "example.home.meta-description", "nav-label": "example.site.nav-home" },
+    "contact": { "meta-title": "example.contact.meta-title", "meta-description": "example.contact.meta-description", "nav-label": "example.site.nav-contact" },
+    "terms": { "meta-title": "example.legal.terms-meta-title", "meta-description": "example.legal.terms-meta-description" },
+    "privacy": { "meta-title": "example.legal.privacy-meta-title", "meta-description": "example.legal.privacy-meta-description" }
+  },
+  "pages": {
+    "home": { "archetype": "marketing-home" },
+    "contact": { "archetype": "contact" },
+    "terms": { "archetype": "legal" },
+    "privacy": { "archetype": "legal" }
+  },
+  "directorCells": ["capability.operation.delivery", "context.competition.alternative", "advantage.model.pricing"]
+}
