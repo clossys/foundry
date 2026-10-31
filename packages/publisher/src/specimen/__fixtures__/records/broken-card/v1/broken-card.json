@@ -1,0 +1,12 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "broken-card",
+  "type": "registry:ui",
+  "files": [
+    {
+      "path": "registry/ui/broken-card.tsx",
+      "type": "registry:ui",
+      "content": "import * as React from \"react\";\n\nexport function BrokenCard({ title }: { title: string }) {\n  if (title) throw new Error(\"BrokenCard cannot render: fixture mutation\");\n  return <div className=\"rounded-xl border p-6\">{title}</div>;\n}\n"
+    }
+  ]
+}

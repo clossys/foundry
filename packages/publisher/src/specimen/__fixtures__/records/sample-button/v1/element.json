@@ -1,0 +1,7 @@
+{
+  "id": "sample-button",
+  "version": 1,
+  "kind": "component",
+  "payload": "sample-button.json",
+  "reason": "fixture: a shadcn-style button"
+}
