@@ -6,7 +6,7 @@ import { emitComponents } from "../catalog-core/emit-components.js";
 import type { ResolvedComponents } from "../catalog-core/resolve-components.js";
 import { loadCatalogBundles } from "../catalog-bundles.js";
 import { glyphs } from "../components/preview-runtime/adapters/glyphs.js";
-import profile from "./__fixtures__/default-component-preview-profile.json" with { type: "json" };
+import profile from "./default-component-preview-profile.json" with { type: "json" };
 
 /** Approved finish adaptations; all other emitted implementation bytes remain exact. */
 function previewSource(content: string, path: string): string {

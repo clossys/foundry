@@ -18,7 +18,7 @@ import { loadCatalogBundles } from "../catalog-bundles.js";
 import { sha256 } from "../catalog-core/digest.js";
 import { ConsumerComponentProvider, SelectedComponentLeaf } from "../runtime/component-leaf.client.js";
 import { completedCatalogLibrary } from "../catalog-core/__fixtures__/completed-catalog-library.js";
-import componentData from "./__fixtures__/default-component-preview-profile.json" with { type: "json" };
+import componentData from "./default-component-preview-profile.json" with { type: "json" };
 import type { DesignerSpecimenContext } from "./DesignerSpecimen.js";
 import type { SpecimenItem, SpecimenLeafProps } from "./specimen-layouts.js";
 import { assetSpecimenItems, colorRampSpecimenItems, tokenAssetSpecimenLeaves, tokenSpecimenItems } from "./specimen-token-assets.js";

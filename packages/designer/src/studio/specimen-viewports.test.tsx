@@ -19,7 +19,7 @@ import { componentLeaf } from "../runtime/component-leaf.js";
 import { renderNativeSpecimenViewport } from "../../../producer/studio/lib/native-specimen-preview.js";
 import { ConsumerComponentProvider } from "../runtime/component-leaf.client.js";
 import frameSlots from "../catalog/slots/frames.json" with { type: "json" };
-import componentData from "./__fixtures__/default-component-preview-profile.json" with { type: "json" };
+import componentData from "./default-component-preview-profile.json" with { type: "json" };
 import type { DesignerSpecimenContext } from "./DesignerSpecimen.js";
 import { emittedDesignerSpecimenContext } from "./emitted-specimens.js";
 import type { SpecimenSurfaceRenderRequest } from "./specimen-layouts.js";

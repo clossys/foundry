@@ -1,4 +1,4 @@
-import selected from "../../studio/__fixtures__/default-component-preview-profile.json" with { type: "json" };
+import selected from "../../studio/default-component-preview-profile.json" with { type: "json" };
 import checkboxDocument from "../../catalog/fills/foundry/components.checkbox.json" with { type: "json" };
 import * as components from "../../components/index.js";
 import { defaultSourceModules } from "../../components/preview-runtime/modules.js";

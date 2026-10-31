@@ -1,6 +1,6 @@
 /** Preview-only selected modules. Native source resolution is not consumer adoption or CSS qualification. */
 import type { ReactNode } from "react";
-import selected from "./__fixtures__/default-component-preview-profile.json" with { type: "json" };
+import selected from "./default-component-preview-profile.json" with { type: "json" };
 import * as components from "../components/index.js";
 import * as charts from "../charts/index.js";
 import * as nativeButton from "../components/preview-runtime/components/button/button.js";

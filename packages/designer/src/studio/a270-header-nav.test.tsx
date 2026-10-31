@@ -9,7 +9,7 @@ import ts from "typescript";
 import { computeCopyFingerprint, createCopyResolver, type CopyRegistry } from "@clossys/writer";
 import { importFoundryFrames, loadBuildCatalog, planSurfaceDefaults } from "../catalog-core/index.js";
 import { planSurfacePreviews } from "./planned-surface-previews.js";
-import { createHeaderNavSpecimen, headerNavSpecimenCopy } from "./__fixtures__/a270-header-nav.js";
+import { createHeaderNavSpecimen, headerNavSpecimenCopy } from "./a270-header-nav.js";
 import { ConsumerComponentProvider } from "../runtime/component-leaf.client.js";
 import { fixtureConsumerComponents } from "../catalog-core/__fixtures__/surface-consumer-components.js";
 import { componentDescriptorHash, type ComponentCandidate } from "../catalog-core/resolve-components.js";

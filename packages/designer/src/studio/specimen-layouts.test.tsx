@@ -7,7 +7,7 @@ import { defaultSourceModules } from "../components/preview-runtime/modules.js";
 import { emittedTokenProperties, loadCatalog, resolve } from "../catalog-core/index.js";
 import type { CompositeResolved } from "../catalog-core/types.js";
 import { completedCatalogLibrary } from "../catalog-core/__fixtures__/completed-catalog-library.js";
-import componentData from "./__fixtures__/default-component-preview-profile.json" with { type: "json" };
+import componentData from "./default-component-preview-profile.json" with { type: "json" };
 import type { DesignerSpecimenContext } from "./DesignerSpecimen.js";
 import { SpecimenLayoutSection, specimenLayoutNeeds, type SpecimenAxis, type SpecimenItem } from "./specimen-layouts.js";
 import { componentSpecimenItems, SpecimenVariantMatrix } from "./specimen-viewports.js";

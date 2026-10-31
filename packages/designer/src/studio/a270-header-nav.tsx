@@ -1,11 +1,11 @@
 /** Neutral header specimen payload; the existing registered Frame remains its owner. */
 import type { ReactNode } from "react";
-import type { CopyResolver } from "../../frames/site-frame/copy-contract.js";
-import type { SiteShellInput } from "../../frames/site-frame/types.js";
-import { resolveShell } from "../../frames/site-frame/internal/resolveShell.js";
-import { importFoundryFrames } from "../../importers/foundry-frames.js";
-import { runtimeHash, type RuntimeJson, type RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
-import { surfaceRuntimeRenderers } from "../../runtime/index.js";
+import type { CopyResolver } from "../frames/site-frame/copy-contract.js";
+import type { SiteShellInput } from "../frames/site-frame/types.js";
+import { resolveShell } from "../frames/site-frame/internal/resolveShell.js";
+import { importFoundryFrames } from "../importers/foundry-frames.js";
+import { runtimeHash, type RuntimeJson, type RuntimeRenderInput } from "../catalog-core/runtime-ports.js";
+import { surfaceRuntimeRenderers } from "../runtime/index.js";
 
 export const headerNavSpecimenCopy = {
   "example.header.home": "ExampleCo home",

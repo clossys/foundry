@@ -6,7 +6,7 @@ import { defaultSourceModules } from "../components/preview-runtime/modules.js";
 import { loadCatalog, resolve } from "../catalog-core/index.js";
 import type { CompositeResolved } from "../catalog-core/types.js";
 import { completedCatalogLibrary } from "../catalog-core/__fixtures__/completed-catalog-library.js";
-import componentData from "./__fixtures__/default-component-preview-profile.json" with { type: "json" };
+import componentData from "./default-component-preview-profile.json" with { type: "json" };
 import { DesignerSpecimen, type DesignerSpecimenContext } from "./DesignerSpecimen.js";
 import type { SpecimenItem, SpecimenLeafDefinition } from "./specimen-layouts.js";
 import { resolveSpecimenLeafBinding } from "./specimen-kind-map.js";
