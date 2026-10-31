@@ -4627,7 +4627,10 @@ a host filter region renders above the list, and the supplied empty state
 replaces it when there are no events.
 
 ```tsx
-import { ActivityFeed } from "@clossys/designer/blocks";
+import { ActivityFeed, type EventRecord, type EventLabels } from "@clossys/designer/blocks";
+
+declare const event: EventRecord; // as in the EventItem example above
+declare const labels: EventLabels;
 
 <ActivityFeed aria-label="Activity" events={[event]} labels={labels}
   groups={[{ id: "today", label: "Today", eventIds: [event.id] }]}

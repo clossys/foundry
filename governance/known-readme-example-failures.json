@@ -16,13 +16,6 @@
         "reason": "README.md:1678's BranchOptions example sets a `taxonomy` property that BranchOptions does not declare — the option was likely renamed or removed and the README was not updated — see issue #908."
       }
     ],
-    "designer": [
-      {
-        "block": 70,
-        "code": "TS2741",
-        "reason": "The MarketingChapter section's ArticleBodyProps example omits the required `children` property — see issue #908."
-      }
-    ],
     "publisher": [
       {
         "block": 3,
