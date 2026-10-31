@@ -1,120 +1,84 @@
 ---
 name: clossys-publisher
-description: Create content slots and candidates through the installed Publisher Node workflow, resolve registered Designer assemblies and Writer copy, and record revision-bound review, owner approval, activation and local release manifests.
+description: Publisher loop. Assembles page records (one frame plus ordered sections, each bound to Writer keys), installs the pinned registry items with clossys publish --install and renders the page. Invoke with @clossys-publisher to assemble or rebuild a page.
 disable-model-invocation: true
 ---
 # clossys-publisher
 
-Use Publisher through the coding agent. Read the installed package's README,
-exports and this [command workflow](references/agent-workflow.md), then use its
-pinned `dist/content/node.js` entry point. The Publisher UI is read-only. Change
-content through these commands; do not edit registry files, generated reports,
-approval metadata or release manifests to bypass a refused operation.
+You are Publisher. You assemble pages; you never write copy or design. Every
+page is one frame plus an ordered list of sections, each a slot Designer has
+pinned, each copy slot bound to a Writer key.
 
-The consumer owns its records. Keep consumer content, library choices and
-approval evidence in the consumer workspace, outside this capability package.
-Publisher holds no destination credentials and performs no deployment, upload,
-send or live readback. Receiver intake, adoption and scaffolding remain pending.
+The CLI is deterministic: it installs, binds and renders. Choosing the frame,
+the section order and the bindings is your work, done through this loop.
 
-## Place content without changing its identity
+## Where the records live
 
-Read `src/content/tree.json` in the installed package for the current editable
-placement tree. Its default media and children are:
+```
+clossys/publisher/pages/<page>.json             page record (you write this)
+clossys/selection.json                          Designer pins (read only)
+clossys/library/<slot>/<element>/v<N>/          pinned items (read only)
+clossys/agents/writer/compiled/<locale>/*.json  Writer records (read only)
+```
 
-| Medium | Children |
-| --- | --- |
-| websites | site, admin, auth, app, demo |
-| documents | docs |
-| presentations | decks |
-| videos | clips |
-| messages | email |
-| social | posts |
+A page record:
 
-These are data, not a permanent closed taxonomy. Use valid current `l1`/`l2`
-placements. One slot represents one content address or artifact; sections,
-slides and scenes belong inside candidates. Milestones and bundles are tags.
+```json
+{
+  "id": "home",
+  "frame": "frames.site",
+  "sections": ["sections.hero", "sections.features"],
+  "bindings": {
+    "frames.site": { "copy": { "frame.title": "site.name" } },
+    "sections.hero": { "copy": { "hero.heading": "home.hero.heading" } }
+  }
+}
+```
 
-`slot-create` mints an opaque `sl_` identity once. Never derive an ID from a
-route, title, medium, directory or alias, and never replace it after a move or
-rename. Record the returned ID. Declare every slot locale explicitly using
-the bootstrapped workspace's locales; the default locale is no substitute for
-the full selection. Targets and destinations must already exist in
-`workspace.json`. There is no initialization or registry-replacement command.
+`id` is `[a-z0-9-]`. `frame` and every `sections` entry are slot ids pinned in
+`selection.json`. `bindings.<slot>.copy` maps each copy slot of that item to a
+Writer record id or alias.
 
-## Define and assemble
+## Loop (one page)
 
-Capture audience, goal, key message, call to action, tone, constraints and
-source answers. Record unresolved blocking questions honestly. Choose a
-registered Designer frame and config, then ordered registered sections and
-configs with narrative intents. Resolve the consumer library at the pinned
-`libraryVersion`. Tree frame hints are not registration evidence. Store
-references to Designer assets and sections, never copied component source or
-an invented layout. A redirect uses `redirectTarget` instead of composition.
+1. **List what is pinned.** Read `clossys/selection.json` `pins`. Pick one
+   `frames.*` slot and the `sections.*` slots the page needs, in reading order.
+   If a needed slot is not pinned, stop and ask Designer for it; never stand in
+   a hand-made section.
+2. **List the copy slots.** For each chosen slot open
+   `clossys/library/<slot>/<element>/v<N>/element.json` (the pinned version);
+   `reads.copyKeys` lists every copy slot to bind.
+3. **Bind.** Map each copy slot to a Writer key from
+   `clossys/agents/writer/compiled/<locale>/*.json` (`records[].id`, or an
+   `aliases` entry). If a key does not exist, stop and ask Writer for it; never
+   type copy into the page record.
+4. **Write** `clossys/publisher/pages/<page>.json`.
+5. **Install, bind and render:**
+   ```sh
+   npx clossys publish --install --page clossys/publisher/pages/<page>.json
+   ```
+   It installs each pinned registry item with the shadcn CLI into a publishing
+   substrate in a temporary output folder (pass `--out <dir>` to choose it), binds the copy, and renders
+   `<out>/site/<page>/index.html`. It prints `Installed`, `Bound`, `Findings`
+   and `Page`; the full report is `<out>/install-report.json`.
+6. **Fix findings at the source.** `unbound-copy-slot` means a binding is
+   missing in the page record; `missing-copy-key` goes to Writer; an install or
+   missing-pin finding goes to Designer. Re-run step 5 until `Findings: 0`.
+7. **Look at it.** Open the rendered page, or run the live substrate
+   (`npm install` then `npx vite` in `<out>/substrate`, page `?page=<page>`,
+   `&theme=dark` for dark mode). Give the owner the page path or URL.
+8. **Commit** the page record:
+   `git add clossys/publisher/pages/<page>.json && git commit -m "publisher: assemble <page>"`.
+   The output folder is build output; do not commit it.
 
-Copy comes from Writer and uses exactly
-`{ "key": "title", "locale": "en", "value": "…", "source": "writer" }`.
-Carry genuine Writer output into the candidate for every declared slot locale;
-do not mark Publisher-authored text as Writer output. Required fields follow
-the registered config's copy schema. Empty draft values remain incomplete.
-Optional page metadata uses the same copy shape and the supported metadata
-keys. The future Writer `CopyRef` bridge is not implemented by these commands;
-do not invent that input or claim live registry resolution.
+## Done when
 
-Pin reused sections to `{ candidateId, sectionKey, revision }`. Following a
-newer source requires an explicit receiving-candidate revision and fresh
-Review and approval. Do not silently update pinned content.
+- `npx clossys publish --install --page clossys/publisher/pages/<page>.json`
+  exits 0 with `Findings: 0` and prints a `Page:` path.
+- The rendered HTML shows every section in order, with Writer text in every
+  `data-copy` element.
+- `npx clossys check --suites` shows no new archetype finding for the page.
+- The page record is committed.
 
-## Review, approve and activate
-
-Use `candidate-add` for a new alternative and `candidate-revise` for a complete
-replacement content payload on a revisable candidate. The workflow allocates
-globally unique `cN` IDs and immutable `rN` snapshots. Changed content appends
-a revision; identical content retains its existing revision. An explicit
-revision command clears approval and returns the candidate to draft. Active and retired candidates cannot be
-revised here; create an alternative.
-
-Run `review` after each revision. Its report and stage results are computed
-from current stored content and the actual consumer Designer library. Inspect
-the report's exact candidate, revision, digest, library version and locales.
-Explain each finding and cross-layer need with its path, reference and named
-producer: Designer for missing frames, sections, configs, assets or copy
-schemas; Writer for missing copy. Resolve the reported need and re-review.
-Do not substitute a layout, suppress findings or manufacture a passing report.
-
-Assembly and Review evidence in this workflow is structural only. Passing it
-does not prove a browser render, visual quality or a rendered medium. Stage
-statuses are derived evidence: Failing, Needs input, Waiting, Done or Not
-applicable. Explain what was measured and what remains pending.
-
-`approve` requires explicit owner approval of the current revision and digest,
-supported by the actual conversation or an owner approval ledger. Preserve
-that evidence in the consumer's normal record. Never self-approve, infer
-approval from an existing route, or treat a successful review as owner consent.
-If that evidence is missing, present the concrete reviewed candidate, revision
-and digest for owner approval before running `approve`. Reuse existing explicit
-approval when it already covers those exact bytes. The command's `by` field
-records that owner; a supplied name alone does not establish their consent.
-
-Run `activate` explicitly only for the selected approved candidate. A slot may
-have at most one active candidate; this command requires an empty active slot.
-It does not implicitly replace or retire an existing active candidate. Report
-unsupported switching or rollback as pending rather than editing the pointer.
-
-## Prepare a local release
-
-Run `release` only for the selected active candidate with current owner
-approval, matching `approvedBy`, and a clean current Review covering every
-slot locale. Release checks and numbering come from the existing local store;
-never select or overwrite a release number manually.
-
-The output is immutable local release and build manifests plus a pending
-handover stub. Its `status: "pending"`, `matches: false` and
-`observedAt: null` mean the receiver has not observed the release. Report
-"local release prepared" with the target, number, revision and digest. Do not
-call it deployed, sent, adopted, live or publication complete. Package
-publication and legacy preview/sealing commands are separate workflows and
-do not supply approval or live evidence for these candidates.
-
-When Publisher is not installed, answer read-only questions and report the
-missing pinned capability. Do not run an unpinned engine or bootstrap a new
-consumer registry as a workaround.
+Report in plain language: the page, its frame and sections, how many copy
+slots are bound, and where to see it.
