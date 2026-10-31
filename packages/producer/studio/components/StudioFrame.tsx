@@ -176,7 +176,11 @@ const defaultModules = (actions: readonly StudioPageAction[]): ReadonlySet<strin
 function CloseMobileNavigation() {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
-  useEffect(() => { setOpenMobile(false); }, [pathname, setOpenMobile]);
+  useEffect(() => {
+    setOpenMobile(false);
+    // The content column is the scroller now, so a new page starts at its top.
+    document.getElementById('studio-main')?.scrollTo({ top: 0 });
+  }, [pathname, setOpenMobile]);
   return null;
 }
 
@@ -213,7 +217,8 @@ function AppFrame({ navigation, commands, breadcrumbs, actions, children }: AppF
   }, []);
   const toggleChat = () => { if (wide) setChatOpen(value => !value); else setChatSheet(true); };
 
-  return <SidebarProvider>
+  // The frame is exactly viewport height: sidebar and chat stay put, only the content column scrolls.
+  return <SidebarProvider className="h-svh overflow-hidden">
     <CloseMobileNavigation />
     <Sidebar collapsible="icon">
       <SidebarHeader>
@@ -257,8 +262,8 @@ function AppFrame({ navigation, commands, breadcrumbs, actions, children }: AppF
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
-    <SidebarInset className="min-w-0">
-      <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <SidebarInset className="min-h-0 min-w-0 overflow-hidden">
+      <header className="z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <SidebarTrigger aria-label="Toggle navigation" />
         <Separator orientation="vertical" className="mx-1 h-4 self-center!" />
         <Breadcrumb className="min-w-0 flex-1">
@@ -286,10 +291,10 @@ function AppFrame({ navigation, commands, breadcrumbs, actions, children }: AppF
         </div>
       </header>
       <div className="flex min-h-0 flex-1">
-        <main id="studio-main" className="min-w-0 flex-1 overflow-x-hidden">
+        <main id="studio-main" className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
           <PageModulesContext.Provider value={modules}>{children}</PageModulesContext.Provider>
         </main>
-        {wide && chatOpen && <aside aria-label="Chat" className="sticky top-14 h-[calc(100svh-3.5rem)] w-80 shrink-0 border-l bg-background"><ChatPanel /></aside>}
+        {wide && chatOpen && <aside aria-label="Chat" className="h-full min-h-0 w-80 shrink-0 border-l bg-background"><ChatPanel /></aside>}
       </div>
     </SidebarInset>
     <CommandMenu commands={commands} open={searchOpen} onOpenChange={setSearchOpen} />
