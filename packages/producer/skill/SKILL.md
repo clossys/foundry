@@ -6,8 +6,9 @@ description: Inspect the private clossys CLI scaffold and its agent resolution c
 
 Use `clossys --help` to inspect supported verbs and flags. This private build
 recognizes `direct`, `design`, `write`, `publish`, and `produce`. `direct`, `design`,
-`write` and `publish` without `--target` exit `2` with `not implemented in this build`.
-`publish --target preview` renders and serves the active pages and writes a build report.
+`write` and `publish` without `--install` exit `2` with `not implemented in this build`.
+`publish --install --page <id>` installs the page's pinned registry items, binds its copy
+and renders it outside the consumer root.
 
 Use `--root <dir>` to select the starting directory for discovery of an ancestor
 containing `clossys/clossys.config.ts`. The scaffold does not evaluate the config.

@@ -35,7 +35,7 @@ describe('native Producer emitted-page specimen port', () => {
     expect(producerPagePreview(publication(), badOrigin)).toBeUndefined();
   });
   it('fails closed for unavailable or unsafe publication descriptors', () => {
-    expect(producerPagePreview({ state: 'missing', message: 'Not published yet', command: 'clossys publish --target preview' }, origin)).toBeUndefined();
+    expect(producerPagePreview({ state: 'missing', message: 'Not published yet', command: 'clossys publish --install --page <page id>' }, origin)).toBeUndefined();
     for (const previewUrl of ['https://example.invalid/page', '/preview/example/pages/../home.html', '/preview/example/pages/home.html?token=value', '/api/config']) {
       const descriptor = publication();
       if (descriptor.state !== 'ready') throw new Error('Invalid fixture');

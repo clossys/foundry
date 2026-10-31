@@ -62,7 +62,7 @@ it("serves only emitted preview HTML and known assets with the existing loopback
 }, 45_000);
 
 it("reports unpublished, invalid and missing source states without inventing a page", async () => {
-  await launch(); expect(JSON.parse((await get("/api/publication")).text)).toEqual({ state: "missing", message: "Not published yet", command: "clossys publish --target preview" });
+  await launch(); expect(JSON.parse((await get("/api/publication")).text)).toEqual({ state: "missing", message: "Not published yet", command: "clossys publish --install --page <page id>" });
   const { base } = await publicationFixture();
   expect(JSON.parse((await get("/api/publication")).text).pages[0].emitted).toBe(false);
   expect((await get("/preview/example/pages/home.html")).status).toBe(404);

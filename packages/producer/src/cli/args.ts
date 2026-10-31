@@ -10,7 +10,6 @@ export interface CliArgs {
   once: boolean;
   port?: number;
   noOpen: boolean;
-  target?: string;
   pages?: string;
   report?: string;
   out?: string;
@@ -31,10 +30,9 @@ export class CliUsageError extends Error {
 }
 
 export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check> [--check] [--root <dir>] [--json]\n"
-  + "Options: --help; produce --once --port <0-65535> --no-open; publish --target preview [--port <0-65535>] [--out <dir>]\n"
+  + "Options: --help; produce --once --port <0-65535> --no-open; publish --install --page <id> [--out <dir>]\n"
   + "Page check: clossys check --pages <generated-manifest.json> --report <report.json> [--json]\n"
   + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root)\n"
-  + "Specimens: clossys publish --target preview [--records <library dir>]... (default <root>/clossys/library)\n"
   + "Install: clossys publish --install --page <page id | page record.json> [--out <dir>] [--records <library dir>]...";
 
 export function parseArgs(argv: readonly string[]): CliArgs {
@@ -53,7 +51,6 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       case "--root": args.root = value(); break;
       case "--once": args.once = true; break;
       case "--no-open": args.noOpen = true; break;
-      case "--target": args.target = value(); break;
       case "--pages": args.pages = value(); break;
       case "--report": args.report = value(); break;
       case "--out": args.out = value(); break;
@@ -74,8 +71,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
     }
   }
   if ((args.once || args.noOpen) && args.verb !== "produce") throw new CliUsageError("--once and --no-open require produce");
-  if (args.port !== undefined && args.verb !== "produce" && args.verb !== "publish") throw new CliUsageError("--port requires produce or publish");
-  if (args.target !== undefined && args.verb !== "publish") throw new CliUsageError("--target requires publish");
+  if (args.port !== undefined && args.verb !== "produce") throw new CliUsageError("--port requires produce");
   if (args.out !== undefined && args.verb !== "publish") throw new CliUsageError("--out requires publish");
   if ((args.pages !== undefined || args.report !== undefined) && args.verb !== "check") {
     throw new CliUsageError("--pages and --report require check");
@@ -85,7 +81,6 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   if ((args.install || args.page !== undefined) && args.verb !== "publish") throw new CliUsageError("--install and --page require publish");
   if (args.install && args.page === undefined && !args.help) throw new CliUsageError("publish --install requires --page <page id | page record.json>");
   if (args.page !== undefined && !args.install) throw new CliUsageError("--page requires --install");
-  if (args.install && args.target !== undefined) throw new CliUsageError("publish takes --install or --target, not both");
   if (!args.verb && !args.help) throw new CliUsageError("A verb is required");
   if (args.verb === "check" && !args.help) {
     const page = args.pages !== undefined || args.report !== undefined;

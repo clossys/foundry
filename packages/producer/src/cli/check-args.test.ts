@@ -36,7 +36,7 @@ describe("page check arguments", () => {
   });
 
   it.each([
-    ["--once"], ["--port", "4300"], ["--no-open"], ["--target", "preview"],
+    ["--once"], ["--port", "4300"], ["--no-open"], ["--install"],
   ])("rejects unrelated flags for check: %j", (...flags) => {
     expect(() => parseArgs(["check", "--pages", "pages.json", "--report", "report.json", ...flags]))
       .toThrow(CliUsageError);
@@ -45,8 +45,8 @@ describe("page check arguments", () => {
   it("preserves existing verb flag behavior", () => {
     expect(parseArgs(["produce", "--check", "--once", "--port", "4300", "--no-open"]))
       .toMatchObject({ verb: "produce", check: true, once: true, port: 4300, noOpen: true });
-    expect(parseArgs(["publish", "--target", "preview", "--json"]))
-      .toMatchObject({ verb: "publish", target: "preview", json: true });
+    expect(parseArgs(["publish", "--install", "--page", "home", "--json"]))
+      .toMatchObject({ verb: "publish", install: true, page: "home", json: true });
     expect(parseArgs(["write", "--check", "--root", "."]))
       .toMatchObject({ verb: "write", check: true, root: "." });
   });

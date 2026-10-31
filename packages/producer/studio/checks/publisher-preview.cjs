@@ -23,7 +23,7 @@ async function checkPublisherPreview(origin, mode = 'ready', output) {
     await page.waitForFunction(() => document.documentElement.dataset.studioState === 'ready', undefined, { timeout: 90_000 });
     if (mode === 'missing') {
       await page.getByRole('heading', { name: 'Not published yet', exact: true }).waitFor();
-      assert.ok((await page.locator('body').innerText()).includes('clossys publish --target preview'));
+      assert.ok((await page.locator('body').innerText()).includes('clossys publish --install --page <page id>'));
       assert.equal(await page.locator('iframe').count(), 0);
     } else {
       assert.equal(publication.state, 'ready');

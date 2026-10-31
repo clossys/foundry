@@ -2,7 +2,7 @@ import type { AgentCells } from './cells-client';
 import type { PublicationPage, PublicationResponse, PreviewEntry } from '../../src/server/publication';
 
 export type { PublicationPage, PublicationResponse } from '../../src/server/publication';
-export const PUBLISH_PREVIEW_COMMAND = 'clossys publish --target preview';
+export const PUBLISH_PREVIEW_COMMAND = 'clossys publish --install --page <page id>';
 export const PUBLISHER_DEVICES = { desktop: { label: 'Desktop', width: 1440, height: 900 }, tablet: { label: 'Tablet', width: 768, height: 1024 }, mobile: { label: 'Mobile', width: 390, height: 844 } } as const;
 export type PublisherDevice = keyof typeof PUBLISHER_DEVICES;
 const object = (value: unknown): value is Record<string, any> => !!value && typeof value === 'object' && !Array.isArray(value);

@@ -5,7 +5,7 @@ import { confinedPreviewFile, generatedBody, previewSource, renderNativePreview 
 import { inventory } from "./cells.js";
 
 export const PREVIEW_PREFIX = "/preview/";
-export const PREVIEW_COMMAND = "clossys publish --target preview";
+export const PREVIEW_COMMAND = "clossys publish --install --page <page id>";
 export interface PreviewRoute { id: string; path: string; locale?: string; source: { file: string; export: string } }
 export interface PreviewEntry { id: string; title: string; kind: string; parentId?: string; path?: string; slug?: string; description?: string; [key: string]: unknown }
 /** Exact descriptor emitted by Publisher's producer-preview destination. */

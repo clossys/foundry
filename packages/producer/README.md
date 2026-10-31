@@ -19,14 +19,7 @@ clossys <verb> [--check] [--root <dir>] [--json]
 | `produce` | The four agents in sequence |
 
 `direct`, `design` and `write` are dispatch stubs in this build, as is `publish`
-without `--target`. They exit `2` with `not implemented in this build`. Help exits `0`.
-
-`clossys publish --target preview [--port 4330] [--out <dir>]` renders every
-active Publisher page as one Designer frame plus its ordered sections, filled
-with bound Writer records, inside the consumer's Designer stylesheet. It writes
-the static site and `report.json` (empty slots, unbound keys, agent requests)
-outside the consumer root and serves the site on `127.0.0.1`, leaving the
-server running. `--check` renders and reports without serving.
+without `--install`. They exit `2` with `not implemented in this build`. Help exits `0`.
 
 `clossys publish --install --page <page record.json> [--out <dir>]` installs the
 registry items the consumer pinned (`clossys/selection.json`) for each slot of
@@ -98,7 +91,7 @@ directory. Discovery selects the nearest ancestor containing
 `clossys/clossys.config.ts`. The scaffold locates that file without evaluating it.
 `--check` preserves files, hashes, and modification times. `--json` emits one
 result object (on shutdown for a serving command). `produce` accepts `--once`, `--port <0..65535>`, and
-`--no-open`; `publish` accepts `--target <id>`.
+`--no-open`; `publish` accepts `--install --page <id>`, `--out <dir>` and `--records <dir>`.
 
 | Exit | Contract |
 | --- | --- |
@@ -108,8 +101,7 @@ result object (on shutdown for a serving command). `produce` accepts `--once`, `
 
 ## Publication previews
 
-Publisher's preview destination writes a native snapshot with
-`clossys publish --target preview`. Producer reads its digest-enveloped
+Publisher's producer-preview destination writes a native snapshot. Producer reads its digest-enveloped
 `preview.json` from `clossys/.producer/preview/<publication>/src/clossys`.
 The descriptor identifies actual emitted route modules and the content map.
 Producer bundles those generated modules and awaits the page's async export

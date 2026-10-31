@@ -21,9 +21,9 @@ describe("check record-suite arguments", () => {
     expect(parseArgs(["check", "--suites"])).toMatchObject({ verb: "check", suites: true, strict: false });
     expect(parseArgs(["check", "--suites", "--strict", "--pages", "p.json", "--report", "r.json"])).toMatchObject({ suites: true, strict: true, pages: "p.json" });
     expect(() => parseArgs(["check", "--strict"])).toThrow(/--pages and --report, or --suites/);
-    expect(() => parseArgs(["publish", "--target", "preview", "--suites"])).toThrow(/require check/);
+    expect(() => parseArgs(["publish", "--install", "--page", "home", "--suites"])).toThrow(/require check/);
     expect(() => parseArgs(["check", "--suites", "--records", "lib"])).toThrow(/--records requires publish/);
-    expect(parseArgs(["publish", "--target", "preview", "--records", "a", "--records", "b"]).records).toEqual(["a", "b"]);
+    expect(parseArgs(["publish", "--install", "--page", "home", "--records", "a", "--records", "b"]).records).toEqual(["a", "b"]);
   });
 });
 

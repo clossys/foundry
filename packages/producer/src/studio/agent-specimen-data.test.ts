@@ -92,7 +92,7 @@ describe('full semantic agent specimen source plans', () => {
     if (emitted.state !== 'ready') throw new Error('Invalid fixture');
     if (failure === 'not-emitted') emitted.pages[0]!.emitted = false;
     if (failure === 'unsafe') emitted.pages[0]!.previewUrl = 'https://example.invalid/page';
-    const plan = agentSpecimenPlan(index(detail), detail, failure === 'missing' ? { state: 'missing', message: 'Not published yet', command: 'clossys publish --target preview' } : emitted);
+    const plan = agentSpecimenPlan(index(detail), detail, failure === 'missing' ? { state: 'missing', message: 'Not published yet', command: 'clossys publish --install --page <page id>' } : emitted);
     expect(plan.items).toEqual([]);
     expect(plan.expectedVariantIds).toHaveLength(2);
     expect(plan.issues.length).toBeGreaterThan(0);

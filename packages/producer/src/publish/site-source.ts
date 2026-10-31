@@ -1,12 +1,12 @@
 /**
- * Read-only loaders for the three agent outputs a preview publish joins. Each reader goes
+ * Read-only loaders for the Publisher and Writer outputs the record suites and install read. Each reader goes
  * through the owning agent's own compiler or check where one exists; nothing is written
  * into the consumer root.
  */
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { agentModule, agentRoot, readCells } from "../server/cells.js";
-import type { DesignerInput, PageCopyBinding, PublisherInput, SectionContract, SurfaceFill, WriterInput, WriterRecord, WriterSectionBinding } from "./site-plan.js";
+import type { PageCopyBinding, PublisherInput, WriterInput, WriterRecord, WriterSectionBinding } from "./site-plan.js";
 
 const COPY_BULLET = /^- ([^:]+): writer:([a-z][a-z0-9-]*\.[a-z][a-z0-9-]*)$/;
 const isRecord = (value: unknown): value is Record<string, any> => !!value && typeof value === "object" && !Array.isArray(value);
@@ -60,40 +60,4 @@ export async function readWriter(root: string): Promise<WriterInput & { locale: 
     for (const record of Array.isArray(value.records) ? value.records : []) if (typeof record?.id === "string" && typeof record.text === "string") records.push({ id: record.id, context: record.context, text: record.text });
   }
   return { locale, aliases, records, sections };
-}
-
-function viewBox(svg: string): { width: number; height: number } {
-  const box = /viewBox="[-\d.]+\s+[-\d.]+\s+([\d.]+)\s+([\d.]+)"/.exec(svg);
-  return box ? { width: Number(box[1]), height: Number(box[2]) } : { width: 48, height: 48 };
-}
-
-/** Designer: active cells, the compiled selection's surface fills, slot contracts and registered renderers. */
-/** `mark` is the consumer mark SVG and the site URL it is served at. */
-export async function readDesigner(root: string, profile: any, mark?: { svg: string; src: string }): Promise<DesignerInput> {
-  const tree = await json(join(agentRoot(root, "designer"), "tree.json"));
-  const active = new Set(Object.keys(tree.active ?? {}));
-  const fills: Record<string, SurfaceFill> = {};
-  for (const [leaf, row] of Object.entries((profile?.surfaces?.fills ?? {}) as Record<string, any>)) {
-    const [layer, name] = leaf.split(".");
-    const entry = row?.document?.[layer!]?.[name!];
-    if (!isRecord(entry)) continue;
-    const keys = (value: unknown) => Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : isRecord(value) ? Object.keys(value) : [];
-    fills[leaf] = {
-      id: row.document.$extensions?.["com.clossys.fill"]?.id ?? `${profile.surfaces.consumer}/${leaf}`,
-      slots: keys(entry.slotMap ?? entry.slots), members: keys(entry.members ?? entry.propMap),
-      configs: isRecord(entry.configs) ? entry.configs : {},
-    };
-  }
-  const [frames, dataset] = await Promise.all([agentModule("designer", "frames/index.js"), agentModule("designer", "studio/specimen-dataset.js")]);
-  const renderers: Record<string, string[]> = {};
-  for (const [leaf, entry] of Object.entries(frames.surfaceRuntimeRenderers as Record<string, any>)) {
-    try { renderers[leaf] = Object.keys(entry.sample(dataset.specimenDataset)); } catch { renderers[leaf] = []; }
-  }
-  const contracts: Record<string, SectionContract> = {};
-  const designerRoot = (await import("../agents.js")).resolveAgent("designer").packageRoot;
-  for (const file of ["sections.json", "frames.json"]) {
-    const rows = await json(join(designerRoot, "dist", "catalog", "slots", file));
-    for (const row of rows) if (row?.contract?.kind === "section" || row?.contract?.kind === "frame") contracts[row.id] = { slots: row.contract.slots ?? [], anatomy: row.contract.anatomy ?? null };
-  }
-  return { active, fills, contracts, renderers, ...(mark ? { mark: { src: mark.src, ...viewBox(mark.svg) } } : {}) };
 }

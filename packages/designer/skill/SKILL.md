@@ -68,7 +68,7 @@ change is `v<N+1>`.
    ```sh
    npx clossys specimen snapshot --records clossys/library --element <id> --v <N> --width 1280,390
    ```
-   or serve them all with `npx clossys publish --target preview`
+   or browse them all in Studio with `npx clossys produce`
    (`/__specimen`). Give the owner the image paths, the path taken (pick,
    adopt or create) and one line on each trade-off. Do not pin anything yet.
 6. **Pin the approved option** only after the owner's explicit yes:
