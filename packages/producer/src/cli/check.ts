@@ -1,3 +1,4 @@
+import { runSlotResolve, slotResolveSummary } from "../check/slot-resolve.js";
 import { statSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
@@ -83,6 +84,17 @@ const consumerRoot = (dir: string) => statSync(join(dir, "clossys", "clossys.con
  * the exit code is the page lint's (0 for suites alone) unless `--strict`.
  */
 export async function runCheck(args: CliArgs, cwd: string): Promise<CliResult> {
+  if (args.slots) {
+    const start = resolve(cwd, args.root ?? ".");
+    // Accept both a consumer repository root and its clossys directory.
+    let root = start;
+    if (consumerRoot(start)) root = join(start, "clossys");
+    else if (!statSync(join(start, "agents"), { throwIfNoEntry: false })) {
+      try { root = join(discoverRoot(start), "clossys"); } catch { /* Adapter reports unreadable inputs. */ }
+    }
+    const slots = await runSlotResolve(root);
+    return { verb: "check", check: true, root, exitCode: 0, message: slotResolveSummary(slots), slots };
+  }
   const page = args.pages !== undefined ? await runPageCheck(args, cwd) : undefined;
   const start = resolve(cwd, args.root ?? ".");
   let root: string | undefined;

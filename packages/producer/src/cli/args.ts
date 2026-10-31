@@ -16,6 +16,8 @@ export interface CliArgs {
   out?: string;
   /** check: run the record suites (archetypes, Writer/Director slots, slot contracts). */
   suites: boolean;
+  /** Report-only slot resolution; strict never enforces this report. */
+  slots: boolean;
   /** check: record-suite findings fail the command (exit 1). */
   strict: boolean;
   /** publish: library roots served at `/__specimen`. */
@@ -39,12 +41,13 @@ export class CliUsageError extends Error {
 export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check> [--check] [--root <dir>] [--json]\n"
   + "Options: --help; produce --once --port <0-65535> --no-open [--out <install out folder>]; publish --install --page <id> | --site <pack id> [--origin <url>] [--build] [--out <dir>]\n"
   + "Page check: clossys check --pages <generated-manifest.json> --report <report.json> [--json]\n"
+  + "Slots: clossys check --slots [--root <clossys dir>] [--json] (report only, including with --strict)\n"
   + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root)\n"
   + "Install: clossys publish --install --page <page id | page record.json> [--out <dir>] [--records <library dir>]...\n"
   + "Site: clossys publish --install --site <route pack id> [--origin <deployment origin>] [--build] [--out <dir>] [--records <library dir>]... (one routed app: content-map paths, route-pack slots, one frame)";
 
 export function parseArgs(argv: readonly string[]): CliArgs {
-  const args: CliArgs = { help: false, check: false, json: false, once: false, noOpen: false, suites: false, strict: false, records: [], install: false, build: false };
+  const args: CliArgs = { help: false, check: false, json: false, once: false, noOpen: false, suites: false, slots: false, strict: false, records: [], install: false, build: false };
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index]!;
     const value = (): string => {
@@ -62,6 +65,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       case "--pages": args.pages = value(); break;
       case "--report": args.report = value(); break;
       case "--out": args.out = value(); break;
+      case "--slots": args.slots = true; break;
       case "--suites": args.suites = true; break;
       case "--strict": args.strict = true; break;
       case "--records": args.records.push(value()); break;
@@ -87,7 +91,8 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   if ((args.pages !== undefined || args.report !== undefined) && args.verb !== "check") {
     throw new CliUsageError("--pages and --report require check");
   }
-  if ((args.suites || args.strict) && args.verb !== "check") throw new CliUsageError("--suites and --strict require check");
+  if ((args.suites || args.slots || args.strict) && args.verb !== "check") throw new CliUsageError("--suites, --slots and --strict require check");
+  if (args.slots && (args.suites || args.pages !== undefined || args.report !== undefined)) throw new CliUsageError("--slots is a standalone report; use a separate invocation for page checks or suites");
   if (args.records.length && args.verb !== "publish") throw new CliUsageError("--records requires publish");
   if ((args.install || args.page !== undefined || args.site !== undefined || args.build || args.origin !== undefined) && args.verb !== "publish") throw new CliUsageError("--install, --page, --site, --origin and --build require publish");
   if (args.page !== undefined && args.site !== undefined) throw new CliUsageError("publish --install takes --page or --site, not both");
@@ -98,7 +103,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   if (args.verb === "check" && !args.help) {
     const page = args.pages !== undefined || args.report !== undefined;
     if (page && (args.pages === undefined || args.report === undefined)) throw new CliUsageError("check requires --pages and --report");
-    if (!page && !args.suites) throw new CliUsageError("check requires --pages and --report, or --suites");
+    if (!page && !args.suites && !args.slots) throw new CliUsageError("check requires --pages and --report, or --suites, or --slots");
   }
   return args;
 }

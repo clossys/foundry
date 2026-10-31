@@ -27,6 +27,7 @@ export interface CliResult {
   check?: boolean;
   report?: PageLintReport;
   suites?: RecordSuitesReport;
+  slots?: import("../check/slot-resolve.js").SlotResolveReport;
   reportPath?: string;
 }
 
