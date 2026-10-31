@@ -45,7 +45,10 @@ export type InstallPins = Readonly<Record<string, InstallPin>>;
 export type InstallFindingCode =
   | "invalid-page" | "unpinned-slot" | "unpinned-dependency" | "missing-record" | "not-a-registry-item" | "no-entry"
   | "install-failed" | "hash-mismatch" | "unbound-copy-slot" | "missing-copy-key"
-  | "unbound-asset-slot" | "missing-asset" | "render-failed";
+  | "unbound-asset-slot" | "missing-asset" | "render-failed"
+  // Site mode (`./site.ts`): the content map and route pack disagree, or a link leads nowhere.
+  | "site-contract" | "site-route-missing" | "site-route-duplicate" | "site-route-extra" | "site-path-mismatch"
+  | "site-sections-mismatch" | "site-frame-mismatch" | "site-inactive-slot" | "site-cell-mismatch" | "site-dead-link" | "build-failed";
 /** `info` findings are reported but never stop a page; every other finding does. */
 export interface InstallFinding { readonly code: InstallFindingCode; readonly slot?: string; readonly detail: string; readonly severity?: "info" }
 /** Whether a finding stops the page (everything but `info`). */
@@ -426,3 +429,6 @@ export async function installAndBind(options: InstallOptions & Omit<BindOptions,
   const { page, findings } = bindPage({ page: options.page, slots: result.slots, copy: options.copy, ...(options.assets ? { assets: options.assets } : {}) });
   return { ...result, findings, ...(page ? { page } : {}) };
 }
+
+export { planSite, applySiteNavigation, siteLinkFindings } from "./site.js";
+export type { SitePlan, SitePlanRoute, SiteLink, SiteRoutePack, SiteRoutePackRoute, SiteRouteSlot } from "./site.js";
