@@ -1,3 +1,4 @@
+import { studioCopy } from './studio-copy';
 /** Gallery previews use the same canonical slot detail projection as the leaf page. */
 import type { SlotDetail } from '../../src/server/slot-detail';
 import type { ContractInput } from '../sections/studio-contract';
@@ -39,8 +40,8 @@ export function galleryLeafInputs(row: GalleryLeaf, links: StudioLinks, theme: '
   const specimen = inputs.specimen as SpecimenInput;
   return {
     specimen: row.detail.kind === 'page' && pageUrl ? {
-      kind: 'viewports', name: row.detail.id, title: 'Rendered page', description: '',
-      specimens: [{ viewport: 1280, light: pageUrl, interactive: false }], empty: 'Publish this page to preview it.',
+      kind: 'viewports', name: row.detail.id, title: studioCopy("studio.rendered-page"), description: '',
+      specimens: [{ viewport: 1280, light: pageUrl, interactive: false }], empty: studioCopy("studio.publish-this-page-to-preview-it"),
     } : specimen,
     contract: inputs.contract as ContractInput,
   };

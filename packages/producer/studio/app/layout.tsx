@@ -1,9 +1,10 @@
+import { studioCopy } from '../lib/studio-copy';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
 import { StudioProviders, THEME_INIT_SCRIPT } from '../components/StudioProviders';
 
-export const metadata: Metadata = { title: 'Studio', description: 'Browse your agent cells.', icons: { icon: '/api/brand/mark.svg' } };
+export const metadata: Metadata = { title: studioCopy("studio.studio"), description: studioCopy("studio.browse-your-agent-cells"), icons: { icon: '/api/brand/mark.svg' } };
 export const dynamic = 'force-dynamic';
 
 /**
