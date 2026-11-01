@@ -45,7 +45,9 @@ const SAFE = (path) => typeof path === "string" && path.length > 0 && !path.star
 
 export function checkReferences(root) {
   const findings = [];
-  const add = (path, message) => findings.push({ path, message });
+  const add = (path, message) => {
+    findings.push({ path, message });
+  };
   const manifestPath = join(root, MANIFEST);
   if (!existsSync(manifestPath)) {
     add(MANIFEST, "missing");

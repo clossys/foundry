@@ -348,6 +348,18 @@
           ]
         }
       }
+    },
+    "assistant-ui": {
+      "namespace": "@assistant-ui",
+      "kind": "registry-json",
+      "source": "https://r.assistant-ui.com/{name}.json",
+      "version": "ff654d8",
+      "versionBasis": "registry endpoint served at fetchedAt; upstream HEAD commit at fetch time",
+      "upstream": "github.com/assistant-ui/assistant-ui@ff654d8156680b839774296ef644b57ab1078425",
+      "license": "MIT",
+      "licenseFiles": {
+        "LICENSE": "https://raw.githubusercontent.com/assistant-ui/assistant-ui/ff654d8156680b839774296ef644b57ab1078425/LICENSE"
+      }
     }
   },
   "direct": [
@@ -1465,6 +1477,13 @@
       "registry": "shadcn-aria",
       "name": "sonner",
       "slots": []
+    },
+    {
+      "registry": "assistant-ui",
+      "name": "elements-comparison-card",
+      "slots": [
+        "sections.comparison"
+      ]
     }
   ],
   "skipped": [
