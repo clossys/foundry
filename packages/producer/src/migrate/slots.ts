@@ -13,7 +13,7 @@ import { sha256Hex } from "../records/hash.js";
 import {
   AGENT_KIND, DIRECTOR_PINNED_BY, IA_SCHEMA, MIGRATION_PINNED_BY, PAGE_SCHEMA, PUBLICATION_SCHEMA, SLOT_AGENTS, SLOT_SCHEMA,
   candidateName, deriveRefs, designerIa, directorIa, feedsIndex, iaPath, jsonBytes, serializeFrontmatter, slotPositions,
-  slotRel, toSlotId, withExtensions, writerIa,
+  slotRel, toSlotId, validateSlotDoc, withExtensions, writerIa,
   type FoundryIa, type FoundrySlot, type IaDoc, type IaLeafGroup, type IaNode, type PinDoc, type RawRefs, type SlotAgent, type SlotDoc, type SlotKind, type SourceDoc,
 } from "../records/slot-model/index.js";
 import { agentModule } from "../server/cells.js";
@@ -385,6 +385,18 @@ export async function readOldStores(consumer: string): Promise<OldStores> {
   };
 }
 
+/** Slot declarations become authored data after migration; refresh only their generated metadata. */
+function existingWiring(consumer: string, rel: string, generated: SlotDoc): Pick<SlotDoc, "inputs" | "uses"> | undefined {
+  let existing: SlotDoc;
+  try { existing = readJsonFile(join(consumer, rel, "slot.json")) as SlotDoc; }
+  catch { return undefined; }
+  if (validateSlotDoc(existing).length || existing.id !== generated.id || existing.agent !== generated.agent || existing.kind !== generated.kind
+    || existing.ia.l0 !== generated.ia.l0 || existing.ia.l1 !== generated.ia.l1 || existing.ia.l2 !== generated.ia.l2) return undefined;
+  // Order and contract are generated. Unresolved refs remain visible to the
+  // model checks rather than being replaced with guesses from legacy stores.
+  return { inputs: existing.inputs, uses: existing.uses };
+}
+
 /** Build the full, deterministic migration plan. Pure apart from reads. */
 export async function planMigration(consumer: string): Promise<MigrationPlan> {
   const old = await readOldStores(consumer);
@@ -410,7 +422,7 @@ export async function planMigration(consumer: string): Promise<MigrationPlan> {
       dropped += derived.dropped.length;
       const doc: SlotDoc = { schema: SLOT_SCHEMA, id, agent, ia: position, kind: slot.kind, contract: slot.contract, inputs: derived.inputs, uses: derived.uses };
       const rel = `agents/${agent}/${slotRel(position, id)}`;
-      files.set(`${rel}/slot.json`, jsonBytes(doc));
+      files.set(`${rel}/slot.json`, jsonBytes({ ...doc, ...existingWiring(consumer, rel, doc) }));
       for (const candidate of slot.candidates) files.set(`${rel}/candidates/${candidate.name}`, candidate.bytes);
       if (slot.pin) {
         const bytes = slot.candidates.find(candidate => candidate.name === slot.pin!.candidate)!.bytes;
@@ -424,8 +436,8 @@ export async function planMigration(consumer: string): Promise<MigrationPlan> {
 
 export interface WriteResult { readonly written: string[]; readonly unchanged: number; readonly kept: string[] }
 /**
- * Write the plan. ia.json and slot.json are generated and always refreshed;
- * an existing candidate or pin.json with different bytes is kept (never
+ * Write the plan. IA and slot metadata are refreshed, with authored wiring
+ * preserved by planMigration. An existing candidate or pin.json with different bytes is kept (never
  * overwritten) and reported, so re-running never reverts later authoring.
  */
 export function writePlan(plan: MigrationPlan): WriteResult {

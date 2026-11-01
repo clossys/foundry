@@ -61,6 +61,68 @@ describe("clossys migrate slots", () => {
     expect(await compareSlotModel(consumer)).toEqual([]);
   });
 
+  it("preserves later declared wiring while refreshing generated metadata on rerun", async () => {
+    await migrate();
+    const entry = pinnedSlot("publisher");
+    const path = slotFile(entry.dir);
+    const original = JSON.parse(readFileSync(path, "utf8"));
+    const wiring = { inputs: ["identity.brand.essence"], uses: ["strings.common"] };
+    const candidatePath = join(candidatesDir(entry.dir), entry.pin!.candidate);
+    const candidate = readFileSync(candidatePath, "utf8");
+    const pin = readFileSync(pinFile(entry.dir), "utf8");
+    writeFileSync(path, jsonBytes({ ...original, ...wiring, contract: { stale: true }, ia: { ...original.ia, order: original.ia.order + 1 } }));
+    const plan = await planMigration(consumer);
+    const planned = JSON.parse(plan.files.get(relative(consumer, path))!);
+    expect(planned).toEqual({ ...original, ...wiring });
+    writePlan(plan);
+    expect(JSON.parse(readFileSync(path, "utf8"))).toEqual({ ...original, ...wiring });
+    expect(readFileSync(candidatePath, "utf8")).toBe(candidate);
+    expect(readFileSync(pinFile(entry.dir), "utf8")).toBe(pin);
+    const before = snapshot(consumer);
+    expect((await migrate()).written).toEqual([]);
+    expect(snapshot(consumer)).toEqual(before);
+  });
+
+  it("preserves explicitly cleared wiring instead of restoring legacy links", async () => {
+    await migrate();
+    const entry = pinnedSlot("publisher");
+    const path = slotFile(entry.dir);
+    const original = JSON.parse(readFileSync(path, "utf8"));
+    expect([...original.inputs, ...original.uses].length).toBeGreaterThan(0);
+    writeFileSync(path, jsonBytes({ ...original, inputs: [], uses: [] }));
+    expect((await migrate()).written).toEqual([]);
+    expect(JSON.parse(readFileSync(path, "utf8"))).toMatchObject({ inputs: [], uses: [] });
+  });
+
+  it("keeps unresolved declared refs visible to model checks on rerun", async () => {
+    await migrate();
+    const entry = pinnedSlot("publisher");
+    const path = slotFile(entry.dir);
+    const original = JSON.parse(readFileSync(path, "utf8"));
+    const edited = { ...original, inputs: ["identity.brand.essence"], uses: ["strings.unknown"] };
+    writeFileSync(path, jsonBytes(edited));
+    expect((await migrate()).written).toEqual([]);
+    expect(JSON.parse(readFileSync(path, "utf8"))).toEqual(edited);
+    expect(issueCodes()).toEqual(["ref-unknown"]);
+  });
+
+  it.each(["id", "agent", "kind", "ia", "schema", "refs", "malformed"])("does not retain wiring from a stale or invalid %s", async field => {
+    await migrate();
+    const entry = pinnedSlot("publisher");
+    const path = slotFile(entry.dir);
+    const original = JSON.parse(readFileSync(path, "utf8"));
+    const edited = { ...original, inputs: ["identity.brand.essence"], uses: ["strings.common"] };
+    if (field === "id") edited.id = "page.other";
+    if (field === "agent") edited.agent = "designer";
+    if (field === "kind") edited.kind = "publication";
+    if (field === "ia") edited.ia = { ...edited.ia, l2: "other" };
+    if (field === "schema") edited.schema = "clossys.slot/0";
+    if (field === "refs") edited.uses = ["invalid ref"];
+    writeFileSync(path, field === "malformed" ? "{" : jsonBytes(edited));
+    await migrate();
+    expect(JSON.parse(readFileSync(path, "utf8"))).toEqual(original);
+  });
+
   it("migrates the active brief, page and strings with pins", async () => {
     await migrate();
     const brief = listSlots(consumer, "director").find(slot => slot.id === "identity.brand.essence");
