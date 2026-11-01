@@ -11,6 +11,8 @@ export const STUDIO_DEPENDENCY_FILES = Object.freeze([
   "lib/cells-client.ts", "lib/cell-events.ts", "lib/studio-report.ts", "lib/studio-route-map.ts",
   "lib/agents.ts", "lib/agent-library.ts", "lib/designer-library.ts", "lib/leaf-status.ts",
   "generated/studio-map.ts", "generated/studio-map.json",
+  "lib/studio-copy.ts", "generated/studio-copy.json", "lib/checks-copy.ts",
+  "lib/contract-copy.ts", "lib/options-copy.ts", "lib/references-copy.ts",
 ] as const);
 
 const safePath = (path: unknown): path is string => typeof path === "string" && !!path && !path.startsWith("/") && !/[\\:\x00-\x1f\x7f]/.test(path) && !path.split("/").some(part => !part || part === "." || part === "..");

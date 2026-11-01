@@ -24,16 +24,19 @@ function manifest(record: SpecimenRecord, edit: (value: any) => void): SpecimenR
 }
 
 describe('package-owned Studio dependency materialization', () => {
-  it('materializes the actual 13 native host files without changing canonical v6 payload authority', async () => {
+  it('materializes the actual 19 native host files without changing canonical v6 payload authority', async () => {
     const source = libraryRecordSource({ roots: [consumer] }), record = (await source.read('frames.studio-shell/studio-shell', 6))!;
     const before = JSON.stringify(record), envelope = (await source.dependencies!(record))!;
     expect(record.version).toBe(6);
     expect(specimenEntry(record)?.path).toBe('index.tsx');
+    expect(envelope.files).toHaveLength(19);
     expect(envelope.files.map(file => file.path)).toEqual(STUDIO_DEPENDENCY_FILES.map(path => `studio/${path}`));
     for (const file of envelope.files) expect(file.content).toBe(readFileSync(join(nativeRoot, file.path.slice('studio/'.length)), 'utf8'));
     expect(envelope.locations).toContainEqual({ path: 'index.tsx', target: 'studio/frames/studio-shell/index.tsx' });
     expect(envelope.files.find(file => file.path === 'studio/generated/studio-map.ts')!.content).toContain("from './studio-map.json'");
     expect(JSON.parse(envelope.files.find(file => file.path === 'studio/generated/studio-map.json')!.content)).toHaveProperty('map');
+    expect(envelope.files.find(file => file.path === 'studio/lib/studio-copy.ts')!.content).toContain("from '../generated/studio-copy.json'");
+    expect(JSON.parse(envelope.files.find(file => file.path === 'studio/generated/studio-copy.json')!.content)).toHaveProperty('entries');
     expect(JSON.stringify(record)).toBe(before);
     const built = await createSpecimenBuilder({ workspace }).build(record, source);
     expect(built.errors).toEqual([]);
