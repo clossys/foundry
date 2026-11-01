@@ -16,7 +16,7 @@
  */
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { mkdir, readFile, realpath, rm, stat, writeFile } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { dirname, extname, join, relative, resolve, sep, isAbsolute } from "node:path";
@@ -24,7 +24,7 @@ import { specimenSubstrate } from "./specimen-substrate.js";
 import { SPECIMEN_FRAME_CSP, specimenFramePage, specimenWidth } from "./specimen-frame.js";
 import { resolveSampleCopy, specimenStateOf, VISIBLE_STATE_CSS, type SpecimenState } from "./specimen-state.js";
 import { installAndBind, isBlocking, substrateDependencies, type InstallFinding, type InstallPageRecord, type InstallPins } from "@clossys/publisher/install";
-import { listVersions, loadSelection, SELECTION_FILE } from "../records/index.js";
+import { slotInstallInputs } from "../specimen/slot-install-inputs.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
 import { ensureSubstrate, ensureSubstrateDependencies, npmRunner, pageModule, pageRecordFromCell, shadcnRunner, writerCopy } from "../publish/install.js";
 
@@ -211,23 +211,13 @@ async function buildPass(options: { library: string; substrate: string; pins: In
 }
 
 async function buildSite(root: string, library: string): Promise<InstalledSpecimenSite | undefined> {
-  const selectionPath = join(library, SELECTION_FILE);
-  if (!existsSync(selectionPath) || !existsSync(join(library, "library"))) return undefined;
-  const selection = loadSelection(selectionPath);
-  const pins: InstallPins = Object.fromEntries(Object.entries(selection.pins).map(([slot, pin]) => [slot, { element: pin.element, version: pin.version }]));
-  // Options: versions of the pinned element newer than the pin, oldest first.
-  const options = new Map(Object.entries(pins).map(([slot, pin]) => [slot, listVersions(join(library, "library"), slot, pin.element).filter(version => version > pin.version)]));
-  // Library slots with no pin yet (a new section an option depends on): their newest version joins every option pass.
-  const libraryRoot = join(library, "library");
-  const unpinned: Record<string, { element: string; version: number }> = {};
-  for (const slot of readdirSync(libraryRoot).filter(name => !pins[name] && /^[a-z0-9][a-z0-9.-]*$/.test(name)).sort()) {
-    const elements = readdirSync(join(libraryRoot, slot)).filter(element => listVersions(libraryRoot, slot, element).length).sort();
-    if (elements.length === 1) unpinned[slot] = { element: elements[0]!, version: listVersions(libraryRoot, slot, elements[0]!).at(-1)! };
-  }
+  const inputs = slotInstallInputs(library);
+  if (!inputs) return undefined;
+  const { pins, options, unpinned } = inputs;
   const passes = Math.max(Object.keys(unpinned).length ? 1 : 0, ...[...options.values()].map(list => list.length));
   const copy = await writerCopy(root).catch(() => ({} as Record<string, string>));
   const records = await pageRecords(root, pins);
-  const key = hash(SPECIMEN_FORMAT, root, await readFile(selectionPath, "utf8"), JSON.stringify([...options]), JSON.stringify(unpinned), JSON.stringify(copy), JSON.stringify(records)).slice(0, 16);
+  const key = hash(SPECIMEN_FORMAT, root, inputs.fingerprint, JSON.stringify(copy), JSON.stringify(records)).slice(0, 16);
   const substrate = specimenSubstrate(root), base = dirname(substrate), manifest = join(base, `site-${key}.json`);
   if (existsSync(manifest)) {
     const saved = await readJson(manifest);
