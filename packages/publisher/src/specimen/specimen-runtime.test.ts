@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { createSpecimenBuilder, specimenEntry } from './build.js';
 import { specimenRecordFrom, adaptPreview } from './source.js';
 import { renderSpecimenPage } from './render.js';
+import { libraryRecordSource } from '../../../producer/src/specimen/library-source.js';
 import { slotDetail } from '../../../producer/src/server/slot-detail.js';
 import { slotDetailInputs } from '../../../producer/studio/lib/slot-detail.js';
 import type { SpecimenFile } from './types.js';
@@ -83,12 +84,37 @@ describe('specimen runtime source boundaries', () => {
     const dom = new JSDOM(html, { runScripts: 'outside-only', pretendToBeVisual: true });
     try {
       dom.window.eval(dom.window.document.querySelector('head script')!.textContent!);
+      expect(dom.window.document.querySelector('[data-specimen-error][role="alert"]')?.textContent).toContain('unresolved element import @/unrelated/button');
+      expect(dom.window.document.getElementById('specimen-root')).toBeNull();
       const health = (dom.window as any).__clossysSpecimen.health();
       expect(health.errors).toMatchObject({ count: 1, items: [{ source: 'build', message: 'unresolved element import @/unrelated/button' }] });
       expect(health.weight.jsBytes).toBe(0);
     } finally { dom.window.close(); }
     const external = record([{ path: 'index.tsx', content: 'import X from "../../host-only"; export default X;' }]);
     expect((await createSpecimenBuilder({ workspace }).build(external)).errors).toContain('unresolved relative import ../../host-only from index.tsx');
+  }, 30_000);
+
+  it('keeps the actual canonical shell build visible as executable output or actual diagnostics', async () => {
+    const source = libraryRecordSource({ roots: [workspace + 'clossys'] });
+    const record = (await source.read('frames.studio-shell/studio-shell'))!;
+    expect(record.kind).toBe('visual');
+    const built = await createSpecimenBuilder({ workspace }).build(record, source);
+    expect(Boolean(built.js) || built.errors.length > 0).toBe(true);
+    const html = renderSpecimenPage({ query: { element: record.id, width: 375 }, record, build: built, mode: 'dark', assetBase: '/assets/', nonce: 'test' });
+    const dom = new JSDOM(html);
+    try {
+      if (built.js) {
+        expect(dom.window.document.getElementById('specimen-root')).not.toBeNull();
+        expect(dom.window.document.querySelector('script[type="module"]')?.getAttribute('src')).toBe(`/assets/${built.hash}.js`);
+        expect(dom.window.document.querySelector('[data-specimen-error]')).toBeNull();
+      } else {
+        const failure = dom.window.document.querySelector('[data-specimen-error][role="alert"]');
+        expect(failure).not.toBeNull();
+        for (const message of built.errors) expect(failure!.textContent).toContain(message);
+        expect(dom.window.document.getElementById('specimen-root')).toBeNull();
+        expect(dom.window.document.querySelector('script[type="module"]')).toBeNull();
+      }
+    } finally { dom.window.close(); }
   }, 30_000);
 
   it('keeps a missing executable bundle red even if the bundler returns no diagnostics', async () => {
@@ -99,5 +125,7 @@ describe('specimen runtime source boundaries', () => {
     const html = renderSpecimenPage({ query: { element: input.id }, record: input, build: built, mode: 'light', assetBase: '/assets/', nonce: 'test' });
     expect(html).toContain('"preErrors":[{"source":"build","message":"visual specimen has no executable bundle"}]');
     expect(html).not.toContain('type="module"');
+    expect(html).toContain('data-specimen-error role="alert">visual specimen has no executable bundle');
+    expect(html).not.toContain('id="specimen-root"');
   });
 });
