@@ -38,11 +38,11 @@
     }
   ],
   "active": {
-    "page.home": 2,
-    "page.director": 2,
-    "page.designer": 2,
-    "page.writer": 2,
-    "page.publisher": 2
+    "page.home": 3,
+    "page.director": 3,
+    "page.designer": 3,
+    "page.writer": 3,
+    "page.publisher": 3
   },
   "retired": [],
   "meta": {

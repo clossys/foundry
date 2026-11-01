@@ -170,17 +170,7 @@
             "input": "checks"
           }
         ],
-        "actions": [
-          {
-            "id": "copy-link",
-            "icon": "assets.icon-link",
-            "label": "Copy link",
-            "handler": {
-              "kind": "copy-link"
-            },
-            "shortcut": "l"
-          }
-        ],
+        "actions": [],
         "wiring": [
           {
             "do": "open outline",
@@ -191,16 +181,8 @@
             "expect": "checks open"
           },
           {
-            "do": "open copy-link",
-            "expect": "copy-link open"
-          },
-          {
             "do": "select outline",
             "expect": "target in view and highlighted"
-          },
-          {
-            "do": "copy copy-link",
-            "expect": "clipboard link"
           },
           {
             "do": "cmdk",
@@ -259,17 +241,7 @@
             "input": "checks"
           }
         ],
-        "actions": [
-          {
-            "id": "copy-link",
-            "icon": "assets.icon-link",
-            "label": "Copy link",
-            "handler": {
-              "kind": "copy-link"
-            },
-            "shortcut": "l"
-          }
-        ],
+        "actions": [],
         "wiring": [
           {
             "do": "open explorer",
@@ -280,20 +252,12 @@
             "expect": "checks open"
           },
           {
-            "do": "open copy-link",
-            "expect": "copy-link open"
-          },
-          {
             "do": "select explorer",
             "expect": "target in view and highlighted"
           },
           {
             "do": "search explorer",
             "expect": "tree filtered to the match"
-          },
-          {
-            "do": "copy copy-link",
-            "expect": "clipboard link"
           },
           {
             "do": "cmdk",
@@ -379,15 +343,6 @@
                 "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
               },
               "shortcut": "r"
-            },
-            {
-              "id": "copy-link",
-              "icon": "assets.icon-link",
-              "label": "Copy link",
-              "handler": {
-                "kind": "copy-link"
-              },
-              "shortcut": "l"
             }
           ],
           "wiring": [
@@ -408,10 +363,6 @@
               "expect": "request-change open"
             },
             {
-              "do": "open copy-link",
-              "expect": "copy-link open"
-            },
-            {
               "do": "select outline",
               "expect": "target in view and highlighted"
             },
@@ -422,10 +373,6 @@
             {
               "do": "copy request-change",
               "expect": "clipboard prompt"
-            },
-            {
-              "do": "copy copy-link",
-              "expect": "clipboard link"
             },
             {
               "do": "cmdk",
@@ -485,17 +432,7 @@
             "input": "checks"
           }
         ],
-        "actions": [
-          {
-            "id": "copy-link",
-            "icon": "assets.icon-link",
-            "label": "Copy link",
-            "handler": {
-              "kind": "copy-link"
-            },
-            "shortcut": "l"
-          }
-        ],
+        "actions": [],
         "wiring": [
           {
             "do": "open explorer",
@@ -506,20 +443,12 @@
             "expect": "checks open"
           },
           {
-            "do": "open copy-link",
-            "expect": "copy-link open"
-          },
-          {
             "do": "select explorer",
             "expect": "target in view and highlighted"
           },
           {
             "do": "search explorer",
             "expect": "tree filtered to the match"
-          },
-          {
-            "do": "copy copy-link",
-            "expect": "clipboard link"
           },
           {
             "do": "cmdk",
@@ -605,15 +534,6 @@
                 "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
               },
               "shortcut": "r"
-            },
-            {
-              "id": "copy-link",
-              "icon": "assets.icon-link",
-              "label": "Copy link",
-              "handler": {
-                "kind": "copy-link"
-              },
-              "shortcut": "l"
             }
           ],
           "wiring": [
@@ -634,10 +554,6 @@
               "expect": "request-change open"
             },
             {
-              "do": "open copy-link",
-              "expect": "copy-link open"
-            },
-            {
               "do": "select outline",
               "expect": "target in view and highlighted"
             },
@@ -648,10 +564,6 @@
             {
               "do": "copy request-change",
               "expect": "clipboard prompt"
-            },
-            {
-              "do": "copy copy-link",
-              "expect": "clipboard link"
             },
             {
               "do": "cmdk",
@@ -711,17 +623,7 @@
             "input": "checks"
           }
         ],
-        "actions": [
-          {
-            "id": "copy-link",
-            "icon": "assets.icon-link",
-            "label": "Copy link",
-            "handler": {
-              "kind": "copy-link"
-            },
-            "shortcut": "l"
-          }
-        ],
+        "actions": [],
         "wiring": [
           {
             "do": "open explorer",
@@ -732,20 +634,12 @@
             "expect": "checks open"
           },
           {
-            "do": "open copy-link",
-            "expect": "copy-link open"
-          },
-          {
             "do": "select explorer",
             "expect": "target in view and highlighted"
           },
           {
             "do": "search explorer",
             "expect": "tree filtered to the match"
-          },
-          {
-            "do": "copy copy-link",
-            "expect": "clipboard link"
           },
           {
             "do": "cmdk",
@@ -831,15 +725,6 @@
                 "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
               },
               "shortcut": "r"
-            },
-            {
-              "id": "copy-link",
-              "icon": "assets.icon-link",
-              "label": "Copy link",
-              "handler": {
-                "kind": "copy-link"
-              },
-              "shortcut": "l"
             }
           ],
           "wiring": [
@@ -860,10 +745,6 @@
               "expect": "request-change open"
             },
             {
-              "do": "open copy-link",
-              "expect": "copy-link open"
-            },
-            {
               "do": "select outline",
               "expect": "target in view and highlighted"
             },
@@ -874,10 +755,6 @@
             {
               "do": "copy request-change",
               "expect": "clipboard prompt"
-            },
-            {
-              "do": "copy copy-link",
-              "expect": "clipboard link"
             },
             {
               "do": "cmdk",
@@ -939,17 +816,7 @@
             "input": "checks"
           }
         ],
-        "actions": [
-          {
-            "id": "copy-link",
-            "icon": "assets.icon-link",
-            "label": "Copy link",
-            "handler": {
-              "kind": "copy-link"
-            },
-            "shortcut": "l"
-          }
-        ],
+        "actions": [],
         "wiring": [
           {
             "do": "open explorer",
@@ -960,20 +827,12 @@
             "expect": "checks open"
           },
           {
-            "do": "open copy-link",
-            "expect": "copy-link open"
-          },
-          {
             "do": "select explorer",
             "expect": "target in view and highlighted"
           },
           {
             "do": "search explorer",
             "expect": "tree filtered to the match"
-          },
-          {
-            "do": "copy copy-link",
-            "expect": "clipboard link"
           },
           {
             "do": "cmdk",
@@ -1059,15 +918,6 @@
                 "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
               },
               "shortcut": "r"
-            },
-            {
-              "id": "copy-link",
-              "icon": "assets.icon-link",
-              "label": "Copy link",
-              "handler": {
-                "kind": "copy-link"
-              },
-              "shortcut": "l"
             }
           ],
           "wiring": [
@@ -1088,10 +938,6 @@
               "expect": "request-change open"
             },
             {
-              "do": "open copy-link",
-              "expect": "copy-link open"
-            },
-            {
               "do": "select outline",
               "expect": "target in view and highlighted"
             },
@@ -1102,10 +948,6 @@
             {
               "do": "copy request-change",
               "expect": "clipboard prompt"
-            },
-            {
-              "do": "copy copy-link",
-              "expect": "clipboard link"
             },
             {
               "do": "cmdk",

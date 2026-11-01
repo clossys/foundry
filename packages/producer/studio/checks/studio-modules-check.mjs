@@ -5,7 +5,7 @@
  *   node studio/checks/studio-modules-check.mjs <origin> [--out report.json] [--only <path>...]
  *
  * First, without a browser, every page manifest of the generated Publisher projection must carry
- * its required popovers: the navigator (explorer or outline), checks and copy link on every page,
+ * its required popovers: the navigator (explorer or outline) and checks on every page,
  * plus versions and request change on every L3 leaf. A manifest missing one fails (rc 1).
  *
  * Then, for every entry of the runtime map (Home, the agent galleries and every L3 leaf), it runs
@@ -14,7 +14,7 @@
  *   - select <explorer|outline|versions>: every item, clicked, brings its target into the page
  *     column's view and is the highlighted (selected) item;
  *   - search explorer: typing an item's name filters the tree down to fewer items, that one kept;
- *   - copy <action>: the popover's copy button writes the page link (and the prompt) to the
+ *   - copy <action>: the popover's copy button writes the request-change prompt to the
  *     clipboard, exactly the text it shows;
  *   - cmdk: the command menu lists every popover with its shortcut, and running one opens it;
  *   - key <letter>: the shortcut opens its popover; key escape and click outside close it.
@@ -46,7 +46,6 @@ const js = value => JSON.stringify(value);
 const REQUIRED = [
   { what: 'navigator', has: manifest => manifest.modules.some(module => module.id === manifest.navigator) },
   { what: 'checks', has: manifest => manifest.modules.some(module => module.id === 'checks' && module.source === 'page.checks') },
-  { what: 'copy-link', has: manifest => manifest.actions.some(action => action.id === 'copy-link' && action.handler?.kind === 'copy-link') },
 ];
 const REQUIRED_LEAF = [
   { what: 'versions', has: manifest => manifest.modules.some(module => module.id === 'versions' && module.source === 'page.versions') },
@@ -59,6 +58,7 @@ export function manifestFindings(pages = projection.pages) {
   const visit = (owner, manifest, leaf) => {
     if (!manifest) { out.push({ rule: 'no-manifest', owner }); return; }
     for (const rule of [...REQUIRED, ...(leaf ? REQUIRED_LEAF : [])]) if (!rule.has(manifest)) out.push({ rule: 'required-popover', owner, missing: rule.what });
+    for (const action of manifest.actions) if (action.id === 'copy-link' || action.handler?.kind !== 'copy-prompt') out.push({ rule: 'unsupported-action', owner, action: action.id });
     const ids = new Set([...manifest.modules, ...manifest.actions].map(row => row.id));
     for (const line of manifest.wiring) {
       const [verb, arg] = line.do.split(' ');
@@ -250,7 +250,7 @@ export async function runModulesCheck(origin, { only } = {}) {
           const text = await clipboard();
           // The page link, without the popover state.
           const href = await evaluate(`(() => { const url = new URL(location.href); url.searchParams.delete('p'); return url.href; })()`);
-          const ok = text === shownText && (action.handler.kind === 'copy-link' ? text === href : typeof text === 'string' && text.includes(href) && text.includes('What should change') && !/\{(agent|title|url)\}/.test(text));
+          const ok = action.handler.kind === 'copy-prompt' && text === shownText && typeof text === 'string' && text.includes(href) && text.includes('What should change') && !/\{(agent|title|url)\}/.test(text);
           result(line, ok, { clipboard: String(text).slice(0, 120), shown: String(shownText).slice(0, 120), href });
         } else if (verb === 'cmdk') {
           await key('k', { code: 'KeyK', modifiers: 4, keyCode: 75 });

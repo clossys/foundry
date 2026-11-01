@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { contentMapFromCells, compileContentMaps } from '@clossys/publisher/content-map/cells';
 import { projectNavigation, projectCommands } from '@clossys/publisher/content-map';
-import { checkManifest, generateStudioMap } from './generate-studio-map.mjs';
+import { HANDLERS, assemblyOf, checkManifest, generateStudioMap } from './generate-studio-map.mjs';
 
 const clossys = fileURLToPath(new URL('../../../clossys/', import.meta.url));
 const GENERIC_PAGE = { file: 'studio/app/[[...route]]/page.tsx', export: 'default' };
@@ -29,6 +29,101 @@ async function replace(path, before, after) {
   await writeFile(path, source.replace(before, after));
 }
 const run = (options, extra = {}) => generateStudioMap({ clossysRoot: options.clossysRoot, outputDir: options.outputDir, ...extra });
+
+const PAGE_NAMES = ['home', 'director', 'designer', 'writer', 'publisher'];
+const pageSlot = name => join('studio', name === 'home' ? 'studio.pages' : 'agents', `page.${name}`);
+const routeBlock = source => JSON.parse(/## Route\n```json\n([\s\S]*?)\n```/.exec(source)[1]);
+const withoutCopyLink = route => {
+  const next = structuredClone(route);
+  for (const manifest of [next.manifest, ...(next.leaf ? [next.leaf.manifest] : [])]) {
+    manifest.actions = manifest.actions.filter(action => action.id !== 'copy-link');
+    manifest.wiring = manifest.wiring.filter(line => !['open copy-link', 'copy copy-link'].includes(line.do));
+  }
+  return next;
+};
+
+test('L16 v3 records remove only Copy link and retain the request-change prompt and other popovers', async () => {
+  const root = join(clossys, 'agents/publisher');
+  const contracts = new Map(JSON.parse(await readFile(join(clossys, 'agents/designer/slot-contracts/studio.json'), 'utf8')).map(contract => [contract.slot, contract]));
+  assert.deepEqual(HANDLERS, ['copy-prompt']);
+  for (const name of PAGE_NAMES) {
+    const oldCell = await readFile(join(root, 'cells', `page.${name}`, 'v2.md'), 'utf8');
+    const cell = await readFile(join(root, 'cells', `page.${name}`, 'v3.md'), 'utf8');
+    const oldCandidate = JSON.parse(await readFile(join(root, pageSlot(name), 'candidates/page-v2.json'), 'utf8'));
+    const candidate = JSON.parse(await readFile(join(root, pageSlot(name), 'candidates/page-v3.json'), 'utf8'));
+    const expected = structuredClone(oldCandidate);
+    expected.meta.entry.blocks.Route = withoutCopyLink(expected.meta.entry.blocks.Route);
+    assert.deepEqual(candidate, expected, `${name}: all other candidate data is preserved`);
+    const route = routeBlock(cell);
+    assert.deepEqual(route, withoutCopyLink(routeBlock(oldCell)), `${name}: all other Route data is preserved`);
+    assert.deepEqual(route, candidate.meta.entry.blocks.Route, `${name}: native stores agree`);
+    const entry = { id: name, path: candidate.path, title: candidate.title, source: { frameId: candidate.frame, sectionIds: candidate.sections } };
+    const page = assemblyOf(entry, route, contracts);
+    assert.doesNotMatch(JSON.stringify(page), /copy-link/);
+    assert.deepEqual(page.manifest.actions, []);
+    if (page.leaf) {
+      assert.deepEqual(page.leaf.manifest.actions.map(action => action.id), ['request-change']);
+      assert.equal(page.leaf.manifest.actions[0].handler.kind, 'copy-prompt');
+      assert.match(page.leaf.manifest.actions[0].handler.prompt, /What should change/);
+      assert.ok(page.leaf.manifest.wiring.some(line => line.do === 'copy request-change' && line.expect === 'clipboard prompt'));
+    }
+  }
+});
+
+test('L16 active generation contains no copy-link actions, commands or wiring and leaves legacy records byte-identical', async t => {
+  const options = await fixture(t);
+  const paths = PAGE_NAMES.flatMap(name => [1, 2].flatMap(version => [
+    join(options.cellRoot, 'cells', `page.${name}`, `v${version}.md`),
+    join(options.cellRoot, pageSlot(name), 'candidates', `page-v${version}.json`),
+  ]));
+  const before = await Promise.all(paths.map(path => readFile(path)));
+  const projection = await run(options);
+  assert.doesNotMatch(JSON.stringify(projection), /copy-link/);
+  assert.doesNotMatch(JSON.stringify(projectCommands(projection.map)), /copy-link/);
+  assert.doesNotMatch(await readFile(join(options.outputDir, 'studio-map.ts'), 'utf8'), /copy-link/);
+  for (let i = 0; i < paths.length; i++) assert.deepEqual(await readFile(paths[i]), before[i], paths[i]);
+});
+
+test('L16 rejects a restored copy-link kind, a renamed copy-link action and stale wiring on every page and leaf', async () => {
+  const root = join(clossys, 'agents/publisher');
+  const contracts = new Map(JSON.parse(await readFile(join(clossys, 'agents/designer/slot-contracts/studio.json'), 'utf8')).map(contract => [contract.slot, contract]));
+  for (const name of PAGE_NAMES) {
+    const route = routeBlock(await readFile(join(root, 'cells', `page.${name}`, 'v3.md'), 'utf8'));
+    for (const original of [route.manifest, ...(route.leaf ? [route.leaf.manifest] : [])]) {
+      const restored = structuredClone(original);
+      restored.actions.push({ id: 'restored-link', label: 'Copy link', icon: 'assets.icon-link', shortcut: 'l', handler: { kind: 'copy-link' } });
+      restored.wiring.push({ do: 'open restored-link', expect: 'restored-link open' }, { do: 'copy restored-link', expect: 'clipboard link' });
+      assert.throws(() => checkManifest(name, restored, contracts), /has no copy handler/);
+      restored.actions.at(-1).id = 'copy-link';
+      restored.actions.at(-1).handler = { kind: 'copy-prompt', prompt: '{url}' };
+      assert.throws(() => checkManifest(name, restored, contracts), /retired copy-link action/);
+      const stale = structuredClone(original);
+      stale.wiring.push({ do: 'open copy-link', expect: 'copy-link open' });
+      assert.throws(() => checkManifest(name, stale, contracts), /unknown popover copy-link/);
+    }
+  }
+});
+
+test('L16 browser manifest preflight permits action-free pages and detects copy-link restoration', async () => {
+  const { manifestFindings } = await import('../studio/checks/studio-modules-check.mjs');
+  const pages = await Promise.all(PAGE_NAMES.map(async name => {
+    const route = routeBlock(await readFile(join(clossys, 'agents/publisher/cells', `page.${name}`, 'v3.md'), 'utf8'));
+    return { id: name, manifest: route.manifest, ...(route.leaf ? { leaf: { manifest: route.leaf.manifest } } : {}) };
+  }));
+  assert.deepEqual(manifestFindings(pages), []);
+  for (const page of pages) {
+    for (const leaf of [false, ...(page.leaf ? [true] : [])]) {
+      const changed = structuredClone(page);
+      const manifest = leaf ? changed.leaf.manifest : changed.manifest;
+      manifest.actions.push({ id: 'copy-link', handler: { kind: 'copy-link' } });
+      assert.ok(manifestFindings([changed]).some(finding => finding.rule === 'unsupported-action'), `${page.id} ${leaf ? 'leaf' : 'page'}`);
+      if (leaf) {
+        manifest.actions = [];
+        assert.ok(manifestFindings([changed]).some(finding => finding.missing === 'request-change'));
+      }
+    }
+  }
+});
 
 test('every Studio page is a Publisher assembly: frame + ordered sections + bindings, from the ordinary map', async t => {
   const options = await fixture(t), projection = await run(options);
@@ -62,7 +157,7 @@ test('every Studio page is a Publisher assembly: frame + ordered sections + bind
 test('active title and path edits drive the map, the page records and the commands', async t => {
   const options = await fixture(t);
   await run(options);
-  const cell = join(options.cellRoot, 'cells/page.designer/v2.md');
+  const cell = join(options.cellRoot, 'cells/page.designer/v3.md');
   await replace(cell, 'title: Designer', 'title: Visual design');
   await replace(cell, 'path: /designer', 'path: /design');
   await assert.rejects(run(options, { check: true }), /drift/i);
@@ -86,7 +181,7 @@ test('pin changes select navigation without hiding command discovery', async t =
 
 test('a section bound to anything but its contract input fails closed', async t => {
   const options = await fixture(t);
-  await replace(join(options.cellRoot, 'cells/page.designer/v2.md'), '"sections.studio.agent-gallery": "gallery"', '"sections.studio.agent-gallery": "cards"');
+  await replace(join(options.cellRoot, 'cells/page.designer/v3.md'), '"sections.studio.agent-gallery": "gallery"', '"sections.studio.agent-gallery": "cards"');
   await assert.rejects(run(options), /contract input is "gallery"/);
 });
 
@@ -112,25 +207,26 @@ async function editRoute(path, edit) {
   await writeFile(path, source.replace(blocks[0][1], JSON.stringify(route, null, 2)));
 }
 
-test('a page manifest missing its explorer, modules or actions fails closed (mutation proof)', async t => {
+test('a page manifest missing its explorer, modules or actions array fails closed (mutation proof)', async t => {
   const mutations = [
     ['no manifest', route => { delete route.manifest; }, /declares no page manifest/],
     ['no explorer', route => { delete route.manifest.navigator; }, /needs an explorer or an outline/],
     ['explorer module removed', route => { route.manifest.modules = route.manifest.modules.filter(module => module.id !== 'explorer'); }, /explorer/],
     ['no modules', route => { route.manifest.modules = []; }, /declares no modules/],
-    ['no actions', route => { route.manifest.actions = []; }, /declares no actions/],
-    ['an action with no wiring line', route => { route.manifest.wiring = route.manifest.wiring.filter(line => !line.do.startsWith('copy ')); }, /wiring/],
+    ['no actions array', route => { delete route.manifest.actions; }, /needs an actions array/],
+    ['an action with no wiring line', route => { route.leaf.manifest.wiring = route.leaf.manifest.wiring.filter(line => !line.do.startsWith('copy ')); }, /wiring/],
     ['a popover with no open line', route => { route.manifest.wiring = route.manifest.wiring.filter(line => line.do !== 'open checks'); }, /checks popover/],
     ['no escape close line', route => { route.manifest.wiring = route.manifest.wiring.filter(line => line.do !== 'key escape'); }, /closing a popover/],
-    ['a shared shortcut', route => { route.manifest.actions[0].shortcut = route.manifest.modules[0].shortcut; }, /reuses the shortcut/],
+    ['a shared shortcut', route => { route.leaf.manifest.actions[0].shortcut = route.leaf.manifest.modules[0].shortcut; }, /reuses the shortcut/],
     ['a retired module frame', route => { route.manifest.frame = 'frames.module'; }, /names frame/],
+    ['a leaf with no request-change', route => { route.leaf.manifest.actions = []; route.leaf.manifest.wiring = route.leaf.manifest.wiring.filter(line => !line.do.includes('request-change')); }, /needs the request-change prompt action/],
     ['a leaf with no outline', route => { delete route.leaf.manifest.navigator; }, /needs an explorer or an outline/],
   ];
   const clean = await fixture(t);
   await run(clean);
   for (const [label, edit, error] of mutations) {
     const options = await fixture(t);
-    await editRoute(join(options.cellRoot, 'cells/page.designer/v2.md'), edit);
+    await editRoute(join(options.cellRoot, 'cells/page.designer/v3.md'), edit);
     await assert.rejects(run(options), error, label);
   }
 });
