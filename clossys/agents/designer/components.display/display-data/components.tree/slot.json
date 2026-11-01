@@ -1,0 +1,57 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.tree",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.display",
+    "l2": "display-data",
+    "order": 119
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "rac:Tree",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "selection",
+        "expand"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.primary",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ],
+      "assets": [
+        "assets.icon-chevron-right"
+      ]
+    },
+    "apg": "treeview"
+  },
+  "inputs": [],
+  "uses": []
+}

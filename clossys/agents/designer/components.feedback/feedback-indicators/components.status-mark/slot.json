@@ -1,0 +1,54 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.status-mark",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.feedback",
+    "l2": "feedback-indicators",
+    "order": 142
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "presentational",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "tone.neutral",
+        "tone.success",
+        "tone.warning",
+        "tone.danger",
+        "tone.info"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.destructive",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ],
+      "assets": [
+        "assets.icon-success",
+        "assets.icon-warning",
+        "assets.icon-danger",
+        "assets.icon-info"
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": []
+}

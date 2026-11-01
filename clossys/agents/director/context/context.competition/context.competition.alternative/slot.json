@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "context.competition.alternative",
+  "agent": "director",
+  "ia": {
+    "l1": "context",
+    "l2": "context.competition",
+    "order": 4
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What does the customer use today instead of us, and why does it appeal?",
+    "mustContain": [
+      {
+        "key": "Default",
+        "hint": "the named alternative, doing nothing included"
+      },
+      {
+        "key": "Appeal",
+        "hint": "why it is good enough for them"
+      },
+      {
+        "key": "Switching",
+        "hint": "what leaving it costs them"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

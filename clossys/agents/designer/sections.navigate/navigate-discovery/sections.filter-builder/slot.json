@@ -1,0 +1,218 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.filter-builder",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.navigate",
+    "l2": "navigate-discovery",
+    "order": 219
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": "sections.band",
+      "header": "sections.section-header"
+    },
+    "slots": [
+      {
+        "name": "fields",
+        "type": "records",
+        "required": true
+      },
+      {
+        "name": "operators",
+        "type": "records",
+        "required": true
+      },
+      {
+        "name": "groups",
+        "type": "records",
+        "required": true
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "allowedComposes": [
+      "components.select",
+      "components.combo-box",
+      "components.date-picker",
+      "components.button",
+      "components.tag-group",
+      "components.text-field"
+    ],
+    "parts": [
+      "sections.band",
+      "sections.section-header"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "app",
+    "passageSchema": "passages.filter-builder",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "fields[].label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "fields[].options[].label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "operators[].label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "groups[].label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "labels.addRule",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "labels.addGroup",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "labels.remove",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "labels.matchAll",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "labels.matchAny",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "labels.value",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [
+    "components.button",
+    "components.combo-box",
+    "components.date-picker",
+    "components.select",
+    "components.tag-group",
+    "components.text-field"
+  ]
+}

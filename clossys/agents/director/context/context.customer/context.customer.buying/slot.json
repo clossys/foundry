@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "context.customer.buying",
+  "agent": "director",
+  "ia": {
+    "l1": "context",
+    "l2": "context.customer",
+    "order": 3
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Who decides, how do they buy, and from which budget?",
+    "mustContain": [
+      {
+        "key": "Decider",
+        "hint": "the role that says yes"
+      },
+      {
+        "key": "Process",
+        "hint": "the steps from interest to payment"
+      },
+      {
+        "key": "Budget",
+        "hint": "the budget line the money comes from"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

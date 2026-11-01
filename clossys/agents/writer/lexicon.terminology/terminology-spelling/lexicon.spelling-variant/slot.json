@@ -1,0 +1,22 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "lexicon.spelling-variant",
+  "agent": "writer",
+  "ia": {
+    "l0": "lexicon",
+    "l1": "lexicon.terminology",
+    "l2": "terminology-spelling",
+    "order": 11
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "lexicon",
+    "source": "writer",
+    "recordKind": "term",
+    "valueType": "locale-tag"
+  },
+  "inputs": [
+    "focus.reach.geography"
+  ],
+  "uses": []
+}

@@ -1,0 +1,147 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.people",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.explain",
+    "l2": "explain-social-proof",
+    "order": 188
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": "sections.band",
+      "header": "sections.section-header"
+    },
+    "slots": [
+      {
+        "name": "people",
+        "type": "records",
+        "required": true
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "allowedComposes": [
+      "components.avatar",
+      "components.card",
+      "components.link",
+      "components.icon",
+      "components.semantic-content"
+    ],
+    "parts": [
+      "sections.band",
+      "sections.section-header"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text",
+        "themes.primary",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius",
+        "themes.destructive",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ],
+      "assets": [
+        "assets.image"
+      ]
+    },
+    "data": "host-injected",
+    "surface": "site",
+    "passageSchema": "passages.people",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "people[].name",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "people[].role",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "people[].initials",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [
+    "components.avatar",
+    "components.card",
+    "components.icon",
+    "components.link",
+    "components.semantic-content"
+  ]
+}

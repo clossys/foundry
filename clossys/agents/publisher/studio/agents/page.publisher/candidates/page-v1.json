@@ -1,0 +1,89 @@
+{
+  "schema": "clossys.page/1",
+  "path": "/agents/publisher",
+  "title": "Publisher",
+  "frame": null,
+  "sections": [],
+  "copy": {},
+  "nav": {
+    "nav": true,
+    "group": "agents"
+  },
+  "meta": {
+    "source": {
+      "kind": "original",
+      "ref": []
+    },
+    "entry": {
+      "fields": {
+        "kind": "page",
+        "planItemId": "studio.publisher"
+      },
+      "blocks": {
+        "Actions": [
+          {
+            "id": "explorer",
+            "label": "Explorer",
+            "icon": "assets.icon-explorer",
+            "defaultOpen": true,
+            "module": {
+              "section": "sections.explorer"
+            }
+          },
+          {
+            "id": "inspector",
+            "label": "Inspector",
+            "icon": "assets.icon-inspector",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.record-detail",
+              "source": "publisher.inspector"
+            }
+          },
+          {
+            "id": "source",
+            "label": "Source",
+            "icon": "assets.icon-source",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.content"
+            }
+          },
+          {
+            "id": "checks",
+            "label": "Checks",
+            "icon": "assets.icon-checks",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.status-list"
+            }
+          },
+          {
+            "id": "needs",
+            "label": "Needs",
+            "icon": "assets.icon-needs",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.task-list",
+              "source": "publisher.open-requests"
+            }
+          }
+        ],
+        "Route": {
+          "entry": {
+            "file": "studio/views/PublisherView.tsx",
+            "export": "default"
+          }
+        }
+      },
+      "publication": "studio",
+      "entryId": "publisher",
+      "entryMeta": {
+        "pin": {
+          "nav": true,
+          "group": "agents"
+        }
+      }
+    }
+  }
+}

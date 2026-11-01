@@ -1,0 +1,33 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "patterns.table-caption",
+  "agent": "writer",
+  "ia": {
+    "l0": "patterns",
+    "l1": "patterns.data-and-lists",
+    "l2": "data-and-lists-tables",
+    "order": 68
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "pattern",
+    "source": "writer",
+    "icu": true,
+    "parts": {
+      "mode": "closed",
+      "items": [
+        {
+          "id": "caption",
+          "required": true,
+          "maxChars": 400,
+          "maxWords": 72
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.proposition.proof",
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

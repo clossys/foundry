@@ -1,0 +1,292 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.sign-in-form",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.collect",
+    "l2": "collect-inputs",
+    "order": 215
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "passageSchema": "passages.sign-in-form",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "providers[].label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "credentials.identifierLabel",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "credentials.identifierPlaceholder",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "credentials.passwordLabel",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "credentials.passwordPlaceholder",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "verification.codeLabel",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "verification.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "verification.placeholder",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions.submit",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions.verify",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions.pending",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions.back",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions.resend",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions.divider",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "error.message",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "error.identifier",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 240
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "error.password",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 240
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "error.code",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 240
+          },
+          "dir": "auto"
+        }
+      ]
+    },
+    "root": "div",
+    "anatomy": {
+      "band": null,
+      "header": null
+    },
+    "slots": [
+      {
+        "name": "header",
+        "type": "copy",
+        "required": true
+      },
+      {
+        "name": "providers",
+        "type": "records",
+        "required": false,
+        "max": 4
+      },
+      {
+        "name": "credentials",
+        "type": "copy",
+        "required": true
+      },
+      {
+        "name": "verification",
+        "type": "copy",
+        "required": true
+      },
+      {
+        "name": "actions",
+        "type": "action",
+        "required": true
+      },
+      {
+        "name": "error",
+        "type": "copy",
+        "required": false
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "sign-in.password",
+        "sign-in.provider",
+        "sign-in.verify"
+      ]
+    },
+    "allowedComposes": [
+      "components.text-field",
+      "components.button"
+    ],
+    "parts": [],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text",
+        "themes.primary",
+        "themes.radius",
+        "themes.destructive",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "app"
+  },
+  "inputs": [],
+  "uses": [
+    "components.button",
+    "components.text-field"
+  ]
+}

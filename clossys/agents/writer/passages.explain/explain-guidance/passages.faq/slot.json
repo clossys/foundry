@@ -1,0 +1,74 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "passages.faq",
+  "agent": "writer",
+  "ia": {
+    "l0": "passages",
+    "l1": "passages.explain",
+    "l2": "explain-guidance",
+    "order": 90
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "passage",
+    "source": "writer",
+    "sectionId": "sections.faq",
+    "passageSchema": "passages.faq",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "items[].question",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "items[].answer",
+          "kind": "rich",
+          "required": true,
+          "maxLength": {
+            "en": 2400
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.proposition.proof",
+    "context.customer.buying",
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

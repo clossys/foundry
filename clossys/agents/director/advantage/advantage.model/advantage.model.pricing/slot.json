@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "advantage.model.pricing",
+  "agent": "director",
+  "ia": {
+    "l1": "advantage",
+    "l2": "advantage.model",
+    "order": 28
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What do we charge for, how much, and against which anchor?",
+    "mustContain": [
+      {
+        "key": "Metric",
+        "hint": "the unit we charge for"
+      },
+      {
+        "key": "Price",
+        "hint": "the price, or the range being tested"
+      },
+      {
+        "key": "Anchor",
+        "hint": "what the buyer compares the price to"
+      }
+    ]
+  },
+  "inputs": [
+    "advantage.defensibility.differentiator"
+  ],
+  "uses": []
+}

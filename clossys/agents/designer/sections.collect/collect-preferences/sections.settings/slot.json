@@ -1,0 +1,219 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.settings",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.collect",
+    "l2": "collect-preferences",
+    "order": 211
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": "sections.band",
+      "header": "sections.section-header"
+    },
+    "slots": [
+      {
+        "name": "groups",
+        "type": "records",
+        "required": true
+      },
+      {
+        "name": "dirty",
+        "type": "records",
+        "required": false
+      },
+      {
+        "name": "save-bar",
+        "type": "region",
+        "required": false
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "allowedComposes": [
+      "components.form",
+      "components.switch",
+      "components.select",
+      "components.button",
+      "components.toast"
+    ],
+    "parts": [
+      "sections.band",
+      "sections.section-header"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "app",
+    "passageSchema": "passages.settings",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "groups[].legend",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "groups[].description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "groups[].controls[].label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "groups[].controls[].description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "groups[].controls[].placeholder",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "groups[].controls[].options[].label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "save-bar.label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "save-bar.save",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "save-bar.discard",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "save-bar.unsaved",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [
+    "components.button",
+    "components.form",
+    "components.select",
+    "components.switch",
+    "components.toast"
+  ]
+}

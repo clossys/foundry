@@ -1,0 +1,158 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.section-header",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.parts",
+    "l2": "parts-structure",
+    "order": 175
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "header",
+    "anatomy": {
+      "band": "sections.band",
+      "header": null
+    },
+    "slots": [
+      {
+        "name": "eyebrow",
+        "type": "copy",
+        "required": false
+      },
+      {
+        "name": "heading",
+        "type": "copy",
+        "required": true
+      },
+      {
+        "name": "description",
+        "type": "copy",
+        "required": false
+      },
+      {
+        "name": "actions",
+        "type": "action",
+        "required": false,
+        "max": 2
+      },
+      {
+        "name": "stats",
+        "type": "records",
+        "required": false
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "align.start",
+        "align.center",
+        "density.display",
+        "density.standard",
+        "density.compact"
+      ]
+    },
+    "allowedComposes": [
+      "components.button",
+      "components.link",
+      "components.badge",
+      "components.status-mark",
+      "components.menu",
+      "components.semantic-content"
+    ],
+    "parts": [
+      "sections.band"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.font-heading",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.primary",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.tracking-tight",
+        "themes.destructive",
+        "themes.font-sans",
+        "themes.font-mono"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "both",
+    "passageSchema": "passages.section-header",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "eyebrow",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "heading",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions[].label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [
+    "components.badge",
+    "components.button",
+    "components.link",
+    "components.menu",
+    "components.semantic-content",
+    "components.status-mark"
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "passages.content",
+  "agent": "writer",
+  "ia": {
+    "l0": "passages",
+    "l1": "passages.explain",
+    "l2": "explain-reading",
+    "order": 80
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "passage",
+    "source": "writer",
+    "sectionId": "sections.content",
+    "passageSchema": "passages.content",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.actions[].label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "body[].text",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 8000
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "body[].items[]",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 8000
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "media.title",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "media.series[].name",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "footnote",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "identity.verbal.narrative",
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

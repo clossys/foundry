@@ -1,0 +1,42 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.spinner",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.feedback",
+    "l2": "feedback-progress",
+    "order": 144
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "rac:ProgressBar",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "size.sm",
+        "size.md",
+        "size.lg"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ],
+      "assets": []
+    }
+  },
+  "inputs": [],
+  "uses": []
+}

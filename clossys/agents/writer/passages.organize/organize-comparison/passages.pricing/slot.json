@@ -1,0 +1,137 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "passages.pricing",
+  "agent": "writer",
+  "ia": {
+    "l0": "passages",
+    "l1": "passages.organize",
+    "l2": "organize-comparison",
+    "order": 97
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "passage",
+    "source": "writer",
+    "sectionId": "sections.pricing",
+    "passageSchema": "passages.pricing",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "plans[].name",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "plans[].price",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "plans[].description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "plans[].features[]",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "plans[].cta.label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "plans[].badge",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "interval",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "plans[].priceByInterval[].amount",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "plans[].priceByInterval[].priceText",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.model.pricing",
+    "focus.lifecycle.acquisition",
+    "focus.offer.included"
+  ],
+  "uses": []
+}

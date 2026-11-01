@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "capability.team.structure",
+  "agent": "director",
+  "ia": {
+    "l1": "capability",
+    "l2": "capability.team",
+    "order": 46
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "How is the team shaped, who decides what, and on what rhythm?",
+    "mustContain": [
+      {
+        "key": "Shape",
+        "hint": "the team shape"
+      },
+      {
+        "key": "Decides",
+        "hint": "who decides what"
+      },
+      {
+        "key": "Rhythm",
+        "hint": "the operating cadence"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

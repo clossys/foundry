@@ -1,0 +1,109 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "passages.media",
+  "agent": "writer",
+  "ia": {
+    "l0": "passages",
+    "l1": "passages.explain",
+    "l2": "explain-media",
+    "order": 88
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "passage",
+    "source": "writer",
+    "sectionId": "sections.media",
+    "passageSchema": "passages.media",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "figure.caption",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "figure.media.title",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "figure.media.series[].name",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "figure.chromeLabel",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "callouts.label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "callouts.items[].body",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "identity.verbal.voice",
+    "identity.visual.imagery"
+  ],
+  "uses": []
+}

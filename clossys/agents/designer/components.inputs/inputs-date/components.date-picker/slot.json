@@ -1,0 +1,46 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.date-picker",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.inputs",
+    "l2": "inputs-date",
+    "order": 113
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "rac:DatePicker",
+    "memberRoots": {
+      "selection.single": "rac:DatePicker",
+      "selection.range": "rac:DateRangePicker"
+    },
+    "members": {
+      "mode": "closed",
+      "names": [
+        "selection.single",
+        "selection.range"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [],
+      "assets": [
+        "assets.icon-date"
+      ]
+    },
+    "composes": [
+      "components.date-field",
+      "components.popover",
+      "components.calendar"
+    ],
+    "apg": "dialog-modal"
+  },
+  "inputs": [],
+  "uses": [
+    "components.calendar",
+    "components.date-field",
+    "components.popover"
+  ]
+}

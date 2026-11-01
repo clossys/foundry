@@ -1,0 +1,67 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.banner",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.feedback",
+    "l2": "feedback-messages",
+    "order": 139
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "presentational",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "tone.info",
+        "tone.danger"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.primary",
+        "themes.radius",
+        "themes.spacing",
+        "themes.destructive",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ],
+      "assets": [
+        "assets.icon-success",
+        "assets.icon-warning",
+        "assets.icon-danger",
+        "assets.icon-info",
+        "assets.icon-close"
+      ]
+    },
+    "composes": [
+      "components.button"
+    ]
+  },
+  "inputs": [],
+  "uses": [
+    "components.button"
+  ]
+}

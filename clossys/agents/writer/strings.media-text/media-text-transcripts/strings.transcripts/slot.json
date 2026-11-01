@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "strings.transcripts",
+  "agent": "writer",
+  "ia": {
+    "l0": "strings",
+    "l1": "strings.media-text",
+    "l2": "media-text-transcripts",
+    "order": 43
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "string",
+    "source": "writer",
+    "icu": true,
+    "maxChars": 30000,
+    "maxWords": 6000,
+    "assetRef": {
+      "layer": "assets",
+      "required": true
+    }
+  },
+  "inputs": [
+    "identity.verbal.narrative"
+  ],
+  "uses": []
+}

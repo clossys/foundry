@@ -1,0 +1,344 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.data-table",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.organize",
+    "l2": "organize-records",
+    "order": 203
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": "sections.band",
+      "header": "sections.section-header"
+    },
+    "slots": [
+      {
+        "name": "columns",
+        "type": "records",
+        "required": true
+      },
+      {
+        "name": "rows",
+        "type": "records",
+        "required": true
+      },
+      {
+        "name": "sort",
+        "type": "records",
+        "required": false
+      },
+      {
+        "name": "selection",
+        "type": "records",
+        "required": false
+      },
+      {
+        "name": "grouping",
+        "type": "records",
+        "required": false
+      },
+      {
+        "name": "toolbar",
+        "type": "region",
+        "required": false
+      },
+      {
+        "name": "pagination",
+        "type": "region",
+        "required": false
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "allowedComposes": [
+      "components.table",
+      "components.toolbar",
+      "components.checkbox",
+      "components.menu",
+      "components.button",
+      "components.dialog",
+      "components.icon",
+      "components.popover",
+      "components.select",
+      "components.text-field",
+      "components.badge",
+      "components.status-mark",
+      "components.tooltip",
+      "components.link",
+      "components.skeleton"
+    ],
+    "parts": [
+      "sections.band",
+      "sections.section-header",
+      "sections.pagination"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text",
+        "themes.primary",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius",
+        "themes.tracking-tight",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ],
+      "assets": [
+        "assets.icon-chevron-down",
+        "assets.icon-chevron-right",
+        "assets.icon-close"
+      ]
+    },
+    "data": "host-injected",
+    "surface": "app",
+    "states": [
+      "loading",
+      "empty",
+      "error"
+    ],
+    "substrates": [
+      "flow"
+    ],
+    "substrateTests": [
+      {
+        "substrate": "flow",
+        "file": "packages/publisher/src/web/publisher/PublisherSection.test.tsx",
+        "name": "renders typed Publisher data-table in flow"
+      }
+    ],
+    "passageSchema": "passages.data-table",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "columns[].label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "rows[].cells[].text",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "toolbar.search.label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "toolbar.search.placeholder",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "toolbar.actions[].label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "pagination.label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "pagination.pageText",
+          "kind": "icu",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "pagination.totalText",
+          "kind": "icu",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "labels.label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "labels.selection",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "labels.sort",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "states.loading.label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "states.loading.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "states.empty.label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "states.empty.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "states.error.label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "states.error.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [
+    "components.badge",
+    "components.button",
+    "components.checkbox",
+    "components.dialog",
+    "components.icon",
+    "components.link",
+    "components.menu",
+    "components.popover",
+    "components.select",
+    "components.skeleton",
+    "components.status-mark",
+    "components.table",
+    "components.text-field",
+    "components.toolbar",
+    "components.tooltip"
+  ]
+}

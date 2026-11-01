@@ -1,0 +1,23 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "narratives.video-script",
+  "agent": "writer",
+  "ia": {
+    "l0": "narratives",
+    "l1": "narratives.communications",
+    "l2": "communications-videos",
+    "order": 135
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "narrative",
+    "source": "writer",
+    "structure": "passage-sequence"
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "identity.brand.personality",
+    "identity.verbal.narrative"
+  ],
+  "uses": []
+}

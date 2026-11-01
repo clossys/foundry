@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "aspiration.culture.belief",
+  "agent": "director",
+  "ia": {
+    "l1": "aspiration",
+    "l2": "aspiration.culture",
+    "order": 10
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Which beliefs guide us even when they cost something?",
+    "mustContain": [
+      {
+        "key": "Belief",
+        "hint": "the belief, as a sentence"
+      },
+      {
+        "key": "Contrast",
+        "hint": "what others believe instead"
+      },
+      {
+        "key": "Cost",
+        "hint": "what holding it costs us"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

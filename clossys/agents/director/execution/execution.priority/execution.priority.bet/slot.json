@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "execution.priority.bet",
+  "agent": "director",
+  "ia": {
+    "l1": "execution",
+    "l2": "execution.priority",
+    "order": 49
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What is the one bet we are making now, what should it produce, and when do we kill it?",
+    "mustContain": [
+      {
+        "key": "Bet",
+        "hint": "the bet"
+      },
+      {
+        "key": "Outcome",
+        "hint": "the outcome it must produce"
+      },
+      {
+        "key": "Kill",
+        "hint": "the condition that ends it"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

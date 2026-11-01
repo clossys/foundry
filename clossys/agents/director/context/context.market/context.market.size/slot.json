@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "context.market.size",
+  "agent": "director",
+  "ia": {
+    "l1": "context",
+    "l2": "context.market",
+    "order": 0
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "How big is the reachable market, counted in a unit you can check?",
+    "mustContain": [
+      {
+        "key": "Unit",
+        "hint": "what is counted: buyers, seats or spend"
+      },
+      {
+        "key": "Reachable",
+        "hint": "the number you can reach inside the horizon"
+      },
+      {
+        "key": "Method",
+        "hint": "how the number was derived, with its source"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

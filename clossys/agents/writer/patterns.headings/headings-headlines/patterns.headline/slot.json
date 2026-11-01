@@ -1,0 +1,33 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "patterns.headline",
+  "agent": "writer",
+  "ia": {
+    "l0": "patterns",
+    "l1": "patterns.headings",
+    "l2": "headings-headlines",
+    "order": 49
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "pattern",
+    "source": "writer",
+    "icu": true,
+    "parts": {
+      "mode": "closed",
+      "items": [
+        {
+          "id": "headline",
+          "required": true,
+          "maxChars": 100,
+          "maxWords": 18
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

@@ -1,0 +1,145 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.notices",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.respond",
+    "l2": "respond-messages",
+    "order": 223
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": "sections.band",
+      "header": "sections.section-header"
+    },
+    "slots": [
+      {
+        "name": "notices",
+        "type": "records",
+        "required": true
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "legal.draft"
+      ]
+    },
+    "allowedComposes": [
+      "components.banner",
+      "components.semantic-content"
+    ],
+    "parts": [
+      "sections.band",
+      "sections.section-header"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.destructive",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "both",
+    "substrates": [
+      "flow"
+    ],
+    "substrateTests": [
+      {
+        "substrate": "flow",
+        "file": "packages/publisher/src/web/publisher/PublisherSection.test.tsx",
+        "name": "renders typed Publisher notices in flow"
+      }
+    ],
+    "passageSchema": "passages.notices",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "notices[].title",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "notices[].body",
+          "kind": "rich",
+          "required": false,
+          "maxLength": {
+            "en": 2400
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "notices[].action.label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "notices[].dismissLabel",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [
+    "components.banner",
+    "components.semantic-content"
+  ]
+}

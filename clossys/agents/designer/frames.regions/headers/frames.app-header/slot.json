@@ -1,0 +1,106 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "frames.app-header",
+  "agent": "designer",
+  "ia": {
+    "l0": "frames",
+    "l1": "frames.regions",
+    "l2": "headers",
+    "order": 230
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "frame",
+    "root": "header",
+    "landmarks": [],
+    "slots": [
+      {
+        "id": "context",
+        "required": false,
+        "accepts": "sections.*"
+      },
+      {
+        "id": "trail",
+        "required": false,
+        "accepts": "components.breadcrumbs"
+      },
+      {
+        "id": "actions",
+        "required": false,
+        "accepts": "host-node"
+      },
+      {
+        "id": "info",
+        "required": false,
+        "accepts": "host-node"
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "surface.glass",
+        "fallback.opaque",
+        "position.sticky",
+        "position.static"
+      ]
+    },
+    "statePorts": [],
+    "rendering": "client",
+    "breakpoints": [],
+    "allowedReads": {
+      "themes": [
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.spacing",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.primary",
+        "themes.radius"
+      ],
+      "assets": [
+        "assets.icon-chevron-down",
+        "assets.icon-external-link"
+      ]
+    },
+    "composes": [
+      "components.breadcrumbs",
+      "components.menu",
+      "components.popover",
+      "components.button",
+      "components.link",
+      "components.toggle-button",
+      "components.status-mark",
+      "components.icon",
+      "components.tooltip"
+    ]
+  },
+  "inputs": [],
+  "uses": [
+    "components.breadcrumbs",
+    "components.button",
+    "components.icon",
+    "components.link",
+    "components.menu",
+    "components.popover",
+    "components.status-mark",
+    "components.toggle-button",
+    "components.tooltip"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "identity.naming.name",
+  "agent": "director",
+  "ia": {
+    "l1": "identity",
+    "l2": "identity.naming",
+    "order": 32
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What are we called, how is it written, and what does it mean?",
+    "mustContain": [
+      {
+        "key": "Name",
+        "hint": "the public name"
+      },
+      {
+        "key": "Casing",
+        "hint": "exact casing and forms"
+      },
+      {
+        "key": "Meaning",
+        "hint": "what the name means or stands for"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

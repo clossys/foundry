@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "assets.backdrop-graphic",
+  "agent": "designer",
+  "ia": {
+    "l0": "assets",
+    "l1": "assets.imagery",
+    "l2": "imagery-patterns",
+    "order": 91
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "asset",
+    "valueKind": "rules",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "mesh",
+        "grid",
+        "dot",
+        "noise"
+      ]
+    },
+    "modes": [
+      "light"
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

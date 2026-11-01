@@ -1,0 +1,37 @@
+{
+  "schema": "clossys.ia/1",
+  "source": "consumer#agents/publisher/tree.json",
+  "extensions": [],
+  "nodes": [
+    {
+      "id": "studio",
+      "label": "Studio",
+      "children": [
+        {
+          "id": "studio.pages",
+          "label": "Pages",
+          "slots": [
+            "page.home"
+          ]
+        },
+        {
+          "id": "agents",
+          "label": "Agents",
+          "slots": [
+            "page.director",
+            "page.designer",
+            "page.writer",
+            "page.publisher"
+          ]
+        },
+        {
+          "id": "publication",
+          "label": "Publication",
+          "slots": [
+            "publication.studio"
+          ]
+        }
+      ]
+    }
+  ]
+}

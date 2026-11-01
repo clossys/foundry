@@ -1,0 +1,36 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.toolbar",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.actions",
+    "l2": "actions-toolbars",
+    "order": 98
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "rac:Toolbar",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "orientation.horizontal",
+        "orientation.vertical"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border"
+      ],
+      "assets": []
+    },
+    "apg": "toolbar"
+  },
+  "inputs": [],
+  "uses": []
+}

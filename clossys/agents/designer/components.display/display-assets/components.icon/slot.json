@@ -1,0 +1,74 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.icon",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.display",
+    "l2": "display-assets",
+    "order": 125
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "presentational",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "size.sm",
+        "size.md",
+        "size.lg"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing"
+      ],
+      "assets": [
+        "assets.icon-chevron-down",
+        "assets.icon-chevron-up",
+        "assets.icon-chevron-left",
+        "assets.icon-chevron-right",
+        "assets.icon-arrow-right",
+        "assets.icon-external-link",
+        "assets.icon-home",
+        "assets.icon-search",
+        "assets.icon-close",
+        "assets.icon-check",
+        "assets.icon-settings",
+        "assets.icon-list-view",
+        "assets.icon-grid-view",
+        "assets.icon-theme-light",
+        "assets.icon-theme-dark",
+        "assets.icon-theme-system",
+        "assets.icon-success",
+        "assets.icon-warning",
+        "assets.icon-danger",
+        "assets.icon-info",
+        "assets.icon-user",
+        "assets.icon-team",
+        "assets.icon-organization",
+        "assets.icon-website",
+        "assets.icon-institution",
+        "assets.icon-guide",
+        "assets.icon-document",
+        "assets.icon-document-approved",
+        "assets.icon-folder",
+        "assets.icon-date",
+        "assets.icon-time",
+        "assets.icon-payment",
+        "assets.icon-receipt",
+        "assets.icon-business",
+        "assets.icon-security",
+        "assets.icon-locked",
+        "assets.icon-legal",
+        "assets.icon-package",
+        "assets.icon-layers",
+        "assets.icon-integration"
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": []
+}

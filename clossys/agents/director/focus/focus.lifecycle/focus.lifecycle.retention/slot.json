@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "focus.lifecycle.retention",
+  "agent": "director",
+  "ia": {
+    "l1": "focus",
+    "l2": "focus.lifecycle",
+    "order": 23
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Why do customers stay and grow with us?",
+    "mustContain": [
+      {
+        "key": "Reason",
+        "hint": "why they stay"
+      },
+      {
+        "key": "Moment",
+        "hint": "when they decide to stay"
+      },
+      {
+        "key": "Expansion",
+        "hint": "how the account grows"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

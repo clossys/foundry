@@ -1,0 +1,39 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "patterns.feature-bullet",
+  "agent": "writer",
+  "ia": {
+    "l0": "patterns",
+    "l1": "patterns.data-and-lists",
+    "l2": "data-and-lists-items",
+    "order": 64
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "pattern",
+    "source": "writer",
+    "icu": true,
+    "parts": {
+      "mode": "closed",
+      "items": [
+        {
+          "id": "title",
+          "required": true,
+          "maxChars": 100,
+          "maxWords": 18
+        },
+        {
+          "id": "body",
+          "required": true,
+          "maxChars": 400,
+          "maxWords": 72
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.defensibility.differentiator",
+    "focus.offer.included"
+  ],
+  "uses": []
+}

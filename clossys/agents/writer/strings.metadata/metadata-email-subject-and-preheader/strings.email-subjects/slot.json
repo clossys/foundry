@@ -1,0 +1,24 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "strings.email-subjects",
+  "agent": "writer",
+  "ia": {
+    "l0": "strings",
+    "l1": "strings.metadata",
+    "l2": "metadata-email-subject-and-preheader",
+    "order": 47
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "string",
+    "source": "writer",
+    "icu": true,
+    "maxChars": 78,
+    "maxWords": 14
+  },
+  "inputs": [
+    "focus.lifecycle.retention",
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

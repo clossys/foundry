@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "identity.brand.essence",
+  "agent": "director",
+  "ia": {
+    "l1": "identity",
+    "l2": "identity.brand",
+    "order": 30
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What single idea should people remember us by?",
+    "mustContain": [
+      {
+        "key": "Essence",
+        "hint": "the idea, in a few words"
+      },
+      {
+        "key": "Meaning",
+        "hint": "what it means in practice"
+      },
+      {
+        "key": "Not",
+        "hint": "what it does not mean"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

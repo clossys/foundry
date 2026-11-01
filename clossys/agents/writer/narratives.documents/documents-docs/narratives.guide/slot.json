@@ -1,0 +1,22 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "narratives.guide",
+  "agent": "writer",
+  "ia": {
+    "l0": "narratives",
+    "l1": "narratives.documents",
+    "l2": "documents-docs",
+    "order": 129
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "narrative",
+    "source": "writer",
+    "structure": "passage-sequence"
+  },
+  "inputs": [
+    "focus.offer.included",
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

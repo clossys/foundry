@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "identity.brand.personality",
+  "agent": "director",
+  "ia": {
+    "l1": "identity",
+    "l2": "identity.brand",
+    "order": 31
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "How would people describe us as a person, and what are we not?",
+    "mustContain": [
+      {
+        "key": "Traits",
+        "hint": "three to five traits"
+      },
+      {
+        "key": "Not",
+        "hint": "traits we avoid"
+      },
+      {
+        "key": "Example",
+        "hint": "one behavior that shows the traits"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

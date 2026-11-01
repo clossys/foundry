@@ -1,0 +1,26 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "publication.studio",
+  "agent": "publisher",
+  "ia": {
+    "l1": "studio",
+    "l2": "publication",
+    "order": 5
+  },
+  "kind": "publication",
+  "contract": {},
+  "inputs": [
+    "page.designer",
+    "page.director",
+    "page.home",
+    "page.publisher",
+    "page.writer"
+  ],
+  "uses": [
+    "page.designer",
+    "page.director",
+    "page.home",
+    "page.publisher",
+    "page.writer"
+  ]
+}

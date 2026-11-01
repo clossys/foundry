@@ -1,0 +1,51 @@
+{
+  "schema": "clossys.page/1",
+  "path": "/",
+  "title": "Home",
+  "frame": null,
+  "sections": [],
+  "copy": {},
+  "nav": {
+    "nav": true
+  },
+  "meta": {
+    "source": {
+      "kind": "original",
+      "ref": []
+    },
+    "entry": {
+      "fields": {
+        "kind": "page",
+        "planItemId": "studio.home",
+        "icon": "assets.icon-home"
+      },
+      "blocks": {
+        "Actions": [
+          {
+            "id": "needs",
+            "label": "Needs",
+            "icon": "assets.icon-needs",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.task-list",
+              "source": "home.open-requests"
+            }
+          }
+        ],
+        "Route": {
+          "entry": {
+            "file": "studio/views/HomeView.tsx",
+            "export": "default"
+          }
+        }
+      },
+      "publication": "studio",
+      "entryId": "home",
+      "entryMeta": {
+        "pin": {
+          "nav": true
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "capability.team.role",
+  "agent": "director",
+  "ia": {
+    "l1": "capability",
+    "l2": "capability.team",
+    "order": 45
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Which roles exist, who holds them, and who do we hire next?",
+    "mustContain": [
+      {
+        "key": "Roles",
+        "hint": "the roles"
+      },
+      {
+        "key": "Who",
+        "hint": "who holds each role"
+      },
+      {
+        "key": "Next-hire",
+        "hint": "the next role to fill, and when"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

@@ -1,0 +1,50 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "patterns.form-field",
+  "agent": "writer",
+  "ia": {
+    "l0": "patterns",
+    "l1": "patterns.forms",
+    "l2": "forms-fields",
+    "order": 62
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "pattern",
+    "source": "writer",
+    "icu": true,
+    "parts": {
+      "mode": "closed",
+      "items": [
+        {
+          "id": "label",
+          "required": true,
+          "maxChars": 80,
+          "maxWords": 12
+        },
+        {
+          "id": "help",
+          "required": false,
+          "maxChars": 200,
+          "maxWords": 35
+        },
+        {
+          "id": "error",
+          "required": false,
+          "maxChars": 240,
+          "maxWords": 45
+        },
+        {
+          "id": "placeholder",
+          "required": false,
+          "maxChars": 80,
+          "maxWords": 12
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

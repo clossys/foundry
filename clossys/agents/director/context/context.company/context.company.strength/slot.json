@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "context.company.strength",
+  "agent": "director",
+  "ia": {
+    "l1": "context",
+    "l2": "context.company",
+    "order": 6
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What can we do today that is hard for others to copy?",
+    "mustContain": [
+      {
+        "key": "Edge",
+        "hint": "the strength, specific"
+      },
+      {
+        "key": "Evidence",
+        "hint": "proof that we have it"
+      },
+      {
+        "key": "Rarity",
+        "hint": "who else has it, and why few do"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

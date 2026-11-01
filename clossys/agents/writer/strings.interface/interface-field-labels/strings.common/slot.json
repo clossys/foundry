@@ -1,0 +1,23 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "strings.common",
+  "agent": "writer",
+  "ia": {
+    "l0": "strings",
+    "l1": "strings.interface",
+    "l2": "interface-field-labels",
+    "order": 30
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "string",
+    "source": "writer",
+    "icu": true,
+    "maxChars": 320,
+    "maxWords": 60
+  },
+  "inputs": [
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

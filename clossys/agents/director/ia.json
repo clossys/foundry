@@ -1,0 +1,274 @@
+{
+  "schema": "clossys.ia/1",
+  "source": "@clossys/strategist#leaf-freeze:2026-10-28",
+  "extensions": [],
+  "nodes": [
+    {
+      "id": "context",
+      "label": "Context",
+      "children": [
+        {
+          "id": "context.market",
+          "label": "Market",
+          "slots": [
+            "context.market.size",
+            "context.market.trend"
+          ]
+        },
+        {
+          "id": "context.customer",
+          "label": "Customer",
+          "slots": [
+            "context.customer.need",
+            "context.customer.buying"
+          ]
+        },
+        {
+          "id": "context.competition",
+          "label": "Competition",
+          "slots": [
+            "context.competition.alternative",
+            "context.competition.gap"
+          ]
+        },
+        {
+          "id": "context.company",
+          "label": "Company",
+          "slots": [
+            "context.company.strength",
+            "context.company.constraint"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "aspiration",
+      "label": "Aspiration",
+      "children": [
+        {
+          "id": "aspiration.purpose",
+          "label": "Purpose",
+          "slots": [
+            "aspiration.purpose.mission",
+            "aspiration.purpose.vision"
+          ]
+        },
+        {
+          "id": "aspiration.culture",
+          "label": "Culture",
+          "slots": [
+            "aspiration.culture.belief",
+            "aspiration.culture.behavior"
+          ]
+        },
+        {
+          "id": "aspiration.goal",
+          "label": "Goal",
+          "slots": [
+            "aspiration.goal.long-term",
+            "aspiration.goal.annual"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "focus",
+      "label": "Focus",
+      "children": [
+        {
+          "id": "focus.category",
+          "label": "Category",
+          "slots": [
+            "focus.category.definition",
+            "focus.category.stance"
+          ]
+        },
+        {
+          "id": "focus.segment",
+          "label": "Segment",
+          "slots": [
+            "focus.segment.core",
+            "focus.segment.next"
+          ]
+        },
+        {
+          "id": "focus.offer",
+          "label": "Offer",
+          "slots": [
+            "focus.offer.included",
+            "focus.offer.excluded"
+          ]
+        },
+        {
+          "id": "focus.reach",
+          "label": "Reach",
+          "slots": [
+            "focus.reach.geography",
+            "focus.reach.channel"
+          ]
+        },
+        {
+          "id": "focus.lifecycle",
+          "label": "Lifecycle",
+          "slots": [
+            "focus.lifecycle.acquisition",
+            "focus.lifecycle.retention"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advantage",
+      "label": "Advantage",
+      "children": [
+        {
+          "id": "advantage.proposition",
+          "label": "Proposition",
+          "slots": [
+            "advantage.proposition.promise",
+            "advantage.proposition.proof"
+          ]
+        },
+        {
+          "id": "advantage.defensibility",
+          "label": "Defensibility",
+          "slots": [
+            "advantage.defensibility.differentiator",
+            "advantage.defensibility.moat"
+          ]
+        },
+        {
+          "id": "advantage.model",
+          "label": "Model",
+          "slots": [
+            "advantage.model.pricing",
+            "advantage.model.margin"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "identity",
+      "label": "Identity",
+      "children": [
+        {
+          "id": "identity.brand",
+          "label": "Brand",
+          "slots": [
+            "identity.brand.essence",
+            "identity.brand.personality"
+          ]
+        },
+        {
+          "id": "identity.naming",
+          "label": "Naming",
+          "slots": [
+            "identity.naming.name",
+            "identity.naming.architecture"
+          ]
+        },
+        {
+          "id": "identity.verbal",
+          "label": "Verbal",
+          "slots": [
+            "identity.verbal.narrative",
+            "identity.verbal.voice"
+          ]
+        },
+        {
+          "id": "identity.visual",
+          "label": "Visual",
+          "slots": [
+            "identity.visual.style",
+            "identity.visual.imagery"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "capability",
+      "label": "Capability",
+      "children": [
+        {
+          "id": "capability.competency",
+          "label": "Competency",
+          "slots": [
+            "capability.competency.critical",
+            "capability.competency.gap"
+          ]
+        },
+        {
+          "id": "capability.sourcing",
+          "label": "Sourcing",
+          "slots": [
+            "capability.sourcing.build",
+            "capability.sourcing.partner",
+            "capability.sourcing.acquire"
+          ]
+        },
+        {
+          "id": "capability.operation",
+          "label": "Operation",
+          "slots": [
+            "capability.operation.delivery",
+            "capability.operation.technology"
+          ]
+        },
+        {
+          "id": "capability.team",
+          "label": "Team",
+          "slots": [
+            "capability.team.role",
+            "capability.team.structure"
+          ]
+        },
+        {
+          "id": "capability.resource",
+          "label": "Resource",
+          "slots": [
+            "capability.resource.funding",
+            "capability.resource.allocation"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "execution",
+      "label": "Execution",
+      "children": [
+        {
+          "id": "execution.priority",
+          "label": "Priority",
+          "slots": [
+            "execution.priority.bet",
+            "execution.priority.parked"
+          ]
+        },
+        {
+          "id": "execution.roadmap",
+          "label": "Roadmap",
+          "slots": [
+            "execution.roadmap.milestone",
+            "execution.roadmap.release"
+          ]
+        },
+        {
+          "id": "execution.measure",
+          "label": "Measure",
+          "slots": [
+            "execution.measure.north-star",
+            "execution.measure.driver"
+          ]
+        },
+        {
+          "id": "execution.risk",
+          "label": "Risk",
+          "slots": [
+            "execution.risk.threat",
+            "execution.risk.mitigation"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "passages.boundary-message",
+  "agent": "writer",
+  "ia": {
+    "l0": "passages",
+    "l1": "passages.respond",
+    "l2": "respond-states",
+    "order": 121
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "passage",
+    "source": "writer",
+    "sectionId": "sections.boundary-message",
+    "passageSchema": "passages.boundary-message",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "status",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 80
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "title",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "description",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions[].label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "notes",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "identity.brand.personality",
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

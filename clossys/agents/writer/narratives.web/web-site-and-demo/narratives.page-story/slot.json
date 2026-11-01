@@ -1,0 +1,24 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "narratives.page-story",
+  "agent": "writer",
+  "ia": {
+    "l0": "narratives",
+    "l1": "narratives.web",
+    "l2": "web-site-and-demo",
+    "order": 124
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "narrative",
+    "source": "writer",
+    "structure": "passage-sequence"
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "advantage.proposition.proof",
+    "focus.lifecycle.acquisition",
+    "identity.verbal.narrative"
+  ],
+  "uses": []
+}

@@ -1,0 +1,251 @@
+{
+  "schema": "clossys.page/1",
+  "path": "/director",
+  "title": "Director",
+  "frame": "frames.studio-shell",
+  "sections": [
+    "sections.studio.agent-gallery"
+  ],
+  "copy": {},
+  "nav": {
+    "nav": true,
+    "group": "agents"
+  },
+  "meta": {
+    "source": {
+      "kind": "original",
+      "ref": []
+    },
+    "entry": {
+      "fields": {
+        "kind": "page",
+        "note": "STUDIO-PUB 2026-10-31: the page is a Publisher assembly of frames.studio-shell plus Designer Studio sections; the agent gallery serves at /<agent> and its leaves at /<agent>/<slug>."
+      },
+      "blocks": {
+        "Actions": [],
+        "Route": {
+          "body": "plain",
+          "data": {
+            "loader": "gallery",
+            "agent": "director"
+          },
+          "inputs": {
+            "sections.studio.agent-gallery": "gallery"
+          },
+          "leaf": {
+            "param": "slug",
+            "body": "detail",
+            "data": {
+              "loader": "leaf",
+              "agent": "director"
+            },
+            "sections": [
+              "sections.studio.leaf-header",
+              "sections.studio.specimen",
+              "sections.studio.options",
+              "sections.studio.checks",
+              "sections.studio.contract",
+              "sections.studio.history",
+              "sections.studio.references"
+            ],
+            "inputs": {
+              "sections.studio.leaf-header": "header",
+              "sections.studio.specimen": "specimen",
+              "sections.studio.options": "options",
+              "sections.studio.checks": "checks",
+              "sections.studio.contract": "contract",
+              "sections.studio.history": "history",
+              "sections.studio.references": "references"
+            },
+            "manifest": {
+              "navigator": "outline",
+              "modules": [
+                {
+                  "id": "outline",
+                  "icon": "assets.icon-outline",
+                  "label": "Outline",
+                  "section": "sections.module.outline",
+                  "source": "page.outline",
+                  "shortcut": "o"
+                },
+                {
+                  "id": "checks",
+                  "icon": "assets.icon-checks",
+                  "label": "Checks",
+                  "section": "sections.module.checks",
+                  "source": "page.checks",
+                  "shortcut": "c"
+                },
+                {
+                  "id": "versions",
+                  "icon": "assets.icon-versions",
+                  "label": "Versions",
+                  "section": "sections.module.outline",
+                  "source": "page.versions",
+                  "shortcut": "v"
+                }
+              ],
+              "actions": [
+                {
+                  "id": "request-change",
+                  "icon": "assets.icon-request",
+                  "label": "Request change",
+                  "handler": {
+                    "kind": "copy-prompt",
+                    "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                  },
+                  "shortcut": "r"
+                },
+                {
+                  "id": "copy-link",
+                  "icon": "assets.icon-link",
+                  "label": "Copy link",
+                  "handler": {
+                    "kind": "copy-link"
+                  },
+                  "shortcut": "l"
+                }
+              ],
+              "wiring": [
+                {
+                  "do": "open outline",
+                  "expect": "outline open"
+                },
+                {
+                  "do": "open checks",
+                  "expect": "checks open"
+                },
+                {
+                  "do": "open versions",
+                  "expect": "versions open"
+                },
+                {
+                  "do": "open request-change",
+                  "expect": "request-change open"
+                },
+                {
+                  "do": "open copy-link",
+                  "expect": "copy-link open"
+                },
+                {
+                  "do": "select outline",
+                  "expect": "target in view and highlighted"
+                },
+                {
+                  "do": "select versions",
+                  "expect": "target in view and highlighted"
+                },
+                {
+                  "do": "copy request-change",
+                  "expect": "clipboard prompt"
+                },
+                {
+                  "do": "copy copy-link",
+                  "expect": "clipboard link"
+                },
+                {
+                  "do": "cmdk",
+                  "expect": "every popover listed with its shortcut"
+                },
+                {
+                  "do": "key o",
+                  "expect": "outline open"
+                },
+                {
+                  "do": "key escape",
+                  "expect": "popover closed"
+                },
+                {
+                  "do": "click outside",
+                  "expect": "popover closed"
+                }
+              ]
+            }
+          },
+          "manifest": {
+            "navigator": "explorer",
+            "modules": [
+              {
+                "id": "explorer",
+                "icon": "assets.icon-explorer",
+                "label": "Explorer",
+                "section": "sections.module.explorer",
+                "source": "page.explorer",
+                "shortcut": "e"
+              },
+              {
+                "id": "checks",
+                "icon": "assets.icon-checks",
+                "label": "Checks",
+                "section": "sections.module.checks",
+                "source": "page.checks",
+                "shortcut": "c"
+              }
+            ],
+            "actions": [
+              {
+                "id": "copy-link",
+                "icon": "assets.icon-link",
+                "label": "Copy link",
+                "handler": {
+                  "kind": "copy-link"
+                },
+                "shortcut": "l"
+              }
+            ],
+            "wiring": [
+              {
+                "do": "open explorer",
+                "expect": "explorer open"
+              },
+              {
+                "do": "open checks",
+                "expect": "checks open"
+              },
+              {
+                "do": "open copy-link",
+                "expect": "copy-link open"
+              },
+              {
+                "do": "select explorer",
+                "expect": "target in view and highlighted"
+              },
+              {
+                "do": "search explorer",
+                "expect": "tree filtered to the match"
+              },
+              {
+                "do": "copy copy-link",
+                "expect": "clipboard link"
+              },
+              {
+                "do": "cmdk",
+                "expect": "every popover listed with its shortcut"
+              },
+              {
+                "do": "key e",
+                "expect": "explorer open"
+              },
+              {
+                "do": "key escape",
+                "expect": "popover closed"
+              },
+              {
+                "do": "click outside",
+                "expect": "popover closed"
+              }
+            ]
+          }
+        }
+      },
+      "publication": "studio",
+      "entryId": "director",
+      "entryMeta": {
+        "pin": {
+          "nav": true,
+          "group": "agents"
+        }
+      }
+    }
+  }
+}

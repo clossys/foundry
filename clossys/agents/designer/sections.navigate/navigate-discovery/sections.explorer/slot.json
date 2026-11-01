@@ -1,0 +1,181 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.explorer",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.navigate",
+    "l2": "navigate-discovery",
+    "order": 218
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": "sections.band",
+      "header": "sections.section-header"
+    },
+    "slots": [
+      {
+        "name": "tree",
+        "type": "region",
+        "required": true
+      },
+      {
+        "name": "list",
+        "type": "region",
+        "required": true
+      },
+      {
+        "name": "selection",
+        "type": "records",
+        "required": false
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "allowedComposes": [
+      "components.tree",
+      "components.grid-list",
+      "components.breadcrumbs",
+      "components.resize-handle",
+      "components.button",
+      "components.icon"
+    ],
+    "parts": [
+      "sections.band",
+      "sections.section-header"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "app",
+    "passageSchema": "passages.explorer",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "tree.label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "tree.nodes[].label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "tree.nodes[].description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "list.label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "list.items[].label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "labels.details",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [
+    "components.breadcrumbs",
+    "components.button",
+    "components.grid-list",
+    "components.icon",
+    "components.resize-handle",
+    "components.tree"
+  ]
+}
