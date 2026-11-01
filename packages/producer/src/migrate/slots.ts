@@ -17,7 +17,7 @@ import {
   type FoundryIa, type FoundrySlot, type IaDoc, type IaLeafGroup, type IaNode, type PinDoc, type RawRefs, type SlotAgent, type SlotDoc, type SlotKind, type SourceDoc,
 } from "../records/slot-model/index.js";
 import { agentModule } from "../server/cells.js";
-import { cmp, readJsonFile, readLibrary, readOldStore, writerRecords, type LibraryVersion, type OldCell, type OldStore } from "./sources.js";
+import { cmp, readDesignerContracts, readJsonFile, readLibrary, readOldStore, writerRecords, type LibraryVersion, type OldCell, type OldStore } from "./sources.js";
 
 export interface PlannedCandidate { readonly name: string; readonly bytes: string }
 export interface PlannedSlot {
@@ -106,8 +106,14 @@ const PIN_LAYERS = new Set(["themes", "assets"]);
 function lineageSource(record: Record<string, any>): SourceDoc {
   const lineage = record.lineage ?? {};
   const mode = String(lineage.mode ?? "original");
-  const refs = Object.entries(lineage).filter(([key]) => key !== "mode").flatMap(([, value]) => typeof value === "string" ? [value] : strings(value));
-  const kind = mode === "original" || mode === "authored" ? "original" : mode === "derived" ? "derived" : "registry";
+  const refs = Object.entries(lineage).filter(([key]) => key !== "mode").flatMap(([, value]) => {
+    if (typeof value === "string") return [value];
+    // Library lineage references and parents are structured identities. Keep
+    // each complete value in the single source field rather than dropping it.
+    if (value !== null && typeof value === "object") return [JSON.stringify(value)];
+    return [];
+  });
+  const kind = mode === "original" || mode === "authored" ? "original" : mode === "derived" || mode === "customized" ? "derived" : "registry";
   return {
     ...sourceFrom(kind, kind === "original" ? [] : (refs.length ? refs : [`lineage:${mode}`])),
     ...(typeof record.hash === "string" ? { hash: record.hash } : {}),
@@ -140,8 +146,21 @@ async function designerCellCandidate(cell: OldCell): Promise<string> {
   });
 }
 async function planDesigner(consumer: string, store: OldStore | null, library: readonly LibraryVersion[], selection: Record<string, any> | null): Promise<AgentPlan> {
-  const foundry = designerIa();
-  const plan = emptyPlan(foundry, "designer", withExtensions("designer", foundry.ia, existingExtensions(consumer, "designer")));
+  const base = designerIa();
+  const slots = new Map(base.slots);
+  const foundry = { ...base, slots };
+  // Only the existing owner-signed extension list grants membership. Contracts
+  // and selection records on their own must never admit a new IA slot.
+  const extensions = existingExtensions(consumer, "designer");
+  const contracts = readDesignerContracts(consumer);
+  for (const id of extensions) {
+    if (foundry.slots.has(id)) continue;
+    const contract = contracts.get(id);
+    if (contract) slots.set(id, {
+      id, kind: "element", contract, declaredInputs: [], declaredUses: [], feeds: [],
+    });
+  }
+  const plan = emptyPlan(foundry, "designer", withExtensions("designer", foundry.ia, extensions));
   const off = (id: string) => { if (!plan.offIa.includes(id)) plan.offIa.push(id); };
   for (const cell of store?.cells ?? []) {
     const slot = plan.slots.get(cell.id);
@@ -159,7 +178,9 @@ async function planDesigner(consumer: string, store: OldStore | null, library: r
     const bytes = elementCandidate(version);
     slot.candidates.push({ name: candidateName(version.element, version.version, "json"), bytes });
     const item = JSON.parse(bytes);
-    slot.raw.uses.push(...strings(item.registryDependencies), ...strings(version.record.deps?.elements));
+    const dependencies = Array.isArray(version.record.deps?.elements) ? version.record.deps.elements : [];
+    slot.raw.uses.push(...strings(item.registryDependencies), ...dependencies.flatMap((dep: unknown) =>
+      typeof dep === "string" ? [dep] : dep !== null && typeof dep === "object" && typeof (dep as { slot?: unknown }).slot === "string" ? [(dep as { slot: string }).slot] : []));
   }
   // D3: the selection pin wins.
   const history = new Map<string, Record<string, any>>((Array.isArray(selection?.history) ? selection!.history : []).map((event: Record<string, any>) => [event.id, event]));

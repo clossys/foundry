@@ -5,6 +5,8 @@
 import { existsSync, lstatSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { agentModule } from "../server/cells.js";
+import { validateSlotContract } from "../records/validate.js";
+import type { SlotContract } from "../records/types.js";
 
 export interface OldCell {
   readonly id: string;
@@ -21,6 +23,24 @@ export interface OldStore { readonly root: string; readonly tree: OldTree; reado
 const isDir = (path: string) => { try { const stat = lstatSync(path); return stat.isDirectory() && !stat.isSymbolicLink(); } catch { return false; } };
 export const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 export const readJsonFile = (path: string): any => JSON.parse(readFileSync(path, "utf8"));
+
+/** Legacy consumer contracts supply facts, never permission to extend the IA. */
+export function readDesignerContracts(consumer: string): ReadonlyMap<string, SlotContract> {
+  const root = join(consumer, "agents/designer/slot-contracts");
+  const contracts = new Map<string, SlotContract>();
+  if (!isDir(root)) return contracts;
+  for (const name of readdirSync(root).sort()) {
+    if (!name.endsWith(".json")) continue;
+    const raw: unknown = readJsonFile(join(root, name));
+    for (const value of Array.isArray(raw) ? raw : [raw]) {
+      const checked = validateSlotContract(value);
+      if (!checked.ok) throw new Error(`invalid Designer contract in ${name}`);
+      if (contracts.has(checked.value.slot)) throw new Error(`duplicate Designer contract for ${checked.value.slot}`);
+      contracts.set(checked.value.slot, checked.value);
+    }
+  }
+  return contracts;
+}
 
 function bodyOf(source: string): string {
   const lines = source.split("\n");

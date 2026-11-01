@@ -9,7 +9,8 @@ import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { listSlots, readiness, slotIndex, usedBy } from "../records/slots.js";
-import { candidatesDir, parseFrontmatter, pinFile, slotFile } from "../records/slot-model/index.js";
+import { candidatesDir, designerIa, jsonBytes, parseFrontmatter, pinFile, slotFile, withExtensions } from "../records/slot-model/index.js";
+import { hashFiles } from "../records/hash.js";
 import { inventory } from "../server/cells.js";
 import { checkSlotModel, compareSlotModel } from "./slot-check.js";
 import { planMigration, writePlan } from "./slots.js";
@@ -81,6 +82,63 @@ describe("clossys migrate slots", () => {
     expect(next.state).toBe("ready");
     expect(next.cells.find(cell => cell.id === "page.about")).toMatchObject({ status: "active", version: 1, fields: { path: "/about" } });
     expect((next.tree as { active: Record<string, number> }).active["page.about"]).toBe(1);
+  });
+
+  describe("Designer consumer extensions", () => {
+    const id = "sections.consumer.sample";
+    const contract = { schema: "clossys.slot-contract/1", slot: id, package: "producer", layer: "sections", purpose: "Recorded sample section", inputs: [], limits: {}, references: [], checkSuite: "sample", specimenKind: "visual" };
+    const source = { registry: "sample", item: "card", version: "1.0.0", hash: "sha256:" + "a".repeat(64), url: "https://example.com/card.json" };
+    const parent = { version: 1, hash: "sha256:" + "b".repeat(64) };
+    const prepare = (admit: boolean) => {
+      const dir = join(consumer, "library", id, "sample", "v2");
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, "index.tsx"), "export const Sample = () => null;\n");
+      const hash = hashFiles(dir, ["index.tsx"]);
+      writeFileSync(join(dir, "element.json"), jsonBytes({ id: "sample", slot: id, kind: "registry:block", payload: ["index.tsx"], hash, lineage: { mode: "customized", source, parent }, deps: { elements: [{ slot: "sections.hero", element: "hero", version: 1, hash }] } }));
+      const contracts = join(consumer, "agents/designer/slot-contracts");
+      mkdirSync(contracts, { recursive: true });
+      writeFileSync(join(contracts, "consumer.json"), jsonBytes([contract]));
+      writeFileSync(join(consumer, "selection.json"), jsonBytes({ pins: { [id]: { element: "sample", version: 2, hash, event: "selected" } }, history: [{ id: "selected", at: "2026-10-20T10:30:00Z" }] }));
+      if (admit) writeFileSync(join(consumer, "agents/designer/ia.json"), jsonBytes(withExtensions("designer", designerIa().ia, [id])));
+      return hash;
+    };
+
+    it("preserves admitted contracts, structured provenance, dependencies and original pin time", async () => {
+      const hash = prepare(true);
+      await migrate();
+      const slot = listSlots(consumer, "designer").find(entry => entry.id === id)!;
+      const doc = JSON.parse(readFileSync(slotFile(slot.dir), "utf8"));
+      expect(doc.contract).toEqual(contract);
+      expect(doc.uses).toContain("sections.hero");
+      expect(usedBy(consumer, "sections.hero")).toContainEqual({ agent: "designer", id });
+      expect(slot.pin).toMatchObject({ candidate: "sample-v2.json", at: "2026-10-20T10:30:00Z", pinnedBy: "migration:SLOT-MODEL" });
+      const candidate = JSON.parse(readFileSync(join(candidatesDir(slot.dir), "sample-v2.json"), "utf8"));
+      expect(candidate.files[0].content).toBe("export const Sample = () => null;\n");
+      expect(candidate.meta.source.hash).toBe(hash);
+      expect(candidate.meta.source.kind).toBe("derived");
+      expect(candidate.meta.source.ref.map((ref: string) => JSON.parse(ref))).toEqual(expect.arrayContaining([source, parent]));
+      expect(await compareSlotModel(consumer)).toEqual([]);
+      const before = snapshot(consumer);
+      expect((await migrate()).written).toEqual([]);
+      expect(snapshot(consumer)).toEqual(before);
+    });
+
+    it("does not admit a contract or pin without an owner-signed IA extension", async () => {
+      prepare(false);
+      const plan = await planMigration(consumer);
+      expect(plan.agents.designer.offIa).toContain(id);
+      expect(plan.agents.designer.slots.has(id)).toBe(false);
+      expect(plan.agents.designer.ia.extensions).toEqual([]);
+    });
+
+    it("refuses malformed or duplicate source contracts", async () => {
+      prepare(true);
+      const path = join(consumer, "agents/designer/slot-contracts/consumer.json");
+      writeFileSync(path, jsonBytes([contract, contract]));
+      await expect(planMigration(consumer)).rejects.toThrow("duplicate Designer contract");
+      writeFileSync(path, jsonBytes([{ ...contract, layer: "frames" }]));
+      await expect(planMigration(consumer)).rejects.toThrow("invalid Designer contract");
+    });
   });
 
   describe("Writer source history", () => {

@@ -1,0 +1,43 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.module.explorer",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.extensions",
+    "l2": "extensions",
+    "order": 238
+  },
+  "kind": "element",
+  "contract": {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.module.explorer",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "Explorer module: the page's map as a searchable tree with IA level 1 as the top grouping; a row click brings its page part into view and the part in view is highlighted.",
+    "inputs": [
+      {
+        "name": "explorer",
+        "kind": "data",
+        "required": true,
+        "description": "Groups of rows (label, depth, target selector), the active target and the select callback."
+      }
+    ],
+    "limits": {
+      "depth": 4
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "command",
+        "version": "4.23.0",
+        "hash": "sha256:549cd010f34024eea234a587e123b487112262775590c6e9baa82e3a6212545c",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/command.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "flow"
+  },
+  "inputs": [],
+  "uses": []
+}

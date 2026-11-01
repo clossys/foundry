@@ -10,9 +10,13 @@
   "kind": "page",
   "contract": {},
   "inputs": [
+    "frames.studio-shell",
+    "sections.studio.home",
     "sections.task-list"
   ],
   "uses": [
+    "frames.studio-shell",
+    "sections.studio.home",
     "sections.task-list"
   ]
 }

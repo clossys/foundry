@@ -1,7 +1,22 @@
 {
   "schema": "clossys.ia/1",
   "source": "@clossys/designer#leaf-freeze:undefined",
-  "extensions": [],
+  "extensions": [
+    "frames.studio-shell",
+    "sections.module.checks",
+    "sections.module.explorer",
+    "sections.module.outline",
+    "sections.studio.agent-gallery",
+    "sections.studio.checks",
+    "sections.studio.contract",
+    "sections.studio.history",
+    "sections.studio.home",
+    "sections.studio.leaf-header",
+    "sections.studio.options",
+    "sections.studio.publications",
+    "sections.studio.references",
+    "sections.studio.specimen"
+  ],
   "nodes": [
     {
       "id": "themes.colors",
@@ -877,6 +892,44 @@
           "label": "Commands",
           "slots": [
             "frames.command"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "frames.extensions",
+      "label": "Consumer extensions",
+      "children": [
+        {
+          "id": "extensions",
+          "label": "Signed extensions",
+          "slots": [
+            "frames.studio-shell"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sections.extensions",
+      "label": "Consumer extensions",
+      "children": [
+        {
+          "id": "extensions",
+          "label": "Signed extensions",
+          "slots": [
+            "sections.module.checks",
+            "sections.module.explorer",
+            "sections.module.outline",
+            "sections.studio.agent-gallery",
+            "sections.studio.checks",
+            "sections.studio.contract",
+            "sections.studio.history",
+            "sections.studio.home",
+            "sections.studio.leaf-header",
+            "sections.studio.options",
+            "sections.studio.publications",
+            "sections.studio.references",
+            "sections.studio.specimen"
           ]
         }
       ]
