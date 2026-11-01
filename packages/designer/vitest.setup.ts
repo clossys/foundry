@@ -1,4 +1,4 @@
-import { afterEach } from "vitest";
+import { afterEach, beforeAll, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 
@@ -14,3 +14,16 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 // exactly what multi-render tests (Button's variant sweep, Badge's variant
 // sweep) and any two tests querying the same accessible name both do.
 afterEach(cleanup);
+
+// Lazy client boundaries and the ambient Studio component selection: see vitest.harness.ts.
+vi.mock("react", async importOriginal => (await import("./vitest.harness.js")).preloadingReact(await importOriginal()));
+// Source modules, and the built copies the package's own `#designer-*` subpath imports resolve to.
+vi.mock("./src/runtime/component-leaf.client.js", async importOriginal => (await import("./vitest.harness.js")).selectedClient(await importOriginal()));
+vi.mock("./src/runtime/component-leaf.js", async importOriginal => (await import("./vitest.harness.js")).ambientFacade(await importOriginal()));
+vi.mock("./dist/runtime/component-leaf.client.js", async importOriginal => (await import("./vitest.harness.js")).selectedClient(await importOriginal()));
+vi.mock("./dist/runtime/component-leaf.js", async importOriginal => (await import("./vitest.harness.js")).ambientFacade(await importOriginal()));
+
+beforeAll(async () => {
+  const { settleHarness } = await import("./vitest.harness.js");
+  await settleHarness(() => import("./src/studio/marketing-component-selection.js"));
+});
