@@ -7,6 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { checkClientBoundary } from './check-client-boundary.mjs';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+fs.mkdirSync(path.join(repositoryRoot, 'node_modules/.cache/tmp'), { recursive: true });
 const evidence = fs.mkdtempSync(path.join(repositoryRoot, 'node_modules/.cache/tmp/client-boundary-test-'));
 const script = path.join(repositoryRoot, 'scripts/check-client-boundary.mjs');
 function fixture(name, files, exports = { './web': { import: './web.js' } }) {
