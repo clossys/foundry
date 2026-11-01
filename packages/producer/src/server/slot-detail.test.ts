@@ -133,7 +133,7 @@ describe('slot details', () => {
       expect(slotDetailInputs(detail, links, 'light', { ...publication, pages: [page] }).specimen).toMatchObject({ kind: 'viewports', specimens: [] });
     }
     // The native endpoint's explicit emitted identity takes precedence over route matching.
-    expect(slotDetailInputs(detail, links, 'light', { ...publication, pages: [{ ...publication.pages[0]!, route: '/different', cellId: id }] }).specimen).toMatchObject({ kind: 'viewports', specimens: [{ viewport: 375 }] });
+    expect(slotDetailInputs(detail, links, 'light', { ...publication, pages: [{ ...publication.pages[0]!, route: '/different', cellId: id }] }).specimen).toMatchObject({ kind: 'viewports', specimens: [375, 768, 1280].map(viewport => ({ viewport })) });
     unlinkSync(join(dir, 'pin.json'));
     expect(slotDetailInputs(slotDetail(root, 'publisher', id)!, links, 'light', publication)).toMatchObject({ header: { statusLabel: 'No pin' }, specimen: { kind: 'viewports', specimens: [] } });
     unlinkSync(join(dir, 'candidates/example-v1.json'));
