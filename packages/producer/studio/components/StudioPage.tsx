@@ -24,9 +24,10 @@ import type { OptionRow } from '../sections/studio-options';
 import type { Publication, PublicationsInput } from '../sections/studio-publications';
 import type { ViewportSpecimen } from '../sections/studio-specimen';
 import {
-  agentGalleryInput, agentGalleryPreview, agentLeafInputs, agentNotice, agentOptionsInput, agentOptionVersions, agentRecordSpecimen, isLibraryAgent, loadAgentLeaf,
+  agentGalleryInput, agentLeafInputs, agentNotice, agentOptionsInput, agentOptionVersions, agentRecordSpecimen, isLibraryAgent, loadAgentLeaf,
   viewportSpecimen, type AgentLeafRecords, type GalleryPreviews, type LibraryAgent, type StudioLinks,
 } from '../lib/agent-library';
+import { galleryLeafInputs, loadGalleryLeaves, type GalleryLeaf } from '../lib/gallery-specimens';
 import { stringChanges } from '../lib/agent-options';
 import { loadSlotDetail, slotDetailInputs } from '../lib/slot-detail';
 import type { SlotDetail } from '../../src/server/slot-detail';
@@ -188,7 +189,7 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
   const gallery = galleries[page.id];
   const withPublications = page.sectionIds.includes('sections.studio.publications');
   const [publication, setPublication] = useState<Resource<PublicationResponse> | undefined>(undefined);
-  const [leaves, setLeaves] = useState<ReadonlyMap<string, AgentLeafRecords | null> | undefined>(undefined);
+  const [leaves, setLeaves] = useState<ReadonlyMap<string, GalleryLeaf | null> | undefined>(undefined);
   const [origin, setOrigin] = useState('');
   useEffect(() => setOrigin(window.location.origin), []);
   useEffect(() => {
@@ -203,9 +204,9 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
   useEffect(() => {
     if (!libraryAgent || !libraryRecords) return;
     const controller = new AbortController();
-    const cards = libraryRecords.sections.flatMap(section => section.cards).filter(card => card.records !== 0);
-    loadLeaves(libraryAgent, cards.map(card => card.slug), controller.signal).then(rows => {
-      if (!controller.signal.aborted) setLeaves(new Map(cards.map((card, index) => [card.id, rows[index] ?? null])));
+    const cards = libraryRecords.sections.flatMap(section => section.cards);
+    loadGalleryLeaves(libraryAgent, cards, controller.signal).then(rows => {
+      if (!controller.signal.aborted) setLeaves(rows);
     });
     return () => controller.abort();
   }, [libraryAgent, libraryRecords]);
@@ -219,7 +220,7 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
     const previews: GalleryPreviews = new Map([...(leaves ?? [])].map(([id, leaf]) => {
       if (!leaf) return [id, null];
       const emitted = pages.find(row => row.cellId === id && row.emitted && safePreviewUrl(row.previewUrl));
-      return [id, agentGalleryPreview(leaf, links, emitted && publisherFrameUrl(emitted, 1280, resolved))];
+      return [id, galleryLeafInputs(leaf, links, resolved, emitted && publisherFrameUrl(emitted, 1280, resolved)).specimen];
     }));
     const input = gallery.value.agent === 'designer' ? designerGalleryInput(gallery.value.records, resolved, links, count) : agentGalleryInput(gallery.value.records, links, count, previews);
     const inputs: Inputs = {};
@@ -235,7 +236,8 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
           const cell = publication.value.state === 'ready' ? publication.value.pages.find(row => row.id === route.pageId)?.cellId : undefined;
           const leaf = cell ? leaves?.get(cell) : undefined;
           if (!leaf) return route;
-          return { ...route, frame: leaf.contract.facts.find(fact => fact.label === 'Frame')?.value ?? route.frame, sections: leaf.contract.lists.find(list => list.label === 'Sections')?.items ?? route.sections };
+          const { contract } = galleryLeafInputs(leaf, links, resolved);
+          return { ...route, frame: contract.facts.find(fact => fact.label === 'Frame')?.value ?? route.frame, sections: contract.lists.find(list => list.label === 'Sections')?.items ?? route.sections };
         }),
       } : site;
       const publications: PublicationsInput = {
@@ -250,19 +252,6 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
   }, [map, gallery, resolved, page, withPublications, publication, leaves, origin, reports]);
 }
 
-/** Every leaf of one agent, a few requests at a time; a leaf that cannot load is `undefined`. */
-async function loadLeaves(agent: LibraryAgent, slugs: readonly string[], signal: AbortSignal): Promise<(AgentLeafRecords | undefined)[]> {
-  const rows: (AgentLeafRecords | undefined)[] = new Array(slugs.length);
-  let next = 0;
-  const worker = async () => {
-    while (next < slugs.length && !signal.aborted) {
-      const index = next++;
-      rows[index] = await loadAgentLeaf(agent, slugs[index]!, signal).catch(() => undefined);
-    }
-  };
-  await Promise.all(Array.from({ length: Math.min(6, slugs.length) }, worker));
-  return rows;
-}
 
 type LeafRecord = { agent: 'slot'; detail: SlotDetail } | { agent: 'designer'; leaf: DesignerLeaf } | { agent: LibraryAgent; leaf: AgentLeafRecords; previews: ReadonlyMap<number, OptionRow['preview']>; specimens?: readonly ViewportSpecimen[] };
 
@@ -379,10 +368,13 @@ function useManifestPopovers(entry: ContentMapEntry, spec: StudioAssemblySpec, l
       };
     });
     const agent = spec.data.agent ? (AGENT_LABELS[spec.data.agent as Agent] ?? spec.data.agent) : 'an agent';
-    const actions = spec.manifest.actions.map((action): PopoverSpec => ({
-      id: action.id, label: action.label, icon: action.icon, shortcut: action.shortcut,
-      copy: action.handler.kind === 'copy-prompt' ? { kind: 'prompt', prompt: action.handler.prompt.replaceAll('{agent}', agent).replaceAll('{title}', entry.title) } : { kind: 'link' },
-    }));
+    const actions = spec.manifest.actions.flatMap((action): PopoverSpec[] => {
+      if (action.handler.kind !== 'copy-prompt') return [];
+      return [{
+        id: action.id, label: action.label, icon: action.icon, shortcut: action.shortcut,
+        copy: { kind: 'prompt', prompt: action.handler.prompt.replaceAll('{agent}', agent).replaceAll('{title}', entry.title) },
+      }];
+    });
     return [...modules, ...actions];
   }, [entry.title, spec, loaded]);
 }
