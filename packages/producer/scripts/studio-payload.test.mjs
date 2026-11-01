@@ -38,6 +38,16 @@ test('unlisted conventional test and spec files accept for JS, TS, JSX and TSX',
   }
 });
 
+test('unlisted CJS and MJS test and spec files accept', async t => {
+  for (const kind of ['test', 'spec']) for (const extension of ['cjs', 'mjs']) {
+    await t.test(`${kind}.${extension}`, async t => {
+      const item = await fixture(t);
+      await writeFile(join(item.studioDir, `stock-frame.${kind}.${extension}`), 'local test only\n');
+      await assert.doesNotReject(checkPayload(item));
+    });
+  }
+});
+
 test('missing registered payload fails', async t => {
   const item = await fixture(t);
   await rm(join(item.studioDir, 'index.tsx'));
@@ -48,6 +58,16 @@ test('unexpected runtime helper fails', async t => {
   const item = await fixture(t);
   await writeFile(join(item.studioDir, 'helper-runtime.js'), 'export const extra = true;\n');
   await assert.rejects(checkPayload(item), /studio folder files \[helper-runtime.js,index.tsx\] differ/);
+});
+
+test('ordinary CJS and MJS runtime files are not ignored', async t => {
+  for (const file of ['helper-runtime.cjs', 'helper-runtime.mjs', 'test.cjs', 'spec.mjs', 'index.test.cjs.mjs', 'index.spec.mjs.cjs']) {
+    await t.test(file, async t => {
+      const item = await fixture(t);
+      await writeFile(join(item.studioDir, file), 'unregistered runtime\n');
+      await assert.rejects(checkPayload(item), /studio folder files .* differ/);
+    });
+  }
 });
 
 test('test-like runtime and provenance names fail', async t => {
@@ -81,6 +101,21 @@ test('explicitly listed test payload is required and validated', async t => {
   await assert.doesNotReject(checkPayload(item));
   await writeFile(join(item.studioDir, file), 'changed test\n');
   await assert.rejects(checkPayload(item), /index.test.tsx differs from studio-home v1 in the library/);
+});
+
+test('explicitly pinned CJS and MJS tests are required and byte-checked', async t => {
+  for (const kind of ['test', 'spec']) for (const extension of ['cjs', 'mjs']) {
+    await t.test(`${kind}.${extension}`, async t => {
+      const item = await fixture(t), file = `stock-frame.${kind}.${extension}`;
+      item.payload.push(file);
+      await writeFile(join(item.versionDir, file), 'registered test\n');
+      await assert.rejects(checkPayload(item), /studio folder files .* differ/);
+      await writeFile(join(item.studioDir, file), 'registered test\n');
+      await assert.doesNotReject(checkPayload(item));
+      await writeFile(join(item.studioDir, file), 'changed test\n');
+      await assert.rejects(checkPayload(item), /stock-frame\.(?:test|spec)\.(?:cjs|mjs) differs from studio-home v1 in the library/);
+    });
+  }
 });
 
 test('record-only names retain their existing library-only semantics', async t => {
