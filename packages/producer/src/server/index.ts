@@ -19,6 +19,7 @@ import { designerDefaultTheme, designerGallery, designerLeaf } from "./designer-
 import { agentGallery, agentLeaf, isLibraryAgent } from "./agent-library.js";
 import { recordSpecimenViewport, RECORD_SPECIMEN_THEME_HEADER, RECORD_SPECIMEN_WIDTH_HEADER } from "./record-specimens.js";
 import { recordSpecimenInput } from "./slot-gallery.js";
+import { specimenFramePage, SPECIMEN_FRAME_CSP } from "./specimen-frame.js";
 import { slotDetail } from "./slot-detail.js";
 import { hasSlotModel } from "../records/slots.js";
 import { SLOT_AGENTS, type SlotAgent } from "../records/slot-model/index.js";
@@ -239,9 +240,19 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
     // Run tokens are header-only; do not forward a token accidentally placed in a URL.
     const decodedQuery = [...new URL(raw, origin).searchParams].flat().join(" ");
     if (raw.includes(token) || decodedQuery.includes(token)) { json(response, 400, { error: "Run tokens must use the request header" }); return; }
-    const recordAgent = new URL(raw, origin).searchParams.get("agent");
+    const specimenParams = new URL(raw, origin).searchParams;
+    const recordAgent = specimenParams.get("agent");
     const recordSpecimen = pathname === "/__specimen" && (recordAgent === "director" || recordAgent === "writer");
     if (recordSpecimen && request.method !== "GET" && request.method !== "HEAD") { json(response, 405, { error: "Specimens are read-only" }); return; }
+    if (recordSpecimen && specimenParams.get("view") !== "record") {
+      const viewport = recordSpecimenViewport(specimenParams);
+      const params = new URLSearchParams({ agent: recordAgent!, slot: specimenParams.get("slot") ?? "",
+        ...(specimenParams.has("candidate") ? { candidate: specimenParams.get("candidate")! } : {}),
+        width: String(viewport.width), theme: viewport.theme, view: "record" });
+      const html = specimenFramePage({ src: `/__specimen?${params}`, width: viewport.width, title: "Record specimen" });
+      response.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": SPECIMEN_FRAME_CSP });
+      response.end(request.method === "HEAD" ? undefined : html); return;
+    }
     if (!recordSpecimen && installed && (pathname === "/__specimen" || pathname.startsWith("/__specimen-site/"))) {
       if (request.method !== "GET" && request.method !== "HEAD") { json(response, 405, { error: "Specimens are read-only" }); return; }
       if (await installed.handle(request, response, pathname)) return;
