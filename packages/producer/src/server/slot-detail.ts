@@ -55,7 +55,7 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
     if (validPin && agent === "designer" && doc.kind === "element" && name.endsWith(".json")) {
       specimen = `${id}/${element}`;
     }
-    const specimenUrl = validPin && agent === "director" && doc.kind === "brief" ? recordSpecimenHref(agent, id, name) : undefined;
+    const specimenUrl = validPin && ((agent === "director" && doc.kind === "brief") || (agent === "writer" && doc.kind === "strings")) ? recordSpecimenHref(agent, id, name) : undefined;
     return { name, version, sha256: candidate.sha256,
       pinned: entry.pin?.candidate === name, content, source,
       ...(specimen ? { specimen } : {}), ...(specimenUrl ? { specimenUrl } : {}),

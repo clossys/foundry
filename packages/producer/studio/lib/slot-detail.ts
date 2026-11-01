@@ -35,6 +35,7 @@ function candidateRows(candidate: DetailCandidate, writer: boolean) {
 export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 'light' | 'dark'): Record<string, unknown> {
   const shown = detail.candidates.find(candidate => candidate.name === detail.shown);
   const pinned = !!shown?.pinned;
+  const recordAgent = detail.agent === 'director' || detail.agent === 'writer';
   const statusLabel = !shown ? 'No candidate' : pinned ? 'Pinned' : detail.pin ? 'Pin unavailable' : 'No pin';
   const specimen: SpecimenInput = shown?.specimen || shown?.specimenUrl ? {
     kind: 'viewports', name: detail.id, title: 'Specimen', description: shown.name,
@@ -45,8 +46,8 @@ export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 
   } : {
     kind: 'record', name: detail.id, title: detail.agent === 'writer' ? 'Strings' : 'Candidate',
     description: shown ? shown.name : 'This slot has no candidate yet.',
-    rows: shown && detail.agent !== 'director' ? candidateRows(shown, detail.agent === 'writer').map(row => ({ ...row, label: row.key })) : [],
-    empty: detail.agent === 'director' ? detail.pin ? 'Pin unavailable' : statusLabel : 'No candidate',
+    rows: shown && !recordAgent ? candidateRows(shown, detail.agent === 'writer').map(row => ({ ...row, label: row.key })) : [],
+    empty: recordAgent ? detail.pin ? 'Pin unavailable' : statusLabel : 'No candidate',
   };
   const options: OptionsInput = {
     name: detail.id, description: detail.pin ? 'Recorded candidates beside the pin.' : 'No pin. Candidates await approval.',
