@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 /** Files a library version carries beside the code Studio runs: provenance, not payload. */
 const RECORD_ONLY = new Set(['registry-item.json', 'LICENCE.md']);
-const TEST_FILE = /\.(?:test|spec)\.[jt]sx?$/;
+const TEST_FILE = /\.(?:test|spec)\.(?:[jt]sx?|[cm]js)$/;
 
 function fail(message) { throw new Error(`Studio assembly: ${message}`); }
 
