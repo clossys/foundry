@@ -1,11 +1,11 @@
 import { contractCopy } from './contract-copy';
-import { studioCopy } from './studio-copy';
 /** Gallery previews use the same canonical slot detail projection as the leaf page. */
 import type { SlotDetail } from '../../src/server/slot-detail';
 import type { ContractInput } from '../sections/studio-contract';
 import type { SpecimenInput } from '../sections/studio-specimen';
 import { agentGalleryPreview, loadAgentLeaf, type AgentCard, type AgentLeafRecords, type LibraryAgent, type StudioLinks } from './agent-library';
 import { loadSlotDetail, slotDetailInputs } from './slot-detail';
+import type { PublicationResponse } from './publisher-preview';
 
 export type GalleryLeaf = { source: 'slot'; detail: SlotDetail } | { source: 'legacy'; leaf: AgentLeafRecords };
 
@@ -34,16 +34,15 @@ export async function loadGalleryLeaves(agent: LibraryAgent, cards: readonly Age
   return new Map(pending.map((card, index) => [card.id, rows[index] ?? null]));
 }
 
-/** Preserve the native detail contract and an actually emitted page preview when available. */
-export function galleryLeafInputs(row: GalleryLeaf, links: StudioLinks, theme: 'light' | 'dark', pageUrl?: string): { specimen: SpecimenInput; contract: ContractInput } {
+/** Native rows share the detail's pinned six-view projection; pageUrl serves explicit legacy rows only. */
+export function galleryLeafInputs(row: GalleryLeaf, links: StudioLinks, theme: 'light' | 'dark', pageUrl?: string, publication?: PublicationResponse): { specimen: SpecimenInput; contract: ContractInput } {
   if (row.source === 'legacy') return { specimen: agentGalleryPreview(row.leaf, links, pageUrl), contract: { ...row.leaf.contract, copy: contractCopy() } };
-  const inputs = slotDetailInputs(row.detail, links, theme);
+  const inputs = slotDetailInputs(row.detail, links, theme, publication);
   const specimen = inputs.specimen as SpecimenInput;
   return {
-    specimen: row.detail.kind === 'page' && pageUrl ? {
-      kind: 'viewports', name: row.detail.id, title: studioCopy("studio.rendered-page"), description: '',
-      specimens: [{ viewport: 1280, light: pageUrl, interactive: false }], empty: studioCopy("studio.publish-this-page-to-preview-it"),
-    } : specimen,
+    specimen: row.detail.agent === 'publisher' && row.detail.kind === 'page' && specimen.kind === 'viewports'
+      ? { ...specimen, specimens: specimen.specimens.map(viewport => ({ ...viewport, interactive: false })) }
+      : specimen,
     contract: inputs.contract as ContractInput,
   };
 }

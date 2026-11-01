@@ -223,7 +223,8 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
     const previews: GalleryPreviews = new Map([...(leaves ?? [])].map(([id, leaf]) => {
       if (!leaf) return [id, null];
       const emitted = pages.find(row => row.cellId === id && row.emitted && safePreviewUrl(row.previewUrl));
-      return [id, galleryLeafInputs(leaf, links, resolved, emitted && publisherFrameUrl(emitted, 1280, resolved)).specimen];
+      const legacyPageUrl = leaf.source === 'legacy' && emitted ? publisherFrameUrl(emitted, 1280, resolved) : undefined;
+      return [id, galleryLeafInputs(leaf, links, resolved, legacyPageUrl, publication?.state === 'ready' ? publication.value : undefined).specimen];
     }));
     const input = gallery.value.agent === 'designer' ? designerGalleryInput(gallery.value.records, resolved, links, count) : agentGalleryInput(gallery.value.records, links, count, previews);
     const inputs: Inputs = {};
