@@ -55,12 +55,6 @@
       "hash": "sha256:afc0fc911775ac565e6df8a88abfd7ece8f5c3545f412355e157d2fd848aeee8",
       "event": "e9"
     },
-    "sections.studio.references": {
-      "element": "studio-references",
-      "version": 1,
-      "hash": "sha256:4faa7667cf6b9aa220ce982b4d9a502d39762e00ba2fa60906dfea7a98c103e5",
-      "event": "e10"
-    },
     "sections.studio.publications": {
       "element": "studio-publications",
       "version": 2,
@@ -439,6 +433,14 @@
       "hash": "sha256:300440386e553b250dda2bd708fef7f1bff1177ed7ee34768543355231125101",
       "from": "option",
       "reason": "FRAME-PANELS (foundry#2553 L6): popover rows stay open on select."
+    },
+    {
+      "id": "e31",
+      "at": "2026-11-01T16:11:46.481Z",
+      "by": "designer/source-helper",
+      "action": "unpin",
+      "slot": "sections.studio.references",
+      "reason": "NEED: the references section cites only the shadcn Card primitive, with no matching eligible whole-section registry reference. Withdraw the unsupported pin until the uses/used-by links and lineage contract has a verified matching source."
     }
   ]
 }
