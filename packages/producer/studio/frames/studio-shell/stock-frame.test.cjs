@@ -30,7 +30,7 @@ const output = buildSync({
     export {NavUser} from './nav-user';
     export {StockChatSidebar, StockChatSheet} from './stock-chat-sidebar';
     export {HeaderPopover} from './stock-header-controls';
-    export {SidebarProvider, SidebarTrigger, SidebarRail, Sidebar, SidebarMenuButton, useSidebar} from '@clossys/designer-ui';
+    export {SidebarProvider, SidebarTrigger, SidebarRail, Sidebar, SidebarMenuButton, HeaderEdgeToggle, useSidebar} from '@clossys/designer-ui';
   `, resolveDir: __dirname, loader: 'tsx' },
   tsconfig: path.join(studio, 'tsconfig.json'), bundle: true, platform: 'node', format: 'cjs', jsx: 'automatic',
   external: ['react', 'react-dom', 'react/*', 'react-dom/*'], loader: { '.css': 'empty' }, write: false, logLevel: 'silent',
@@ -55,6 +55,25 @@ async function mounted(element, width = 1440) {
   return { container, async close() { await act(async () => root.unmount()); container.remove(); } };
 }
 async function click(element) { assert.ok(element); await act(async () => element.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 0 }))); }
+
+test('header edge toggles mirror the same native divider with equal spacing and preserve both controls', async () => {
+  const calls = [];
+  const view = await mounted(e('header', null,
+    e('div', { className: 'flex items-center gap-2' }, e(api.HeaderEdgeToggle, null, e('button', { onClick: () => calls.push('left') }, 'Left'))),
+    e('div', { className: 'flex items-center gap-2' }, e(api.HeaderEdgeToggle, { separatorFirst: true }, e('button', { onClick: () => calls.push('chat') }, 'Chat')))));
+  try {
+    const separators = [...view.container.querySelectorAll('[data-slot="separator"]')];
+    assert.equal(separators.length, 2);
+    assert.equal(separators[0].outerHTML, separators[1].outerHTML);
+    assert.equal(separators[0].getAttribute('aria-orientation'), 'vertical');
+    assert.ok(separators[0].classList.contains('aria-[orientation=vertical]:h-4'));
+    assert.ok(separators[0].classList.contains('aria-[orientation=vertical]:self-auto'));
+    assert.doesNotMatch(separators[0].className, /\b(?:mr|ml)-/);
+    await click(separators[0].previousElementSibling);
+    await click(separators[1].nextElementSibling);
+    assert.deepEqual(calls, ['left', 'chat']);
+  } finally { await view.close(); }
+});
 
 // Pure component inputs exercise static adoption without a fabricated account or menu.
 test('workspace and profile keep stock row presentation with no switch menu or inactive button', () => {
@@ -143,7 +162,16 @@ test('actual shell binds native resizing, shared dividers, container ancestry an
   try {
     const header = view.container.querySelector('header'); assert.ok(header);
     const separators = [...header.querySelectorAll('[data-slot="separator"]')]; assert.equal(separators.length, 2);
-    assert.equal(separators[0].className.replace('mr-2 ', ''), separators[1].className);
+    assert.equal(separators[0].className, separators[1].className, 'both header edges share separator height, alignment and spacing');
+    for (const separator of separators) {
+      assert.equal(separator.getAttribute('aria-orientation'), 'vertical');
+      assert.ok(separator.classList.contains('aria-[orientation=vertical]:h-4'));
+      assert.ok(separator.classList.contains('aria-[orientation=vertical]:self-auto'));
+      assert.ok(separator.parentElement.classList.contains('gap-2'));
+      assert.doesNotMatch(separator.className, /\b(?:mr|ml)-/);
+    }
+    assert.equal(separators[0].previousElementSibling.getAttribute('data-panel-toggle'), 'left');
+    assert.equal(separators[1].nextElementSibling.getAttribute('data-panel-toggle'), 'chat');
     assert.ok(view.container.querySelector('#body').closest('[class*="@container/main"]'));
     assert.ok(view.container.querySelector('[data-slot="resizable-panel-group"]'));
     const handle = view.container.querySelector('[data-slot="resizable-handle"]'); assert.ok(handle);
