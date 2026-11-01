@@ -29,10 +29,11 @@ const output = buildSync({
     export {TeamSwitcher} from './team-switcher';
     export {NavUser} from './nav-user';
     export {StockChatSidebar, StockSidebarSheet} from './stock-chat-sidebar';
-    export {HeaderPopover} from './stock-header-controls';
-    export {SidebarProvider, SidebarTrigger, SidebarRail, Sidebar, SidebarMenuButton, HeaderEdgeToggle, useSidebar} from '@clossys/designer-ui';
+    export {HeaderPopover, HeaderIconButton} from './stock-header-controls';
+    export {SidebarProvider, SidebarTrigger, SidebarRail, Sidebar, SidebarMenuButton, HeaderEdgeToggle, StudioAppFrame, StudioPageFrame, useSidebar} from '@clossys/designer-ui';
   `, resolveDir: __dirname, loader: 'tsx' },
-  tsconfig: path.join(studio, 'tsconfig.json'), bundle: true, platform: 'node', format: 'cjs', jsx: 'automatic',
+  alias: { '@clossys/designer-ui': path.resolve(studio, '../../designer/ui/src/index.ts') },
+    tsconfig: path.join(studio, 'tsconfig.json'), bundle: true, platform: 'node', format: 'cjs', jsx: 'automatic',
   external: ['react', 'react-dom', 'react/*', 'react-dom/*'], loader: { '.css': 'empty' }, write: false, logLevel: 'silent',
   plugins: undefined,
 }).outputFiles[0].text;
@@ -75,12 +76,55 @@ test('header edge toggles mirror the same native divider with equal spacing and 
   } finally { await view.close(); }
 });
 
+for (const width of [768, 1280]) test(`shared desktop panels component unit at ${width}px uses one group and independent snap toggles`, async () => {
+  function Header({ chatOpen, setChatOpen }) {
+    const { open, toggleSidebar } = api.useSidebar();
+    return e(React.Fragment, null,
+      e(api.HeaderEdgeToggle, null, e(api.HeaderIconButton, { label: 'Toggle Sidebar', 'aria-expanded': open, 'data-panel-toggle': 'left', onClick: toggleSidebar }, 'Left')),
+      e(api.HeaderEdgeToggle, { separatorFirst: true }, e(api.HeaderIconButton, { label: 'Toggle chat', 'aria-expanded': chatOpen, 'data-panel-toggle': 'chat', onClick: () => setChatOpen(value => !value) }, 'Chat')));
+  }
+  function Harness() {
+    const [open, setOpen] = React.useState(true);
+    const [chatOpen, setChatOpen] = React.useState(true);
+    return e(api.StudioAppFrame, { open, onOpenChange: setOpen,
+      navigation: e(api.Sidebar, { collapsible: 'none' }, 'Navigation') },
+      e(api.StudioPageFrame, { header: e(Header, { chatOpen, setChatOpen }), chatOpen, chatResizeLabel: 'Resize chat',
+        chat: e(api.Sidebar, { collapsible: 'none' }, 'Chat') }, e('section', { id: 'panel-body' }, 'Body')));
+  }
+  const view = await mounted(e(Harness), width);
+  const panel = id => view.container.querySelector(`#studio-${id}`);
+  const handles = () => [...view.container.querySelectorAll('[data-slot="resizable-handle"]')];
+  const toggle = side => view.container.querySelector(`[data-panel-toggle="${side}"]`);
+  try {
+    const groups = view.container.querySelectorAll('[data-slot="resizable-panel-group"]'); assert.equal(groups.length, 1);
+    assert.deepEqual([...groups[0].children].filter(child => child.hasAttribute('data-slot')).map(child => child.getAttribute('data-slot') === 'resizable-handle' ? 'resizable-handle' : child.id),
+      ['studio-navigation', 'resizable-handle', 'studio-page', 'resizable-handle', 'studio-chat']);
+    for (const side of ['navigation', 'chat']) {
+      assert.equal(panel(side).parentElement, groups[0]);
+      assert.ok(panel(side).querySelector('[data-slot="sidebar"]'));
+    }
+    assert.ok(panel('page').querySelector('#studio-main.overflow-y-auto #panel-body'));
+    assert.ok(panel('page').querySelector('#panel-body').closest('[class*="@container/main"]'));
+    assert.equal(handles().length, 2);
+    for (const handle of handles()) { assert.equal(handle.getAttribute('role'), 'separator'); assert.equal(handle.tabIndex, 0); }
+    assert.equal(toggle('left').className, toggle('chat').className);
+    await click(toggle('left')); assert.equal(panel('navigation'), null); assert.ok(panel('chat')); assert.equal(handles().length, 1);
+    assert.equal(toggle('left').getAttribute('aria-expanded'), 'false'); assert.match(document.cookie, /sidebar_state=false/);
+    await act(async () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true, bubbles: true })));
+    assert.ok(panel('navigation')); assert.match(document.cookie, /sidebar_state=true/);
+    await click(toggle('chat')); assert.equal(panel('chat'), null); assert.ok(panel('navigation')); assert.equal(handles().length, 1);
+    await click(toggle('left')); assert.equal(panel('navigation'), null); assert.equal(handles().length, 0); assert.ok(panel('page'));
+    await click(toggle('chat')); await click(toggle('left')); assert.ok(panel('navigation')); assert.ok(panel('chat')); assert.equal(handles().length, 2);
+  } finally { await view.close(); document.cookie = 'sidebar_state=true'; }
+});
+
 test('actual sidebar keeps static workspace and profile rows with Clossys Studio and the consumer mark', () => {
   const provider = JSON.stringify(`data:text/javascript,${encodeURIComponent('export const useStudioData=()=>globalThis.__staticNavData;export const useThemeMode=()=>globalThis.__staticNavTheme;')}`);
   const source = fs.readFileSync(path.join(__dirname, 'app-sidebar.tsx'), 'utf8')
     .replace('from "../../components/StudioProviders"', `from ${provider}`)
     + '\nexport { SidebarProvider as TestSidebarProvider } from "@clossys/designer-ui";';
   const bundled = buildSync({ stdin: { contents: source, resolveDir: __dirname, loader: 'tsx' },
+    alias: { '@clossys/designer-ui': path.resolve(studio, '../../designer/ui/src/index.ts') },
     tsconfig: path.join(studio, 'tsconfig.json'), bundle: true, platform: 'node', format: 'cjs', jsx: 'automatic',
     external: ['react', 'react-dom', 'react/*', 'react-dom/*'], loader: { '.css': 'empty' }, write: false, logLevel: 'silent' }).outputFiles[0].text;
   const { AppSidebar, TestSidebarProvider } = load(bundled);
@@ -236,6 +280,7 @@ function shellComponent() {
     .replace("from 'next/navigation'", `from ${port("export const usePathname=()=>'/';export const useRouter=()=>({push(){}});")}`)
     .replace("from '../../components/StudioProviders'", `from ${port("export const useThemeMode=()=>globalThis.__stockFrameTheme;")}`);
   const bundled = buildSync({ stdin: { contents: source, resolveDir: __dirname, loader: 'tsx' },
+    alias: { '@clossys/designer-ui': path.resolve(studio, '../../designer/ui/src/index.ts') },
     tsconfig: path.join(studio, 'tsconfig.json'), bundle: true, platform: 'node', format: 'cjs', jsx: 'automatic',
     external: ['react', 'react-dom', 'react/*', 'react-dom/*'], loader: { '.css': 'empty' }, write: false, logLevel: 'silent' }).outputFiles[0].text;
   return load(bundled).default;
@@ -264,7 +309,9 @@ for (const width of [768, 1280]) test(`shell component unit with stubbed navigat
     assert.equal(separators[1].nextElementSibling.getAttribute('data-panel-toggle'), 'chat');
     assert.ok(view.container.querySelector('#body').closest('[class*="@container/main"]'));
     assert.ok(view.container.querySelector('[data-slot="resizable-panel-group"]'));
-    const handle = view.container.querySelector('[data-slot="resizable-handle"]'); assert.ok(handle);
+    assert.equal(view.container.querySelectorAll('[data-slot="resizable-panel-group"]').length, 1);
+    assert.equal(view.container.querySelectorAll('[data-slot="resizable-handle"]').length, 2);
+    const handle = view.container.querySelector('[data-slot="resizable-handle"][aria-label="Resize chat"]'); assert.ok(handle);
     assert.equal(handle.getAttribute('role'), 'separator'); assert.equal(handle.getAttribute('aria-label'), 'Resize chat');
     assert.ok(view.container.querySelector('#studio-chat [data-panel="chat"]'));
     assert.ok(header.classList.contains('h-14'));
@@ -272,6 +319,9 @@ for (const width of [768, 1280]) test(`shell component unit with stubbed navigat
     await click(header.querySelector('[data-theme-toggle]')); assert.deepEqual(themeCalls, ['dark']);
     await click(header.querySelector('[data-panel-toggle="chat"]'));
     assert.equal(view.container.querySelector('#studio-chat'), null);
+    assert.equal(view.container.querySelectorAll('[data-slot="resizable-handle"]').length, 1);
+    await click(header.querySelector('[data-panel-toggle="left"]'));
+    assert.equal(view.container.querySelector('#studio-navigation'), null);
     assert.equal(view.container.querySelector('[data-slot="resizable-handle"]'), null);
   } finally { await view.close(); delete globalThis.__stockFrameTheme; document.cookie = 'chat_state=false'; }
 });

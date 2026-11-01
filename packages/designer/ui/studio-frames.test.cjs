@@ -38,15 +38,18 @@ const { act, createElement: e } = React;
 const { createRoot } = require('react-dom/client');
 const { renderToStaticMarkup } = require('react-dom/server');
 
-test('app frame renders only navigation and leaves page regions to its child', () => {
+test('app frame owns the shared resize group and navigation while leaving page regions to its child', () => {
   const root = document.createElement('div');
   root.innerHTML = renderToStaticMarkup(e(StudioAppFrame, {
-    navigation: e(Sidebar, { 'aria-label': 'Navigation' }, 'Navigation'), open: true, onOpenChange() {},
+    navigation: e(Sidebar, { collapsible: 'none', 'aria-label': 'Navigation' }, 'Navigation'), open: true, onOpenChange() {},
   }, e('section', { id: 'page-slot' }, 'Page slot')));
   assert.equal(root.querySelectorAll('[data-slot="sidebar-wrapper"]').length, 1);
   assert.ok(root.querySelector('[aria-label="Navigation"]'));
   assert.ok(root.querySelector('#page-slot'));
-  assert.equal(root.querySelector('header, main, #studio-chat, [data-slot="resizable-panel-group"]'), null);
+  assert.equal(root.querySelector('header, main, #studio-chat'), null);
+  assert.equal(root.querySelectorAll('[data-slot="resizable-panel-group"]').length, 1);
+  assert.ok(root.querySelector('#studio-navigation [aria-label="Navigation"]'));
+  assert.equal(root.querySelectorAll('[data-slot="resizable-handle"]').length, 1);
 });
 
 test('composed page owns its header, body and chat without a competing provider or inset', async () => {
@@ -56,7 +59,7 @@ test('composed page owns its header, body and chat without a competing provider 
     const [chatOpen, setChatOpen] = React.useState(true);
     return e(StudioAppFrame, {
       open, onOpenChange(value) { navigationChanges++; setOpen(value); },
-      navigation: e(Sidebar, { 'aria-label': 'Navigation' }, 'Navigation'),
+      navigation: e(Sidebar, { collapsible: 'none', 'aria-label': 'Navigation' }, 'Navigation'),
     }, e(StudioPageFrame, {
       header: e(React.Fragment, null, e(SidebarTrigger), e('span', null, 'Page breadcrumb'), e('button', { onClick: () => setChatOpen(value => !value) }, 'Toggle chat')),
       head: e('h1', null, 'Page heading'), body: 'detail', chatOpen, chatResizeLabel: 'Resize chat',
@@ -68,6 +71,8 @@ test('composed page owns its header, body and chat without a competing provider 
   try {
     await act(async () => root.render(e(Composition)));
     assert.equal(container.querySelectorAll('[data-slot="sidebar-wrapper"]').length, 1);
+    const groups = container.querySelectorAll('[data-slot="resizable-panel-group"]'); assert.equal(groups.length, 1);
+    for (const id of ['studio-navigation', 'studio-page', 'studio-chat']) assert.equal(container.querySelector(`#${id}`).parentElement, groups[0]);
     assert.equal(container.querySelectorAll('[data-slot="sidebar-inset"]').length, 1);
     assert.equal(container.querySelectorAll('header').length, 1);
     assert.equal(container.querySelectorAll('main').length, 1);
@@ -80,12 +85,16 @@ test('composed page owns its header, body and chat without a competing provider 
     await act(async () => container.querySelector('[data-sidebar="trigger"]').click());
     assert.equal(navigationChanges, 1, 'page header controls the app navigation provider exactly once');
     assert.ok(container.querySelector('#studio-chat'));
+    assert.equal(container.querySelector('#studio-navigation'), null);
+    await act(async () => container.querySelector('[data-sidebar="trigger"]').click());
+    assert.equal(navigationChanges, 2);
+    assert.ok(container.querySelector('#studio-navigation'));
     await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Toggle chat').click());
     assert.equal(container.querySelector('#studio-chat'), null);
-    assert.equal(container.querySelector('[data-slot="resizable-handle"]'), null);
+    assert.equal(container.querySelectorAll('[data-slot="resizable-handle"]').length, 1, 'navigation handle stays while app navigation remains open');
     assert.ok(container.querySelector('[aria-label="Navigation"]'));
     assert.ok(container.querySelector('#page-body'));
-    assert.equal(navigationChanges, 1, 'chat changes belong to the page');
+    assert.equal(navigationChanges, 2, 'chat changes belong to the page');
   } finally {
     await act(async () => root.unmount()); container.remove();
   }

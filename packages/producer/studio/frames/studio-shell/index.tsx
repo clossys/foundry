@@ -2,19 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { MoonIcon, PanelRightIcon, SunIcon } from 'lucide-react';
+import { MoonIcon, PanelLeftIcon, PanelRightIcon, SunIcon } from 'lucide-react';
 import type { ContentMapCommandGroup, ContentMapNavigation } from '@clossys/publisher/content-map';
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, Button,
   CommandDialog, Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut,
   PopoverDescription, PopoverHeader, PopoverTitle, ScrollArea, HeaderEdgeToggle,
-  StudioAppFrame, StudioPageFrame, SidebarTrigger,
+  StudioAppFrame, StudioPageFrame,
   useSidebar,
 } from '@clossys/designer-ui';
 import { studioIcon } from '../../lib/studio-icons';
 import { AppSidebar } from './app-sidebar';
 import { useThemeMode } from '../../components/StudioProviders';
-import { HeaderIconButton, HeaderPopover, HeaderTooltip } from './stock-header-controls';
+import { HeaderIconButton, HeaderPopover } from './stock-header-controls';
 import { ChatContent, StockSidebarSheet, StockChatSidebar } from './stock-chat-sidebar';
 
 export { PageNotice, type PageNoticeData } from './PageNotice';
@@ -120,16 +120,9 @@ function CommandMenu({ commands, pageCommands, open, onOpenChange }: { commands:
   </CommandDialog>;
 }
 
-/** Desktop navigation and mobile dismissal follow the native Sidebar boundary. */
+/** Navigation fills the app-owned desktop panel; mobile content uses the shared sheet. */
 function StudioNavigation({ navigation }: { navigation: ContentMapNavigation }) {
-  const pathname = usePathname();
-  const { isMobile, setOpenMobile } = useSidebar();
-  useEffect(() => {
-    setOpenMobile(false);
-    // The content column is the scroller, so a new page starts at its top.
-    document.getElementById('studio-main')?.scrollTo({ top: 0 });
-  }, [pathname, setOpenMobile]);
-  return !isMobile ? <AppSidebar navigation={navigation} /> : null;
+  return <AppSidebar navigation={navigation} collapsible="none" style={{ '--sidebar-width': '100%' } as CSSProperties} />;
 }
 
 /** The scroll-spy over the open popover's targets: the part at the top of the page column is active. */
@@ -209,8 +202,13 @@ function StudioShellContent({ navigation, commands, breadcrumbs, popovers = [], 
   const pathname = usePathname();
   const { resolved, setMode } = useThemeMode();
   const [searchOpen, setSearchOpen] = useState(false);
-  const { isMobile, openMobile, setOpenMobile } = useSidebar();
+  const { isMobile, open: navigationOpen, toggleSidebar, openMobile, setOpenMobile } = useSidebar();
   const [mobilePanel, setMobilePanel] = useState<'left' | 'chat'>('left');
+  useEffect(() => {
+    setOpenMobile(false);
+    // The content column is the scroller, so a new page starts at its top.
+    document.getElementById('studio-main')?.scrollTo({ top: 0 });
+  }, [pathname, setOpenMobile]);
   useEffect(() => { if (!openMobile) setMobilePanel('left'); }, [openMobile]);
   useEffect(() => { setOpenMobile(false); }, [isMobile, setOpenMobile]);
   const [chatOpen, setChatOpen] = useState(false);
@@ -271,10 +269,12 @@ function StudioShellContent({ navigation, commands, breadcrumbs, popovers = [], 
       header={<>
         <div className="flex flex-1 items-center gap-2 px-3">
           <HeaderEdgeToggle>
-            <HeaderTooltip label="Toggle Sidebar"><SidebarTrigger data-panel-toggle="left" onPress={() => {
-              setMobilePanel('left');
-              if (isMobile && mobilePanel === 'chat') setOpenMobile(false);
-            }} /></HeaderTooltip>
+            <HeaderIconButton label="Toggle Sidebar" aria-expanded={isMobile ? openMobile && mobilePanel === 'left' : navigationOpen} data-panel-toggle="left" onClick={() => {
+              if (isMobile) {
+                setMobilePanel('left');
+                setOpenMobile(mobilePanel !== 'left' || !openMobile);
+              } else toggleSidebar();
+            }}><PanelLeftIcon /></HeaderIconButton>
           </HeaderEdgeToggle>
           <Breadcrumb>
             <BreadcrumbList>
@@ -305,7 +305,7 @@ function StudioShellContent({ navigation, commands, breadcrumbs, popovers = [], 
           {resolved === 'dark' ? <SunIcon /> : <MoonIcon />}
         </HeaderIconButton>
         <HeaderEdgeToggle separatorFirst>
-          <HeaderIconButton label="Toggle chat" aria-pressed={isMobile ? openMobile && mobilePanel === 'chat' : chatOpen} data-panel-toggle="chat" onClick={toggleChat}><PanelRightIcon /></HeaderIconButton>
+          <HeaderIconButton label="Toggle chat" aria-expanded={isMobile ? openMobile && mobilePanel === 'chat' : chatOpen} data-panel-toggle="chat" onClick={toggleChat}><PanelRightIcon /></HeaderIconButton>
         </HeaderEdgeToggle>
         </div>
       </>}>
