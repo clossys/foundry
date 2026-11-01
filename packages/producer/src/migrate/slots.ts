@@ -10,6 +10,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, sep } from "node:path";
 import { sha256Hex } from "../records/hash.js";
+import { readIa } from "../records/slots.js";
 import {
   AGENT_KIND, DIRECTOR_PINNED_BY, IA_SCHEMA, MIGRATION_PINNED_BY, PAGE_SCHEMA, PUBLICATION_SCHEMA, SLOT_AGENTS, SLOT_SCHEMA,
   candidateName, deriveRefs, designerIa, directorIa, feedsIndex, iaPath, jsonBytes, serializeFrontmatter, slotPositions,
@@ -73,7 +74,7 @@ function emptyPlan(foundry: FoundryIa | null, agent: SlotAgent, ia: IaDoc): Agen
 }
 
 function existingExtensions(consumer: string, agent: SlotAgent): string[] {
-  try { return strings((readJsonFile(iaPath(consumer, agent)) as IaDoc).extensions); } catch { return []; }
+  return [...(readIa(consumer, agent)?.extensions ?? [])];
 }
 
 // ---------- Director ----------

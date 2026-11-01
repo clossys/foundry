@@ -168,6 +168,7 @@ describe("clossys migrate slots", () => {
     it("preserves admitted contracts, structured provenance, dependencies and original pin time", async () => {
       const hash = prepare(true);
       await migrate();
+      expect(JSON.parse(readFileSync(join(consumer, "agents/designer/ia.json"), "utf8")).extensions).toEqual([id]);
       const slot = listSlots(consumer, "designer").find(entry => entry.id === id)!;
       const doc = JSON.parse(readFileSync(slotFile(slot.dir), "utf8"));
       expect(doc.contract).toEqual(contract);
@@ -191,6 +192,21 @@ describe("clossys migrate slots", () => {
       expect(plan.agents.designer.offIa).toContain(id);
       expect(plan.agents.designer.slots.has(id)).toBe(false);
       expect(plan.agents.designer.ia.extensions).toEqual([]);
+      writePlan(plan);
+      expect(listSlots(consumer, "designer").some(slot => slot.id === id)).toBe(false);
+    });
+
+    it.each(["malformed JSON", "nonstring extension", "unplaced extension", "invalid IA node"])("rejects %s before writing consumer files", async invalid => {
+      prepare(true);
+      const path = join(consumer, "agents/designer/ia.json");
+      const ia = JSON.parse(readFileSync(path, "utf8"));
+      if (invalid === "nonstring extension") ia.extensions.push(42);
+      if (invalid === "unplaced extension") ia.extensions.push("sections.consumer.unplaced");
+      if (invalid === "invalid IA node") ia.nodes[0].children = null;
+      writeFileSync(path, invalid === "malformed JSON" ? "{" : jsonBytes(ia));
+      const before = snapshot(consumer);
+      await expect(planMigration(consumer)).rejects.toThrow();
+      expect(snapshot(consumer)).toEqual(before);
     });
 
     it("preserves actual registry theme variables and font metadata without files", async () => {
