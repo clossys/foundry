@@ -16,7 +16,7 @@ import { studioFrames, studioSections } from '../generated/assembly-bindings';
 import { studioPublicationRoot, type StudioAssemblySpec, type StudioPageRecord } from '../generated/studio-map';
 import { PageNotice, type PageNoticeData, type PopoverSpec } from '../frames/studio-shell';
 import type { AgentGalleryInput } from '../sections/studio-agent-gallery';
-import type { CheckRow } from '../sections/studio-checks';
+import type { ChecksInput } from '../sections/studio-checks';
 import type { ExplorerGroup } from '../sections/module-explorer';
 import type { HistoryInput } from '../sections/studio-history';
 import type { ModuleCheckGroup, ModuleCheckRow, ModuleChecksInput } from '../sections/module-checks';
@@ -101,7 +101,7 @@ function galleryChecks(gallery: AgentGalleryInput, reports: readonly StudioRepor
 }
 
 function leafChecks(inputs: Inputs, reports: readonly StudioReport[], agent: string, slug: string): ModuleChecksInput {
-  const checks = (inputs.checks as readonly CheckRow[] | undefined) ?? [];
+  const checks = (inputs.checks as ChecksInput | undefined)?.rows ?? [];
   const options = inputs.options as OptionsInput | undefined;
   return checksInput(
     checks.filter(row => !row.ok).map(row => ({ id: row.key, badge: studioCopy("studio.finding"), tone: 'destructive', title: row.label, detail: row.detail })),

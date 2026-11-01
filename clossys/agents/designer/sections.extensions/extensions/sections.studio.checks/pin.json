@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-checks-v1.json",
-  "sha256": "d45de2598032c234d2071aaa9fb234880284e54faacba25bed51e0e8d0744c03",
-  "pinnedBy": "migration:SLOT-MODEL",
-  "at": "2026-10-31T12:00:00Z"
+  "candidate": "studio-checks-v2.json",
+  "sha256": "629f942cca7742cc1839b2be265d82aec860a8cfe70e5de1d25f589c6a901a0a",
+  "pinnedBy": "migration:studio-checks-copy",
+  "at": "2026-11-01T16:21:44Z"
 }

@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "675683fab25c7ee6b456c1cb1bf42308d897dba89899720253c5dc7ce04db944",
+  "revision": "d245e59a047e82abe00bf1e140906647347a5c4ef7ac3254bff5917845f5d3e1",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -119,6 +119,30 @@
       "id": "studio.references-none",
       "text": "None",
       "context": "lib/references-copy.ts, sections/studio-references/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.checks-title",
+      "text": "Checks",
+      "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.checks-check",
+      "text": "Check",
+      "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.checks-result",
+      "text": "Result",
+      "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.checks-detail",
+      "text": "Detail",
+      "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
       "status": "draft"
     },
     {
@@ -1286,6 +1310,18 @@
       "status": "draft"
     },
     {
+      "id": "studio.checks-pass",
+      "text": "Pass",
+      "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.checks-finding",
+      "text": "Finding",
+      "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
+      "status": "draft"
+    },
+    {
       "id": "studio.every-publication-with-the-root-its-config",
       "text": "Every publication with the root its config names and every route after it: the page that renders each path, its frame and sections, and the leaf that records it.",
       "context": "components/StudioPage.tsx",
@@ -1313,6 +1349,18 @@
       "id": "studio.references-description",
       "text": "Links to the other agents' leaves, in both directions, and where each version came from.",
       "context": "lib/references-copy.ts, sections/studio-references/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.checks-all-pass",
+      "text": "All {count} checks pass.",
+      "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.checks-findings",
+      "text": "{failing} of {count} checks report a finding.",
+      "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
       "status": "draft"
     }
   ]

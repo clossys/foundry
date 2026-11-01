@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-v1.md",
-  "sha256": "3eb848a2ebb75fa40a47ce6c31178a6b75f055a81ebe2ce5517bbf69d1eb0284",
-  "pinnedBy": "migration:studio-copy",
-  "at": "2026-11-01T15:56:22Z"
+  "candidate": "studio-v2.md",
+  "sha256": "631503b1cfe915e358c36e11fb424f8c1fc119eda9c615adda4e6e95928158f8",
+  "pinnedBy": "migration:studio-checks-copy",
+  "at": "2026-11-01T16:21:44Z"
 }

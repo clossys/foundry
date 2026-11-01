@@ -1,3 +1,4 @@
+import { checksCopy } from './checks-copy';
 import { referencesCopy } from './references-copy';
 import { contractCopy } from './contract-copy';
 import { studioCopy } from './studio-copy';
@@ -234,6 +235,6 @@ export function agentLeafInputs(leaf: AgentLeafRecords, links: StudioLinks, extr
   const references: ReferencesInput = { copy: referencesCopy(), uses: leaf.uses.map(ref => toRef(links, ref)), usedBy: leaf.usedBy.map(ref => toRef(links, ref)), lineage: agentLineage(leaf) };
   return {
     header, specimen: extra.specimen ?? agentRecordSpecimen(leaf, links), options: extra.options,
-    checks: checks.length ? checks : undefined, contract, history, references,
+    checks: checks.length ? { rows: checks, copy: checksCopy(checks) } : undefined, contract, history, references,
   };
 }

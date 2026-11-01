@@ -1,3 +1,4 @@
+import { checksCopy } from './checks-copy';
 import { referencesCopy } from './references-copy';
 import { contractCopy } from './contract-copy';
 import { studioCopy } from './studio-copy';
@@ -64,6 +65,7 @@ export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 
     const href = target ? links.leaf(target, id) : undefined;
     return { label: id, ...(href ? { href } : {}) };
   };
+  const checks = detail.checks.map((check, index) => ({ key: String(index), ...check }));
   return {
     header: { name: detail.id, id: detail.id, ...(shown ? { version: shown.version } : {}), statusLabel,
       statusTone: pinned ? 'secondary' : 'outline', statusDetail: [!detail.pin ? studioCopy("studio.no-pin-87eb19") : studioCopy("studio.pinned-candidate", { value0: String(detail.pin.candidate) })],
@@ -71,7 +73,7 @@ export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 
     specimen, options,
     references: { copy: referencesCopy(), uses: detail.uses.map(id => reference(id)), usedBy: detail.usedBy.map(ref => reference(ref.id, ref.agent)),
       lineage: detail.candidates.map(candidate => ({ key: candidate.name, version: candidate.name, mode: studioCopy("studio.recorded-source"), source: candidate.source === undefined ? studioCopy("studio.no-source-recorded") : text(candidate.source) })) },
-    checks: detail.checks.map((check, index) => ({ key: String(index), ...check })),
+    checks: { rows: checks, copy: checksCopy(checks) },
     contract: { copy: contractCopy(), facts: [{ label: studioCopy("studio.kind"), value: detail.kind }, ...Object.entries(detail.contract).map(([label, value]) => ({ label, value: text(value) }))],
       lists: [{ label: studioCopy("studio.inputs"), items: detail.inputs }, { label: studioCopy("studio.uses"), items: detail.uses }] },
     // History is pin history, rather than inferred "revises" relationships.

@@ -39,9 +39,9 @@
     },
     "sections.studio.checks": {
       "element": "studio-checks",
-      "version": 1,
-      "hash": "sha256:c746dae76f3db9224c906705db343bbe1e3e96c4af4bb089f815ef23c8bf77e8",
-      "event": "e7"
+      "version": 2,
+      "hash": "sha256:878129fd73106f02b089818fa9b0489aff32eb1b34b17573f24c3c39396f4ec5",
+      "event": "e33"
     },
     "sections.studio.contract": {
       "element": "studio-contract",
@@ -463,6 +463,18 @@
       "hash": "sha256:41cfc00aac448bdc7038a6c5f930f0b0bbc11a746ac3ea03a87a8df506eea333",
       "from": "option",
       "reason": "Bind existing References labels to Writer preview copy; no editorial approval."
+    },
+    {
+      "id": "e33",
+      "at": "2026-11-01T16:21:44Z",
+      "by": "studio-checks-copy",
+      "action": "pin",
+      "slot": "sections.studio.checks",
+      "element": "studio-checks",
+      "version": 2,
+      "hash": "sha256:878129fd73106f02b089818fa9b0489aff32eb1b34b17573f24c3c39396f4ec5",
+      "from": "option",
+      "reason": "Bind existing Checks labels and summaries to Writer preview copy; no editorial approval."
     }
   ]
 }
