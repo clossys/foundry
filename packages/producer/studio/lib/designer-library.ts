@@ -1,3 +1,4 @@
+import { referencesCopy } from './references-copy';
 import { contractCopy } from './contract-copy';
 import { studioCopy } from './studio-copy';
 /**
@@ -184,6 +185,7 @@ export function designerLeafInputs(leaf: DesignerLeaf, theme: 'light' | 'dark', 
   } : undefined;
   // Uses: what the leaf composes; used by is not recorded for Designer leaves yet.
   const references: ReferencesInput = {
+    copy: referencesCopy(),
     uses: leaf.contract.composes.map(label => ({ label })), usedBy: [],
     lineage: leaf.lineage.map(row => ({
       key: `v${row.version}`, version: `v${row.version}`,

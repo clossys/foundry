@@ -1,3 +1,4 @@
+import { referencesCopy } from './references-copy';
 import { contractCopy } from './contract-copy';
 import { studioCopy } from './studio-copy';
 /** Detail inputs only; gallery rendering has its own projection. */
@@ -68,7 +69,7 @@ export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 
       statusTone: pinned ? 'secondary' : 'outline', statusDetail: [!detail.pin ? studioCopy("studio.no-pin-87eb19") : studioCopy("studio.pinned-candidate", { value0: String(detail.pin.candidate) })],
       trail: detail.trail, galleryHref: links.gallery(detail.agent) ?? '', galleryLabel: detail.agent },
     specimen, options,
-    references: { uses: detail.uses.map(id => reference(id)), usedBy: detail.usedBy.map(ref => reference(ref.id, ref.agent)),
+    references: { copy: referencesCopy(), uses: detail.uses.map(id => reference(id)), usedBy: detail.usedBy.map(ref => reference(ref.id, ref.agent)),
       lineage: detail.candidates.map(candidate => ({ key: candidate.name, version: candidate.name, mode: studioCopy("studio.recorded-source"), source: candidate.source === undefined ? studioCopy("studio.no-source-recorded") : text(candidate.source) })) },
     checks: detail.checks.map((check, index) => ({ key: String(index), ...check })),
     contract: { copy: contractCopy(), facts: [{ label: studioCopy("studio.kind"), value: detail.kind }, ...Object.entries(detail.contract).map(([label, value]) => ({ label, value: text(value) }))],

@@ -1,3 +1,4 @@
+import { referencesCopy } from './references-copy';
 import { contractCopy } from './contract-copy';
 import { studioCopy } from './studio-copy';
 /**
@@ -230,7 +231,7 @@ export function agentLeafInputs(leaf: AgentLeafRecords, links: StudioLinks, extr
     version: row.version, date: row.updated, note: row.note || '—',
     marks: [row.active && studioCopy("studio.active"), STATUS_LABEL[row.status]].filter((mark, index, all): mark is string => Boolean(mark) && all.indexOf(mark) === index),
   })) };
-  const references: ReferencesInput = { uses: leaf.uses.map(ref => toRef(links, ref)), usedBy: leaf.usedBy.map(ref => toRef(links, ref)), lineage: agentLineage(leaf) };
+  const references: ReferencesInput = { copy: referencesCopy(), uses: leaf.uses.map(ref => toRef(links, ref)), usedBy: leaf.usedBy.map(ref => toRef(links, ref)), lineage: agentLineage(leaf) };
   return {
     header, specimen: extra.specimen ?? agentRecordSpecimen(leaf, links), options: extra.options,
     checks: checks.length ? checks : undefined, contract, history, references,

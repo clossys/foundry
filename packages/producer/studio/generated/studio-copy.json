@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "a6f8eb8a59d2e39ecb2902669c43d9ae1461dda475eb88dfdb9f2bd6450a5f8c",
+  "revision": "675683fab25c7ee6b456c1cb1bf42308d897dba89899720253c5dc7ce04db944",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -77,6 +77,48 @@
       "id": "studio.contract-none",
       "text": "None",
       "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.references-title",
+      "text": "Uses and used by",
+      "context": "lib/references-copy.ts, sections/studio-references/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.references-uses",
+      "text": "Uses",
+      "context": "lib/references-copy.ts, sections/studio-references/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.references-used-by",
+      "text": "Used by",
+      "context": "lib/references-copy.ts, sections/studio-references/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.references-lineage",
+      "text": "Lineage",
+      "context": "lib/references-copy.ts, sections/studio-references/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.references-version",
+      "text": "Version",
+      "context": "lib/references-copy.ts, sections/studio-references/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.references-source",
+      "text": "Source",
+      "context": "lib/references-copy.ts, sections/studio-references/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.references-none",
+      "text": "None",
+      "context": "lib/references-copy.ts, sections/studio-references/index.tsx",
       "status": "draft"
     },
     {
@@ -1265,6 +1307,12 @@
       "id": "studio.producer-supplied-no-designer-selection-studio-renders",
       "text": "Producer supplied no Designer selection. Studio renders with the stock component layer.",
       "context": "lib/studio-report.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.references-description",
+      "text": "Links to the other agents' leaves, in both directions, and where each version came from.",
+      "context": "lib/references-copy.ts, sections/studio-references/index.tsx",
       "status": "draft"
     }
   ]
