@@ -398,6 +398,19 @@
           ]
         }
       }
+    },
+    "corsair-ui": {
+      "namespace": "@corsair-ui",
+      "kind": "registry-json",
+      "style": "default",
+      "source": "https://kevingirelli.github.io/corsair-ui/r/{name}.json",
+      "version": "ecfd4f59e03694ff35741096d5371e4fec3c80e2",
+      "versionBasis": "Published registry JSON supplied as original raw bytes; every embedded source matches the immutable upstream commit recorded in upstream. The upstream registry/default sources use Radix Slot; default denotes that upstream source directory and native Radix engine family, not radix-nova.",
+      "upstream": "github.com/KevinGirelli/corsair-ui@ecfd4f59e03694ff35741096d5371e4fec3c80e2",
+      "license": "MIT",
+      "licenseFiles": {
+        "LICENSE": "https://raw.githubusercontent.com/KevinGirelli/corsair-ui/ecfd4f59e03694ff35741096d5371e4fec3c80e2/LICENSE"
+      }
     }
   },
   "direct": [
@@ -1544,6 +1557,18 @@
       "slots": [
         "sections.studio.home"
       ]
+    },
+    {
+      "registry": "corsair-ui",
+      "name": "hero",
+      "slots": [
+        "sections.hero"
+      ]
+    },
+    {
+      "registry": "corsair-ui",
+      "name": "nav-link",
+      "slots": []
     }
   ],
   "skipped": [
