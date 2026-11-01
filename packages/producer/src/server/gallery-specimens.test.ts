@@ -1,14 +1,18 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { dirname, resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { JSDOM } from 'jsdom';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { agentGallery, agentLeaf } from './agent-library.js';
 import { slotDetail } from './slot-detail.js';
+import { recordSpecimenInput } from './slot-gallery.js';
+import { listSlots, readCandidate } from '../records/slots.js';
 import { agentGalleryLayers, type AgentCard, type AgentLeafRecords, type GalleryPreviews } from '../../studio/lib/agent-library';
 import { loadGalleryLeaves, galleryLeafInputs } from '../../studio/lib/gallery-specimens';
 import { slotDetailInputs } from '../../studio/lib/slot-detail';
-import { SpecimenContent } from '../../studio/sections/studio-specimen';
+import { SpecimenContent, type SpecimenInput } from '../../studio/sections/studio-specimen';
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const links = { gallery: (agent: string) => `/${agent}`, leaf: (agent: string, id: string) => `/${agent}/${id}` };
@@ -21,6 +25,58 @@ const legacy: AgentLeafRecords = {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('slot-first gallery specimen collection', () => {
+  it('preserves every pinned migrated Studio string in native specimens, details and shared rendering', async () => {
+    const reference: { locale: string; entries: { id: string; text: string }[] } = JSON.parse(readFileSync(join(repo, 'packages/producer/studio/generated/studio-copy.json'), 'utf8'));
+    expect(reference.locale).toBe('en');
+    const expected = new Map(reference.entries.map(row => [row.id, row.text]));
+    expect(expected.size).toBe(218);
+    const counts = { 'strings.common': 168, 'strings.statuses': 26, 'strings.descriptions': 5, 'strings.field-labels': 19 };
+    const consumer = join(repo, 'clossys');
+    const entries = listSlots(consumer, 'writer');
+    const gallery = (await agentGallery(repo, 'writer'))!;
+    const cards = gallery.sections.flatMap(section => section.cards);
+    const seen: string[] = [];
+    const renderedTexts = (specimen: SpecimenInput) => {
+      const document = new JSDOM(renderToStaticMarkup(createElement(SpecimenContent, { specimen }))).window.document;
+      expect(document.querySelector('iframe')).toBeNull();
+      return [...document.querySelectorAll('[data-slot="table-cell"]')].filter((_, index) => index % 2 === 1).map(cell => cell.textContent);
+    };
+    for (const [id, count] of Object.entries(counts)) {
+      const entry = entries.find(row => row.id === id)!;
+      const pin = entry.pin!;
+      const candidate = readCandidate(consumer, 'writer', id, pin.candidate);
+      expect(candidate.sha256).toBe(pin.sha256);
+      // Read identities from the real pinned payload; expected text is independent
+      // of the tested specimen parsers and comes from F7's generated registry.
+      const ids = [...candidate.bytes.matchAll(/^<!-- (.+) -->$/gm)].map(match => JSON.parse(match[1]!).id as string);
+      expect(ids).toHaveLength(count);
+      for (const key of ids) expect(expected.has(key)).toBe(true);
+      seen.push(...ids);
+      const texts = ids.map(key => expected.get(key)!);
+      const card = cards.find(row => row.id === id)!;
+      const url = new URL(card.specimenUrl!, 'http://studio.invalid');
+      expect(Object.fromEntries(url.searchParams)).toMatchObject({ agent: 'writer', slot: id, candidate: pin.candidate });
+      const native = recordSpecimenInput(consumer, 'writer', id)!;
+      expect(native.rows).toEqual(ids.map((key, index) => ({ key: String(index), label: `en: ${key}`, text: texts[index] })));
+      const detail = slotDetail(repo, 'writer', id)!;
+      expect(detail.shown).toBe(pin.candidate);
+      expect(detail.candidates.find(row => row.name === detail.shown)?.sha256).toBe(pin.sha256);
+      const detailPreview = slotDetailInputs(detail, links, 'light').specimen as SpecimenInput;
+      const galleryPreview = galleryLeafInputs({ source: 'slot', detail }, links, 'light').specimen;
+      expect(detailPreview).toMatchObject({ kind: 'record', rows: ids.map((key, index) => ({ key: `en/${key}`, text: texts[index] })) });
+      expect(galleryPreview).toEqual(detailPreview);
+      for (const preview of [native, detailPreview, galleryPreview]) expect(renderedTexts(preview)).toEqual(texts);
+    }
+    expect([...seen].sort()).toEqual([...expected.keys()].sort());
+    // This separate existing draft is still a NEED, not one of the migrated
+    // candidates. Rendering must not silently shorten it to its 60-char limit.
+    const draft = JSON.parse(readFileSync(join(repo, 'packages/writer/src/catalog/records/admin-studio.r1.en.json'), 'utf8')).records.find((row: { id: string }) => row.id === 'st.aqdaz871km');
+    expect(expected.has(draft.id)).toBe(false);
+    expect(draft.text).toHaveLength(85);
+    expect(draft.text.length).toBeGreaterThan(60);
+    expect(renderedTexts({ kind: 'record', name: draft.id, title: '', description: '', empty: '', rows: [{ key: draft.id, label: draft.id, text: draft.text }] })).toEqual([draft.text]);
+  }, 15_000);
+
   it('renders a native publication candidate without a legacy cell and makes zero legacy requests', async () => {
     const gallery = (await agentGallery(repo, 'publisher'))!;
     const cards = gallery.sections.flatMap(section => section.cards) as AgentCard[];
