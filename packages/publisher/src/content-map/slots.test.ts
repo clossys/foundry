@@ -165,7 +165,6 @@ it.each([
   ["foreign publication", (v: JsonObject) => { v.meta.entry.publication = "foreign"; }, /identity/],
   ["foreign entry", (v: JsonObject) => { v.meta.entry.entryId = "foreign"; }, /identity/],
   ["conflicting title", (v: JsonObject) => { v.meta.entry.fields.title = "Conflicting"; }, /Conflicting title/],
-  ["missing route", (v: JsonObject) => { delete v.meta.entry.blocks.Route; }, /Missing Route/],
   ["invalid source", (v: JsonObject) => { v.meta.source = { kind: "derived", ref: [] }; }, /source/],
   ["conflicting source", (v: JsonObject) => { v.frame = "frames.extra"; }, /source/],
   ["invalid copy", (v: JsonObject) => { v.copy.heading = 7; }, /page contract/],
@@ -173,6 +172,20 @@ it.each([
 ] as const)("NATIVE rejects selected page %s after repinning its bytes", async (_name, mutate, message) => {
   const f = await fixture(); await edit(candidatePath(f.path, "page.designer"), mutate); await repin(f.path, "page.designer");
   await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(message);
+});
+
+it("NATIVE rejects a missing non-home Route after repinning its bytes", async () => {
+  const f = await fixture();
+  await edit(candidatePath(f.path, "page.writer-panel"), value => { delete value.meta.entry.blocks.Route; });
+  await repin(f.path, "page.writer-panel");
+  await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/Missing Route/);
+});
+
+it("NATIVE rejects a missing home Route at the route pack header guard", async () => {
+  const f = await fixture();
+  await edit(candidatePath(f.path, "page.designer"), value => { delete value.meta.entry.blocks.Route; });
+  await repin(f.path, "page.designer");
+  await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/Conflicting route pack header/);
 });
 
 it("NATIVE cannot borrow a page not declared by the publication slot", async () => {
