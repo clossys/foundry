@@ -152,7 +152,6 @@ export function PageBar({ root, context, page, workspaces, header, onNavigate, l
   const [glassSupported, setGlass] = useState(false);
   const glass = (legacy || surface === "glass") && glassSupported;
   const [infoOpen, setInfoOpen] = useState(false);
-  const [barWidth, setBarWidth] = useState<number>();
   const { direction: contextDirection } = useLocale();
   const direction = dir ?? contextDirection;
   useEffect(() => {
@@ -167,7 +166,6 @@ export function PageBar({ root, context, page, workspaces, header, onNavigate, l
       if (!bar.current) return;
       const rect = bar.current.getBoundingClientRect();
       if (rect.height > 0) onHeightChange?.(rect.height);
-      setBarWidth(rect.width || undefined);
     };
     measure();
     const observer = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : undefined;
@@ -209,9 +207,9 @@ export function PageBar({ root, context, page, workspaces, header, onNavigate, l
   const content = header ? <HeaderSlots header={header} onNavigate={onNavigate} embedded={embedded} /> : <>
     {context === undefined || context === null ? null : <SemanticContent as="div" data-application-frame-slot="context" className="min-w-0 max-w-full">{context}</SemanticContent>}
     {page && <PageTrail root={root} title={page.title} breadcrumb={page.breadcrumb} workspaces={workspaces} narrow={narrow} labels={labels} />}
-    {information && <Popover anchorRef={bar} className="text-body text-ink-primary" aria-label={pageInfoLabel} placement="bottom start" offset={0} isOpen={infoOpen} onOpenChange={setInfoOpen}
+    {information && <Popover className="w-72 text-body text-ink-primary" aria-label={pageInfoLabel} placement="bottom end" offset={4} isOpen={infoOpen} onOpenChange={setInfoOpen}
       trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={pageInfoLabel} aria-expanded={infoOpen}><Icon glyph={ChevronDown} decorative className={infoOpen ? "rotate-180" : undefined} /></Button>}
-      style={{ direction, inlineSize: barWidth, maxInlineSize: `calc(100vw - 2 * ${PAGE_BAR_LAYOUT.gutter})` }}>
+      style={{ direction, maxInlineSize: `calc(100vw - 2 * ${PAGE_BAR_LAYOUT.gutter})` }}>
       <SemanticContent as="div" data-application-frame-region="page-info" className="flex flex-wrap items-start gap-sm">
         <SemanticContent as="div">{page?.status}</SemanticContent><SemanticContent as="div">{page?.description}</SemanticContent><SemanticContent as="div">{page?.updatedAt}</SemanticContent><SemanticContent as="div">{page?.meta}</SemanticContent><SemanticContent as="div">{page?.scope}</SemanticContent>
       </SemanticContent>

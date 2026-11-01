@@ -71,6 +71,7 @@ export interface AppFrameProps {
   /** Publication region updates preserve this Frame instance. */
   headerTrail?: readonly PageBarCrumb[];
   headerActions?: readonly PageBarAction[];
+  /** Small header popover content, anchored to its action icon. */
   pageModule?: ReactNode;
   pageModuleLabel?: string;
   main?: ReactNode;

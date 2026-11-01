@@ -67,6 +67,42 @@ async function settleFocusRestoration() {
 }
 
 describe("AppFrame composition", () => {
+  it("separates edge controls and opens page tools as a dismissible header popover", async () => {
+    const user = userEvent.setup();
+    render(<AppFrame {...fixture()} pageModule={<button>Filter results</button>} pageModuleLabel="Page tools" />);
+    const header = document.querySelector('[data-application-frame-region="bar"]')!;
+    const buttons = within(header as HTMLElement).getAllByRole("button");
+    expect(buttons[0]).toHaveAttribute("data-application-frame-navigation", "trigger");
+    expect(buttons.at(-1)).toHaveAttribute("data-application-frame-panel", "trigger");
+    expect(header.querySelectorAll('[aria-hidden="true"].h-4')).toHaveLength(2);
+    expect(document.querySelector('[data-application-frame-region="page-module"]')).toBeNull();
+    expect(screen.queryByRole("button", { name: "Filter results" })).not.toBeInTheDocument();
+    const trigger = screen.getByRole("button", { name: "Page tools" });
+    await user.click(trigger);
+    expect(screen.getByRole("dialog", { name: "Page tools" }).parentElement).toHaveClass("w-72");
+    expect(screen.getByRole("button", { name: "Filter results" })).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(trigger).toHaveFocus());
+    await user.click(trigger);
+    await user.click(document.body);
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Page tools" })).not.toBeInTheDocument());
+  });
+  it("exposes the header controls through commands and keyboard shortcuts", async () => {
+    const user = userEvent.setup();
+    render(<AppFrame {...fixture()} pageModule={<button>Filter results</button>} pageModuleLabel="Page tools" />);
+    fireEvent.keyDown(window, { key: "b", ctrlKey: true });
+    expect(screen.getByRole("button", { name: "Open navigation" })).toHaveAttribute("aria-expanded", "false");
+    fireEvent.keyDown(window, { key: "b", ctrlKey: true, shiftKey: true });
+    expect(screen.getByRole("button", { name: "Open panel" })).toHaveAttribute("aria-expanded", "false");
+    await user.keyboard("{Control>}k{/Control}");
+    expect(screen.getByRole("menuitem", { name: /Open navigation/ })).toHaveTextContent("Ctrl+B");
+    await user.click(screen.getByRole("menuitem", { name: /Page tools/ }));
+    expect(await screen.findByRole("dialog", { name: "Page tools" })).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    fireEvent.keyDown(window, { key: "m", ctrlKey: true, shiftKey: true });
+    expect(await screen.findByRole("dialog", { name: "Page tools" })).toBeInTheDocument();
+  });
   it("owns the sole main and focusable skip target, active host navigation, and bottom account footer", async () => {
     render(<AppFrame {...fixture()} />);
     const main = screen.getByRole("main");

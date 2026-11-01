@@ -131,7 +131,7 @@ describe("PageBar", () => {
     await user.click(within(bar()).getByRole("button", { name: "Quarterly report" }));
     expect(await screen.findByRole("menuitem", { name: "Annual report" })).toHaveAttribute("href", "/projects/reporting/annual");
   });
-  it("M11: reports measured resize heights and anchors the information surface to bar width and direction", async () => {
+  it("M11: reports measured resize heights and keeps the information surface small and inherits direction", async () => {
     let measuredHeight = 72;
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function () {
       return { x: 16, y: 16, top: 16, left: 16, bottom: 16 + measuredHeight, right: 656, width: 640, height: measuredHeight, toJSON() {} };
@@ -144,8 +144,13 @@ describe("PageBar", () => {
     await userEvent.click(within(bar()).getByRole("button", { name: labels.pageInfo }));
     const dialog = screen.getByRole("dialog", { name: labels.pageInfo });
     const surface = dialog.closest<HTMLElement>('[data-placement]')!;
-    expect(surface.style.inlineSize).toBe("640px"); expect(surface.style.direction).toBe("rtl");
+    expect(surface.style.inlineSize).toBe(""); expect(surface).toHaveClass("w-72"); expect(surface.style.direction).toBe("rtl");
     expect(dialog).toHaveTextContent("Reporting period: July to September");
+    await userEvent.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog", { name: labels.pageInfo })).not.toBeInTheDocument();
+    await userEvent.click(within(bar()).getByRole("button", { name: labels.pageInfo }));
+    await userEvent.click(document.body);
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: labels.pageInfo })).not.toBeInTheDocument());
     view.unmount(); expect(resizeObservers.size).toBe(0);
   });
 });

@@ -29,7 +29,8 @@ const Icon = componentLeaf<typeof import("../components/index.js").Icon>("compon
 const Logomark = componentLeaf<typeof import("../components/index.js").Logomark>("components.logo");
 const Menu = componentLeaf<typeof import("../components/index.js").Menu>("components.menu");
 const Tooltip = componentLeaf<typeof import("../components/index.js").Tooltip>("components.tooltip");
-const ToggleButton = componentLeaf<typeof import("../components/index.js").ToggleButton>("components.toggle-button");
+const Popover = componentLeaf<typeof import("../components/index.js").Popover>("components.popover");
+const Separator = componentLeaf<typeof import("../components/index.js").Separator>("components.separator");
 
 /** DOM provenance (WIRE-3 D1): this frame root stamps its leaf and fill. */
 const FRAME_STAMP = dsAttrs("frames", "frames.app-shell", "foundry/frames.app-shell");
@@ -75,7 +76,7 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
   /** @default "Skip to content" */
   skipLabel: suppliedSkipLabel, mainId }: AppFrameProps) {
   const rightPanel = suppliedRightPanel && inspectorContext !== undefined ? { ...suppliedRightPanel, children: inspectorContext } : suppliedRightPanel;
-  const [moduleOpen, setModuleOpen] = useState(true);
+  const [moduleOpen, setModuleOpen] = useState(false);
   const main = suppliedMain === undefined ? children : suppliedMain;
   const { resolvedTheme } = useTheme();
   const markSrc = resolvedTheme === "dark" ? brand.reversedMarkSrc ?? brand.markSrc : brand.markSrc;
@@ -247,9 +248,9 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
     const panelTrigger = rightPanel && (narrow ? <SemanticContent as="div" className="contents" onFocusCapture={capturePanelFocus}><ModalContext.Provider value={{ style: { direction: dir } }}><Drawer fullViewport wide="sheet" placement="end" dismissAt={APP_FRAME_WIDE_QUERY}
     heading={rightPanel.label} closeLabel={closeLabel} closeButtonStyle={panelCloseButtonStyle} navigationKey={navigation.navigationKey}
     isOpen={panelOpen} onOpenChange={next => { setPanelOpen(next); if (next) { setNavDrawerOpen(false); navigation.onDrawerOpenChange?.(false); } }}
-    trigger={<Button variant="ghost" className={CONTROL} aria-label={openLabel} aria-expanded={panelOpen} data-application-frame-panel="trigger"><Icon glyph={List} decorative className={PANEL_GLYPH} /></Button>}>
+    trigger={<Button variant="ghost" className={CONTROL} aria-label={openLabel} aria-expanded={panelOpen} aria-keyshortcuts="Control+Shift+B" data-application-frame-panel="trigger"><Icon glyph={List} decorative className={PANEL_GLYPH} /></Button>}>
     <FrameSlotOutlet slot="right-panel">{rightPanel.children}</FrameSlotOutlet>
-  </Drawer></ModalContext.Provider></SemanticContent> : <Button variant="ghost" className={CONTROL} aria-controls={generated + "-panel"} aria-expanded={!collapsed} aria-label={collapsed ? openLabel : closeLabel} data-application-frame-panel="trigger"
+  </Drawer></ModalContext.Provider></SemanticContent> : <Button variant="ghost" className={CONTROL} aria-controls={generated + "-panel"} aria-expanded={!collapsed} aria-label={collapsed ? openLabel : closeLabel} aria-keyshortcuts="Control+Shift+B" data-application-frame-panel="trigger"
     onPress={() => changeCollapsed(!collapsed)}><Icon glyph={List} decorative className={PANEL_GLYPH} /></Button>);
   const navOpen = layout.navigationOverlay ? navigation.drawerOpen ?? navDrawerOpen : !navCollapsed;
   const changeNav = () => {
@@ -257,7 +258,7 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
     else { setNavigationCollapsed(navOpen); navigation.onCollapsedChange?.(navOpen); }
   };
   const navigationTrigger = <Button variant="ghost" className={CONTROL}
-    data-application-frame-navigation="trigger"
+    aria-keyshortcuts="Control+B" data-application-frame-navigation="trigger"
     aria-controls={generated + "-navigation"} aria-label={navOpen ? navigationCloseLabel : navigationOpenLabel} aria-expanded={navOpen} onPress={changeNav}><Icon glyph={List} decorative className={NAVIGATION_GLYPH} /></Button>;
   // The navigation top reserves one tap-sized corner row (the drawer close control sits at its start); a brand row takes that row instead of bare padding.
   const navigationBrand = <SemanticContent as="div" data-application-frame-slot="brand" className="flex min-w-0 items-center frame-brand-gap"
@@ -265,7 +266,29 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
     <Logomark src={markSrc} size="sm" />{brand.navigationMark && <SemanticContent as="span" className="min-w-0 truncate text-body text-ink-primary">{brand.navigationMark.label}</SemanticContent>}
   </SemanticContent>;
   const commandTrigger = <SemanticContent as="div">{navigationBrand}<Button variant="ghost" className={CONTROL + " w-full justify-start"} onPress={openCommands}><Icon glyph={Search} decorative /><SemanticContent as="span" className="min-w-0 truncate">{triggerLabel}</SemanticContent></Button></SemanticContent>;
-  const moduleToggle = pageModule != null && pageModuleLabel ? <ToggleButton aria-label={pageModuleLabel} shape="icon-only" isSelected={moduleOpen} onChange={setModuleOpen}><Icon glyph={List} decorative /></ToggleButton> : null;
+  const moduleToggle = pageModule != null && pageModuleLabel ? <Popover aria-label={pageModuleLabel} isOpen={moduleOpen} onOpenChange={setModuleOpen}
+    placement="bottom end" offset={4} className="w-72 max-w-full"
+    trigger={<Button variant="ghost" className={CONTROL} aria-label={pageModuleLabel} aria-keyshortcuts="Control+Shift+M" aria-expanded={moduleOpen}><Icon glyph={List} decorative /></Button>}>
+    {pageModule}
+  </Popover> : null;
+  // Keep frame actions available from the same command index as host actions.
+  const chromeCommands = [
+    { id: generated + "-navigation-command", label: navOpen ? navigationCloseLabel : navigationOpenLabel, shortcutHint: "Ctrl+B", onAction: changeNav },
+    ...(rightPanel ? [{ id: generated + "-panel-command", label: panelOpen || panelDocked ? closeLabel : openLabel, shortcutHint: "Ctrl+Shift+B", onAction: () => { if (narrow) { setPanelOpen(!panelOpen); if (!panelOpen) { setNavDrawerOpen(false); navigation.onDrawerOpenChange?.(false); } } else changeCollapsed(!collapsed); } }] : []),
+    ...(moduleToggle ? [{ id: generated + "-module-command", label: pageModuleLabel!, shortcutHint: "Ctrl+Shift+M", onAction: () => requestAnimationFrame(() => setModuleOpen(true)) }] : []),
+  ];
+  useEffect(() => {
+    if (!shortcutEnabled) return;
+    const keydown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.repeat || event.isComposing || !event.ctrlKey || event.metaKey || event.altKey || document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+      const key = event.key.toLowerCase();
+      const action = key === "b" ? event.shiftKey ? "panel" : "navigation" : key === "m" && event.shiftKey ? "module" : undefined;
+      const command = action && chromeCommands.find(item => item.id === `${generated}-${action}-command`);
+      if (command) { event.preventDefault(); command.onAction(); }
+    };
+    window.addEventListener("keydown", keydown);
+    return () => window.removeEventListener("keydown", keydown);
+  });
   const hasRegions = headerTrail !== undefined || headerActions !== undefined;
   const regionPage = hasRegions ? { ...(page ?? { title: resolvedHeader?.title ?? "" }), breadcrumb: headerTrail ?? page?.breadcrumb, actions: headerActions ?? page?.actions } : page;
   const leasedActions = hasRegions && headerActions === undefined ? resolvedHeader?.actions?.render({ compact: !wide }) : null;
@@ -274,8 +297,8 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
   if (mainState !== "ready" && displayedMain === undefined) throw new TypeError("AppFrame: a resolved view is required for its main state");
   const pageBar = <PageBar position={headerPosition} surface={headerSurface ?? (shellLayout === "immersive" ? "glass" : "solid")} header={hasRegions ? undefined : resolvedHeader} onNavigate={onNavigate} context={context} root={root} page={regionPage} workspaces={workspaces} narrow={!wide}
     embedded dir={dir}
-    start={<SemanticContent as="span" ref={setNavigationControlHost} className="contents">{!navigationControlHost && <Tooltip trigger={navigationTrigger}>{navOpen ? navigationCloseLabel : navigationOpenLabel}</Tooltip>}</SemanticContent>}
-    end={<>{leasedActions}{moduleToggle}{rightPanel ? <Tooltip trigger={panelTrigger}>{panelOpen || panelDocked ? closeLabel : openLabel}</Tooltip> : <SemanticContent as="span" aria-hidden="true" className="icon-control-md shrink-0" />}</>}
+    start={<><SemanticContent as="span" ref={setNavigationControlHost} className="contents">{!navigationControlHost && <Tooltip trigger={navigationTrigger}>{navOpen ? navigationCloseLabel : navigationOpenLabel}</Tooltip>}</SemanticContent><Separator orientation="vertical" decorative className="h-4" /></>}
+    end={<>{leasedActions}{moduleToggle}{rightPanel ? <><Separator orientation="vertical" decorative className="h-4" /><Tooltip trigger={panelTrigger}>{panelOpen || panelDocked ? closeLabel : openLabel}</Tooltip></> : <SemanticContent as="span" aria-hidden="true" className="icon-control-md shrink-0" />}</>}
     labels={{ breadcrumb: breadcrumbLabel ?? copy(SHELL_COPY_REFS.frame.breadcrumb), collapsedBreadcrumb: collapsedBreadcrumbLabel ?? copy(SHELL_COPY_REFS.frame.collapsedBreadcrumb), pageInfo: pageInfoLabel ?? copy(SHELL_COPY_REFS.frame.pageInfo),
       pageActions: pageActionsLabel ?? copy(SHELL_COPY_REFS.frame.pageActions) }} />;
   return <ModalContext.Provider value={{ style: { direction: dir } }}><PopoverContext.Provider value={{ style: { direction: dir } }}>
@@ -297,7 +320,6 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
           <SemanticContent as="div" ref={stage} data-application-frame-region="stage" data-stage-navigation={layout.navigationOverlay ? "overlay" : "docked"} data-stage-panel={narrow ? "overlay" : "docked"}
             className={"relative isolate flex min-h-0 min-w-0 flex-1 overflow-hidden" + (stageInset === "full" ? "" : " " + STAGE_INSET)}>
             <SemanticContent as="main" id={target} tabIndex={-1} className={MAIN + "focus-ring-inset"} aria-busy={mainState === "loading" || undefined} style={{ flex: "1 1 0%", overflowAnchor: "auto" }}>{displayedMain}</SemanticContent>
-            {pageModule != null && moduleOpen ? <SemanticContent as="aside" data-application-frame-region="page-module" aria-label={pageModuleLabel} className="min-h-0 shrink-0 overflow-auto" style={{ inlineSize: APP_FRAME_LAYOUT.sidebar }}>{pageModule}</SemanticContent> : null}
           </SemanticContent>
           <FrameDock notices={notices} dock={dock} sheet={!wide} />
         </SemanticContent>
@@ -309,7 +331,7 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
             className="h-full min-h-0 shrink-0 rounded-none border-0 border-s border-line-base p-frame-panel"><FrameSlotOutlet slot="right-panel">{rightPanel.children}</FrameSlotOutlet></ResizablePane>}
         </SemanticContent>}
       </SemanticContent>
-      <CommandMenu {...commandProps} dir={dir} isOpen={commandOpen} onOpenChange={setCommandOpen} query={query} onQueryChange={value => { setQuery(value); queryChange?.(value); }} />
+      <CommandMenu {...commandProps} groups={[...commandProps.groups, { id: generated + "-chrome-commands", label: triggerLabel, items: chromeCommands }]} dir={dir} isOpen={commandOpen} onOpenChange={setCommandOpen} query={query} onQueryChange={value => { setQuery(value); queryChange?.(value); }} />
       {hasToasts ? <ToasterFrameInsetProvider value={toastInset}>{toasts}</ToasterFrameInsetProvider> : null}
     </SemanticContent>
   </PopoverContext.Provider></ModalContext.Provider>;
