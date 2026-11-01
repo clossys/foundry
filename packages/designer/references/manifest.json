@@ -2677,19 +2677,44 @@
         "button",
         "example"
       ],
-      "hash": "sha256:9ee2ae44a16a1b9974f8e6479cb253f0d13d51ddf938f6590a2a578c1899eff3",
+      "hash": "sha256:3a3b1fe68d639b9767983050ee1d2ba41e83121d25f6c723e85abb4ba4c491d8",
       "files": [
         {
           "path": "message-example.json",
-          "sha256": "53a55d49e920912887fc5e607e824311d445a2c2997f118cc3e135ee5e8714c5",
-          "bytes": 31417,
+          "sha256": "8af97ef4448504f426ad3dbd9c33f300127048983b43e7404cce4a6408b6f685",
+          "bytes": 31382,
           "origin": "https://ui.shadcn.com/r/styles/aria-nova/message-example.json"
         },
         {
           "path": "registry/aria-nova/examples/message-example.tsx",
-          "sha256": "aa01a80753b93e4e0f485567cbbce5be5b02271339b2cb6896c81b80ff4fc193",
-          "bytes": 29560,
+          "sha256": "4b6dba06f69d17a9584cd2430e9c12fb8396f5bfc68e3d289a1dae197034b9d8",
+          "bytes": 29524,
           "origin": "message-example.json#files[0].content"
+        }
+      ],
+      "adaptations": [
+        {
+          "kind": "identity",
+          "reason": "Owner-approved neutral example stack locations replace upstream identity-bearing sample paths; executable behavior and reference structure are unchanged.",
+          "approvedBy": "owner",
+          "approvedAt": "2026-11-01",
+          "upstream": {
+            "hash": "sha256:9ee2ae44a16a1b9974f8e6479cb253f0d13d51ddf938f6590a2a578c1899eff3",
+            "files": [
+              {
+                "path": "message-example.json",
+                "sha256": "53a55d49e920912887fc5e607e824311d445a2c2997f118cc3e135ee5e8714c5",
+                "bytes": 31417,
+                "origin": "https://ui.shadcn.com/r/styles/aria-nova/message-example.json"
+              },
+              {
+                "path": "registry/aria-nova/examples/message-example.tsx",
+                "sha256": "aa01a80753b93e4e0f485567cbbce5be5b02271339b2cb6896c81b80ff4fc193",
+                "bytes": 29560,
+                "origin": "message-example.json#files[0].content"
+              }
+            ]
+          }
         }
       ]
     },
