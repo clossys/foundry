@@ -1,6 +1,6 @@
 /** Compile-time public API assertions; .check.tsx is included in the real package build. */
 import { AppFrame, APP_FRAME_CONTRACT, APP_FRAME_CONFIG_SCHEMA } from "./index.js";
-import type { AppFrameProps, AppFrameBrand, AppFrameAccount, AppFrameRightPanel } from "./index.js";
+import type { AppFrameProps, AppFrameBrand, AppFrameAccount, AppFrameRightPanel, FrameNoticeApi } from "./index.js";
 
 export const brand: AppFrameBrand = { markSrc: "/mark.svg" };
 export const signedOut: AppFrameAccount = {
@@ -98,3 +98,6 @@ export const pageFrame = <AppFrame {...props} page={page} root={{ label: "Worksp
 export const invalidPageWidth: AppFrameProps["page"] = { title: "Projects", width: "fixed" };
 // @ts-expect-error actions have exactly one destination mechanism
 export const ambiguousPageAction: NonNullable<NonNullable<AppFrameProps["page"]>["actions"]>[number] = { id: "run", label: "Run", href: "/", onAction: () => {} };
+
+// The frames entry exports the page notice API type, and it carries the frame-routed toast.
+export const frameNoticeToast = (api: FrameNoticeApi): FrameNoticeApi["toast"] => api.toast;

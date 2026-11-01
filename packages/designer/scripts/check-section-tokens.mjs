@@ -23,7 +23,7 @@
  * Verbatim vendored files (`meta.verbatim`) and `registry:ui|hook|lib` files are
  * reference primitives and are not linted. Exit 1 on any finding.
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -130,9 +130,12 @@ export function loadCatalog() {
   };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Resolve argv[1] so a node_modules/.bin symlink launch still runs the CLI.
+if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const usage = "usage: check-section-tokens.mjs --root <consumer>/clossys";
+  if (process.argv.includes("--help")) { console.log(usage); process.exit(0); }
   const at = process.argv.indexOf("--root");
-  if (at < 0 || !process.argv[at + 1]) { console.error("usage: check-section-tokens.mjs --root <consumer>/clossys"); process.exit(2); }
+  if (at < 0 || !process.argv[at + 1]) { console.error(usage); process.exit(2); }
   const findings = sectionShellFindings(resolve(process.argv[at + 1]));
   if (findings.length) { console.error(`check-section-tokens: FAIL (${findings.length})\n- ${findings.join("\n- ")}`); process.exit(1); }
   console.log("check-section-tokens: ok; shell, spacing, type, size, bleed");

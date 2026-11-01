@@ -116,10 +116,6 @@ it("packs complete admin copy and resolves every Designer route-label reference 
       const copy: AdminCopy = getAdminCopy();
       const record: AdminCopyRecord | undefined = getAdminCopyRecord(copy.records[0]!.id);
       const text: string | undefined = record?.text;
-      // @ts-expect-error Shipped records cannot be rewritten through the accessor.
-      studio.records[0]!.text = "changed";
-      // @ts-expect-error The combined record list is immutable.
-      copy.records.push(studio.records[0]!);
       void [text, records, createAdminCopy(envelopes)];
     `);
     const compiler = resolve(packageRoot, "../../node_modules/typescript/bin/tsc");

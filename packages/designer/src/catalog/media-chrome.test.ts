@@ -6,9 +6,7 @@ import sections from "./slots/sections.json" with { type: "json" };
 import sectionIa from "./ia/sections.json" with { type: "json" };
 import passages from "../../../writer/src/catalog/slots/passages.json" with { type: "json" };
 import { FOUNDRY_SECTION_MAP, generatedFoundrySectionFiles, importFoundrySections } from "../importers/foundry-sections.js";
-// @ts-expect-error — the canonical producer is dependency-free JavaScript.
 import { derivePassages } from "../../../writer/scripts/derive-passages.mjs";
-// @ts-expect-error — the canonical producer is dependency-free JavaScript.
 import { emitCopyPortTypes } from "../../scripts/generate-copy-ports.mjs";
 
 const section = sections.find(row => row.id === "sections.media")!;

@@ -58,6 +58,17 @@ function checkManifests(state, policy) {
     .map((entry) => entry.name).sort();
   if (directories.length === 0) return ["packages/ contains no package manifests"];
   const currentNames = new Set(directories.map((directory) => `${identity.scope}/${directory}`));
+  // An explicit (non-glob) root workspace path such as packages/designer/ui is
+  // also a declared first-party package, under the exact name its own manifest
+  // carries. Globs add nothing here: packages/* is already the directory set.
+  const rootManifest = readJson(join(root, "package.json"));
+  for (const workspace of Array.isArray(rootManifest.workspaces) ? rootManifest.workspaces : []) {
+    if (typeof workspace !== "string" || /[*?[\]{}!]/.test(workspace)) continue;
+    const workspaceManifest = join(root, workspace, "package.json");
+    if (!existsSync(workspaceManifest)) continue;
+    const { name } = readJson(workspaceManifest);
+    if (typeof name === "string" && name.startsWith(`${identity.scope}/`)) currentNames.add(name);
+  }
   for (const directory of directories) {
     const path = join(packagesRoot, directory, "package.json");
     const manifest = readJson(path);

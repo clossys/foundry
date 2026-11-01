@@ -8,7 +8,6 @@ import { checkWriterICU } from "../../checks/icu.js";
 import { writerPassageSchemaDigest } from "../../checks/closed-world.js";
 import { loadWriterCatalog } from "./index.js";
 import type { WriterLibrary, WriterRecord } from "../../model/types.js";
-// @ts-expect-error — the generator deliberately uses dependency-free JavaScript.
 import { derivePassages, run } from "../../../scripts/derive-passages.mjs";
 
 import { withDeclaredCommonRecords } from "../__fixtures__/shared-records.fixture.js";

@@ -75,6 +75,7 @@
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { dirname, join, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
+import { roleFolder } from "./lib/role-folder.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 
@@ -188,7 +189,7 @@ export function evaluatePackageFramework(activeRoles, manifestsByName, options =
       row.outputs = "malformed";
       findings.push({ rule: "invalid-outputs-declaration", role, message: "foundry.outputs must be a non-empty array of path strings" });
     } else {
-      const expectedPrefix = `clossys/${roleShortName(role)}/`;
+      const expectedPrefix = roleFolder(role);
       const outside = foundry.outputs.filter((path) => !isSafeRelativePath(path) || !path.startsWith(expectedPrefix));
       if (outside.length > 0) {
         row.outputs = "malformed";
@@ -291,7 +292,7 @@ export function evaluatePackageFramework(activeRoles, manifestsByName, options =
       row.feeds = "malformed";
       findings.push({ rule: "invalid-feeds-declaration", role, message: "foundry.feeds must be an array of { artifact, path } (may be empty)" });
     } else {
-      const expectedPrefix = `clossys/${roleShortName(role)}/`;
+      const expectedPrefix = roleFolder(role);
       const outside = foundry.feeds.filter((item) => !isSafeRelativePath(item.path) || !item.path.startsWith(expectedPrefix));
       if (outside.length > 0) {
         row.feeds = "malformed";
