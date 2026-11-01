@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "nav-link",
+  "title": "Nav Link",
+  "description": "A navigation link that marks the current page with aria-current and data-active. Supports asChild for router links.",
+  "dependencies": [
+    "@radix-ui/react-slot"
+  ],
+  "registryDependencies": [
+    "@corsair-ui/utils"
+  ],
+  "files": [
+    {
+      "path": "registry/default/ui/nav-link.tsx",
+      "content": "import { Slot } from \"@radix-ui/react-slot\";\nimport type { ComponentProps } from \"react\";\nimport { cn } from \"@/registry/default/lib/utils\";\n\ninterface NavLinkProps extends ComponentProps<\"a\"> {\n  /** Marks the link as the current page: sets `aria-current=\"page\"` and `data-active`. */\n  active?: boolean;\n  /** Render the single child (next/link, a router Link, a plain `<a>`) with the link styles instead. */\n  asChild?: boolean;\n}\n\n/**\n * A navigation link that knows whether it points at the current page. The\n * active link gets `aria-current=\"page\"`, which screen readers announce as\n * \"current page\", and `data-active=\"true\"` for styling. It stays a real link,\n * so it is reached with Tab and followed with Enter, and shows a focus ring.\n * Pass `asChild` to use your framework's link component.\n *\n * @example\n * <NavLink asChild active={pathname === \"/docs\"}>\n *   <Link href=\"/docs\">Docs</Link>\n * </NavLink>\n */\nfunction NavLink({ active = false, asChild = false, className, ...props }: NavLinkProps) {\n  const Comp = asChild ? Slot : \"a\";\n\n  return (\n    <Comp\n      data-slot=\"nav-link\"\n      data-active={active}\n      aria-current={active ? \"page\" : undefined}\n      className={cn(\n        \"text-muted-foreground hover:text-foreground data-[active=true]:text-foreground inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm data-[active=true]:font-medium\",\n        \"transition-colors outline-none motion-reduce:transition-none\",\n        \"focus-visible:ring-ring/50 focus-visible:ring-[3px]\",\n        \"[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4\",\n        className\n      )}\n      {...props}\n    />\n  );\n}\n\nexport { NavLink, type NavLinkProps };\n",
+      "type": "registry:ui"
+    }
+  ],
+  "type": "registry:ui"
+}

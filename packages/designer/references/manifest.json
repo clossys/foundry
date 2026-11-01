@@ -120,6 +120,18 @@
       "licenseFiles": [
         "shadcn-app/LICENSE.md"
       ]
+    },
+    "corsair-ui": {
+      "namespace": "@corsair-ui",
+      "source": "https://kevingirelli.github.io/corsair-ui/r/{name}.json",
+      "version": "ecfd4f59e03694ff35741096d5371e4fec3c80e2",
+      "versionBasis": "Published registry JSON supplied as original raw bytes; every embedded source matches the immutable upstream commit recorded in upstream. The upstream registry/default sources use Radix Slot; default denotes that upstream source directory and native Radix engine family, not radix-nova.",
+      "upstream": "github.com/KevinGirelli/corsair-ui@ecfd4f59e03694ff35741096d5371e4fec3c80e2",
+      "license": "MIT",
+      "licenseFiles": [
+        "corsair-ui/LICENSE"
+      ],
+      "style": "default"
     }
   },
   "licenses": [
@@ -128,6 +140,12 @@
       "sha256": "eafb05991a572efa34097474b31fef45b14a8879ed1d1a8fd77de62e6fa7d275",
       "bytes": 1073,
       "sourceUrl": "https://raw.githubusercontent.com/assistant-ui/assistant-ui/ff654d8156680b839774296ef644b57ab1078425/LICENSE"
+    },
+    {
+      "path": "corsair-ui/LICENSE",
+      "sha256": "ebd654ef05ace8705aa23477e3d90c628bc6f4b1bb13eb52c18335577eef6e85",
+      "bytes": 1070,
+      "sourceUrl": "https://raw.githubusercontent.com/KevinGirelli/corsair-ui/ecfd4f59e03694ff35741096d5371e4fec3c80e2/LICENSE"
     },
     {
       "path": "diceui/LICENSE",
@@ -255,6 +273,183 @@
       ],
       "requiredBy": [
         "@assistant-ui/elements-comparison-card"
+      ]
+    },
+    {
+      "registry": "corsair-ui",
+      "name": "badge",
+      "version": "ecfd4f59e03694ff35741096d5371e4fec3c80e2",
+      "dir": "corsair-ui/badge@ecfd4f59e03694ff35741096d5371e4fec3c80e2",
+      "type": "registry:ui",
+      "sourceUrl": "https://kevingirelli.github.io/corsair-ui/r/badge.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "registryDependencies": [
+        "@corsair-ui/utils"
+      ],
+      "dependencies": [
+        "@radix-ui/react-slot",
+        "class-variance-authority"
+      ],
+      "hash": "sha256:bb96231f34d4a87aa0ae0c9b0cb73002d2e9ed9fbdfd88831ed625e40d17e2e3",
+      "files": [
+        {
+          "path": "badge.json",
+          "sha256": "fcb5008e4076ea72d6899b5cf24db749b6c228c415347614e1c8280850ea88ac",
+          "bytes": 3253,
+          "origin": "https://kevingirelli.github.io/corsair-ui/r/badge.json"
+        },
+        {
+          "path": "registry/default/ui/badge.tsx",
+          "sha256": "5402d9561342e33bc1d74ac2641425ac047726fef5008f6a10830ebf31accb7c",
+          "bytes": 2597,
+          "origin": "badge.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@corsair-ui/hero"
+      ]
+    },
+    {
+      "registry": "corsair-ui",
+      "name": "button",
+      "version": "ecfd4f59e03694ff35741096d5371e4fec3c80e2",
+      "dir": "corsair-ui/button@ecfd4f59e03694ff35741096d5371e4fec3c80e2",
+      "type": "registry:ui",
+      "sourceUrl": "https://kevingirelli.github.io/corsair-ui/r/button.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "registryDependencies": [
+        "@corsair-ui/utils"
+      ],
+      "dependencies": [
+        "@radix-ui/react-slot",
+        "class-variance-authority",
+        "lucide-react"
+      ],
+      "hash": "sha256:fa2e2c009246582a15b055ecd24068b306189fac42352bc7751e63f4f686a618",
+      "files": [
+        {
+          "path": "button.json",
+          "sha256": "a20000454bb945cdb8280f0dd5e34bf3650a5778c14a1b5af35a7dd76dd01bf9",
+          "bytes": 5438,
+          "origin": "https://kevingirelli.github.io/corsair-ui/r/button.json"
+        },
+        {
+          "path": "registry/default/ui/button.tsx",
+          "sha256": "749e30510d1643888f1428317ec063161352ba24c613ed95fb682362698f89e5",
+          "bytes": 4627,
+          "origin": "button.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@corsair-ui/hero"
+      ]
+    },
+    {
+      "registry": "corsair-ui",
+      "name": "hero",
+      "version": "ecfd4f59e03694ff35741096d5371e4fec3c80e2",
+      "dir": "corsair-ui/hero@ecfd4f59e03694ff35741096d5371e4fec3c80e2",
+      "type": "registry:block",
+      "sourceUrl": "https://kevingirelli.github.io/corsair-ui/r/hero.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.hero"
+      ],
+      "registryDependencies": [
+        "@corsair-ui/utils",
+        "@corsair-ui/badge",
+        "@corsair-ui/button"
+      ],
+      "dependencies": [
+        "lucide-react"
+      ],
+      "hash": "sha256:e360e8a225f471f4bad075d93a7850ae490da6ccd2da8202cbee3d4213580275",
+      "files": [
+        {
+          "path": "hero.json",
+          "sha256": "03b4708040f2b378c375021cd6e8168b16da096444bed2729f977622b76015b4",
+          "bytes": 5492,
+          "origin": "https://kevingirelli.github.io/corsair-ui/r/hero.json"
+        },
+        {
+          "path": "registry/default/components/blocks/hero.tsx",
+          "sha256": "4ce952ec770672de5fec1a4c323f1f96270b5dd4e166cb75622eb4c872347d90",
+          "bytes": 4675,
+          "origin": "hero.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "corsair-ui",
+      "name": "nav-link",
+      "version": "ecfd4f59e03694ff35741096d5371e4fec3c80e2",
+      "dir": "corsair-ui/nav-link@ecfd4f59e03694ff35741096d5371e4fec3c80e2",
+      "type": "registry:ui",
+      "sourceUrl": "https://kevingirelli.github.io/corsair-ui/r/nav-link.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "registryDependencies": [
+        "@corsair-ui/utils"
+      ],
+      "dependencies": [
+        "@radix-ui/react-slot"
+      ],
+      "hash": "sha256:1d09ae9cc46c00c3f4d351cd4058f41e2cdaa233e253e3878b7e103724db7459",
+      "files": [
+        {
+          "path": "nav-link.json",
+          "sha256": "c9359be48703dfbd69a64ffff3fa28f878c4b4cbd50df271ab05eebb69b5e556",
+          "bytes": 2298,
+          "origin": "https://kevingirelli.github.io/corsair-ui/r/nav-link.json"
+        },
+        {
+          "path": "registry/default/ui/nav-link.tsx",
+          "sha256": "2b649c23a35eea10d22dbb8f6f313dd203405fa1698820c986c04ba8dc744104",
+          "bytes": 1710,
+          "origin": "nav-link.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "corsair-ui",
+      "name": "utils",
+      "version": "ecfd4f59e03694ff35741096d5371e4fec3c80e2",
+      "dir": "corsair-ui/utils@ecfd4f59e03694ff35741096d5371e4fec3c80e2",
+      "type": "registry:lib",
+      "sourceUrl": "https://kevingirelli.github.io/corsair-ui/r/utils.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "dependencies": [
+        "clsx",
+        "tailwind-merge"
+      ],
+      "hash": "sha256:e630798fff3a2615b1c70113ebb204d6ed07e52c09c532b5b8caedf26df8c88e",
+      "files": [
+        {
+          "path": "registry/default/lib/utils.ts",
+          "sha256": "4fc57620294fc2bc1e8829df29722731bacad1f3c2f985cd8932c0ed5c9c47a7",
+          "bytes": 333,
+          "origin": "utils.json#files[0].content"
+        },
+        {
+          "path": "utils.json",
+          "sha256": "4f24941d9d1e52dca2df156a4417aa42a62db2f9d5ff3a1cb1492405a33a494f",
+          "bytes": 764,
+          "origin": "https://kevingirelli.github.io/corsair-ui/r/utils.json"
+        }
+      ],
+      "requiredBy": [
+        "@corsair-ui/badge",
+        "@corsair-ui/button",
+        "@corsair-ui/hero",
+        "@corsair-ui/nav-link"
       ]
     },
     {
