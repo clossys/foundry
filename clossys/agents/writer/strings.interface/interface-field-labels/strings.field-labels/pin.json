@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-contract-v3.md",
-  "sha256": "61f505f6035b68edeb3dcdf6cf111368bdf7ad29ec66c8932c1846296f064eb0",
-  "pinnedBy": "migration:studio-checks-copy",
-  "at": "2026-11-01T16:21:44Z"
+  "candidate": "studio-contract-v4.md",
+  "sha256": "228df514b4640554210a249966f35bdd27a6d6241ef01498b2c1d485a61886d4",
+  "pinnedBy": "migration:studio-publications-copy",
+  "at": "2026-11-01T16:27:59Z"
 }

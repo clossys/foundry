@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "d245e59a047e82abe00bf1e140906647347a5c4ef7ac3254bff5917845f5d3e1",
+  "revision": "88022640509ad27cd7493d7b336ac7ee5d2044367b1333be89198dba194fc435",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -143,6 +143,72 @@
       "id": "studio.checks-detail",
       "text": "Detail",
       "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-root",
+      "text": "Root",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-path",
+      "text": "Path",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-page",
+      "text": "Page",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-frame",
+      "text": "Frame",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-sections",
+      "text": "Sections",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-status",
+      "text": "Status",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-leaf",
+      "text": "Leaf",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-none",
+      "text": "None",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-one-route",
+      "text": "1 route",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-many-routes",
+      "text": "{count} routes",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-routes-label",
+      "text": "{title} routes",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
       "status": "draft"
     },
     {

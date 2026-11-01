@@ -1,4 +1,5 @@
 'use client';
+import { publicationCopy, publicationsCopy } from '../lib/publications-copy';
 import { studioCopy } from '../lib/studio-copy';
 
 
@@ -245,7 +246,8 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
       const publications: PublicationsInput = {
         title: studioCopy("studio.publications"),
         description: studioCopy("studio.every-publication-with-the-root-its-config"),
-        publications: [studioPublication(map, origin), ...(withSite ? [withSite] : [])],
+        copy: publicationsCopy(),
+        publications: [studioPublication(map, origin), ...(withSite ? [withSite] : [])].map(publication => ({ ...publication, copy: publicationCopy(publication) })),
       };
       inputs.publications = publications;
       explorer.push({ id: 'publications', label: studioCopy("studio.publications"), items: publications.publications.map(row => ({ id: `publication:${row.id}`, label: row.title, depth: 0, target: byId(`publication-${row.id}`) })) });
