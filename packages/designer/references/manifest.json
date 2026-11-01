@@ -108,6 +108,18 @@
       "licenseFiles": [
         "assistant-ui/LICENSE"
       ]
+    },
+    "shadcn-app": {
+      "namespace": "@shadcn-app",
+      "source": "https://raw.githubusercontent.com/shadcn-ui/ui/b8d7baa15b1dca5716f13153e63795fc3d741f6b/{path}",
+      "version": "b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+      "versionBasis": "exact official repository source commit; application components and example source files, not generated registry JSON",
+      "upstream": "github.com/shadcn-ui/ui@b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+      "fetchedAt": "2026-11-01T03:27:06Z",
+      "license": "MIT",
+      "licenseFiles": [
+        "shadcn-app/LICENSE.md"
+      ]
     }
   },
   "licenses": [
@@ -140,6 +152,12 @@
       "sha256": "0147b84235ed916b8b4e89c1f80655351c5afe7d211b629be61f553a227b34ba",
       "bytes": 1060,
       "sourceUrl": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/LICENSE.md"
+    },
+    {
+      "path": "shadcn-app/LICENSE.md",
+      "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f",
+      "bytes": 1063,
+      "sourceUrl": "https://raw.githubusercontent.com/shadcn-ui/ui/b8d7baa15b1dca5716f13153e63795fc3d741f6b/LICENSE.md"
     },
     {
       "path": "shadcn-aria/LICENSE.md",
@@ -1741,6 +1759,66 @@
           "sha256": "8e50e929a19b82cc70930b1572d37179ffc2516174892e12b56bc39b15d801aa",
           "bytes": 13864,
           "origin": "https://magicui.design/r/safari.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-app",
+      "name": "block-viewer",
+      "version": "b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+      "dir": "shadcn-app/block-viewer@b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+      "type": "application:component",
+      "sourceUrl": "https://raw.githubusercontent.com/shadcn-ui/ui/b8d7baa15b1dca5716f13153e63795fc3d741f6b/apps/v4/components/block-viewer.tsx",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "hash": "sha256:ec4ab90e87520a0bd228193842558167c44e27ef48d359a20a86ad8fa94a66ba",
+      "files": [
+        {
+          "path": "apps/v4/components/block-viewer.tsx",
+          "sha256": "3bb44052325910fd4990fc8acef67b64ea6942836a9bfdd4e8d72fb7cef197d3",
+          "bytes": 15781,
+          "origin": "https://raw.githubusercontent.com/shadcn-ui/ui/b8d7baa15b1dca5716f13153e63795fc3d741f6b/apps/v4/components/block-viewer.tsx"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-app",
+      "name": "card-example",
+      "version": "b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+      "dir": "shadcn-app/card-example@b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+      "type": "registry:example",
+      "sourceUrl": "https://raw.githubusercontent.com/shadcn-ui/ui/b8d7baa15b1dca5716f13153e63795fc3d741f6b/apps/v4/registry/bases/aria/examples/card-example.tsx",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "hash": "sha256:edec06e15a64fbde974f05a30da46589bd54fcc55a5b6a2003af537d1cbb304e",
+      "files": [
+        {
+          "path": "apps/v4/registry/bases/aria/examples/card-example.tsx",
+          "sha256": "8df73f6f5241bfa3823f19aea8da37103904ebe4d0d8a8a13aae1c29f9cdf3fa",
+          "bytes": 15164,
+          "origin": "https://raw.githubusercontent.com/shadcn-ui/ui/b8d7baa15b1dca5716f13153e63795fc3d741f6b/apps/v4/registry/bases/aria/examples/card-example.tsx"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-app",
+      "name": "skeleton-example",
+      "version": "b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+      "dir": "shadcn-app/skeleton-example@b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+      "type": "registry:example",
+      "sourceUrl": "https://raw.githubusercontent.com/shadcn-ui/ui/b8d7baa15b1dca5716f13153e63795fc3d741f6b/apps/v4/registry/bases/aria/examples/skeleton-example.tsx",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "hash": "sha256:d2306007fb5bc220d71fd01d04e239c778e4aded4e425e01e5685d25a2c3306b",
+      "files": [
+        {
+          "path": "apps/v4/registry/bases/aria/examples/skeleton-example.tsx",
+          "sha256": "f612b224d30bd9dacf0b553d40642efe98e77a4b5ee5191f93cc73781eeb286b",
+          "bytes": 2674,
+          "origin": "https://raw.githubusercontent.com/shadcn-ui/ui/b8d7baa15b1dca5716f13153e63795fc3d741f6b/apps/v4/registry/bases/aria/examples/skeleton-example.tsx"
         }
       ]
     },

@@ -360,6 +360,38 @@
       "licenseFiles": {
         "LICENSE": "https://raw.githubusercontent.com/assistant-ui/assistant-ui/ff654d8156680b839774296ef644b57ab1078425/LICENSE"
       }
+    },
+    "shadcn-app": {
+      "namespace": "@shadcn-app",
+      "kind": "github-files",
+      "source": "https://raw.githubusercontent.com/shadcn-ui/ui/b8d7baa15b1dca5716f13153e63795fc3d741f6b/{path}",
+      "version": "b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+      "versionBasis": "exact official repository source commit; application components and example source files, not generated registry JSON",
+      "upstream": "github.com/shadcn-ui/ui@b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+      "license": "MIT",
+      "licenseFiles": {
+        "LICENSE.md": "https://raw.githubusercontent.com/shadcn-ui/ui/b8d7baa15b1dca5716f13153e63795fc3d741f6b/LICENSE.md"
+      },
+      "items": {
+        "block-viewer": {
+          "type": "application:component",
+          "files": [
+            "apps/v4/components/block-viewer.tsx"
+          ]
+        },
+        "skeleton-example": {
+          "type": "registry:example",
+          "files": [
+            "apps/v4/registry/bases/aria/examples/skeleton-example.tsx"
+          ]
+        },
+        "card-example": {
+          "type": "registry:example",
+          "files": [
+            "apps/v4/registry/bases/aria/examples/card-example.tsx"
+          ]
+        }
+      }
     }
   },
   "direct": [
@@ -1484,6 +1516,21 @@
       "slots": [
         "sections.comparison"
       ]
+    },
+    {
+      "registry": "shadcn-app",
+      "name": "block-viewer",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-app",
+      "name": "skeleton-example",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-app",
+      "name": "card-example",
+      "slots": []
     }
   ],
   "skipped": [
