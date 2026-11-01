@@ -44,16 +44,22 @@ it("canonical part names resolve from the adopted shadcn source without compound
   }
 });
 
-it("preserves actual named Foundry NavigationTree parts and their native collection behavior", () => {
+it.each([
+  { item: "NavigationTreeItem", content: "NavigationTreeItemContent" },
+  { item: "Item", content: "ItemContent" },
+])("preserves actual Foundry NavigationTree parts and collection behavior ($item)", ({ item, content }) => {
   const selection = fixtureConsumerComponents();
   const tree = selection.profile.components.components["components.navigation-tree"]!;
   expect(tree.impl).toEqual({ kind: "package", module: "@clossys/designer/components", export: "NavigationTree" });
   if (tree.impl.kind !== "package") throw new Error("Expected selected package");
   expect(selection.modules[tree.impl.module]?.NavigationTreeItem).toBe(native.NavigationTreeItem);
+  // The barrel also exports an unrelated Item; the selected root owns .Item.
+  expect(selection.profile.components.packageExports[tree.impl.module]).toContain("Item");
+  expect(selection.modules[tree.impl.module]?.Item).not.toBe(native.NavigationTree.Item);
   render(<ConsumerComponentProvider value={selection}>
     {part("components.navigation-tree", undefined, { "aria-label": "Navigation", children:
-      part("components.navigation-tree", "NavigationTreeItem", { id: "record", textValue: "Record", href: "/record", children:
-        part("components.navigation-tree", "NavigationTreeItemContent", { children: () => <native.Link>Record</native.Link> }) }) })}
+      part("components.navigation-tree", item, { id: "record", textValue: "Record", href: "/record", children:
+        part("components.navigation-tree", content, { children: () => <native.Link>Record</native.Link> }) }) })}
   </ConsumerComponentProvider>);
   expect(screen.getByRole("treegrid", { name: "Navigation" })).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Record" })).toBeInTheDocument();
