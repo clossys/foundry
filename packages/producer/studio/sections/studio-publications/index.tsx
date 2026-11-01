@@ -16,7 +16,7 @@ export default function PublicationsSection({ publications }: { publications: Pu
   return <section data-studio-section="publications" aria-labelledby="publications-heading">
     <CardHeader className="px-0">
       <CardTitle id="publications-heading" role="heading" aria-level={2} className="text-xl">{publications.title}</CardTitle>
-      <CardDescription className="max-w-(--measure)">{publications.description}</CardDescription>
+      <CardDescription>{publications.description}</CardDescription>
     </CardHeader>
     <CardContent className="flex flex-col gap-6 px-0 pt-4">
       {publications.publications.map(publication => <Card key={publication.id} size="sm" id={`publication-${publication.id}`}>

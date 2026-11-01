@@ -1,4 +1,6 @@
-import { Badge, Card, CardContent, CardDescription, CardGrid, CardHeader, CardTitle, LinkButton, SpecimenFrame, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';
+import { Badge, Card, CardContent, CardDescription, CardGrid, CardHeader, CardTitle, LinkButton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';
+
+import { BlockViewerIframe } from './BlockViewerIframe';
 
 export type SpecimenTone = 'secondary' | 'outline' | 'destructive';
 
@@ -29,14 +31,11 @@ export type SpecimenInput = { name: string; title: string; description: string }
   | { kind: 'record'; tables?: readonly SpecimenTable[]; rows?: readonly { key: string; label: string; text: string; href?: string }[]; status?: { label: string; tone: SpecimenTone; description: string }; empty: string }
 );
 
-const RATIO = { 375: 'mobile', 768: 'tablet', 1280: 'desktop' } as const;
-
 /**
  * Every viewport in one vertical run, widest first, each a headed row of its light and dark frames
  * (no tabs). A single viewport, as a gallery card shows it, is the frame alone at full width.
- * Each frame fits its content (`data-specimen-fit`): the specimen frame page sets the frame's
- * height to the rendered item's own height, capped at the viewport ratio, so a short item (a
- * logo, a toast) is not left in a tall empty box.
+ * The extracted stock iframe uses the projected viewport and bounded local content-size binding.
+ * The surrounding light/dark comparison layout remains pending a verified stock composition.
  */
 function Viewports({ name, specimens, empty }: { name: string; specimens: readonly ViewportSpecimen[]; empty: string }) {
   if (!specimens.length) return <CardContent><Badge variant="outline" data-preview-status="empty">{empty}</Badge></CardContent>;
@@ -45,8 +44,8 @@ function Viewports({ name, specimens, empty }: { name: string; specimens: readon
     {rows.map(row => <CardContent key={row.viewport} className="flex flex-col gap-2 px-0" data-specimen-viewport={row.viewport}>
       {rows.length > 1 && <CardDescription role="heading" aria-level={3} className="font-medium text-foreground">{row.viewport} px</CardDescription>}
       <CardGrid density={row.dark ? 'specimens' : undefined} className={row.dark ? undefined : 'grid-cols-1'}>
-        <SpecimenFrame data-specimen-fit="content" interactive={row.interactive ?? true} ratio={RATIO[row.viewport]} title={`${name} at ${row.viewport} px${row.dark ? ', light' : ''}`} src={row.light} />
-        {row.dark && <SpecimenFrame data-specimen-fit="content" interactive={row.interactive ?? true} ratio={RATIO[row.viewport]} title={`${name} at ${row.viewport} px, dark`} src={row.dark} />}
+        <BlockViewerIframe iframeKey={`${name}:${row.viewport}:light`} viewport={row.viewport} interactive={row.interactive ?? true} title={`${name} at ${row.viewport} px${row.dark ? ', light' : ''}`} src={row.light} />
+        {row.dark && <BlockViewerIframe iframeKey={`${name}:${row.viewport}:dark`} viewport={row.viewport} interactive={row.interactive ?? true} title={`${name} at ${row.viewport} px, dark`} src={row.dark} />}
       </CardGrid>
     </CardContent>)}
   </CardContent>;
@@ -103,7 +102,7 @@ export default function SpecimenSection({ specimen }: { specimen: SpecimenInput 
   return <Card size="sm" data-studio-section="specimen">
     <CardHeader>
       <CardTitle role="heading" aria-level={2}>{specimen.title}</CardTitle>
-      <CardDescription className="max-w-(--measure)">{specimen.description}</CardDescription>
+      <CardDescription>{specimen.description}</CardDescription>
     </CardHeader>
     <SpecimenContent specimen={specimen} />
   </Card>;

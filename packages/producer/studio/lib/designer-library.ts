@@ -175,7 +175,7 @@ export function designerLeafInputs(leaf: DesignerLeaf, theme: 'light' | 'dark', 
       return {
         version, pinned, label: pinned ? `Pinned v${version}` : `Option v${version}`,
         reason: leaf.versions.find(row => row.version === version)?.reason ?? '',
-        preview: { kind: 'frame' as const, src: specimenHref({ specimen: card.specimen, version }, theme, 1280)! },
+        preview: { kind: 'frame' as const, viewport: 1280 as const, src: specimenHref({ specimen: card.specimen, version }, theme, 1280)! },
       };
     }),
   } : undefined;

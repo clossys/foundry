@@ -52,7 +52,7 @@ export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 
     name: detail.id, description: detail.pin ? 'Recorded candidates beside the pin.' : 'No pin. Candidates await approval.',
     rows: [...detail.candidates].sort((a, b) => Number(b.pinned) - Number(a.pinned) || a.version - b.version).map(candidate => ({
       version: candidate.version, pinned: candidate.pinned, label: candidate.name, reason: candidate.pinned ? 'Pinned' : 'Unpinned',
-      preview: candidate.specimen ? { kind: 'frame' as const, src: specimenHref({ specimen: candidate.specimen, version: candidate.version }, theme, 1280)! }
+      preview: candidate.specimen ? { kind: 'frame' as const, viewport: 1280 as const, src: specimenHref({ specimen: candidate.specimen, version: candidate.version }, theme, 1280)! }
         : { kind: 'strings' as const, rows: candidateRows(candidate, detail.agent === 'writer').map(row => ({ ...row, change: 'same' as const })) },
     })),
   };

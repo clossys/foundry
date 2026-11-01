@@ -25,6 +25,6 @@ export default function LeafHeaderSection({ header }: { header: LeafHeaderInput 
       <Badge variant={header.statusTone}>{header.statusLabel}</Badge>
     </CardTitle>
     <CardDescription>{[header.id, ...header.trail].join(' · ')}</CardDescription>
-    {header.statusDetail.map(line => <CardDescription key={line} className="max-w-(--measure)">{line}</CardDescription>)}
+    {header.statusDetail.map(line => <CardDescription key={line}>{line}</CardDescription>)}
   </CardHeader>;
 }

@@ -1,11 +1,13 @@
-import { Badge, Card, CardContent, CardDescription, CardGrid, CardHeader, CardTitle, SpecimenFigure, SpecimenFrame, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';
+import { Badge, Card, CardContent, CardDescription, CardGrid, CardHeader, CardTitle, SpecimenFigure, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';
+
+import { BlockViewerIframe } from '../studio-specimen/BlockViewerIframe';
 
 /**
  * What one version shows beside the others: a framed render (Designer items, Publisher pages),
  * its strings set against the active version (Writer, Director), or a note when it has neither.
  */
 export type OptionPreview =
-  | { kind: 'frame'; src: string }
+  | { kind: 'frame'; src: string; viewport: 375 | 768 | 1280 }
   | { kind: 'strings'; rows: readonly { key: string; text: string; change: 'added' | 'changed' | 'removed' | 'same' }[] }
   | { kind: 'note'; text: string };
 
@@ -18,7 +20,7 @@ const CHANGE_LABEL = { added: 'Added', changed: 'Changed', removed: 'Removed', s
 const CHANGE_TONE = { added: 'secondary', changed: 'secondary', removed: 'destructive', same: 'ghost' } as const;
 
 function Preview({ name, row }: { name: string; row: OptionRow }) {
-  if (row.preview.kind === 'frame') return <SpecimenFrame interactive ratio="desktop" title={`${name} v${row.version}${row.pinned ? ', pinned' : ', option'}`} src={row.preview.src} />;
+  if (row.preview.kind === 'frame') return <BlockViewerIframe interactive viewport={row.preview.viewport} iframeKey={`${name}:${row.version}`} title={`${name} v${row.version}${row.pinned ? ', pinned' : ', option'}`} src={row.preview.src} />;
   if (row.preview.kind === 'note') return <CardDescription>{row.preview.text}</CardDescription>;
   return <Table aria-label={`${name} v${row.version} strings`}>
     <TableHeader>
@@ -42,7 +44,7 @@ export default function OptionsSection({ options }: { options: OptionsInput }) {
   return <Card size="sm" data-studio-section="options">
     <CardHeader>
       <CardTitle role="heading" aria-level={2}>Options (pending approval)</CardTitle>
-      <CardDescription className="max-w-(--measure)">{options.description}</CardDescription>
+      <CardDescription>{options.description}</CardDescription>
     </CardHeader>
     <CardContent>
       <CardGrid density="specimens">
