@@ -1,10 +1,10 @@
-import { reviewFixture, libraryFixture, at } from "../../../content/__fixtures__/review.js";
-import type { ContentCandidate, ContentRegistry, ContentSlot } from "../../../content/model.js";
-import type { CopyField } from "../../../content/composition.js";
-import type { CandidateStageEvidence, StageResult } from "../../../content/stage-engine.js";
-import { createContentRevision } from "../../../content/revisions.js";
-import { CONTENT_TREE } from "../../../content/taxonomy.js";
-import { STAGE_STATUSES } from "../../../content/stages.js";
+import { reviewFixture, libraryFixture, at } from "../../../../content/__fixtures__/review.js";
+import type { ContentCandidate, ContentRegistry, ContentSlot } from "../../../../content/model.js";
+import type { CopyField } from "../../../../content/composition.js";
+import type { CandidateStageEvidence, StageResult } from "../../../../content/stage-engine.js";
+import { createContentRevision } from "../../../../content/revisions.js";
+import { CONTENT_TREE } from "../../../../content/taxonomy.js";
+import { STAGE_STATUSES } from "../../../../content/stages.js";
 
 export const boardSlotIds = {
   site: "sl_boyi4ashca", admin: "sl_rkjigy5k5p", auth: "sl_wl546svpom", docs: "sl_2xv4y3uo7k",

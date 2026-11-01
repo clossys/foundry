@@ -5,19 +5,19 @@ import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { JSDOM } from "jsdom";
 import ts from "typescript";
-import { buildPublisherBoard } from "../../content/board/build.js";
-import { computeStageReport } from "../../content/stage-engine.js";
-import { loadContentStore, writeContentStore } from "../../content/store/index.js";
-import { readConsumerLibrarySnapshot } from "../../content/store/library.js";
-import type { ContentStoreOptions } from "../../content/store/index.js";
-import type { PublisherBoardModel } from "../../content/board/types.js";
-import { CONTENT_TREE, loadContentTree } from "../../content/taxonomy.js";
+import { buildPublisherBoard } from "../../../content/board/build.js";
+import { computeStageReport } from "../../../content/stage-engine.js";
+import { loadContentStore, writeContentStore } from "../../../content/store/index.js";
+import { readConsumerLibrarySnapshot } from "../../../content/store/library.js";
+import type { ContentStoreOptions } from "../../../content/store/index.js";
+import type { PublisherBoardModel } from "../../../content/board/types.js";
+import { CONTENT_TREE, loadContentTree } from "../../../content/taxonomy.js";
 import { PublisherBoard } from "./PublisherBoard.js";
 import { boardFixture, boardWriterCopy, boardEvidence, boardLibraries, boardSlotIds } from "./__fixtures__/board.js";
 
 // Only the external consumer-library read is replaced. PB4 persistence, snapshot
 // validation, stage derivation, React SSR, and every Designer export remain real.
-vi.mock("../../content/store/library.js", () => ({ readConsumerLibrarySnapshot: vi.fn() }));
+vi.mock("../../../content/store/library.js", () => ({ readConsumerLibrarySnapshot: vi.fn() }));
 const options = { designer: { root: "fixture-designer-library", catalog: {} } } as ContentStoreOptions;
 const roots: string[] = [];
 const stages = ["define", "assemble", "review", "approve", "publish"] as const;

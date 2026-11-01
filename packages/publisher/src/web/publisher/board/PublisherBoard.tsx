@@ -11,8 +11,8 @@ import {
   type Selection,
   type Viewport,
 } from "@clossys/designer/blocks";
-import type { PublisherBoardModel, PublisherBoardRow } from "../../content/board/types.js";
-import type { StageKey } from "../../content/stage-engine.js";
+import type { PublisherBoardModel, PublisherBoardRow } from "../../../content/board/types.js";
+import type { StageKey } from "../../../content/stage-engine.js";
 
 const STAGES: readonly StageKey[] = ["define", "assemble", "review", "approve", "publish"];
 

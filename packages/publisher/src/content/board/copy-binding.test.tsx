@@ -6,10 +6,10 @@ import { approvedCopyEntry, copyRefFixtureAt } from "../__fixtures__/copy-ref.js
 import { buildPublisherBoard } from "./build.js";
 import { buildPublisherInspector } from "./inspector-model.js";
 import { writerLabel, type PublisherBoardCopyResolver } from "./copy.js";
-import { boardFixture, boardWriterCopy } from "../../web/publisher-v2/__fixtures__/board.js";
-import { inspectorFixture } from "../../web/publisher-v2/inspector/__fixtures__/inspector.js";
-import { PublisherBoard } from "../../web/publisher-v2/PublisherBoard.js";
-import { PublisherInspector } from "../../web/publisher-v2/inspector/PublisherInspector.js";
+import { boardFixture, boardWriterCopy } from "../../web/publisher/board/__fixtures__/board.js";
+import { inspectorFixture } from "../../web/publisher/board/inspector/__fixtures__/inspector.js";
+import { PublisherBoard } from "../../web/publisher/board/PublisherBoard.js";
+import { PublisherInspector } from "../../web/publisher/board/inspector/PublisherInspector.js";
 import type { CopyField } from "../composition.js";
 import { createContentRevision } from "../revisions.js";
 
