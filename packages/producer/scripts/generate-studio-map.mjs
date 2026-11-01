@@ -1,15 +1,13 @@
 import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { contentMapFromCells, compileContentMaps } from '@clossys/publisher/content-map/cells';
+import { checkPayload } from './studio-payload.mjs';
 
 const studioRoot = fileURLToPath(new URL('../studio/', import.meta.url));
 const defaultClossysRoot = fileURLToPath(new URL('../../../clossys/', import.meta.url));
 const json = value => `${JSON.stringify(value, null, 2)}\n`;
 const banner = '// Generated from Foundry Publisher cells and the Studio library selection. Run npm run generate:studio-map.\n';
-/** Files a library version carries beside the code Studio runs: provenance, not payload. */
-const RECORD_ONLY = new Set(['registry-item.json', 'LICENCE.md']);
 const LAYER_FOLDER = { frames: 'frames', sections: 'sections' };
 
 function fail(message) { throw new Error(`Studio assembly: ${message}`); }
@@ -122,17 +120,6 @@ async function pinnedItem(clossysRoot, selection, slot) {
   if (element.hash !== pin.hash) fail(`${slot} pin hash does not match its library record`);
   if (!['adopted', 'customized', 'verbatim'].includes(element.lineage?.mode) || !element.lineage?.source?.registry) fail(`${slot} must come from a trusted reference (lineage adopted/customized with a source)`);
   return { slot, element: pin.element, version: pin.version, versionDir, payload: element.payload, studioDir: join(studioRoot, folder, pin.element), module: `../${folder}/${pin.element}` };
-}
-
-/** The Studio folder must hold exactly the pinned payload's code: Studio runs the registered item, nothing else. */
-async function checkPayload(item) {
-  const code = item.payload.filter(file => !RECORD_ONLY.has(file)).sort();
-  const present = existsSync(item.studioDir) ? (await readdir(item.studioDir)).filter(name => !name.startsWith('.')).sort() : [];
-  if (JSON.stringify(code) !== JSON.stringify(present)) fail(`${item.slot}: studio folder files [${present}] differ from the pinned payload [${code}]`);
-  for (const file of code) {
-    const [stored, running] = await Promise.all([readFile(join(item.versionDir, file), 'utf8'), readFile(join(item.studioDir, file), 'utf8')]);
-    if (stored !== running) fail(`${item.slot}: ${file} differs from ${item.element} v${item.version} in the library`);
-  }
 }
 
 /** Build-time authoring only. Runtime consumers read the generated projection. */
