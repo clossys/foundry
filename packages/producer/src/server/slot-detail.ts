@@ -1,5 +1,6 @@
 /** Detail-only projection. Slot metadata, candidates and pins have one reader. */
 import { join } from "node:path";
+import { recordSpecimenHref } from "./slot-gallery.js";
 import { hasSlotModel, listSlots, pinHistory, readCandidate, readIa, readSlot, slotIndex, usedBy } from "../records/slots.js";
 import { CANDIDATE_NAME, parseFrontmatter, validateCandidate, validateSlotDoc, type SlotAgent } from "../records/slot-model/index.js";
 
@@ -7,6 +8,7 @@ export interface DetailCandidate {
   name: string; version: number; sha256: string; pinned: boolean;
   content: string; source: unknown; issues: string[];
   specimen?: string;
+  specimenUrl?: string;
 }
 export interface SlotDetail {
   agent: SlotAgent; id: string; kind: string; trail: string[];
@@ -47,15 +49,16 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
     let specimen: string | undefined;
     // The specimen source reads these same native bytes. Only the exact valid pin
     // grants a preview; legacy selections and installed artifacts are irrelevant.
-    if (agent === "designer" && doc.kind === "element" && name.endsWith(".json") && !issues.length
-      && entry.pin?.candidate === name && entry.pin.sha256 === candidate.sha256
+    const validPin = !issues.length && entry.pin?.candidate === name && entry.pin.sha256 === candidate.sha256
       && !validateSlotDoc(doc).length && doc.id === id && doc.agent === agent
-      && doc.ia.l0 === entry.position.l0 && doc.ia.l1 === entry.position.l1 && doc.ia.l2 === entry.position.l2 && doc.ia.order === entry.position.order) {
+      && doc.ia.l0 === entry.position.l0 && doc.ia.l1 === entry.position.l1 && doc.ia.l2 === entry.position.l2 && doc.ia.order === entry.position.order;
+    if (validPin && agent === "designer" && doc.kind === "element" && name.endsWith(".json")) {
       specimen = `${id}/${element}`;
     }
+    const specimenUrl = validPin && agent === "director" && doc.kind === "brief" ? recordSpecimenHref(agent, id, name) : undefined;
     return { name, version, sha256: candidate.sha256,
       pinned: entry.pin?.candidate === name, content, source,
-      ...(specimen ? { specimen } : {}),
+      ...(specimen ? { specimen } : {}), ...(specimenUrl ? { specimenUrl } : {}),
       issues };
   });
   const pinCandidate = candidates.find(candidate => candidate.pinned);

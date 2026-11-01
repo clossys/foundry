@@ -36,17 +36,17 @@ export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 
   const shown = detail.candidates.find(candidate => candidate.name === detail.shown);
   const pinned = !!shown?.pinned;
   const statusLabel = !shown ? 'No candidate' : pinned ? 'Pinned' : detail.pin ? 'Pin unavailable' : 'No pin';
-  const specimen: SpecimenInput = shown?.specimen ? {
+  const specimen: SpecimenInput = shown?.specimen || shown?.specimenUrl ? {
     kind: 'viewports', name: detail.id, title: 'Specimen', description: shown.name,
     specimens: ([375, 768, 1280] as const).map(viewport => ({ viewport,
-      light: specimenHref({ specimen: shown.specimen, version: shown.version }, 'light', viewport)!,
-      dark: specimenHref({ specimen: shown.specimen, version: shown.version }, 'dark', viewport)!,
+      light: shown.specimenUrl ? `${shown.specimenUrl}&${new URLSearchParams({ theme: 'light', width: String(viewport) })}` : specimenHref({ specimen: shown.specimen, version: shown.version }, 'light', viewport)!,
+      dark: shown.specimenUrl ? `${shown.specimenUrl}&${new URLSearchParams({ theme: 'dark', width: String(viewport) })}` : specimenHref({ specimen: shown.specimen, version: shown.version }, 'dark', viewport)!,
     })), empty: 'No candidate',
   } : {
     kind: 'record', name: detail.id, title: detail.agent === 'writer' ? 'Strings' : 'Candidate',
     description: shown ? shown.name : 'This slot has no candidate yet.',
-    rows: shown ? candidateRows(shown, detail.agent === 'writer').map(row => ({ ...row, label: row.key })) : [],
-    empty: 'No candidate',
+    rows: shown && detail.agent !== 'director' ? candidateRows(shown, detail.agent === 'writer').map(row => ({ ...row, label: row.key })) : [],
+    empty: detail.agent === 'director' ? detail.pin ? 'Pin unavailable' : statusLabel : 'No candidate',
   };
   const options: OptionsInput = {
     name: detail.id, description: detail.pin ? 'Recorded candidates beside the pin.' : 'No pin. Candidates await approval.',
