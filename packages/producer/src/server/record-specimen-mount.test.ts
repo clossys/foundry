@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { request } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -14,7 +14,7 @@ let server: ProducerServer | undefined;
 afterEach(async () => { await server?.close(); if (root) await rm(root, { recursive: true, force: true }); });
 
 it('dispatches record specimens through the running Producer host and exposes only native read-only inputs', async () => {
-  root = await mkdtemp(join(tmpdir(), 'producer-record-mount-'));
+  root = await realpath(await mkdtemp(join(tmpdir(), 'producer-record-mount-')));
   for (const [agent, id, body] of [
     ['director', 'context.market.size', '## Direction\nMeasure demand\n## Because\nEvidence\n## Watch\nSignals'],
     ['writer', 'strings.label', '## en\n### greeting\n<!-- {"id":"greeting","bindings":[]} -->\nHello <script>'],
