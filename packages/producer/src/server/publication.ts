@@ -3,7 +3,7 @@ import type { ServerResponse } from "node:http";
 import { extname, join } from "node:path";
 import { confinedPreviewFile, generatedBody, previewSource, renderNativePreview } from "./publisher-preview-render.js";
 import { inventory } from "./cells.js";
-import { readIa, listSlots } from "../records/slots.js";
+import { readIa, listSlots, readCandidate, type SlotEntry } from "../records/slots.js";
 import { readPinnedPublication } from "@clossys/publisher/content-map/slots";
 import { INSTALL_MARKER, installOutRoot } from "../publish/install-out.js";
 import { SPECIMEN_FRAME_CSP, specimenFramePage, specimenWidth } from "./specimen-frame.js";
@@ -122,18 +122,40 @@ async function installPages(base: string): Promise<InstallPage[]> {
 /** Native publication ownership and presentation come only from intact Publisher pins. */
 async function nativeInstallPublication(root: string, base: string, installs: InstallPage[], requested?: string): Promise<InstallPublication | undefined> {
   const consumer = join(root, "clossys"), installed = new Map(installs.map(page => [page.id, page]));
-  const publications = await Promise.all(listSlots(consumer, "publisher").filter(slot => slot.id.startsWith("publication.")).map(slot =>
-    readPinnedPublication(join(consumer, "agents", "publisher"), slot.id.slice("publication.".length))));
+  const slots = listSlots(consumer, "publisher");
+  const publications = await Promise.all(slots.filter(slot => slot.id.startsWith("publication.")).map(async slot => ({
+    ...await readPinnedPublication(join(consumer, "agents", "publisher"), slot.id.slice("publication.".length)), slot,
+  })));
   const web = publications.filter(value => value.map.format === "web.page.responsive");
   const matches = web.filter(value => value.map.entries.some(entry => entry.kind === "page" && installed.has(entry.id)));
   if (installs.some(page => matches.filter(value => value.map.entries.some(entry => entry.kind === "page" && entry.id === page.id)).length > 1)) return undefined;
   const choices = requested === undefined ? matches : matches.filter(value => value.map.publicationId === requested);
   if (choices.length !== 1) return undefined;
-  const { map, routePack } = choices[0]!, id = map.publicationId;
+  const { map, routePack, slot } = choices[0]!, id = map.publicationId;
   const entries = map.entries.filter(entry => entry.kind === "page" && installed.has(entry.id));
   // An absent configured path is unavailable, never reconstructed from a page id.
   if (entries.some(entry => typeof entry.path !== "string" || !entry.path.startsWith("/"))) return undefined;
-  const pages: PublicationPage[] = entries.map(entry => ({ id: entry.id, route: entry.path!, title: entry.title,
+  const selectedRecord = (slot: SlotEntry) => {
+    if (!slot.pin) throw new Error("Native publication metadata is unpinned");
+    const source = readCandidate(consumer, "publisher", slot.id, slot.pin.candidate);
+    if (source.sha256 !== slot.pin.sha256) throw new Error("Native publication metadata hash drift");
+    return JSON.parse(source.bytes);
+  };
+  const references = (node: Record<string, any>): string[] => [
+    ...(node.cells ?? []), ...(node.children ?? []).flatMap(references),
+  ];
+  const bySlot = new Map(slots.map(slot => [slot.id, slot])), cellIds = new Map<string, string>();
+  // Only the validated publication tree names page slots; explicit entry metadata supplies the join.
+  for (const slotId of references(selectedRecord(slot).meta.tree)) {
+    const pageSlot = bySlot.get(slotId);
+    if (!pageSlot) return undefined;
+    const metadata = selectedRecord(pageSlot).meta?.entry;
+    if (!object(metadata) || metadata.publication !== id || typeof metadata.entryId !== "string" || !entries.some(entry => entry.id === metadata.entryId)) continue;
+    if (cellIds.has(metadata.entryId)) return undefined;
+    cellIds.set(metadata.entryId, pageSlot.id);
+  }
+  if (entries.some(entry => !cellIds.has(entry.id))) return undefined;
+  const pages: PublicationPage[] = entries.map(entry => ({ id: entry.id, cellId: cellIds.get(entry.id)!, route: entry.path!, title: entry.title,
     ...(entry.description === undefined ? {} : { description: entry.description }),
     ...(entry.indexing === undefined ? {} : { indexing: entry.indexing.mode }),
     emitted: !!installed.get(entry.id)!.html, ...pageRoutes(id, entry.id) }));

@@ -12,6 +12,7 @@ import { SPECIMEN_FRAME_SCRIPT_HASH } from "./specimen-frame.js";
 import { INSTALL_MARKER, installOutRoot } from "../publish/install-out.js";
 import { renderNativePreview } from "./publisher-preview-render.js";
 import { readPinnedPublication } from "@clossys/publisher/content-map/slots";
+import { slotGallery } from "./slot-gallery.js";
 
 let root: string;
 let server: ProducerServer | undefined;
@@ -192,15 +193,29 @@ it("uses pinned native publication identity, configured paths, titles and order 
   await launch(outs);
   const metadata = JSON.parse((await get("/api/publication?publication=studio")).text);
   expect(metadata).toMatchObject({ state: "ready", publication: "studio", manifest: { publication: "studio", sourceApp: "apps/configured-studio", format: "web.page.responsive" }, pages: [
-    { id: "designer", route: "/work/design", title: "Visual design", emitted: true, previewUrl: "/preview/studio/pages/designer.html" },
-    { id: "home", route: "/start-here", title: "Configured home", emitted: false },
+    { id: "designer", cellId: "page.designer", route: "/work/design", title: "Visual design", emitted: true, previewUrl: "/preview/studio/pages/designer.html" },
+    { id: "home", cellId: "page.home", route: "/start-here", title: "Configured home", emitted: false },
   ] });
   expect(metadata.pages).toHaveLength(2);
+  const card = slotGallery(join(root, "clossys"), "publisher").sections.flatMap(section => section.cards).find(card => card.id === "page.designer")!;
+  expect(metadata.pages.find((page: any) => page.cellId === card.id)).toMatchObject({ id: "designer", emitted: true, frameUrl: "/preview/studio/frame/designer.html" });
   expect(metadata.manifest.routes).toEqual([{ id: "designer", path: "/work/design", source: { file: "design/site/designer/index.html", export: "default" } }]);
   expect((await get("/preview/studio/pages/designer.html")).status).toBe(200);
   expect((await get("/preview/studio/pages/designer.html", "HEAD")).text).toBe("");
   expect((await get("/preview/studio/pages/home.html")).status).toBe(404);
   expect(JSON.parse((await get("/api/publication?publication=other")).text).state).toBe("missing");
+});
+
+it.each([
+  ["missing entry identity", (value: any) => { delete value.meta.entry.entryId; }, "missing"],
+  ["unknown entry identity", (value: any) => { value.meta.entry.entryId = "unknown-page"; }, "error"],
+  ["missing publication identity", (value: any) => { delete value.meta.entry.publication; }, "missing"],
+] as const)("leaves native preview unavailable for %s instead of guessing its gallery slot", async (_name, edit, state) => {
+  const publisher = await nativePublisherFixture(true), outs = join(root, "outs");
+  await editNative(publisher, "page.home", edit);
+  await installFixture(join(outs, "home"), "home");
+  await launch(outs);
+  expect(JSON.parse((await get("/api/publication?publication=studio")).text).state).toBe(state);
 });
 
 it.each(["page.home", "publication.studio"])("does not borrow legacy metadata when native %s has no pin", async id => {
