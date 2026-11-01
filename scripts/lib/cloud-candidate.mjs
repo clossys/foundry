@@ -16,6 +16,7 @@ export const TRUST_ROOT = join(userInfo().homedir, '.config', 'public-safety', '
 const HEX = /^[a-f0-9]{64}$/;
 const OID = /^[a-f0-9]{40}$/;
 const MAX_AGE = 15 * 60 * 1000;
+export const CHECKPOINT_LANES = Object.freeze(['setup-52', 'exactparts', 'native-home', 'root-qual-portfolio', 'packed-ref-closure', '2553-existing', 'b5-3560', 'designer-3572', 'immutable-node-3562']);
 const utf8 = new TextDecoder('utf-8', { fatal: true });
 export const encode = value => Buffer.from(`${JSON.stringify(value)}\n`);
 export const digest = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -160,8 +161,8 @@ export function readBounded(path, limit = LIMITS.artifact) {
   } finally { closeSync(fd); }
 }
 function validatePolicy(policy) {
-  keys(policy, ['version', 'repository', 'owner', 'base', 'unit', 'messageSha256', 'nonce', 'expiresAt', 'engineSha256', 'denylistSha256', 'inputs', 'publicKey']);
-  if (policy.version !== 1 || !OID.test(policy.base) || !HEX.test(policy.messageSha256) || !HEX.test(policy.nonce) || !HEX.test(policy.engineSha256) || !HEX.test(policy.denylistSha256)) fail('Invalid policy pins');
+  keys(policy, ['version', 'repository', 'owner', 'base', 'unit', 'messageSha256', 'nonce', 'expiresAt', 'engineSha256', 'denylistSha256', 'inputs', 'publicKey', ...(policy.version === 2 ? ['checkpoint'] : [])]);
+  if (![1, 2].includes(policy.version) || !OID.test(policy.base) || !HEX.test(policy.messageSha256) || !HEX.test(policy.nonce) || !HEX.test(policy.engineSha256) || !HEX.test(policy.denylistSha256)) fail('Invalid policy pins');
   text(policy.repository, 160, /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/); text(policy.owner, 80, /^[A-Za-z0-9_.-]+$/); text(policy.unit, 160, /^[A-Za-z0-9_.:-]+$/);
   if (policy.repository.split('/')[0] !== policy.owner || !Number.isSafeInteger(policy.expiresAt) || policy.expiresAt <= Date.now() || policy.expiresAt > Date.now() + 24 * 60 * 60 * 1000) fail('Stale or invalid policy');
   keys(policy.inputs, [...Object.keys(INPUTS), 'history', 'historyConfig', 'historyExceptions']);
@@ -171,6 +172,7 @@ function validatePolicy(policy) {
   }
   text(policy.publicKey, 1024);
   if (createPublicKey(policy.publicKey).asymmetricKeyType !== 'ed25519') fail('Ed25519 trust anchor required');
+  if (policy.version === 2) validateCheckpoint(policy.checkpoint);
 }
 const scannerDigest = policy => digest(encode({ engineSha256: policy.engineSha256, denylistSha256: policy.denylistSha256, inputs: Object.fromEntries(Object.entries(policy.inputs).sort(([a], [b]) => a.localeCompare(b)).map(([id, pin]) => [id, pin.sha256])) }));
 function outside(path, root) {
@@ -310,8 +312,8 @@ export function loadConsumerTrust(repositoryPath) {
   const own = fileURLToPath(import.meta.url);
   if (own !== join(TRUST_ROOT, 'lib', 'cloud-candidate.mjs') || !outside(TRUST_ROOT, root) || realpathSync(TRUST_ROOT) !== TRUST_ROOT) fail('Independently installed consumer required');
   const authority = canonical(externalFile(join(TRUST_ROOT, 'authority.json'), root), 16384);
-  keys(authority, ['version', 'repository', 'owner', 'publicKey', 'engineSha256', 'cliSha256', 'npmPath', 'npmSha256']);
-  if (authority.version !== 1 || authority.engineSha256 !== engineDigest() || !HEX.test(authority.cliSha256) || digest(readBounded(join(TRUST_ROOT, 'cloud-candidate.mjs'), 128 * 1024)) !== authority.cliSha256) fail('Installed consumer pin mismatch');
+  keys(authority, ['version', 'repository', 'owner', 'publicKey', 'engineSha256', 'cliSha256', 'npmPath', 'npmSha256', ...(authority.version === 2 ? ['comparisonKey', 'checkpointUnits'] : [])]);
+  if (![1, 2].includes(authority.version) || authority.engineSha256 !== engineDigest() || !HEX.test(authority.cliSha256) || digest(readBounded(join(TRUST_ROOT, 'cloud-candidate.mjs'), 128 * 1024)) !== authority.cliSha256) fail('Installed consumer pin mismatch');
   const policy = canonical(externalFile(join(TRUST_ROOT, 'policy.json'), root), 1024 * 1024);
   validatePolicy(policy);
   if (policy.publicKey !== authority.publicKey || policy.repository !== authority.repository || policy.owner !== authority.owner || policy.engineSha256 !== authority.engineSha256) fail('Policy differs from fixed owner authority');
@@ -326,7 +328,100 @@ function loadRemoteInputs({ repositoryPath, artifactPath, receiptPath, messagePa
   const candidate = parseCandidate(artifact, trust.policy);
   verifyReceipt({ artifact, receipt, policy: trust.policy, repositoryPath, message });
   assertWorkingSnapshot(repositoryPath, candidate);
-  return { ...trust, artifact, receipt, message, candidate };
+  const input = { ...trust, artifact, receipt, message, candidate };
+  if (trust.policy.version === 2) checkpointAuthorization(input, repositoryPath);
+  return input;
+}
+function checkpointPin(pin) {
+  keys(pin, ['path', 'sha256']); text(pin.path, 4096);
+  if (!isAbsolute(pin.path) || !HEX.test(pin.sha256)) fail('Invalid external checkpoint pin');
+}
+function validateCheckpoint(profile) {
+  keys(profile, ['lane', 'checks', 'evidence', 'baseline', 'owed']);
+  if (!CHECKPOINT_LANES.includes(profile.lane)) fail('Unnamed checkpoint lane');
+  checkpointPin(profile.evidence);
+  if (!Array.isArray(profile.checks) || profile.checks.length < 3 || profile.checks.length > 32) fail('Applicable checks required');
+  const ids = new Set(), kinds = new Set();
+  for (const check of profile.checks) {
+    keys(check, ['id', 'kind', 'tool', 'args', 'inputs', 'normalizer']);
+    text(check.id, 80, /^[A-Za-z0-9_.-]+$/);
+    if (ids.has(check.id) || !['native', 'scoped', 'mutant'].includes(check.kind)) fail('Invalid applicable check identity');
+    ids.add(check.id); kinds.add(check.kind); checkpointPin(check.tool); checkpointPin(check.normalizer);
+    if (!Array.isArray(check.args) || check.args.length > 64 || !Array.isArray(check.inputs) || !check.inputs.length || check.inputs.length > LIMITS.files) fail('Bounded check arguments/inputs required');
+    for (const arg of check.args) text(arg, 4096);
+    const paths = new Set();
+    for (const input of check.inputs) {
+      keys(input, ['path', 'sha256']); safePath(input.path);
+      if (!HEX.test(input.sha256) || paths.has(input.path)) fail('Invalid check source/input pin');
+      paths.add(input.path);
+    }
+  }
+  if (kinds.size !== 3 || !Array.isArray(profile.owed) || profile.owed.length > 32) fail('Native/scoped/mutant checks cannot be owed');
+  for (const item of profile.owed) text(item, 512);
+  keys(profile.baseline, ['payload', 'signature']);
+}
+function failureSet(value) {
+  if (!Array.isArray(value) || value.length > 10000 || value.some(id => !HEX.test(id)) || new Set(value).size !== value.length) fail('Exact normalized failure identities required');
+  return [...value].sort();
+}
+function checkpointAuthorization(input, repo) {
+  const { authority, policy, candidate, artifact } = input, profile = policy.checkpoint;
+  if (authority.version !== 2 || createPublicKey(authority.comparisonKey).asymmetricKeyType !== 'ed25519' || createPublicKey(authority.comparisonKey).export({ type: 'spki', format: 'der' }).equals(createPublicKey(authority.publicKey).export({ type: 'spki', format: 'der' }))) fail('Independent comparison authority required');
+  if (!authority.checkpointUnits || Array.isArray(authority.checkpointUnits) || typeof authority.checkpointUnits !== 'object' || !Object.hasOwn(authority.checkpointUnits, policy.unit) || authority.checkpointUnits[policy.unit] !== profile.lane || Object.values(authority.checkpointUnits).some(lane => !CHECKPOINT_LANES.includes(lane))) fail('Exact owner-admitted checkpoint unit required');
+  const { payload, signature } = profile.baseline;
+  if (typeof signature !== 'string' || !/^[A-Za-z0-9+/]{86}==$/.test(signature) || !verify(null, encode(payload), createPublicKey(authority.comparisonKey), Buffer.from(signature, 'base64'))) fail('Unauthenticated independent baseline comparison');
+  keys(payload, ['version', 'profile', 'lane', 'repository', 'owner', 'base', 'baseTree', 'tree', 'unit', 'candidateSha256', 'messageSha256', 'checksSha256', 'nonce', 'issuedAt', 'expiresAt', 'distributionBuild', 'evidenceSha256', 'results']);
+  if (payload.version !== 1 || payload.profile !== 'source-checkpoint' || payload.lane !== profile.lane || payload.distributionBuild !== false || payload.baseTree !== gitText(repo, ['rev-parse', `${policy.base}^{tree}`]) || payload.candidateSha256 !== digest(artifact) || payload.messageSha256 !== policy.messageSha256 || payload.checksSha256 !== digest(encode(profile.checks)) || payload.nonce !== policy.nonce || payload.evidenceSha256 !== profile.evidence.sha256) fail('Independent baseline bindings differ');
+  bindings(candidate, payload);
+  if (!Number.isSafeInteger(payload.issuedAt) || !Number.isSafeInteger(payload.expiresAt) || payload.issuedAt > Date.now() || payload.issuedAt < Date.now() - 24 * 60 * 60 * 1000 || payload.expiresAt <= Date.now() || payload.expiresAt > policy.expiresAt) fail('Stale baseline comparison');
+  const bytes = externalFile(profile.evidence.path, repo, 32 * 1024 * 1024);
+  if (digest(bytes) !== payload.evidenceSha256) fail('Baseline evidence pin mismatch');
+  const evidence = canonical(bytes, 32 * 1024 * 1024);
+  keys(evidence, ['version', 'base', 'baseTree', 'checksSha256', 'results']);
+  if (evidence.version !== 1 || evidence.base !== policy.base || evidence.baseTree !== payload.baseTree || evidence.checksSha256 !== payload.checksSha256 || !Array.isArray(evidence.results) || encode(evidence.results).toString() !== encode(payload.results).toString() || evidence.results.length !== profile.checks.length) fail('Independent baseline evidence incomplete');
+  for (let i = 0; i < profile.checks.length; i++) {
+    const check = profile.checks[i], result = evidence.results[i];
+    keys(result, ['id', 'exit', 'failures', 'stdout', 'stderr']);
+    if (result.id !== check.id || ![0, 1].includes(result.exit) || (result.exit === 0) !== (failureSet(result.failures).length === 0)) fail('Invalid baseline outcome');
+    for (const stream of ['stdout', 'stderr']) if (typeof result[stream] !== 'string' || result[stream].length > 16 * 1024 * 1024 || Buffer.from(result[stream], 'base64').toString('base64') !== result[stream]) fail('Bounded complete baseline streams required');
+    for (const pin of [check.tool, check.normalizer]) if (digest(externalFile(pin.path, repo, 128 * 1024 * 1024)) !== pin.sha256) fail('External check tool/normalizer changed');
+    for (const pin of check.inputs) {
+      const file = candidate.files.find(file => file.path === pin.path);
+      if (!file || digest(decodedFile(file)) !== pin.sha256) fail('Applicable check source/input changed');
+    }
+  }
+  return evidence;
+}
+function normalizedOutcome(check, result, repo, env) {
+  const parsed = spawnSync(check.normalizer.path, [], { cwd: repo, env, input: encode(result), encoding: null, timeout: 120000, maxBuffer: 1024 * 1024 });
+  if (!scannerPass(parsed) || parsed.stderr.length) fail('Unparsed check outcome');
+  const report = canonical(parsed.stdout, 1024 * 1024); keys(report, ['failures']);
+  const failures = failureSet(report.failures);
+  if (![0, 1].includes(result.exit) || (result.exit === 0) !== (failures.length === 0)) fail('Unexplained native check result');
+  return failures;
+}
+function runCheckpointChecks(input, repo, record, env) {
+  const baseline = checkpointAuthorization(input, repo), results = [];
+  for (let i = 0; i < input.policy.checkpoint.checks.length; i++) {
+    const check = input.policy.checkpoint.checks[i], prior = baseline.results[i];
+    // Normalize authenticated complete baseline streams with the same pinned
+    // independent parser. Candidate expected-exit/output assertions are not used.
+    const old = normalizedOutcome(check, prior, repo, env);
+    if (encode(old).toString() !== encode(failureSet(prior.failures)).toString()) fail('Independent baseline normalization differs');
+    const actual = spawnSync(check.tool.path, check.args, { cwd: repo, env, input: '', encoding: null, maxBuffer: 8 * 1024 * 1024, timeout: 120000 });
+    const result = { id: check.id, exit: actual.status, stdout: actual.stdout?.toString('base64') ?? '', stderr: actual.stderr?.toString('base64') ?? '' };
+    results.push(result);
+    // Retain complete actual streams/status before parsing or refusal.
+    const retained = encode(results);
+    if (retained.length > 32 * 1024 * 1024) fail('Complete check evidence exceeds bound');
+    writeFileSync(`${record}.checks`, retained, { mode: 0o600 });
+    if (actual.error) fail('Applicable check did not complete');
+    result.failures = normalizedOutcome(check, result, repo, env);
+    if (result.failures.some(id => !old.includes(id))) fail('New applicable check failure');
+    checkpointAuthorization(input, repo);
+  }
+  const bytes = encode(results); writeFileSync(`${record}.checks`, bytes, { mode: 0o600 });
+  return { exit: results.some(result => result.exit !== 0) ? 1 : 0, sha256: digest(bytes) };
 }
 function statePaths(policy) {
   const state = join(TRUST_ROOT, 'state');
@@ -423,13 +518,19 @@ export async function admitCommit(options) {
     // Required native checks execute only on the uncredentialed consumer, never
     // the trusted signing runner. The receipt adapter has no local denylist.
     const env = { ...cleanEnv(), PATH: `${dirname(process.execPath)}:/usr/bin:/bin`, HOME: scratch, PUBLIC_SAFETY_REMOTE_REPOSITORY: realpathSync(repositoryPath), PUBLIC_SAFETY_REMOTE_ARTIFACT: resolve(options.artifactPath), PUBLIC_SAFETY_REMOTE_RECEIPT: resolve(options.receiptPath), PUBLIC_SAFETY_REMOTE_MESSAGE: resolve(options.messagePath) };
-    const checked = spawnSync(process.execPath, [realpathSync(input.authority.npmPath), 'run', 'check'], { cwd: repositoryPath, env, input: '', encoding: null, maxBuffer: 32 * 1024 * 1024, timeout: 30 * 60 * 1000 });
-    if (!scannerPass(checked)) fail('Required native check failed; no commit admitted');
+    let checkExit = 0;
+    if (input.policy.version === 2) {
+      const checked = runCheckpointChecks(input, repositoryPath, record, env);
+      checkExit = checked.exit; state.outcomesSha256 = checked.sha256; state.profile = 'source-checkpoint';
+    } else {
+      const checked = spawnSync(process.execPath, [realpathSync(input.authority.npmPath), 'run', 'check'], { cwd: repositoryPath, env, input: '', encoding: null, maxBuffer: 32 * 1024 * 1024, timeout: 30 * 60 * 1000 });
+      if (!scannerPass(checked)) fail('Required native check failed; no commit admitted');
+    }
     // Any index/worktree/message/receipt/policy mutation during check fails.
     const current = loadRemoteInputs(options);
     if (!current.artifact.equals(input.artifact) || !current.receipt.equals(input.receipt)) fail('Admission inputs changed during checks');
     noActiveCommitHooks(repositoryPath);
-    state.phase = 'attempted'; state.checkExit = 0;
+    state.phase = 'attempted'; state.checkExit = checkExit;
     writeFileSync(record, encode(state), { mode: 0o600 });
     const message = join(scratch, 'message'); writeFileSync(message, input.message, { flag: 'wx', mode: 0o600 });
     // Freeze exact qualified Git objects in a private index; neither a caller's
@@ -469,7 +570,7 @@ export async function admitCommit(options) {
     if (gitText(repositoryPath, ['rev-parse', 'HEAD']) !== head) fail('Published HEAD changed; no delivery admitted');
     state.phase = 'committed'; state.head = head;
     writeFileSync(record, encode(state), { mode: 0o600 });
-    return { provenance: 'trusted-remote-FULL', admitted: 'commit', head, tree: input.candidate.tree, checkExit: 0 };
+    return { provenance: 'trusted-remote-FULL', admitted: input.policy.version === 2 ? 'source-checkpoint-commit' : 'commit', head, tree: input.candidate.tree, checkExit, ...(input.policy.version === 2 ? { qualification: 'UNQUALIFIED', outcomesSha256: state.outcomesSha256, owed: input.policy.checkpoint.owed } : {}) };
   } catch (error) {
     state.phase = 'refused'; writeFileSync(record, encode(state), { mode: 0o600 });
     throw error;
@@ -495,8 +596,12 @@ export function admitDelivery(options) {
   verifyReceipt({ artifact, receipt, policy, message });
   const { record, delivery } = statePaths(policy), state = canonical(readBounded(record, 16384), 16384);
   const head = gitText(options.repositoryPath, ['rev-parse', 'HEAD']);
-  if (state.phase !== 'committed' || state.checkExit !== 0 || state.head !== head || state.candidateSha256 !== digest(artifact) || state.receiptSha256 !== digest(receipt)) fail('No current checked commit admission');
+  if (state.phase !== 'committed' || (policy.version === 1 ? state.checkExit !== 0 : ![0, 1].includes(state.checkExit)) || state.head !== head || state.candidateSha256 !== digest(artifact) || state.receiptSha256 !== digest(receipt)) fail('No current checked commit admission');
+  if (policy.version === 2) {
+    checkpointAuthorization({ authority, policy, candidate, artifact }, options.repositoryPath);
+    if (state.profile !== 'source-checkpoint' || digest(readBounded(`${record}.checks`, 32 * 1024 * 1024)) !== state.outcomesSha256) fail('Checkpoint outcome evidence changed');
+  }
   verifyCommitted({ authority, policy, candidate, message }, options.repositoryPath, head);
   writeFileSync(delivery, encode({ head, tree: candidate.tree }), { flag: 'wx', mode: 0o600 });
-  return { provenance: 'trusted-remote-FULL', admitted: 'delivery', head, tree: candidate.tree, pushExecuted: false };
+  return { provenance: 'trusted-remote-FULL', admitted: policy.version === 2 ? 'source-checkpoint-delivery' : 'delivery', head, tree: candidate.tree, pushExecuted: false, ...(policy.version === 2 ? { qualification: 'UNQUALIFIED' } : {}) };
 }

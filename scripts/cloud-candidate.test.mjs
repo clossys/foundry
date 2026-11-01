@@ -419,3 +419,83 @@ test('native replacement refs and grafts cannot reinterpret qualified objects be
     assert.equal(existsSync(`${git(f.repo, 'rev-parse', '--path-format=absolute', '--git-path', 'HEAD')}.lock`), false);
   }
 });
+
+
+async function checkpointFixture(t, native = 'known', scoped = 'pass') {
+  const f = await installedFixture(t);
+  const comparison = generateKeyPairSync('ed25519'), failure = digest('independent baseline failure');
+  const normalizer = join(f.installation, 'normalize');
+  writeFileSync(normalizer, `#!${process.execPath}
+const chunks=[];for await(const chunk of process.stdin)chunks.push(chunk);
+const r=JSON.parse(Buffer.concat(chunks));const text=Buffer.from(r.stdout,'base64').toString();
+if(Buffer.from(r.stderr,'base64').length)process.exit(2);
+if(r.exit===0&&text==='pass\\n')console.log(JSON.stringify({failures:[]}));
+else if(r.exit===1&&text==='known\\n')console.log(JSON.stringify({failures:['${failure}']}));
+else if(r.exit===1&&text==='new\\n')console.log(JSON.stringify({failures:['${digest('new failure')}']}));
+else process.exit(2);
+`); chmodSync(normalizer, 0o700);
+  const pin = path => ({ path: realpathSync(path), sha256: digest(readFileSync(path)) });
+  const checks = ['native', 'scoped', 'mutant'].map(kind => {
+    const tool = join(f.installation, kind); const output = kind === 'native' ? native : kind === 'scoped' ? scoped : 'pass';
+    writeFileSync(tool, `#!/bin/sh\nprintf '${output}\\n'\nexit ${output === 'pass' ? 0 : 1}\n`); chmodSync(tool, 0o700);
+    return { id: kind, kind, tool: pin(tool), args: [], inputs: JSON.parse(f.artifact).files.map(file => ({ path: file.path, sha256: digest(Buffer.from(file.bytes, 'base64')) })), normalizer: pin(normalizer) };
+  });
+  const results = checks.map(check => ({ id: check.id, exit: check.kind === 'native' ? 1 : 0, failures: check.kind === 'native' ? [failure] : [], stdout: Buffer.from(check.kind === 'native' ? 'known\n' : 'pass\n').toString('base64'), stderr: '' }));
+  const baseTree = git(f.repo, 'rev-parse', `${f.base}^{tree}`), checksSha256 = digest(encode(checks));
+  const evidence = join(f.installation, 'baseline-evidence'); writeFileSync(evidence, encode({ version: 1, base: f.base, baseTree, checksSha256, results }));
+  const payload = { version: 1, profile: 'source-checkpoint', lane: 'setup-52', repository: f.policy.repository, owner: f.policy.owner, base: f.base, baseTree, tree: JSON.parse(f.artifact).tree, unit: f.policy.unit, candidateSha256: digest(f.artifact), messageSha256: f.policy.messageSha256, checksSha256, nonce: f.policy.nonce, issuedAt: Date.now(), expiresAt: f.policy.expiresAt, distributionBuild: false, evidenceSha256: digest(readFileSync(evidence)), results };
+  const baseline = { payload, signature: sign(null, encode(payload), comparison.privateKey).toString('base64') };
+  const policy = { ...f.policy, version: 2, checkpoint: { lane: 'setup-52', checks, evidence: pin(evidence), baseline, owed: ['assembled native rootcheck0 and artifact/browser acceptance'] } };
+  const authorityPath = join(f.installation, 'authority.json');
+  const authority = { ...JSON.parse(readFileSync(authorityPath)), version: 2, comparisonKey: comparison.publicKey.export({ type: 'spki', format: 'pem' }).toString(), checkpointUnits: { [policy.unit]: 'setup-52' } };
+  writeFileSync(authorityPath, encode(authority));
+  const refresh = () => {
+    writeFileSync(join(f.installation, 'policy.json'), encode(policy));
+    const receipt = f.module.qualifyCandidate({ artifact: f.artifact, policy, trustedRepository: f.repo, denylistPath: f.denylist, privateKey: f.privateKey });
+    writeFileSync(f.receiptPath, receipt);
+  };
+  refresh(); return { ...f, policy, authority, authorityPath, refresh };
+}
+
+test('independently authenticated source checkpoints retain baseline failures as unqualified outcomes', async t => {
+  for (const actual of ['known', 'pass']) {
+    const f = await checkpointFixture(t, actual);
+    const admitted = f.run('admit-commit'); assert.equal(admitted.status, 0, admitted.stderr);
+    const result = JSON.parse(admitted.stdout);
+    assert.equal(result.admitted, 'source-checkpoint-commit'); assert.equal(result.qualification, 'UNQUALIFIED');
+    assert.equal(result.checkExit, actual === 'known' ? 1 : 0);
+    assert.equal(git(f.repo, 'rev-parse', 'HEAD^'), f.base);
+    assert.equal(git(f.repo, 'rev-parse', 'HEAD^{tree}'), JSON.parse(f.artifact).tree);
+    const record = join(f.installation, 'state', `${f.policy.nonce}.json`);
+    const outcomes = JSON.parse(readFileSync(record + '.checks'));
+    assert.equal(outcomes.length, 3); assert.equal(outcomes[0].exit, result.checkExit);
+    assert.equal(Buffer.from(outcomes[0].stdout, 'base64').toString(), actual + '\n');
+    assert.equal(f.run('admit-delivery').status, 0);
+    assert.equal(f.run('admit-delivery').status, 2);
+  }
+});
+
+test('checkpoint profile refuses new scoped failures, incomplete checks and self-selected comparison authority', async t => {
+  for (const [native, scoped] of [['new', 'pass'], ['known', 'new'], ['unparsed', 'pass']]) {
+    const f = await checkpointFixture(t, native, scoped);
+    assert.equal(f.run('admit-commit').status, 2);
+    assert.equal(git(f.repo, 'rev-parse', 'HEAD'), f.base);
+    assert.equal(f.run('admit-delivery').status, 2);
+  }
+  for (const mutate of [
+    f => { f.policy.checkpoint.baseline.signature = Buffer.alloc(64).toString('base64'); },
+    f => { f.policy.checkpoint.baseline.payload.base = '0'.repeat(40); },
+    f => { f.policy.checkpoint.baseline.payload.distributionBuild = true; },
+    f => { f.policy.checkpoint.lane = 'unrelated'; },
+    f => { f.authority.checkpointUnits = { 'unit-1-prefix': 'setup-52' }; },
+    f => { f.authority.comparisonKey = f.authority.publicKey; },
+    f => { f.authority.comparisonKey = f.authority.publicKey.replaceAll('\n', '\r\n'); },
+    f => { f.policy.checkpoint.checks.pop(); },
+    f => { f.policy.checkpoint.checks[0].inputs[0].sha256 = '0'.repeat(64); },
+  ]) {
+    const f = await checkpointFixture(t); mutate(f);
+    writeFileSync(f.authorityPath, encode(f.authority));
+    try { f.refresh(); } catch { /* Invalid closed policy itself must refuse. */ }
+    assert.equal(f.run('admit-commit').status, 2); assert.equal(git(f.repo, 'rev-parse', 'HEAD'), f.base);
+  }
+});
