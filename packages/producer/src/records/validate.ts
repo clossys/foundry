@@ -49,6 +49,25 @@ export function validateElement(value: unknown): Validation<ElementRecord> {
     if (mode !== "original" && !source) issues.push({ path: "$.lineage.source", message: `is required when mode is ${mode}` });
     if (mode === "original" && source) issues.push({ path: "$.lineage.source", message: "must be absent when mode is original" });
     if (mode === "original" && record.lineage.parts) issues.push({ path: "$.lineage.parts", message: "must be absent when mode is original" });
+    const proof = record.lineage.exactParts;
+    if (proof) {
+      if (mode === "original") issues.push({ path: "$.lineage.exactParts", message: "must be absent when mode is original" });
+      const count = 1 + (record.lineage.parts?.length ?? 0);
+      for (const [file, evidence] of Object.entries(proof.files)) {
+        let end = 0;
+        for (const segment of evidence.segments) {
+          const at = `$.lineage.exactParts.files.${file}`;
+          if (segment.start !== end || segment.endExclusive <= segment.start) issues.push({ path: at, message: "segments must form a contiguous nonempty byte partition" });
+          end = segment.endExclusive;
+          if (segment.source.reference >= count || segment.source.endExclusive <= segment.source.start) issues.push({ path: at, message: "invalid source reference or byte boundaries" });
+          let editEnd = 0;
+          for (const edit of segment.edits) {
+            if (edit.start < editEnd || edit.endExclusive <= edit.start || edit.endExclusive > segment.source.endExclusive - segment.source.start) issues.push({ path: at, message: "edits must be ordered nonoverlapping source byte spans" });
+            editEnd = edit.endExclusive;
+          }
+        }
+      }
+    }
     if (parent && parent.version >= record.version) issues.push({ path: "$.lineage.parent.version", message: "must be lower than version" });
     return issues;
   });

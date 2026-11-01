@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -121,4 +122,33 @@ describe("pin() ref-verbatim gate", () => {
     writeFileSync(join(root, "library", "components.button", "button", "v1", "button.tsx"), `${STOCK}\nconsole.log("x")\n`);
     expect(() => restore(s, "e1", { root, at: AT(2), by: "agent", approval: "approve-1" })).toThrow(/payload hash|REF-HUNK-LOGIC/);
   });
+});
+
+
+it("native pin and restore never fall back to legacy mappings after exact proof tampering", () => {
+  const root = library([{ version: 1, text: STOCK }]);
+  const input = { root, element: el(root, 1), at: AT(1), by: "agent" };
+  const selected = pin(emptySelection(), input);
+  writeSelection(root, selected);
+  const selectionBefore = readFileSync(join(root, "selection.json"), "utf8");
+  const recordPath = join(root, "library/components.button/button/v1/element.json");
+  const record = JSON.parse(readFileSync(recordPath, "utf8"));
+  const upstream = button.files.find((file: { path: string }) => file.path === "registry/aria-nova/ui/button.tsx");
+  record.lineage.exactParts = {
+    schema: "ref-exact-parts/1", payload: { "button.tsx": record.hash.slice(7) },
+    files: { "button.tsx": { sha256: "0".repeat(64), segments: [{
+      start: 0, endExclusive: Buffer.byteLength(STOCK), edits: [], source: {
+        reference: 0, path: upstream.path, upstream: manifest.registries["shadcn-aria"].upstream,
+        fileSha256: upstream.sha256, start: 0, endExclusive: upstream.bytes, sha256: upstream.sha256,
+        license: { path: "shadcn-aria/LICENSE.md", sha256: "0".repeat(64), payloadPath: "LICENSE" },
+      },
+    }] } }, closure: { roots: ["button.tsx"], imports: [] },
+  };
+  // Bind the actual emitted file hash; leave only the part evidence corrupted.
+  record.lineage.exactParts.payload["button.tsx"] = createHash("sha256").update(STOCK).digest("hex");
+  writeFileSync(recordPath, JSON.stringify(record));
+  expect(() => pin(selected, { ...input, at: AT(2) })).toThrow(/REF-PART-PROOF/);
+  expect(() => restore(selected, "e1", { root, at: AT(2), by: "agent" })).toThrow(/REF-PART-PROOF/);
+  expect(readFileSync(join(root, "selection.json"), "utf8")).toBe(selectionBefore);
+  expect(selected.history).toHaveLength(1);
 });

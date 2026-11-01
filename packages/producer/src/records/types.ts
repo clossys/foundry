@@ -14,6 +14,33 @@ export type ReferenceRef = {
   readonly files?: Readonly<Record<string, string>>;
 };
 
+/** Byte offsets are UTF-8 bytes, endExclusive excluded. Reference 0 is source; n>0 is parts[n-1]. */
+export type ExactPartSource = {
+  readonly reference: number; readonly path: string; readonly upstream: string;
+  readonly fileSha256: string; readonly start: number; readonly endExclusive: number; readonly sha256: string;
+  readonly license: { readonly path: string; readonly sha256: string; readonly payloadPath: string };
+};
+export type ExactPartEdit = {
+  readonly kind: "import" | "token" | "data";
+  readonly start: number; readonly endExclusive: number; readonly from: string; readonly to: string;
+};
+export type ExactPartProof = {
+  readonly schema: "ref-exact-parts/1";
+  readonly payload: Readonly<Record<string, string>>;
+  readonly files: Readonly<Record<string, {
+    readonly sha256: string;
+    readonly segments: readonly { readonly start: number; readonly endExclusive: number; readonly source: ExactPartSource; readonly edits: readonly ExactPartEdit[] }[];
+  }>>;
+  readonly closure: {
+    readonly roots: readonly string[];
+    readonly imports: readonly { readonly file: string; readonly specifier: string; readonly target:
+      | { readonly kind: "payload"; readonly path: string }
+      | { readonly kind: "npm"; readonly package: string; readonly version: string; readonly entry: string; readonly hash: Hash }
+      | { readonly kind: "element"; readonly slot: string; readonly element: string; readonly version: number; readonly hash: Hash; readonly entry: string }
+    }[];
+  };
+};
+
 export type CheckResult = {
   readonly id: string;
   readonly suite?: string;
@@ -66,6 +93,7 @@ export type ElementRecord = {
     readonly path?: "pick" | "adopt" | "create";
     readonly ownerRequest?: string;
     readonly adaptations?: readonly ElementAdaptation[];
+    readonly exactParts?: ExactPartProof;
     readonly source?: ReferenceRef;
     /** Further trusted references the payload takes verbatim parts from, beside the source block. */
     readonly parts?: readonly ReferenceRef[];

@@ -23,13 +23,14 @@
  */
 import { createHash } from "node:crypto";
 import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, dirname, join, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { configFromComponents, normalizeReference } from "./ref-verbatim/normalize.mjs";
+import { configFromComponents, mapImport, normalizeReference } from "./ref-verbatim/normalize.mjs";
 import { replayDataFit } from "./ref-verbatim/data-fit.mjs";
 import { ADAPTATION_KINDS, adaptationHash, recordedHunk, staticSingleOptionRow } from "./ref-verbatim/adaptations.mjs";
 export { ADAPTATION_KINDS, adaptationHash };
-import { diffSources, isEngineNeutral } from "./ref-verbatim/diff.mjs";
+import { loadTypeScript } from "./ref-verbatim/typescript.mjs";
+import { diffSources, isEngineNeutral, tokenSwapAllowed } from "./ref-verbatim/diff.mjs";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const json = (path) => JSON.parse(readFileSync(path, "utf8"));
@@ -46,6 +47,8 @@ export const CODES = [
   "REF-HUNK-TEXT",
   "REF-NORMALIZE",
   "REF-ADAPTATION",
+  "REF-PART-PROOF",
+  "REF-PART-CLOSURE",
 ];
 
 /**
@@ -131,6 +134,438 @@ const parseSpec = (spec) => {
   return { slot: m[1], element: m[2], version: Number(m[3]) };
 };
 
+
+// Exact parts are a second, opt-in proof format. No legacy mapping/adaptation
+// fallback applies when this field exists, including when it is malformed.
+const partError = (detail, code = "REF-PART-PROOF") => { throw Object.assign(new Error(detail), { code }); };
+const partRequire = (condition, detail, code) => { if (!condition) partError(detail, code); };
+const partObject = (value, keys) => {
+  partRequire(value && typeof value === "object" && !Array.isArray(value), "expected a closed proof object");
+  partRequire(Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key)), `proof fields must be exactly ${keys.join(", ")}`);
+};
+const partPath = value => typeof value === "string" && !!value && !/[\\\u0000:]/.test(value) && value.split("/").every(part => !!part && part !== "." && part !== "..");
+const partHex = value => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+const partNatural = value => Number.isSafeInteger(value) && value >= 0;
+const partKeysEqual = (a, b) => JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
+const partDecode = bytes => new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+function partRead(base, file) {
+  partRequire(partPath(file), "reference/payload path must remain inside its declared root");
+  let path = base;
+  for (const segment of file.split("/")) {
+    path = join(path, segment);
+    partRequire(!lstatSync(path).isSymbolicLink(), "exact proof cannot follow symlinks");
+  }
+  partRequire(lstatSync(path).isFile(), "exact proof requires a regular file");
+  return readFileSync(path);
+}
+function partSlice(bytes, start, end) {
+  partRequire(partNatural(start) && partNatural(end) && start < end && end <= bytes.length, "invalid UTF-8 byte boundaries");
+  const slice = bytes.subarray(start, end);
+  partDecode(slice); // A partial codepoint or invalid UTF-8 is never normalized.
+  return slice;
+}
+function partParse(ts, text, file) {
+  const parsed = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, /\.[jt]sx$/.test(file) ? ts.ScriptKind.TSX : /\.[cm]?js$/.test(file) ? ts.ScriptKind.JS : ts.ScriptKind.TS);
+  partRequire(!parsed.parseDiagnostics.length, `unparseable exact source: ${file}`);
+  return parsed;
+}
+function partEditAllowed(ts, original, file, edit, config, themeVars, imports) {
+  const source = partParse(ts, original, file);
+  const characterOffset = byte => partDecode(Buffer.from(original).subarray(0, byte)).length;
+  const a = characterOffset(edit.start), b = characterOffset(edit.endExclusive);
+  const nodes = [];
+  const visit = node => { nodes.push(node); ts.forEachChild(node, visit); };
+  visit(source);
+  if (edit.kind === "import") {
+    const node = nodes.find(node => ts.isStringLiteral(node) && node.getStart(source) + 1 === a && node.getEnd() - 1 === b
+      && ((ts.isImportDeclaration(node.parent) || ts.isExportDeclaration(node.parent)) && node.parent.moduleSpecifier === node));
+    partRequire(node && node.text === edit.from && !/["'\\\r\n]/.test(edit.to)
+      && imports.some(edge => edge.file === file && edge.specifier === edit.to), "import edit must relocate one unchanged static binding to a measured closure edge");
+    partRequire(mapImport(edit.from, config.aliases) === edit.to, "import relocation is not an allowed native normalizer mapping");
+    return;
+  }
+  if (edit.kind === "token") {
+    const node = nodes.find(node => ts.isStringLiteral(node) && ts.isJsxAttribute(node.parent)
+      && node.parent.name.getText(source) === "className" && a > node.getStart(source) && b < node.getEnd());
+    partRequire(node && !/\s/.test(edit.from + edit.to) && tokenSwapAllowed(edit.from, edit.to, themeVars), "token edit must map one class token to a permitted semantic token");
+    const left = original[a - 1], right = original[b];
+    partRequire(/[\s"']/.test(left) && /[\s"']/.test(right), "token edit must cover a complete token");
+    return;
+  }
+  partRequire(edit.kind === "data", "unknown exact-part adaptation");
+  const node = nodes.find(node => node.getStart(source) === a && node.getEnd() === b && (ts.isStringLiteral(node) || ts.isNumericLiteral(node) || ts.isJsxText(node)));
+  const parent = node?.parent;
+  const jsx = node && (ts.isJsxText(node) || ts.isJsxAttribute(parent));
+  const path = jsx ? /^\{([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\}$/.exec(edit.to)?.[1] : undefined;
+  partRequire(path && !(ts.isJsxAttribute(parent) && /^(?:className|style|dangerouslySetInnerHTML|srcDoc)$|^on[A-Z]/.test(parent.name.getText(source))), "data edit must bind literal JSX data to a property path");
+  const bindings = new Set();
+  const bind = name => { if (ts.isIdentifier(name)) bindings.add(name.text); else for (const item of name.elements ?? []) if (ts.isBindingElement(item)) bind(item.name); };
+  let ancestor = node;
+  while (ancestor && !ts.isFunctionLike(ancestor)) ancestor = ancestor.parent;
+  for (const parameter of ancestor?.parameters ?? []) bind(parameter.name);
+  partRequire(bindings.has(path.split(".")[0]), "data binding must be rooted in a declared input parameter");
+}
+// Extraction units are complete top-level syntax, never arbitrary byte mosaics.
+function partStatements(ts, source) {
+  const allowed = node => ts.isImportDeclaration(node) || ts.isExportDeclaration(node) || ts.isExportAssignment(node)
+    || ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node) || ts.isInterfaceDeclaration(node)
+    || ts.isTypeAliasDeclaration(node) || ts.isVariableStatement(node) || ts.isEnumDeclaration(node)
+    || (ts.isExpressionStatement(node) && ts.isStringLiteral(node.expression) && ["use client", "use server", "use strict"].includes(node.expression.text));
+  partRequire(source.statements.length > 0 && source.statements.every(allowed), "exact extraction requires complete supported declarations/directives");
+  return source.statements;
+}
+function partDeclarationRange(ts, whole, path, start, end) {
+  const text = partDecode(whole), source = partParse(ts, text, path);
+  const a = partDecode(whole.subarray(0, start)).length, b = partDecode(whole.subarray(0, end)).length;
+  const selected = source.statements.filter(node => node.getStart(source) < b && node.getEnd() > a);
+  partRequire(selected.length > 0 && selected.every(node => node.getStart(source) >= a && node.getEnd() <= b)
+    && !text.slice(a, selected[0].getStart(source)).trim() && !text.slice(selected.at(-1).getEnd(), b).trim(), "source range cuts through syntax or includes unsupported framing bytes");
+  const extracted = partParse(ts, partDecode(whole.subarray(start, end)), path);
+  partStatements(ts, extracted);
+}
+const partStatementShape = (ts, text, path) => {
+  const source = partParse(ts, text, path);
+  return [...partStatements(ts, source)].map(node => [node.kind, node.getText(source)]);
+};
+
+function exactPartsCheck({ root, record, payload, codeFiles, readBytes, opts, slot, fail, files, options }) {
+  const proof = record.lineage.exactParts;
+  try {
+    partObject(proof, ["schema", "payload", "files", "closure"]);
+    partRequire(proof.schema === "ref-exact-parts/1", "unknown exact-part proof schema");
+    for (const map of [proof.payload, proof.files]) partRequire(map && typeof map === "object" && !Array.isArray(map), "exact proof inventories must be objects");
+    partRequire(partKeysEqual(Object.keys(proof.payload), payload) && new Set(payload).size === payload.length, "proof must hash the complete emitted payload inventory");
+    partRequire(partKeysEqual(Object.keys(proof.files), codeFiles), "proof must cover every emitted executable file, including embedded sources");
+    partRequire(codeFiles.length > 0 && !(record.lineage.adaptations?.length), "exact parts require code and use only explicit byte edits");
+    const bytes = new Map();
+    for (const file of new Set([...payload, ...codeFiles])) {
+      partRequire(partPath(file) && !/^(node_modules|library)\//.test(file), "invalid or reserved exact payload path");
+      const content = readBytes(file);
+      partRequire(Buffer.isBuffer(content), `missing exact payload bytes: ${file}`);
+      bytes.set(file, content);
+      if (payload.includes(file)) partRequire(partHex(proof.payload[file]) && sha256(content) === proof.payload[file], `stale emitted payload hash: ${file}`);
+    }
+    partRequire(treeHash(payload.map(path => ({ path, sha256: sha256(bytes.get(path)) }))) === record.hash, "exact proof must bind the final canonical payload hash");
+    const refs = [record.lineage.source, ...(record.lineage.parts ?? [])];
+    const sources = refs.map((ref, index) => {
+      partRequire(ref && typeof ref.registry === "string" && opts.manifest.registries?.[ref.registry], "untrusted exact source registry", "REF-NOT-VENDORED");
+      const item = opts.manifest.items?.find(item => item.registry === ref.registry && item.name === ref.item && item.version === ref.version);
+      partRequire(item && item.hash === ref.hash && Array.isArray(item.files) && item.files.length, "missing or stale exact source identity", "REF-NOT-VENDORED");
+      if (/^(frames|sections)\./.test(slot)) {
+        partRequire(item.type !== "registry:ui", "a primitive cannot qualify an exact section/frame part", "REF-PRIMITIVE-AS-REF");
+        if (index === 0) partRequire(["registry:block", "registry:example"].includes(item.type), "an exact section/frame requires a real primary block or example", "REF-PRIMITIVE-AS-REF");
+      }
+      partRequire(["registry:block", "registry:example", "application:component", "registry:ui"].includes(item.type), "unsupported exact-part source kind", "REF-NOT-VENDORED");
+      const registry = opts.manifest.registries[ref.registry];
+      partRequire(typeof registry.upstream === "string" && /@[a-f0-9]{40}$/.test(registry.upstream), "exact upstream must identify an immutable full source revision", "REF-NOT-VENDORED");
+      partRequire(item.license === registry.license && partPath(item.dir), "exact source license/root mismatch", "REF-NOT-VENDORED");
+      const contents = new Map();
+      for (const file of item.files) {
+        partRequire(partPath(file.path) && !contents.has(file.path), "duplicate or invalid upstream path", "REF-NOT-VENDORED");
+        const content = partRead(opts.referencesDir, `${item.dir}/${file.path}`);
+        partRequire(content.length === file.bytes && sha256(content) === file.sha256, "whole upstream file hash/length differs", "REF-NOT-VENDORED");
+        contents.set(file.path, content);
+      }
+      partRequire(treeHash([...contents].map(([path, content]) => ({ path, sha256: sha256(content) }))) === item.hash, "whole upstream item tree differs", "REF-NOT-VENDORED");
+      return { item, registry, contents };
+    });
+    const components = loadComponents(root, opts.components);
+    partRequire(components, "exact proof requires consumer components.json", "REF-FLAVOR");
+    const config = configFromComponents(components.value);
+    const ts = loadTypeScript();
+    partObject(proof.closure, ["roots", "imports"]);
+    partRequire(Array.isArray(proof.closure.roots) && proof.closure.roots.length && proof.closure.roots.every(file => codeFiles.includes(file))
+      && new Set(proof.closure.roots).size === proof.closure.roots.length && Array.isArray(proof.closure.imports), "invalid exact executable roots", "REF-PART-CLOSURE");
+    const used = new Set();
+    for (const file of codeFiles) {
+      const evidence = proof.files[file];
+      partObject(evidence, ["sha256", "segments"]);
+      partRequire(partHex(evidence.sha256) && sha256(bytes.get(file)) === evidence.sha256 && Array.isArray(evidence.segments) && evidence.segments.length, `invalid part evidence: ${file}`);
+      let end = 0;
+      const replay = [], statementShapes = [];
+      for (const segment of evidence.segments) {
+        partObject(segment, ["start", "endExclusive", "source", "edits"]);
+        partRequire(segment.start === end && partNatural(segment.endExclusive) && segment.endExclusive > end, `unmapped/overlapping emitted bytes: ${file}`);
+        const source = segment.source;
+        partObject(source, ["reference", "path", "upstream", "fileSha256", "start", "endExclusive", "sha256", "license"]);
+        partRequire(partNatural(source.reference) && source.reference < sources.length, "unknown exact source index");
+        const bound = sources[source.reference];
+        const whole = bound.contents.get(source.path);
+        partRequire(whole && source.upstream === bound.registry.upstream && partHex(source.fileSha256) && sha256(whole) === source.fileSha256, "stale whole source/upstream binding", "REF-NOT-VENDORED");
+        partDecode(whole);
+        const slice = partSlice(whole, source.start, source.endExclusive);
+        partRequire(partHex(source.sha256) && sha256(slice) === source.sha256, "stale exact source range hash");
+        const license = source.license;
+        partObject(license, ["path", "sha256", "payloadPath"]);
+        const listed = opts.manifest.licenses?.find(row => row.path === license.path);
+        partRequire(listed && bound.registry.licenseFiles?.includes(license.path) && partHex(license.sha256) && listed.sha256 === license.sha256, "unknown or stale source license", "REF-NOT-VENDORED");
+        const licenseBytes = partRead(opts.referencesDir, license.path);
+        partRequire(licenseBytes.length === listed.bytes && sha256(licenseBytes) === license.sha256
+          && payload.includes(license.payloadPath) && bytes.get(license.payloadPath)?.equals(licenseBytes), "source/bundled license bytes differ", "REF-NOT-VENDORED");
+        partDeclarationRange(ts, whole, source.path, source.start, source.endExclusive);
+        const raw = partDecode(slice);
+        const style = engineFamily(bound.registry.style);
+        partRequire((style && style === engineFamily(config.style)) || isEngineNeutral(raw, source.path), "exact part has incompatible engine flavor", "REF-FLAVOR");
+        partRequire(Array.isArray(segment.edits), "exact edits must be an array");
+        const chunks = []; let offset = 0;
+        for (const edit of segment.edits) {
+          partObject(edit, ["kind", "start", "endExclusive", "from", "to"]);
+          partRequire(["import", "token", "data"].includes(edit.kind) && typeof edit.from === "string" && !!edit.from && typeof edit.to === "string" && !!edit.to && edit.from !== edit.to
+            && partNatural(edit.start) && edit.start >= offset, "unknown, empty or overlapping adaptation");
+          const before = partSlice(slice, edit.start, edit.endExclusive);
+          partRequire(before.equals(Buffer.from(edit.from)), "adaptation from bytes differ");
+          partEditAllowed(ts, raw, file, edit, config, record.reads?.themeVars ?? [], proof.closure.imports);
+          chunks.push(slice.subarray(offset, edit.start), Buffer.from(edit.to)); offset = edit.endExclusive;
+        }
+        chunks.push(slice.subarray(offset));
+        const emitted = Buffer.concat(chunks);
+        partRequire(emitted.length === segment.endExclusive - segment.start, "adaptation output byte range differs");
+        statementShapes.push(...partStatementShape(ts, partDecode(emitted), file));
+        replay.push(emitted); end = segment.endExclusive; used.add(source.reference);
+      }
+      partRequire(end === bytes.get(file).length && Buffer.concat(replay).equals(bytes.get(file)), `unmapped or altered emitted bytes: ${file}`);
+      partRequire(JSON.stringify(statementShapes) === JSON.stringify(partStatementShape(ts, partDecode(bytes.get(file)), file)), "assembled bytes introduce syntax across extraction-unit boundaries");
+      files.push({ file, status: "pass", mapping: "recorded", hunks: [] });
+    }
+    partRequire(used.size === refs.length, "unbound primary or additional source identity");
+    exactPartClosure(ts, root, record, proof, bytes, codeFiles, opts, options, config);
+  } catch (error) {
+    fail(CODES.includes(error.code) ? error.code : "REF-PART-PROOF", error.message);
+    for (const file of files) file.status = "fail";
+  }
+}
+
+
+/** Parse and resolve an isolated module inventory. Never consult neighboring
+ * Studio files, ambient module resolution, package caches or declaration-only
+ * stand-ins for executable dependencies. Package/element roots are byte-bound.
+ */
+function exactPartClosure(ts, root, record, proof, payloadBytes, codeFiles, opts, options, config) {
+  const need = (condition, message) => partRequire(condition, message, "REF-PART-CLOSURE");
+  const declared = new Map();
+  for (const edge of proof.closure.imports) {
+    partObject(edge, ["file", "specifier", "target"]);
+    need(partPath(edge.file) && typeof edge.specifier === "string" && edge.specifier.length, "invalid closure edge");
+    const target = edge.target;
+    need(target && ["payload", "npm", "element"].includes(target.kind), "unknown executable dependency kind");
+    partObject(target, target.kind === "payload" ? ["kind", "path"] : target.kind === "npm"
+      ? ["kind", "package", "version", "hash", "entry"] : ["kind", "slot", "element", "version", "hash", "entry"]);
+    const key = `${edge.file}\0${edge.specifier}`;
+    need(!declared.has(key), "duplicate closure resolution"); declared.set(key, edge);
+  }
+  const nodes = new Map(), npmRoots = new Map(), elementRoots = new Map(), resolutions = new Map(), edges = [], used = new Set();
+  const payloadRoot = { kind: "payload", label: "", bytes: payloadBytes, record };
+  const fileAt = (domain, file) => domain.label + file;
+  const resolveRelative = (domain, file, specifier) => {
+    const path = posix.normalize(posix.join(posix.dirname(file), specifier));
+    need(partPath(path), "relative import escapes its materialization");
+    const candidates = [path, ...[".tsx", ".ts", ".jsx", ".js", ".mjs", ".cjs", ".mts", ".cts", ".d.ts"].map(ext => path + ext),
+      ...["index.tsx", "index.ts", "index.jsx", "index.js", "index.mjs", "index.cjs", "index.d.ts"].map(name => `${path}/${name}`)]
+      .filter(candidate => domain.bytes.has(candidate));
+    need(candidates.length === 1, `missing or ambiguous isolated import ${file}: ${specifier}`);
+    return candidates[0];
+  };
+  const npmRoot = target => {
+    need(typeof target.package === "string" && /^(?:@[a-z0-9._-]+\/)?[a-z0-9._-]+$/.test(target.package)
+      && typeof target.version === "string" && /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(target.version)
+      && record.deps?.npm?.[target.package] === target.version && /^sha256:[a-f0-9]{64}$/.test(target.hash), "npm closure requires an exact declared version and measured package digest");
+    if (npmRoots.has(target.package)) {
+      const domain = npmRoots.get(target.package);
+      need(domain.hash === target.hash && domain.version === target.version, "conflicting npm dependency identity"); return domain;
+    }
+    const base = join(root, "node_modules", target.package);
+    // Installed package symlinks are not an isolated consumer installation.
+    let directory = root;
+    for (const component of ["node_modules", ...target.package.split("/")]) { directory = join(directory, component); need(!lstatSync(directory).isSymbolicLink(), "npm closure cannot follow workspace symlinks"); }
+    const bytes = new Map();
+    const walk = (dir, prefix) => {
+      for (const name of readdirSync(dir).sort()) {
+        if (name === "node_modules") continue; // Every package resolves at the explicit root below.
+        const path = prefix ? `${prefix}/${name}` : name, stat = lstatSync(join(dir, name));
+        need(!stat.isSymbolicLink() && partPath(path), "invalid npm package entry");
+        if (stat.isDirectory()) walk(join(dir, name), path);
+        else { need(stat.isFile(), "npm closure requires regular package files"); bytes.set(path, readFileSync(join(dir, name))); }
+      }
+    };
+    walk(base, "");
+    const hash = treeHash([...bytes].map(([path, content]) => ({ path, sha256: sha256(content) })));
+    const manifest = JSON.parse(partDecode(bytes.get("package.json")));
+    need(hash === target.hash && manifest.name === target.package && manifest.version === target.version, "npm package bytes/identity changed");
+    // A caller-supplied digest alone is not a trust anchor: rewriting package
+    // bytes and that digest must still fail against the immutable vendored item.
+    const anchors = (opts.manifest.items ?? []).filter(item => item.name === target.package && item.version === target.version && item.hash === target.hash);
+    need(anchors.length === 1, "npm bytes require one exact trusted vendored source identity");
+    const anchor = anchors[0], registry = opts.manifest.registries?.[anchor.registry];
+    need(registry && /@[a-f0-9]{40}$/.test(registry.upstream ?? "") && partPath(anchor.dir)
+      && anchor.license === registry.license && manifest.license === registry.license && Array.isArray(anchor.files)
+      && partKeysEqual(anchor.files.map(file => file.path), bytes.keys()), "npm source revision/license/file inventory differs");
+    for (const file of anchor.files) {
+      const vendored = partRead(opts.referencesDir, `${anchor.dir}/${file.path}`);
+      need(vendored.length === file.bytes && sha256(vendored) === file.sha256 && vendored.equals(bytes.get(file.path)), "npm source/package bytes differ from trusted whole-file hashes");
+    }
+    need(Array.isArray(registry.licenseFiles) && registry.licenseFiles.length > 0, "npm source has no trusted license");
+    for (const path of registry.licenseFiles) {
+      const license = opts.manifest.licenses?.find(row => row.path === path);
+      const content = partRead(opts.referencesDir, path);
+      need(license && content.length === license.bytes && sha256(content) === license.sha256
+        && [...bytes.values()].some(file => file.equals(content)), "npm source/license bytes are stale or omitted from the package");
+    }
+    const domain = { kind: "npm", label: `node_modules/${target.package}/`, bytes, manifest, registry, hash, version: target.version, package: target.package };
+    npmRoots.set(target.package, domain); return domain;
+  };
+  const elementRoot = target => {
+    need(/^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/.test(target.slot) && /^[a-z0-9][a-z0-9-]*$/.test(target.element)
+      && partNatural(target.version) && target.version > 0 && /^sha256:[a-f0-9]{64}$/.test(target.hash), "invalid canonical dependency identity");
+    need(record.deps?.elements?.some(dep => ["slot", "element", "version", "hash"].every(key => dep[key] === target[key])), "undeclared canonical dependency");
+    const identity = `${target.slot}/${target.element}/v${target.version}`;
+    if (elementRoots.has(identity)) { const domain = elementRoots.get(identity); need(domain.hash === target.hash, "conflicting canonical dependency"); return domain; }
+    const base = join(root, "library", identity);
+    const dependency = JSON.parse(partDecode(partRead(root, `library/${identity}/element.json`)));
+    need(dependency.slot === target.slot && dependency.id === target.element && dependency.version === target.version
+      && dependency.hash === target.hash && Array.isArray(dependency.payload), "canonical dependency identity differs");
+    const bytes = new Map(dependency.payload.map(file => [file, partRead(base, file)]));
+    need(bytes.size === dependency.payload.length && treeHash([...bytes].map(([path, content]) => ({ path, sha256: sha256(content) }))) === target.hash, "canonical dependency payload changed");
+    const ancestors = options.exactAncestors ?? [];
+    need(!ancestors.includes(identity), "cyclic canonical proof dependency");
+    const checked = checkVersion(root, { slot: target.slot, element: target.element, version: target.version }, { ...options, strict: true, exactAncestors: [...ancestors, identity] });
+    need(checked.findings.length === 0, "canonical dependency does not pass its actual strict source proof");
+    const domain = { kind: "element", label: `library/${identity}/`, bytes, record: dependency, hash: target.hash };
+    elementRoots.set(identity, domain); return domain;
+  };
+  const publicNpm = (domain, specifier) => {
+    need(specifier === domain.package || specifier.startsWith(domain.package + "/"), "npm target differs from its import");
+    const subpath = specifier === domain.package ? "." : "./" + specifier.slice(domain.package.length + 1);
+    const exports = domain.manifest.exports;
+    const selected = exports && typeof exports === "object" && !Array.isArray(exports) && Object.keys(exports).some(key => key.startsWith(".")) ? exports[subpath] : subpath === "." ? exports : undefined;
+    const leaves = value => {
+      if (typeof value === "string") { need(value.startsWith("./") && partPath(value.slice(2)), "unsupported npm export path"); return [value.slice(2)]; }
+      need(value && typeof value === "object", "missing/conditional-null npm export");
+      return Object.values(value).flatMap(leaves);
+    };
+    if (exports !== undefined) return [...new Set(leaves(selected))];
+    if (subpath !== ".") return [resolveRelative(domain, "root.js", subpath)];
+    return [...new Set([domain.manifest.module, domain.manifest.main].filter(Boolean).map(path => path.replace(/^\.\//, "")))].length
+      ? [...new Set([domain.manifest.module, domain.manifest.main].filter(Boolean).map(path => path.replace(/^\.\//, "")))] : ["index.js"];
+  };
+  const resolveEdge = (domain, file, request, typeOnly) => {
+    const label = fileAt(domain, file), key = `${label}\0${request}`;
+    const declaration = declared.get(key);
+    need(declaration, `unrecorded executable/type import ${label}: ${request}`); used.add(key);
+    const target = declaration.target;
+    let destination, entries;
+    if (target.kind === "payload") {
+      need(domain.kind === "payload" && request.startsWith(".") && partPath(target.path), "payload imports must resolve inside their own inventory");
+      destination = payloadRoot; entries = [resolveRelative(destination, file, request)];
+      need(entries[0] === target.path, "payload import resolution differs");
+    } else if (target.kind === "npm") {
+      destination = npmRoot(target);
+      entries = request.startsWith(".") && domain === destination ? [resolveRelative(domain, file, request)] : publicNpm(destination, request);
+      need(entries.includes(target.entry), "npm entry is not its actual public/local resolution");
+    } else {
+      destination = elementRoot(target);
+      need(partPath(target.entry), "invalid canonical entry");
+      if (request.startsWith(".") && domain === destination) {
+        entries = [resolveRelative(domain, file, request)]; need(entries[0] === target.entry, "canonical local edge differs");
+      } else {
+        // A canonical dependency exposes only the registry item's public entry,
+        // never an arbitrary neighboring helper or a section deep-import alias.
+        const registry = JSON.parse(partDecode(destination.bytes.get("registry-item.json")));
+        need(request === `@elements/${target.slot}/${target.element}` && registry.files?.some(row => row.path === target.entry && /(?:^|\/)index\.[cm]?[jt]sx?$/.test(row.path)), "canonical import must name its verified public entry");
+        entries = [target.entry];
+      }
+    }
+    for (const entry of entries) {
+      need(destination.bytes.has(entry) && partPath(entry) && (isCode(entry) || (typeOnly && entry.endsWith(".d.ts"))), "dependency has no executable/type source bytes");
+      load(destination, entry, !typeOnly);
+    }
+    resolutions.set(key, entries.map(entry => fileAt(destination, entry)));
+    return entries.map(entry => fileAt(destination, entry));
+  };
+  const scanned = new Set();
+  const load = (domain, file, executable) => {
+    const label = fileAt(domain, file), mode = `${label}\0${executable}`;
+    need(!executable || !label.endsWith(".d.ts"), "declarations cannot stand in for executable code");
+    if (scanned.has(mode)) return;
+    scanned.add(mode);
+    if (executable && domain.kind === "npm") {
+      const style = engineFamily(domain.registry.style);
+      need((style && style === engineFamily(config.style)) || isEngineNeutral(partDecode(domain.bytes.get(file)), file), "npm executable has incompatible engine flavor");
+    }
+    const source = nodes.get(label) ?? partParse(ts, partDecode(domain.bytes.get(file)), label);
+    nodes.set(label, source);
+    const imports = [];
+    const inspect = node => {
+      if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier) {
+        need(ts.isStringLiteral(node.moduleSpecifier), "nonliteral module reference");
+        const clause = node.importClause, bindings = clause?.namedBindings;
+        need(!bindings || !ts.isNamespaceImport(bindings), "namespace imports require an unsupported export-usage proof");
+        const named = ts.isExportDeclaration(node) ? node.exportClause : bindings;
+        const typeOnly = !!node.isTypeOnly || !!clause?.isTypeOnly;
+        const names = [];
+        if (clause?.name) names.push("default");
+        if (named && (ts.isNamedImports(named) || ts.isNamedExports(named))) for (const binding of named.elements) if (!binding.isTypeOnly || typeOnly) names.push((binding.propertyName ?? binding.name).text);
+        const onlyTypes = typeOnly || (!clause?.name && bindings && ts.isNamedImports(bindings) && bindings.elements.length > 0 && bindings.elements.every(binding => binding.isTypeOnly));
+        imports.push({ request: node.moduleSpecifier.text, names, typeOnly: onlyTypes || !executable });
+      } else if (ts.isImportEqualsDeclaration(node)) partError("import-equals is not supported by the isolated ESM proof", "REF-PART-CLOSURE");
+      else if (ts.isCallExpression(node) && (node.expression.kind === ts.SyntaxKind.ImportKeyword || (ts.isIdentifier(node.expression) && node.expression.text === "require"))) {
+        need(node.arguments.length === 1 && ts.isStringLiteral(node.arguments[0]), "dynamic module loading is not a finite executable closure");
+        imports.push({ request: node.arguments[0].text, names: [], typeOnly: !executable });
+      } else if (ts.isIdentifier(node) && node.text === "require") {
+        need(ts.isCallExpression(node.parent) && node.parent.expression === node, "aliased require is not a finite executable closure");
+      } else if ((ts.isIdentifier(node) && ["eval", "Function"].includes(node.text)) || (ts.isElementAccessExpression(node) && /(?:require|import|eval|Function)/.test(node.argumentExpression?.getText(source) ?? ""))) {
+        partError("indirect code loading is not supported by exact closure", "REF-PART-CLOSURE");
+      }
+      ts.forEachChild(node, inspect);
+    };
+    inspect(source);
+    for (const dependency of imports) edges.push({ ...dependency, targets: resolveEdge(domain, file, dependency.request, dependency.typeOnly) });
+  };
+  // Every emitted executable is checked, including files not reachable from roots.
+  for (const file of codeFiles) load(payloadRoot, file, true);
+  need(used.size === declared.size, "closure contains stale or unmeasured import edges");
+  // The compiler sees only these byte-bound modules, with no ambient resolver.
+  const sourcePath = label => `/__ref_exact__/${label}`;
+  const compilerOptions = { target: ts.ScriptTarget.ES2022, noEmit: true, allowJs: true, checkJs: true, skipLibCheck: true, jsx: ts.JsxEmit.Preserve, module: ts.ModuleKind.ESNext, types: [] };
+  const compilerLibDir = dirname(ts.getDefaultLibFilePath(compilerOptions));
+  const standardLib = path => dirname(path) === compilerLibDir && /^lib(?:\.[a-z0-9.]+)?\.d\.ts$/.test(basename(path));
+  const compilerLibs = new Map();
+  const host = {
+    getSourceFile: path => {
+      if (path.startsWith("/__ref_exact__/")) return nodes.get(path.slice("/__ref_exact__/".length));
+      if (!standardLib(path)) return undefined;
+      if (!compilerLibs.has(path)) compilerLibs.set(path, ts.createSourceFile(path, readFileSync(path, "utf8"), ts.ScriptTarget.Latest, true));
+      return compilerLibs.get(path);
+    }, getDefaultLibFileName: () => ts.getDefaultLibFilePath(compilerOptions),
+    writeFile: () => {}, getCurrentDirectory: () => "/__ref_exact__", getDirectories: () => [],
+    fileExists: path => nodes.has(path.slice("/__ref_exact__/".length)) || (standardLib(path) && existsSync(path)),
+    readFile: path => nodes.get(path.slice("/__ref_exact__/".length))?.text ?? (standardLib(path) ? readFileSync(path, "utf8") : undefined),
+    getCanonicalFileName: path => path, useCaseSensitiveFileNames: () => true, getNewLine: () => "\n",
+    resolveModuleNames: (names, containing) => names.map(name => {
+      const labels = resolutions.get(`${containing.slice("/__ref_exact__/".length)}\0${name}`);
+      return labels ? { resolvedFileName: sourcePath(labels[0]), extension: /\.[cm]?js$/.test(labels[0]) ? ts.Extension.Js : labels[0].endsWith(".d.ts") ? ts.Extension.Dts : labels[0].endsWith(".tsx") ? ts.Extension.Tsx : ts.Extension.Ts, isExternalLibraryImport: false } : undefined;
+    }),
+  };
+  // Set virtual names before binding; actual source paths are never consulted.
+  for (const [label, source] of nodes) source.fileName = sourcePath(label);
+  const program = ts.createProgram([...nodes.keys()].map(sourcePath), compilerOptions, host);
+  const checker = program.getTypeChecker();
+  // A complete declaration can still reference a helper whose declaration or
+  // import was dropped by extraction. Only compiler ES/DOM globals are ambient.
+  const missingBinding = program.getSemanticDiagnostics().find(diagnostic => [2304, 2552].includes(diagnostic.code));
+  need(!missingBinding, "isolated executable/type closure contains an undeclared binding");
+  for (const edge of edges) for (const target of edge.targets) {
+    const source = program.getSourceFile(sourcePath(target));
+    const symbol = source && checker.getSymbolAtLocation(source);
+    need(symbol, `dependency is not a module: ${target}`);
+    const exports = new Map(checker.getExportsOfModule(symbol).map(symbol => [symbol.name, symbol]));
+    for (const name of edge.names) {
+      let exported = exports.get(name);
+      if (exported && exported.flags & ts.SymbolFlags.Alias) exported = checker.getAliasedSymbol(exported);
+      need(exported && (edge.typeOnly || (exported.flags & ts.SymbolFlags.Value)), `missing ${edge.typeOnly ? "type" : "executable"} export ${name}: ${target}`);
+    }
+  }
+}
+
 /**
  * Check one element version. `strict` (the pin gate) requires
  * `lineage.source.files`; otherwise a unique basename match is accepted and
@@ -156,13 +591,13 @@ function checkVersion(root, target, options = {}, versionInput) {
   const record = versionInput?.record ?? (existsSync(recordPath) ? json(recordPath) : undefined);
   const embedded = new Map();
   const safePayload = (file) => typeof file === "string" && !!file && !file.startsWith("/") && !file.includes("\\") && !file.includes("\u0000") && !file.split("/").includes("..");
-  const readPayload = (file) => {
+  const readPayload = (file, raw = false) => {
     if (!safePayload(file)) throw new Error("payload path must stay inside its version");
-    if (embedded.has(file)) return embedded.get(file);
-    if (versionInput) return versionInput.files[file];
+    if (embedded.has(file)) return raw ? Buffer.from(embedded.get(file)) : embedded.get(file);
+    if (versionInput) return raw ? Buffer.from(versionInput.files[file]) : versionInput.files[file];
     let path = dir;
     for (const part of file.split("/")) { path = join(path, part); if (lstatSync(path).isSymbolicLink()) throw new Error("symlink payload is not a reference source"); }
-    return readFileSync(path, "utf8");
+    return raw ? readFileSync(path) : readFileSync(path, "utf8");
   };
   const meta = !record && existsSync(join(dir, "registry-item.json")) ? json(join(dir, "registry-item.json")).meta ?? {} : {};
   const mode = record ? record.lineage?.mode : meta.lineage;
@@ -194,7 +629,7 @@ function checkVersion(root, target, options = {}, versionInput) {
     }
   }
 
-  if ((opts.rule.consumerAssets?.slots ?? []).some((pattern) => globMatch(pattern, slot))) return result("exempt", { hash, note: "consumer-asset slot" });
+  if (!Object.hasOwn(record?.lineage ?? {}, "exactParts") && (opts.rule.consumerAssets?.slots ?? []).some((pattern) => globMatch(pattern, slot))) return result("exempt", { hash, note: "consumer-asset slot" });
   if (mode === "original" || !source?.registry || !source?.item) {
     fail("REF-NO-SOURCE", mode === "original" ? `original code in ${slot}, which is not a consumer-asset slot` : `${mode ?? "no"} lineage without lineage.source`);
     return result("fail", { hash });
@@ -224,6 +659,11 @@ function checkVersion(root, target, options = {}, versionInput) {
   if (source.hash !== item.hash) {
     fail("REF-NOT-VENDORED", `${ref}: lineage.source.hash ${source.hash ?? "(none)"} != vendored ${item.hash}`);
     return result("fail", { hash, ref });
+  }
+
+  if (record?.lineage && Object.hasOwn(record.lineage, "exactParts")) {
+    exactPartsCheck({ root, record, payload, codeFiles, readBytes: file => readPayload(file, true), opts, slot, fail, files, options });
+    return result(findings.length ? "fail" : "pass", { hash, ref });
   }
 
   if (codeFiles.length === 0) return result(findings.length ? "fail" : "n/a", { hash, ref, note: "non-code payload has a verified registry source" });
@@ -347,10 +787,12 @@ export function checkRegistryItem(root, slot, candidate, options = {}) {
   const files = Object.fromEntries((candidate.files ?? []).map(file => [file.path, file.content]));
   if (Object.values(files).some(content => typeof content !== "string")) throw new Error("registry candidate must carry every payload file's content");
   const mapping = candidate.meta?.refVerbatim ?? {};
-  const record = { payload: Object.keys(files), reads: candidate.meta?.element?.reads, lineage: {
+  const record = { payload: Object.keys(files), hash: treeHash(Object.entries(files).map(([path, content]) => ({ path, sha256: sha256(content) }))), deps: candidate.meta?.element?.deps, reads: candidate.meta?.element?.reads, lineage: {
     mode: source?.kind === "original" ? "original" : "customized",
     ...(item ? { source: { registry: item.registry, item: item.name, version: item.version, hash: item.hash, files: mapping.files } } : {}),
     adaptations: mapping.adaptations ?? [],
+    ...(mapping.parts ? { parts: mapping.parts } : {}),
+    ...(Object.hasOwn(mapping, "exactParts") ? { exactParts: mapping.exactParts } : {}),
   } };
   return checkVersion(root, { slot, element: candidate.name ?? "unknown", version: 1 }, options, { record, files });
 }

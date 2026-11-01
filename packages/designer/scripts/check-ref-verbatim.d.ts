@@ -11,7 +11,9 @@ export type RefVerbatimCode =
   | "REF-HUNK-LOGIC"
   | "REF-HUNK-TEXT"
   | "REF-NORMALIZE"
-  | "REF-ADAPTATION";
+  | "REF-ADAPTATION"
+  | "REF-PART-PROOF"
+  | "REF-PART-CLOSURE";
 
 export type RefVerbatimPosition = { readonly line: number; readonly column: number };
 export type RefVerbatimRange = { readonly start: RefVerbatimPosition; readonly end: RefVerbatimPosition };

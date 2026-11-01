@@ -67,7 +67,7 @@ describe("ref-verbatim allowed-hunk grammar", () => {
   it("declares five allowed kinds and four hunk failure codes", () => {
     expect(ALLOWED).toEqual(["H-IMPORT", "H-TOKEN", "H-DATA", "H-PROPS", "H-LINK"]);
     expect(HUNK_CODES).toEqual(["REF-HUNK-CLASS", "REF-HUNK-STRUCTURE", "REF-HUNK-LOGIC", "REF-HUNK-TEXT"]);
-    expect(CODES).toHaveLength(11);
+    expect(CODES).toHaveLength(13);
     expect(CODES).toEqual(expect.arrayContaining(HUNK_CODES));
   });
 
@@ -141,6 +141,279 @@ const button = (patch: Partial<Version> = {}): Version => ({
   ...patch,
 });
 const gate = (root: string, spec: string, options = {}) => codes(refVerbatimFindings(root, spec, options));
+
+// Synthetic byte-proof regression only: this does not qualify actual R6/R7 sources.
+// Reuses the real application:component manifest shape without calling it a block.
+function specimenExactPartFixture({ missingExport = false, relocate = false, external = false, missingExternalExport = false, bindings = false, missingBinding = false } = {}) {
+  const referencesDir = mkdtempSync(join(tmpdir(), "ref-exact-specimen-"));
+  const license = "Synthetic test-only license bytes\n";
+  const licensePath = "fixture/LICENSE";
+  const registry = "fixture-specimen";
+  const upstream = `fixture:authored-specimen@${sha("authored specimen fixture revision").slice(0, 40)}`;
+  const files = {
+    "index.tsx": 'import { Figure } from "./Figure"\nimport { RecordTable } from "./RecordTable"\nexport function Specimen() { return <><Figure /><RecordTable /></> }\n',
+    "RecordTable.tsx": 'export function RecordTable() { return <table><tbody><tr><td>Record</td></tr></tbody></table> }\n',
+    "Figure.tsx": 'import { BlockViewerIframe } from "./BlockViewerIframe"\nexport function Figure() { return <figure><BlockViewerIframe /><figcaption>Preview</figcaption></figure> }\n',
+    "BlockViewerIframe.tsx": 'export function BlockViewerIframe() { return <iframe title="Preview" src="/preview/test" /> }\n',
+    "LICENSE": license,
+  };
+  if (missingBinding) files["BlockViewerIframe.tsx"] = "export function BlockViewerIframe() { return MissingHelper() }\n";
+  if (bindings) files["RecordTable.tsx"] = 'export function RecordTable({ label = "Record" }: { label?: string } = {}) { return <table className="bg-surface"><tbody><tr><td>{label}</td></tr></tbody></table> }\n';
+  if (external) files["BlockViewerIframe.tsx"] = 'import { Marker } from "fixture-dependency"\n' + files["BlockViewerIframe.tsx"];
+  if (missingExport) files["Figure.tsx"] = files["Figure.tsx"].replace("{ BlockViewerIframe }", "{ MissingIframe as BlockViewerIframe }");
+  const itemFiles = [Object.entries(files).slice(0, 2), Object.entries(files).slice(2, 4)];
+  const proofs: Record<string, unknown> = {};
+  const items = itemFiles.map((entries, reference) => {
+    const name = reference === 0 ? "specimen-block" : "specimen-application";
+    const dir = `${registry}/${name}@fixture-1`;
+    const rows = entries.map(([path, text]) => {
+      const prefix = "// authored fixture prefix: π\n" + (missingBinding && path === "BlockViewerIframe.tsx" ? "function MissingHelper() { return null }\n" : "");
+      const original = relocate && path === "index.tsx" ? text.replace('"./Figure"', '"@/registry/aria-nova/components/Figure"')
+        : bindings && path === "RecordTable.tsx" ? text.replace("bg-surface", "bg-background").replace("{label}</td>", "Record</td>") : text;
+      const whole = `${prefix}${original}// authored fixture suffix\n`;
+      const importStart = original.indexOf("@/registry/aria-nova/components/Figure");
+      const edits: { kind: string; start: number; endExclusive: number; from: string; to: string }[] = [];
+      const edit = (kind: string, at: number, from: string, to: string) => edits.push({ kind, start: Buffer.byteLength(original.slice(0, at)), endExclusive: Buffer.byteLength(original.slice(0, at) + from), from, to });
+      if (importStart >= 0) edit("import", importStart, "@/registry/aria-nova/components/Figure", "./Figure");
+      if (bindings && path === "RecordTable.tsx") {
+        edit("token", original.indexOf("bg-background"), "bg-background", "bg-surface");
+        edit("data", original.lastIndexOf("Record"), "Record", "{label}");
+      }
+      mkdirSync(dirname(join(referencesDir, dir, path)), { recursive: true });
+      writeFileSync(join(referencesDir, dir, path), whole);
+      proofs[path] = {
+        sha256: sha(text),
+        segments: [{
+          start: 0, endExclusive: Buffer.byteLength(text),
+          source: {
+            reference, path, upstream, fileSha256: sha(whole),
+            start: Buffer.byteLength(prefix), endExclusive: Buffer.byteLength(prefix + original),
+            sha256: sha(original), license: { path: licensePath, sha256: sha(license), payloadPath: "LICENSE" },
+          },
+          edits,
+        }],
+      };
+      return { path, sha256: sha(whole), bytes: Buffer.byteLength(whole), origin: "fixture" };
+    });
+    return {
+      registry, name, version: "fixture-1", dir,
+      type: reference === 0 ? "registry:block" : "application:component",
+      sourceUrl: "https://example.invalid/authored-fixture", license: "LicenseRef-TestFixture",
+      direct: true, slots: [], hash: treeHash(rows), files: rows,
+    };
+  });
+  mkdirSync(dirname(join(referencesDir, licensePath)), { recursive: true });
+  writeFileSync(join(referencesDir, licensePath), license);
+  const fixtureManifest = {
+    ...manifest,
+    registries: { [registry]: { namespace: "@fixture", source: "https://example.invalid/{name}", version: "fixture-1", upstream, style: "aria-nova", license: "LicenseRef-TestFixture", licenseFiles: [licensePath] } },
+    licenses: [{ path: licensePath, sha256: sha(license), bytes: Buffer.byteLength(license), sourceUrl: "https://example.invalid/LICENSE" }],
+    items,
+  };
+  const refs = items.map(item => ({ registry, item: item.name, version: item.version, hash: item.hash }));
+  const exactParts = {
+    schema: "ref-exact-parts/1", files: proofs,
+    payload: Object.fromEntries(Object.entries(files).map(([path, text]) => [path, sha(text)])),
+    closure: {
+      roots: ["index.tsx"],
+      imports: [
+        { file: "index.tsx", specifier: "./Figure", target: { kind: "payload", path: "Figure.tsx" } },
+        { file: "index.tsx", specifier: "./RecordTable", target: { kind: "payload", path: "RecordTable.tsx" } },
+        { file: "Figure.tsx", specifier: "./BlockViewerIframe", target: { kind: "payload", path: "BlockViewerIframe.tsx" } },
+      ],
+    },
+  };
+  const root = consumer([{
+    slot: "sections.fixture-specimen", element: "fixture-specimen", files,
+    hash: treeHash(Object.entries(files).map(([path, text]) => ({ path, sha256: sha(text) }))),
+    lineage: { mode: "verbatim", source: refs[0], parts: [refs[1]], exactParts },
+  }]);
+  const dir = join(root, "library/sections.fixture-specimen/fixture-specimen/v1");
+  const recordPath = join(dir, "element.json");
+  const record = JSON.parse(readFileSync(recordPath, "utf8"));
+  if (relocate) {
+    const components = JSON.parse(readFileSync(join(root, "components.json"), "utf8"));
+    components.aliases.components = ".";
+    writeFileSync(join(root, "components.json"), JSON.stringify(components));
+  }
+  record.deps = { npm: {}, elements: [] };
+  if (bindings) record.reads.themeVars = ["--color-surface"];
+  const dependency = external ? {
+    installed: join(root, "node_modules/fixture-dependency"),
+    vendored: join(referencesDir, "fixture/dependency@1.0.0"),
+  } : undefined;
+  if (dependency) {
+    const packageFiles = {
+      "package.json": JSON.stringify({ name: "fixture-dependency", version: "1.0.0", type: "module", license: "LicenseRef-TestFixture", exports: { ".": "./index.js" } }),
+      "index.js": `export function ${missingExternalExport ? "Other" : "Marker"}() { return null }\n`,
+      "LICENSE": license,
+    };
+    mkdirSync(dependency.installed, { recursive: true });
+    mkdirSync(dependency.vendored, { recursive: true });
+    for (const [file, content] of Object.entries(packageFiles)) {
+      writeFileSync(join(dependency.installed, file), content);
+      writeFileSync(join(dependency.vendored, file), content);
+    }
+    const rows = Object.entries(packageFiles).map(([path, content]) => ({ path, sha256: sha(content), bytes: Buffer.byteLength(content), origin: "fixture" }));
+    const hash = treeHash(rows);
+    fixtureManifest.items.push({ registry, name: "fixture-dependency", version: "1.0.0", dir: "fixture/dependency@1.0.0", type: "application:component", sourceUrl: "https://example.invalid/authored-dependency", license: "LicenseRef-TestFixture", direct: true, slots: [], hash, files: rows });
+    record.deps.npm["fixture-dependency"] = "1.0.0";
+    record.lineage.exactParts.closure.imports.push({ file: "BlockViewerIframe.tsx", specifier: "fixture-dependency", target: { kind: "npm", package: "fixture-dependency", version: "1.0.0", entry: "index.js", hash } });
+  }
+  const save = (rehash = false) => {
+    if (rehash) {
+      record.hash = treeHash(record.payload.map((file: string) => ({ path: file, sha256: sha(readFileSync(join(dir, file), "utf8")) })));
+      for (const file of record.payload) {
+        record.lineage.exactParts.payload[file] = sha(readFileSync(join(dir, file), "utf8"));
+        if (record.lineage.exactParts.files[file]) record.lineage.exactParts.files[file].sha256 = record.lineage.exactParts.payload[file];
+      }
+    }
+    writeFileSync(recordPath, JSON.stringify(record));
+  };
+  save();
+  return { root, dir, record, save, dependency, options: { manifest: fixtureManifest, referencesDir } };
+}
+
+const specimenGate = (fixture: ReturnType<typeof specimenExactPartFixture>) => gate(fixture.root, "sections.fixture-specimen/fixture-specimen/v1", fixture.options);
+
+describe("specimen exact-part graph and bundled helper", () => {
+  it("checks one real-shaped block/application graph with every emitted code byte and bundled license", () => {
+    expect(specimenGate(specimenExactPartFixture())).toEqual([]);
+    expect(specimenGate(specimenExactPartFixture({ relocate: true }))).toEqual([]);
+    expect(specimenGate(specimenExactPartFixture({ bindings: true }))).toEqual([]);
+  });
+
+  it("resolves an installed dependency only against its complete trusted vendored package bytes", () => {
+    expect(specimenGate(specimenExactPartFixture({ external: true }))).toEqual([]);
+    expect(specimenGate(specimenExactPartFixture({ external: true, missingExternalExport: true }))).toContain("REF-PART-CLOSURE");
+  });
+
+  it("rejects changed dependency/code/license bytes even when attacker recomputes the dependency proof digest", () => {
+    for (const mutation of ["code", "license", "version", "vendored", "undeclared", "private-entry"]) {
+      const fixture = specimenExactPartFixture({ external: true });
+      const target = fixture.record.lineage.exactParts.closure.imports.at(-1).target;
+      const packageDir = fixture.dependency!.installed;
+      if (mutation === "code" || mutation === "license") {
+        const file = mutation === "code" ? "index.js" : "LICENSE";
+        writeFileSync(join(packageDir, file), readFileSync(join(packageDir, file), "utf8") + "changed\n");
+        target.hash = treeHash(["package.json", "index.js", "LICENSE"].map(path => ({ path, sha256: sha(readFileSync(join(packageDir, path), "utf8")) })));
+      } else if (mutation === "vendored") {
+        const path = join(fixture.dependency!.vendored, "index.js");
+        writeFileSync(path, readFileSync(path, "utf8") + "changed\n");
+      } else if (mutation === "version") target.version = "1.0.1";
+      else if (mutation === "undeclared") delete fixture.record.deps.npm["fixture-dependency"];
+      else target.entry = "private.js";
+      fixture.save(true);
+      expect(specimenGate(fixture), mutation).toContain("REF-PART-CLOSURE");
+    }
+  });
+
+  it("rejects arbitrary import retargeting even when the measured target exports the same symbol", () => {
+    const fixture = specimenExactPartFixture({ relocate: true });
+    const components = JSON.parse(readFileSync(join(fixture.root, "components.json"), "utf8"));
+    components.aliases.components = "./other-native-target";
+    writeFileSync(join(fixture.root, "components.json"), JSON.stringify(components));
+    // The proof still routes to the existing Figure with unchanged exports/hashes.
+    expect(specimenGate(fixture)).toContain("REF-PART-PROOF");
+  });
+
+  it("rejects an invented module assembled from individually hashed upstream characters", () => {
+    const fixture = specimenExactPartFixture();
+    const proof = fixture.record.lineage.exactParts.files["index.tsx"];
+    const bound = proof.segments[0].source;
+    const whole = readFileSync(join(fixture.options.referencesDir, fixture.options.manifest.items[0]!.dir, "index.tsx"));
+    const invented = Buffer.from("export function foo() { return null }\n");
+    proof.segments = [...invented].map((byte, index) => {
+      const start = whole.indexOf(Buffer.from([byte]));
+      expect(start).toBeGreaterThanOrEqual(0);
+      return { start: index, endExclusive: index + 1, edits: [], source: { ...bound, start, endExclusive: start + 1, sha256: createHash("sha256").update(Buffer.from([byte])).digest("hex") } };
+    });
+    writeFileSync(join(fixture.dir, "index.tsx"), invented);
+    fixture.save(true);
+    expect(specimenGate(fixture)).toContain("REF-PART-PROOF");
+  });
+
+  it("rejects altered code even after attacker recomputes all emitted and payload hashes", () => {
+    for (const file of ["index.tsx", "BlockViewerIframe.tsx"]) {
+      const fixture = specimenExactPartFixture();
+      writeFileSync(join(fixture.dir, file), readFileSync(join(fixture.dir, file), "utf8") + "console.log(1)\n");
+      fixture.save(true);
+      expect(specimenGate(fixture)).toContain("REF-PART-PROOF");
+    }
+  });
+
+  it("rejects an omitted bundled iframe despite ambient presence and recomputed remaining hashes", () => {
+    const fixture = specimenExactPartFixture();
+    fixture.record.payload = fixture.record.payload.filter((file: string) => file !== "BlockViewerIframe.tsx");
+    delete fixture.record.lineage.exactParts.payload["BlockViewerIframe.tsx"];
+    delete fixture.record.lineage.exactParts.files["BlockViewerIframe.tsx"];
+    fixture.save(true);
+    expect(specimenGate(fixture)).toContain("REF-PART-CLOSURE");
+  });
+
+  it("rejects byte gaps, range alteration and offsets inside a UTF-8 codepoint", () => {
+    for (const mutation of ["gap", "range", "utf8"]) {
+      const fixture = specimenExactPartFixture();
+      const segment = fixture.record.lineage.exactParts.files["index.tsx"].segments[0];
+      const upstream = readFileSync(join(fixture.options.referencesDir, fixture.options.manifest.items[0]!.dir, "index.tsx"));
+      if (mutation === "gap") segment.start = 1;
+      else {
+        segment.source.start = mutation === "utf8" ? upstream.indexOf(Buffer.from("π")) + 1 : segment.source.start + 1;
+        segment.source.sha256 = createHash("sha256").update(upstream.subarray(segment.source.start, segment.source.endExclusive)).digest("hex");
+      }
+      fixture.save(true);
+      expect(specimenGate(fixture)).toContain("REF-PART-PROOF");
+    }
+  });
+
+  it("rejects whole-source changes outside the range and either source or bundled license mutation", () => {
+    for (const mutation of ["outside", "upstream-license", "payload-license"]) {
+      const fixture = specimenExactPartFixture();
+      const file = mutation === "outside" ? join(fixture.options.referencesDir, fixture.options.manifest.items[0]!.dir, "index.tsx")
+        : mutation === "upstream-license" ? join(fixture.options.referencesDir, "fixture/LICENSE") : join(fixture.dir, "LICENSE");
+      writeFileSync(file, readFileSync(file, "utf8") + "changed\n");
+      fixture.save(true);
+      expect(specimenGate(fixture)).toContain("REF-NOT-VENDORED");
+    }
+  });
+
+  it("rejects unknown proof/adaptation fields and arbitrary code disguised as data", () => {
+    for (const mutation of ["field", "unknown-edit", "data-logic"]) {
+      const fixture = specimenExactPartFixture();
+      const proof = fixture.record.lineage.exactParts;
+      if (mutation === "field") proof.allow = true;
+      else proof.files["BlockViewerIframe.tsx"].segments[0].edits = [{ kind: mutation === "unknown-edit" ? "arbitrary" : "data", start: 0, endExclusive: 6, from: "export", to: "eval(1)" }];
+      fixture.save(true);
+      expect(specimenGate(fixture)).toContain("REF-PART-PROOF");
+    }
+  });
+
+  it("rejects a nonsemantic token or executable data expression after exact output hashes are recomputed", () => {
+    for (const mutation of ["token", "data"]) {
+      const fixture = specimenExactPartFixture({ bindings: true });
+      const edits = fixture.record.lineage.exactParts.files["RecordTable.tsx"].segments[0].edits;
+      const changed = edits.find((edit: { kind: string }) => edit.kind === mutation);
+      const before = changed.to;
+      changed.to = mutation === "token" ? "bg-red-500" : "{label()}";
+      const path = join(fixture.dir, "RecordTable.tsx");
+      writeFileSync(path, readFileSync(path, "utf8").replace(before, changed.to));
+      fixture.record.lineage.exactParts.files["RecordTable.tsx"].segments[0].endExclusive = Buffer.byteLength(readFileSync(path, "utf8"));
+      fixture.save(true);
+      expect(specimenGate(fixture)).toContain("REF-PART-PROOF");
+    }
+  });
+
+  it("checks measured edges and actual exported values, preserving the primitive prohibition", () => {
+    expect(specimenGate(specimenExactPartFixture({ missingExport: true }))).toContain("REF-PART-CLOSURE");
+    expect(specimenGate(specimenExactPartFixture({ missingBinding: true }))).toContain("REF-PART-CLOSURE");
+    const absentEdge = specimenExactPartFixture();
+    absentEdge.record.lineage.exactParts.closure.imports.pop(); absentEdge.save(true);
+    expect(specimenGate(absentEdge)).toContain("REF-PART-CLOSURE");
+    const primitive = specimenExactPartFixture();
+    primitive.options.manifest.items[1]!.type = "registry:ui";
+    expect(specimenGate(primitive)).toContain("REF-PRIMITIVE-AS-REF");
+  });
+});
 
 describe("ref-verbatim pin gate (strict, one element version)", () => {
   it("passes a stock aria-nova primitive copied by the CLI", () => {

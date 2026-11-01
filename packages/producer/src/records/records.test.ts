@@ -394,3 +394,41 @@ describe("slot status derivation", () => {
     expect(existsSync(join(root, "releases", "1.json"))).toBe(true);
   });
 });
+
+
+describe("exact-part record contract", () => {
+  const record = () => ({
+    ...fullElement(), payload: ["index.tsx", "LICENSE"],
+    lineage: { mode: "verbatim", source, exactParts: {
+      schema: "ref-exact-parts/1", payload: { "index.tsx": "a".repeat(64), LICENSE: "b".repeat(64) },
+      files: { "index.tsx": { sha256: "a".repeat(64), segments: [{
+        start: 0, endExclusive: 12, edits: [], source: {
+          reference: 0, path: "upstream.tsx", upstream: "fixture:authored@" + "a".repeat(40),
+          fileSha256: "c".repeat(64), start: 10, endExclusive: 22, sha256: "a".repeat(64),
+          license: { path: "fixture/LICENSE", sha256: "b".repeat(64), payloadPath: "LICENSE" },
+        },
+      }] } }, closure: { roots: ["index.tsx"], imports: [] },
+    } },
+  });
+
+  it("accepts the closed opt-in shape alongside unchanged source identities", () => {
+    expect(validateElement(record()).ok).toBe(true);
+  });
+
+  it("rejects unknown proof fields/kinds, original proofs, bad indices and byte boundaries", () => {
+    const mutations = [
+      (r: any) => { r.lineage.exactParts.allow = true; },
+      (r: any) => { r.lineage.exactParts.files["index.tsx"].segments[0].source.reference = 1; },
+      (r: any) => { r.lineage.exactParts.files["index.tsx"].segments[0].source.start = 22; },
+      (r: any) => { r.lineage.exactParts.files["index.tsx"].segments[0].start = 1; },
+      (r: any) => { r.lineage.exactParts.files["index.tsx"].segments[0].edits = [{ kind: "logic", start: 0, endExclusive: 1, from: "x", to: "y" }]; },
+      (r: any) => { r.lineage.mode = "original"; delete r.lineage.source; },
+      (r: any) => { r.lineage.exactParts.payload["index.tsx"] = "wrong"; },
+      (r: any) => { r.lineage.exactParts.closure.imports = [{ file: "index.tsx", specifier: "./x", target: { kind: "ambient", path: "x.tsx" } }]; },
+    ];
+    for (const mutation of mutations) {
+      const changed = JSON.parse(JSON.stringify(record())); mutation(changed);
+      expect(validateElement(changed).ok).toBe(false);
+    }
+  });
+});

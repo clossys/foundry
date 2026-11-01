@@ -50,6 +50,338 @@ const referenceRef: JsonSchema = {
   },
 };
 
+/** Closed opt-in byte proof; the reference guard performs byte replay and closure checks. */
+const exactPartDefinitions = {
+  "exactPartSource": {
+    "type": "object",
+    "required": [
+      "reference",
+      "path",
+      "upstream",
+      "fileSha256",
+      "start",
+      "endExclusive",
+      "sha256",
+      "license"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "reference": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "path": {
+        "type": "string",
+        "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\\\u0000]+$"
+      },
+      "upstream": {
+        "type": "string",
+        "minLength": 1
+      },
+      "fileSha256": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "start": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "endExclusive": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "sha256": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "license": {
+        "type": "object",
+        "required": [
+          "path",
+          "sha256",
+          "payloadPath"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\\\u0000]+$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "payloadPath": {
+            "type": "string",
+            "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\\\u0000]+$"
+          }
+        }
+      }
+    }
+  },
+  "exactPartEdit": {
+    "type": "object",
+    "required": [
+      "kind",
+      "start",
+      "endExclusive",
+      "from",
+      "to"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "kind": {
+        "enum": [
+          "import",
+          "token",
+          "data"
+        ]
+      },
+      "start": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "endExclusive": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "from": {
+        "type": "string",
+        "minLength": 1
+      },
+      "to": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "exactPartSegment": {
+    "type": "object",
+    "required": [
+      "start",
+      "endExclusive",
+      "source",
+      "edits"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "start": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "endExclusive": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "source": {
+        "$ref": "#/$defs/exactPartSource"
+      },
+      "edits": {
+        "type": "array",
+        "minItems": 0,
+        "items": {
+          "$ref": "#/$defs/exactPartEdit"
+        }
+      }
+    }
+  },
+  "exactPartFile": {
+    "type": "object",
+    "required": [
+      "sha256",
+      "segments"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "sha256": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "segments": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "$ref": "#/$defs/exactPartSegment"
+        }
+      }
+    }
+  },
+  "exactPartTarget": {
+    "oneOf": [
+      {
+        "type": "object",
+        "required": [
+          "kind",
+          "path"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "payload"
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\\\u0000]+$"
+          }
+        }
+      },
+      {
+        "type": "object",
+        "required": [
+          "kind",
+          "package",
+          "version",
+          "entry",
+          "hash"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "npm"
+          },
+          "package": {
+            "type": "string",
+            "minLength": 1
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "entry": {
+            "type": "string",
+            "minLength": 1
+          },
+          "hash": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          }
+        }
+      },
+      {
+        "type": "object",
+        "required": [
+          "kind",
+          "slot",
+          "element",
+          "version",
+          "hash",
+          "entry"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "element"
+          },
+          "slot": {
+            "type": "string",
+            "minLength": 1
+          },
+          "element": {
+            "type": "string",
+            "minLength": 1
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "hash": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "entry": {
+            "type": "string",
+            "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\\\u0000]+$"
+          }
+        }
+      }
+    ]
+  },
+  "exactPartImport": {
+    "type": "object",
+    "required": [
+      "file",
+      "specifier",
+      "target"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "file": {
+        "type": "string",
+        "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\\\u0000]+$"
+      },
+      "specifier": {
+        "type": "string",
+        "minLength": 1
+      },
+      "target": {
+        "$ref": "#/$defs/exactPartTarget"
+      }
+    }
+  }
+} satisfies Readonly<Record<string, JsonSchema>>;
+
+const exactParts: JsonSchema = {
+  "type": "object",
+  "required": [
+    "schema",
+    "payload",
+    "files",
+    "closure"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "ref-exact-parts/1"
+    },
+    "payload": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\\\u0000]+$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    },
+    "files": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\\\u0000]+$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/exactPartFile"
+      }
+    },
+    "closure": {
+      "type": "object",
+      "required": [
+        "roots",
+        "imports"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "roots": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\\\u0000]+$"
+          }
+        },
+        "imports": {
+          "type": "array",
+          "minItems": 0,
+          "items": {
+            "$ref": "#/$defs/exactPartImport"
+          }
+        }
+      }
+    }
+  }
+};
+
 const pinState: JsonSchema = {
   type: "object",
   required: ["element", "version", "hash", "event"],
@@ -78,7 +410,7 @@ export const ELEMENT_SCHEMA: JsonSchema = {
     "license", "creator", "reason", "createdAt", "checks", "deps", "reads",
   ],
   additionalProperties: false,
-  $defs: { referenceRef },
+  $defs: { referenceRef, ...exactPartDefinitions },
   properties: {
     schema: { const: RECORD_SCHEMA_IDS.element },
     id: { type: "string", pattern: ID, description: "Element id, unique within its slot." },
@@ -117,6 +449,7 @@ export const ELEMENT_SCHEMA: JsonSchema = {
             },
           },
         },
+        exactParts,
         source: { $ref: "#/$defs/referenceRef" },
         parts: {
           type: "array",
