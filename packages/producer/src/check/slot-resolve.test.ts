@@ -16,12 +16,16 @@ const store = (agent: SlotStore["agent"] = "designer"): SlotStore => ({ agent, i
 const writer = () => new Map([["site.synthetic.title", ["A synthetic title"]]]);
 const codes = (input: SlotStore, strings = writer()) => resolveSlots([input], strings, new Map())[0]!.findings.map(row => row.code);
 const entry = resolve(dirname(fileURLToPath(import.meta.url)), "../../dist/cli/index.js");
+const designer = resolve(dirname(fileURLToPath(import.meta.url)), "../../../designer");
+const manifest = JSON.parse(readFileSync(join(designer, "references/manifest.json"), "utf8"));
+const button = manifest.items.find((row: any) => row.registry === "shadcn-aria" && row.name === "button");
 const save = (path: string, value: unknown) => writeFileSync(path, JSON.stringify(value, null, 2) + "\n");
 
 function fixture() {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "synthetic-slot-check-")));
   const consumer = join(root, "clossys");
   mkdirSync(consumer);
+  writeFileSync(join(consumer, "components.json"), readFileSync(join(designer, "ui/components.json")));
   writeFileSync(join(consumer, "clossys.config.ts"), "export default {};\n");
   const dirs: Record<string, string> = {};
   const slots: [SlotAgent, string, string, string][] = [
@@ -41,7 +45,10 @@ function fixture() {
     if (kind === "brief") bytes = serializeFrontmatter({ slot: id, source, feeds: [], functions: [] }, "## Direction\n- example: A direction\n\n## Because\n- example: A reason\n\n## Watch\n- example: A constraint\n");
     else if (kind === "strings") bytes = serializeFrontmatter({ slot: id, locales: ["en"], source }, '## en\n### site.synthetic.title\n<!-- {"id":"synthetic-title","bindings":[]} -->\nA synthetic title\n');
     else if (kind === "page") bytes = JSON.stringify({ schema: "clossys.page/1", path: "/", title: "site.synthetic.title", frame: null, sections: ["components.synthetic"], copy: { "site.synthetic.title": "strings.synthetic" }, meta: { source } });
-    else bytes = JSON.stringify({ name: "synthetic", type: "registry:item", files: [], meta: { source } });
+    else bytes = JSON.stringify({ name: "button", type: "registry:ui", files: [{ path: "button.tsx", type: "registry:ui", content: readFileSync(join(designer, "ui/src/components/ui/button.tsx"), "utf8") }], meta: {
+      source: { kind: "registry", ref: [button.dir], hash: button.hash },
+      refVerbatim: { files: { "button.tsx": "registry/aria-nova/ui/button.tsx" } },
+    } });
     const name = `sample-v1.${kind === "brief" || kind === "strings" ? "md" : "json"}`;
     writeFileSync(join(dir, "candidates", name), bytes);
     save(join(dir, "pin.json"), { candidate: name, sha256: sha256Hex(bytes), pinnedBy: "migration:SLOT-MODEL", at: "2026-10-31T00:00:00Z" });
@@ -89,11 +96,40 @@ describe("default native model enforcement", () => {
       const result = native(f.root, ["--readiness"]);
       expect(result.status, result.stderr).toBe(0);
       const report = JSON.parse(result.stdout);
-      expect(report).toMatchObject({ reportOnly: false, exitCode: 0, verdict: "satisfied", findings: [] });
-      expect(report.rows).toHaveLength(4);
-      expect(report.coverage.map((row: any) => [row.agent, row.slots, row.withCandidate, row.pinned])).toEqual(["director", "designer", "writer", "publisher"].map(agent => [agent, 1, 1, 1]));
+      expect(report).toMatchObject({ exitCode: 0, verdict: "satisfied", findings: [] });
+      expect(report.slots).toMatchObject({ reportOnly: false });
+      expect(report.slots.rows).toHaveLength(4);
+      expect(report.suites.suites).toMatchObject([{ suite: "ref-verbatim", exitCode: 0 }]);
+      expect(report.slots.coverage.map((row: any) => [row.agent, row.slots, row.withCandidate, row.pinned])).toEqual(["director", "designer", "writer", "publisher"].map(agent => [agent, 1, 1, 1]));
       expect(slotResolveSummary(await runSlotResolve(f.consumer), true)).toContain("publisher blocked-by: none");
       expect(native(f.consumer, ["--slots", "--strict"]).status).toBe(0);
+    } finally { rmSync(f.root, { recursive: true, force: true }); }
+  });
+
+  it("native JSON aggregate verdict follows stock, forbidden class and restored bytes", () => {
+    const f = fixture();
+    try {
+      const path = join(f.dirs.designer!, "candidates/sample-v1.json");
+      const original = JSON.parse(readFileSync(path, "utf8"));
+      const run = (item: any, exit: number, verdict: string) => {
+        save(path, item);
+        const pin = JSON.parse(readFileSync(join(f.dirs.designer!, "pin.json"), "utf8"));
+        save(join(f.dirs.designer!, "pin.json"), { ...pin, sha256: sha256Hex(readFileSync(path)) });
+        const result = native(f.root);
+        expect(result.status, result.stderr).toBe(exit);
+        const report = JSON.parse(result.stdout);
+        expect(report).toMatchObject({ exitCode: exit, verdict });
+        expect(report.slots).toMatchObject({ verdict: "satisfied", findings: [] });
+        return report;
+      };
+      expect(run(original, 0, "satisfied").findings).toEqual([]);
+      const altered = structuredClone(original);
+      altered.files[0].content = altered.files[0].content.replace("hover:bg-primary/80", "hover:bg-primary/80 shadow-xl");
+      expect(altered.files[0].content).not.toBe(original.files[0].content);
+      const failed = run(altered, 1, "violated");
+      expect(failed.findings.some((finding: any) => finding.rule === "REF-HUNK-CLASS" && finding.severity === "error")).toBe(true);
+      expect(failed.summary).not.toContain("passed");
+      expect(run(original, 0, "satisfied").findings).toEqual([]);
     } finally { rmSync(f.root, { recursive: true, force: true }); }
   });
 
@@ -120,7 +156,7 @@ describe("default native model enforcement", () => {
       expect(result.status, result.stderr).toBe(1);
       const report = JSON.parse(result.stdout);
       expect(report.findings.some((row: any) => row.rule === code)).toBe(true);
-      expect(report.coverage).toHaveLength(4);
+      expect(report.slots.coverage).toHaveLength(4);
     } finally { rmSync(f.root, { recursive: true, force: true }); }
   });
 

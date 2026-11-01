@@ -94,6 +94,29 @@ export const ELEMENT_SCHEMA: JsonSchema = {
       additionalProperties: false,
       properties: {
         mode: { enum: ["verbatim", "customized", "original"] },
+        path: { enum: ["pick", "adopt", "create"] },
+        ownerRequest: { type: "string", minLength: 1 },
+        adaptations: {
+          type: "array", items: {
+            type: "object", required: ["kind", "file", "reason"], additionalProperties: false,
+            properties: {
+              kind: { enum: ["import-paths", "token-mapping", "data-binding", "data-fit", "slot-bound-copy", "slot-bound-identity"] },
+              file: { type: "string", pattern: REL_PATH }, reason: { type: "string", minLength: 1 },
+              hash: { type: "string", pattern: HASH },
+              operation: { enum: ["single-option-static-row", "sidebar15-frame-split", "sidebar15-right-offcanvas", "sidebar07-single-option", "sidebar-mirrored-edge", "sidebar-resizable-panels"] },
+              sourceHash: { type: "string", pattern: HASH },
+              bindings: {
+                type: "object", additionalProperties: false,
+                properties: {
+                  region: { enum: ["app", "page"] }, side: { enum: ["left", "right"] }, collapsible: { const: "offcanvas" },
+                  input: { enum: ["teams", "user"] }, values: { type: "array", minItems: 1, items: { type: "object" } },
+                  orientation: { const: "horizontal" },
+                },
+              },
+              optionCount: { const: 1 }, menu: { type: "string", minLength: 1 },
+            },
+          },
+        },
         source: { $ref: "#/$defs/referenceRef" },
         parts: {
           type: "array",
@@ -233,6 +256,7 @@ export const SELECTION_SCHEMA: JsonSchema = {
           version: { type: "integer", minimum: 1 },
           hash: { type: "string", pattern: HASH },
           from: { enum: ["option", "saved", "version", "reference"] },
+          approval: { type: "string", minLength: 1 },
           restores: { type: "string", minLength: 1, description: "Id of the earlier pin event a restore re-applies." },
           reason: { type: "string" },
         },
@@ -360,6 +384,25 @@ export const REFERENCES_MANIFEST_SCHEMA: JsonSchema = {
           slots: { type: "array", uniqueItems: true, items: { type: "string", pattern: SLOT } },
           requiredBy: { type: "array", uniqueItems: true, items: { type: "string", minLength: 1 } },
           registryDependencies: { type: "array", items: { type: "string", minLength: 1 } },
+          adaptations: {
+            type: "array", minItems: 1, items: {
+              type: "object", required: ["kind", "reason", "approvedBy", "approvedAt", "upstream"], additionalProperties: false,
+              properties: {
+                kind: { const: "identity" }, reason: { type: "string", pattern: "\\S" },
+                approvedBy: { const: "owner" }, approvedAt: { type: "string", pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+                upstream: {
+                  type: "object", required: ["hash", "files"], additionalProperties: false,
+                  properties: {
+                    hash: { type: "string", pattern: HASH },
+                    files: { type: "array", minItems: 1, items: {
+                      type: "object", required: ["path", "sha256", "bytes", "origin"], additionalProperties: false,
+                      properties: { path: { type: "string", pattern: REL_PATH }, sha256: { type: "string", pattern: "^[0-9a-f]{64}$" }, bytes: { type: "integer", minimum: 0 }, origin: { type: "string", minLength: 1 } },
+                    } },
+                  },
+                },
+              },
+            },
+          },
           dependencies: { type: "array", items: { type: "string", minLength: 1 } },
           hash: { type: "string", pattern: HASH },
           files: {

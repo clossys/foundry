@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,6 +14,8 @@ vi.mock("@clossys/designer/ref-verbatim", () => ({
 }));
 import {
   hashFiles,
+  sha256Hex,
+  treeHash,
   loadReferencesManifest,
   manifestReferenceHash,
   validateReferencesManifest,
@@ -23,10 +25,10 @@ import {
   emptySelection,
   latestRelease,
   listVersions,
-  pin,
+  pin as rawPin,
   pinsAt,
   readElementVersion,
-  restore,
+  restore as rawRestore,
   SLOT_CONTRACT_SCHEMA,
   unpin,
   validateElement,
@@ -46,7 +48,43 @@ import {
   type ReferenceRef,
 } from "./index.js";
 
-const H = (c: string): Hash => `sha256:${c.repeat(64)}`;
+// Synthetic record fixtures still carry explicit owner decisions; approval enforcement stays real.
+function approvePin(input: { root: string; element: { slot: string; id: string; version: number; hash: string } }) {
+  const file = join(input.root, "approvals.json");
+  const data = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : { schema: "clossys.owner-approvals/1", records: [] };
+  const id = `fixture-${data.records.length + 1}`;
+  data.records.push({ id, actor: "owner", owner: "fixture-owner", reference: "test owner decision", at: "2026-10-29T00:00:00Z", action: "pin", slot: input.element.slot, element: input.element.id, version: input.element.version, hash: input.element.hash });
+  writeFileSync(file, JSON.stringify(data));
+  return id;
+}
+function ensurePinFixture(input: Parameters<typeof rawPin>[1]): void {
+  const dir = join(input.root, "library", input.element.slot, input.element.id, `v${input.element.version}`);
+  if (existsSync(join(dir, "element.json"))) return;
+  const bytes = fixtureBytes.get(input.element.hash);
+  if (bytes === undefined) throw new Error("Fixture hash must name genuine payload bytes");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "fixture.json"), bytes);
+  const record = { ...elementBase({ id: input.element.id, slot: input.element.slot, layer: input.element.slot.split(".")[0]! }),
+    version: input.element.version, hash: hashFiles(dir, ["fixture.json"]), payload: ["fixture.json"] };
+  writeFileSync(join(dir, "element.json"), JSON.stringify(record));
+  writeFileSync(join(dir, "preview.json"), JSON.stringify(preview));
+}
+const pin = (selection: Parameters<typeof rawPin>[0], input: Parameters<typeof rawPin>[1]) => {
+  ensurePinFixture(input);
+  return rawPin(selection, { ...input, approval: approvePin(input) });
+};
+const restore = (selection: Parameters<typeof rawRestore>[0], event: string, input: Parameters<typeof rawRestore>[2]) => {
+  const target = selection.history.find(row => row.id === event)!;
+  return rawRestore(selection, event, { ...input, approval: target ? approvePin({ ...input, element: { slot: target.slot, id: target.element!, version: target.version!, hash: target.hash! } }) : undefined });
+};
+
+const fixtureBytes = new Map<string, string>();
+const H = (c: string): Hash => {
+  const bytes = JSON.stringify({ fixture: c });
+  const hash = treeHash([{ path: "fixture.json", sha256: sha256Hex(bytes) }]);
+  fixtureBytes.set(hash, bytes);
+  return hash;
+};
 const AT = (minute: number) => `2026-10-30T10:${String(minute).padStart(2, "0")}:00Z`;
 
 const preview: PreviewRecord = {
@@ -245,6 +283,23 @@ describe("Designer references manifest", () => {
     expect(resolve({ registry: first.registry, item: first.name, version: first.version })).toBe(first.hash);
   });
 
+  it("keeps source sanitization approvals finite and verifies the preserved upstream tree", () => {
+    const manifest = JSON.parse(readFileSync(fileURLToPath(new URL("../../../designer/references/manifest.json", import.meta.url)), "utf8"));
+    const item = manifest.items.find((row: { adaptations?: unknown[] }) => row.adaptations?.length);
+    expect(item).toBeDefined();
+    expect(validateReferencesManifest(manifest)).toMatchObject({ ok: true });
+    const original = item.adaptations[0].upstream.hash;
+    item.adaptations[0].upstream.hash = H("0");
+    let checked = validateReferencesManifest(manifest);
+    expect(checked.ok).toBe(false);
+    if (!checked.ok) expect(checked.issues.some(issue => issue.path.endsWith(".upstream.hash"))).toBe(true);
+    item.adaptations[0].upstream.hash = original;
+    item.adaptations[0].kind = "arbitrary-rewrite";
+    checked = validateReferencesManifest(manifest);
+    expect(checked.ok).toBe(false);
+    if (!checked.ok) expect(checked.issues.some(issue => issue.path.endsWith(".kind"))).toBe(true);
+  });
+
   it("rejects a manifest whose item hash no longer matches its files (mutation)", () => {
     const manifest = JSON.parse(readFileSync(join(referencesRoot, "manifest.json"), "utf8"));
     manifest.items[0].files[0].sha256 = "0".repeat(64);
@@ -319,8 +374,10 @@ describe("slot status derivation", () => {
 
   it("reads a whole workspace from disk, including a tampered payload", () => {
     const library = join(root, "library");
+    writeFileSync(join(root, "approvals.json"), JSON.stringify({ schema: "clossys.owner-approvals/1", records: [{ id: "status-fixture-create", actor: "owner", owner: "fixture-owner", reference: "explicit fixture create decision", at: "2026-10-29T00:00:00Z", action: "create", slot: "sections.hero", element: "hero" }] }));
     const v1 = writeElementVersion(library, {
       element: elementBase({ lineage: { mode: "original" } }),
+      designerFlow: { path: "create", ownerRequest: "status-fixture-create" },
       preview,
       files: { "hero.tsx": "export const x = 1\n" },
     });

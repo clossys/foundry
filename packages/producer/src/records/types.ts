@@ -42,6 +42,17 @@ export type ElementRecord = {
   readonly hash: Hash;
   readonly lineage: {
     readonly mode: LineageMode;
+    readonly path?: "pick" | "adopt" | "create";
+    readonly ownerRequest?: string;
+    readonly adaptations?: readonly {
+      readonly kind: "import-paths" | "token-mapping" | "data-binding" | "data-fit" | "slot-bound-copy" | "slot-bound-identity";
+      readonly file: string;
+      readonly reason: string;
+      readonly hash?: Hash;
+      readonly operation?: "single-option-static-row";
+      readonly optionCount?: 1;
+      readonly menu?: string;
+    }[];
     readonly source?: ReferenceRef;
     /** Further trusted references the payload takes verbatim parts from, beside the source block. */
     readonly parts?: readonly ReferenceRef[];
@@ -85,6 +96,7 @@ export type PinEvent = {
   readonly hash?: Hash;
   readonly from?: "option" | "saved" | "version" | "reference";
   readonly restores?: string;
+  readonly approval?: string;
   readonly reason?: string;
 };
 
@@ -108,17 +120,25 @@ export type Release = {
 
 export type SpecimenKind = "visual" | "text" | "data" | "media" | "flow";
 
+/** Region input names are bound once by the frame that owns the region. */
+export type FrameOwnership =
+  | { readonly kind: "app"; readonly regions: { readonly navigation: readonly string[] } }
+  | { readonly kind: "page"; readonly regions: { readonly header: readonly string[]; readonly chat: readonly string[]; readonly body: readonly string[] } };
+
 export type SlotContract = {
   readonly schema: "clossys.slot-contract/1";
   readonly slot: string;
   readonly package: string;
   readonly layer: string;
   readonly purpose: string;
+  readonly ownership?: FrameOwnership;
   readonly inputs: readonly {
     readonly name: string;
     readonly kind: "copy" | "prop" | "asset" | "theme" | "data" | "cell";
     readonly required: boolean;
     readonly description?: string;
+    /** Owning identity, Writer or composed slot; never a literal frame value. */
+    readonly slot?: string;
   }[];
   readonly limits: Readonly<Record<string, number | string | boolean>>;
   readonly references: readonly ReferenceRef[];
@@ -143,6 +163,14 @@ export type ReferenceItem = {
   readonly dependencies?: readonly string[];
   readonly hash: Hash;
   readonly files: readonly ReferenceFile[];
+  /** Owner-approved source sanitization, retaining the complete upstream digest record. */
+  readonly adaptations?: readonly {
+    readonly kind: "identity";
+    readonly reason: string;
+    readonly approvedBy: "owner";
+    readonly approvedAt: string;
+    readonly upstream: { readonly hash: Hash; readonly files: readonly ReferenceFile[] };
+  }[];
 };
 
 export type ReferencesManifest = {

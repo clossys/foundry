@@ -5,7 +5,7 @@
  *   node check-ref-verbatim.mjs --root <consumer>/clossys --element <slot>/<element>/v<N>   one version, strict (pin gate)
  *   node check-ref-verbatim.mjs --root <consumer>/clossys --pinned                          every pin, against the baseline
  *   node check-ref-verbatim.mjs --root <consumer>/clossys --all                             every version directory
- *     [--components <components.json>] [--report <file>] [--json]
+ *     [--components <components.json>] [--report <file>] [--release] [--json]
  *
  * Rule: every code file an element ships is the vendored reference file it
  * names in `lineage.source.files`, after the shadcn CLI 4.23.0 add-time
@@ -14,18 +14,21 @@
  * Anything else fails with one of the codes in CODES. check-provenance.mjs
  * stays the record-level gate; this check is the code-level one.
  *
- * `--pinned` and `--all` accept the pins listed in
+ * `--pinned` and `--all` inventory, but never excuse, the pins listed in
  * scripts/ref-verbatim/baseline.json, which may only shrink: a row that is
  * not in BASELINE_CEILING below fails the run (REF-BASELINE). For legacy
- * records without `lineage.source.files` those modes infer the mapping (a
- * unique basename, else the item's only code file) and say so; `--element` and pin() require the mapping.
+ * records without `lineage.source.files`, reporting and pinning fail closed;
+ * only direct non-strict checkElement callers may request an inferred mapping.
  * Exit 1 on any finding, 2 on a usage error.
  */
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { configFromComponents, normalizeReference } from "./ref-verbatim/normalize.mjs";
+import { replayDataFit } from "./ref-verbatim/data-fit.mjs";
+import { ADAPTATION_KINDS, adaptationHash, recordedHunk, staticSingleOptionRow } from "./ref-verbatim/adaptations.mjs";
+export { ADAPTATION_KINDS, adaptationHash };
 import { diffSources, isEngineNeutral } from "./ref-verbatim/diff.mjs";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -42,6 +45,7 @@ export const CODES = [
   "REF-HUNK-LOGIC",
   "REF-HUNK-TEXT",
   "REF-NORMALIZE",
+  "REF-ADAPTATION",
 ];
 
 /**
@@ -80,7 +84,7 @@ export const BASELINE_CEILING = Object.freeze([
   "sections.studio.specimen/studio-specimen@v2#sha256:55b39a4888d8ba1da2e925dc93317b2c3f8b14322e3647247d7789f4db75c61b",
 ]);
 
-const CODE_FILE = /\.(tsx|ts|jsx|js|mjs)$/;
+const CODE_FILE = /\.(tsx|ts|jsx|js|mjs|cjs|mts|cts)$/;
 const isCode = (file) => CODE_FILE.test(file) && !file.endsWith(".d.ts");
 const globMatch = (pattern, slot) => (pattern.endsWith("*") ? slot.startsWith(pattern.slice(0, -1)) : pattern === slot);
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
@@ -133,9 +137,10 @@ const parseSpec = (spec) => {
  * reported as inferred.
  * @returns {{ key, slot, element, version, hash, status, files, findings }}
  */
-export function checkElement(root, target, options = {}) {
+function checkVersion(root, target, options = {}, versionInput) {
   const opts = defaults(options);
   const { slot, element, version } = typeof target === "string" ? parseSpec(target) : target;
+  if (!/^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/.test(slot) || !/^[a-z0-9][a-z0-9-]*$/.test(element) || !Number.isInteger(version) || version < 1) throw new Error("invalid reference target");
   const key = `${slot}/${element}@v${version}`;
   const dir = join(root, "library", slot, element, `v${version}`);
   const findings = [];
@@ -144,20 +149,52 @@ export function checkElement(root, target, options = {}) {
   const fail = (code, detail, extra = {}) => findings.push({ element: key, code, detail, ...extra });
 
   const recordPath = join(dir, "element.json");
-  if (!existsSync(dir)) {
+  if (!versionInput && !existsSync(dir)) {
     fail("REF-NO-SOURCE", "no library directory for this version");
     return result("fail");
   }
-  const record = existsSync(recordPath) ? json(recordPath) : undefined;
+  const record = versionInput?.record ?? (existsSync(recordPath) ? json(recordPath) : undefined);
+  const embedded = new Map();
+  const safePayload = (file) => typeof file === "string" && !!file && !file.startsWith("/") && !file.includes("\\") && !file.includes("\u0000") && !file.split("/").includes("..");
+  const readPayload = (file) => {
+    if (!safePayload(file)) throw new Error("payload path must stay inside its version");
+    if (embedded.has(file)) return embedded.get(file);
+    if (versionInput) return versionInput.files[file];
+    let path = dir;
+    for (const part of file.split("/")) { path = join(path, part); if (lstatSync(path).isSymbolicLink()) throw new Error("symlink payload is not a reference source"); }
+    return readFileSync(path, "utf8");
+  };
   const meta = !record && existsSync(join(dir, "registry-item.json")) ? json(join(dir, "registry-item.json")).meta ?? {} : {};
   const mode = record ? record.lineage?.mode : meta.lineage;
   const source = record ? record.lineage?.source : meta.reference;
   const hash = record?.hash;
   const payload = record?.payload ?? readdirSync(dir).filter((f) => statSync(join(dir, f)).isFile());
-  const codeFiles = payload.filter(isCode).sort();
+  if (!Array.isArray(payload) || payload.some(file => !safePayload(file))) {
+    fail("REF-FILE-UNMAPPED", "payload paths must stay inside the version");
+    return result("fail", { hash });
+  }
+  // Registry JSON is executable payload too: inspect every embedded source file.
+  for (const file of payload.filter(file => file.endsWith(".json"))) {
+    const value = JSON.parse(readPayload(file));
+    if (!Array.isArray(value.files)) continue;
+    for (const entry of value.files) {
+      if (!isCode(entry.path ?? "")) continue;
+      if (typeof entry.content !== "string") fail("REF-NO-SOURCE", `embedded code ${entry.path} has no content`, { file });
+      else if (embedded.has(entry.path) || payload.includes(entry.path)) fail("REF-FILE-UNMAPPED", `duplicate embedded code path ${entry.path}`, { file });
+      else embedded.set(entry.path, entry.content);
+    }
+  }
+  const codeFiles = [...payload.filter(isCode), ...embedded.keys()].sort();
+  const adaptations = record?.lineage?.adaptations ?? [];
+  if (!Array.isArray(adaptations)) fail("REF-ADAPTATION", "lineage.adaptations must be an array");
+  else for (const a of adaptations) {
+    if (!a || !ADAPTATION_KINDS.includes(a.kind) || typeof a.reason !== "string" || !a.reason.trim() || !codeFiles.includes(a.file)
+      || (a.kind !== "data-fit" && !/^sha256:[a-f0-9]{64}$/.test(a.hash ?? ""))) {
+      fail("REF-ADAPTATION", "each adaptation requires a permitted kind, payload file, exact hunk hash and non-empty reason");
+    }
+  }
 
   if ((opts.rule.consumerAssets?.slots ?? []).some((pattern) => globMatch(pattern, slot))) return result("exempt", { hash, note: "consumer-asset slot" });
-  if (codeFiles.length === 0) return result("n/a", { hash, note: "no code payload (check-provenance is the record gate)" });
   if (mode === "original" || !source?.registry || !source?.item) {
     fail("REF-NO-SOURCE", mode === "original" ? `original code in ${slot}, which is not a consumer-asset slot` : `${mode ?? "no"} lineage without lineage.source`);
     return result("fail", { hash });
@@ -169,7 +206,7 @@ export function checkElement(root, target, options = {}) {
     fail("REF-NOT-VENDORED", `${ref} is not vendored in references/manifest.json`);
     return result("fail", { hash, ref });
   }
-  const itemDir = join(opts.referencesDir, item.dir);
+  let itemDir = join(opts.referencesDir, item.dir);
   const vendored = [];
   for (const file of item.files) {
     const path = join(itemDir, file.path);
@@ -189,51 +226,68 @@ export function checkElement(root, target, options = {}) {
     return result("fail", { hash, ref });
   }
 
+  if (codeFiles.length === 0) return result(findings.length ? "fail" : "n/a", { hash, ref, note: "non-code payload has a verified registry source" });
+
   if (/^(frames|sections)\./.test(slot) && item.type === "registry:ui") {
     fail("REF-PRIMITIVE-AS-REF", `${slot} cites ${ref}, a registry:ui primitive; a frame or section must cite a registry:block or registry:example`);
   }
 
-  // File mapping: payload file → file inside the vendored item.
-  const itemPaths = item.files.map((f) => f.path).filter((p) => p !== `${item.name}.json`);
+  // Additional parts have the same manifest/file-byte proof as the primary block.
+  // A file has exactly one source; a part cannot override a primary mapping.
+  const sources = [{ source, item, itemDir }];
+  for (const part of record?.lineage?.parts ?? []) {
+    const partItem = (opts.manifest.items ?? []).find(row => row.registry === part.registry && row.name === part.item && row.version === part.version);
+    if (!partItem || part.hash !== partItem.hash || !part.files || !Object.keys(part.files).length) {
+      fail("REF-NOT-VENDORED", "each additional part requires exact manifest identity/hash and file mappings");
+      continue;
+    }
+    const dir = join(opts.referencesDir, partItem.dir);
+    const bytes = partItem.files.map(file => ({ path: file.path, sha256: existsSync(join(dir, file.path)) ? sha256(readFileSync(join(dir, file.path))) : "missing" }));
+    if (treeHash(bytes) !== partItem.hash || bytes.some((file, i) => file.sha256 !== partItem.files[i].sha256)) {
+      fail("REF-NOT-VENDORED", `${partItem.dir}: additional part bytes differ from the manifest`);
+      continue;
+    }
+    sources.push({ source: part, item: partItem, itemDir: dir });
+  }
   const mapping = new Map();
   for (const file of codeFiles) {
-    const mapped = source.files?.[file];
-    if (mapped !== undefined) {
-      if (!itemPaths.includes(mapped)) fail("REF-FILE-UNMAPPED", `${file} maps to ${mapped}, which is not a file of ${ref}`, { file });
-      else mapping.set(file, { path: mapped, inferred: false });
+    const recorded = sources.filter(row => row.source.files?.[file] !== undefined);
+    if (recorded.length > 1) {
+      fail("REF-FILE-UNMAPPED", `${file} has multiple source mappings`, { file });
+      continue;
+    }
+    if (recorded.length === 1) {
+      const row = recorded[0];
+      const path = row.source.files[file];
+      if (!row.item.files.some(entry => entry.path === path && isCode(path))) fail("REF-FILE-UNMAPPED", `${file} maps outside its exact source item`, { file });
+      else mapping.set(file, { ...row, path, inferred: false });
       continue;
     }
     if (options.strict) {
-      fail("REF-FILE-UNMAPPED", `${file} has no lineage.source.files entry`, { file });
+      fail("REF-FILE-UNMAPPED", `${file} has no lineage.source.files or parts entry`, { file });
       continue;
     }
-    const named = itemPaths.filter((p) => basename(p) === basename(file));
+    const itemPaths = item.files.map(f => f.path).filter(p => p !== `${item.name}.json`);
+    const named = itemPaths.filter(p => basename(p) === basename(file));
     const code = itemPaths.filter(isCode);
     const matches = named.length ? named : code.length === 1 ? code : [];
-    if (matches.length === 1) mapping.set(file, { path: matches[0], inferred: true });
-    else fail("REF-FILE-UNMAPPED", `${file} has no lineage.source.files entry and no single ${ref} file matches it`, { file });
+    if (matches.length === 1) mapping.set(file, { ...sources[0], path: matches[0], inferred: true });
+    else fail("REF-FILE-UNMAPPED", `${file} has no recorded mapping or unique primary source`, { file });
   }
 
   // Flavor: the reference's engine must be the consumer's, unless the code is engine-neutral.
   const components = loadComponents(root, opts.components);
-  const registryStyle = opts.manifest.registries?.[source.registry]?.style;
   let config;
   if (!components) {
     fail("REF-FLAVOR", "no components.json for this consumer (style, iconLibrary and aliases are required)");
   } else {
     config = configFromComponents(components.value);
     const consumer = engineFamily(config.style);
-    const reference = engineFamily(registryStyle);
-    if (!consumer || consumer !== reference) {
-      let neutral = mapping.size > 0;
-      for (const [, target] of mapping) {
-        try {
-          if (!isEngineNeutral(readFileSync(join(itemDir, target.path), "utf8"), target.path)) neutral = false;
-        } catch {
-          neutral = false;
-        }
+    for (const [file, target] of mapping) {
+      const style = opts.manifest.registries?.[target.source.registry]?.style;
+      if ((!consumer || consumer !== engineFamily(style)) && !isEngineNeutral(readFileSync(join(target.itemDir, target.path), "utf8"), target.path)) {
+        fail("REF-FLAVOR", `${target.item.dir} is ${style ?? "unstyled"}; consumer is ${config.style ?? "unstyled"}`, { file });
       }
-      if (!neutral) fail("REF-FLAVOR", `${ref} is ${registryStyle ?? "an unstyled registry"} (${reference ?? "no engine"}); the consumer is ${config.style ?? "unstyled"} (${consumer ?? "no engine"})`);
     }
   }
 
@@ -250,13 +304,24 @@ export function checkElement(root, target, options = {}) {
       continue;
     }
     try {
-      const normalized = normalizeReference(readFileSync(join(itemDir, target.path), "utf8"), target.path, config);
-      const { hunks } = diffSources(normalized, target.path, readFileSync(join(dir, file), "utf8"), file, {
+      const rawSource = readFileSync(join(target.itemDir, target.path), "utf8");
+      let normalized = normalizeReference(rawSource, target.path, config);
+      const candidate = readPayload(file);
+      const recorded = Array.isArray(adaptations) ? adaptations : [];
+      for (const adaptation of recorded.filter(a => a?.file === file && a.kind === "data-fit")) {
+        normalized = adaptation.operation === "single-option-static-row"
+          ? staticSingleOptionRow(normalized, target.path, adaptation)
+          : replayDataFit(normalized, target.path, adaptation, { raw: rawSource, source: target.source, sources });
+      }
+      const { hunks } = diffSources(normalized, target.path, candidate, file, {
         themeVars: record?.reads?.themeVars ?? [],
         linkComponents: opts.linkComponents,
       });
       entry.hunks = hunks;
-      for (const h of hunks.filter((h) => !h.ok)) fail(h.rule, h.detail, { file, reference: target.path, range: h.file, referenceRange: h.ref });
+      for (const h of hunks) {
+        if (!h.ok) fail(h.rule, h.detail, { file, reference: target.path, range: h.file, referenceRange: h.ref });
+        else if (!recordedHunk(h, file, normalized, candidate, recorded)) fail("REF-ADAPTATION", `${h.rule}: unrecorded adaptation ${adaptationHash(h, normalized, candidate)}; each change requires its permitted kind and reason`, { file, reference: target.path, range: h.file, referenceRange: h.ref });
+      }
     } catch (error) {
       fail("REF-NORMALIZE", error.message, { file, reference: target.path });
     }
@@ -264,6 +329,30 @@ export function checkElement(root, target, options = {}) {
     entry.status = entry.codes.length ? "fail" : "pass";
   }
   return result(findings.length ? "fail" : "pass", { hash, ref });
+}
+
+/** Check the immutable legacy library version on disk. */
+export function checkElement(root, target, options = {}) {
+  return checkVersion(root, target, options);
+}
+
+/** Slot-model registry item: provenance stays in meta.source; exact file mappings
+ * and adaptation reasons live in meta.refVerbatim. Missing evidence fails closed.
+ */
+export function checkRegistryItem(root, slot, candidate, options = {}) {
+  const opts = defaults(options);
+  const refs = candidate.meta?.source?.ref ?? [];
+  const source = candidate.meta?.source;
+  const item = (opts.manifest.items ?? []).find(row => refs.includes(`${row.registry}/${row.name}@${row.version}`));
+  const files = Object.fromEntries((candidate.files ?? []).map(file => [file.path, file.content]));
+  if (Object.values(files).some(content => typeof content !== "string")) throw new Error("registry candidate must carry every payload file's content");
+  const mapping = candidate.meta?.refVerbatim ?? {};
+  const record = { payload: Object.keys(files), reads: candidate.meta?.element?.reads, lineage: {
+    mode: source?.kind === "original" ? "original" : "customized",
+    ...(item ? { source: { registry: item.registry, item: item.name, version: item.version, hash: item.hash, files: mapping.files } } : {}),
+    adaptations: mapping.adaptations ?? [],
+  } };
+  return checkVersion(root, { slot, element: candidate.name ?? "unknown", version: 1 }, options, { record, files });
 }
 
 /** The pin gate: strict findings for one element version (an empty array means it may be pinned). */
@@ -306,7 +395,7 @@ export function loadBaseline(options = {}) {
 }
 
 /**
- * `--pinned` (every pin) or `--all` (every version directory), against the baseline.
+ * `--pinned` (every pin) or `--all` (every version directory), with a shrink-only inventory. Baseline findings still fail; no release exemption.
  * @returns {{ mode, elements, findings, baselined, stale }}
  */
 export function refVerbatimReport(root, { all = false, ...options } = {}) {
@@ -323,17 +412,40 @@ export function refVerbatimReport(root, { all = false, ...options } = {}) {
   const findings = [...baselineFindings];
   const baselined = [];
   for (const target of targets) {
-    const checked = checkElement(root, target, options);
+    const checked = checkElement(root, target, { ...options, strict: true });
     const key = baselineKey({ ...target, hash: checked.hash ?? target.pinHash });
     if (checked.status === "fail" && baseline.has(key)) {
       used.add(key);
       baselined.push(checked.key);
       elements.push({ ...checked, status: "baselined" });
+      findings.push(...checked.findings);
       continue;
     }
     elements.push(checked);
     findings.push(...checked.findings);
   }
+  const agentDir = join(root, "agents", "designer");
+  const walkSlots = (dir) => {
+    if (!existsSync(dir)) return;
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (!entry.isDirectory() || entry.isSymbolicLink() || entry.name === "candidates") continue;
+      const child = join(dir, entry.name);
+      const pinPath = join(child, "pin.json");
+      if (existsSync(pinPath)) {
+        const pin = json(pinPath);
+        const slot = json(join(child, "slot.json")).id;
+        if (!/^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\.json$/.test(pin.candidate ?? "")) throw new Error(`invalid Designer pin candidate in ${slot}`);
+        const bytes = readFileSync(join(child, "candidates", pin.candidate));
+        const checked = checkRegistryItem(root, slot, JSON.parse(bytes.toString("utf8")), { ...options, strict: true });
+        if (sha256(bytes) !== pin.sha256) checked.findings.push({ element: checked.key, code: "REF-NO-SOURCE", detail: "slot pin sha256 does not match candidate bytes" });
+        if (checked.findings.length) checked.status = "fail";
+        elements.push(checked);
+        findings.push(...checked.findings);
+      }
+      walkSlots(child);
+    }
+  };
+  if (!all) walkSlots(agentDir);
   const stale = rows.map(baselineKey).filter((k) => !used.has(k));
   return { mode: all ? "all" : "pinned", root, elements, findings, baselined, stale };
 }
@@ -357,7 +469,7 @@ function main(argv) {
   const element = value("--element");
   const mode = argv.includes("--all") ? "all" : argv.includes("--pinned") ? "pinned" : undefined;
   if (!root || (!element && !mode) || (element && mode)) {
-    console.error("usage: check-ref-verbatim.mjs --root <consumer>/clossys (--element <slot>/<element>/v<N> | --pinned | --all) [--components <components.json>] [--report <file>] [--json]");
+    console.error("usage: check-ref-verbatim.mjs --root <consumer>/clossys (--element <slot>/<element>/v<N> | --pinned | --all) [--components <components.json>] [--report <file>] [--release] [--json]");
     return 2;
   }
   const options = {
@@ -375,6 +487,9 @@ function main(argv) {
   } catch (error) {
     console.error(`check-ref-verbatim: ${error.message}`);
     return 2;
+  }
+  if (argv.includes("--release")) for (const row of loadBaseline(options).rows) {
+    report.findings.push({ element: `${row.slot}/${row.element}@v${row.version}`, code: "REF-BASELINE", detail: "release requires an empty ref-verbatim baseline; resolve and remove this row" });
   }
   report.summary = summary(report.elements);
   const reportPath = resolve(value("--report") ?? join("reports", "ref-verbatim.json"));

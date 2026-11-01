@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -6,9 +7,11 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 // @ts-expect-error plain ESM check script, no type declarations for the .mjs path
-import { BASELINE_CEILING, CODES, baselineKey, checkElement, engineFamily, loadBaseline, refVerbatimFindings, refVerbatimReport } from "../../scripts/check-ref-verbatim.mjs";
+import { BASELINE_CEILING, CODES, ADAPTATION_KINDS, adaptationHash, baselineKey, checkElement, checkRegistryItem, engineFamily, loadBaseline, refVerbatimFindings, refVerbatimReport } from "../../scripts/check-ref-verbatim.mjs";
 // @ts-expect-error plain ESM check script, no type declarations
 import { cleanClasses, configFromComponents, mapImport, normalizeReference } from "../../scripts/ref-verbatim/normalize.mjs";
+// @ts-expect-error plain ESM check script, no type declarations
+import { replayDataFit, sourceHash } from "../../scripts/ref-verbatim/data-fit.mjs";
 // @ts-expect-error plain ESM check script, no type declarations
 import { ALLOWED, HUNK_CODES, diffSources, isEngineNeutral, tokenSwapAllowed } from "../../scripts/ref-verbatim/diff.mjs";
 
@@ -64,7 +67,7 @@ describe("ref-verbatim allowed-hunk grammar", () => {
   it("declares five allowed kinds and four hunk failure codes", () => {
     expect(ALLOWED).toEqual(["H-IMPORT", "H-TOKEN", "H-DATA", "H-PROPS", "H-LINK"]);
     expect(HUNK_CODES).toEqual(["REF-HUNK-CLASS", "REF-HUNK-STRUCTURE", "REF-HUNK-LOGIC", "REF-HUNK-TEXT"]);
-    expect(CODES).toHaveLength(10);
+    expect(CODES).toHaveLength(11);
     expect(CODES).toEqual(expect.arrayContaining(HUNK_CODES));
   });
 
@@ -256,6 +259,31 @@ describe("ref-verbatim baseline (shrink only)", () => {
     for (const row of baseline.rows) expect(BASELINE_CEILING).toContain(baselineKey(row));
   });
 
+  it("release qualification refuses any remaining baseline row, including stale rows", () => {
+    const root = consumer([]);
+    const command = [join(pkg, "scripts/check-ref-verbatim.mjs"), "--root", root, "--pinned", "--release", "--report", join(root, "report.json")];
+    const result = spawnSync(process.execPath, command, { encoding: "utf8" });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("release requires an empty ref-verbatim baseline");
+  });
+
+  it("classifies every remaining baseline row as an explicit reference NEED, without an exemption", () => {
+    const needs = JSON.parse(read("scripts/ref-verbatim/owner-needs.json"));
+    expect(new Set(needs.rows.map(baselineKey)).size).toBe(needs.rows.length);
+    for (const row of baseline.rows) {
+      const need = needs.rows.find((item: any) => baselineKey(item) === baselineKey(row));
+      expect(need).toMatchObject({ status: "NEED", decision: "reference-required" });
+      expect(need.reason.trim()).not.toBe("");
+      expect(need.candidates.length).toBeGreaterThanOrEqual(2);
+      for (const candidate of need.candidates) {
+        const item = itemOf(candidate.registry, candidate.item);
+        expect(candidate.version).toBe(item.version);
+        expect(candidate.hash).toBe(item.hash);
+        expect(item.files.map((file: any) => file.path)).toContain(candidate.path);
+      }
+    }
+  });
+
   it("mutation 3: adding a baseline entry fails REF-BASELINE", () => {
     const dir = mkdtempSync(join(tmpdir(), "ref-verbatim-baseline-"));
     const added = join(dir, "baseline.json");
@@ -266,7 +294,7 @@ describe("ref-verbatim baseline (shrink only)", () => {
     expect(codes(refVerbatimReport(root, { baselinePath: added }).findings)).toEqual(["REF-BASELINE"]);
   });
 
-  it("a baselined pin is reported but does not fail --pinned; the same pin still fails the gate", () => {
+  it("a baselined pin blocks the report and the pin gate", () => {
     const failing = button({ pinned: true, hash: `sha256:${"3".repeat(64)}`, files: { "button.tsx": BUTTON.replace("hover:bg-primary/80", "hover:bg-primary/80 shadow-xl") } });
     const root = consumer([failing]);
     const dir = mkdtempSync(join(tmpdir(), "ref-verbatim-baseline-"));
@@ -274,10 +302,104 @@ describe("ref-verbatim baseline (shrink only)", () => {
     const row = { slot: "components.button", element: "button", version: 1, hash: failing.hash! };
     writeFileSync(path, JSON.stringify({ rows: [row] }));
     const report = refVerbatimReport(root, { baselinePath: path, ceiling: [baselineKey(row)] });
-    expect(report.findings).toEqual([]);
+    expect(codes(report.findings)).toEqual(["REF-HUNK-CLASS"]);
     expect(report.elements.map((e: { status: string }) => e.status)).toEqual(["baselined"]);
     expect(gate(root, "components.button/button/v1")).toEqual(["REF-HUNK-CLASS"]);
     const unlisted = refVerbatimReport(root, { baselinePath: path });
     expect(codes(unlisted.findings)).toEqual(["REF-BASELINE", "REF-HUNK-CLASS"]);
+  });
+});
+
+
+describe("recorded adaptations", () => {
+  it("requires a reason and exact content binding for an otherwise allowed token swap", () => {
+    const file = BUTTON.replace("bg-primary", "bg-(--brand)");
+    const normalized = normalizeReference(read(`references/shadcn-aria/button@4.23.0/${BUTTON_REF}`), BUTTON_REF, config);
+    const hunks = diffSources(normalized, BUTTON_REF, file, "button.tsx", { themeVars: [] }).hunks;
+    expect(hunks.length).toBeGreaterThan(0);
+    const adaptations = hunks.map((h: Hunk) => ({ kind: "token-mapping", file: "button.tsx", reason: "Bind the consumer brand token", hash: adaptationHash(h, normalized, file) }));
+    const record = { mode: "customized", source: sourceOf("shadcn-aria", "button", { "button.tsx": BUTTON_REF }) };
+    const missing = consumer([button({ lineage: record, files: { "button.tsx": file } })]);
+    expect(gate(missing, "components.button/button/v1")).toEqual(["REF-ADAPTATION"]);
+    const recorded = consumer([button({ lineage: { ...record, adaptations }, files: { "button.tsx": file } })]);
+    expect(gate(recorded, "components.button/button/v1")).toEqual([]);
+    const forged = consumer([button({ lineage: { ...record, adaptations: adaptations.map((a: object) => ({ ...a, reason: " " })) }, files: { "button.tsx": file } })]);
+    expect(gate(forged, "components.button/button/v1")).toContain("REF-ADAPTATION");
+    const edited = consumer([button({ lineage: { ...record, adaptations }, files: { "button.tsx": file.replace("hover:bg-primary/80", "hover:bg-primary/80 shadow-xl") } })]);
+    expect(gate(edited, "components.button/button/v1")).toContain("REF-HUNK-CLASS");
+    expect(ADAPTATION_KINDS).toEqual(["import-paths", "token-mapping", "data-binding", "data-fit", "slot-bound-copy", "slot-bound-identity"]);
+  });
+});
+
+
+describe("import-path adaptations", () => {
+  it("permits a recorded path move while refusing a new side-effect import", () => {
+    const stock = read(`references/shadcn-aria/button@4.23.0/${BUTTON_REF}`);
+    const normalized = normalizeReference(stock, BUTTON_REF, config);
+    for (const [candidate, allowed] of [[BUTTON.replace("@/lib/utils", "./utils"), true], [`import "./side-effect";\n${BUTTON}`, false]] as const) {
+      const hunks = diffSources(normalized, BUTTON_REF, candidate, "button.tsx").hunks;
+      const adaptations = hunks.map((h: Hunk) => ({ kind: "import-paths", file: "button.tsx", reason: "Resolve the local import path", hash: adaptationHash(h, normalized, candidate) }));
+      const root = consumer([button({ lineage: { mode: "customized", source: sourceOf("shadcn-aria", "button", { "button.tsx": BUTTON_REF }), adaptations }, files: { "button.tsx": candidate } })]);
+      expect(gate(root, "components.button/button/v1")).toEqual(allowed ? [] : ["REF-ADAPTATION"]);
+    }
+  });
+});
+
+describe("every pinned source representation", () => {
+  it("checks code embedded in a legacy registry JSON payload", () => {
+    const item = { name: "button", type: "registry:ui", files: [{ path: "button.tsx", content: BUTTON }] };
+    const lineage = { mode: "customized", source: sourceOf("shadcn-aria", "button", { "button.tsx": BUTTON_REF }) };
+    const root = consumer([button({ lineage, files: { "button.json": JSON.stringify(item) } })]);
+    expect(gate(root, "components.button/button/v1")).toEqual([]);
+    item.files[0].content = BUTTON.replace("hover:bg-primary/80", "hover:bg-primary/80 shadow-xl");
+    writeFileSync(join(root, "library/components.button/button/v1/button.json"), JSON.stringify(item));
+    expect(gate(root, "components.button/button/v1")).toEqual(["REF-HUNK-CLASS"]);
+  });
+  it("checks modern Designer pins independently of the legacy selection store", () => {
+    const root = consumer([]);
+    const item = { name: "button", type: "registry:ui", files: [{ path: "button.tsx", content: BUTTON }], meta: {
+      source: { kind: "registry", ref: ["shadcn-aria/button@4.23.0"] }, refVerbatim: { files: { "button.tsx": BUTTON_REF } },
+    } };
+    expect(checkRegistryItem(root, "components.button", item, { strict: true }).findings).toEqual([]);
+    const dir = join(root, "agents/designer/components/actions/components.button");
+    mkdirSync(join(dir, "candidates"), { recursive: true });
+    writeFileSync(join(dir, "slot.json"), JSON.stringify({ id: "components.button" }));
+    const save = () => {
+      const bytes = JSON.stringify(item);
+      writeFileSync(join(dir, "candidates/button-v1.json"), bytes);
+      writeFileSync(join(dir, "pin.json"), JSON.stringify({ candidate: "button-v1.json", sha256: sha(bytes) }));
+    };
+    save();
+    expect(refVerbatimReport(root).findings).toEqual([]);
+    item.files[0].content = BUTTON.replace("hover:bg-primary/80", "hover:bg-primary/80 shadow-xl");
+    save();
+    expect(codes(refVerbatimReport(root).findings)).toEqual(["REF-HUNK-CLASS"]);
+  });
+});
+
+
+describe("finite data-fit and additional source parts", () => {
+  it("replays the exact mirrored source and still refuses extra classes or stale byte proof", () => {
+    const file = "edge.tsx";
+    const path = "registry/aria-nova/blocks/sidebar-15/page.tsx";
+    const raw = read(`references/shadcn-aria/sidebar-15@4.23.0/${path}`);
+    const normalized = normalizeReference(raw, path, config);
+    const source = sourceOf("shadcn-aria", "sidebar-15", { [file]: path });
+    const adaptation = { kind: "data-fit", file, reason: "Mirror the same stock edge control", operation: "sidebar-mirrored-edge", sourceHash: sourceHash(raw), bindings: { side: "right" } };
+    const text = replayDataFit(normalized, path, adaptation, { raw, source, sources: [] });
+    const make = (candidate: string, proof = adaptation) => consumer([{ slot: "frames.edge", element: "edge", lineage: { mode: "customized", source, adaptations: [proof] }, files: { [file]: candidate } }]);
+    expect(gate(make(text), "frames.edge/edge/v1")).toEqual([]);
+    expect(gate(make(text.replace("data-[orientation=vertical]:h-4", "data-[orientation=vertical]:h-4 gap-8")), "frames.edge/edge/v1")).toContain("REF-HUNK-CLASS");
+    expect(gate(make(text, { ...adaptation, sourceHash: `sha256:${"0".repeat(64)}` }), "frames.edge/edge/v1")).toContain("REF-NORMALIZE");
+  });
+  it("verifies each additional source part independently and refuses overlapping mappings", () => {
+    const path = "registry/aria-nova/blocks/sidebar-15/page.tsx";
+    const text = normalizeReference(read(`references/shadcn-aria/sidebar-15@4.23.0/${path}`), path, config);
+    const primary = sourceOf("shadcn-aria", "sidebar-15", { "index.tsx": path });
+    const part = sourceOf("shadcn-aria", "button", { "button.tsx": BUTTON_REF });
+    const make = (parts: any[]) => consumer([{ slot: "frames.example", element: "example", lineage: { mode: "verbatim", source: primary, parts }, files: { "index.tsx": text, "button.tsx": BUTTON } }]);
+    expect(gate(make([part]), "frames.example/example/v1")).toEqual([]);
+    expect(gate(make([{ ...part, hash: `sha256:${"0".repeat(64)}` }]), "frames.example/example/v1")).toContain("REF-NOT-VENDORED");
+    expect(gate(make([part, part]), "frames.example/example/v1")).toContain("REF-FILE-UNMAPPED");
   });
 });

@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { treeHash } from "./hash.js";
+import { withFrameOwnershipSchema } from "./frame-ownership-schema.js";
 import { validateAgainst, type JsonSchema, type SchemaIssue } from "./schema.js";
 import {
   ELEMENT_SCHEMA,
@@ -58,7 +59,24 @@ export function validatePreview(value: unknown): Validation<PreviewRecord> {
 }
 
 export function validateSlotContract(value: unknown): Validation<SlotContract> {
-  return run<SlotContract>(SLOT_CONTRACT_SCHEMA, value, (contract) => slotInLayer(contract.slot, contract.layer, "$.slot"));
+  return run<SlotContract>(withFrameOwnershipSchema(SLOT_CONTRACT_SCHEMA), value, (contract) => {
+    const issues = slotInLayer(contract.slot, contract.layer, "$.slot");
+    if (!contract.ownership) return issues;
+    if (contract.layer !== "frames") issues.push({ path: "$.ownership", message: "ownership belongs only to frame contracts" });
+    const inputs = new Map(contract.inputs.map(input => [input.name, input]));
+    if (inputs.size !== contract.inputs.length) issues.push({ path: "$.inputs", message: "frame input names must be unique" });
+    const bound = new Set<string>();
+    for (const [region, names] of Object.entries(contract.ownership.regions)) for (const name of names) {
+      const path = `$.ownership.regions.${region}`;
+      const input = inputs.get(name);
+      if (!input) issues.push({ path, message: `undeclared input ${name}` });
+      if (bound.has(name)) issues.push({ path, message: `input ${name} is bound by more than one region` });
+      bound.add(name);
+      if (input && (input.kind === "copy" || input.kind === "asset") && !input.slot) issues.push({ path, message: `${input.kind} input ${name} must bind an owning slot` });
+    }
+    for (const input of contract.inputs) if (input.required && input.kind !== "theme" && !bound.has(input.name)) issues.push({ path: "$.ownership.regions", message: `required input ${input.name} has no owning region` });
+    return issues;
+  });
 }
 
 export function validateRelease(value: unknown): Validation<Release> {
@@ -142,6 +160,9 @@ export function validateReferencesManifest(value: unknown): Validation<Reference
       if (dirs.has(item.dir)) issues.push({ path: `${where}.dir`, message: "duplicate item directory" });
       dirs.add(item.dir);
       if (treeHash(item.files) !== item.hash) issues.push({ path: `${where}.hash`, message: "does not match its files" });
+      item.adaptations?.forEach((adaptation, n) => {
+        if (treeHash(adaptation.upstream.files) !== adaptation.upstream.hash) issues.push({ path: `${where}.adaptations[${n}].upstream.hash`, message: "does not match its upstream files" });
+      });
     });
     return issues;
   });
