@@ -26,6 +26,7 @@ import { resolveSampleCopy, specimenStateOf, VISIBLE_STATE_CSS, type SpecimenSta
 import { installAndBind, isBlocking, substrateDependencies, type InstallFinding, type InstallPageRecord, type InstallPins } from "@clossys/publisher/install";
 import { listVersions, loadSelection, SELECTION_FILE } from "../records/index.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
+import { specimenPageSlotIds } from "../specimen/page-slot-ids.js";
 import { ensureSubstrate, ensureSubstrateDependencies, npmRunner, pageModule, pageRecordFromCell, shadcnRunner, writerCopy } from "../publish/install.js";
 
 /** Bumped when the generated specimen pages change shape. */
@@ -62,11 +63,9 @@ const specimenPageId = (slot: string, version: number) => `specimen-${slot.repla
 const pageKey = (slot: string, version: number) => `${slot}@v${version}`;
 const hash = (...parts: string[]) => { const h = createHash("sha256"); for (const part of parts) h.update(part).update("\0"); return h.digest("hex"); };
 
-/** Active Publisher page cells (`page.*`), home first, as install page records. */
+/** Pinned Publisher page slots (legacy active cells without IA), home first. */
 async function pageRecords(root: string, pins: InstallPins): Promise<InstallPageRecord[]> {
-  let tree: { active?: Record<string, number> } | undefined;
-  try { tree = JSON.parse(await readFile(join(root, "clossys", "agents", "publisher", "tree.json"), "utf8")); } catch { return []; }
-  const ids = Object.keys(tree?.active ?? {}).filter(id => /^page\.[a-z0-9][a-z0-9-]*$/.test(id)).sort((a, b) => (a === "page.home" ? -1 : b === "page.home" ? 1 : a.localeCompare(b)));
+  const ids = await specimenPageSlotIds(root);
   const records: InstallPageRecord[] = [];
   for (const id of ids) { try { records.push(await pageRecordFromCell(root, id, pins)); } catch { /* a page cell without frame/sections binds nothing */ } }
   return records;
