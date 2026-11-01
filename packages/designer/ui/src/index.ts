@@ -136,6 +136,7 @@ export * from "./foundry/use-mobile"
 export * from "./foundry/layout"
 
 export * from "./foundry/studio-home-stock"
+export * from "./foundry/studio-frames"
 
 // Explicit stock Radix picks for the frame's shared asChild tooltip/popover composition.
 export { Button as RadixButton } from "./components/radix/button"
