@@ -48,3 +48,33 @@ test('accepts an explicit scroll owner but rejects silently overflowing content'
   card.style.overflowX = 'visible';
   assert.ok(overflowFindings(document).some(row => row.rule === 'content-overflow-x' && row.slot === 'card'));
 });
+
+test('accepts offscreen descendants inside nested deliberate scroll owners', () => {
+  for (const overflow of ['auto', 'scroll']) {
+    for (const axis of ['x', 'y']) {
+      const { document, card, badge, rect, dimensions } = fixture();
+      const scroller = document.createElement('div');
+      scroller.dataset.slot = 'scroll-owner';
+      scroller.style.setProperty(`overflow-${axis}`, overflow);
+      scroller.getBoundingClientRect = () => rect(0, 300);
+      dimensions(scroller, axis === 'x' ? { scrollWidth: 500 } : { scrollHeight: 120 });
+      card.append(scroller);
+      scroller.append(badge);
+      badge.getBoundingClientRect = () => axis === 'x' ? rect(400, 440, 0, 20) : rect(0, 40, 80, 100);
+      assert.deepEqual(overflowFindings(document), [], `${overflow} ${axis} owns its offscreen content`);
+    }
+  }
+});
+
+test('still rejects a scroll owner whose own viewport is clipped by the card', () => {
+  const { document, card, badge, rect, dimensions } = fixture();
+  const scroller = document.createElement('div');
+  scroller.dataset.slot = 'scroll-owner';
+  scroller.style.overflowX = 'auto';
+  scroller.getBoundingClientRect = () => rect(0, 340);
+  dimensions(scroller, { clientWidth: 340, scrollWidth: 500 });
+  card.append(scroller);
+  scroller.append(badge);
+  const rows = overflowFindings(document);
+  assert.ok(rows.some(row => row.rule === 'descendant-clipped' && row.slot === 'scroll-owner' && row.ancestor === 'card' && row.axis === 'x'));
+});
