@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "registry": "shadcn",
+      "name": "shadcn/ui",
+      "url": "https://ui.shadcn.com/r/styles/radix-nova/{name}.json",
+      "provenanceFile": "packages/designer/references/manifest.json"
+    },
+    {
+      "registry": "magicui",
+      "name": "Magic UI",
+      "url": "https://magicui.design/r/{name}.json",
+      "provenanceFile": "packages/designer/references/manifest.json"
+    },
+    {
+      "registry": "diceui",
+      "name": "Dice UI",
+      "url": "https://diceui.com/r/new-york/{name}.json",
+      "provenanceFile": "packages/designer/references/manifest.json"
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "Tailark OSS",
+      "url": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/{path}",
+      "provenanceFile": "packages/designer/references/manifest.json"
+    },
+    {
+      "registry": "lucide",
+      "name": "Lucide",
+      "url": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/{path}",
+      "provenanceFile": "packages/designer/references/manifest.json"
+    },
+    {
+      "registry": "tailwindcss-typography",
+      "name": "Tailwind CSS typography",
+      "url": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss-typography/e3714a3fe55551ce9d51eec4721183ed6b1d5cd1/{path}",
+      "provenanceFile": "packages/designer/references/manifest.json"
+    },
+    {
+      "registry": "fontsource",
+      "name": "Fontsource",
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource-variable/inter-tight@5.3.0/{path}",
+      "provenanceFile": "packages/designer/references/manifest.json"
+    }
+  ]
+}

@@ -295,3 +295,36 @@ test("the transferred repository admits exact candidate issue trackers but not c
     rmSync(source, { recursive: true, force: true });
   }
 });
+
+test("approved adopted sources require provenance in the same file, and redacted output lists every finding", async () => {
+  const root = fixture();
+  const registry = "shadcn";
+  const slug = ["shadcn-ui", "ui"].join("/");
+  const sourceUrl = "https://ui.shadcn.com/r/styles/radix-nova/{name}.json";
+  const provenanceFile = "references/adopted.json";
+  const hash = `sha256:${"a".repeat(64)}`;
+  const foreignScope = `@${["unrelated", "account"].join("-")}`;
+  write(join(root, "governance/approved-design-sources.json"), JSON.stringify({ schemaVersion: 1, sources: [{ registry, name: "shadcn/ui", url: sourceUrl, provenanceFile }] }));
+  write(join(root, provenanceFile), JSON.stringify({
+    registries: { [registry]: { namespace: `@${registry}`, source: sourceUrl, upstream: `github.com/${slug}${"@"}abc1234` } },
+    items: [{ registry, name: "button", version: "1", hash }],
+  }));
+  try {
+    const clean = await run(root);
+    assert.equal(clean.status, 0, clean.stderr || clean.stdout);
+    write(join(root, "src/shadcn-looking.mjs"), `export const reference = "https://github.com/${slug}";\n`);
+    const mutation = await spawnCapture(process.execPath, [checker, root, "--json", "--redact"]);
+    assert.equal(mutation.status, 1, mutation.stderr || mutation.stdout);
+    const report = JSON.parse(mutation.stdout);
+    assert.deepEqual(report.findings, [{ file: "src/shadcn-looking.mjs", line: 1, kind: "forge-slug" }]);
+    assert.equal(JSON.stringify(report).includes("export const"), false);
+    write(join(root, "src/shadcn-looking.mjs"), `// Source: https://github.com/${slug}\nexport const reference = "https://github.com/${slug}";\nexport const peer = "${foreignScope}";\n`);
+    const adjacent = await spawnCapture(process.execPath, [checker, root, "--redact"]);
+    assert.equal(adjacent.status, 1, adjacent.stderr || adjacent.stdout);
+    assert.match(adjacent.stdout, /src\/shadcn-looking\.mjs/);
+    assert.match(adjacent.stdout, /3: bare-scope/);
+    assert.equal(adjacent.stdout.includes(foreignScope), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
