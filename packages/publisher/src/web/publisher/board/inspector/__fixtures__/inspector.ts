@@ -1,8 +1,8 @@
 import { boardFixture, boardWriterCopy } from "../../__fixtures__/board.js";
-import { createContentRevision } from "../../../../content/revisions.js";
-import type { CopyField } from "../../../../content/composition.js";
-import type { ContentRegistry } from "../../../../content/model.js";
-import type { PublisherInspectorInput } from "../../../../content/board/inspector-model.js";
+import { createContentRevision } from "../../../../../content/revisions.js";
+import type { CopyField } from "../../../../../content/composition.js";
+import type { ContentRegistry } from "../../../../../content/model.js";
+import type { PublisherInspectorInput } from "../../../../../content/board/inspector-model.js";
 
 export function inspectorFixture(): PublisherInspectorInput {
   const base = boardFixture();

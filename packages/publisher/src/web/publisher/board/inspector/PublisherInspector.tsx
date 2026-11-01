@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { ContentSection, DetailView } from "@clossys/designer/blocks";
 import { Button } from "@clossys/designer/components";
-import { buildPublisherInspector, type PublisherInspectorInput, type PublisherInspectorModel } from "../../../content/board/inspector-model.js";
-import type { PublisherBoardModel } from "../../../content/board/types.js";
+import { buildPublisherInspector, type PublisherInspectorInput, type PublisherInspectorModel } from "../../../../content/board/inspector-model.js";
+import type { PublisherBoardModel } from "../../../../content/board/types.js";
 import { PublisherBoard } from "../PublisherBoard.js";
 
 export function PublisherInspector({ model }: { model: PublisherInspectorModel }) {

@@ -33,7 +33,6 @@ import type { ProductionSettings, PublisherProductionState, PublisherInputReques
 import type { PublisherConfiguration } from "../../planning/configuration.js";
 import { projectPublisherChannels, projectPublisherChannelProcess } from "./publisher-channels.js";
 import type { PublisherChannelId, PublisherChannelItem, PublisherRouteChannels } from "./publisher-channels.js";
-import type { RouteRegistryProjection } from "../../core/route-registry.js";
 import { projectRouteRegistry } from "../../core/route-registry.js";
 import { plainRouteProjectionRegistry } from "../../core/route-projection.js";
 import type { PlainRegisteredRouteProjection } from "../../core/route-projection.js";
@@ -69,7 +68,6 @@ export interface PublisherPageProps extends Omit<PublisherInstancesViewProps, "p
   readonly appInventory?: AppInventory;
   /** Node-produced display projection. It grants no runtime or lifecycle clearance. */
   readonly registeredRouteProjection?: PlainRegisteredRouteProjection;
-  readonly registeredRoutes?: RouteRegistryProjection;
   readonly appPageBindings?: readonly AppPageBindingInput[];
   readonly appSubrowBindings?: readonly AppSubrowBindingInput[];
   readonly appPipelineMessages?: Partial<AppPipelineMessages>;
@@ -118,7 +116,7 @@ function PublisherCopyText({ resolver, reference }: { resolver?: PublisherCopyRe
 }
 
 /** Channel-first workspace. All check evidence still comes from the original bindings. */
-export function PublisherPage({ copyResolver, lanes: _lanes, planStore, draftPlan, onApplyPlan, formatsPanel, itemAssembly, assemblyOwnerHref, appInventory, registeredRoutes, registeredRouteProjection, appPageBindings, appSubrowBindings, appPipelineMessages, brandAssets, brandAssetMessages: _assetMessages, productionSettings, onProductionSettingsChange, appInputRequests, fixtureLibrary = false, messages, planMessages, appMessages, productionMessages, checkMessages, deploymentSurfaceIds, requirementMessages, routeChannels, activeChannel, channelHref, ...inputs }: PublisherPageProps) {
+export function PublisherPage({ copyResolver, lanes: _lanes, planStore, draftPlan, onApplyPlan, formatsPanel, itemAssembly, assemblyOwnerHref, appInventory, registeredRouteProjection, appPageBindings, appSubrowBindings, appPipelineMessages, brandAssets, brandAssetMessages: _assetMessages, productionSettings, onProductionSettingsChange, appInputRequests, fixtureLibrary = false, messages, planMessages, appMessages, productionMessages, checkMessages, deploymentSurfaceIds, requirementMessages, routeChannels, activeChannel, channelHref, ...inputs }: PublisherPageProps) {
   const id = useId();
   const valueNames = useMemo(() => copyResolver ? createPublisherValueNames(copyResolver) : undefined, [copyResolver]);
   const productionCopy = { ...productionMessages, valueNames };

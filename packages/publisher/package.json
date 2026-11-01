@@ -87,8 +87,8 @@
       "import": "./dist/web/content-route.js"
     },
     "./web/publisher-v2": {
-      "types": "./dist/web/publisher-v2/index.d.ts",
-      "import": "./dist/web/publisher-v2/index.js"
+      "types": "./dist/web/publisher/board/index.d.ts",
+      "import": "./dist/web/publisher/board/index.js"
     },
     "./document": {
       "types": "./dist/document/index.d.ts",

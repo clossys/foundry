@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildPublisherInspector } from "./inspector-model.js";
-import { inspectorFixture } from "../../web/publisher-v2/inspector/__fixtures__/inspector.js";
+import { inspectorFixture } from "../../web/publisher/board/inspector/__fixtures__/inspector.js";
 
 describe("read-only inspector projection", () => {
   it("joins only the selected slot's candidates, revisions, pinned reviews, locale copy, approval and releases", () => {
