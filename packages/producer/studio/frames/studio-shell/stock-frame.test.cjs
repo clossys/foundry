@@ -105,19 +105,21 @@ test('375px navigation and chat use native sheets with the same 18rem geometry',
   } finally { await chat.close(); }
 });
 
-test('Tooltip and Popover share exactly one actual icon button and open its own content', async () => {
+test('1280px module Popover keeps its body outside the page layout and shares one actual icon button', async () => {
   let open = false;
   function Harness() {
     const [value, setValue] = React.useState(false);
     return e(api.HeaderPopover, { label: 'Outline', 'data-popover-trigger': 'outline', open: value, onOpenChange(value) { open = value; setValue(value); }, content: e('p', null, 'Outline content') }, e('svg'));
   }
-  const view = await mounted(e(Harness));
+  const view = await mounted(e(Harness), 1280);
   try {
     assert.equal(view.container.querySelectorAll('button').length, 1);
     const button = view.container.querySelector('button'); assert.equal(button.getAttribute('aria-label'), 'Outline');
     assert.equal(button.getAttribute('aria-haspopup'), 'dialog');
     await click(button); assert.equal(open, true);
     const content = document.querySelector('[data-popover="outline"]'); assert.ok(content); assert.match(content.textContent, /Outline content/);
+    assert.equal(view.container.contains(content), false, 'opening a module portals its body outside the page layout');
+    assert.equal(view.container.children.length, 1, 'the module adds no column beside its header trigger');
     assert.equal(button.querySelectorAll('button').length, 0);
   } finally { await view.close(); }
 });
