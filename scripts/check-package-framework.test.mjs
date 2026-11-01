@@ -537,3 +537,25 @@ test("validateFitSignalsShape rejects a non-array signals field", () => {
   const findings = validateFitSignalsShape({ schemaVersion: 1, role: "@scope/alpha", signals: "not-an-array" }, "@scope/alpha");
   assert.deepEqual(findings.map((f) => f.rule), ["invalid-fit-signals-file"]);
 });
+
+// Native declaration compatibility does not grant a sibling or unimplemented agent folder.
+const NATIVE_OUTPUT_ROLES = ["strategist", "writer", "designer", "publisher"];
+const INVALID_OWNED_OUTPUTS = [["alpha", "clossys/agents/alpha/report.json"], ["customer", "clossys/agents/customer/report.json"], ["director", "clossys/agents/director/report.json"], ["writer", "clossys/agents/publisher/report.json"], ["writer", "clossys/publisher/report.json"], ["writer", "clossys/agents/writer-other/report.json"], ["writer", "clossys/agents/writer/../publisher/report.json"], ["writer", "clossys/writer/../publisher/report.json"], ["writer", "/clossys/agents/writer/report.json"], ["writer", "C:/clossys/agents/writer/report.json"], ["writer", "clossys/agents/writer\\../publisher/report.json"], ["writer", "clossys/agents/writer/"], ["agents", "clossys/agents/writer/report.json"]];
+for (const short of NATIVE_OUTPUT_ROLES) {
+  test(`owned outputs and feeds accept both declaration roots for ${short}`, () => {
+    const role = `@scope/${short}`;
+    for (const path of [`clossys/${short}/report.json`, `clossys/agents/${short}/cells/`]) {
+      const result = evaluatePackageFramework([role], manifests([{ name: role, foundry: { outputs: [path], feeds: [{ artifact: "report", path }] } }]));
+      assert.deepEqual(result.findings, [], path);
+      assert.equal(result.table[0].outputs, "declared");
+      assert.equal(result.table[0].feeds, "declared");
+    }
+  });
+}
+for (const [short, path] of INVALID_OWNED_OUTPUTS) {
+  test(`outputs and feeds refuse ${short}: ${path}`, () => {
+    const role = `@scope/${short}`;
+    const result = evaluatePackageFramework([role], manifests([{ name: role, foundry: { outputs: [path], feeds: [{ artifact: "report", path }] } }]));
+    assert.deepEqual(result.findings.map(item => item.rule).sort(), ["feeds-path-outside-role-folder", "output-path-outside-role-folder"]);
+  });
+}

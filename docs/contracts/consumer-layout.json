@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "$comment": "The consumer layout contract (#1171): one visible clossys/ folder per repository. The four agents keep cells under clossys/agents/<agent>/; other roles retain clossys/<role>/. Root clossys/ owns the package installation, configuration, generated README and machine state. Applications receive generated local source under apps/<app>/src/clossys/.",
+  "$comment": "The consumer layout contract (#1171): one visible clossys/ folder per repository. Native agent cell positions are listed under clossys/agents/<agent>/; other roles retain clossys/<role>/. Root clossys/ owns the package installation, configuration, generated README and machine state. Applications receive generated local source under apps/<app>/src/clossys/.",
   "root": "clossys",
   "readme": "clossys/README.md",
   "stateDir": "clossys/.state",
@@ -11,13 +11,21 @@
     "default": "."
   },
   "rules": [
-    "One owner per folder: director, designer, writer and publisher own clossys/agents/<agent>/, containing tree.json and cells/<id>/v<N>.md. Other roles retain clossys/<role>/. No two roles write the same folder.",
+    "One owner per folder: the declared Director, Designer, Writer and Publisher cell positions and the existing implemented Strategist native position are listed below. Other roles retain clossys/<role>/. No two roles write the same folder.",
     "Visible, not hidden: these are the business's own records. Only machine files go under clossys/.state/; there is no separate .clossys/.",
     "Removing a role removes its folder.",
     "Monorepos: one configuration key (see monorepoRootKey) may place clossys/ inside a workspace package; the default is the repository root.",
+    "Declaration compatibility: safe owned descendants of clossys/<role>/ remain valid; only implemented CellAgent roles strategist, writer, designer and publisher additionally accept clossys/agents/<role>/. The separately retained Director position does not resolve Director/Strategist identity or migration, and compatibility enables no runtime legacy fallback.",
     "clossys/package.json and clossys/clossys.config.ts are required. The package manifest is the only @clossys/* install site; applications consume generated local source at apps/<app>/src/clossys/."
   ],
   "folders": [
+    {
+      "path": "clossys/agents/strategist",
+      "owner": "@clossys/strategist",
+      "kind": "record",
+      "committed": true,
+      "description": "Existing implemented Strategist native cell root: tree.json, cells/<id>/v<N>.md and compiled strategy outputs. Recorded alongside the retained Director position without deciding role identity or migration."
+    },
     {
       "path": "clossys/package.json",
       "owner": "@clossys/producer",

@@ -737,3 +737,36 @@ test("CLI: a plain file directly under packages/ (not a directory, not a symlink
   assert.deepEqual(parsed.table, []);
 });
 
+
+const NATIVE_OUTPUT_ROLES = ["strategist", "writer", "designer", "publisher"];
+const INVALID_OWNED_OUTPUTS = [["alpha", "clossys/agents/alpha/report.json"], ["customer", "clossys/agents/customer/report.json"], ["director", "clossys/agents/director/report.json"], ["writer", "clossys/agents/publisher/report.json"], ["writer", "clossys/publisher/report.json"], ["writer", "clossys/agents/writer-other/report.json"], ["writer", "clossys/agents/writer/../publisher/report.json"], ["writer", "clossys/writer/../publisher/report.json"], ["writer", "/clossys/agents/writer/report.json"], ["writer", "C:/clossys/agents/writer/report.json"], ["writer", "clossys/agents/writer\\../publisher/report.json"], ["writer", "clossys/agents/writer/"], ["agents", "clossys/agents/writer/report.json"]];
+function ownedOutputDescriptor(short, path) {
+  const role = `@scope/${short}`;
+  return descriptor({ role, packageDir: short, manifest: manifest({ name: role, foundry: {
+    outputs: [path], feeds: [{ artifact: "report", path }],
+    capabilities: [{ id: "report", subQuestion: "Is the report current?", worldClass: "A current report", inputs: [], outputs: [path], proofCase: null, maturity: "planned", v0: true }],
+  } }) });
+}
+for (const short of NATIVE_OUTPUT_ROLES) {
+  test(`conformance layout accepts both declaration roots for ${short}`, t => {
+    const root = makeTempRoot(t);
+    for (const path of [`clossys/${short}/report.json`, `clossys/agents/${short}/cells/`]) {
+      const result = evaluateConformance(root, [ownedOutputDescriptor(short, path)]);
+      assert.equal(result.table[0].layout, "declared", path);
+      assert.equal(result.findings.some(item => item.rule.includes("outside-role-folder")), false);
+    }
+  });
+}
+for (const [short, path] of INVALID_OWNED_OUTPUTS) {
+  test(`conformance layout refuses ${short}: ${path}`, t => {
+    const result = evaluateConformance(makeTempRoot(t), [ownedOutputDescriptor(short, path)]);
+    assert.equal(result.table[0].layout, "malformed");
+    assert.equal(result.findings.filter(item => item.rule.includes("outside-role-folder")).length, 3);
+  });
+}
+test("the actual Strategist manifest declares its native output layout", () => {
+  const actual = JSON.parse(readFileSync(join(repoRoot, "packages/strategist/package.json"), "utf8"));
+  const result = evaluateConformance(repoRoot, [descriptor({ role: actual.name, packageDir: "strategist", manifest: actual })]);
+  assert.equal(result.table[0].layout, "declared");
+  assert.equal(result.findings.some(item => item.rule.includes("outside-role-folder")), false);
+});
