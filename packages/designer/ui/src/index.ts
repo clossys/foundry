@@ -135,6 +135,8 @@ export * from "./foundry/use-mobile"
 // Foundry layout primitives (not a shadcn slot): card grids and fixed-ratio specimen frames.
 export * from "./foundry/layout"
 
+export * from "./foundry/studio-home-stock"
+
 // Explicit stock Radix picks for the frame's shared asChild tooltip/popover composition.
 export { Button as RadixButton } from "./components/radix/button"
 export { Popover as RadixPopover, PopoverTrigger as RadixPopoverTrigger, PopoverContent as RadixPopoverContent } from "./components/radix/popover"
