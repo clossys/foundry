@@ -29,6 +29,10 @@ inputs, limits, references). The slot catalog (anatomy, allowed composes,
 copy fields) is `src/catalog/slots/<layer>.json`. Versions are immutable; a
 change is `v<N+1>`.
 
+## Director derivation
+
+- [Derive native Designer drafts](director-brief.md): read the active Director brief, make design decisions as the agent, and declare versioned trait coverage in cell rationale.
+
 ## Loop (one slot)
 
 1. **Read the contract.** Find the slot's row in `<layer>.json` under

@@ -18,8 +18,7 @@ clossys <verb> [--check] [--root <dir>] [--json]
 | `publish` | Publisher |
 | `produce` | The four agents in sequence |
 
-`direct`, `design` and `write` are dispatch stubs in this build, as is `publish`
-without `--install`. They exit `2` with `not implemented in this build`. Help exits `0`.
+`publish` without `--install` is a dispatch stub in this build. They exit `2` with `not implemented in this build`. Help exits `0`.
 
 `clossys publish --install --page <page record.json> [--out <dir>]` installs the
 registry items the consumer pinned (`clossys/selection.json`) for each slot of
@@ -134,6 +133,51 @@ descriptor is shown as not provided, including indexing, sitemap membership,
 publication time and social images. Raw cell source stays in the closed Source
 disclosure. The preview emitter is supplied by Publisher's preview-destination
 integration; Producer never substitutes application source for its snapshot.
+
+## Director and Designer checks
+
+`clossys design --brief` returns the exact active Director inputs, versioned refs,
+unresolved owner facts, prohibition bullets and existing Designer leaves. The
+Designer agent uses the installed `skill/director-brief.md` procedure to author
+creative draft proposals; this CLI makes no creative choices or model calls.
+`design --check` reads active cells, checks Director links and declared per-bullet
+rationale coverage, and runs native value and token-contrast checks. Missing
+contrast bindings are findings; runtime WCAG and visual review remain named limits.
+It exits `0` for no findings, `1` for findings, and `2` when it cannot run.
+`design` without either flag compiles active Designer cells into
+`clossys/agents/designer/compiled`; it creates no drafts or activations.
+`--brief` and `--check` are read-only and mutually exclusive. All three forms
+honour `--root` and `--json`. Writer owns prohibited-copy and locale checks.
+
+`clossys direct [--check]` checks the active Director strategy under
+`clossys/agents/director` using the installed agent's grounding and won't-claim
+rules. Both forms are read-only. It reports active pointers, stored drafts and
+retired versions, and TODO-OWNER lines with their cell versions and locations.
+TODO-OWNER counts are informational. Quoted Never-claim and Never phrases in
+active Proof and Voice cells govern the prohibition check; unquoted entries
+are reported as unchecked. Director source files and generated build directories
+are excluded from surface checks. Grounding scans Markdown and source files;
+prohibitions scan Markdown, text, HTML, JSON and YAML, matching strategist-check's
+default extensions. Missing or invalid inputs, an empty findings registry, and
+missing surface coverage return `2`; native findings return `1`; clean returns
+`0`. JSON includes `summary`, `grounding`, `wontClaim`, `findings`, and `limits`.
+
+## Writer derivation
+
+`clossys write --brief` assembles a structured, read-only brief from the active
+Director cells, including their ids and versions and the Writer leaves to fill.
+It prints the brief; `--json` puts it in the result's `brief` field.
+`clossys write --check` checks Director links, version freshness, voice derivation,
+banned claims and locale coverage using Writer's native checks. Findings appear
+in the message and the JSON result's `checks` field. Both commands preserve cell
+files and outputs. `--brief` and `--check` cannot be combined.
+
+Plain `clossys write` compiles active Writer cells to
+`clossys/agents/writer/compiled` using the existing compile manifest. It does not
+require a clean traceability check or an active Director. Draft cells remain
+outside the compiled copy. These commands make no model or network calls and
+create no drafts; creative derivation follows the Writer package skill in the
+consumer session, followed by the existing cell check and activation flow.
 
 ## Agent mapping API
 

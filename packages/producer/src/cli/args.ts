@@ -5,6 +5,7 @@ export interface CliArgs {
   verb?: Verb;
   help: boolean;
   check: boolean;
+  brief: boolean;
   root?: string;
   json: boolean;
   once: boolean;
@@ -42,6 +43,7 @@ export class CliUsageError extends Error {
 
 export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check> [--check] [--root <dir>] [--json]\n"
   + "Options: --help; produce --once --port <0-65535> --no-open [--out <install out folder>]; publish --install --page <id> | --site <pack id> [--origin <url>] [--build] [--out <dir>]\n"
+  + "Derivation inputs: design|write --brief (read-only; cannot combine with --check)\n"
   + "Page check: clossys check --pages <generated-manifest.json> --report <report.json> [--json]\n"
   + "Slots: clossys check [--slots] [--readiness] [--root <dir>] (enforced by default); migration: clossys migrate slots [--check] [--compare]\n"
   + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root)\n"
@@ -49,7 +51,7 @@ export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check>
   + "Site: clossys publish --install --site <route pack id> [--origin <deployment origin>] [--build] [--out <dir>] [--records <library dir>]... (one routed app: content-map paths, route-pack slots, one frame)";
 
 export function parseArgs(argv: readonly string[]): CliArgs {
-  const args: CliArgs = { help: false, check: false, json: false, once: false, noOpen: false, suites: false, strict: false, records: [], install: false, build: false, slots: false, readiness: false };
+  const args: CliArgs = { help: false, check: false, brief: false, json: false, once: false, noOpen: false, suites: false, strict: false, records: [], install: false, build: false, slots: false, readiness: false };
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index]!;
     const value = (): string => {
@@ -60,6 +62,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
     switch (arg) {
       case "--help": args.help = true; break;
       case "--check": args.check = true; break;
+      case "--brief": args.brief = true; break;
       case "--json": args.json = true; break;
       case "--root": args.root = value(); break;
       case "--once": args.once = true; break;
@@ -102,6 +105,8 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   if (args.install && args.page === undefined && args.site === undefined && !args.help) throw new CliUsageError("publish --install requires --page <page id | page record.json> or --site <route pack id>");
   if ((args.page !== undefined || args.site !== undefined) && !args.install) throw new CliUsageError("--page and --site require --install");
   if ((args.build || args.origin !== undefined) && args.site === undefined) throw new CliUsageError("--build and --origin require --site");
+  if (args.brief && args.verb !== "write" && args.verb !== "design") throw new CliUsageError("--brief requires design or write");
+  if (args.brief && args.check) throw new CliUsageError("--brief and --check are mutually exclusive");
   if (!args.verb && !args.help) throw new CliUsageError("A verb is required");
   if (args.verb === "check" && !args.help) {
     const page = args.pages !== undefined || args.report !== undefined;

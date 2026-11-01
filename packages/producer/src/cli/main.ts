@@ -11,6 +11,9 @@ import { discoverRoot } from "./root.js";
 import { runProduce } from "./produce.js";
 import { runCheck } from "./check.js";
 import { runPublish } from "./publish.js";
+import { runWrite } from "./write.js";
+import { runDesign } from "./design.js";
+import { runDirect } from "./direct.js";
 
 const VERB_AGENTS: Record<Exclude<Verb, "check">, readonly AgentKind[]> = {
   direct: ["director"],
@@ -30,6 +33,9 @@ export interface CliResult {
   suites?: RecordSuitesReport;
   slots?: import("../check/slot-resolve.js").SlotResolveReport;
   reportPath?: string;
+  brief?: unknown;
+  checks?: unknown;
+  compilation?: unknown;
 }
 
 export async function runCli(argv: readonly string[], cwd = process.cwd()): Promise<CliResult> {
@@ -44,6 +50,9 @@ export async function runCli(argv: readonly string[], cwd = process.cwd()): Prom
     if (verb === "check") return await runCheck(args, cwd);
     const root = discoverRoot(resolve(cwd, args.root ?? "."));
     if (verb === "produce") return await runProduce(args, root);
+    if (verb === "write") return await runWrite(args, root);
+    if (verb === "design") return await runDesign(args, root);
+    if (verb === "direct") return await runDirect(args, root);
     if (verb === "publish" && args.install) return await runPublish(args, root, cwd);
     for (const kind of VERB_AGENTS[verb]) resolveAgent(kind);
     return { exitCode: 2, message: `${verb}: not implemented in this build`, verb, root, check: args.check };
