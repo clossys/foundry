@@ -28,6 +28,8 @@ import {
   viewportSpecimen, type AgentLeafRecords, type GalleryPreviews, type LibraryAgent, type StudioLinks,
 } from '../lib/agent-library';
 import { stringChanges } from '../lib/agent-options';
+import { loadSlotDetail, slotDetailInputs } from '../lib/slot-detail';
+import type { SlotDetail } from '../../src/server/slot-detail';
 import { AGENT_LABELS, AGENTS, type Agent } from '../lib/agents';
 import { loadCell } from '../lib/cells-client';
 import { designerGalleryInput, designerLeafInputs, designerNotice, loadDesignerLeaf, type DesignerLeaf } from '../lib/designer-library';
@@ -262,9 +264,11 @@ async function loadLeaves(agent: LibraryAgent, slugs: readonly string[], signal:
   return rows;
 }
 
-type LeafRecord = { agent: 'designer'; leaf: DesignerLeaf } | { agent: LibraryAgent; leaf: AgentLeafRecords; previews: ReadonlyMap<number, OptionRow['preview']>; specimens?: readonly ViewportSpecimen[] };
+type LeafRecord = { agent: 'slot'; detail: SlotDetail } | { agent: 'designer'; leaf: DesignerLeaf } | { agent: LibraryAgent; leaf: AgentLeafRecords; previews: ReadonlyMap<number, OptionRow['preview']>; specimens?: readonly ViewportSpecimen[] };
 
 async function loadLeaf(agent: string, slug: string, signal: AbortSignal): Promise<LeafRecord | undefined> {
+  const detail = await loadSlotDetail(agent, slug, signal);
+  if (detail !== undefined) return detail ? { agent: 'slot', detail } : undefined;
   if (agent === 'designer') { const leaf = await loadDesignerLeaf(slug, signal); return leaf && { agent, leaf }; }
   if (!isLibraryAgent(agent)) return undefined;
   const leaf = await loadAgentLeaf(agent, slug, signal);
@@ -309,6 +313,7 @@ function useLeafInputs(page: StudioPageRecord, slug: string): Loaded {
     const links = mapLinks(map);
     const list: readonly StudioReport[] = reports.state === 'ready' ? reports.value : [];
     const ready = (inputs: Inputs): Loaded => ({ state: 'ready', inputs, modules: { checks: leafChecks(inputs, list, agent, slug) } });
+    if (record.value.agent === 'slot') return ready(slotDetailInputs(record.value.detail, links, resolved));
     if (record.value.agent === 'designer') return ready(designerLeafInputs(record.value.leaf, resolved, links));
     const { leaf, previews, specimens } = record.value;
     const specimen = specimens

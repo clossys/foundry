@@ -17,6 +17,9 @@ import { DESIGNER_FONT_PREFIX, consumerBrand, consumerFontFile, consumerGlobals 
 import { installedSpecimens } from "./installed-specimens.js";
 import { designerDefaultTheme, designerGallery, designerLeaf } from "./designer-library.js";
 import { agentGallery, agentLeaf, isLibraryAgent } from "./agent-library.js";
+import { slotDetail } from "./slot-detail.js";
+import { hasSlotModel } from "../records/slots.js";
+import { SLOT_AGENTS, type SlotAgent } from "../records/slot-model/index.js";
 import { specimenMount } from "../publish/site-server.js";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -116,6 +119,13 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
     if (pathname === "/api" || pathname.startsWith("/api/")) {
       if (request.method !== "GET") { json(response, 405, { error: "API is read-only" }); return; }
       if (pathname === "/api/health") { json(response, 200, { ok: !!child, studio: child ? "ready" : "starting" }); return; }
+      const slotMatch = /^\/api\/slots\/([a-z]+)\/([a-z0-9][a-z0-9.-]*)$/.exec(pathname);
+      if (slotMatch) {
+        if (!(SLOT_AGENTS as readonly string[]).includes(slotMatch[1]!)) { json(response, 404, { state: "missing" }); return; }
+        if (!hasSlotModel(join(options.root, "clossys"))) { json(response, 200, { state: "legacy" }); return; }
+        const detail = slotDetail(options.root, slotMatch[1] as SlotAgent, slotMatch[2]!);
+        json(response, detail ? 200 : 404, detail ? { state: "ready", detail } : { state: "missing" }); return;
+      }
       if (pathname === "/api/config") {
         const [theme, selection] = await Promise.all([studioTheme(options.root), studioSelection(options.root)]);
         json(response, 200, { token, tokenHeader: TOKEN_HEADER, readOnly: true, theme, selection, compilation: options.compilation ?? [], agents: AGENT_KINDS.map(agent => ({ agent, packageName: resolveAgent(agent).packageName })) }); return;
