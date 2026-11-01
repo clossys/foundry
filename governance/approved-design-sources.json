@@ -8,6 +8,12 @@
       "provenanceFile": "packages/designer/references/manifest.json"
     },
     {
+      "registry": "shadcn-aria",
+      "name": "shadcn/ui Aria",
+      "url": "https://ui.shadcn.com/r/styles/aria-nova/{name}.json",
+      "provenanceFile": "packages/designer/references/manifest.json"
+    },
+    {
       "registry": "magicui",
       "name": "Magic UI",
       "url": "https://magicui.design/r/{name}.json",

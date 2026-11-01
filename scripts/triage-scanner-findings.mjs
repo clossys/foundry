@@ -106,6 +106,11 @@ export function groupFindings(rows, ruleKey) {
   return [...groups.values()].sort((a, b) => a.file.localeCompare(b.file) || a.rule.localeCompare(b.rule));
 }
 
+export function nameForeignNeed(group) {
+  const id = digest(JSON.stringify([group.rule, group.file])).slice(0, 16);
+  return { id: `NEED-FOREIGN-${id}`, ...group, status: "NEED" };
+}
+
 export function generateIgnore(proofs) {
   const seen = new Set();
   const lines = ["# Exact historical fingerprints, each backed by structural evidence."];
@@ -128,9 +133,9 @@ export function triage(root, foreign, leaks) {
     const carried = designSourceProvenance(readFileSync(join(root, group.file), "utf8"), sources);
     const references = [...new Set(group.findings.map(row => row.reference))];
     const approvals = sources.filter(source => references.some(reference => group.rule === "forge-slug" ? reference.toLowerCase() === source.repository : reference.toLowerCase() === `@${source.scope}`));
-    return { rule: group.rule, file: group.file, count: group.findings.length, status: "NEEDS-SOURCE-FIX",
+    return nameForeignNeed({ rule: group.rule, file: group.file, count: group.findings.length,
       approvedSources: approvals.map(source => ({ registry: source.registry, provenanceFile: source.provenanceFile, carried: carried.has(source.registry) })),
-      reason: approvals.length ? "Approved source references lack file-local provenance; other references in this group remain unapproved." : "No approved source owns these references; no admission granted." };
+      reason: approvals.length ? "Approved source references lack file-local provenance; other references in this group remain unapproved." : "No approved source owns these references; no admission granted." });
   });
   const proofs = leaks.map(row => ({ file: row.file, rule: row.rule, fingerprint: row.fingerprint, ...proveFingerprint(row, readBlob) }));
   const leakGroups = groupFindings(proofs, "rule").map(group => ({ file: group.file, rule: group.rule, count: group.findings.length,

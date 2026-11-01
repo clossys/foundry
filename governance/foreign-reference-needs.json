@@ -1,0 +1,1973 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Report only: these NEEDs grant no scanner admission.",
+  "findings": 652,
+  "needs": [
+    {
+      "id": "NEED-FOREIGN-0d66daf0f27c44a4",
+      "rule": "bare-scope",
+      "file": "packages/controller/src/review/entrypoints.test.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-115ba8e039c04df9",
+      "rule": "forge-slug",
+      "file": "packages/designer/references/diceui/color-picker@04aad54/color-picker.json",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-6ac0dc453d17548c",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/diceui/color-picker@04aad54/color-picker.json",
+      "count": 2,
+      "approvedSources": [
+        {
+          "registry": "diceui",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-65bbf03de6de26a8",
+      "rule": "forge-slug",
+      "file": "packages/designer/references/diceui/color-picker@04aad54/ui/color-picker.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-d4522fe482852e1b",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/diceui/file-upload@04aad54/file-upload.json",
+      "count": 2,
+      "approvedSources": [
+        {
+          "registry": "diceui",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-ff35e2de765dc0b2",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/diceui/media-player@04aad54/media-player.json",
+      "count": 1,
+      "approvedSources": [
+        {
+          "registry": "diceui",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-453f04467ec5488d",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/diceui/scroll-spy@04aad54/scroll-spy.json",
+      "count": 2,
+      "approvedSources": [
+        {
+          "registry": "diceui",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-e776eeefa365eac6",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/diceui/stepper@04aad54/stepper.json",
+      "count": 2,
+      "approvedSources": [
+        {
+          "registry": "diceui",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-55a4883f1b1371f1",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/diceui/tags-input@04aad54/tags-input.json",
+      "count": 2,
+      "approvedSources": [
+        {
+          "registry": "diceui",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-0e3a49b2fb72019c",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/diceui/tags-input@04aad54/ui/tags-input.tsx",
+      "count": 1,
+      "approvedSources": [
+        {
+          "registry": "diceui",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-cb3951724f7778a7",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/diceui/timeline@04aad54/timeline.json",
+      "count": 1,
+      "approvedSources": [
+        {
+          "registry": "diceui",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-4b8e705451a3f9eb",
+      "rule": "forge-slug",
+      "file": "packages/designer/references/fontsource/inter-tight@5.3.0/metadata.json",
+      "count": 3,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-c9a37bc379e7afff",
+      "rule": "forge-slug",
+      "file": "packages/designer/references/fontsource/inter-tight@5.3.0/package.json",
+      "count": 2,
+      "approvedSources": [
+        {
+          "registry": "fontsource",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-081329e98dfccbeb",
+      "rule": "forge-slug",
+      "file": "packages/designer/references/fontsource/LICENSE",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-1ca9e69bb4eb3dcd",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/magicui/file-tree@efe76fc/file-tree.json",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-c1312be5ac5d5f1d",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/magicui/file-tree@efe76fc/registry/magicui/file-tree.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-624ab321e976eadb",
+      "rule": "bare-scope",
+      "file": "packages/designer/references/manifest.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-308db725b56cd055",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/manifest.json",
+      "count": 8,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-7eeec196075cad56",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/shadcn-aria/card@4.23.0/card.json",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-fd9529716f43c046",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/shadcn-aria/card@4.23.0/registry/aria-nova/ui/card.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-022063a07fd0b11e",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/shadcn-aria/dashboard-01@4.23.0/dashboard-01.json",
+      "count": 12,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-b2beb9198d3b58af",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/shadcn-aria/dashboard-01@4.23.0/registry/aria-nova/blocks/dashboard-01/components/chart-area-interactive.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-fa61de3e8a342316",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/shadcn-aria/dashboard-01@4.23.0/registry/aria-nova/blocks/dashboard-01/components/section-cards.tsx",
+      "count": 4,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-85013c92e3d49b63",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/shadcn-aria/dashboard-01@4.23.0/registry/aria-nova/blocks/dashboard-01/page.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-80df9c379c447df0",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/shadcn-aria/drawer@4.23.0/drawer.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-d5089e494275763d",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/shadcn-aria/drawer@4.23.0/registry/aria-nova/ui/drawer.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-c7a4ab615e65c513",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/shadcn-aria/field@4.23.0/field.json",
+      "count": 5,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-d1f7766ec02e4a65",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/shadcn-aria/field@4.23.0/registry/aria-nova/ui/field.tsx",
+      "count": 5,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-b060fb2c20de3dbd",
+      "rule": "bare-scope",
+      "file": "packages/designer/references/shadcn-aria/message-example@4.23.0/message-example.json",
+      "count": 5,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-083eaedeb0d0b237",
+      "rule": "bare-scope",
+      "file": "packages/designer/references/shadcn-aria/message-example@4.23.0/registry/aria-nova/examples/message-example.tsx",
+      "count": 5,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-499a06533971b7fc",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/shadcn-aria/message-scroller-example@4.23.0/message-scroller-example.json",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-31a7cbd451082005",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/shadcn-aria/message-scroller-example@4.23.0/registry/aria-nova/examples/message-scroller-example.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-7ceb6e327ed9afa0",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/shadcn/card@4.23.0/card.json",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-f00eabe14f9850cd",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/shadcn/card@4.23.0/registry/radix-nova/ui/card.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-52b194794dc52971",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/shadcn/combobox@4.23.0/combobox.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-112808ee13478139",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/shadcn/combobox@4.23.0/registry/radix-nova/ui/combobox.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-de71d94fdf74f438",
+      "rule": "forge-slug",
+      "file": "packages/designer/references/shadcn/command@4.23.0/command.json",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-14629c7ef9b0c5ee",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/shadcn/field@4.23.0/field.json",
+      "count": 5,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-229d465e500591d1",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/shadcn/field@4.23.0/registry/radix-nova/ui/field.tsx",
+      "count": 5,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-790bae66ce2ab331",
+      "rule": "forge-slug",
+      "file": "packages/designer/references/shadcn/resizable@4.23.0/resizable.json",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-f204364a9e881eea",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/tailark-oss/mist-accordion@8139698/mist/ui/accordion.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-d770d7da703f9dd6",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/tailark-oss/mist-button@8139698/mist/ui/button.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-4f9b912c71ce717a",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/tailark-oss/mist-label@8139698/mist/ui/label.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-121b36fe06daec20",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/tailark-oss/mist-select@8139698/mist/ui/select.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-e6808f622fc09295",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/tailark-oss/mist-toggle-group@8139698/mist/ui/toggle-group.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-499687abbe0283ee",
+      "rule": "npm-scope",
+      "file": "packages/designer/references/tailark-oss/mist-toggle@8139698/mist/ui/toggle.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-c6c4879ae4e04525",
+      "rule": "bare-scope",
+      "file": "packages/designer/scripts/check-provenance.mjs",
+      "count": 3,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-450e67c13d755a0b",
+      "rule": "bare-scope",
+      "file": "packages/designer/scripts/check-ref-verbatim.mjs",
+      "count": 3,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-4983a1009eb04bc8",
+      "rule": "forge-slug",
+      "file": "packages/designer/scripts/import-shadcn-presets.mjs",
+      "count": 1,
+      "approvedSources": [
+        {
+          "registry": "shadcn",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "shadcn-aria",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-ba2afb6178a922fd",
+      "rule": "forge-slug",
+      "file": "packages/designer/scripts/inventory-shadcn-refresh.mjs",
+      "count": 2,
+      "approvedSources": [
+        {
+          "registry": "shadcn",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "shadcn-aria",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-2bc025589416cce6",
+      "rule": "npm-scope",
+      "file": "packages/designer/scripts/inventory-shadcn-refresh.mjs",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-3f2e91a9cd5c741e",
+      "rule": "bare-scope",
+      "file": "packages/designer/scripts/ref-verbatim/diff.mjs",
+      "count": 4,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-6c35124cb5c1f35d",
+      "rule": "npm-scope",
+      "file": "packages/designer/scripts/ref-verbatim/normalize.mjs",
+      "count": 3,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-2673156c0a1f96ee",
+      "rule": "bare-scope",
+      "file": "packages/designer/scripts/references-sources.json",
+      "count": 6,
+      "approvedSources": [
+        {
+          "registry": "shadcn-aria",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "magicui",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "diceui",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "tailark-oss",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-7143d4da7ddbe1c2",
+      "rule": "forge-slug",
+      "file": "packages/designer/scripts/references-sources.json",
+      "count": 18,
+      "approvedSources": [
+        {
+          "registry": "shadcn",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "shadcn-aria",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "magicui",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "diceui",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "tailark-oss",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "lucide",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "tailwindcss-typography",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "fontsource",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-1dd88f7e1239a748",
+      "rule": "npm-scope",
+      "file": "packages/designer/scripts/references-sources.json",
+      "count": 36,
+      "approvedSources": [
+        {
+          "registry": "tailark-oss",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-ea0412d2c48f85e1",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog-bundles.data.json",
+      "count": 80,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-556f08d0e0a798a8",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/catalog-bundles.data.json",
+      "count": 6,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-01b1f5e39dd485f7",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/catalog-core/__fixtures__/wiring/wl3.frame.tsx.txt",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-f6be7e3d8b60203d",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/catalog-core/check-components.test.ts",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-d193432885d87803",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/catalog-core/check-components.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-e6e6c0e7ca3907e0",
+      "rule": "bare-scope",
+      "file": "packages/designer/src/catalog-core/check-guidance.test.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-c65255be95802c87",
+      "rule": "bare-scope",
+      "file": "packages/designer/src/catalog-core/component-integration.test.ts",
+      "count": 3,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-a4d332ec65360961",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/catalog-core/emit.golden.test.ts",
+      "count": 5,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-c4f4d33370276eda",
+      "rule": "bare-scope",
+      "file": "packages/designer/src/catalog-core/emit.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-30454f710b82bc0e",
+      "rule": "bare-scope",
+      "file": "packages/designer/src/catalog-core/selected-library-chain.test.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-6ec2cf207b274b00",
+      "rule": "bare-scope",
+      "file": "packages/designer/src/catalog-core/token-definitions.test.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-93fad4232440902c",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/catalog-core/wiring.test.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-f699c80e60087240",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/adapters/rac-starter.json",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-cdcf539294b8d20b",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/open-props/assets.image-ratio.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-ff95501067f89cb2",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-arrow-right.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-028706d7d25a45c5",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-business.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-fd8c147f45d3efda",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-check.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-9589583df9d23ac2",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-chevron-down.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-c05ce2ed49d44ae8",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-chevron-left.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-515740dffd77cce7",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-chevron-right.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-564dd56bf4806659",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-chevron-up.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-437a1127c03dcdb8",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-close.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-05c2c9fe1a2f28b1",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-danger.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-42d829fc15ab7230",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-date.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-0662f8d5ae3ef900",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-document-approved.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-a20965bc28bc1be4",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-document.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-c4b6971edea4b318",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-external-link.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-9e6269aef5313ed0",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-folder.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-8b16c8edeca7bbc5",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-grid-view.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-3055a9244c1d80f7",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-guide.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-5c743ab11d09e234",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-home.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-61edaac640008700",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-info.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-97c9f66c76de35af",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-institution.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-7339b650e7b145b2",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-integration.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-158f88297b960052",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-layers.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-4feb5b69a6526a9c",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-legal.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-9346bcf0d382fd86",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-list-view.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-4e5b89392f00c227",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-locked.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-6a548a03de087b56",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-organization.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-c1c41543bbf24bd1",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-package.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-47e1d3f10c952e54",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-payment.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-7cb3e64aba276e1b",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-receipt.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-3eb0020135cf57f5",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-search.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-15ca8fc78f48c673",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-security.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-dc1dcf13ddeca255",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-settings.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-08170043c2883bff",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-success.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-9f11e653df7c6ddf",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-team.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-3f7fba40e508887c",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-theme-dark.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-e7b89dabb14959bf",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-theme-light.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-52a2f51b37f3ec7a",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-theme-system.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-036dfdb53ecd8bd1",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-time.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-47cbcc755159f0c3",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-user.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-1c00c87e3e1dc6d9",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-warning.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-fdad5f29b252fdd8",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/phosphor/assets.icon-website.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-35d3aa52835be4a1",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/rac-starter/components.color-picker.json",
+      "count": 3,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-7ea4713fe28b6339",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/rac-starter/components.form.json",
+      "count": 3,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-b0c2e3648a745228",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/rac-starter/components.navigation-tree.json",
+      "count": 3,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-34ae30621c3b6d1d",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/rac-starter/components.number-field.json",
+      "count": 3,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-cd984647827e153e",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/rac-starter/components.tag-group.json",
+      "count": 3,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-bd7ad6acf3a16a08",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/rac-starter/components.toolbar.json",
+      "count": 3,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-0c18fade178d2860",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/fills/rac-starter/components.tree.json",
+      "count": 3,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-628d8c5f1dc5ed9e",
+      "rule": "bare-scope",
+      "file": "packages/designer/src/catalog/ref-verbatim.test.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-e30d8275e2049cf9",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/catalog/ref-verbatim.test.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-871b083537569026",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/rules/shadcn-refresh-needs.json",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-e4de359687a53be8",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/catalog/rules/shadcn-refresh-needs.json",
+      "count": 67,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-dd2525ada5246b87",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/sources/carbon-colors.json",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-b40009386b9cbb29",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/catalog/sources/carbon-colors.json",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-fe0ee759f303126c",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/sources/open-props.json",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-bf4461a6fdbb4815",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/sources/phosphor.json",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-3c2f99a33eb6bb1f",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/sources/rac-starter.json",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-68b129e246abbe5f",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/catalog/sources/radix-colors.json",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-083e6dfbeea78bce",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/catalog/sources/radix-colors.json",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-80da7d14a139a7ea",
+      "rule": "bare-scope",
+      "file": "packages/designer/src/components/Calendar.selected-api.test.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-13427822271a281e",
+      "rule": "bare-scope",
+      "file": "packages/designer/src/components/Dialog.selected-api.test.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-7405e6ec0ac182bd",
+      "rule": "bare-scope",
+      "file": "packages/designer/src/components/Menu.selected-api.test.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-6e81ff93128af29a",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/components/preview-runtime/components/card/card.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-b08eea4573d49c8d",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/components/preview-runtime/notices/THIRD-PARTY.md",
+      "count": 1,
+      "approvedSources": [
+        {
+          "registry": "shadcn",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "shadcn-aria",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-4548c01e05b10a8d",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/importers/__fixtures__/shadcn-aria/button.golden.json",
+      "count": 1,
+      "approvedSources": [
+        {
+          "registry": "shadcn",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "shadcn-aria",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-912e2d833be87729",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/importers/__fixtures__/shadcn-aria/calendar.golden.json",
+      "count": 1,
+      "approvedSources": [
+        {
+          "registry": "shadcn",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "shadcn-aria",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-6e6f02fa2d418f09",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/importers/__fixtures__/shadcn-aria/card.json",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-64af13fbc7c96f88",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/importers/__fixtures__/shadcn-aria/checkbox.golden.json",
+      "count": 1,
+      "approvedSources": [
+        {
+          "registry": "shadcn",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "shadcn-aria",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-94d3ccde2f86c64d",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/importers/__fixtures__/shadcn-aria/combo-box.golden.json",
+      "count": 1,
+      "approvedSources": [
+        {
+          "registry": "shadcn",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "shadcn-aria",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-1dcd079ded85a09f",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/importers/__fixtures__/shadcn-aria/dialog.golden.json",
+      "count": 1,
+      "approvedSources": [
+        {
+          "registry": "shadcn",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "shadcn-aria",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-eb1336d3ba12f243",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/importers/__fixtures__/shadcn-aria/field.json",
+      "count": 5,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-ffe913f5842b4fc2",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/importers/__fixtures__/shadcn-aria/select.golden.json",
+      "count": 1,
+      "approvedSources": [
+        {
+          "registry": "shadcn",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "shadcn-aria",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-34c0681697bf822d",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/importers/__fixtures__/shadcn-aria/switch.golden.json",
+      "count": 1,
+      "approvedSources": [
+        {
+          "registry": "shadcn",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "shadcn-aria",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-a8aef27a46486933",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/importers/__fixtures__/shadcn-aria/tabs.golden.json",
+      "count": 1,
+      "approvedSources": [
+        {
+          "registry": "shadcn",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "shadcn-aria",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-a3b4655bdc5f95e3",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/importers/open-props-image-ratio.test.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-5625de5a5e9ddabc",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/importers/phosphor-pin.json",
+      "count": 40,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-66d5e7e077452fdb",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/importers/rewrite.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-f0f98ba98fcc9be0",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/importers/shadcn-charts.ts",
+      "count": 1,
+      "approvedSources": [
+        {
+          "registry": "shadcn",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "shadcn-aria",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-2eed062953f0e868",
+      "rule": "bare-scope",
+      "file": "packages/designer/src/importers/vendor/carbon/color-palette.scss",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-a42dff93909a0ac2",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/importers/vendor/carbon/color-palette.scss",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-4caaed8293aec206",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/importers/vendor/carbon/provenance.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-8c7686530271f656",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/importers/vendor/carbon/provenance.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-ad5b99ee954a9889",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/importers/vendor/open-props/provenance.json",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-bc1802953f6b3121",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/importers/vendor/phosphor/provenance.json",
+      "count": 43,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-6e4fdb1e3999ba8b",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/importers/vendor/phosphor/upstream-package.json.txt",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-26ce6c59387b15fd",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/importers/vendor/phosphor/upstream-package.json.txt",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-5cea702eb078e505",
+      "rule": "forge-slug",
+      "file": "packages/designer/src/importers/vendor/radix/provenance.json",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-fd9cc0ce65c3c57e",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/importers/vendor/radix/provenance.json",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-b3845fbfef3ea1e5",
+      "rule": "bare-scope",
+      "file": "packages/designer/src/library-cli/__fixtures__/surface-library.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-831e684189a14230",
+      "rule": "bare-scope",
+      "file": "packages/designer/src/library-cli/apply-decisions.test.ts",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-7d8b6d70eb4b764d",
+      "rule": "bare-scope",
+      "file": "packages/designer/src/library-cli/capture.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-db1285c08370b403",
+      "rule": "bare-scope",
+      "file": "packages/designer/src/library-cli/cells.test.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-1435df7f91513e3f",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/library-cli/consumer-dogfood.test.ts",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-3afbfb7aa1598e17",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/library-cli/default-candidates.questions.json",
+      "count": 11,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-e031cc13458159a1",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/rac-starter.data.json",
+      "count": 3,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-aa7ad2d96f1f141f",
+      "rule": "bare-scope",
+      "file": "packages/designer/src/render-primitive-imports.test.ts",
+      "count": 7,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-08b5c88835c8ccd8",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/render-primitive-imports.test.ts",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-9bbfb87de803517c",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/studio/default-component-previews.test.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-442359a97850477e",
+      "rule": "npm-scope",
+      "file": "packages/designer/src/studio/system-canvas/surface-preview.test.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-d02de7ac25b41977",
+      "rule": "npm-scope",
+      "file": "packages/designer/styles/utilities.css",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-8cdb78f7d75d9d0a",
+      "rule": "npm-scope",
+      "file": "packages/designer/ui/src/components/ui/card.tsx",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-e5694a441f646a22",
+      "rule": "npm-scope",
+      "file": "packages/designer/ui/src/components/ui/field.tsx",
+      "count": 5,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-e42001d1ada3ce07",
+      "rule": "bare-scope",
+      "file": "packages/producer/src/cli/specimen.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-fcfde8fb2657f0e3",
+      "rule": "bare-scope",
+      "file": "packages/producer/src/publish/install.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-79410c5ce2d6ee17",
+      "rule": "bare-scope",
+      "file": "packages/producer/src/records/records.test.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-42fc2e0cd4f0d761",
+      "rule": "bare-scope",
+      "file": "packages/producer/src/records/status.ts",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-323407e21229cc71",
+      "rule": "bare-scope",
+      "file": "packages/producer/src/server/designer-library.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-926d1b90a0800de6",
+      "rule": "bare-scope",
+      "file": "packages/producer/src/server/installed-specimens.ts",
+      "count": 4,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-30ca3f46a41e055f",
+      "rule": "bare-scope",
+      "file": "packages/producer/src/server/library-selection.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-98a0363b16330def",
+      "rule": "forge-slug",
+      "file": "packages/producer/src/server/selection-shadcn-base.ts",
+      "count": 1,
+      "approvedSources": [
+        {
+          "registry": "shadcn",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        },
+        {
+          "registry": "shadcn-aria",
+          "provenanceFile": "packages/designer/references/manifest.json",
+          "carried": false
+        }
+      ],
+      "reason": "Approved source references lack file-local provenance; other references in this group remain unapproved.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-fd32852d74c39917",
+      "rule": "bare-scope",
+      "file": "packages/producer/src/specimen/library-source.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-a6f3c8663937ac69",
+      "rule": "bare-scope",
+      "file": "packages/producer/src/specimen/thumbnails.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-57be271af826f697",
+      "rule": "bare-scope",
+      "file": "packages/publisher/src/install/index.ts",
+      "count": 5,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-5f9f8dbe87f886c4",
+      "rule": "npm-scope",
+      "file": "packages/publisher/src/install/install.test.ts",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-61a721f6e59264ca",
+      "rule": "bare-scope",
+      "file": "packages/publisher/src/specimen/handler.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-b1b189392b57f8e0",
+      "rule": "bare-scope",
+      "file": "packages/publisher/src/specimen/render.ts",
+      "count": 3,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-17aed0ea6019a05b",
+      "rule": "bare-scope",
+      "file": "packages/publisher/src/web/registered-route-registry-binding.test.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-a320cad6ccdc1b51",
+      "rule": "bare-scope",
+      "file": "packages/publisher/src/web/registered-route-server-loader.test.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-a24add6f7659fc5f",
+      "rule": "bare-scope",
+      "file": "packages/strategist/src/citations/index.test.ts",
+      "count": 1,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    },
+    {
+      "id": "NEED-FOREIGN-a2cdec27ff6fb595",
+      "rule": "npm-scope",
+      "file": "scripts/designer-dogfood.test.mjs",
+      "count": 2,
+      "approvedSources": [],
+      "reason": "No approved source owns these references; no admission granted.",
+      "status": "NEED"
+    }
+  ]
+}

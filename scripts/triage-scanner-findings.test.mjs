@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
-import { generateIgnore, groupFindings, proveFingerprint, triage } from "./triage-scanner-findings.mjs";
+import { generateIgnore, groupFindings, nameForeignNeed, proveFingerprint, triage } from "./triage-scanner-findings.mjs";
 
 const commit = "a".repeat(40), sourceTree = "b".repeat(40);
 const file = "scripts/lib/designer-foundation.json";
@@ -72,4 +72,15 @@ test("findings are grouped by both rule and exact path", () => {
   assert.equal(groups.length, 3);
   assert.equal(groups.find(group => group.file === "src/a.ts" && group.rule === "scope").findings.length, 2);
   assert.throws(() => groupFindings([{ file: "../escape", kind: "scope" }], "kind"), /Invalid metadata/);
+});
+
+test("each unresolved rule-path group receives a stable NEED with no admission", () => {
+  const group = { file: "src/source.ts", rule: "npm-scope", count: 2, approvedSources: [] };
+  const need = nameForeignNeed(group);
+  assert.equal(need.status, "NEED");
+  assert.match(need.id, /^NEED-FOREIGN-[a-f0-9]{16}$/);
+  assert.equal(nameForeignNeed({ ...group, count: 3 }).id, need.id);
+  assert.notEqual(nameForeignNeed({ ...group, rule: "forge-slug" }).id, need.id);
+  assert.notEqual(nameForeignNeed({ ...group, file: "src/other.ts" }).id, need.id);
+  assert.deepEqual(need.approvedSources, []);
 });
