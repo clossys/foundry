@@ -17,7 +17,7 @@ import { SPECIMEN_CHROME_CSS } from "./chrome.js";
 import type { SpecimenFile, SpecimenRecord, SpecimenRecordSource } from "./types.js";
 
 /** Bumped when the renderer's output for the same record changes. */
-export const SPECIMEN_RENDERER_VERSION = "specimen-2";
+export const SPECIMEN_RENDERER_VERSION = "specimen-3";
 
 export interface SpecimenBuild {
   readonly hash: string;
@@ -119,9 +119,31 @@ async function compileCss(sources: readonly { content: string; extension: string
 }
 
 /** Files the element imports through the `@/` alias, found in its own payload or a sibling record. */
-async function closure(record: SpecimenRecord, source: SpecimenRecordSource | undefined, errors: string[]): Promise<Map<string, string>> {
+async function closure(record: SpecimenRecord, source: SpecimenRecordSource | undefined, errors: string[]) {
   const files = new Map<string, string>();
-  for (const file of record.payload.files) files.set(posix.normalize(file.path), file.content);
+  const locations = new Map<string, string>();
+  let identity: string | undefined;
+  for (const file of record.payload.files) {
+    if (!safePath(file.path) || files.has(file.path)) errors.push(`invalid or duplicate payload path ${file.path}`);
+    else files.set(file.path, file.content);
+  }
+  try {
+    const dependencies = await source?.dependencies?.(record);
+    if (dependencies) {
+      identity = dependencies.identity;
+      if (typeof identity !== "string" || !identity) throw new Error("host dependencies need an identity");
+      // Copy primitive values into owned maps; the source cannot later change a cached build.
+      const targets = new Set<string>();
+      for (const { path, target } of dependencies.locations) {
+        if (!safePath(path) || !safePath(target) || !files.has(path) || locations.has(path) || targets.has(target) || (files.has(target) && target !== path)) throw new Error(`invalid or conflicting dependency location ${path}`);
+        locations.set(path, target); targets.add(target);
+      }
+      for (const { path, content } of dependencies.files) {
+        if (!safePath(path) || typeof content !== "string" || files.has(path) || targets.has(path)) throw new Error(`invalid or conflicting dependency file ${path}`);
+        files.set(path, content);
+      }
+    }
+  } catch (error) { errors.push(`specimen dependencies: ${error instanceof Error ? error.message : String(error)}`); }
   const seen = new Set<string>([record.id]);
   const pending = [...files.keys()].filter(path => CODE.test(path));
   while (pending.length) {
@@ -142,7 +164,11 @@ async function closure(record: SpecimenRecord, source: SpecimenRecordSource | un
       }
     }
   }
-  return files;
+  return { files, locations, identity };
+}
+
+function safePath(path: string): boolean {
+  return typeof path === "string" && !!path && !path.startsWith("/") && !/[\\:\x00-\x1f\x7f]/.test(path) && !path.split("/").some(part => !part || part === "." || part === "..");
 }
 
 function aliasTarget(files: ReadonlyMap<string, string>, alias: string): string | undefined {
@@ -152,14 +178,19 @@ function aliasTarget(files: ReadonlyMap<string, string>, alias: string): string 
   return targets.length === 1 ? targets[0] : undefined;
 }
 
-function relativeTarget(files: ReadonlyMap<string, string>, importer: string, specifier: string): string | undefined {
+function relativeTarget(files: ReadonlyMap<string, string>, nativePaths: ReadonlyMap<string, string>, importer: string, specifier: string): string | undefined {
   const base = posix.normalize(posix.join(posix.dirname(importer), specifier));
-  return [base, ...[".tsx", ".ts", ".jsx", ".js", "/index.tsx", "/index.ts"].map(ext => base + ext)].find(path => files.has(path));
+  for (const path of [base, ...[".tsx", ".ts", ".jsx", ".js", "/index.tsx", "/index.ts"].map(ext => base + ext)]) {
+    if (files.has(path)) return path;
+    if (nativePaths.has(path)) return nativePaths.get(path);
+  }
+  return undefined;
 }
 
-const loaderOf = (path: string) => ({ ".tsx": "tsx", ".ts": "ts", ".jsx": "jsx", ".js": "js", ".mjs": "js", ".cjs": "js", ".css": "css" } as Record<string, string>)[extname(path)] ?? "tsx";
+const loaderOf = (path: string) => ({ ".tsx": "tsx", ".ts": "ts", ".jsx": "jsx", ".js": "js", ".mjs": "js", ".cjs": "js", ".css": "css", ".json": "json" } as Record<string, string>)[extname(path)] ?? "tsx";
 
-async function bundle(esbuild: SpecimenEsbuild, files: ReadonlyMap<string, string>, entry: string, workspace: string): Promise<{ js?: string; css: string; errors: string[] }> {
+async function bundle(esbuild: SpecimenEsbuild, files: ReadonlyMap<string, string>, locations: ReadonlyMap<string, string>, entry: string, workspace: string): Promise<{ js?: string; css: string; errors: string[] }> {
+  const nativePaths = new Map([...locations].map(([path, target]) => [target, path]));
   const plugin = {
     name: "specimen-records",
     setup(build: any) {
@@ -172,7 +203,7 @@ async function bundle(esbuild: SpecimenEsbuild, files: ReadonlyMap<string, strin
         return { errors: [{ text: `unresolved element import ${args.path}` }] };
       });
       build.onResolve({ filter: /^\.\.?\//, namespace: "specimen" }, (args: any) => {
-        const target = relativeTarget(files, args.importer, args.path);
+        const target = relativeTarget(files, nativePaths, args.importer, args.path) ?? (locations.has(args.importer) ? relativeTarget(files, nativePaths, locations.get(args.importer)!, args.path) : undefined);
         return target ? { path: target, namespace: "specimen" } : { errors: [{ text: `unresolved relative import ${args.path} from ${args.importer}` }] };
       });
       // npm imports resolve from the preview workspace, then from this package's own install.
@@ -215,18 +246,18 @@ export function createSpecimenBuilder(options: SpecimenBuilderOptions = {}) {
     async build(record: SpecimenRecord, source?: SpecimenRecordSource): Promise<SpecimenBuild> {
       const errors: string[] = [];
       const visual = record.kind === "visual";
-      const files = visual ? await closure(record, source, errors) : new Map<string, string>();
+      const { files, locations, identity } = visual ? await closure(record, source, errors) : { files: new Map<string, string>(), locations: new Map<string, string>(), identity: undefined };
       const entry = visual ? specimenEntry(record) : undefined;
       if (visual && !entry) errors.push(`${record.id}: payload has no code file to mount`);
-      const hash = sha256(JSON.stringify([SPECIMEN_RENDERER_VERSION, record.kind, entry?.path ?? null, [...files].sort(), errors])).slice(0, 24);
+      const hash = sha256(JSON.stringify([SPECIMEN_RENDERER_VERSION, record.kind, entry?.path ?? null, identity, [...locations].sort(), [...files].sort(), errors])).slice(0, 24);
       let pending = builds.get(hash);
       if (!pending) {
         pending = (async () => {
           const sources = [...files].filter(([path]) => CODE.test(path)).map(([path, content]) => ({ content, extension: extname(path).slice(1) }));
           const css = await compileCss([...sources, { content: BOOTSTRAP, extension: "js" }], workspace);
-          if (!visual || !entry) return { hash, css, errors };
+          if (!visual || !entry || errors.length) return { hash, css, errors };
           const esbuild = options.esbuild ?? await import("esbuild" as string) as SpecimenEsbuild;
-          const built = await bundle(esbuild, files, posix.normalize(entry.path), workspace);
+          const built = await bundle(esbuild, files, locations, entry.path, workspace);
           return { hash, css: built.css ? `${css}\n${built.css}` : css, errors: [...errors, ...built.errors], ...(built.js ? { js: built.js } : {}) };
         })();
         builds.set(hash, pending);

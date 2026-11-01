@@ -8,6 +8,7 @@ import { recordStoreSource, type SpecimenElementVersion, type SpecimenRecordSour
 import { listSlots, readCandidate, readSlot, type SlotEntry } from "../records/slots.js";
 import { CANDIDATE_NAME, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
 import { RecordError } from "../records/validate.js";
+import { studioDependencies } from "./studio-dependencies.js";
 
 const SEGMENT = /^[a-z0-9][a-z0-9.-]*$/;
 export interface LibrarySourceOptions {
@@ -77,7 +78,7 @@ export function libraryRecordStore(rootsIn: readonly string[]): SpecimenRecordSt
 }
 
 export function libraryRecordSource(options: LibrarySourceOptions): SpecimenRecordSource {
-  return recordStoreSource(libraryRecordStore(options.roots), options.defaultTheme ? { defaultTheme: options.defaultTheme } : {});
+  return { ...recordStoreSource(libraryRecordStore(options.roots), options.defaultTheme ? { defaultTheme: options.defaultTheme } : {}), dependencies: studioDependencies };
 }
 
 /** Actual candidate identities, in IA slots only; first consumer wins a repeat. */

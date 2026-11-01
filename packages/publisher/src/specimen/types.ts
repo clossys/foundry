@@ -72,12 +72,22 @@ export interface SpecimenTheme {
   readonly contentHash: string;
 }
 
+/** A host's bounded, explicit inputs; payload files remain authoritative. */
+export interface SpecimenDependencies {
+  readonly identity: string;
+  readonly files: readonly SpecimenFile[];
+  /** Native placement of a payload file, without changing its payload path. */
+  readonly locations: readonly { readonly path: string; readonly target: string }[];
+}
+
 /** The one adapter between a record store and the renderer. */
 export interface SpecimenRecordSource {
   /** One record; the highest version when `version` is omitted. */
   read(id: string, version?: number): Promise<SpecimenRecord | undefined>;
   /** A theme by id; the source's default theme when `id` is omitted. */
   theme(id?: string): Promise<SpecimenTheme | undefined>;
+  /** Optional package-owned inputs. This never authorizes renderer filesystem reads. */
+  dependencies?(record: SpecimenRecord): Promise<SpecimenDependencies | undefined>;
 }
 
 /** Parsed `/__specimen` query. */
