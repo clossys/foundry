@@ -12,6 +12,44 @@ not write copy, invent facts or assemble pages.
 The CLI is deterministic: it validates, snapshots and installs. Choosing and
 building the item is your work, done through this loop.
 
+## Fill (slot model)
+
+Use this mode when asked to `fill` a migrated workspace. It takes precedence
+over the legacy store loop below for initial fill. The agent derives content;
+the deterministic API only measures readiness and records supplied bytes.
+
+1. Read `clossys/agents/designer/ia.json` and call the installed Producer API:
+   ```js
+   import { planSlotFill, recordInitialCandidate } from "@clossys/producer";
+   const plan = planSlotFill("clossys", "designer");
+   ```
+   Report `total`, `withCandidate`, `ready`, `blocked` and each blocked row's
+   `blockedBy`. Use current IA order and measured counts, never an old target.
+   Missing migrated input is WAITINPUT; do not substitute a legacy workspace.
+2. For each `ready` empty row, read its `slot.json` contract and every
+   `row.inputs[].bytes`. Inputs must have owner-cleared pins whose candidate
+   hashes verify. A migration pin alone is not clearance. Never infer missing
+   inputs from prose, old stores or a newer unpinned option.
+3. Derive exactly one candidate for that row.
+   Read every cleared Director input and the slot contract. Use the existing
+   reference pick/adopt/create rules: read the trusted registry item, preserve its
+   code and provenance, and bind copy to Writer keys. Missing references are a
+   NEED, never a fabricated design. Record source under `meta.source`; retain
+   registry references alongside every exact input reference returned by the plan.
+4. Cite every `row.inputs[].ref` exactly in `source.ref`; these references
+   include the candidate name and sha256. Use one `source` key, with no
+   candidate-side status or approval fields. Record the supplied option:
+   ```js
+   recordInitialCandidate("clossys", "designer", slotId, candidateName, candidateBytes);
+   ```
+   The name is `<name>-v1.md` for brief/strings or `<name>-v1.json` for other
+   kinds. This API rechecks inputs and refuses a nonempty slot. It never
+   creates `pin.json`. Preserve every existing candidate and pin.
+5. Recompute the plan. Report exact coverage and remaining blocked slot ids.
+   Show the unpinned options for owner approval. Initial fill does not approve
+   or pin anything; use the separate approval flow only after explicit owner
+   selection. Stop when every row is existing or blocked, with no polling.
+
 ## Where the records live
 
 These are consumer files in the consumer repository; they do not ship in this package.

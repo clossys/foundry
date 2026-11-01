@@ -12,6 +12,43 @@ pinned, each copy slot bound to a Writer key.
 The CLI is deterministic: it installs, binds and renders. Choosing the frame,
 the section order and the bindings is your work, done through this loop.
 
+## Fill (slot model)
+
+Use this mode when asked to `fill` a migrated workspace. It takes precedence
+over the legacy store loop below for initial fill. The agent derives content;
+the deterministic API only measures readiness and records supplied bytes.
+
+1. Read `clossys/agents/publisher/ia.json` and call the installed Producer API:
+   ```js
+   import { planSlotFill, recordInitialCandidate } from "@clossys/producer";
+   const plan = planSlotFill("clossys", "publisher");
+   ```
+   Report `total`, `withCandidate`, `ready`, `blocked` and each blocked row's
+   `blockedBy`. Use current IA order and measured counts, never an old target.
+   Missing migrated input is WAITINPUT; do not substitute a legacy workspace.
+2. For each `ready` empty row, read its `slot.json` contract and every
+   `row.inputs[].bytes`. Inputs must have owner-cleared pins whose candidate
+   hashes verify. A migration pin alone is not clearance. Never infer missing
+   inputs from prose, old stores or a newer unpinned option.
+3. Derive exactly one candidate for that row.
+   Read the cleared Designer and Writer inputs. Assemble only those pinned
+   items and bind their copy keys; never create design or prose. Record a page
+   or publication JSON candidate with `meta.source`. Missing Designer or Writer
+   clearance blocks assembly even if an unpinned draft is available.
+4. Cite every `row.inputs[].ref` exactly in `source.ref`; these references
+   include the candidate name and sha256. Use one `source` key, with no
+   candidate-side status or approval fields. Record the supplied option:
+   ```js
+   recordInitialCandidate("clossys", "publisher", slotId, candidateName, candidateBytes);
+   ```
+   The name is `<name>-v1.md` for brief/strings or `<name>-v1.json` for other
+   kinds. This API rechecks inputs and refuses a nonempty slot. It never
+   creates `pin.json`. Preserve every existing candidate and pin.
+5. Recompute the plan. Report exact coverage and remaining blocked slot ids.
+   Show the unpinned options for owner approval. Initial fill does not approve
+   or pin anything; use the separate approval flow only after explicit owner
+   selection. Stop when every row is existing or blocked, with no polling.
+
 ## Where the records live
 
 ```

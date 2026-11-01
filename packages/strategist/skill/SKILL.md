@@ -12,6 +12,45 @@ not write copy, choose components or assemble pages.
 The CLI is deterministic: it checks and compiles. Deriving cells from the
 conversation is your work, done through this loop.
 
+## Fill (slot model)
+
+Use this mode when asked to `fill` a migrated workspace. It takes precedence
+over the legacy store loop below for initial fill. The agent derives content;
+the deterministic API only measures readiness and records supplied bytes.
+
+1. Read `clossys/agents/director/ia.json` and call the installed Producer API:
+   ```js
+   import { planSlotFill, recordInitialCandidate } from "@clossys/producer";
+   const plan = planSlotFill("clossys", "director");
+   ```
+   Report `total`, `withCandidate`, `ready`, `blocked` and each blocked row's
+   `blockedBy`. Use current IA order and measured counts, never an old target.
+   Missing migrated input is WAITINPUT; do not substitute a legacy workspace.
+2. For each `ready` empty row, read its `slot.json` contract and every
+   `row.inputs[].bytes`. Inputs must have owner-cleared pins whose candidate
+   hashes verify. A migration pin alone is not clearance. Never infer missing
+   inputs from prose, old stores or a newer unpinned option.
+3. Derive exactly one candidate for that row.
+   Read the owner brief and its evidence before deriving each Director slot.
+   Root slots have no upstream slot inputs, but still require real owner or
+   evidence references in `source.ref`. Never manufacture facts to meet a count.
+   Record Markdown frontmatter `slot`, `source`, `feeds`, `functions`, optional
+   `note`, then `## Direction`, `## Because`, `## Watch`. When a Director slot
+   declares other inputs, read their owner-cleared pinned bytes first.
+4. Cite every `row.inputs[].ref` exactly in `source.ref`; these references
+   include the candidate name and sha256. Use one `source` key, with no
+   candidate-side status or approval fields. Record the supplied option:
+   ```js
+   recordInitialCandidate("clossys", "director", slotId, candidateName, candidateBytes);
+   ```
+   The name is `<name>-v1.md` for brief/strings or `<name>-v1.json` for other
+   kinds. This API rechecks inputs and refuses a nonempty slot. It never
+   creates `pin.json`. Preserve every existing candidate and pin.
+5. Recompute the plan. Report exact coverage and remaining blocked slot ids.
+   Show the unpinned options for owner approval. Initial fill does not approve
+   or pin anything; use the separate approval flow only after explicit owner
+   selection. Stop when every row is existing or blocked, with no polling.
+
 ## Where the records live
 
 The root is `<repo root>/clossys/agents/director/`. Pass it explicitly to every

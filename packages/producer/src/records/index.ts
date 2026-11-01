@@ -58,3 +58,5 @@ export {
 export type { PinGateInput, PinInput } from "./selection.js";
 export { deriveSlotStatus, manifestReferenceHash, STATUS_PRECEDENCE, workspaceSlotStatus } from "./status.js";
 export type { SlotStatus, SlotStatusRow, StatusInput } from "./status.js";
+export { planSlotFill, recordInitialCandidate } from "./slot-fill.js";
+export type { FillBlock, FillInput, FillPlan, FillRow } from "./slot-fill.js";
