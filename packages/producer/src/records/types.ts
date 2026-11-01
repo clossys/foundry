@@ -31,6 +31,27 @@ export type ElementDependency = {
   readonly hash: Hash;
 };
 
+/** The five source-bound replays currently implemented by the reference guard. */
+export type FiniteDataFitReplay = {
+  readonly kind: "data-fit";
+  readonly sourceHash: Hash;
+} & (
+  | { readonly operation: "sidebar15-frame-split"; readonly bindings: { readonly region: "app" | "page" } }
+  | { readonly operation: "sidebar15-right-offcanvas"; readonly bindings: { readonly side: "right"; readonly collapsible: "offcanvas" } }
+  | { readonly operation: "sidebar07-single-option"; readonly bindings: { readonly input: "teams" | "user"; readonly values: readonly Readonly<Record<string, unknown>>[] } }
+  | { readonly operation: "sidebar-mirrored-edge"; readonly bindings: { readonly side: "left" | "right" } }
+  | { readonly operation: "sidebar-resizable-panels"; readonly bindings: { readonly orientation: "horizontal" } }
+);
+
+export type ElementAdaptation = {
+  readonly kind: "import-paths" | "token-mapping" | "data-binding" | "data-fit" | "slot-bound-copy" | "slot-bound-identity";
+  readonly file: string;
+  readonly reason: string;
+  readonly hash?: Hash;
+  readonly optionCount?: 1;
+  readonly menu?: string;
+} & ({ readonly operation?: "single-option-static-row" } | FiniteDataFitReplay);
+
 export type ElementRecord = {
   readonly schema: "clossys.element/1";
   readonly id: string;
@@ -44,15 +65,7 @@ export type ElementRecord = {
     readonly mode: LineageMode;
     readonly path?: "pick" | "adopt" | "create";
     readonly ownerRequest?: string;
-    readonly adaptations?: readonly {
-      readonly kind: "import-paths" | "token-mapping" | "data-binding" | "data-fit" | "slot-bound-copy" | "slot-bound-identity";
-      readonly file: string;
-      readonly reason: string;
-      readonly hash?: Hash;
-      readonly operation?: "single-option-static-row";
-      readonly optionCount?: 1;
-      readonly menu?: string;
-    }[];
+    readonly adaptations?: readonly ElementAdaptation[];
     readonly source?: ReferenceRef;
     /** Further trusted references the payload takes verbatim parts from, beside the source block. */
     readonly parts?: readonly ReferenceRef[];

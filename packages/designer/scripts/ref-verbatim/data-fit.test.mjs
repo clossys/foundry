@@ -4,6 +4,7 @@ import { test } from "node:test";
 import { replayDataFit, sourceHash, DATA_FIT_OPERATIONS } from "./data-fit.mjs";
 import { configFromComponents, normalizeReference } from "./normalize.mjs";
 import { diffSources } from "./diff.mjs";
+import { loadTypeScript } from "./typescript.mjs";
 const config = configFromComponents(JSON.parse(readFileSync(new URL("../../ui/components.json", import.meta.url), "utf8")));
 function stock(item, path, registry = "shadcn-aria") {
   const raw = readFileSync(new URL(`../../references/${registry}/${item}@4.23.0/${path}`, import.meta.url), "utf8");
@@ -22,6 +23,44 @@ test("finite frame split keeps copied provider/navigation or inset/header/body/r
   assert.match(result, /sticky top-0 flex h-14 shrink-0 items-center gap-2 bg-background/);
   assert.doesNotMatch(result, /<SidebarLeft \/>/);
   assert.throws(() => replay(source, "sidebar15-frame-split", { region: "page", className: "gap-8" }));
+});
+test("app frame split binds child input during direct invocation of transpiled Page", () => {
+  const source = page();
+  const app = replay(source, "sidebar15-frame-split", { region: "app" });
+  const ts = loadTypeScript();
+  const parsed = ts.createSourceFile("app.tsx", app, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const declarations = parsed.statements.filter(node => ts.isFunctionDeclaration(node)
+    && node.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword));
+  assert.equal(declarations.length, 1);
+  // Execute the actual replayed Page declaration. The JSX collector and symbolic
+  // tags host the invocation; application imports and UI components are not run.
+  const compiled = ts.transpileModule(declarations[0].getText(parsed), {
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS,
+      jsx: ts.JsxEmit.React, jsxFactory: "element" },
+    reportDiagnostics: true,
+  });
+  assert.deepEqual(compiled.diagnostics.filter(diagnostic => diagnostic.category === ts.DiagnosticCategory.Error), []);
+  const provider = Symbol("SidebarProvider"), left = Symbol("SidebarLeft");
+  const element = (type, props, ...children) => ({ type, props, children });
+  const Page = new Function("exports", "element", "SidebarProvider", "SidebarLeft",
+    `${compiled.outputText}\nreturn exports.default;`)({}, element, provider, left);
+  const child = { content: "recorded child input" };
+  let result;
+  assert.doesNotThrow(() => { result = Page({ children: child }); });
+  assert.equal(result.type, provider);
+  assert.equal(result.children.length, 2);
+  assert.equal(result.children[0].type, left);
+  assert.equal(result.children[1], child);
+  const pageRegion = replay(source, "sidebar15-frame-split", { region: "page" });
+  assert.equal(pageRegion, source.text.replace("<SidebarProvider>", "<>")
+    .replace("</SidebarProvider>", "</>").replace("<SidebarLeft />", ""));
+  for (const text of [source.text.replace("function Page()", "function Page(props: unknown)"),
+    source.text.replace("function Page()", "async function Page()"),
+    source.text.replace("function Page()", "function Other()"),
+    source.text.replace("return (", "const children = 'local'; return (")]) {
+    assert.throws(() => replay({ ...source, text }, "sidebar15-frame-split", { region: "app" }),
+      /NEED: app frame requires stock zero-parameter default Page returning the provider/);
+  }
 });
 test("right sidebar changes only none/hidden-lg defaults to right/offcanvas", () => {
   const source = stock("sidebar-15", "registry/aria-nova/blocks/sidebar-15/components/sidebar-right.tsx");

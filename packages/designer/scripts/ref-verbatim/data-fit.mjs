@@ -79,7 +79,21 @@ export function replayDataFit(text, file, record, context) {
     if (record.operation === "sidebar15-frame-split") {
       if (!exactKeys(bind, ["region"]) || !["app", "page"].includes(bind.region)) throw new Error("NEED: frame split selects app or page");
       const inset = one("SidebarInset"), left = one("SidebarLeft"), right = one("SidebarRight");
-      if (bind.region === "app") { replace(inset, "{children}"); replace(right, ""); }
+      if (bind.region === "app") {
+        const pages = source.statements.filter(node => ts.isFunctionDeclaration(node)
+          && node.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword));
+        const page = pages[0];
+        let returned = page?.body?.statements[0];
+        returned = returned && ts.isReturnStatement(returned) ? returned.expression : undefined;
+        while (returned && ts.isParenthesizedExpression(returned)) returned = returned.expression;
+        if (pages.length !== 1 || page.name?.text !== "Page" || page.modifiers.length !== 2
+          || !page.modifiers.some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword)
+          || page.parameters.length || page.typeParameters?.length || page.type || page.asteriskToken
+          || page.body?.statements.length !== 1 || returned !== provider)
+          throw new Error("NEED: app frame requires stock zero-parameter default Page returning the provider");
+        edits.push([page.parameters.pos, page.parameters.end, "{ children }: { children: React.ReactNode }"]);
+        replace(inset, "{children}"); replace(right, "");
+      }
       else { replace(provider.openingElement, "<>"); replace(provider.closingElement, "</>"); replace(left, ""); }
     } else if (record.operation === "sidebar-mirrored-edge") {
       if (!exactKeys(bind, ["side"]) || !["left", "right"].includes(bind.side)) throw new Error("NEED: mirrored edge selects left or right");
