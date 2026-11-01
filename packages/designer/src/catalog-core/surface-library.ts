@@ -163,7 +163,7 @@ export function assertSurfaceCandidate(value: unknown, installed = false): asser
         surfaceFault("S1 API primary/duplicates");
     list(value.bindings, row => { object(row, ["file", "module", "name", "local", "slot"]); [row.file, row.module, row.slot].forEach(string); surfacePath(row.file as string, value.slot as string); if (!name(row.name) || !name(row.local) || !/^components\.[a-z][a-z0-9-]*$/.test(row.slot as string))
         surfaceFault("S1 component binding"); });
-    list(value.dependencies, row => { object(row, ["module", "version", "license"]); [row.module, row.version, row.license].forEach(string); if (!/^(?:@[a-z0-9-]+\/)?[a-z0-9-]+(?:\/[A-Za-z0-9_-]+)*$/.test(row.module as string) || !/^\d+\.\d+\.\d+(?:-[\w.-]+)?$/.test(row.version as string))
+    list(value.dependencies, row => { object(row, ["module", "version", "license"]); [row.module, row.version, row.license].forEach(string); if (!/^(?:@[a-z0-9-]+\/)?[a-z0-9-]+(?:\/[A-Za-z0-9_-][A-Za-z0-9_.-]*)*$/.test(row.module as string) || !/^\d+\.\d+\.\d+(?:-[\w.-]+)?$/.test(row.version as string))
         surfaceFault("S4 exact dependency required"); });
     if (new Set((value.dependencies as SurfaceCandidate["dependencies"]).map(row => row.module)).size !== (value.dependencies as unknown[]).length || new Set((value.bindings as SurfaceCandidate["bindings"]).map(row => stableStringify(row))).size !== (value.bindings as unknown[]).length)
         surfaceFault("S1 duplicate dependency/binding");

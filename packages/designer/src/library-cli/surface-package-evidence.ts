@@ -4,25 +4,85 @@
  * The surface check joins a package fill to two independent sides: the catalog
  * candidate (descriptor, pin) and the installed package artifact. This module
  * reads the second side: for every package module the candidates point at, it
- * resolves the installed package, reads that package's own exported barrel
- * (the built `exports` target when present, else the source index the build
- * compiles from) and records its bytes and export names. It never consults the
+ * resolves Node's import target and records its bytes and export names. Built
+ * ESM barrels use a syntax-checked static inventory; installed CommonJS uses a
+ * bounded native import namespace. A missing dist target retains the historical
+ * same-package source-only inventory, which is not consumer runtime proof.
+ * It never consults the
  * catalog pin for the version: the installed package.json speaks for itself, so
  * a pin/install mismatch surfaces as the check's S4 finding instead of passing.
  */
 import * as fs from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { execFile } from "node:child_process";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { promisify } from "node:util";
 import { sha256 } from "../catalog-core/digest.js";
 import type { SurfaceAnyDocument, SurfacePackageEvidence } from "../catalog-core/surface-types.js";
 
 const IDENT = /^[A-Za-z_$][\w$]*$/;
 const sorted = (values: Iterable<string>): string[] => [...new Set(values)].sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
 
+/** Preserve token boundaries while hiding text that cannot declare module exports. */
+function barrelCode(text: string): string {
+  const masked = text.split("");
+  const unsupported = (): never => { throw new Error("surface package evidence: unsupported barrel lexical syntax"); };
+  function quoted(start: number): number {
+    const quote = text[start];
+    for (let index = start + 1; index < text.length; index++) {
+      if (text[index] === "\\") { index++; if (text[index] === "\r" && text[index + 1] === "\n") index++; continue; }
+      if (text[index] === quote) return index + 1;
+      if (text[index] === "\n" || text[index] === "\r") return unsupported();
+    }
+    return unsupported();
+  }
+  function expression(start: number): number {
+    let depth = 1;
+    for (let index = start; index < text.length;) {
+      const end = literal(index);
+      if (end !== undefined) { index = end; continue; }
+      if (text[index] === "{") depth++;
+      if (text[index] === "}" && --depth === 0) return index + 1;
+      index++;
+    }
+    return unsupported();
+  }
+  function template(start: number): number {
+    for (let index = start + 1; index < text.length; index++) {
+      if (text[index] === "\\") { index++; continue; }
+      if (text[index] === "`") return index + 1;
+      if (text[index] === "$" && text[index + 1] === "{") index = expression(index + 2) - 1;
+    }
+    return unsupported();
+  }
+  function literal(start: number): number | undefined {
+    if (text[start] === '"' || text[start] === "'") return quoted(start);
+    if (text[start] === "`") return template(start);
+    if (text[start] !== "/") return undefined;
+    if (text[start + 1] === "/") {
+      const end = text.indexOf("\n", start + 2);
+      return end < 0 ? text.length : end;
+    }
+    if (text[start + 1] === "*") {
+      const end = text.indexOf("*/", start + 2);
+      return end < 0 ? unsupported() : end + 2;
+    }
+    // Distinguishing division from a regular-expression literal needs a wider
+    // grammar. Neither may contribute guessed exports to this static contract.
+    return unsupported();
+  }
+  for (let index = 0; index < text.length;) {
+    const end = literal(index);
+    if (end === undefined) { index++; continue; }
+    for (let offset = index; offset < end; offset++) if (text[offset] !== "\n" && text[offset] !== "\r") masked[offset] = " ";
+    index = end;
+  }
+  return masked.join("");
+}
+
 /** Value and type export names of one ES module barrel. Star re-exports are refused: the barrel alone cannot enumerate them. */
 export function packageBarrelExports(text: string): { values: string[]; types: string[] } {
-  // Strip comments without touching string literals (barrel specifiers never contain comment markers).
-  const code = text.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:"'`])\/\/[^\n]*/g, "$1");
+  const code = barrelCode(text);
   if (/\bexport\s*\*/.test(code)) throw new Error("surface package evidence: star re-export cannot be enumerated from the barrel");
   const values = new Set<string>(), types = new Set<string>();
   for (const match of code.matchAll(/\bexport\s+(type\s+)?\{([^}]*)\}/g)) {
@@ -52,7 +112,7 @@ export function packageBarrelExports(text: string): { values: string[]; types: s
   return { values: sorted(values), types: sorted([...types].filter(name => !values.has(name))) };
 }
 
-type PackageJson = { name?: unknown; version?: unknown; exports?: unknown };
+type PackageJson = { name?: unknown; version?: unknown; exports?: unknown; type?: unknown };
 const exists = async (path: string): Promise<boolean> => { try { return (await fs.stat(path)).isFile(); } catch { return false; } };
 const readJson = async (path: string): Promise<PackageJson | undefined> => { try { return JSON.parse(await fs.readFile(path, "utf8")) as PackageJson; } catch { return undefined; } };
 
@@ -60,34 +120,169 @@ const readJson = async (path: string): Promise<PackageJson | undefined> => { try
 async function locatePackage(name: string, from: string): Promise<{ root: string; manifest: PackageJson } | undefined> {
   for (let dir = resolve(from); ; dir = dirname(dir)) {
     const own = await readJson(join(dir, "package.json"));
-    if (own?.name === name) return { root: dir, manifest: own };
+    if (own?.name === name && own.exports != null) return { root: dir, manifest: own };
     const installed = await readJson(join(dir, "node_modules", name, "package.json"));
     if (installed?.name === name) return { root: join(dir, "node_modules", name), manifest: installed };
     if (dirname(dir) === dir) return undefined;
   }
 }
-const target = (entry: unknown, condition: "import" | "types"): string | undefined => {
-  if (typeof entry === "string") return condition === "import" ? entry : undefined;
-  if (!entry || typeof entry !== "object") return undefined;
-  const value = condition === "import" ? (entry as Record<string, unknown>).import ?? (entry as Record<string, unknown>).default : (entry as Record<string, unknown>).types;
-  return typeof value === "string" ? value : undefined;
+const runNode = promisify(execFile);
+const inside = (root: string, file: string): boolean => {
+  const path = relative(root, file);
+  return !!path && path !== ".." && !path.startsWith(".." + sep) && !isAbsolute(path);
 };
-/** The built target when it exists, else the source module the build compiles to that target. */
-async function barrelFile(root: string, built: string): Promise<string | undefined> {
-  const path = resolve(root, built);
-  if (await exists(path)) return path;
-  const source = /^\.\/dist\/(.+)\.(?:js|d\.ts)$/.exec(built)?.[1];
+const MODULE = /^(?:@[a-z0-9-]+\/)?[a-z0-9-]+(?:\/[A-Za-z0-9_-][A-Za-z0-9_.-]*)*$/;
+/** Node, rather than a second export-map implementation, selects the import target. */
+async function importTarget(module: string, from: string, types = false): Promise<string | undefined> {
+  try {
+    const { stdout } = await runNode(process.execPath, ["--experimental-import-meta-resolve", ...(types ? ["--conditions=types"] : []), "--input-type=module", "-e",
+      'process.stdout.write(JSON.stringify(import.meta.resolve(process.argv[1], process.argv[2])))', module, pathToFileURL(join(resolve(from), "surface-evidence.mjs")).href], { timeout: 5000, maxBuffer: 1024 * 1024 });
+    const url: unknown = JSON.parse(stdout);
+    return typeof url === "string" && url.startsWith("file:") ? fileURLToPath(url) : undefined;
+  } catch { return undefined; }
+}
+/** Resolve symlinks before reading bytes or executing an installed CommonJS module. */
+async function containedFile(root: string, file: string): Promise<string | undefined> {
+  if (!inside(root, file)) return undefined;
+  try {
+    const actual = await fs.realpath(file);
+    return inside(await fs.realpath(root), actual) && await exists(actual) ? actual : undefined;
+  } catch { return undefined; }
+}
+/** Missing dist targets retain the historical source-only barrel inventory, not runtime proof. */
+async function barrelFile(root: string, built: string, sourceFallback: boolean): Promise<{ file: string; source: boolean } | undefined> {
+  const file = await containedFile(root, built);
+  if (file) return { file, source: false };
+  if (!sourceFallback) return undefined;
+  // An existing escaped symlink is not a missing build and must never trigger fallback.
+  try { await fs.lstat(built); return undefined; } catch { /* missing build */ }
+  if (!inside(root, built)) return undefined;
+  for (let parent = dirname(built); ; parent = dirname(parent)) {
+    try {
+      const actual = await fs.realpath(parent);
+      if (actual !== root && !inside(root, actual)) return undefined;
+      break;
+    } catch { if (dirname(parent) === parent) return undefined; }
+  }
+  const source = /^dist\/(.+)\.js$/.exec(relative(root, built).split(sep).join("/"))?.[1];
   if (!source) return undefined;
-  for (const extension of [".ts", ".tsx"]) if (await exists(resolve(root, "src", source + extension))) return resolve(root, "src", source + extension);
+  for (const extension of [".ts", ".tsx"]) {
+    const file = await containedFile(root, resolve(root, "src", source + extension));
+    if (file) return { file, source: true };
+  }
   return undefined;
+}
+async function commonJs(file: string): Promise<boolean> {
+  if (file.endsWith(".cjs")) return true;
+  if (file.endsWith(".mjs")) return false;
+  for (let dir = dirname(file); ; dir = dirname(dir)) {
+    const manifest = await readJson(join(dir, "package.json"));
+    if (manifest) return manifest.type !== "module";
+    if (dirname(dir) === dir) return true;
+  }
+}
+async function commonJsExports(file: string): Promise<string[] | undefined> {
+  try {
+    const { stdout } = await runNode(process.execPath, ["--input-type=module", "-e",
+      'const namespace = await import(process.argv[1]); process.stdout.write("\\n" + JSON.stringify(Object.keys(namespace)))', pathToFileURL(file).href], { timeout: 5000, maxBuffer: 1024 * 1024 });
+    const names: unknown = JSON.parse(stdout.trim().split("\n").at(-1)!);
+    return Array.isArray(names) && names.every(name => typeof name === "string") ? sorted(names.filter(name => IDENT.test(name))) : undefined;
+  } catch { return undefined; }
+}
+async function validBuiltEsm(file: string): Promise<boolean> {
+  try {
+    await runNode(process.execPath, ["--check", file], { timeout: 5000, maxBuffer: 1024 * 1024 });
+    return true;
+  } catch { return false; }
+}
+
+// Optional host tooling, resolved from the consumer just like its declarations.
+// This worker never emits files, supplies runtime values, or searches a package tree.
+const DECLARATION_WORKER = String.raw`
+import fs from "node:fs";
+import { dirname, isAbsolute, join, relative, sep } from "node:path";
+import { fileURLToPath } from "node:url";
+const request = JSON.parse(process.argv[1]);
+const inside = (root, file) => {
+  const path = relative(root, file);
+  return !!path && path !== ".." && !path.startsWith(".." + sep) && !isAbsolute(path);
+};
+const owns = (owner, file) => {
+  try {
+    const root = fs.realpathSync(owner.root);
+    const manifest = JSON.parse(fs.readFileSync(join(root, "package.json"), "utf8"));
+    return manifest.name === owner.name && manifest.version === owner.version && inside(root, fs.realpathSync(file));
+  } catch { return false; }
+};
+const compilerUrl = import.meta.resolve("typescript", request.parent);
+if (!owns(request.compiler, fileURLToPath(compilerUrl))) throw new Error("Consumer compiler provenance differs");
+const imported = await import(compilerUrl);
+const ts = imported.default ?? imported;
+const options = { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler, strict: true, skipLibCheck: true, types: [], noEmit: true };
+const host = ts.createCompilerHost(options);
+const entries = [];
+for (const entry of request.modules) {
+  const resolved = ts.resolveModuleName(entry.module, join(request.from, "surface-evidence.ts"), options, host).resolvedModule;
+  if (!resolved || !/\.d\.[cm]?ts$/.test(resolved.resolvedFileName) || !resolved.packageId) continue;
+  const owner = entry.owners.find(owner => owner.name === resolved.packageId.name && owner.version === resolved.packageId.version && owns(owner, resolved.resolvedFileName));
+  if (owner) entries.push({ module: entry.module, file: resolved.resolvedFileName });
+}
+const program = ts.createProgram(entries.map(entry => entry.file), options, host);
+const checker = program.getTypeChecker();
+const result = [];
+for (const entry of entries) {
+  const source = program.getSourceFile(entry.file);
+  if (!source?.isDeclarationFile || source.parseDiagnostics.length) continue;
+  const assignment = source.statements.find(statement => ts.isExportAssignment(statement) && statement.isExportEquals);
+  let symbol = checker.getSymbolAtLocation(assignment ? assignment.expression : source);
+  if (!symbol) continue;
+  if (symbol.flags & ts.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
+  const types = checker.getExportsOfModule(symbol).filter(symbol => {
+    const target = symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
+    return !!(target.flags & ts.SymbolFlags.Type);
+  }).map(symbol => symbol.name);
+  result.push({ module: entry.module, types });
+}
+process.stdout.write(JSON.stringify(result));
+`;
+
+async function consumerDeclarationTypes(modules: readonly string[], from: string): Promise<Map<string, string[]>> {
+  const result = new Map<string, string[]>();
+  const compiler = await locatePackage("typescript", from);
+  if (!compiler || typeof compiler.manifest.version !== "string") return result;
+  const entries = [];
+  for (const module of modules) {
+    const name = module.split("/").slice(0, module.startsWith("@") ? 2 : 1).join("/");
+    const names = [name, "@types/" + name.replace(/^@/, "").replace("/", "__")];
+    const owners = [];
+    for (const name of names) {
+      const located = await locatePackage(name, from);
+      if (located && typeof located.manifest.version === "string") owners.push({ name, version: located.manifest.version, root: await fs.realpath(located.root) });
+    }
+    entries.push({ module, owners });
+  }
+  try {
+    const request = { from: resolve(from), parent: pathToFileURL(join(resolve(from), "surface-evidence.mjs")).href, compiler: { name: "typescript", version: compiler.manifest.version, root: await fs.realpath(compiler.root) }, modules: entries };
+    const { stdout } = await runNode(process.execPath, ["--experimental-import-meta-resolve", "--input-type=module", "-e", DECLARATION_WORKER, JSON.stringify(request)], { timeout: 5000, maxBuffer: 1024 * 1024 });
+    const rows: unknown = JSON.parse(stdout);
+    if (!Array.isArray(rows)) return result;
+    for (const row of rows) {
+      if (!row || typeof row !== "object" || !modules.includes(row.module) || result.has(row.module) || !Array.isArray(row.types) || !row.types.every((name: unknown) => typeof name === "string" && IDENT.test(name))) return new Map();
+      result.set(row.module, sorted(row.types));
+    }
+  } catch { /* Missing, escaped, or unsupported declarations provide no type evidence. */ }
+  return result;
 }
 
 /** Package modules (`<package>/<subpath>`) the given candidate or installed surface documents point at. */
 export function surfacePackageModules(docs: readonly SurfaceAnyDocument[]): string[] {
   const modules: string[] = [];
   for (const doc of docs) {
-    const entries = Object.values({ ...(doc as { sections?: object }).sections, ...(doc as { frames?: object }).frames }) as { impl?: { kind?: unknown; module?: unknown } }[];
-    for (const entry of entries) if (entry?.impl?.kind === "package" && typeof entry.impl.module === "string") modules.push(entry.impl.module);
+    const entries = Object.values({ ...(doc as { sections?: object }).sections, ...(doc as { frames?: object }).frames }) as { impl?: { kind?: unknown; module?: unknown }; dependencies?: readonly { module?: unknown }[] }[];
+    for (const entry of entries) {
+      if (entry?.impl?.kind === "package" && typeof entry.impl.module === "string") modules.push(entry.impl.module);
+      if (entry?.impl?.kind === "source" && Array.isArray(entry.dependencies)) for (const dependency of entry.dependencies) if (typeof dependency.module === "string") modules.push(dependency.module);
+    }
   }
   return sorted(modules);
 }
@@ -100,25 +295,43 @@ export function surfacePackageModules(docs: readonly SurfaceAnyDocument[]): stri
 export async function readSurfacePackageEvidence(docs: readonly SurfaceAnyDocument[], options: { from?: string } = {}): Promise<SurfacePackageEvidence[]> {
   const from = options.from ?? dirname(fileURLToPath(import.meta.url));
   const rows: SurfacePackageEvidence[] = [];
+  const needsDeclarations: string[] = [];
   for (const module of surfacePackageModules(docs)) {
+    if (!MODULE.test(module)) continue;
     const parts = module.split("/"), scoped = module.startsWith("@");
-    const name = parts.slice(0, scoped ? 2 : 1).join("/"), subpath = "./" + parts.slice(scoped ? 2 : 1).join("/");
+    const name = parts.slice(0, scoped ? 2 : 1).join("/");
     const located = await locatePackage(name, from);
-    if (!located || typeof located.manifest.version !== "string" || !located.manifest.exports || typeof located.manifest.exports !== "object") continue;
-    const entry = (located.manifest.exports as Record<string, unknown>)[subpath];
-    const built = target(entry, "import");
-    const file = built && await barrelFile(located.root, built);
-    if (!file) continue;
+    if (!located || typeof located.manifest.version !== "string") continue;
+    const built = await importTarget(module, from);
+    const root = await fs.realpath(located.root);
+    const selected = built && inside(located.root, built) ? resolve(root, relative(located.root, built)) : built;
+    const barrel = selected && await barrelFile(root, selected, located.manifest.exports != null);
+    if (!barrel || !barrel.source && !/\.[cm]?js$/.test(barrel.file)) continue;
+    const { file } = barrel;
     const text = await fs.readFile(file, "utf8");
-    const inventory = packageBarrelExports(text);
+    const runtime = !barrel.source && await commonJs(file);
+    let inventory: { values: string[]; types: string[] };
+    if (runtime) {
+      const values = await commonJsExports(file);
+      if (!values) continue;
+      inventory = { values, types: [] };
+    } else {
+      if (!barrel.source && !await validBuiltEsm(file)) continue;
+      try { inventory = packageBarrelExports(text); } catch { continue; }
+    }
     let types = inventory.types;
     // A built JS barrel carries no types; its declaration barrel does.
-    const declared = target(entry, "types");
-    if (/\.[cm]?js$/.test(file) && declared && await exists(resolve(located.root, declared))) {
-      const declaration = packageBarrelExports(await fs.readFile(resolve(located.root, declared), "utf8"));
+    const declared = await importTarget(module, from, true);
+    const declaredPath = declared && inside(located.root, declared) ? resolve(root, relative(located.root, declared)) : declared;
+    const declarationFile = declaredPath && /\.d\.[cm]?ts$/.test(declaredPath) && await containedFile(root, declaredPath);
+    if (!barrel.source && declarationFile) {
+      const declaration = packageBarrelExports(await fs.readFile(declarationFile, "utf8"));
       types = sorted([...declaration.types, ...declaration.values].filter(name => !inventory.values.includes(name)));
     }
+    if (!barrel.source && !declarationFile) needsDeclarations.push(module);
     rows.push({ module, version: located.manifest.version, artifactSha256: sha256(text), values: inventory.values, types });
   }
-  return rows;
+  if (!needsDeclarations.length) return rows;
+  const declarations = await consumerDeclarationTypes(needsDeclarations, from);
+  return rows.map(row => ({ ...row, types: sorted([...row.types, ...(declarations.get(row.module) ?? [])].filter(name => !row.values.includes(name))) }));
 }
