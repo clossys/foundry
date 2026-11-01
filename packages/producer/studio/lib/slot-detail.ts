@@ -1,3 +1,6 @@
+import { referencesCopy } from './references-copy';
+import { contractCopy } from './contract-copy';
+import { studioCopy } from './studio-copy';
 /** Detail inputs only; gallery rendering has its own projection. */
 import type { SlotDetail, DetailCandidate } from '../../src/server/slot-detail';
 import type { StudioLinks } from './agent-library';
@@ -35,23 +38,23 @@ function candidateRows(candidate: DetailCandidate, writer: boolean) {
 export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 'light' | 'dark'): Record<string, unknown> {
   const shown = detail.candidates.find(candidate => candidate.name === detail.shown);
   const pinned = !!shown?.pinned;
-  const statusLabel = !shown ? 'No candidate' : pinned ? 'Pinned' : detail.pin ? 'Pin unavailable' : 'No pin';
+  const statusLabel = !shown ? studioCopy("studio.no-candidate") : pinned ? studioCopy("studio.pinned") : detail.pin ? studioCopy("studio.pin-unavailable") : studioCopy("studio.no-pin");
   const specimen: SpecimenInput = shown?.specimen ? {
-    kind: 'viewports', name: detail.id, title: 'Specimen', description: shown.name,
+    kind: 'viewports', name: detail.id, title: studioCopy("studio.specimen"), description: shown.name,
     specimens: ([375, 768, 1280] as const).map(viewport => ({ viewport,
       light: specimenHref({ specimen: shown.specimen, version: shown.version }, 'light', viewport)!,
       dark: specimenHref({ specimen: shown.specimen, version: shown.version }, 'dark', viewport)!,
-    })), empty: 'No candidate',
+    })), empty: studioCopy("studio.no-candidate"),
   } : {
-    kind: 'record', name: detail.id, title: detail.agent === 'writer' ? 'Strings' : 'Candidate',
-    description: shown ? shown.name : 'This slot has no candidate yet.',
+    kind: 'record', name: detail.id, title: detail.agent === 'writer' ? studioCopy("studio.strings") : studioCopy("studio.candidate"),
+    description: shown ? shown.name : studioCopy("studio.this-slot-has-no-candidate-yet"),
     rows: shown ? candidateRows(shown, detail.agent === 'writer').map(row => ({ ...row, label: row.key })) : [],
-    empty: 'No candidate',
+    empty: studioCopy("studio.no-candidate"),
   };
   const options: OptionsInput = {
-    name: detail.id, description: detail.pin ? 'Recorded candidates beside the pin.' : 'No pin. Candidates await approval.',
+    name: detail.id, description: detail.pin ? studioCopy("studio.recorded-candidates-beside-the-pin") : studioCopy("studio.no-pin-candidates-await-approval"),
     rows: [...detail.candidates].sort((a, b) => Number(b.pinned) - Number(a.pinned) || a.version - b.version).map(candidate => ({
-      version: candidate.version, pinned: candidate.pinned, label: candidate.name, reason: candidate.pinned ? 'Pinned' : 'Unpinned',
+      version: candidate.version, pinned: candidate.pinned, label: candidate.name, reason: candidate.pinned ? studioCopy("studio.pinned") : studioCopy("studio.unpinned"),
       preview: candidate.specimen ? { kind: 'frame' as const, viewport: 1280 as const, src: specimenHref({ specimen: candidate.specimen, version: candidate.version }, theme, 1280)! }
         : { kind: 'strings' as const, rows: candidateRows(candidate, detail.agent === 'writer').map(row => ({ ...row, change: 'same' as const })) },
     })),
@@ -63,14 +66,14 @@ export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 
   };
   return {
     header: { name: detail.id, id: detail.id, ...(shown ? { version: shown.version } : {}), statusLabel,
-      statusTone: pinned ? 'secondary' : 'outline', statusDetail: [!detail.pin ? 'No pin.' : `Pinned candidate: ${detail.pin.candidate}`],
+      statusTone: pinned ? 'secondary' : 'outline', statusDetail: [!detail.pin ? studioCopy("studio.no-pin-87eb19") : studioCopy("studio.pinned-candidate", { value0: String(detail.pin.candidate) })],
       trail: detail.trail, galleryHref: links.gallery(detail.agent) ?? '', galleryLabel: detail.agent },
     specimen, options,
-    references: { uses: detail.uses.map(id => reference(id)), usedBy: detail.usedBy.map(ref => reference(ref.id, ref.agent)),
-      lineage: detail.candidates.map(candidate => ({ key: candidate.name, version: candidate.name, mode: 'Recorded source', source: candidate.source === undefined ? 'No source recorded' : text(candidate.source) })) },
+    references: { copy: referencesCopy(), uses: detail.uses.map(id => reference(id)), usedBy: detail.usedBy.map(ref => reference(ref.id, ref.agent)),
+      lineage: detail.candidates.map(candidate => ({ key: candidate.name, version: candidate.name, mode: studioCopy("studio.recorded-source"), source: candidate.source === undefined ? studioCopy("studio.no-source-recorded") : text(candidate.source) })) },
     checks: detail.checks.map((check, index) => ({ key: String(index), ...check })),
-    contract: { facts: [{ label: 'Kind', value: detail.kind }, ...Object.entries(detail.contract).map(([label, value]) => ({ label, value: text(value) }))],
-      lists: [{ label: 'Inputs', items: detail.inputs }, { label: 'Uses', items: detail.uses }] },
+    contract: { copy: contractCopy(), facts: [{ label: studioCopy("studio.kind"), value: detail.kind }, ...Object.entries(detail.contract).map(([label, value]) => ({ label, value: text(value) }))],
+      lists: [{ label: studioCopy("studio.inputs"), items: detail.inputs }, { label: studioCopy("studio.uses"), items: detail.uses }] },
     // History is pin history, rather than inferred "revises" relationships.
     history: { rows: detail.history.map(event => ({ version: Number(/-v(\d+)\./.exec(event.candidate)?.[1] ?? 0), date: event.at,
       note: `${event.candidate} · ${event.commit}`, hash: event.sha256, marks: [event.pinnedBy] })) },
@@ -81,11 +84,11 @@ export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 
 export async function loadSlotDetail(agent: string, slug: string, signal: AbortSignal): Promise<SlotDetail | null | undefined> {
   const response = await fetch(`/api/slots/${encodeURIComponent(agent)}/${encodeURIComponent(slug)}`, { signal, cache: 'no-store' });
   if (response.status === 404) return null;
-  if (!response.ok) throw new Error(`Slot detail could not load (${response.status}).`);
+  if (!response.ok) throw new Error(studioCopy("studio.slot-detail-could-not-load", { value0: String(response.status) }));
   const value = await response.json();
   if (value?.state === 'legacy') return undefined;
   if (value?.state !== 'ready' || !value.detail || !Array.isArray(value.detail.candidates) || typeof value.detail.id !== 'string') {
-    throw new Error('Slot detail response is invalid.');
+    throw new Error(studioCopy("studio.slot-detail-response-is-invalid"));
   }
   return value.detail;
 }

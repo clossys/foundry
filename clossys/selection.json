@@ -45,9 +45,9 @@
     },
     "sections.studio.contract": {
       "element": "studio-contract",
-      "version": 1,
-      "hash": "sha256:4cccd0fd1ae6390804388a6b1a3c709bc23d4aba85835b2d668d3e3e2639741d",
-      "event": "e8"
+      "version": 2,
+      "hash": "sha256:4b19f88c68c98b0555dce70fa4b1cec2fb964eccb6e8bbb2e0112b3abaaa5d19",
+      "event": "e31"
     },
     "sections.studio.history": {
       "element": "studio-history",
@@ -57,9 +57,9 @@
     },
     "sections.studio.references": {
       "element": "studio-references",
-      "version": 1,
-      "hash": "sha256:4faa7667cf6b9aa220ce982b4d9a502d39762e00ba2fa60906dfea7a98c103e5",
-      "event": "e10"
+      "version": 2,
+      "hash": "sha256:41cfc00aac448bdc7038a6c5f930f0b0bbc11a746ac3ea03a87a8df506eea333",
+      "event": "e32"
     },
     "sections.studio.publications": {
       "element": "studio-publications",
@@ -439,6 +439,30 @@
       "hash": "sha256:300440386e553b250dda2bd708fef7f1bff1177ed7ee34768543355231125101",
       "from": "option",
       "reason": "FRAME-PANELS (foundry#2553 L6): popover rows stay open on select."
+    },
+    {
+      "id": "e31",
+      "at": "2026-11-01T16:09:14Z",
+      "by": "studio-contract-copy",
+      "action": "pin",
+      "slot": "sections.studio.contract",
+      "element": "studio-contract",
+      "version": 2,
+      "hash": "sha256:4b19f88c68c98b0555dce70fa4b1cec2fb964eccb6e8bbb2e0112b3abaaa5d19",
+      "from": "option",
+      "reason": "Bind existing Contract labels to Writer preview copy; no editorial approval."
+    },
+    {
+      "id": "e32",
+      "at": "2026-11-01T16:15:03Z",
+      "by": "studio-references-copy",
+      "action": "pin",
+      "slot": "sections.studio.references",
+      "element": "studio-references",
+      "version": 2,
+      "hash": "sha256:41cfc00aac448bdc7038a6c5f930f0b0bbc11a746ac3ea03a87a8df506eea333",
+      "from": "option",
+      "reason": "Bind existing References labels to Writer preview copy; no editorial approval."
     }
   ]
 }

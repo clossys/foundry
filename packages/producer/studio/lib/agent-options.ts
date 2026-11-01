@@ -1,3 +1,4 @@
+import { studioCopy } from './studio-copy';
 /**
  * What an agent option changes against the active version: the record's markdown split into
  * heading blocks, each block compared by heading. Writer and Director options show only the
@@ -12,7 +13,7 @@ const clip = (text: string) => text.length > LIMIT ? `${text.slice(0, LIMIT - 1)
 /** Heading -> block text, in document order; text before the first heading sits under "Intro". */
 export function headingBlocks(source: string): Map<string, string> {
   const blocks = new Map<string, string[]>();
-  let key = 'Intro';
+  let key = studioCopy("studio.intro");
   for (const line of stripFrontMatter(source).split('\n')) {
     const heading = /^#{1,6}\s+(.+?)\s*#*\s*$/.exec(line);
     if (heading) { key = heading[1]!; if (!blocks.has(key)) blocks.set(key, []); continue; }
@@ -34,5 +35,5 @@ export function stringChanges(option: string, base?: string): OptionPreview {
     else if (before !== text) rows.push({ key, text: clip(text), change: 'changed' });
   }
   for (const [key, text] of previous) if (!next.has(key)) rows.push({ key, text: clip(text), change: 'removed' });
-  return rows.length ? { kind: 'strings', rows } : { kind: 'note', text: 'This version changes no strings against the active version.' };
+  return rows.length ? { kind: 'strings', rows } : { kind: 'note', text: studioCopy("studio.this-version-changes-no-strings-against-the") };
 }

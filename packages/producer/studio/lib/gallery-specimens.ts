@@ -1,3 +1,5 @@
+import { contractCopy } from './contract-copy';
+import { studioCopy } from './studio-copy';
 /** Gallery previews use the same canonical slot detail projection as the leaf page. */
 import type { SlotDetail } from '../../src/server/slot-detail';
 import type { ContractInput } from '../sections/studio-contract';
@@ -34,13 +36,13 @@ export async function loadGalleryLeaves(agent: LibraryAgent, cards: readonly Age
 
 /** Preserve the native detail contract and an actually emitted page preview when available. */
 export function galleryLeafInputs(row: GalleryLeaf, links: StudioLinks, theme: 'light' | 'dark', pageUrl?: string): { specimen: SpecimenInput; contract: ContractInput } {
-  if (row.source === 'legacy') return { specimen: agentGalleryPreview(row.leaf, links, pageUrl), contract: row.leaf.contract };
+  if (row.source === 'legacy') return { specimen: agentGalleryPreview(row.leaf, links, pageUrl), contract: { ...row.leaf.contract, copy: contractCopy() } };
   const inputs = slotDetailInputs(row.detail, links, theme);
   const specimen = inputs.specimen as SpecimenInput;
   return {
     specimen: row.detail.kind === 'page' && pageUrl ? {
-      kind: 'viewports', name: row.detail.id, title: 'Rendered page', description: '',
-      specimens: [{ viewport: 1280, light: pageUrl, interactive: false }], empty: 'Publish this page to preview it.',
+      kind: 'viewports', name: row.detail.id, title: studioCopy("studio.rendered-page"), description: '',
+      specimens: [{ viewport: 1280, light: pageUrl, interactive: false }], empty: studioCopy("studio.publish-this-page-to-preview-it"),
     } : specimen,
     contract: inputs.contract as ContractInput,
   };

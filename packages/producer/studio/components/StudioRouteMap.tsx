@@ -1,4 +1,6 @@
 'use client';
+import { studioCopy } from '../lib/studio-copy';
+
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { ContentMap } from '@clossys/publisher/content-map';
@@ -24,7 +26,7 @@ function leafRows(gallery: StudioGallery): StudioLeafRow[] {
 async function loadGallery(agent: string, signal: AbortSignal): Promise<StudioGallery> {
   if (agent === 'designer') return { agent, records: await loadDesignerGallery(signal) };
   if (isLibraryAgent(agent)) return { agent, records: await loadAgentGallery(agent, signal) };
-  throw new Error(`Studio has no library for ${agent}.`);
+  throw new Error(studioCopy("studio.studio-has-no-library-for", { value0: String(agent) }));
 }
 
 /** Loads each gallery page's records once per Producer revision and extends the map with their leaves. */
@@ -35,7 +37,7 @@ export function StudioRouteMapProvider({ revision, children }: { revision: numbe
     for (const page of studioLeafPages) {
       const agent = page.leaf!.data.agent ?? page.id;
       loadGallery(agent, controller.signal).then(value => setGalleries(current => ({ ...current, [page.id]: { state: 'ready', value } })), error => {
-        if (!controller.signal.aborted) setGalleries(current => ({ ...current, [page.id]: { state: 'error', message: error instanceof Error ? error.message : 'The library could not load.' } }));
+        if (!controller.signal.aborted) setGalleries(current => ({ ...current, [page.id]: { state: 'error', message: error instanceof Error ? error.message : studioCopy("studio.the-library-could-not-load") } }));
       });
     }
     return () => controller.abort();

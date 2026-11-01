@@ -1,3 +1,4 @@
+import { studioCopy } from './studio-copy';
 import { useEffect, useState } from 'react';
 import { AGENTS, type Agent } from './agents';
 
@@ -7,7 +8,7 @@ export type HomeSlotCensus =
   | { state: 'loading' }
   | { state: 'error'; message: string };
 export type SlotCensusByAgent = Record<Agent, HomeSlotCensus>;
-const unavailable = (): HomeSlotCensus => ({ state: 'error', message: 'The slot census could not load.' });
+const unavailable = (): HomeSlotCensus => ({ state: 'error', message: studioCopy("studio.the-slot-census-could-not-load") });
 const states = (value: () => HomeSlotCensus): SlotCensusByAgent => Object.fromEntries(AGENTS.map(agent => [agent, value()])) as SlotCensusByAgent;
 const object = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 const count = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
