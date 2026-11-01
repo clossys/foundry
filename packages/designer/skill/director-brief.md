@@ -29,7 +29,7 @@ fabricate package evidence or bypass native library checks.
 Write proposals only as **draft** native Designer cell versions under
 `clossys/agents/designer/cells/<existing-slot>/v<N>.md`. Preserve active sources,
 versions and tree pointers. For a currently active slot, use
-`designer-library cells propose <slot> --root <designer-cell-root>` to allocate
+`designer-library cells propose <slot> --root <cell-root>` to allocate
 the next version; never overwrite an earlier version. An unchanged proposal
 should reuse the existing draft rather than allocate a duplicate. The shared
 propose command requires an active version; missing roots and new slot creation
@@ -64,7 +64,7 @@ Run `clossys design --check` before and after activation and report actual findi
 The check measures **active** downstream cells: an unactivated draft cannot make
 the active result clean. Preserve expected findings until the requested native
 activation occurs. Use `designer-library cells activate <slot@version...>
---confirm <valid-confirmation-ref> --root <designer-cell-root>` only within the
+--confirm <valid-confirmation-ref> --root <cell-root>` only within the
 session's activation authority. Then `clossys design --root <consumer>` compiles
 the active cells into the native `compiled` projection; it neither generates
 creative proposals nor activates them. Do not edit that projection by hand.

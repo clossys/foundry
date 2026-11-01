@@ -40,7 +40,7 @@ function subpaths(text: string): string[] {
 }
 
 describe("installed Designer skill contract", () => {
-  it("ships every companion discovered from SKILL.md in the real npm pack list", () => {
+  it("ships companions and runtime inventory without recursive script tests", () => {
     const docs = documents();
     expect(docs.size).toBeGreaterThan(1);
     expect(docs.has(resolve(skillRoot, "library-needs.md"))).toBe(true);
@@ -51,6 +51,19 @@ describe("installed Designer skill contract", () => {
     const result = JSON.parse(packed.stdout) as { files: { path: string }[] }[];
     const files = new Set(result[0]!.files.map(file => file.path));
     for (const path of docs.keys()) expect(files.has(relative(root, path)), `not packed: ${relative(root, path)}`).toBe(true);
+    for (const [command, target] of Object.entries(manifest.bin)) {
+      expect(files.has(target), `bin target missing for ${command}: ${target}`).toBe(true);
+    }
+    expect([...files].filter(path => path.startsWith("scripts/") && /\.test\.[^/]+$/.test(path))).toEqual([]);
+    for (const path of [
+      "scripts/check-ref-verbatim.mjs", "scripts/check-ref-verbatim.d.ts",
+      "scripts/ref-verbatim/adaptations.mjs", "scripts/ref-verbatim/data-fit.mjs",
+      "scripts/ref-verbatim/diff.mjs", "scripts/ref-verbatim/normalize.mjs", "scripts/ref-verbatim/typescript.mjs",
+      "scripts/ref-verbatim/baseline.json", "scripts/ref-verbatim/owner-needs.json",
+      "references/manifest.json", "scripts/check-section-tokens.mjs",
+      "src/catalog/slots/sections.json", "src/catalog/slots/frames.json",
+      "src/catalog/slot-contracts/sections.json", "src/catalog/slot-contracts/frames.json",
+    ]) expect(files.has(path), `runtime inventory missing: ${path}`).toBe(true);
   }, 35_000);
 
   it("declares every designer command named by the skill and companions as a bin", () => {

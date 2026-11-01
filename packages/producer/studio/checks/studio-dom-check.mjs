@@ -12,7 +12,7 @@
  *   - a leaf shows Options, History and References whenever its records hold them.
  * On Home it opens the command menu and requires one command per map entry.
  *
- * Class-wide layout rules (LAYOUT), on every page, in light and again in dark:
+ * Class-wide layout and overflow rules, on every page at 375/768/1280, light and dark:
  *   - card-grid: cards in one grid row are equal height; a card footer ends at the card bottom and
  *     spans its edges; no card description sits beside a card action (it would wrap in a narrow column);
  *   - card-in-card: the page body (#studio-main) never nests a card inside a card;
@@ -34,6 +34,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { buildSync } from 'esbuild';
+import { overflowFindings } from './studio-overflow.mjs';
 
 const studio = join(dirname(fileURLToPath(import.meta.url)), '..');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -239,9 +240,14 @@ export async function runDomCheck(origin, { only } = {}) {
       }
       const required = leaf ? expect(entry.id) : (entry.source?.sectionIds ?? []).map(slot => slot.replace(/^sections\.studio\./, ''));
       for (const section of required) if (!page.sections.includes(section)) add('missing-section', { section });
-      for (const theme of ['light', 'dark']) {
-        if (theme === 'dark') await browser.evaluate(DARK);
-        for (const { rule, ...extra } of await browser.evaluate(LAYOUT) ?? []) add(rule, { theme, ...extra });
+      for (const width of [375, 768, 1280]) {
+        await browser.send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width === 375 });
+        await browser.evaluate(`new Promise(resolve => { document.documentElement.classList.remove('dark'); document.documentElement.dataset.theme = 'light'; setTimeout(resolve, 400); })`);
+        for (const theme of ['light', 'dark']) {
+          if (theme === 'dark') await browser.evaluate(DARK);
+          for (const { rule, ...extra } of await browser.evaluate(LAYOUT) ?? []) add(rule, { width, theme, ...extra });
+          for (const { rule, ...extra } of await browser.evaluate(`(${overflowFindings.toString()})(document)`) ?? []) add(rule, { width, theme, ...extra });
+        }
       }
       const counts = await browser.evaluate(COUNTS);
       const leafCount = id => map.entries.filter(row => row.kind === 'page' && row.parentId === id && row.id.startsWith(`${id}:`)).length;
