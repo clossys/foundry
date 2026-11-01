@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { slotDetail } from './slot-detail.js';
 import { detailStrings, loadSlotDetail, slotDetailInputs } from '../../studio/lib/slot-detail';
 import { serializeFrontmatter, slotPositions, type IaDoc } from '../records/slot-model/index.js';
+import { parseWriterCell, serializeWriterCell } from '../../../writer/src/cells/parse.js';
 
 const roots: string[] = [];
 const id = 'passages.example';
@@ -92,6 +93,66 @@ describe('slot details', () => {
     expect(detailStrings('## en\n### title\n<!-- {"id":"a"} -->\nHello\n## fr\n### title\n<!-- {"id":"b"} -->\nBonjour')).toEqual([
       { key: 'en/title', text: 'Hello' }, { key: 'fr/title', text: 'Bonjour' },
     ]);
+  });
+
+  it('shows canonical Writer strings verbatim after serialization, including escaped content lines', () => {
+    const original = [
+      '', '# Literal heading', '## Literal locale', '### Literal key',
+      '<!-- literal comment -->', '\\leading backslash', '```json', '{"literal":true}', '```',
+      'A multiline string.', '', 'Last line.  ', '',
+    ].join('\n');
+    const source = serializeWriterCell({
+      id: 'strings.example', version: 1, status: 'draft', updated: '2026-01-01', links: [], locales: ['en', 'fr'],
+      records: [
+        { locale: 'en', record: { id: 'synthetic-heading-en', context: 'heading', text: original }, bindings: [] },
+        { locale: 'fr', record: { id: 'synthetic-heading-fr', context: 'heading', text: 'Bonjour\nEncore' }, bindings: [] },
+      ],
+    });
+    expect(parseWriterCell(source).records.map(item => item.record.text)).toEqual([original, 'Bonjour\nEncore']);
+    const body = source.slice(source.indexOf('\n---\n') + '\n---\n'.length);
+    expect(detailStrings(body)).toEqual([
+      { key: 'en/heading', text: original }, { key: 'fr/heading', text: 'Bonjour\nEncore' },
+    ]);
+    const detail: Parameters<typeof slotDetailInputs>[0] = { agent: 'writer', id, kind: 'strings', trail: [], contract: {}, inputs: [], uses: [],
+      usedBy: [], links: [], pin: null, history: [], checks: [], shown: 'copy-v1.md',
+      candidates: [{ name: 'copy-v1.md', version: 1, sha256: 'a'.repeat(64), pinned: false, content: body, source: undefined, issues: [] }],
+    };
+    const inputs = slotDetailInputs(detail, links, 'light');
+    expect(inputs.specimen).toMatchObject({ rows: [{ key: 'en/heading', text: original }, { key: 'fr/heading', text: 'Bonjour\nEncore' }] });
+    expect(inputs.options).toMatchObject({ rows: [{ preview: { rows: [{ key: 'en/heading', text: original }, { key: 'fr/heading', text: 'Bonjour\nEncore' }] } }] });
+  });
+
+  it.each([
+    { kind: 'voice', table: 'principles', record: { id: 'synthetic-voice', context: `${id}.tone`, kind: 'voice-rule', rule: 'tone', value: 'Synthetic calm voice.' }, visible: 'Synthetic calm voice.' },
+    { kind: 'claims', table: 'claims', record: { id: 'synthetic-claim', context: `${id}.promise`, kind: 'claim', phrasings: ['Synthetic claim.'], strategy: { cell: 'advantage.promise', version: 2 }, requiresCitation: true }, visible: 'Synthetic claim.' },
+    { kind: 'naming', table: 'names', record: { id: 'synthetic-name', context: `${id}.name`, kind: 'term', term: 'Synthetic name', termStatus: 'brand', forms: [] }, visible: 'Synthetic name' },
+  ])('projects canonical textless $kind records into the existing native specimen tables', ({ kind, table, record, visible }) => {
+    const { root, dir } = fixture();
+    const source = serializeWriterCell({ id: 'strings.example', version: 1, status: 'draft', updated: '2026-01-01', links: [], locales: ['en'],
+      records: [{ locale: 'en', record, bindings: [] }],
+    });
+    const body = source.slice(source.indexOf('\n---\n') + '\n---\n'.length);
+    const file = join(dir, 'candidates/copy-v1.md');
+    writeFileSync(file, serializeFrontmatter({ slot: id, locales: ['en'], source: { kind: 'original', ref: [] } }, body));
+    const detail = slotDetail(root, 'writer', id)!;
+    expect(detail.candidates[0]!.issues).toEqual([]);
+    const inputs = slotDetailInputs(detail, links, 'light');
+    expect(inputs.specimen).toMatchObject({ kind: 'record', rows: [], tables: [{ id: table, rows: [expect.objectContaining({ cells: expect.arrayContaining([expect.objectContaining({ text: visible })]) })] }] });
+    if (kind === 'claims') expect(inputs.specimen).toMatchObject({ tables: [{ rows: [{ cells: [
+      expect.objectContaining({ statusLabel: 'Draft' }), expect.anything(), { text: 'advantage.promise v2', href: '/director/advantage.promise' },
+    ] }] }] });
+    // Metadata, fence and structured identity must all agree before a table exists.
+    for (const invalid of [
+      body.replace(/<!-- .* -->/, '<!-- {invalid} -->'),
+      body.replace(/<!-- .* -->/, '<!-- {"id":"another-record","bindings":[]} -->'),
+      body.replace(/<!-- .* -->/, '<!-- {"id":"another-record","text":"not metadata","bindings":[]} -->'),
+      body.replace(/<!-- .* -->/, `<!-- ${JSON.stringify({ id: record.id, bindings: [{ recordId: 'invalid-binding' }] })} -->`),
+      body.replace(JSON.stringify(record.context), JSON.stringify('different.context')),
+      body.replace(/\n```\n/, '\n'),
+    ]) {
+      writeFileSync(file, serializeFrontmatter({ slot: id, locales: ['en'], source: { kind: 'original', ref: [] } }, invalid));
+      expect(slotDetailInputs(slotDetail(root, 'writer', id)!, links, 'light').specimen).not.toHaveProperty('tables');
+    }
   });
 
   it('falls back only for an explicit legacy response, never a missing or malformed detail', async () => {

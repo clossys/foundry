@@ -13,6 +13,7 @@ import type { OptionRow, OptionsInput } from '../sections/studio-options';
 import type { ReferenceLink, ReferencesInput } from '../sections/studio-references';
 import type { SpecimenInput, ViewportSpecimen } from '../sections/studio-specimen';
 import type { PageNoticeData } from '../frames/studio-shell/PageNotice';
+import type { SpecimenTable as RecordSpecimenTable } from '../../src/server/writer-specimen-kinds';
 import { optionsDescription } from './designer-library';
 import { LEAF_STATUS_LABEL as STATUS_LABEL, LEAF_STATUS_TONE as STATUS_TONE, LEAF_UNIT, leafCountLabel, type LeafStatus } from './leaf-status';
 
@@ -196,16 +197,21 @@ export function agentRecordSpecimen(leaf: AgentLeafRecords, links: StudioLinks):
       const href = row.ref ? refHref(links, row.ref) : undefined;
       return { key: `${index}`, label: row.label, text: row.text, ...(href ? { href } : {}) };
     }),
-    ...(leaf.specimen.tables?.length ? { tables: leaf.specimen.tables.map(table => ({
-      id: table.id, label: table.label, columns: table.columns, ...(table.prose === undefined ? {} : { prose: table.prose }),
-      rows: table.rows.map(row => ({ key: row.key, cells: row.cells.map(cell => {
-        const href = cell.ref ? refHref(links, cell.ref) : undefined;
-        return { text: cell.text, ...(href ? { href } : {}), ...(isLeafStatus(cell.status) ? { statusLabel: STATUS_LABEL[cell.status], statusTone: STATUS_TONE[cell.status] } : {}) };
-      }) })),
-    })) } : {}),
+    ...(leaf.specimen.tables?.length ? { tables: agentSpecimenTables(leaf.specimen.tables, links) } : {}),
     ...(empty ? { status: { ...status(empty), description: 'This cell holds no records yet, so there is nothing to preview.' } } : {}),
     empty: 'This record holds no content yet.',
   };
+}
+
+/** Shared table binding for legacy cells and native Writer slot candidates. */
+export function agentSpecimenTables(tables: readonly RecordSpecimenTable[], links: StudioLinks) {
+  return tables.map(table => ({
+    id: table.id, label: table.label, columns: table.columns, ...(table.prose === undefined ? {} : { prose: table.prose }),
+    rows: table.rows.map(row => ({ key: row.key, cells: row.cells.map(cell => {
+      const href = cell.ref ? refHref(links, cell.ref) : undefined;
+      return { text: cell.text, ...(href ? { href } : {}), ...(isLeafStatus(cell.status) ? { statusLabel: STATUS_LABEL[cell.status], statusTone: STATUS_TONE[cell.status] } : {}) };
+    }) })),
+  }));
 }
 
 /** A rendered page specimen: the installed page framed at every viewport. */
