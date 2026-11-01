@@ -91,7 +91,9 @@ test('every page manifest declares its navigator, popovers and header actions (a
       assert.ok(manifest, `${page.id} ${where} has a manifest`);
       assert.equal(manifest.navigator, navigator, `${page.id} ${where} navigator`);
       assert.deepEqual(manifest.modules.map(module => module.id), where === 'leaf' ? [navigator, 'checks', 'versions'] : [navigator, 'checks'], `${page.id} ${where} modules`);
-      assert.deepEqual(manifest.actions.map(action => action.id), where === 'leaf' ? ['request-change', 'copy-link'] : ['copy-link'], `${page.id} ${where} actions`);
+      assert.deepEqual(manifest.actions.map(action => action.id), where === 'leaf' ? ['request-change'] : [], `${page.id} ${where} actions`);
+      assert.doesNotMatch(JSON.stringify(manifest), /copy-link/, `${page.id} ${where} has no retired action, command or wiring`);
+      for (const action of manifest.actions) assert.equal(action.handler.kind, 'copy-prompt');
       assert.ok(!('frame' in manifest) && manifest.modules.every(module => !('defaultOpen' in module)), `${page.id} ${where} names no module frame`);
     }
   }

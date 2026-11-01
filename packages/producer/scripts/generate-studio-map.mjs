@@ -17,14 +17,14 @@ const nonEmpty = value => typeof value === 'string' && value.length > 0;
 /** The page manifest vocabulary: navigators, module sources, action handlers and wiring verbs. */
 export const NAVIGATORS = ['explorer', 'outline'];
 export const MODULE_SOURCES = ['page.explorer', 'page.outline', 'page.checks', 'page.versions'];
-export const HANDLERS = ['copy-link', 'copy-prompt'];
-const WIRING_EXPECT = { 'copy-link': 'clipboard link', 'copy-prompt': 'clipboard prompt' };
+export const HANDLERS = ['copy-prompt'];
+const WIRING_EXPECT = { 'copy-prompt': 'clipboard prompt' };
 
 /**
  * A page manifest (app-frame-target "Page manifest"): the navigator (explorer or outline), the
  * modules and the actions, each one header icon that opens a popover (a module popover places a
- * pinned module section fed from a named source; an action popover copies the page link or a
- * prompt), each with a shortcut and a command menu entry, and one wiring line per interaction.
+ * pinned module section fed from a named source; an action popover copies a prompt), each with
+ * a shortcut and a command menu entry, and one wiring line per interaction.
  * A page missing any part fails here, before anything renders.
  */
 export function checkManifest(owner, manifest, contracts) {
@@ -32,7 +32,7 @@ export function checkManifest(owner, manifest, contracts) {
   for (const retired of ['frame', 'defaultOpen']) if (retired in manifest) fail(`${owner} manifest names ${retired}; popovers have no module frame or default open state`);
   if (!NAVIGATORS.includes(manifest.navigator)) fail(`${owner} manifest needs an explorer or an outline`);
   if (!Array.isArray(manifest.modules) || !manifest.modules.length) fail(`${owner} manifest declares no modules`);
-  if (!Array.isArray(manifest.actions) || !manifest.actions.length) fail(`${owner} manifest declares no actions`);
+  if (!Array.isArray(manifest.actions)) fail(`${owner} manifest needs an actions array (which may be empty)`);
   if (!Array.isArray(manifest.wiring) || !manifest.wiring.length) fail(`${owner} manifest declares no wiring checks`);
   const ids = new Set(), keys = new Set();
   const key = (id, shortcut) => {
@@ -55,6 +55,7 @@ export function checkManifest(owner, manifest, contracts) {
   if (!navigator || navigator.section !== `sections.module.${manifest.navigator}`) fail(`${owner} manifest names ${manifest.navigator} but places no sections.module.${manifest.navigator} module`);
   for (const action of manifest.actions) {
     if (!object(action) || !nonEmpty(action.id) || !nonEmpty(action.icon) || !nonEmpty(action.label) || 'cmdk' in action) fail(`${owner} has an invalid action`);
+    if (action.id === 'copy-link') fail(`${owner} declares the retired copy-link action`);
     if (ids.has(action.id)) fail(`${owner} declares ${action.id} twice`);
     ids.add(action.id);
     const handler = action.handler;
@@ -64,6 +65,8 @@ export function checkManifest(owner, manifest, contracts) {
   }
   const lines = manifest.wiring.map(line => {
     if (!object(line) || !nonEmpty(line.do) || !nonEmpty(line.expect)) fail(`${owner} has an invalid wiring line`);
+    const [verb, target] = line.do.split(' ');
+    if (['open', 'copy', 'select', 'search'].includes(verb) && !ids.has(target)) fail(`${owner} wiring names unknown popover ${target}`);
     return line;
   });
   const has = (verb, expect) => lines.some(line => line.do === verb && (expect === undefined || line.expect.startsWith(expect)));
@@ -102,6 +105,7 @@ export function assemblyOf(entry, route, contracts) {
     if (!object(leaf) || leaf.param !== 'slug' || !['plain', 'detail'].includes(leaf.body) || !object(leaf.data) || !Array.isArray(leaf.sections)) fail(`${entry.id} has an invalid leaf template`);
     checkInputs(`${entry.id} leaf`, leaf.sections, leaf.inputs);
     page.leaf = { param: leaf.param, body: leaf.body, data: leaf.data, sectionIds: leaf.sections, inputs: leaf.inputs, manifest: checkManifest(`${entry.id} leaf`, leaf.manifest, contracts) };
+    if (!page.leaf.manifest.actions.some(action => action.id === 'request-change' && action.handler.kind === 'copy-prompt')) fail(`${entry.id} leaf needs the request-change prompt action`);
   }
   return page;
 }
@@ -157,8 +161,8 @@ import projection from './studio-map.json';
 
 /** One page module: a header icon whose popover places a pinned module section, fed from a named source. */
 export interface StudioManifestModule { id: string; icon: string; label: string; section: string; input: string; source: string; shortcut: string }
-/** One header action: a header icon whose popover copies the page link or a prompt naming it. */
-export interface StudioManifestAction { id: string; icon: string; label: string; shortcut: string; handler: { kind: 'copy-link' } | { kind: 'copy-prompt'; prompt: string } }
+/** One header action: a header icon whose popover copies a prompt naming the page. */
+export interface StudioManifestAction { id: string; icon: string; label: string; shortcut: string; handler: { kind: 'copy-prompt'; prompt: string } }
 /** The page manifest: navigator, modules, header actions and one wiring line per interaction. */
 export interface StudioPageManifest { navigator: 'explorer' | 'outline'; modules: readonly StudioManifestModule[]; actions: readonly StudioManifestAction[]; wiring: readonly { do: string; expect: string }[] }
 /** How one assembly is laid out and fed: a data loader, and per section the data field its contract input reads. */

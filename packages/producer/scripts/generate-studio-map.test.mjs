@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { readPinnedPublication } from '@clossys/publisher/content-map/slots';
 import { projectNavigation, projectCommands } from '@clossys/publisher/content-map';
-import { checkManifest, generateStudioMap } from './generate-studio-map.mjs';
+import { HANDLERS, assemblyOf, checkManifest, generateStudioMap } from './generate-studio-map.mjs';
 
 const clossys = fileURLToPath(new URL('../../../clossys/', import.meta.url));
 const GENERIC_PAGE = { file: 'studio/app/[[...route]]/page.tsx', export: 'default' };
@@ -55,6 +55,110 @@ async function selectedBytes(options) {
   return await Promise.all(records.flatMap(record => [readFile(record.path), readFile(record.pinPath)]));
 }
 
+
+async function nativeFixture(t) {
+  const options = await fixture(t);
+  for (const name of ['tree.json', 'cells', 'compile.json', 'content-map', 'route-pack']) {
+    await rm(join(options.publisherRoot, name), { recursive: true, force: true });
+  }
+  return options;
+}
+
+const PAGE_NAMES = ['home', 'director', 'designer', 'writer', 'publisher'];
+const pageSlot = name => join('studio', name === 'home' ? 'studio.pages' : 'agents', `page.${name}`);
+const withoutCopyLink = route => {
+  const next = structuredClone(route);
+  for (const manifest of [next.manifest, ...(next.leaf ? [next.leaf.manifest] : [])]) {
+    manifest.actions = manifest.actions.filter(action => action.id !== 'copy-link');
+    manifest.wiring = manifest.wiring.filter(line => !['open copy-link', 'copy copy-link'].includes(line.do));
+  }
+  return next;
+};
+
+test('L16 v3 records remove only Copy link and retain the request-change prompt and other popovers', async t => {
+  const options = await nativeFixture(t), root = options.publisherRoot;
+  const { routePack } = await readPinnedPublication(root, 'studio');
+  const contracts = new Map(JSON.parse(await readFile(join(clossys, 'agents/designer/slot-contracts/studio.json'), 'utf8')).map(contract => [contract.slot, contract]));
+  assert.deepEqual(HANDLERS, ['copy-prompt']);
+  for (const name of PAGE_NAMES) {
+    const oldCandidate = JSON.parse(await readFile(join(root, pageSlot(name), 'candidates/page-v2.json'), 'utf8'));
+    const candidate = JSON.parse(await readFile(join(root, pageSlot(name), 'candidates/page-v3.json'), 'utf8'));
+    const expected = structuredClone(oldCandidate);
+    expected.meta.entry.blocks.Route = withoutCopyLink(expected.meta.entry.blocks.Route);
+    assert.deepEqual(candidate, expected, `${name}: all other candidate data is preserved`);
+    assert.equal((await selected(options, `page.${name}`)).pin.candidate, 'page-v3.json');
+    const route = candidate.meta.entry.blocks.Route;
+    assert.deepEqual(route, withoutCopyLink(oldCandidate.meta.entry.blocks.Route), `${name}: all other Route data is preserved`);
+    const { instanceId, path, label, keywords, ...projectedRoute } = routePack.routes.find(route => route.instanceId === name);
+    assert.deepEqual(projectedRoute, route, `${name}: native projection retains canonical Route metadata`);
+    const entry = { id: name, path: candidate.path, title: candidate.title, source: { frameId: candidate.frame, sectionIds: candidate.sections } };
+    const page = assemblyOf(entry, route, contracts);
+    assert.doesNotMatch(JSON.stringify(page), /copy-link/);
+    assert.deepEqual(page.manifest.actions, []);
+    if (page.leaf) {
+      assert.deepEqual(page.leaf.manifest.actions.map(action => action.id), ['request-change']);
+      assert.equal(page.leaf.manifest.actions[0].handler.kind, 'copy-prompt');
+      assert.match(page.leaf.manifest.actions[0].handler.prompt, /What should change/);
+      assert.ok(page.leaf.manifest.wiring.some(line => line.do === 'copy request-change' && line.expect === 'clipboard prompt'));
+    }
+  }
+});
+
+test('L16 active generation contains no copy-link and leaves native candidate history and pins byte-identical', async t => {
+  const options = await nativeFixture(t);
+  const paths = PAGE_NAMES.flatMap(name => [1, 2, 3].map(version =>
+    join(options.publisherRoot, pageSlot(name), 'candidates', `page-v${version}.json`)));
+  const pinsBefore = await selectedBytes(options);
+  const before = await Promise.all(paths.map(path => readFile(path)));
+  const projection = await run(options);
+  assert.doesNotMatch(JSON.stringify(projection), /copy-link/);
+  assert.doesNotMatch(JSON.stringify(projectCommands(projection.map)), /copy-link/);
+  assert.doesNotMatch(await readFile(join(options.outputDir, 'studio-map.ts'), 'utf8'), /copy-link/);
+  for (let i = 0; i < paths.length; i++) assert.deepEqual(await readFile(paths[i]), before[i], paths[i]);
+  assert.deepEqual(await selectedBytes(options), pinsBefore);
+});
+
+test('L16 rejects a restored copy-link kind, a renamed copy-link action and stale wiring on every page and leaf', async t => {
+  const options = await nativeFixture(t);
+  const contracts = new Map(JSON.parse(await readFile(join(clossys, 'agents/designer/slot-contracts/studio.json'), 'utf8')).map(contract => [contract.slot, contract]));
+  for (const name of PAGE_NAMES) {
+    const route = (await selected(options, `page.${name}`)).record.meta.entry.blocks.Route;
+    for (const original of [route.manifest, ...(route.leaf ? [route.leaf.manifest] : [])]) {
+      const restored = structuredClone(original);
+      restored.actions.push({ id: 'restored-link', label: 'Copy link', icon: 'assets.icon-link', shortcut: 'l', handler: { kind: 'copy-link' } });
+      restored.wiring.push({ do: 'open restored-link', expect: 'restored-link open' }, { do: 'copy restored-link', expect: 'clipboard link' });
+      assert.throws(() => checkManifest(name, restored, contracts), /has no copy handler/);
+      restored.actions.at(-1).id = 'copy-link';
+      restored.actions.at(-1).handler = { kind: 'copy-prompt', prompt: '{url}' };
+      assert.throws(() => checkManifest(name, restored, contracts), /retired copy-link action/);
+      const stale = structuredClone(original);
+      stale.wiring.push({ do: 'open copy-link', expect: 'copy-link open' });
+      assert.throws(() => checkManifest(name, stale, contracts), /unknown popover copy-link/);
+    }
+  }
+});
+
+test('L16 browser manifest preflight permits action-free pages and detects copy-link restoration', async t => {
+  const options = await nativeFixture(t);
+  const { manifestFindings } = await import('../studio/checks/studio-modules-check.mjs');
+  const pages = await Promise.all(PAGE_NAMES.map(async name => {
+    const route = (await selected(options, `page.${name}`)).record.meta.entry.blocks.Route;
+    return { id: name, manifest: route.manifest, ...(route.leaf ? { leaf: { manifest: route.leaf.manifest } } : {}) };
+  }));
+  assert.deepEqual(manifestFindings(pages), []);
+  for (const page of pages) {
+    for (const leaf of [false, ...(page.leaf ? [true] : [])]) {
+      const changed = structuredClone(page);
+      const manifest = leaf ? changed.leaf.manifest : changed.manifest;
+      manifest.actions.push({ id: 'copy-link', handler: { kind: 'copy-link' } });
+      assert.ok(manifestFindings([changed]).some(finding => finding.rule === 'unsupported-action'), `${page.id} ${leaf ? 'leaf' : 'page'}`);
+      if (leaf) {
+        manifest.actions = [];
+        assert.ok(manifestFindings([changed]).some(finding => finding.missing === 'request-change'));
+      }
+    }
+  }
+});
 
 test('every Studio page is a Publisher assembly: frame + ordered sections + bindings, from the native pinned map', async t => {
   const options = await fixture(t), projection = await run(options);
@@ -130,18 +234,19 @@ test('a slot with no pin, or an item with no trusted reference, fails closed', a
 });
 
 
-test('a page manifest missing its explorer, modules or actions fails closed (mutation proof)', async t => {
+test('a page manifest missing its explorer, modules or actions array fails closed (mutation proof)', async t => {
   const mutations = [
     ['no manifest', route => { delete route.manifest; }, /declares no page manifest/],
     ['no explorer', route => { delete route.manifest.navigator; }, /needs an explorer or an outline/],
     ['explorer module removed', route => { route.manifest.modules = route.manifest.modules.filter(module => module.id !== 'explorer'); }, /explorer/],
     ['no modules', route => { route.manifest.modules = []; }, /declares no modules/],
-    ['no actions', route => { route.manifest.actions = []; }, /declares no actions/],
-    ['an action with no wiring line', route => { route.manifest.wiring = route.manifest.wiring.filter(line => !line.do.startsWith('copy ')); }, /wiring/],
+    ['no actions array', route => { delete route.manifest.actions; }, /needs an actions array/],
+    ['an action with no wiring line', route => { route.leaf.manifest.wiring = route.leaf.manifest.wiring.filter(line => !line.do.startsWith('copy ')); }, /wiring/],
     ['a popover with no open line', route => { route.manifest.wiring = route.manifest.wiring.filter(line => line.do !== 'open checks'); }, /checks popover/],
     ['no escape close line', route => { route.manifest.wiring = route.manifest.wiring.filter(line => line.do !== 'key escape'); }, /closing a popover/],
-    ['a shared shortcut', route => { route.manifest.actions[0].shortcut = route.manifest.modules[0].shortcut; }, /reuses the shortcut/],
+    ['a shared shortcut', route => { route.leaf.manifest.actions[0].shortcut = route.leaf.manifest.modules[0].shortcut; }, /reuses the shortcut/],
     ['a retired module frame', route => { route.manifest.frame = 'frames.module'; }, /names frame/],
+    ['a leaf with no request-change', route => { route.leaf.manifest.actions = []; route.leaf.manifest.wiring = route.leaf.manifest.wiring.filter(line => !line.do.includes('request-change')); }, /needs the request-change prompt action/],
     ['a leaf with no outline', route => { delete route.leaf.manifest.navigator; }, /needs an explorer or an outline/],
   ];
   const clean = await fixture(t);

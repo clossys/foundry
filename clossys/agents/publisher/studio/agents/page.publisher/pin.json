@@ -1,6 +1,6 @@
 {
-  "candidate": "page-v2.json",
-  "sha256": "3676a1e4a0c745ef45b58376538d39f1f49b1e2c5c218975841e81dd04aaf3d2",
-  "pinnedBy": "migration:SLOT-MODEL",
-  "at": "2026-10-31T00:00:00Z"
+  "candidate": "page-v3.json",
+  "sha256": "52cf3a2bac0212817019ec270a25f4d321cbf1f5b5fd340dcca2e10dc02a9852",
+  "pinnedBy": "owner:msg:01a19586-01c0-76f5-af0b-0461e8975017#U19",
+  "at": "2026-11-01T15:52:01.291Z"
 }
