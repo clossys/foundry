@@ -62,17 +62,22 @@ describe("NavDisclosure", () => {
     expect(toggle).toHaveFocus();
   });
 
-  it("activating a link in the panel collapses it, including a nested click target, without refocusing the toggle", () => {
+  it.each(["link", "nested target"])("activating a panel %s returns focus before the closed panel becomes inert", target => {
     renderNav();
     const toggle = screen.getByRole("button", { name: "Menu" });
     fireEvent.click(toggle);
     const link = screen.getByRole("link", { name: "Contact" });
     act(() => link.focus());
-    fireEvent.click(screen.getByText("Contact"));
+    expect(link).toHaveFocus();
+    expect(link.parentElement).not.toHaveAttribute("inert");
+    const inertAtFocus: boolean[] = [];
+    toggle.addEventListener("focus", () => { inertAtFocus.push(link.parentElement!.hasAttribute("inert")); }, { once: true });
+    fireEvent.click(target === "link" ? link : screen.getByText("Contact"));
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(link.parentElement).not.toHaveAttribute("data-expanded");
     expect(link.parentElement).toHaveAttribute("inert");
-    expect(toggle).not.toHaveFocus();
+    expect(inertAtFocus).toEqual([false]);
+    expect(toggle).toHaveFocus();
   });
 
   it("accepts landmark and trigger names and className, with instance-local controls", () => {
