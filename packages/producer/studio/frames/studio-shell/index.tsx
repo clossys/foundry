@@ -2,18 +2,20 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { MessageSquareIcon, PanelRightIcon, SparklesIcon } from 'lucide-react';
+import { MoonIcon, PanelRightIcon, SunIcon } from 'lucide-react';
 import type { ContentMapCommandGroup, ContentMapNavigation } from '@clossys/publisher/content-map';
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, Button,
   CommandDialog, Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut,
-  Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
-  Popover, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger, ScrollArea, Separator,
-  Sheet, SheetDescription, SheetHeader, SheetTitle, Sidebar, SidebarContent, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarProvider, SidebarTrigger,
-  useSidebar, Tooltip, TooltipTrigger,
+  PopoverDescription, PopoverHeader, PopoverTitle, ScrollArea, Separator,
+  ResizablePanel, ResizablePanelGroup, ResizableHandle, SidebarInset, SidebarProvider, SidebarTrigger,
+  useSidebar,
 } from '@clossys/designer-ui';
 import { studioIcon } from '../../lib/studio-icons';
 import { AppSidebar } from './app-sidebar';
+import { useThemeMode } from '../../components/StudioProviders';
+import { HeaderIconButton, HeaderPopover, HeaderTooltip } from './stock-header-controls';
+import { StockChatSheet, StockChatSidebar } from './stock-chat-sidebar';
 
 export { PageNotice, type PageNoticeData } from './PageNotice';
 
@@ -23,7 +25,7 @@ export interface PopoverContext { active?: string; select: (target: string) => v
 /**
  * One header popover, as the page manifest declares it. A module popover places its pinned module
  * section (`render`) and names the page parts it points at (`targets`, followed by the scroll-spy);
- * an action popover shows the text it copies (`copy`: the page link, or a prompt naming it).
+ * an action popover shows the text it copies (`copy`: a prompt naming the page).
  */
 export interface PopoverSpec {
   id: string;
@@ -33,7 +35,7 @@ export interface PopoverSpec {
   description?: string;
   targets?: readonly string[];
   render?: (context: PopoverContext) => ReactNode;
-  copy?: { kind: 'link' } | { kind: 'prompt'; prompt: string };
+  copy?: { kind: 'prompt'; prompt: string };
 }
 
 /** One page command for the command menu: opening one header popover, with its shortcut. */
@@ -85,37 +87,18 @@ async function copyText(text: string): Promise<boolean> {
 const typing = (element: EventTarget | null) => element instanceof HTMLElement && (element.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(element.tagName));
 const sentence = (value: string) => value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
 
-/** The right sidebar is chat only. Chat is not connected yet, so it shows its empty state. */
-function ChatContent() {
-  return <>
-    <SidebarHeader className="h-16 justify-center border-b border-sidebar-border">
-      <SidebarGroupLabel><SparklesIcon />Chat</SidebarGroupLabel>
-    </SidebarHeader>
-    <SidebarContent>
-      <Empty data-chat-empty>
-        <EmptyHeader>
-          <EmptyMedia variant="icon"><MessageSquareIcon /></EmptyMedia>
-          <EmptyTitle>No conversation yet</EmptyTitle>
-          <EmptyDescription>Chat with Director, Designer, Writer and Publisher will open here. Agents work through the CLI for now.</EmptyDescription>
-        </EmptyHeader>
-      </Empty>
-    </SidebarContent>
-  </>;
-}
-
 /** An action popover's body: the text it copies, then the copy button. */
-function CopyBody({ spec }: { spec: PopoverSpec }) {
+function CopyBody({ spec, prompt }: { spec: PopoverSpec; prompt: string }) {
   const [copied, setCopied] = useState(false);
   // The page link, without the popover state (it renders only once opened, in the browser).
   const [href] = useState(() => { const url = new URL(window.location.href); url.searchParams.delete(POPOVER_PARAM); return url.href; });
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
-  const text = spec.copy?.kind === 'prompt' ? spec.copy.prompt.replaceAll('{url}', href) : href;
-  const label = spec.copy?.kind === 'prompt' ? 'Copy prompt' : 'Copy link';
+  const text = prompt.replaceAll('{url}', href);
   return <>
     <PopoverDescription data-popover-text={spec.id} className="max-h-48 overflow-y-auto rounded-md bg-muted px-2 py-1.5 font-mono text-xs break-all whitespace-pre-wrap">{text}</PopoverDescription>
     <Button size="sm" data-popover-copy={spec.id} onPress={() => { void copyText(text).then(ok => { if (!ok) return; setCopied(true); clearTimeout(timer.current); timer.current = setTimeout(() => setCopied(false), 1600); }); }}>
-      {copied ? 'Copied' : label}
+      {copied ? 'Copied' : 'Copy prompt'}
     </Button>
   </>;
 }
@@ -228,6 +211,7 @@ export interface StudioShellProps {
  */
 export default function StudioShellFrame({ navigation, commands, breadcrumbs, popovers = [], body = 'plain', head, children }: StudioShellProps) {
   const pathname = usePathname();
+  const { resolved, setMode } = useThemeMode();
   const [searchOpen, setSearchOpen] = useState(false);
   const wide = useMediaQuery('(min-width: 1024px)');
   const [leftOpen, setLeftOpen] = useState(true);
@@ -284,13 +268,15 @@ export default function StudioShellFrame({ navigation, commands, breadcrumbs, po
   return <SidebarProvider open={leftOpen} onOpenChange={setLeftOpen} className="h-svh overflow-hidden">
     <CloseMobileNavigation />
     <AppSidebar navigation={navigation} />
-    <SidebarInset className="min-h-0 min-w-0 overflow-hidden">
-      <header className="sticky top-0 flex h-14 shrink-0 items-center gap-2 bg-background pr-3">
+    <ResizablePanelGroup orientation="horizontal" className="min-h-0 min-w-0 flex-1">
+    <ResizablePanel id="studio-page">
+    <SidebarInset className="h-full min-h-0 min-w-0 overflow-hidden">
+      <header className="sticky top-0 flex h-14 shrink-0 items-center gap-2 bg-background">
         <div className="flex flex-1 items-center gap-2 px-3">
-          <SidebarTrigger data-panel-toggle="left" />
+          <HeaderTooltip label="Toggle Sidebar"><SidebarTrigger data-panel-toggle="left" /></HeaderTooltip>
           <Separator
             orientation="vertical"
-            className="mr-2 data-vertical:h-4 data-vertical:self-auto"
+            className="mr-2 aria-[orientation=vertical]:h-4 aria-[orientation=vertical]:self-auto"
           />
           <Breadcrumb>
             <BreadcrumbList>
@@ -304,46 +290,43 @@ export default function StudioShellFrame({ navigation, commands, breadcrumbs, po
             </BreadcrumbList>
           </Breadcrumb>
         </div>
+        <div className="flex items-center gap-2 px-3">
         {popovers.map(spec => {
           const Icon = studioIcon(spec.icon, spec.id);
-          const pressed = open === spec.id;
-          return <PopoverTrigger key={spec.id} isOpen={pressed} onOpenChange={value => show(value ? spec.id : undefined)}>
-            <TooltipTrigger>
-              <Button variant={pressed ? 'secondary' : 'ghost'} size="icon-sm" aria-label={spec.label} data-popover-trigger={spec.id} aria-keyshortcuts={spec.shortcut}><Icon /></Button>
-              <Tooltip>{spec.label}{spec.shortcut ? ` (${spec.shortcut.toUpperCase()})` : ''}</Tooltip>
-            </TooltipTrigger>
-            <Popover placement="bottom end" data-popover={spec.id} className="w-80 max-w-[calc(100vw-2rem)]">
+          return <HeaderPopover key={spec.id} label={spec.label} open={open === spec.id} onOpenChange={value => show(value ? spec.id : undefined)}
+            data-popover-trigger={spec.id} aria-keyshortcuts={spec.shortcut} content={<>
               <PopoverHeader>
                 <PopoverTitle>{spec.label}</PopoverTitle>
                 {spec.description && <PopoverDescription>{spec.description}</PopoverDescription>}
               </PopoverHeader>
-              {spec.copy ? <CopyBody spec={spec} /> : <ScrollArea data-popover-body={spec.id} className="max-h-[60svh]">{spec.render?.(context)}</ScrollArea>}
-            </Popover>
-          </PopoverTrigger>;
+              {spec.copy?.kind === 'prompt' ? <CopyBody spec={spec} prompt={spec.copy.prompt} /> : <ScrollArea data-popover-body={spec.id} className="max-h-[60svh]">{spec.render?.(context)}</ScrollArea>}
+            </>}><Icon /></HeaderPopover>;
         })}
+        <HeaderIconButton label="Toggle theme" aria-pressed={resolved === 'dark'} data-theme-toggle
+          onClick={() => setMode(resolved === 'dark' ? 'light' : 'dark')}>
+          {resolved === 'dark' ? <SunIcon /> : <MoonIcon />}
+        </HeaderIconButton>
         <Separator
           orientation="vertical"
-          className="mx-1 data-vertical:h-4 data-vertical:self-auto"
+          className="aria-[orientation=vertical]:h-4 aria-[orientation=vertical]:self-auto"
         />
-        <Button variant={(wide ? chatOpen : chatSheet) ? 'secondary' : 'ghost'} size="icon-sm" aria-label="Toggle chat" aria-pressed={wide ? chatOpen : chatSheet} data-panel-toggle="chat" onPress={toggleChat}><PanelRightIcon /></Button>
+        <HeaderIconButton label="Toggle chat" aria-pressed={wide ? chatOpen : chatSheet} data-panel-toggle="chat" onClick={toggleChat}><PanelRightIcon /></HeaderIconButton>
+        </div>
       </header>
-      <main id="studio-main" data-body={body} className="flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-x-hidden overflow-y-auto overscroll-contain p-4 md:p-6 *:shrink-0">
+      <main id="studio-main" data-body={body} className="@container/main flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-x-hidden overflow-y-auto overscroll-contain p-4 md:p-6 *:shrink-0">
         {head}{children}
       </main>
     </SidebarInset>
-    {wide && chatOpen && <Sidebar
-      collapsible="none"
-      className="sticky top-0 hidden h-svh border-l lg:flex"
-      aria-label="Chat"
-      data-panel="chat"
-    >
-      <ChatContent />
-    </Sidebar>}
+    </ResizablePanel>
+    {wide && chatOpen && <>
+      <ResizableHandle aria-label="Resize chat" />
+      <ResizablePanel id="studio-chat" defaultSize="16rem" minSize="16rem" maxSize="50%" groupResizeBehavior="preserve-pixel-size">
+        <StockChatSidebar />
+      </ResizablePanel>
+    </>}
+    </ResizablePanelGroup>
     <CommandMenu commands={commands} pageCommands={pageCommands} open={searchOpen} onOpenChange={setSearchOpen} />
-    {!wide && <Sheet isOpen={chatSheet} onOpenChange={setChatSheet} side="right" data-panel="chat" className="w-72 max-w-[90vw] bg-sidebar p-0 text-sidebar-foreground">
-      <SheetHeader className="sr-only"><SheetTitle>Chat</SheetTitle><SheetDescription>Ask an agent about the open page.</SheetDescription></SheetHeader>
-      <ChatContent />
-    </Sheet>}
+    {!wide && <StockChatSheet isOpen={chatSheet} onOpenChange={setChatSheet} />}
   </SidebarProvider>;
 }
 
