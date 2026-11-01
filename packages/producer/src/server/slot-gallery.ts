@@ -77,7 +77,7 @@ export function slotGallery(consumer: string, agent: SlotAgent): { sections: Slo
     try {
       kind = readSlot(consumer, agent, id).kind;
       if (candidate && entry.pin && readCandidate(consumer, agent, id, candidate).sha256 !== entry.pin.sha256) failing = true;
-      if (!failing && candidate && agent === 'designer') {
+      if (!failing && candidate && agent === 'designer' && entry.pin?.candidate === candidate) {
         const item = JSON.parse(readCandidate(consumer, agent, id, candidate).bytes);
         if (typeof item.name === 'string') element = item.name;
       }
