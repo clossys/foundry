@@ -17,7 +17,7 @@ import { SPECIMEN_CHROME_CSS } from "./chrome.js";
 import type { SpecimenFile, SpecimenRecord, SpecimenRecordSource } from "./types.js";
 
 /** Bumped when the renderer's output for the same record changes. */
-export const SPECIMEN_RENDERER_VERSION = "specimen-1";
+export const SPECIMEN_RENDERER_VERSION = "specimen-2";
 
 export interface SpecimenBuild {
   readonly hash: string;
@@ -53,9 +53,9 @@ import * as Element from "specimen-entry";
 const report = (error, source) => { try { window.__clossysSpecimen && window.__clossysSpecimen.error(error, source); } catch {} };
 const config = JSON.parse(document.getElementById("specimen-props").textContent || "{}");
 const pick = () => {
-  if (config.export && typeof Element[config.export] === "function") return Element[config.export];
-  if (typeof Element.default === "function") return Element.default;
-  return Object.values(Element).find(value => typeof value === "function" && /^[A-Z]/.test(value.name || "")) || Object.values(Element).find(value => typeof value === "function");
+  const name = config.export || "default";
+  if (typeof Element[name] === "function") return Element[name];
+  report(new Error("payload has no component export " + name), "build");
 };
 class Boundary extends React.Component {
   constructor(props) { super(props); this.state = { error: null }; }
@@ -68,8 +68,7 @@ class Boundary extends React.Component {
 }
 const Component = pick();
 const root = createRoot(document.getElementById("specimen-root"), { onCaughtError() {}, onRecoverableError(error) { report(error, "recoverable"); } });
-if (!Component) report(new Error("payload exports no component"), "build");
-else root.render(React.createElement(Boundary, null, React.createElement(Component, config.props || {})));
+if (Component) root.render(React.createElement(Boundary, null, React.createElement(Component, config.props || {})));
 `;
 
 const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -147,9 +146,10 @@ async function closure(record: SpecimenRecord, source: SpecimenRecordSource | un
 }
 
 function aliasTarget(files: ReadonlyMap<string, string>, alias: string): string | undefined {
+  if (alias.startsWith("/") || alias.split("/").some(part => part === ".." || part === ".")) return undefined;
   const paths = [...files.keys()].filter(path => CODE.test(path));
-  return paths.find(path => stripExt(path) === alias || stripExt(path).endsWith(`/${alias}`))
-    ?? paths.find(path => posix.basename(stripExt(path)) === posix.basename(alias));
+  const targets = paths.filter(path => stripExt(path) === alias || stripExt(path).endsWith(`/${alias}`) || stripExt(path) === `${alias}/index`);
+  return targets.length === 1 ? targets[0] : undefined;
 }
 
 function relativeTarget(files: ReadonlyMap<string, string>, importer: string, specifier: string): string | undefined {
@@ -164,7 +164,7 @@ async function bundle(esbuild: SpecimenEsbuild, files: ReadonlyMap<string, strin
     name: "specimen-records",
     setup(build: any) {
       build.onResolve({ filter: /^specimen-entry$/ }, () => ({ path: entry, namespace: "specimen" }));
-      build.onResolve({ filter: /^@\// }, (args: any) => {
+      build.onResolve({ filter: /^@\//, namespace: "specimen" }, (args: any) => {
         const alias = args.path.slice(2);
         const target = aliasTarget(files, alias);
         if (target) return { path: target, namespace: "specimen" };
@@ -177,7 +177,9 @@ async function bundle(esbuild: SpecimenEsbuild, files: ReadonlyMap<string, strin
       });
       // npm imports resolve from the preview workspace, then from this package's own install.
       build.onResolve({ filter: /^[^./]/ }, async (args: any) => {
-        if (args.pluginData?.specimenFallback || args.path.startsWith("@/")) return undefined;
+        const virtual = args.namespace === "specimen" || args.namespace === "specimen-utils";
+        const bootstrap = args.importer === join(workspace, "specimen-bootstrap.js");
+        if (args.pluginData?.specimenFallback || args.path.startsWith("@/") || (!virtual && !bootstrap)) return undefined;
         for (const resolveDir of [workspace, publisherDir]) {
           const result = await build.resolve(args.path, { kind: args.kind, resolveDir, pluginData: { specimenFallback: true } });
           if (!result.errors.length) return { path: result.path, external: result.external, sideEffects: result.sideEffects };
@@ -196,7 +198,8 @@ async function bundle(esbuild: SpecimenEsbuild, files: ReadonlyMap<string, strin
       logLevel: "silent", legalComments: "none", plugins: [plugin],
     });
     const output = result.outputFiles ?? [];
-    return { js: output.find(file => file.path.endsWith(".js"))?.text, css: output.filter(file => file.path.endsWith(".css")).map(file => file.text).join("\n"), errors: [] };
+    const js = output.find(file => file.path.endsWith(".js"))?.text;
+    return { ...(js ? { js } : {}), css: output.filter(file => file.path.endsWith(".css")).map(file => file.text).join("\n"), errors: js ? [] : ["visual specimen has no executable bundle"] };
   } catch (error: any) {
     const messages = Array.isArray(error?.errors) && error.errors.length ? error.errors.map((row: any) => row.text) : [error instanceof Error ? error.message : String(error)];
     return { css: "", errors: messages };

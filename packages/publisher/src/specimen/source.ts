@@ -73,13 +73,20 @@ export function adaptPreview(value: unknown): SpecimenPreview {
   // A bare `light` or `dark` is a mode (the library preview record), not a theme id.
   const themeId = (raw: unknown) => typeof raw === "string" && raw !== "light" && raw !== "dark" ? raw : undefined;
   const theme = themeId(value.theme) ?? themeId(value.defaults?.theme);
-  const fixtures = isRecord(value.fixtures) ? value.fixtures : isRecord(value.props) ? value.props : undefined;
+  const rawFixtures = isRecord(value.fixtures) ? value.fixtures : undefined;
+  // Canonical fixtures name a source file and export. Older previews already carry a prop map.
+  const descriptor = rawFixtures && Object.hasOwn(rawFixtures, "file") && Object.hasOwn(rawFixtures, "export") && Object.hasOwn(rawFixtures, "props");
+  if (descriptor && (typeof rawFixtures.file !== "string" || typeof rawFixtures.export !== "string" || !rawFixtures.export || !isRecord(rawFixtures.props))) throw new Error("preview fixtures need file, export and object props");
+  const fixtures = descriptor ? rawFixtures.props : rawFixtures ?? (isRecord(value.props) ? value.props : undefined);
+  const entry = typeof value.entry === "string" ? value.entry : descriptor ? rawFixtures.file : undefined;
+  const exported = typeof value.export === "string" ? value.export : descriptor ? rawFixtures.export : undefined;
+  if (exported !== undefined && !exported) throw new Error("preview export must name a component");
   const copy = adaptCopy(value.copy);
   return {
     ...(fixtures ? { fixtures } : {}), ...(copy ? { copy } : {}), ...(container ? { container } : {}),
     ...(theme ? { theme } : {}), ...(width ? { width } : {}),
-    ...(typeof value.entry === "string" ? { entry: value.entry } : {}),
-    ...(typeof value.export === "string" ? { export: value.export } : {}),
+    ...(entry !== undefined ? { entry } : {}),
+    ...(exported !== undefined ? { export: exported } : {}),
   };
 }
 
@@ -136,11 +143,13 @@ export function specimenRecordFrom(input: SpecimenElementVersion): SpecimenRecor
   if (!primary) throw new Error(`${input.id}: the record has no payload file`);
   const kind = specimenKindOf({ id: input.id, kind: input.kind, ...(input.layer ? { layer: input.layer } : {}) });
   const files = input.files.flatMap(file => payloadFiles(file.path, file.content));
+  const preview = adaptPreview(input.preview);
+  if (preview.entry !== undefined && (!/\.(?:[cm]?[jt]sx?)$/.test(preview.entry) || isAbsolute(preview.entry) || preview.entry.split(/[\\/]/).some(part => part === ".." || part === ".") || files.filter(file => file.path === preview.entry).length !== 1)) throw new Error(`${input.id}: preview entry ${preview.entry} is not a code file in the payload`);
   return {
     id: input.id, version: input.version, kind,
     payload: { path: primary.path, raw: primary.content, files },
     sources: input.files.map(file => ({ path: file.path, content: file.content })),
-    preview: adaptPreview(input.preview),
+    preview,
     contentHash: input.contentHash,
   };
 }

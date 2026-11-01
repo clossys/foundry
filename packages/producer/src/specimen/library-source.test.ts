@@ -1,6 +1,7 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { RecordError } from "../records/validate.js";
 import { listSlots, readCandidate } from "../records/slots.js";
@@ -37,6 +38,33 @@ describe("canonical specimen records through the common slot reader", () => {
     expect(record!.contentHash).toBe(sha256Hex(readFileSync(candidate())));
     expect(await source.read("sample-card", 2)).toBeUndefined();
     expect(await source.theme()).toMatchObject({ id: "themes.preset/neutral" });
+  });
+
+  it("transports actual canonical Studio multi-file fixtures with exact pin bytes, order and lineage", async () => {
+    const consumer = fileURLToPath(new URL("../../../../clossys", import.meta.url));
+    const source = libraryRecordSource({ roots: [consumer] });
+    for (const id of ["frames.studio-shell/studio-shell", "sections.studio.agent-gallery/studio-agent-gallery", "sections.studio.checks/studio-checks"]) {
+      const [slot] = id.split("/");
+      const pin = listSlots(consumer, "designer").find(entry => entry.id === slot)!.pin!;
+      const native = readCandidate(consumer, "designer", slot!, pin.candidate);
+      const item = JSON.parse(native.bytes);
+      const record = (await source.read(id))!;
+      expect(record.contentHash).toBe(pin.sha256);
+      expect(record.payload.raw).toBe(native.bytes);
+      expect(record.payload.files).toEqual(item.files);
+      expect(record.kind).toBe("visual");
+      expect(record.preview).toMatchObject({ entry: item.meta.preview.fixtures.file, export: item.meta.preview.fixtures.export, fixtures: item.meta.preview.fixtures.props });
+      expect(JSON.parse(record.payload.raw).meta.source).toEqual(item.meta.source);
+      expect(record.version).toBe(Number(/-v(\d+)\.json$/.exec(pin.candidate)![1]));
+    }
+  });
+
+  it("rejects candidate identity drift even after a temporary fixture is re-pinned to those bytes", async () => {
+    const slot = card(), item = JSON.parse(readFileSync(candidate(), "utf8"));
+    const bytes = jsonBytes({ ...item, name: "another-element" });
+    writeFileSync(candidate(), bytes);
+    writeFileSync(pinFile(slot.dir), jsonBytes({ ...slot.pin, sha256: sha256Hex(bytes) }));
+    await expect(libraryRecordStore([root]).load("sample-card")).rejects.toThrow(/element identity/);
   });
 
   it("reads an older pin and exposes newer options only by explicit version", async () => {

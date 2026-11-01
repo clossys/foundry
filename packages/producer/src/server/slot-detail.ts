@@ -1,9 +1,7 @@
 /** Detail-only projection. Slot metadata, candidates and pins have one reader. */
 import { join } from "node:path";
-import { readFileSync } from "node:fs";
-import { isDeepStrictEqual } from "node:util";
 import { hasSlotModel, listSlots, pinHistory, readCandidate, readIa, readSlot, slotIndex, usedBy } from "../records/slots.js";
-import { CANDIDATE_NAME, parseFrontmatter, validateCandidate, type SlotAgent } from "../records/slot-model/index.js";
+import { CANDIDATE_NAME, parseFrontmatter, validateCandidate, validateSlotDoc, type SlotAgent } from "../records/slot-model/index.js";
 
 export interface DetailCandidate {
   name: string; version: number; sha256: string; pinned: boolean;
@@ -39,25 +37,26 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
       try { source = JSON.parse(candidate.bytes).meta?.source; } catch { /* validation records malformed JSON */ }
     }
     const version = Number(CANDIDATE_NAME.exec(name)![2]);
+    const issues = validateCandidate(doc.kind, id, name, candidate.bytes).map(issue => `${issue.code}: ${issue.message}`);
+    const element = CANDIDATE_NAME.exec(name)![1]!;
+    if (agent === "designer" && doc.kind === "element" && !issues.length) {
+      const item = JSON.parse(candidate.bytes);
+      if (item.name !== element || (item.meta?.element?.id !== undefined && item.meta.element.id !== element)
+        || (item.meta?.element?.slot !== undefined && item.meta.element.slot !== id)) issues.push("candidate-identity: element identity differs from the candidate name or slot");
+    }
     let specimen: string | undefined;
-    // The existing specimen substrate renders library artifacts. Use it only
-    // when the candidate's actual registry payload matches that artifact.
-    if (agent === "designer" && name.endsWith(".json")) {
-      const element = CANDIDATE_NAME.exec(name)![1]!;
-      for (const file of ["registry-item.json", `${element}.json`]) {
-        try {
-          const { meta: _candidateMeta, ...payload } = JSON.parse(candidate.bytes);
-          const { meta: _libraryMeta, ...installed } = JSON.parse(readFileSync(join(consumer, "library", id, element, `v${version}`, file), "utf8"));
-          const selection = JSON.parse(readFileSync(join(consumer, "selection.json"), "utf8"));
-          const selected = selection.pins?.[id];
-          if (selected?.element === element && version >= selected.version && isDeepStrictEqual(payload, installed)) specimen = `${id}/${element}`;
-        } catch { /* No matching render artifact: keep the candidate's content visible. */ }
-      }
+    // The specimen source reads these same native bytes. Only the exact valid pin
+    // grants a preview; legacy selections and installed artifacts are irrelevant.
+    if (agent === "designer" && doc.kind === "element" && name.endsWith(".json") && !issues.length
+      && entry.pin?.candidate === name && entry.pin.sha256 === candidate.sha256
+      && !validateSlotDoc(doc).length && doc.id === id && doc.agent === agent
+      && doc.ia.l0 === entry.position.l0 && doc.ia.l1 === entry.position.l1 && doc.ia.l2 === entry.position.l2 && doc.ia.order === entry.position.order) {
+      specimen = `${id}/${element}`;
     }
     return { name, version, sha256: candidate.sha256,
       pinned: entry.pin?.candidate === name, content, source,
       ...(specimen ? { specimen } : {}),
-      issues: validateCandidate(doc.kind, id, name, candidate.bytes).map(issue => `${issue.code}: ${issue.message}`) };
+      issues };
   });
   const pinCandidate = candidates.find(candidate => candidate.pinned);
   const ia = readIa(consumer, agent)!;

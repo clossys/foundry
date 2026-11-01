@@ -105,7 +105,7 @@ describe('slot details', () => {
     await expect(loadSlotDetail('writer', id, signal)).rejects.toThrow('Slot detail response is invalid');
   });
 
-  it('links all six live viewports only to a matching library artifact', () => {
+  it('links all six viewports only to the exact canonical pin without any legacy artifact', () => {
     const { root } = fixture();
     const consumer = join(root, 'clossys');
     const designer = join(consumer, 'agents/designer');
@@ -117,17 +117,26 @@ describe('slot details', () => {
     writeFileSync(join(dir, 'slot.json'), JSON.stringify({ schema: 'clossys.slot/1', id: 'sections.example', agent: 'designer',
       ia: slotPositions('designer', ia).get('sections.example'), kind: 'element', contract: {}, inputs: [], uses: [] }));
     const item = { name: 'example', type: 'registry:block', files: [{ path: 'index.tsx', type: 'registry:component', content: 'export default function Example() { return null; }' }] };
-    writeFileSync(join(dir, 'candidates/example-v1.json'), JSON.stringify({ ...item, meta: { slot: 'sections.example', source: { kind: 'original', ref: [] } } }));
-    const library = join(consumer, 'library/sections.example/example/v1'); mkdirSync(library, { recursive: true });
-    writeFileSync(join(library, 'registry-item.json'), JSON.stringify(item));
-    writeFileSync(join(consumer, 'selection.json'), JSON.stringify({ pins: { 'sections.example': { element: 'example', version: 1 } } }));
+    const file = join(dir, 'candidates/example-v1.json');
+    const bytes = JSON.stringify({ ...item, meta: { slot: 'sections.example', source: { kind: 'original', ref: [] } } });
+    writeFileSync(file, bytes);
+    const pin = { candidate: 'example-v1.json', sha256: createHash('sha256').update(bytes).digest('hex'), pinnedBy: 'owner:synthetic-test-only:canonical-viewport', at: '2026-01-01T00:00:00Z' };
+    writeFileSync(join(dir, 'pin.json'), JSON.stringify(pin));
     const detail = slotDetail(root, 'designer', 'sections.example')!;
     const inputs = slotDetailInputs(detail, links, 'dark');
     expect(inputs.specimen).toMatchObject({ kind: 'viewports', specimens: [375, 768, 1280].map(viewport => ({ viewport,
       light: `/__specimen?element=sections.example%2Fexample&theme=light&width=${viewport}&v=1`,
       dark: `/__specimen?element=sections.example%2Fexample&theme=dark&width=${viewport}&v=1`,
     })) });
-    writeFileSync(join(library, 'registry-item.json'), JSON.stringify({ ...item, files: [] }));
+    writeFileSync(join(dir, 'candidates/example-v2.json'), bytes);
+    expect(slotDetail(root, 'designer', 'sections.example')!.candidates[1]!.specimen).toBeUndefined();
+    writeFileSync(file, bytes + '\n');
     expect(slotDetail(root, 'designer', 'sections.example')!.candidates[0]!.specimen).toBeUndefined();
+    // Even a matching hash cannot grant a candidate with another element identity.
+    const wrong = JSON.stringify({ ...JSON.parse(bytes), name: 'other' });
+    writeFileSync(file, wrong);
+    writeFileSync(join(dir, 'pin.json'), JSON.stringify({ ...pin, sha256: createHash('sha256').update(wrong).digest('hex') }));
+    expect(slotDetail(root, 'designer', 'sections.example')!.candidates[0]!.specimen).toBeUndefined();
+    expect(slotDetail(root, 'designer', 'sections.example')!.candidates[0]!.issues).toContain('candidate-identity: element identity differs from the candidate name or slot');
   });
 });

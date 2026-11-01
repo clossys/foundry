@@ -1,9 +1,11 @@
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
+import { listSlots, readCandidate, readSlot } from '../records/slots.js';
+import { CANDIDATE_NAME, validateCandidate, validateSlotDoc } from '../records/slot-model/index.js';
 
 /**
  * AMEND-1 ds-only check for every Studio section and frame the page records place: each folder
@@ -19,7 +21,7 @@ import { describe, expect, it } from 'vitest';
  * `packages/designer/references/shadcn/<item>@<version>/registry/`).
  *
  * A section may also place another pinned Studio section's export (`../<folder>`) when, and only
- * when, its pinned library record declares that section in `deps.elements`: composition the record
+ * when, its pinned canonical record declares that section in `meta.element.deps.elements`: composition the record
  * store tracks (a re-pin of the dependency marks the dependent stale), never an ad hoc import.
  */
 const STUDIO = resolve(dirname(fileURLToPath(import.meta.url)), '../../studio');
@@ -55,32 +57,63 @@ export function referenceMarkup(root: string): Set<string> {
   return pairs;
 }
 
-type Ref = { registry: string; item: string; version: string };
+type Ref = { registry: string; item: string; version: string; hash: string };
 
-/** The raw markup of the reference blocks a placed frame's pinned record names in `lineage.source` and `lineage.parts`. */
+/** Migrated lineage preserves structured objects and arrays as JSON strings. Decode deliberately. */
+export function lineageReferences(refs: unknown): Ref[] {
+  if (!Array.isArray(refs)) return [];
+  const rows: unknown[] = refs.flatMap(value => {
+    if (typeof value !== 'string') return [];
+    try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed : [parsed]; } catch { return []; }
+  });
+  return rows.filter((row): row is Ref => !!row && typeof row === 'object'
+    && (row as Ref).registry === 'shadcn' && /^[a-z0-9-]+$/.test((row as Ref).item ?? '')
+    && /^\d+\.\d+\.\d+$/.test((row as Ref).version ?? '') && /^sha256:[a-f0-9]{64}$/.test((row as Ref).hash ?? ''));
+}
+
+/** Read only the exact valid canonical pin; a stale legacy record cannot authorize markup. */
+function pinnedElement(folder: string, prefix: string, clossys: string): { item: any; slot: string; version: number } | undefined {
+  const entries = listSlots(clossys, 'designer').filter(entry => entry.id.startsWith(prefix) && entry.pin && CANDIDATE_NAME.exec(entry.pin.candidate)?.[1] === folder);
+  if (entries.length !== 1) return undefined;
+  const entry = entries[0]!, name = entry.pin!.candidate;
+  if (!entry.candidates.includes(name)) return undefined;
+  const candidate = readCandidate(clossys, 'designer', entry.id, name), doc = readSlot(clossys, 'designer', entry.id);
+  if (candidate.sha256 !== entry.pin!.sha256 || validateCandidate('element', entry.id, name, candidate.bytes).length
+    || validateSlotDoc(doc).length || doc.kind !== 'element' || doc.id !== entry.id || doc.agent !== 'designer'
+    || doc.ia.l0 !== entry.position.l0 || doc.ia.l1 !== entry.position.l1 || doc.ia.l2 !== entry.position.l2 || doc.ia.order !== entry.position.order) return undefined;
+  const item = JSON.parse(candidate.bytes);
+  if (item.name !== folder || item.meta?.element?.id !== folder || item.meta?.element?.slot !== entry.id) return undefined;
+  return { item, slot: entry.id, version: Number(CANDIDATE_NAME.exec(name)![2]) };
+}
+
+/** Stock markup from exact reference identities in the pinned candidate's preserved lineage. */
 export function frameBlockMarkup(folder: string, clossys = CLOSSYS, references = REFERENCES): Set<string> {
-  const pins = (JSON.parse(readFileSync(join(clossys, 'selection.json'), 'utf8')) as { pins: Record<string, { element: string; version: number }> }).pins;
-  const slot = Object.keys(pins).find(key => key.startsWith('frames.') && pins[key]!.element === folder);
-  if (!slot) return new Set();
-  const pin = pins[slot]!;
-  const record = JSON.parse(readFileSync(join(clossys, 'library', slot, pin.element, `v${pin.version}`, 'element.json'), 'utf8')) as { lineage?: { source?: Ref; parts?: readonly Ref[] } };
+  const pinned = pinnedElement(folder, 'frames.', clossys);
+  if (!pinned) return new Set();
+  const manifest = JSON.parse(readFileSync(join(references, '../manifest.json'), 'utf8'));
   const markup = new Set<string>();
-  for (const ref of [record.lineage?.source, ...(record.lineage?.parts ?? [])]) {
-    if (ref?.registry !== 'shadcn') continue;
+  for (const ref of lineageReferences(pinned.item.meta.source.ref)) {
+    const exact = manifest.items.find((item: any) => item.registry === ref.registry && item.name === ref.item && item.version === ref.version && item.hash === ref.hash);
+    if (!exact) continue;
     const root = join(references, `${ref.item}@${ref.version}`, 'registry');
     if (existsSync(root)) for (const line of referenceMarkup(root)) markup.add(line);
   }
   return markup;
 }
 
-/** Sibling section folders a placed section's pinned record declares it composes (`deps.elements`). */
+/** Only declared dependencies on the exact pinned canonical section may compose. */
 export function declaredSections(folder: string, clossys = CLOSSYS): Set<string> {
-  const pins = (JSON.parse(readFileSync(join(clossys, 'selection.json'), 'utf8')) as { pins: Record<string, { element: string; version: number }> }).pins;
-  const slot = Object.keys(pins).find(key => key.startsWith('sections.') && pins[key]!.element === folder);
-  if (!slot) return new Set();
-  const pin = pins[slot]!;
-  const record = JSON.parse(readFileSync(join(clossys, 'library', slot, pin.element, `v${pin.version}`, 'element.json'), 'utf8')) as { deps?: { elements?: { slot: string; element: string }[] } };
-  return new Set((record.deps?.elements ?? []).filter(dep => dep.slot.startsWith('sections.')).map(dep => `../${dep.element}`));
+  const pinned = pinnedElement(folder, 'sections.', clossys);
+  if (!pinned) return new Set();
+  const doc = readSlot(clossys, 'designer', pinned.slot);
+  const deps = pinned.item.meta.element.deps?.elements;
+  if (!Array.isArray(deps)) return new Set();
+  return new Set(deps.flatMap(dep => {
+    if (typeof dep.slot !== 'string' || !dep.slot.startsWith('sections.') || typeof dep.element !== 'string'
+      || typeof dep.hash !== 'string' || !/^sha256:[a-f0-9]{64}$/.test(dep.hash) || !doc.uses.includes(dep.slot)) return [];
+    const target = pinnedElement(dep.element, 'sections.', clossys);
+    return target && target.slot === dep.slot && target.version === dep.version && target.item.meta.source.hash === dep.hash ? [`../${dep.element}`] : [];
+  }));
 }
 
 export function dsOnlyViolations(folder: string, kind: 'section' | 'frame' = 'section', composes: ReadonlySet<string> = new Set(), blockMarkup: ReadonlySet<string> = new Set()): string[] {
@@ -116,6 +149,25 @@ export function dsOnlyViolations(folder: string, kind: 'section' | 'frame' = 'se
 }
 
 describe('Studio sections are ds-only', () => {
+  it('reads canonical pin lineage arrays and exact declared section dependencies without retired stores', () => {
+    expect(lineageReferences(['[{"registry":"shadcn","item":"sidebar-07","version":"4.23.0","hash":"sha256:' + 'a'.repeat(64) + '"}]', 'not JSON', '{"version":5,"hash":"parent"}', '{"registry":"shadcn","item":"../escape","version":"4.23.0","hash":"sha256:' + 'a'.repeat(64) + '"}']))
+      .toEqual([{ registry: 'shadcn', item: 'sidebar-07', version: '4.23.0', hash: `sha256:${'a'.repeat(64)}` }]);
+    expect(frameBlockMarkup('studio-shell').size).toBeGreaterThan(0);
+    expect(declaredSections('studio-agent-gallery')).toEqual(new Set(['../studio-specimen']));
+    const probe = realpathSync(mkdtempSync(join(tmpdir(), 'ds-only-canonical-')));
+    try {
+      cpSync(join(CLOSSYS, 'agents/designer'), join(probe, 'agents/designer'), { recursive: true });
+      expect(frameBlockMarkup('studio-shell', probe)).toEqual(frameBlockMarkup('studio-shell'));
+      const frame = listSlots(probe, 'designer').find(entry => entry.id === 'frames.studio-shell')!;
+      const pin = join(frame.dir, 'pin.json');
+      writeFileSync(pin, JSON.stringify({ ...frame.pin, sha256: '0'.repeat(64) }));
+      expect(frameBlockMarkup('studio-shell', probe)).toEqual(new Set());
+      const section = listSlots(probe, 'designer').find(entry => entry.id === 'sections.studio.specimen')!;
+      writeFileSync(join(section.dir, 'pin.json'), JSON.stringify({ ...section.pin, candidate: 'studio-specimen-v999.json' }));
+      expect(declaredSections('studio-agent-gallery', probe)).toEqual(new Set());
+    } finally { rmSync(probe, { recursive: true, force: true }); }
+  });
+
   it('covers every placed Studio section', () => {
     expect(FOLDERS).toEqual(['module-checks', 'module-explorer', 'module-outline', 'studio-agent-gallery', 'studio-checks', 'studio-contract', 'studio-history', 'studio-home', 'studio-leaf-header', 'studio-options', 'studio-publications', 'studio-references', 'studio-specimen']);
   });
