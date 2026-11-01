@@ -3,9 +3,13 @@
  * through the owning agent's own compiler or check where one exists; nothing is written
  * into the consumer root.
  */
-import { readdir, readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { lstat, readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
+import type { WriterSlotBodyRecord } from "@clossys/writer/slot-body";
 import { agentModule, agentRoot, readCells } from "../server/cells.js";
+import { listSlots, readCandidate, readIa, readSlot } from "../records/slots.js";
+import { parseFrontmatter, pinFile, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
 import type { PageCopyBinding, PublisherInput, WriterInput, WriterRecord, WriterSectionBinding } from "./site-plan.js";
 
 const COPY_BULLET = /^- ([^:]+): writer:([a-z][a-z0-9-]*\.[a-z][a-z0-9-]*)$/;
@@ -45,8 +49,49 @@ export async function readPublisher(root: string, publication?: string): Promise
   return { publicationId: map.publicationId, ...(typeof map.format === "string" ? { format: map.format } : {}), entries: map.entries, routes, copy, cellOfEntry };
 }
 
-/** Writer: the compiled locale files (records, aliases) and its section bindings. */
-export async function readWriter(root: string): Promise<WriterInput & { locale: string }> {
+/** Explicit native declarations opt in; consumers awaiting authored declarations retain compiled locales. */
+export async function readWriter(root: string): Promise<WriterInput & { locale: string; native?: { rows: WriterSlotBodyRecord[]; declarations: Record<string, unknown> } }> {
+  const consumer = join(root, "clossys");
+  const path = join(agentRoot(root, "writer"), "declarations.json");
+  const declarationFile = await lstat(path).catch((error: NodeJS.ErrnoException) => {
+    if (error.code !== "ENOENT") throw error;
+    return undefined;
+  });
+  if (declarationFile) {
+    if (!readIa(consumer, "writer")) throw new Error("Writer native IA is missing");
+    if (!declarationFile.isFile() || declarationFile.isSymbolicLink()) throw new Error("Expected a regular Writer declarations file");
+    const entries = listSlots(consumer, "writer");
+    const parser = await agentModule("writer", "slot-body.js");
+    const rows: WriterSlotBodyRecord[] = [];
+    const selectedLocales = new Set<string>();
+    for (const entry of entries) {
+      if (!entry.pin) {
+        if (existsSync(pinFile(entry.dir))) throw new Error(`Invalid Writer pin: ${entry.id}`);
+        continue;
+      }
+      const doc = readSlot(consumer, "writer", entry.id);
+      if (validateSlotDoc(doc).length || doc.id !== entry.id || doc.agent !== "writer" || doc.kind !== "strings"
+        || doc.ia.l0 !== entry.position.l0 || doc.ia.l1 !== entry.position.l1 || doc.ia.l2 !== entry.position.l2 || doc.ia.order !== entry.position.order) {
+        throw new Error(`Invalid Writer slot: ${entry.id}`);
+      }
+      const candidate = readCandidate(consumer, "writer", entry.id, entry.pin.candidate);
+      if (candidate.sha256 !== entry.pin.sha256) throw new Error(`Writer candidate hash mismatch: ${entry.id}`);
+      if (validateCandidate(doc.kind, entry.id, candidate.name, candidate.bytes).length) throw new Error(`Invalid Writer candidate: ${entry.id}`);
+      const parsed = parseFrontmatter(candidate.bytes);
+      if (!parsed.ok) throw new Error(`Invalid Writer candidate envelope: ${entry.id}`);
+      rows.push(...parser.parseWriterSlotBody(parsed.value.body, parsed.value.fields.locales));
+      for (const locale of parsed.value.fields.locales as string[]) selectedLocales.add(locale);
+    }
+    const api = await agentModule("writer", "declarations.js");
+    const declarations = api.parseWriterDeclarations(await readFile(path, "utf8"));
+    const locales = [...selectedLocales].sort();
+    // Without pinned locales, declarations still select an explicit locale and validate every target.
+    const available = locales.length ? locales : Object.keys(declarations.locales).sort();
+    const locale = available.includes("en") ? "en" : available[0]!;
+    const selected = api.projectWriterDeclarations(declarations, locale, { completeRecords: rows });
+    const records = rows.filter(row => row.locale === locale && typeof row.record.text === "string").map(row => row.record as WriterRecord);
+    return { ...selected, locale, records, native: { rows, declarations } };
+  }
   const compiled = join(agentRoot(root, "writer"), "compiled");
   const locales = (await readdir(compiled, { withFileTypes: true })).filter(entry => entry.isDirectory()).map(entry => entry.name).sort();
   const locale = locales.includes("en") ? "en" : locales[0];
