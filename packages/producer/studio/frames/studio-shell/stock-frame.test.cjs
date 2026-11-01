@@ -75,6 +75,37 @@ test('header edge toggles mirror the same native divider with equal spacing and 
   } finally { await view.close(); }
 });
 
+test('actual sidebar keeps static workspace and profile rows with Clossys Studio and the consumer mark', () => {
+  const provider = JSON.stringify(`data:text/javascript,${encodeURIComponent('export const useStudioData=()=>globalThis.__staticNavData;export const useThemeMode=()=>globalThis.__staticNavTheme;')}`);
+  const source = fs.readFileSync(path.join(__dirname, 'app-sidebar.tsx'), 'utf8')
+    .replace('from "../../components/StudioProviders"', `from ${provider}`)
+    + '\nexport { SidebarProvider as TestSidebarProvider } from "@clossys/designer-ui";';
+  const bundled = buildSync({ stdin: { contents: source, resolveDir: __dirname, loader: 'tsx' },
+    tsconfig: path.join(studio, 'tsconfig.json'), bundle: true, platform: 'node', format: 'cjs', jsx: 'automatic',
+    external: ['react', 'react-dom', 'react/*', 'react-dom/*'], loader: { '.css': 'empty' }, write: false, logLevel: 'silent' }).outputFiles[0].text;
+  const { AppSidebar, TestSidebarProvider } = load(bundled);
+  try {
+    for (const resolved of ['light', 'dark']) {
+      for (const brand of [{ state: 'ready', value: { name: 'Consumer' } }, { state: 'unavailable' }]) {
+        globalThis.__staticNavData = { brand };
+        globalThis.__staticNavTheme = { resolved };
+        const html = renderToStaticMarkup(e(TestSidebarProvider, null, e(AppSidebar, { navigation: { tree: [], activeId: 'home' } })));
+        const container = document.createElement('div'); container.innerHTML = html;
+        const header = container.querySelector('[data-sidebar="header"]');
+        const footer = container.querySelector('[data-sidebar="footer"]');
+        assert.match(header.textContent, /Clossys Studio/);
+        const mark = header.querySelector('img'); assert.ok(mark);
+        assert.equal(mark.getAttribute('src'), `/api/brand/mark.svg?ground=${resolved === 'dark' ? 'light' : 'dark'}`);
+        assert.match(footer.textContent, /Local workspace/);
+        for (const row of [header, footer]) {
+          assert.equal(row.querySelectorAll('[data-sidebar="menu-button"]').length, 1);
+          assert.equal(row.querySelector('button, [role="button"], [aria-haspopup], [data-slot="dropdown-menu-trigger"], [data-slot="popover-trigger"]'), null);
+        }
+      }
+    }
+  } finally { delete globalThis.__staticNavData; delete globalThis.__staticNavTheme; }
+});
+
 // Pure component inputs exercise static adoption without a fabricated account or menu.
 test('workspace and profile keep stock row presentation with no switch menu or inactive button', () => {
   const html = renderToStaticMarkup(e(api.SidebarProvider, null,
