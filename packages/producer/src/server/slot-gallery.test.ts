@@ -155,6 +155,61 @@ describe('IA-first gallery data', () => {
     } finally { rmSync(root, { recursive: true, force: true }); }
   });
 
+  it('serves only the valid pinned Director brief, rejecting drafts, foreign slots and invalid native records', async () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), 'director-specimen-pin-')));
+    try {
+      const id = 'context.market.size', name = 'record-v1.md';
+      const dir = join(root, `agents/director/one/two/${id}`);
+      mkdirSync(join(dir, 'candidates'), { recursive: true });
+      const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic-test-only#director-pin', extensions: [], nodes: [{ id: 'one', label: 'One', children: [{ id: 'two', label: 'Two', slots: [id] }] }] };
+      writeFileSync(join(root, 'agents/director/ia.json'), JSON.stringify(ia));
+      const doc: SlotDoc = { schema: 'clossys.slot/1', id, agent: 'director', ia: slotPositions('director', ia).get(id)!, kind: 'brief', contract: {}, inputs: [], uses: [] };
+      writeFileSync(join(dir, 'slot.json'), JSON.stringify(doc));
+      const fields = { slot: id, source: { kind: 'original', ref: [] }, feeds: [], functions: [] };
+      const body = '## Direction\nPinned demand\n## Because\nEvidence\n## Watch\nSignals';
+      const content = serializeFrontmatter(fields, body);
+      const pin = { candidate: name, sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:director-pin', at: '2026-01-01T00:00:00Z' };
+      writeFileSync(join(dir, 'candidates', name), content);
+      writeFileSync(join(dir, 'candidates/record-v2.md'), serializeFrontmatter(fields, body.replace('Pinned demand', 'Newer draft')));
+      const render = (input: NonNullable<ReturnType<typeof recordSpecimenInput>>) => renderToStaticMarkup(createElement(SpecimenContent, { specimen: input }));
+      const mount = recordSpecimens({ consumer: root, render });
+      const request = async (query = `slot=${id}`) => {
+        let code = 0, html = '';
+        const response = { writeHead(status: number) { code = status; }, end(value?: string) { html = value ?? ''; } } as ServerResponse;
+        expect(await mount.handle({ method: 'GET', url: `/__specimen?agent=director&${query}` } as IncomingMessage, response, '/__specimen')).toBe(true);
+        return { code, html };
+      };
+      expect((await request()).code).toBe(404);
+      const card = () => slotGallery(root, 'director').sections.flatMap(section => section.cards)[0]!;
+      expect(card()).toMatchObject({ emptyState: 'No pin', records: 1 });
+      expect(card().specimenUrl).toBeUndefined();
+      writeFileSync(join(dir, 'pin.json'), JSON.stringify(pin));
+      expect(await request()).toEqual({ code: 200, html: render(recordSpecimenInput(root, 'director', id)!) });
+      expect((await request()).html).toContain('Pinned demand');
+      expect((await request()).html).not.toContain('Newer draft');
+      expect(card().specimenUrl).toContain('candidate=record-v1.md');
+      for (const query of [`slot=${id}&candidate=record-v2.md`, `slot=${id}&candidate=absent-v1.md`, 'slot=foreign.slot']) expect((await request(query)).code).toBe(404);
+      for (const change of [
+        () => writeFileSync(join(dir, 'pin.json'), JSON.stringify({ ...pin, candidate: 'absent-v1.md' })),
+        () => writeFileSync(join(dir, 'pin.json'), JSON.stringify({ ...pin, sha256: '0'.repeat(64) })),
+        () => writeFileSync(join(dir, 'pin.json'), '{}'),
+        () => writeFileSync(join(dir, 'slot.json'), JSON.stringify({ ...doc, id: 'foreign.slot' })),
+        () => writeFileSync(join(dir, 'slot.json'), JSON.stringify({ ...doc, ia: { ...doc.ia, order: doc.ia.order + 1 } })),
+        ...[serializeFrontmatter({ ...fields, slot: 'foreign.slot' }, body), serializeFrontmatter(fields, '## Direction\nInvalid brief')].map(bytes => () => {
+          writeFileSync(join(dir, 'candidates', name), bytes);
+          writeFileSync(join(dir, 'pin.json'), JSON.stringify({ ...pin, sha256: sha256Hex(bytes) }));
+        }),
+      ]) {
+        writeFileSync(join(dir, 'slot.json'), JSON.stringify(doc));
+        writeFileSync(join(dir, 'candidates', name), content);
+        writeFileSync(join(dir, 'pin.json'), JSON.stringify(pin));
+        change();
+        expect((await request()).code).toBe(404);
+        expect(card().specimenUrl).toBeUndefined();
+      }
+    } finally { rmSync(root, { recursive: true, force: true }); }
+  });
+
   it('binds Director and Writer fixtures to the existing shared record specimen renderer', async () => {
     const root = realpathSync(mkdtempSync(join(tmpdir(), 'record-specimens-')));
     try {
@@ -172,7 +227,9 @@ describe('IA-first gallery data', () => {
         } satisfies SlotDoc));
         const fields = { slot: id, source: { kind: 'original', ref: [] },
           ...(agent === 'director' ? { feeds: [], functions: [] } : { locales: ['en'] }) };
-        writeFileSync(join(dir, 'candidates/record-v1.md'), serializeFrontmatter(fields, body));
+        const content = serializeFrontmatter(fields, body);
+        writeFileSync(join(dir, 'candidates/record-v1.md'), content);
+        if (agent === 'director') writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: 'record-v1.md', sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:specimen', at: '2026-01-01T00:00:00Z' }));
         const input = recordSpecimenInput(root, agent, id)!;
         const html = renderToStaticMarkup(createElement(SpecimenContent, { specimen: input }));
         expect(html).toContain('<table');

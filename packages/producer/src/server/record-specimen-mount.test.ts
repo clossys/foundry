@@ -1,4 +1,5 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { request } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -14,7 +15,7 @@ let server: ProducerServer | undefined;
 afterEach(async () => { await server?.close(); if (root) await rm(root, { recursive: true, force: true }); });
 
 it('dispatches record specimens through the running Producer host and exposes only native read-only inputs', async () => {
-  root = await mkdtemp(join(tmpdir(), 'producer-record-mount-'));
+  root = await realpath(await mkdtemp(join(tmpdir(), 'producer-record-mount-')));
   for (const [agent, id, body] of [
     ['director', 'context.market.size', '## Direction\nMeasure demand\n## Because\nEvidence\n## Watch\nSignals'],
     ['writer', 'strings.label', '## en\n### greeting\n<!-- {"id":"greeting","bindings":[]} -->\nHello <script>'],
@@ -24,7 +25,12 @@ it('dispatches record specimens through the running Producer host and exposes on
     const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic-test-only#record-mount', extensions: [], nodes: [{ id: 'one', label: 'One', children: [{ id: 'two', label: 'Two', slots: [id] }] }] };
     await writeFile(join(root, 'clossys', 'agents', agent, 'ia.json'), JSON.stringify(ia));
     await writeFile(join(dir, 'slot.json'), JSON.stringify({ schema: 'clossys.slot/1', id, agent, ia: slotPositions(agent, ia).get(id)!, kind: agent === 'director' ? 'brief' : 'strings', contract: {}, inputs: [], uses: [] } satisfies SlotDoc));
-    await writeFile(join(dir, 'candidates/record-v1.md'), serializeFrontmatter({ slot: id, source: { kind: 'original', ref: [] }, ...(agent === 'director' ? { feeds: [], functions: [] } : { locales: ['en'] }) }, body));
+    const bytes = serializeFrontmatter({ slot: id, source: { kind: 'original', ref: [] }, ...(agent === 'director' ? { feeds: [], functions: [] } : { locales: ['en'] }) }, body);
+    await writeFile(join(dir, 'candidates/record-v1.md'), bytes);
+    if (agent === 'director') await writeFile(join(dir, 'pin.json'), JSON.stringify({
+      candidate: 'record-v1.md', sha256: createHash('sha256').update(bytes).digest('hex'),
+      pinnedBy: 'owner:synthetic-test-only:director-record-mount', at: '2026-01-01T00:00:00Z',
+    }));
   }
   server = await startProducerServer({ root, port: 0, studioEntry: join(dirname(fileURLToPath(import.meta.url)), '__fixtures__/studio-child.mjs'), handleSignals: false });
   for (const [agent, id, text] of [['director', 'context.market.size', 'Measure demand'], ['writer', 'strings.label', 'Hello <script>']]) {
