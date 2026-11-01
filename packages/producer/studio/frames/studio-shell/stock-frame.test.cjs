@@ -29,6 +29,9 @@ const output = buildSync({
     export {TeamSwitcher} from './team-switcher';
     export {NavUser} from './nav-user';
     export {StockChatSidebar, StockChatSheet} from './stock-chat-sidebar';
+    export {default as StockAppFrame} from './stock-app-frame';
+    export {default as StockPageFrame} from './stock-page-frame';
+    export {useStudioFrameScrollSpy} from '../../lib/studio-frame-scroll';
     export {HeaderPopover} from './stock-header-controls';
     export {SidebarProvider, SidebarTrigger, SidebarRail, Sidebar, SidebarMenuButton, HeaderEdgeToggle, useSidebar} from '@clossys/designer-ui';
   `, resolveDir: __dirname, loader: 'tsx' },
@@ -153,6 +156,35 @@ test('375px navigation and chat use native sheets with the same 18rem geometry',
     assert.equal(sheet.style.getPropertyValue('--sidebar-width'), leftWidth);
     assert.match(sheet.textContent, /No conversation yet/);
   } finally { await chat.close(); }
+});
+
+test('source-derived app owns navigation and the page owns live content in its bounded scroller', async () => {
+  let scroll;
+  function BoundFrame() {
+    scroll = api.useStudioFrameScrollSpy(['#live-page-body']);
+    return e(api.StockAppFrame, { className: 'h-svh overflow-hidden', open: true, onOpenChange() {}, navigation: e(api.Sidebar, { collapsible: 'none', 'data-app-navigation': true }, 'Navigation') },
+      e(api.StockPageFrame, { header: e('span', null, 'Page header'), chat: e(api.StockChatSidebar), chatOpen: true, chatResizeLabel: 'Resize chat', groupProps: { className: 'min-h-0 min-w-0 flex-1' }, insetProps: { className: 'h-full min-h-0 min-w-0 overflow-hidden' }, bodyProps: { id: 'studio-main', className: '@container/main min-h-0 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain *:shrink-0' }, chatPanelProps: { defaultSize: '16rem', minSize: '16rem', maxSize: '50%', groupResizeBehavior: 'preserve-pixel-size' } }, e('section', { id: 'live-page-body' }, 'Live body')));
+  }
+  const view = await mounted(e(BoundFrame));
+  try {
+    const nav = view.container.querySelector('[data-app-navigation]'); assert.ok(nav);
+    const page = view.container.querySelector('[data-slot="sidebar-inset"]'); assert.ok(page);
+    assert.equal(nav.closest('[data-slot="sidebar-inset"]'), null);
+    assert.match(page.querySelector('header').textContent, /Page header/);
+    const main = page.querySelector('#studio-main'); const body = main.querySelector('#live-page-body'); assert.ok(body);
+    for (const token of ['@container/main', 'min-h-0', 'min-w-0', 'overflow-y-auto', 'overscroll-contain']) assert.ok(main.classList.contains(token), token);
+    assert.ok(page.classList.contains('overflow-hidden'));
+    assert.ok(view.container.querySelector('[data-slot="sidebar-wrapper"]').classList.contains('h-svh'));
+    const calls = [];
+    main.scrollTop = 40;
+    main.getBoundingClientRect = () => ({ top: 20, bottom: 500 });
+    body.getBoundingClientRect = () => ({ top: 200, bottom: 300 });
+    main.scrollTo = value => calls.push(value);
+    await act(async () => scroll.select('#live-page-body'));
+    assert.deepEqual(calls, [{ top: 220 }], 'the actual host controller scrolls the bounded body, not the document');
+    assert.ok(view.container.querySelector('#studio-chat [data-panel="chat"]'));
+    assert.equal(page.querySelector('[class*="h-24"]'), null, 'real content replaces upstream sample placeholders');
+  } finally { await view.close(); }
 });
 
 test('Tooltip and Popover share exactly one actual icon button and open its own content', async () => {

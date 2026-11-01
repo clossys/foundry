@@ -8,11 +8,14 @@ import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, Button,
   CommandDialog, Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut,
   PopoverDescription, PopoverHeader, PopoverTitle, ScrollArea, HeaderEdgeToggle,
-  StudioAppFrame, StudioPageFrame, SidebarTrigger,
+  SidebarTrigger,
   useSidebar,
 } from '@clossys/designer-ui';
 import { studioIcon } from '../../lib/studio-icons';
 import { AppSidebar } from './app-sidebar';
+import StockAppFrame from './stock-app-frame';
+import StockPageFrame from './stock-page-frame';
+import { useStudioFrameScrollSpy } from '../../lib/studio-frame-scroll';
 import { useThemeMode } from '../../components/StudioProviders';
 import { HeaderIconButton, HeaderPopover, HeaderTooltip } from './stock-header-controls';
 import { StockChatSheet, StockChatSidebar } from './stock-chat-sidebar';
@@ -45,7 +48,6 @@ const POPOVER_PARAM = 'p';
 const LEFT_COOKIE = 'sidebar_state';
 const CHAT_COOKIE = 'chat_state';
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
-const SPY_OFFSET = 96;
 
 function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(false);
@@ -77,10 +79,6 @@ function writePopover(id: string | undefined) {
   window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
 }
 
-const mainColumn = () => document.getElementById('studio-main');
-const target = (selector: string) => {
-  try { return mainColumn()?.querySelector<HTMLElement>(selector) ?? null; } catch { return null; }
-};
 async function copyText(text: string): Promise<boolean> {
   try { await navigator.clipboard.writeText(text); return true; } catch { return false; }
 }
@@ -144,46 +142,6 @@ function CloseMobileNavigation() {
   return null;
 }
 
-/** The scroll-spy over the open popover's targets: the part at the top of the page column is active. */
-function useScrollSpy(targets: readonly string[]) {
-  const [active, setActive] = useState<string | undefined>(undefined);
-  const chosen = useRef<string | undefined>(undefined);
-  const spy = useCallback(() => {
-    const main = mainColumn();
-    if (!main) return;
-    // A part chosen in a popover stays highlighted while it is in view (a short part, or one at
-    // the end of the column, may never reach the top).
-    const bounds = main.getBoundingClientRect();
-    const kept = chosen.current ? target(chosen.current)?.getBoundingClientRect() : undefined;
-    if (kept && kept.top < bounds.bottom && kept.bottom > bounds.top) { setActive(chosen.current); return; }
-    chosen.current = undefined;
-    const top = bounds.top + SPY_OFFSET;
-    let current: string | undefined;
-    for (const selector of targets) { const element = target(selector); if (element && element.getBoundingClientRect().top <= top) current = selector; }
-    setActive(current ?? targets.find(selector => target(selector)));
-  }, [targets]);
-  useEffect(() => {
-    const main = mainColumn();
-    if (!main || !targets.length) return;
-    let frame = 0;
-    const onScroll = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(spy); };
-    onScroll();
-    main.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
-    return () => { cancelAnimationFrame(frame); main.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); };
-  }, [targets, spy]);
-  const select = useCallback((selector: string) => {
-    const element = target(selector);
-    const main = mainColumn();
-    if (!element || !main) return;
-    chosen.current = selector;
-    // Scroll the page column only: scrolling an ancestor of the header would close the popover.
-    main.scrollTo({ top: main.scrollTop + element.getBoundingClientRect().top - main.getBoundingClientRect().top });
-    setActive(selector);
-  }, []);
-  return { active, select };
-}
-
 /**
  * The inputs of `frames.studio-shell`. Navigation, commands and breadcrumbs are projected by
  * Publisher from the one Studio map; `popovers` are the page manifest's modules and actions, one
@@ -236,7 +194,7 @@ export default function StudioShellFrame({ navigation, commands, breadcrumbs, po
   const openRef = useRef(open);
   openRef.current = open;
   const current = popovers.find(spec => spec.id === open);
-  const spy = useScrollSpy(useMemo(() => current?.targets ?? [], [current]));
+  const spy = useStudioFrameScrollSpy(useMemo(() => current?.targets ?? [], [current]));
   const pageCommands = useMemo((): PageCommand[] => popovers.map(spec => ({
     id: `popover:${spec.id}`, label: spec.label, icon: spec.icon, ...(spec.shortcut ? { shortcut: spec.shortcut } : {}),
     // The menu returns focus to the page as it closes; the popover opens after that.
@@ -265,11 +223,15 @@ export default function StudioShellFrame({ navigation, commands, breadcrumbs, po
   }, [popovers, show]);
 
   const context: PopoverContext = { ...(spy.active ? { active: spy.active } : {}), select: spy.select };
-  return <StudioAppFrame open={leftOpen} onOpenChange={setLeftOpen} navigation={<>
+  return <StockAppFrame className="h-svh overflow-hidden" open={leftOpen} onOpenChange={setLeftOpen} navigation={<>
     <CloseMobileNavigation />
     <AppSidebar navigation={navigation} />
   </>}>
-    <StudioPageFrame body={body} head={head} chatOpen={wide && chatOpen} chatResizeLabel="Resize chat"
+    <StockPageFrame body={body} head={head} chatOpen={wide && chatOpen} chatResizeLabel="Resize chat"
+      groupProps={{ className: 'min-h-0 min-w-0 flex-1' }}
+      insetProps={{ className: 'h-full min-h-0 min-w-0 overflow-hidden' }}
+      bodyProps={{ id: 'studio-main', className: '@container/main min-h-0 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain *:shrink-0' }}
+      chatPanelProps={{ defaultSize: '16rem', minSize: '16rem', maxSize: '50%', groupResizeBehavior: 'preserve-pixel-size' }}
       chat={<StockChatSidebar />}
       chatSheet={!wide && <StockChatSheet isOpen={chatSheet} onOpenChange={setChatSheet} />}
       header={<>
@@ -311,8 +273,8 @@ export default function StudioShellFrame({ navigation, commands, breadcrumbs, po
         </div>
       </>}>
       {children}
-    </StudioPageFrame>
+    </StockPageFrame>
     <CommandMenu commands={commands} pageCommands={pageCommands} open={searchOpen} onOpenChange={setSearchOpen} />
-  </StudioAppFrame>;
+  </StockAppFrame>;
 }
 
