@@ -60,8 +60,8 @@ function RecordTable({ name, table, titled }: { name: string; table: SpecimenTab
       </TableHeader>
       <TableBody>
         {table.rows.map(row => <TableRow key={row.key} id={row.key}>
-          {row.cells.map((cell, index) => <TableCell key={index} className={index === table.prose ? 'min-w-48 whitespace-normal' : 'whitespace-normal'}>
-            {cell.href ? <LinkButton href={cell.href} variant="link" size="sm" className="h-auto px-0 text-left whitespace-normal break-words">{cell.text}</LinkButton> : cell.text}
+          {row.cells.map((cell, index) => <TableCell key={index} className={index === table.prose ? 'min-w-48 whitespace-pre-wrap' : 'whitespace-pre-wrap'}>
+            {cell.href ? <LinkButton href={cell.href} variant="link" size="sm" className="h-auto px-0 text-left whitespace-pre-wrap break-words">{cell.text}</LinkButton> : cell.text}
             {cell.statusLabel && <Badge variant={cell.statusTone ?? 'outline'} className="ml-2">{cell.statusLabel}</Badge>}
           </TableCell>)}
         </TableRow>)}
@@ -83,8 +83,8 @@ export function SpecimenContent({ specimen }: { specimen: SpecimenInput }) {
       <TableBody>
         {specimen.rows.map(row => <TableRow key={row.key} id={row.key}>
           <TableCell>{row.label}</TableCell>
-          <TableCell className="whitespace-normal">
-            {row.href ? <LinkButton href={row.href} variant="link" size="sm" className="h-auto px-0">{row.text}</LinkButton> : row.text}
+          <TableCell className="whitespace-pre-wrap">
+            {row.href ? <LinkButton href={row.href} variant="link" size="sm" className="h-auto px-0 text-left whitespace-pre-wrap break-words">{row.text}</LinkButton> : row.text}
           </TableCell>
         </TableRow>)}
       </TableBody>
