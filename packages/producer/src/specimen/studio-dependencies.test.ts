@@ -46,7 +46,7 @@ describe('package-owned Studio dependency materialization', () => {
     const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
     const [packed] = JSON.parse(execFileSync(npm, ['pack', '--json', '--workspaces=false', '--pack-destination', destination], { cwd: producer, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }));
     expect(packed.files.filter((file: { path: string }) => file.path.startsWith('studio/')).map((file: { path: string }) => file.path).sort())
-      .toEqual(STUDIO_DEPENDENCY_FILES.map(path => `studio/${path}`).sort());
+      .toEqual([...STUDIO_DEPENDENCY_FILES.map(path => `studio/${path}`), 'studio/README.md'].sort());
     execFileSync('tar', ['-xzf', join(destination, packed.filename), '-C', destination]);
     const installed = join(destination, 'package');
     // Native Node loads the shipped compiled helper; no test loader, source fallback or root override.
