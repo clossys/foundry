@@ -34,9 +34,10 @@ const declaredRecords = envelope => (envelope.externalRecords ?? []).map(declara
 });
 declaredRecords(common);
 // Inspection views include genuine moved records for existing fixture callers.
+// Inspection records validate every declaration when requested.
 // Resolution receives only the original owner envelopes, never these views.
-export const pages = { ...pageSource, records: [...pageSource.records, ...declaredRecords(pageSource)] };
-export const chat = { ...chatSource, records: [...chatSource.records, ...declaredRecords(chatSource)] };
+export const pages = { ...pageSource, get records() { return [...pageSource.records, ...declaredRecords(pageSource)]; } };
+export const chat = { ...chatSource, get records() { return [...chatSource.records, ...declaredRecords(chatSource)]; } };
 export { studio, arabic };
 export const copyEnvelopes = () => prepareAdminPageCopyEnvelopes(sourceEnvelopes);
 export const adminCopyFixture = () => createAdminPageCopy({ locale: "en", envelopes: copyEnvelopes() });
