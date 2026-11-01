@@ -332,7 +332,7 @@ test("the repository omission matrix is closed against every current publishable
 });
 
 const addedRuntimeSpecifiers = {
-  "@clossys/designer": ["catalog", "catalog/server", "studio", "studio/queries", "studio/state", "catalog-bundles", "frames"],
+  "@clossys/designer": ["catalog", "catalog/server", "studio", "studio/queries", "studio/state", "catalog-bundles", "frames", "ref-verbatim"],
   "@clossys/publisher": ["web/registered-route", "web/registered-route-check", "web/registered-route-wiring"],
 };
 test("each added runtime export is required in every optional-peer row", async () => {
@@ -350,6 +350,45 @@ test("each added runtime export is required in every optional-peer row", async (
     }
   }
 });
+
+test("actual shipped ref-verbatim source imports without any optional UI peer", async (t) => {
+  const root = await fixture(t);
+  const sourceRoot = join(process.cwd(), "packages/designer");
+  const manifest = JSON.parse(await readFile(join(sourceRoot, "package.json"), "utf8"));
+  const specifier = "@clossys/designer/ref-verbatim";
+  const exported = manifest.exports["./ref-verbatim"];
+  assert.equal(exported.import, "./scripts/check-ref-verbatim.mjs");
+  assert.ok(manifest.files.includes("scripts/check-ref-verbatim.mjs"));
+  assert.ok(manifest.files.includes("scripts/ref-verbatim"));
+  const packageRoot = join(root, "node_modules", manifest.name);
+  // Exact shipped source bytes, with no dist build or packed-artifact claim.
+  // Importing this entry does not invoke the verifier's lazy TypeScript API.
+  const sources = ["scripts/check-ref-verbatim.mjs", ...[
+    "normalize", "data-fit", "adaptations", "diff", "typescript",
+  ].map((name) => `scripts/ref-verbatim/${name}.mjs`)];
+  for (const source of sources) {
+    await mkdir(dirname(join(packageRoot, source)), { recursive: true });
+    await writeFile(join(packageRoot, source), await readFile(join(sourceRoot, source)));
+  }
+  await writeFile(join(packageRoot, "package.json"), JSON.stringify({
+    name: manifest.name, type: manifest.type, exports: { "./ref-verbatim": exported },
+  }));
+  const peers = Object.keys(manifest.peerDependenciesMeta).filter((peer) => manifest.peerDependenciesMeta[peer].optional);
+  const env = { PATH: process.env.PATH };
+  const absent = await runProcess(process.execPath, ["--input-type=module", "--eval", `
+    for (const peer of ${JSON.stringify(peers)}) {
+      try { import.meta.resolve(peer); process.exit(1); }
+      catch (error) { if (error.code !== "ERR_MODULE_NOT_FOUND") throw error; }
+    }
+  `], { cwd: root, env });
+  assert.equal(absent.exitCode, 0, absent.stderr);
+  const result = await importSpecifier(specifier, root, env);
+  assert.equal(result.exitCode, 0, result.stderr);
+  assert.equal(result.timedOut, false);
+  assert.equal(result.launchError, undefined);
+  for (const peer of peers) assert.equal(OPTIONAL_PEER_POLICY[manifest.name][peer][specifier], "imports", peer);
+});
+
 test("registered-route-check requires distinct browser/default outcomes and a browser marker", async () => {
   const packages = await discoverPublishablePackages(process.cwd());
   const specifier = "@clossys/publisher/web/registered-route-check";
