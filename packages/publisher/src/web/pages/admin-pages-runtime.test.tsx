@@ -143,6 +143,8 @@ describe("six native admin records through prepareRegisteredRoute (fixture decla
     expect(html).toMatch(/<h2[^>]*[^]*Strings[^]*<h3[^>]*[^]*Names[^]*<h4[^>]*[^]*Key[^]*<h4[^>]*[^]*Text/);
     expect(html).toContain("الكاتب");
     expect(html).toContain("النص");
+    expect(f.copy.resolve({ id: "strings.admin.pagination.label" })).toMatchObject({ text: "Pagination", provenance: { recordSource: "common-labels.r1.en.json", bindingSource: "admin-pages.r1.en.json" } });
+    expect(html).toContain("Pagination");
     }
   }, 120_000);
   it("prepares and renders every list and item through the selected existing Section renderers", async () => {

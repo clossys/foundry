@@ -1,4 +1,4 @@
-import { createAdminCopy, getAdminCopyRecord, getAdminItemNameBinding, resolveAdminCopyRef } from "@clossys/writer/admin-copy";
+import { createAdminCopy, getAdminCopyRecord, getAdminItemNameBinding, getAdminPageItemNameAuthority, resolveAdminCopyRef } from "@clossys/writer/admin-copy";
 import type { AdminCopyRef, AdminRouteCopy } from "@clossys/writer/admin-copy";
 import type { StringRecord } from "@clossys/writer";
 import { runtimeHash, runtimeSnapshot } from "@clossys/designer/catalog";
@@ -57,7 +57,7 @@ function checkedEnvelope(input: AdminPageCopyEnvelope): CheckedEnvelope {
     if (!recordObject(external) || typeof external.recordId !== "string" || typeof external.source !== "string" || typeof external.sourceContext !== "string") throw new TypeError("Writer external record declaration is malformed");
     return { recordId: external.recordId, source: external.source, sourceContext: external.sourceContext };
   }) : (() => { throw new TypeError("Writer external records must be a list"); })();
-  return { source: input.source, hash: runtimeHash(value), version: value.version, revision: value.revision, state: value.state, locale: value.locale, activation: value.activation, records, bindings, aliases, externalRecords };
+  return { ...value, source: input.source, hash: runtimeHash(value), version: value.version, revision: value.revision, state: value.state, locale: value.locale, activation: value.activation, records, bindings, aliases, externalRecords };
 }
 export function assertAdminPageCopy(copy: unknown): asserts copy is AdminPageCopy {
   if (typeof copy !== "function" || !sources.has(copy)) throw new TypeError("Admin pages require a real Writer copy source, not a text callback");
@@ -80,13 +80,28 @@ export function createAdminPageCopy(input: { readonly locale: string; readonly e
     const aliasOwner = aliases[0], recordId = aliasOwner?.aliases[reference.id] ?? reference.id;
     const declarations = aliasOwner?.externalRecords.filter(row => row.recordId === recordId) ?? [];
     const canonicalItemBinding = getAdminItemNameBinding(recordId);
-    const itemBinding = !aliasOwner && canonicalItemBinding ? getAdminItemNameBinding(recordId, store) : undefined;
+    const authenticatedItemBinding = canonicalItemBinding ? getAdminItemNameBinding(recordId, store) : undefined;
+    const itemBinding = !aliasOwner ? authenticatedItemBinding : undefined;
+    const pageAuthority = getAdminPageItemNameAuthority(reference.id);
+    const exact = (a: unknown, b: unknown) => runtimeHash(a) === runtimeHash(b);
+    if ((pageAuthority || aliasOwner && canonicalItemBinding) && (!aliasOwner || !authenticatedItemBinding || !pageAuthority || aliasOwner.source !== pageAuthority.source
+      || recordId !== pageAuthority.binding.recordId || !exact(declarations, [pageAuthority.declaration])
+      || !exact(aliasOwner.bindings.filter(row => row.recordId === recordId), [pageAuthority.binding])
+      || !exact(aliasOwner.bindings.filter(row => row.cellId === reference.id), [pageAuthority.binding]))) throw new TypeError("Writer item alias lacks its current Page authority");
+    if (canonicalItemBinding && getAdminCopyRecord(recordId)?.leaf === "strings.common") {
+      const studioCarriers = envelopes.filter(candidate => candidate.bindings.some(row => row.recordId === recordId && row.kind === "item-name"));
+      if (!authenticatedItemBinding || studioCarriers.length !== 1 || studioCarriers[0]?.source !== "admin-studio.r1.en.json") throw new TypeError("Writer common item requires its original Studio source");
+    }
     const matches = envelopes.flatMap(envelope => {
       const record = envelope.records.find(row => row.id === recordId);
       if (!record || aliasOwner && aliasOwner !== envelope && !declarations.some(row => row.source === envelope.source && row.sourceContext === record.context)) return [];
-      const bindingOwner = aliasOwner ?? envelope;
+      const itemCarriers = itemBinding ? envelopes.filter(candidate => candidate.bindings.some(row => row.recordId === recordId && row.kind === itemBinding.kind && row.cellId === itemBinding.cellId && row.target === itemBinding.target)) : [];
+      if (itemBinding && itemCarriers.length !== 1) return [];
+      if (canonicalItemBinding && record.leaf === "strings.common" && (envelope.source !== "common-labels.r1.en.json"
+        || itemBinding && itemCarriers[0]?.source !== "admin-studio.r1.en.json")) return [];
+      const bindingOwner = aliasOwner ?? itemCarriers[0] ?? envelope;
       const binding = bindingOwner.bindings.find(row => row.recordId === recordId && (
-        !canonicalItemBinding && !record.context.startsWith("designer.item.") && row.kind === "CopyRef" && row.cellId === (aliasOwner ? reference.id : record.context)
+        (!canonicalItemBinding && !record.context.startsWith("designer.item.") || pageAuthority && envelope.source === pageAuthority.declaration.source && record.context === pageAuthority.declaration.sourceContext) && row.kind === "CopyRef" && row.cellId === (aliasOwner ? reference.id : record.context)
         || itemBinding && row.kind === itemBinding.kind && row.cellId === itemBinding.cellId && row.target === itemBinding.target
       ));
       return binding ? [{ envelope, record, binding, bindingOwner }] : [];
