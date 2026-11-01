@@ -56,7 +56,7 @@
   },
   "consumerAdaptations": [
     "Import paths bind to the existing native Designer UI exports and Studio modules.",
-    "Sidebar-15 left slots retain existing Publisher navigation, consumer brand endpoint and local workspace profile; fallback display name is Clossys Studio.",
+    "Sidebar-15 left slots retain existing Publisher navigation, consumer brand endpoint and local workspace profile; workspace display name is Clossys Studio regardless of brand loading state.",
     "Sidebar-07 single-option workspace/profile rows omit only dropdown/action affordances and retain all native SidebarMenuButton base/default/lg classes. Static div adapter explicitly calls the native useSidebar context guard.",
     "Existing profile initials remain the fallback; no avatar image or account data is fabricated.",
     "Sidebar-15 right calendar sample slots bind to the existing unconnected chat empty state. Stock resizable Panel/Separator handles right width; sidebar width binds to its panel at 100%, with native 16rem default/minimum and 50% maximum.",

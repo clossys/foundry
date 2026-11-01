@@ -43,7 +43,7 @@ export function AppSidebar({
     },
     teams: [
       {
-        name: name ?? "Clossys Studio",
+        name: "Clossys Studio",
         // The logo sits on `--sidebar-primary`, the menu item's logo on the menu ground.
         logo: <BrandMark ground={resolved === "dark" ? "light" : "dark"} />,
         itemLogo: <BrandMark ground={resolved === "dark" ? "dark" : "light"} />,
