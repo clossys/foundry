@@ -98,7 +98,7 @@ export function slotGallery(consumer: string, agent: SlotAgent): { sections: Slo
     target.cards.push({ id, slug: id, name: label(id), kind, version: candidate ? candidateVersion(candidate) : 0,
       status: failing ? 'failing' : missing ? 'missing' : entry.pin ? 'active' : 'draft', records: candidate && !failing ? 1 : 0,
       excerpt: [], ...(candidate ? { candidate } : {}), ...(element ? { element, specimen: `${id}/${element}` } : {}), ...(missing || !entry.pin ? { emptyState: missing ? 'No candidate' as const : 'No pin' as const } : {}),
-      ...(!failing && (agent === 'writer' || (agent === 'director' && recordSpecimenInput(consumer, agent, id, candidate))) ? { specimenUrl: recordSpecimenHref(agent, id, candidate) } : {}),
+      ...(!failing && ((agent === 'writer' && candidate && entry.pin?.candidate === candidate) || (agent === 'director' && recordSpecimenInput(consumer, agent, id, candidate))) ? { specimenUrl: recordSpecimenHref(agent, id, candidate) } : {}),
     });
   }
   return { sections, count: sections.reduce((n, row) => n + row.cards.length, 0) };
