@@ -33,9 +33,9 @@
     },
     "sections.studio.options": {
       "element": "studio-options",
-      "version": 1,
-      "hash": "sha256:d04264150d45bf0d7ce1caeb0646b6605209d926198483640faf06c7ab2de369",
-      "event": "e6"
+      "version": 2,
+      "hash": "sha256:08bc50fefa89c2d134e2569c898b773d3e87632f0113c69fa00a9ab3bc580c17",
+      "event": "e35"
     },
     "sections.studio.checks": {
       "element": "studio-checks",
@@ -487,6 +487,18 @@
       "hash": "sha256:8d3fae8ae7058536af902ae4c2f377b54e6cc227018c35f5bb943fedcfaa0056",
       "from": "option",
       "reason": "Bind existing Publications labels and route counts to Writer preview copy; no editorial approval."
+    },
+    {
+      "id": "e35",
+      "at": "2026-11-01T16:47:33Z",
+      "by": "studio-options-copy",
+      "action": "pin",
+      "slot": "sections.studio.options",
+      "element": "studio-options",
+      "version": 2,
+      "hash": "sha256:08bc50fefa89c2d134e2569c898b773d3e87632f0113c69fa00a9ab3bc580c17",
+      "from": "option",
+      "reason": "Bind existing Options labels to Writer preview copy; no editorial approval."
     }
   ]
 }

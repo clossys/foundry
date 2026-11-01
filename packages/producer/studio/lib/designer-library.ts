@@ -1,3 +1,4 @@
+import { optionCopy, optionsCopy } from './options-copy';
 import { referencesCopy } from './references-copy';
 import { contractCopy } from './contract-copy';
 import { studioCopy } from './studio-copy';
@@ -172,12 +173,13 @@ export function designerLeafInputs(leaf: DesignerLeaf, theme: 'light' | 'dark', 
     empty: studioCopy("studio.no-specimen-recorded-for-this-leaf-yet"),
   };
   const options: OptionsInput | undefined = card.specimen && optionVersions.length ? {
+    copy: optionsCopy(),
     name: card.name,
     description: optionsDescription(card.pinned, optionVersions.length - (card.pinned ? 1 : 0)),
     rows: optionVersions.map(version => {
       const pinned = card.pinned && version === card.version;
       return {
-        version, pinned, label: pinned ? studioCopy("studio.pinned-v", { value0: String(version) }) : studioCopy("studio.option-v", { value0: String(version) }),
+        version, pinned, copy: optionCopy(card.name, { version, pinned }), label: pinned ? studioCopy("studio.pinned-v", { value0: String(version) }) : studioCopy("studio.option-v", { value0: String(version) }),
         reason: leaf.versions.find(row => row.version === version)?.reason ?? '',
         preview: { kind: 'frame' as const, viewport: 1280 as const, src: specimenHref({ specimen: card.specimen, version }, theme, 1280)! },
       };

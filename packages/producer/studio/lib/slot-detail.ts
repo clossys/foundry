@@ -1,3 +1,4 @@
+import { optionCopy, optionsCopy } from './options-copy';
 import { checksCopy } from './checks-copy';
 import { referencesCopy } from './references-copy';
 import { contractCopy } from './contract-copy';
@@ -53,9 +54,10 @@ export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 
     empty: studioCopy("studio.no-candidate"),
   };
   const options: OptionsInput = {
+    copy: optionsCopy(),
     name: detail.id, description: detail.pin ? studioCopy("studio.recorded-candidates-beside-the-pin") : studioCopy("studio.no-pin-candidates-await-approval"),
     rows: [...detail.candidates].sort((a, b) => Number(b.pinned) - Number(a.pinned) || a.version - b.version).map(candidate => ({
-      version: candidate.version, pinned: candidate.pinned, label: candidate.name, reason: candidate.pinned ? studioCopy("studio.pinned") : studioCopy("studio.unpinned"),
+      version: candidate.version, pinned: candidate.pinned, copy: optionCopy(detail.id, candidate), label: candidate.name, reason: candidate.pinned ? studioCopy("studio.pinned") : studioCopy("studio.unpinned"),
       preview: candidate.specimen ? { kind: 'frame' as const, viewport: 1280 as const, src: specimenHref({ specimen: candidate.specimen, version: candidate.version }, theme, 1280)! }
         : { kind: 'strings' as const, rows: candidateRows(candidate, detail.agent === 'writer').map(row => ({ ...row, change: 'same' as const })) },
     })),

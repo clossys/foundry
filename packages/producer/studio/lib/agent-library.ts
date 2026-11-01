@@ -1,3 +1,4 @@
+import { optionCopy, optionsCopy } from './options-copy';
 import { checksCopy } from './checks-copy';
 import { referencesCopy } from './references-copy';
 import { contractCopy } from './contract-copy';
@@ -177,7 +178,8 @@ export function agentOptionsInput(leaf: AgentLeafRecords, previews: ReadonlyMap<
   return {
     name: leaf.card.name,
     description: optionsDescription(Boolean(active), options.length, 'active'),
-    rows,
+    copy: optionsCopy(),
+    rows: rows.map(row => ({ ...row, copy: optionCopy(leaf.card.name, row) })),
   };
 }
 
