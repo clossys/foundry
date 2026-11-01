@@ -1,0 +1,89 @@
+{
+  "name": "studio-publications",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:file",
+      "content": "import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, LinkButton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';\n\nexport interface PublicationsCopy {\n  root: string;\n  path: string;\n  page: string;\n  frame: string;\n  sections: string;\n  status: string;\n  leaf: string;\n  none: string;\n}\n\nexport interface PublicationCopy { routeCount: string; routesLabel: string }\n\nexport type PublicationTone = 'secondary' | 'outline' | 'destructive';\n\n/** One route of a publication: its served path, the page that renders it and how it is assembled. */\nexport interface PublicationRoute { key: string; path: string; pageId: string; frame: string; sections: readonly string[]; status: { label: string; tone: PublicationTone }; leaf?: { label: string; href: string } }\n\n/** One publication: where it is served from (from its config, never assumed) and every route after that root. */\nexport interface Publication { id: string; title: string; root: string; rootNote: string; routes: readonly PublicationRoute[]; notice?: string }\n\n/** The `publications` input of `sections.studio.publications`. */\nexport interface PublicationsInput { title: string; description: string; copy: PublicationsCopy; publications: readonly (Publication & { copy: PublicationCopy })[] }\n\n/** `sections.studio.publications`: each publication's root and its full route table, one card per publication in the page column (no outer card). */\nexport default function PublicationsSection({ publications }: { publications: PublicationsInput }) {\n  return <section data-studio-section=\"publications\" aria-labelledby=\"publications-heading\">\n    <CardHeader className=\"px-0\">\n      <CardTitle id=\"publications-heading\" role=\"heading\" aria-level={2} className=\"text-xl\">{publications.title}</CardTitle>\n      <CardDescription>{publications.description}</CardDescription>\n    </CardHeader>\n    <CardContent className=\"flex flex-col gap-6 px-0 pt-4\">\n      {publications.publications.map(publication => <Card key={publication.id} size=\"sm\" id={`publication-${publication.id}`}>\n        <CardHeader>\n          <CardTitle role=\"heading\" aria-level={3} className=\"flex flex-wrap items-center gap-2\">\n            {publication.title}\n            <Badge variant=\"outline\">{publication.copy.routeCount}</Badge>\n          </CardTitle>\n          <CardDescription className=\"flex flex-wrap items-center gap-1\">{publications.copy.root} <Badge variant=\"secondary\">{publication.root}</Badge> {publication.rootNote}</CardDescription>\n          {publication.notice && <CardDescription>{publication.notice}</CardDescription>}\n        </CardHeader>\n        <CardContent>\n          <Table aria-label={publication.copy.routesLabel}>\n            <TableHeader>\n              <TableHead isRowHeader>{publications.copy.path}</TableHead>\n              <TableHead>{publications.copy.page}</TableHead>\n              <TableHead>{publications.copy.frame}</TableHead>\n              <TableHead>{publications.copy.sections}</TableHead>\n              <TableHead>{publications.copy.status}</TableHead>\n              <TableHead>{publications.copy.leaf}</TableHead>\n            </TableHeader>\n            <TableBody>\n              {publication.routes.map(route => <TableRow key={route.key} id={route.key}>\n                <TableCell className=\"font-mono text-xs\">{route.path}</TableCell>\n                <TableCell className=\"font-mono text-xs\">{route.pageId}</TableCell>\n                <TableCell className=\"font-mono text-xs\">{route.frame}</TableCell>\n                <TableCell className=\"whitespace-normal font-mono text-xs\">{route.sections.join(', ')}</TableCell>\n                <TableCell><Badge variant={route.status.tone}>{route.status.label}</Badge></TableCell>\n                <TableCell>{route.leaf ? <LinkButton href={route.leaf.href} variant=\"link\" size=\"sm\" className=\"h-auto px-0\">{route.leaf.label}</LinkButton> : <Badge variant=\"ghost\">{publications.copy.none}</Badge>}</TableCell>\n              </TableRow>)}\n            </TableBody>\n          </Table>\n        </CardContent>\n      </Card>)}\n    </CardContent>\n  </section>;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"studio-publications\",\n  \"type\": \"registry:block\",\n  \"title\": \"Publications\",\n  \"description\": \"Each publication with its configured root and its full route table: path, page, frame, sections, status and the leaf page.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [],\n  \"registryDependencies\": [\n    \"table\"\n  ],\n  \"files\": [\n    {\n      \"path\": \"index.tsx\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/studio-publications/index.tsx\"\n    }\n  ]\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.studio.publications",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "{\"registry\":\"shadcn\",\"item\":\"table\",\"version\":\"4.23.0\",\"hash\":\"sha256:7c761c65cbdd8a04693fbde181016cf3af26590ebc57c1073a47fd6a0e188561\",\"url\":\"https://ui.shadcn.com/r/styles/radix-nova/table.json\"}",
+        "{\"version\":1,\"hash\":\"sha256:9a3ea969749f3514da61da6077bdd34c4bd09de31f4a870580fe23d3fd7c4c38\"}"
+      ],
+      "hash": "sha256:8d3fae8ae7058536af902ae4c2f377b54e6cc227018c35f5bb943fedcfaa0056",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "studio-publications",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.studio.publications",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "writer",
+        "model": "UNKNOWN",
+        "by": "studio-publications-copy"
+      },
+      "reason": "Bind existing Publications labels and route counts through display-ready Writer copy inputs. The pre-cut Producer source already omitted pinned v2's max-w-(--measure) description class; existing drift is preserved.",
+      "createdAt": "2026-11-01T16:28:21Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [
+          "studio.publications-root",
+          "studio.publications-path",
+          "studio.publications-page",
+          "studio.publications-frame",
+          "studio.publications-sections",
+          "studio.publications-status",
+          "studio.publications-leaf",
+          "studio.publications-none",
+          "studio.publications-one-route",
+          "studio.publications-many-routes",
+          "studio.publications-routes-label"
+        ],
+        "themeVars": [
+          "--card",
+          "--border",
+          "--muted-foreground"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

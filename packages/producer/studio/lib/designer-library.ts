@@ -1,3 +1,7 @@
+import { optionCopy, optionsCopy } from './options-copy';
+import { referencesCopy } from './references-copy';
+import { contractCopy } from './contract-copy';
+import { studioCopy } from './studio-copy';
 /**
  * Studio Designer library client: the gallery and leaf read Producer's record-store projection
  * over HTTP only (`/api/designer/library[/<leaf>]`), and the adapter below turns it into the
@@ -47,7 +51,7 @@ export function specimenHref(card: Pick<DesignerCard, 'specimen' | 'version'>, t
 async function request(path: string, signal: AbortSignal): Promise<unknown> {
   const response = await fetch(path, { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
   if (response.status === 404) return undefined;
-  if (!response.ok) throw new Error(`Producer could not load the Designer library (${response.status}).`);
+  if (!response.ok) throw new Error(studioCopy("studio.producer-could-not-load-the-designer-library", { value0: String(response.status) }));
   return response.json();
 }
 
@@ -55,14 +59,14 @@ function object(value: unknown): value is Record<string, unknown> { return typeo
 
 export async function loadDesignerGallery(signal: AbortSignal): Promise<DesignerGallery> {
   const value = await request('/api/designer/library', signal);
-  if (!object(value) || !Array.isArray(value.sections) || typeof value.count !== 'number') throw new Error('The Designer library response is invalid.');
+  if (!object(value) || !Array.isArray(value.sections) || typeof value.count !== 'number') throw new Error(studioCopy("studio.the-designer-library-response-is-invalid"));
   return value as unknown as DesignerGallery;
 }
 
 export async function loadDesignerLeaf(slug: string, signal: AbortSignal): Promise<DesignerLeaf | undefined> {
   const value = await request(`/api/designer/library/${encodeURIComponent(slug)}`, signal);
   if (value === undefined) return undefined;
-  if (!object(value) || value.state !== 'ready' || !object(value.leaf)) throw new Error('The Designer leaf response is invalid.');
+  if (!object(value) || value.state !== 'ready' || !object(value.leaf)) throw new Error(studioCopy("studio.the-designer-leaf-response-is-invalid"));
   return value.leaf as unknown as DesignerLeaf;
 }
 
@@ -75,8 +79,8 @@ export const DESIGNER_UNIT = LEAF_UNIT;
 
 export function designerNotice(state: 'missing' | 'error', message?: string): PageNoticeData {
   return state === 'missing'
-    ? { title: 'No Designer library yet', description: 'Producer found no record store for this workspace.' }
-    : { title: 'The Designer library could not load', description: message ?? 'Producer returned an error.' };
+    ? { title: studioCopy("studio.no-designer-library-yet"), description: studioCopy("studio.producer-found-no-record-store-for-this") }
+    : { title: studioCopy("studio.the-designer-library-could-not-load"), description: message ?? studioCopy("studio.producer-returned-an-error") };
 }
 
 /** Records -> display data: L0 sections open a layer; L1/L2 sections become its groups. */
@@ -92,13 +96,13 @@ export function designerGalleryLayers(records: DesignerGallery, theme: 'light' |
         // The full live preview: the active state framed view-only at desktop width in the page's theme.
         const src = specimenHref(card, theme, GALLERY_WIDTH);
         const specimen: SpecimenInput | undefined = src ? {
-          kind: 'viewports', name: card.name, title: 'Specimen', description: specimenDescription(card.status),
-          specimens: [{ viewport: GALLERY_WIDTH, light: src, interactive: false }], empty: 'No specimen recorded for this leaf yet.',
+          kind: 'viewports', name: card.name, title: studioCopy("studio.specimen"), description: specimenDescription(card.status),
+          specimens: [{ viewport: GALLERY_WIDTH, light: src, interactive: false }], empty: studioCopy("studio.no-specimen-recorded-for-this-leaf-yet"),
         } : undefined;
         return [{
           key: card.slot, name: card.name, ...(card.version !== undefined ? { version: card.version } : {}),
           statusLabel: card.emptyState ?? LEAF_STATUS_LABEL[card.status], statusTone: LEAF_STATUS_TONE[card.status],
-          href: href ?? '', ...(specimen ? { specimen } : { specimenStatus: { label: card.emptyState ?? 'Nothing to preview yet', tone: 'outline' as const } }),
+          href: href ?? '', ...(specimen ? { specimen } : { specimenStatus: { label: card.emptyState ?? studioCopy("studio.nothing-to-preview-yet"), tone: 'outline' as const } }),
         }];
       }),
     });
@@ -112,8 +116,8 @@ export function designerGalleryInput(records: DesignerGallery, theme: 'light' | 
   if (records.state === 'missing' || !layers.length) return designerNotice('missing');
   return {
     header: {
-      title: 'Designer library',
-      description: `${leafCountLabel(count)} from the record store. Open a leaf for its contract, lineage and versions.`,
+      title: studioCopy("studio.designer-library"),
+      description: studioCopy("studio.from-the-record-store-open-a-leaf", { value0: String(leafCountLabel(count)) }),
     },
     unit: DESIGNER_UNIT, layers,
   };
@@ -122,11 +126,11 @@ export function designerGalleryInput(records: DesignerGallery, theme: 'light' | 
 /** The options description, shared by every agent: how many versions wait beside the pin, if any. */
 export function optionsDescription(pinned: boolean, options: number, noun: 'pinned' | 'active' = 'pinned'): string {
   return pinned
-    ? `${options === 1 ? '1 newer version is' : `${options} newer versions are`} not ${noun === 'pinned' ? 'pinned' : 'approved'}. The site keeps the ${noun} version until one is approved.`
-    : `Nothing is ${noun} yet. ${options === 1 ? '1 recorded version waits' : `${options} recorded versions wait`} for approval.`;
+    ? studioCopy("studio.newer-options-description", { count: options, noun })
+    : studioCopy("studio.unpinned-options-description", { count: options, noun });
 }
 
-const versionFlags = (row: DesignerVersionRow) => [row.pinned && 'Pinned', row.released && 'Released', row.verified && 'Verified'].filter((flag): flag is string => Boolean(flag));
+const versionFlags = (row: DesignerVersionRow) => [row.pinned && studioCopy("studio.pinned"), row.released && studioCopy("studio.released"), row.verified && studioCopy("studio.verified")].filter((flag): flag is string => Boolean(flag));
 
 /** Every section input a Designer leaf page places, display-ready. */
 export function designerLeafInputs(leaf: DesignerLeaf, theme: 'light' | 'dark', links: StudioLinks): Record<string, unknown> {
@@ -137,25 +141,26 @@ export function designerLeafInputs(leaf: DesignerLeaf, theme: 'light' | 'dark', 
   const header: LeafHeaderInput = {
     name: card.name, id: card.slot, ...(card.version !== undefined ? { version: card.version } : {}),
     statusLabel: LEAF_STATUS_LABEL[card.status], statusTone: LEAF_STATUS_TONE[card.status],
-    statusDetail: leaf.statusDetail, trail: leaf.trail, galleryHref: links.gallery('designer') ?? '', galleryLabel: 'Designer library',
+    statusDetail: leaf.statusDetail, trail: leaf.trail, galleryHref: links.gallery('designer') ?? '', galleryLabel: studioCopy("studio.designer-library"),
   };
   const contract: ContractInput = {
+    copy: contractCopy(),
     facts: [
-      ...(leaf.contract.kind ? [{ label: 'Kind', value: leaf.contract.kind }] : []),
-      ...(leaf.contract.root ? [{ label: 'Root', value: leaf.contract.root }] : []),
+      ...(leaf.contract.kind ? [{ label: studioCopy("studio.kind"), value: leaf.contract.kind }] : []),
+      ...(leaf.contract.root ? [{ label: studioCopy("studio.root"), value: leaf.contract.root }] : []),
     ],
     inputs: leaf.contract.inputs,
     lists: [
-      { label: 'Composes', items: leaf.contract.composes },
-      { label: 'Copy keys', items: leaf.contract.copyKeys },
-      { label: 'Theme variables', items: leaf.contract.themeVars },
-      { label: 'Depends on', items: leaf.contract.dependencies },
+      { label: studioCopy("studio.composes"), items: leaf.contract.composes },
+      { label: studioCopy("studio.copy-keys"), items: leaf.contract.copyKeys },
+      { label: studioCopy("studio.theme-variables"), items: leaf.contract.themeVars },
+      { label: studioCopy("studio.depends-on"), items: leaf.contract.dependencies },
     ],
   };
   const history: HistoryInput = {
     rows: leaf.versions.map(row => {
       const step = lineage.get(row.version);
-      const mode = step ? [step.mode, step.parent !== undefined && `from v${step.parent}`].filter(Boolean).join(' ') : row.lineage;
+      const mode = step ? [step.mode, step.parent !== undefined && studioCopy("studio.from-v", { value0: String(step.parent) })].filter(Boolean).join(' ') : row.lineage;
       return {
         version: row.version, date: row.createdAt, note: row.reason || '—', marks: versionFlags(row),
         lineage: { mode, ...(step?.source ? { source: step.source } : {}) }, ...(row.hash ? { hash: row.hash } : {}),
@@ -163,17 +168,18 @@ export function designerLeafInputs(leaf: DesignerLeaf, theme: 'light' | 'dark', 
     }),
   };
   const specimen: SpecimenInput = {
-    kind: 'viewports', name: card.name, title: 'Specimen', description: specimenDescription(card.status),
+    kind: 'viewports', name: card.name, title: studioCopy("studio.specimen"), description: specimenDescription(card.status),
     specimens: card.specimen ? SPECIMEN_VIEWPORTS.map(viewport => ({ viewport, light: specimenHref(card, 'light', viewport)!, dark: specimenHref(card, 'dark', viewport)! })) : [],
-    empty: 'No specimen recorded for this leaf yet.',
+    empty: studioCopy("studio.no-specimen-recorded-for-this-leaf-yet"),
   };
   const options: OptionsInput | undefined = card.specimen && optionVersions.length ? {
+    copy: optionsCopy(),
     name: card.name,
     description: optionsDescription(card.pinned, optionVersions.length - (card.pinned ? 1 : 0)),
     rows: optionVersions.map(version => {
       const pinned = card.pinned && version === card.version;
       return {
-        version, pinned, label: pinned ? `Pinned v${version}` : `Option v${version}`,
+        version, pinned, copy: optionCopy(card.name, { version, pinned }), label: pinned ? studioCopy("studio.pinned-v", { value0: String(version) }) : studioCopy("studio.option-v", { value0: String(version) }),
         reason: leaf.versions.find(row => row.version === version)?.reason ?? '',
         preview: { kind: 'frame' as const, viewport: 1280 as const, src: specimenHref({ specimen: card.specimen, version }, theme, 1280)! },
       };
@@ -181,10 +187,11 @@ export function designerLeafInputs(leaf: DesignerLeaf, theme: 'light' | 'dark', 
   } : undefined;
   // Uses: what the leaf composes; used by is not recorded for Designer leaves yet.
   const references: ReferencesInput = {
+    copy: referencesCopy(),
     uses: leaf.contract.composes.map(label => ({ label })), usedBy: [],
     lineage: leaf.lineage.map(row => ({
       key: `v${row.version}`, version: `v${row.version}`,
-      mode: [row.mode, row.parent !== undefined && `from v${row.parent}`].filter(Boolean).join(' '),
+      mode: [row.mode, row.parent !== undefined && studioCopy("studio.from-v", { value0: String(row.parent) })].filter(Boolean).join(' '),
       source: row.source ?? '—',
     })),
   };

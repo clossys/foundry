@@ -1,3 +1,4 @@
+import { studioCopy } from './studio-copy';
 import type { CellSummary } from './cells-client';
 
 /** Readable label for an identity segment: "accent-color" becomes "Accent color". */
@@ -39,9 +40,9 @@ export function presentText(value: string, titles: ReadonlyMap<string, string> =
   const cite = (name: string) => { if (name && !citations.includes(name)) citations.push(name); return ''; };
   text = text.replace(/^\s*fact:([\w.-]+)\s+is\s+[^:]{1,80}?:\s*/i, (_, name: string) => cite(name));
   text = text.replace(/\s*\((?:finding|fact):([\w.-]+)\)/gi, (_, name: string) => cite(name));
-  text = text.replace(/TODO-OWNER/g, () => { ownerInput = true; return 'awaiting owner input'; });
+  text = text.replace(/TODO-OWNER/g, () => { ownerInput = true; return studioCopy('studio.awaiting-owner-input'); });
   // Request identifiers are bookkeeping; readers see what they refer to.
-  text = text.replace(/\b(?:REQ|req)-\d{1,6}\b/g, 'the open request');
+  text = text.replace(/\b(?:REQ|req)-\d{1,6}\b/g, () => studioCopy('studio.the-open-request'));
   text = text.replace(IDENTITY, (match, id: string, version?: string) => {
     const known = titles.get(id);
     if (!known && !LAYER_PREFIX.test(id)) return match;
