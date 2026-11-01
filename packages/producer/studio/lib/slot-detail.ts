@@ -4,6 +4,7 @@ import type { StudioLinks } from './agent-library';
 import type { SpecimenInput } from '../sections/studio-specimen';
 import type { OptionsInput } from '../sections/studio-options';
 import { specimenHref } from './designer-library';
+import { publisherFrameUrl, safePreviewUrl, type PublicationResponse } from './publisher-preview';
 
 const text = (value: unknown): string => typeof value === 'string' ? value : JSON.stringify(value) ?? '';
 
@@ -32,11 +33,11 @@ function candidateRows(candidate: DetailCandidate, writer: boolean) {
   return strings.length ? strings : [{ key: candidate.name, text: candidate.content }];
 }
 
-export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 'light' | 'dark'): Record<string, unknown> {
+export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 'light' | 'dark', publication?: PublicationResponse): Record<string, unknown> {
   const shown = detail.candidates.find(candidate => candidate.name === detail.shown);
   const pinned = !!shown?.pinned;
   const statusLabel = !shown ? 'No candidate' : pinned ? 'Pinned' : detail.pin ? 'Pin unavailable' : 'No pin';
-  const specimen: SpecimenInput = shown?.specimen ? {
+  let specimen: SpecimenInput = shown?.specimen ? {
     kind: 'viewports', name: detail.id, title: 'Specimen', description: shown.name,
     specimens: ([375, 768, 1280] as const).map(viewport => ({ viewport,
       light: specimenHref({ specimen: shown.specimen, version: shown.version }, 'light', viewport)!,
@@ -48,6 +49,20 @@ export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 
     rows: shown ? candidateRows(shown, detail.agent === 'writer').map(row => ({ ...row, label: row.key })) : [],
     empty: 'No candidate',
   };
+  if (detail.agent === 'publisher' && detail.kind === 'page' && shown) {
+    let path: unknown;
+    const validPin = shown.pinned && !shown.issues.length && shown.sha256 === detail.pin?.sha256;
+    if (validPin) {
+      try { path = JSON.parse(shown.content).path; } catch { /* A malformed record cannot identify a published page. */ }
+    }
+    const page = validPin && publication?.state === 'ready' ? publication.pages.find(page => page.cellId !== undefined ? page.cellId === detail.id : typeof path === 'string' && page.route === path) : undefined;
+    specimen = {
+      kind: 'viewports', name: detail.id, title: 'Rendered page', description: '',
+      specimens: page?.emitted && safePreviewUrl(page.previewUrl) ? ([375, 768, 1280] as const).map(viewport => ({
+        viewport, light: publisherFrameUrl(page, viewport, 'light'), dark: publisherFrameUrl(page, viewport, 'dark'),
+      })) : [], empty: 'Publish this page to preview it.',
+    };
+  }
   const options: OptionsInput = {
     name: detail.id, description: detail.pin ? 'Recorded candidates beside the pin.' : 'No pin. Candidates await approval.',
     rows: [...detail.candidates].sort((a, b) => Number(b.pinned) - Number(a.pinned) || a.version - b.version).map(candidate => ({

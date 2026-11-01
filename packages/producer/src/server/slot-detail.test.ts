@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { slotDetail } from './slot-detail.js';
 import { detailStrings, loadSlotDetail, slotDetailInputs } from '../../studio/lib/slot-detail';
+import { parsePublicationResponse } from '../../studio/lib/publisher-preview';
 import { serializeFrontmatter, slotPositions, type IaDoc } from '../records/slot-model/index.js';
 
 const roots: string[] = [];
@@ -103,6 +104,40 @@ describe('slot details', () => {
     expect(await loadSlotDetail('writer', id, signal)).toBeNull();
     fetch.mockResolvedValueOnce(new Response(JSON.stringify({ state: 'ready' })));
     await expect(loadSlotDetail('writer', id, signal)).rejects.toThrow('Slot detail response is invalid');
+  });
+
+  it('renders an emitted native Publisher page at all six viewport/theme variants without replacing its slot contract', () => {
+    const { root } = fixture();
+    const id = 'page.example', agent = join(root, 'clossys/agents/publisher');
+    const dir = join(agent, 'web/pages', id);
+    mkdirSync(join(dir, 'candidates'), { recursive: true });
+    const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic-test-only#publisher-detail', extensions: [], nodes: [{ id: 'web', label: 'Web', children: [{ id: 'pages', label: 'Pages', slots: [id] }] }] };
+    writeFileSync(join(agent, 'ia.json'), JSON.stringify(ia));
+    writeFileSync(join(dir, 'slot.json'), JSON.stringify({ schema: 'clossys.slot/1', id, agent: 'publisher', ia: slotPositions('publisher', ia).get(id), kind: 'page', contract: { purpose: 'Example page' }, inputs: [], uses: [] }));
+    const bytes = JSON.stringify({ schema: 'clossys.page/1', title: 'Example', path: '/example', frame: null, sections: [], copy: {}, meta: { source: { kind: 'original', ref: [] } } });
+    writeFileSync(join(dir, 'candidates/example-v1.json'), bytes);
+    writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: 'example-v1.json', sha256: createHash('sha256').update(bytes).digest('hex'), pinnedBy: 'owner:synthetic-test-only:publisher-detail', at: '2026-01-01T00:00:00Z' }));
+    const detail = slotDetail(root, 'publisher', id)!;
+    expect(detail.candidates[0]!.issues).toEqual([]);
+    const publication = parsePublicationResponse({ state: 'ready', publication: 'example', publications: ['example'], manifest: { schemaVersion: 1, publication: 'example', contentMap: { entries: [] } }, pages: [{ id: 'emitted-example', route: '/example', previewUrl: '/preview/example/pages/emitted-example.html', frameUrl: '/preview/example/frame/emitted-example.html', emitted: true }] });
+    const inputs = slotDetailInputs(detail, links, 'dark', publication);
+    expect(inputs.specimen).toMatchObject({ kind: 'viewports', specimens: [375, 768, 1280].map(viewport => ({ viewport,
+      light: `/preview/example/frame/emitted-example.html?theme=light&width=${viewport}`,
+      dark: `/preview/example/frame/emitted-example.html?theme=dark&width=${viewport}`,
+    })) });
+    const withoutPublication = slotDetailInputs(detail, links, 'light');
+    for (const name of ['header', 'options', 'contract', 'checks', 'history', 'references']) expect(inputs[name]).toEqual(withoutPublication[name]);
+    expect(withoutPublication.specimen).toMatchObject({ kind: 'viewports', specimens: [], empty: 'Publish this page to preview it.' });
+    if (publication.state !== 'ready') throw new Error('Expected fixture publication');
+    for (const page of [{ ...publication.pages[0]!, emitted: false }, { ...publication.pages[0]!, route: '/unrelated' }, { ...publication.pages[0]!, cellId: 'page.other' }]) {
+      expect(slotDetailInputs(detail, links, 'light', { ...publication, pages: [page] }).specimen).toMatchObject({ kind: 'viewports', specimens: [] });
+    }
+    // The native endpoint's explicit emitted identity takes precedence over route matching.
+    expect(slotDetailInputs(detail, links, 'light', { ...publication, pages: [{ ...publication.pages[0]!, route: '/different', cellId: id }] }).specimen).toMatchObject({ kind: 'viewports', specimens: [{ viewport: 375 }] });
+    unlinkSync(join(dir, 'pin.json'));
+    expect(slotDetailInputs(slotDetail(root, 'publisher', id)!, links, 'light', publication)).toMatchObject({ header: { statusLabel: 'No pin' }, specimen: { kind: 'viewports', specimens: [] } });
+    unlinkSync(join(dir, 'candidates/example-v1.json'));
+    expect(slotDetailInputs(slotDetail(root, 'publisher', id)!, links, 'light', publication).specimen).toMatchObject({ kind: 'record', rows: [], empty: 'No candidate' });
   });
 
   it('links all six viewports only to the exact canonical pin without any legacy artifact', () => {
