@@ -36,7 +36,8 @@
         "observer",
         "builder",
         "inspector",
-        "publisher"
+        "publisher",
+        "producer"
       ]
     }
   ]

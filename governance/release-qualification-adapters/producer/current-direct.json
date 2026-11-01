@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/producer",
+  "archetype": "current-direct",
+  "bins": {
+    "clossys": 0
+  },
+  "fixtures": [
+    "satisfied/clossys/agents/director/ia.json",
+    "satisfied/clossys/agents/director/brief/examples/brief.qualification/slot.json",
+    "satisfied/clossys/agents/director/brief/examples/brief.qualification/candidates/brief-v1.md",
+    "violated/clossys/agents/director/ia.json",
+    "violated/clossys/agents/director/brief/examples/brief.qualification/slot.json",
+    "violated/clossys/agents/director/brief/examples/brief.qualification/candidates/brief-v1.md"
+  ],
+  "cases": [
+    {
+      "id": "slot-model-satisfied",
+      "bin": "clossys",
+      "args": [
+        {
+          "literal": "migrate"
+        },
+        {
+          "literal": "slots"
+        },
+        {
+          "literal": "--check"
+        },
+        {
+          "literal": "--root"
+        },
+        {
+          "fixtureDirectory": "satisfied"
+        },
+        {
+          "literal": "--json"
+        }
+      ],
+      "exitCode": 0,
+      "group": "slot-model"
+    },
+    {
+      "id": "slot-model-violated",
+      "bin": "clossys",
+      "args": [
+        {
+          "literal": "migrate"
+        },
+        {
+          "literal": "slots"
+        },
+        {
+          "literal": "--check"
+        },
+        {
+          "literal": "--root"
+        },
+        {
+          "fixtureDirectory": "violated"
+        },
+        {
+          "literal": "--json"
+        }
+      ],
+      "exitCode": 1,
+      "group": "slot-model"
+    },
+    {
+      "id": "slot-model-invalid-argument",
+      "bin": "clossys",
+      "args": [
+        {
+          "literal": "migrate"
+        },
+        {
+          "literal": "slots"
+        },
+        {
+          "literal": "--check"
+        },
+        {
+          "literal": "--unknown"
+        },
+        {
+          "literal": "--json"
+        }
+      ],
+      "exitCode": 2,
+      "group": "slot-model"
+    }
+  ],
+  "dimensionEvidence": {
+    "rollback": "restoration"
+  }
+}

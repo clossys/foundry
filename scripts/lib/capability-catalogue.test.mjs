@@ -149,7 +149,7 @@ test("a contract-shaped `needs` edge resolves: producerRole's scoped name become
   const customer = roleOf(catalogue, "customer");
   assert.deepEqual(customer.needs, [
     { artifact: "surface-documents", role: "publisher", producerRole: "@clossys/publisher", source: "manifest" },
-    { artifact: "audience-understanding", role: "strategist", producerRole: "@clossys/strategist", source: "manifest" },
+    { artifact: "strategy-brief", role: "strategist", producerRole: "@clossys/strategist", source: "manifest" },
   ]);
 
   // The producer's side of the met edge names its consumer and its declared path.
@@ -191,13 +191,23 @@ test("a need is met only when its producer feeds the artifact, the same rule as 
   // Strategist keeps its capability map but declares no `feeds`: every need on it goes unmet.
   const unfed = verdicts({ strategist: (foundry) => ({ ...foundry, feeds: [] }) }, ["customer"]);
   assert.deepEqual(unfed.kitUnsatisfied, [
-    "customer audience-understanding",
-    "designer brand-derivation",
+    "customer strategy-brief",
+    "designer strategy-brief",
     "publisher strategy-brief",
-    "writer brand-derivation",
-    "writer claims",
+    "writer strategy-brief",
   ]);
   assert.deepEqual(unfed.kitUnsatisfied, unfed.gateUnmatched);
+
+  // Feeding a different artifact does not satisfy the required strategy brief.
+  // Keep strategy-map available: role presence alone must not satisfy this edge.
+  const missingBrief = verdicts({ strategist: (foundry) => ({ ...foundry, feeds: foundry.feeds.filter((feed) => feed.artifact !== "strategy-brief") }) }, ["customer"]);
+  assert.deepEqual(missingBrief.kitUnsatisfied, [
+    "customer strategy-brief",
+    "designer strategy-brief",
+    "publisher strategy-brief",
+    "writer strategy-brief",
+  ]);
+  assert.deepEqual(missingBrief.kitUnsatisfied, missingBrief.gateUnmatched);
 });
 
 test("a `needs` edge naming a producer outside this repository's scope is unsatisfied, never guessed", () => {

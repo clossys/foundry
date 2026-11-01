@@ -172,8 +172,11 @@ test("portfolio closure fails when policy or catalogue omits one source package"
   const catalog = await repositoryJson("governance/release-catalog.json");
   const manifests = await Promise.all((await readdir(new URL("../packages", import.meta.url))).sort().map((key) => repositoryJson(`packages/${key}/package.json`)));
   const target = catalog.targets.find((item) => item.id === catalog.defaultTarget);
-  const missingPolicy = structuredClone(policy);
-  delete missingPolicy.packages["@clossys/observer"];
-  assert.deepEqual(validateReleaseQualificationPortfolio({ policy: missingPolicy, manifests, releasePackages: target.packages }).map((item) => item.rule), ["portfolio-policy"]);
-  assert.deepEqual(validateReleaseQualificationPortfolio({ policy, manifests, releasePackages: target.packages.filter((key) => key !== "observer") }).map((item) => item.rule), ["portfolio-catalog"]);
+  assert.deepEqual(validateReleaseQualificationPortfolio({ policy, manifests, releasePackages: target.packages }), []);
+  for (const key of ["observer", "producer"]) {
+    const missingPolicy = structuredClone(policy);
+    delete missingPolicy.packages[`@clossys/${key}`];
+    assert.deepEqual(validateReleaseQualificationPortfolio({ policy: missingPolicy, manifests, releasePackages: target.packages }).map((item) => item.rule), ["portfolio-policy"], key);
+    assert.deepEqual(validateReleaseQualificationPortfolio({ policy, manifests, releasePackages: target.packages.filter((item) => item !== key) }).map((item) => item.rule), ["portfolio-catalog"], key);
+  }
 });
