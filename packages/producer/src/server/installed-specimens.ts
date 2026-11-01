@@ -162,7 +162,7 @@ async function buildPass(options: { library: string; substrate: string; pins: In
   // Only this pass's pages: a page from another pass or an earlier selection must not reach the bundle.
   await rm(pagesDir, { recursive: true, force: true });
   await mkdir(pagesDir, { recursive: true });
-  const source = libraryRecordSource({ roots: [join(library, "library")] });
+  const source = libraryRecordSource({ roots: [library] });
   const runner = shadcnRunner();
   const include = Object.keys(pins).filter(slot => slot.startsWith("themes.")).sort();
   const findings: InstallFinding[] = [];

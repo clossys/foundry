@@ -47,8 +47,8 @@ export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check>
   + "Page check: clossys check --pages <generated-manifest.json> --report <report.json> [--json]\n"
   + "Slots: clossys check [--slots] [--readiness] [--root <dir>] (enforced by default); migration: clossys migrate slots [--check] [--compare]\n"
   + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root)\n"
-  + "Install: clossys publish --install --page <page id | page record.json> [--out <dir>] [--records <library dir>]...\n"
-  + "Site: clossys publish --install --site <route pack id> [--origin <deployment origin>] [--build] [--out <dir>] [--records <library dir>]... (one routed app: content-map paths, route-pack slots, one frame)";
+  + "Install: clossys publish --install --page <page id | page record.json> [--out <dir>] [--records <consumer dir>]...\n"
+  + "Site: clossys publish --install --site <route pack id> [--origin <deployment origin>] [--build] [--out <dir>] [--records <consumer dir>]... (one routed app: content-map paths, route-pack slots, one frame)";
 
 export function parseArgs(argv: readonly string[]): CliArgs {
   const args: CliArgs = { help: false, check: false, brief: false, json: false, once: false, noOpen: false, suites: false, strict: false, records: [], install: false, build: false, slots: false, readiness: false };

@@ -11,6 +11,7 @@ import {
   type SpecimenHealthMessage,
 } from "./health-contract.js";
 import { snapshotSpecimen, thumbnailKey } from "./thumbnails.js";
+import { canonicalLibrary } from "./__fixtures__/canonical-library.js";
 
 const records = fileURLToPath(new URL("./__fixtures__/library/", import.meta.url));
 const workspace = fileURLToPath(new URL("../../../../", import.meta.url));
@@ -60,7 +61,8 @@ describe.skipIf(!chrome)("snapshot thumbnails in Chrome", () => {
   it("renders once per content hash and width, then skips", async () => {
     const cache = await mkdtemp(join(tmpdir(), "producer-specimen-thumbs-"));
     temps.push(cache);
-    const options = { records: [records], element: "sample-card", widths: [320, 480], cache, workspace, cwd: workspace };
+    const consumer = await canonicalLibrary(join(cache, "clossys"));
+    const options = { records: [consumer], element: "sample-card", widths: [320, 480], cache, workspace, cwd: workspace };
     const first = await snapshotSpecimen(options);
     expect(first.thumbnails.map(thumb => [thumb.width, thumb.cached])).toEqual([[320, false], [480, false]]);
     for (const thumb of first.thumbnails) {

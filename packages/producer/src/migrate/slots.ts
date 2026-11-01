@@ -125,7 +125,8 @@ function elementCandidate(version: LibraryVersion): string {
   if (version.payload.length === 1 && version.payload[0]!.path.endsWith(".json")) {
     try {
       const parsed = JSON.parse(version.payload[0]!.content);
-      if (parsed && typeof parsed.name === "string" && typeof parsed.type === "string" && Array.isArray(parsed.files)) item = parsed;
+      if (parsed && typeof parsed.name === "string" && typeof parsed.type === "string"
+        && (Array.isArray(parsed.files) || parsed.type === "registry:theme" || parsed.type === "registry:font")) item = { ...parsed, files: parsed.files ?? [] };
     } catch { /* not a registry item: inlined below */ }
   }
   item ??= { name: version.element, type: String(version.record.kind ?? "registry:item"), files: version.payload.map(file => ({ path: file.path, type: "registry:file", content: file.content })) };

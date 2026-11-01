@@ -26,6 +26,7 @@ export interface PublishSiteOptions {
   /** The route pack and content map id (`clossys-site`). */
   readonly site: string;
   readonly out?: string;
+  /** Canonical consumer roots; defaults to <root>/clossys. */
   readonly records?: readonly string[];
   readonly runner?: ShadcnRunner;
   readonly npm?: ShadcnRunner;

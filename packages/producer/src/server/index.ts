@@ -65,11 +65,11 @@ function specimenNpmRoot(workspace: string): string {
 export async function startProducerServer(options: ProducerServerOptions): Promise<ProducerServer> {
   const entry = await studioEntry(options.studioEntry);
   const library = resolve(options.root, options.library ?? "clossys");
-  const hasLibrary = existsSync(join(library, "library"));
+  const hasLibrary = existsSync(join(library, "agents", "designer", "ia.json"));
   const defaultTheme = hasLibrary ? designerDefaultTheme(library) : undefined;
   // Pinned items render through the install pipeline; the record handler stays for other versions.
   const installed = hasLibrary ? installedSpecimens({ root: options.root, library }) : undefined;
-  const specimen = hasLibrary ? await specimenMount({ records: [join(library, "library")], workspace: specimenNpmRoot(library), ...(defaultTheme ? { defaultTheme } : {}) }) : undefined;
+  const specimen = hasLibrary ? await specimenMount({ records: [library], workspace: specimenNpmRoot(library), ...(defaultTheme ? { defaultTheme } : {}) }) : undefined;
   const token = randomBytes(32).toString("base64url");
   const aborter = new AbortController();
   const streams = new Set<ServerResponse>();
