@@ -1,24 +1,22 @@
-// Foundry layout primitives: shared by every Studio view that lays out cards or specimens.
-// Sizes come from the layout tokens in ../index.css (`--card-grid-*`, `--specimen-grid-min`,
-// `--specimen-ratio-*`, `--measure`),
-// so a view never carries its own grid or ratio classes.
+// Shared Studio specimen layout. Card grid geometry is adopted from shadcn dashboard-01:
+// references/shadcn-aria/dashboard-01@4.23.0/registry/aria-nova/blocks/dashboard-01/components/section-cards.tsx:16.
+// Data-fit adaptations: section padding/card decoration stay with the caller; specimen
+// comparisons stop at two columns. Container breakpoints follow available main width.
 import type { ComponentProps, ReactNode } from "react"
 import { cn } from "../lib/utils"
 
 const CARD_GRID_DENSITY = {
-  /** Gallery cards: `--card-grid-min` columns, so a content column fills with several per row. */
-  cards: "grid-cols-[repeat(auto-fill,minmax(min(100%,var(--card-grid-min)),1fr))]",
-  /** Side-by-side specimens: wider `--specimen-grid-min` columns that fit as many as the column allows. */
-  specimens: "grid-cols-[repeat(auto-fit,minmax(min(100%,var(--specimen-grid-min)),1fr))]",
+  cards: "grid-cols-1",
+  specimens: "grid-cols-1 @xl/main:grid-cols-2",
 } as const
 
-/** A responsive grid that fills its column: as many min-width columns as fit, `--card-grid-gap` apart. */
+/** Stock dashboard grid pattern, shared by Studio's specimen and option sections. */
 function CardGrid({ density = "cards", className, ...props }: ComponentProps<"div"> & { density?: keyof typeof CARD_GRID_DENSITY }) {
   return (
     <div
       data-slot="card-grid"
       data-density={density}
-      className={cn("grid w-full min-w-0 gap-(--card-grid-gap)", CARD_GRID_DENSITY[density], className)}
+      className={cn("grid gap-4", CARD_GRID_DENSITY[density], className)}
       {...props}
     />
   )
