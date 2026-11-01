@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { request } from "node:http";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -11,6 +11,8 @@ import { previewRoot, themePage } from "./publication.js";
 import { SPECIMEN_FRAME_SCRIPT_HASH } from "./specimen-frame.js";
 import { INSTALL_MARKER, installOutRoot } from "../publish/install-out.js";
 import { renderNativePreview } from "./publisher-preview-render.js";
+import { readPinnedPublication } from "@clossys/publisher/content-map/slots";
+import { slotGallery } from "./slot-gallery.js";
 
 let root: string;
 let server: ProducerServer | undefined;
@@ -152,6 +154,107 @@ it("reads installs written with --out from the folder produce --out names, under
   expect(metadata).toMatchObject({ state: "ready", publication: "example-site", pages: [{ id: "contact", route: "/contact-us", cellId: "page.contact", emitted: true, previewUrl: "/preview/example-site/pages/contact.html" }] });
   expect(metadata.pages).toHaveLength(1);
   expect((await get("/preview/example-site/pages/contact.html")).text).toContain("<h1>Installed contact</h1>");
+});
+
+// Copy actual native records; edits and rehashed pins exist only in this test's scratch root.
+async function nativePublisherFixture(keepLegacy = false) {
+  const publisher = agentRoot(root, "publisher");
+  await cp(fileURLToPath(new URL("../../../../clossys/agents/publisher/", import.meta.url)), publisher, { recursive: true });
+  if (!keepLegacy) for (const name of ["tree.json", "cells", "compile.json", "content-map", "route-pack"]) await rm(join(publisher, name), { recursive: true, force: true });
+  return publisher;
+}
+async function nativeRecord(publisher: string, id: string) {
+  const ia = JSON.parse(await readFile(join(publisher, "ia.json"), "utf8"));
+  for (const node of ia.nodes) for (const child of node.children) if (child.slots.includes(id)) {
+    const dir = join(publisher, node.id, child.id, id), pinPath = join(dir, "pin.json");
+    const pin = JSON.parse(await readFile(pinPath, "utf8")), path = join(dir, "candidates", pin.candidate);
+    return { dir, path, pinPath, pin, record: JSON.parse(await readFile(path, "utf8")) };
+  }
+  throw new Error(`Missing fixture slot ${id}`);
+}
+async function editNative(publisher: string, id: string, change: (value: any) => void) {
+  const value = await nativeRecord(publisher, id); change(value.record);
+  const bytes = JSON.stringify(value.record);
+  await writeFile(value.path, bytes);
+  await writeFile(value.pinPath, JSON.stringify({ ...value.pin, sha256: createHash("sha256").update(bytes).digest("hex") }));
+}
+
+it("uses pinned native publication identity, configured paths, titles and order without legacy stores", async () => {
+  const publisher = await nativePublisherFixture(), outs = join(root, "outs");
+  await editNative(publisher, "page.designer", value => { value.title = "Visual design"; value.path = "/work/design"; });
+  await editNative(publisher, "page.home", value => { value.title = "Configured home"; value.path = "/start-here"; });
+  await editNative(publisher, "publication.studio", value => {
+    value.entryOrder = ["designer", ...value.entryOrder.filter((id: string) => id !== "designer")];
+    value.routePack.app = "apps/configured-studio";
+  });
+  await installFixture(join(outs, "design"), "designer");
+  await installFixture(join(outs, "home"), "home", [{ code: "render-failed", severity: "error" }]);
+  await installFixture(join(outs, "unowned"), "unowned");
+  await launch(outs);
+  const metadata = JSON.parse((await get("/api/publication?publication=studio")).text);
+  expect(metadata).toMatchObject({ state: "ready", publication: "studio", manifest: { publication: "studio", sourceApp: "apps/configured-studio", format: "web.page.responsive" }, pages: [
+    { id: "designer", cellId: "page.designer", route: "/work/design", title: "Visual design", emitted: true, previewUrl: "/preview/studio/pages/designer.html" },
+    { id: "home", cellId: "page.home", route: "/start-here", title: "Configured home", emitted: false },
+  ] });
+  expect(metadata.pages).toHaveLength(2);
+  const card = slotGallery(join(root, "clossys"), "publisher").sections.flatMap(section => section.cards).find(card => card.id === "page.designer")!;
+  expect(metadata.pages.find((page: any) => page.cellId === card.id)).toMatchObject({ id: "designer", emitted: true, frameUrl: "/preview/studio/frame/designer.html" });
+  expect(metadata.manifest.routes).toEqual([{ id: "designer", path: "/work/design", source: { file: "design/site/designer/index.html", export: "default" } }]);
+  expect((await get("/preview/studio/pages/designer.html")).status).toBe(200);
+  expect((await get("/preview/studio/pages/designer.html", "HEAD")).text).toBe("");
+  expect((await get("/preview/studio/pages/home.html")).status).toBe(404);
+  expect(JSON.parse((await get("/api/publication?publication=other")).text).state).toBe("missing");
+});
+
+it.each([
+  ["missing entry identity", (value: any) => { delete value.meta.entry.entryId; }, "missing"],
+  ["unknown entry identity", (value: any) => { value.meta.entry.entryId = "unknown-page"; }, "error"],
+  ["missing publication identity", (value: any) => { delete value.meta.entry.publication; }, "missing"],
+] as const)("leaves native preview unavailable for %s instead of guessing its gallery slot", async (_name, edit, state) => {
+  const publisher = await nativePublisherFixture(true), outs = join(root, "outs");
+  await editNative(publisher, "page.home", edit);
+  await installFixture(join(outs, "home"), "home");
+  await launch(outs);
+  expect(JSON.parse((await get("/api/publication?publication=studio")).text).state).toBe(state);
+});
+
+it.each(["page.home", "publication.studio"])("does not borrow legacy metadata when native %s has no pin", async id => {
+  const publisher = await nativePublisherFixture(true), outs = join(root, "outs");
+  await installFixture(join(outs, "home"), "home");
+  await rm((await nativeRecord(publisher, id)).pinPath);
+  await launch(outs);
+  expect(JSON.parse((await get("/api/publication")).text).state).toBe("error");
+});
+
+it("does not relabel an intact nonweb native publication as a web preview", async () => {
+  const publisher = await nativePublisherFixture(), outs = join(root, "outs");
+  await editNative(publisher, "publication.studio", value => { value.format = "deck.16x9"; });
+  expect((await readPinnedPublication(publisher, "studio")).map.format).toBe("deck.16x9");
+  await installFixture(join(outs, "home"), "home");
+  await launch(outs);
+  expect(JSON.parse((await get("/api/publication")).text).state).toBe("missing");
+});
+
+it("leaves ambiguous native ownership unavailable even when a publication is requested", async () => {
+  const publisher = await nativePublisherFixture(), outs = join(root, "outs");
+  const selected = await nativeRecord(publisher, "publication.studio"), id = "publication.secondary";
+  const iaPath = join(publisher, "ia.json"), ia = JSON.parse(await readFile(iaPath, "utf8"));
+  const node = ia.nodes.find((node: any) => node.id === "studio"), group = node.children.find((child: any) => child.slots.includes("publication.studio"));
+  const order = ia.nodes.flatMap((node: any) => node.children.flatMap((child: any) => child.slots)).length;
+  group.slots.push(id); await writeFile(iaPath, JSON.stringify(ia));
+  const dir = join(publisher, node.id, group.id, id);
+  await cp(selected.dir, dir, { recursive: true });
+  const slotPath = join(dir, "slot.json"), slot = JSON.parse(await readFile(slotPath, "utf8"));
+  slot.id = id; slot.ia.order = order; await writeFile(slotPath, JSON.stringify(slot));
+  await editNative(publisher, id, value => { value.meta.tree.id = "secondary"; value.routePack.packId = "secondary"; });
+  for (const pageId of new Set<string>([...slot.inputs, ...slot.uses])) {
+    await editNative(publisher, pageId, value => { delete value.meta.entry.publication; });
+  }
+  expect((await readPinnedPublication(publisher, "studio")).map.publicationId).toBe("studio");
+  expect((await readPinnedPublication(publisher, "secondary")).map.publicationId).toBe("secondary");
+  await installFixture(join(outs, "home"), "home");
+  await launch(outs);
+  expect(JSON.parse((await get("/api/publication?publication=studio")).text).state).toBe("missing");
 });
 
 it("applies the preview theme on <html> without dropping the page's own classes", () => {

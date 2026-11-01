@@ -1,4 +1,4 @@
-// Generated from Foundry Publisher cells and the Studio library selection. Run npm run generate:studio-map.
+// Generated from pinned Foundry Publisher candidates and the Studio library selection. Run npm run generate:studio-map.
 import type { ContentMap, ContentMapPageAction } from '@clossys/publisher/content-map';
 import projection from './studio-map.json';
 
