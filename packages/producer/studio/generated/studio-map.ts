@@ -4,8 +4,8 @@ import projection from './studio-map.json';
 
 /** One page module: a header icon whose popover places a pinned module section, fed from a named source. */
 export interface StudioManifestModule { id: string; icon: string; label: string; section: string; input: string; source: string; shortcut: string }
-/** One header action: a header icon whose popover copies the page link or a prompt naming it. */
-export interface StudioManifestAction { id: string; icon: string; label: string; shortcut: string; handler: { kind: 'copy-link' } | { kind: 'copy-prompt'; prompt: string } }
+/** One header action: a header icon whose popover copies a prompt naming the page. */
+export interface StudioManifestAction { id: string; icon: string; label: string; shortcut: string; handler: { kind: 'copy-prompt'; prompt: string } }
 /** The page manifest: navigator, modules, header actions and one wiring line per interaction. */
 export interface StudioPageManifest { navigator: 'explorer' | 'outline'; modules: readonly StudioManifestModule[]; actions: readonly StudioManifestAction[]; wiring: readonly { do: string; expect: string }[] }
 /** How one assembly is laid out and fed: a data loader, and per section the data field its contract input reads. */
