@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { afterAll, describe, expect, it, vi } from "vitest";
 import { runCli } from "../cli/main.js";
 import { parseArgs } from "../cli/args.js";
-import { recordSuitesSummary, runRecordSuites, slotContractSuite } from "./record-suites.js";
+import { recordSuitesSummary, refVerbatimSuite, runRecordSuites, slotContractSuite } from "./record-suites.js";
 
 const temps: string[] = [];
 afterAll(() => { for (const dir of temps) rmSync(dir, { recursive: true, force: true }); });
@@ -34,11 +34,24 @@ describe("record suites", () => {
     expect(suite.findings).toEqual([]);
   });
 
+  it("runs Designer's ref-verbatim check over every pin", async () => {
+    const root = consumer();
+    const dir = join(root, "clossys", "library", "sections.hero", "hero", "v1");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "hero.tsx"), "export const Hero = () => null\n");
+    const hash = `sha256:${"4".repeat(64)}`;
+    writeFileSync(join(dir, "element.json"), JSON.stringify({ schema: "clossys.element/1", id: "hero", slot: "sections.hero", version: 1, hash, lineage: { mode: "original" }, payload: ["hero.tsx"] }));
+    writeFileSync(join(root, "clossys", "selection.json"), JSON.stringify({ pins: { "sections.hero": { element: "hero", version: 1, hash, event: "e1" } } }));
+    const suite = await refVerbatimSuite(root);
+    expect(suite).toMatchObject({ suite: "ref-verbatim", status: "ran", checked: 1, totals: { error: 1 } });
+    expect(suite.findings[0]).toMatchObject({ code: "REF-NO-SOURCE", where: "sections.hero/hero@v1" });
+  });
+
   it("reports a suite that cannot run without failing the command unless strict", async () => {
     const root = consumer();
     const loose = await runRecordSuites(root);
     expect(loose.exitCode).toBe(0);
-    expect(loose.suites.map(suite => suite.suite)).toEqual(["archetypes", "writer-slots", "director-slots", "slot-contracts"]);
+    expect(loose.suites.map(suite => suite.suite)).toEqual(["archetypes", "writer-slots", "director-slots", "slot-contracts", "ref-verbatim"]);
     expect(loose.suites[0]).toMatchObject({ suite: "archetypes", status: "error" });
     expect(recordSuitesSummary(loose)).toMatch(/Archetypes: error: /);
     expect((await runRecordSuites(root, { strict: true })).exitCode).toBe(1);
@@ -51,7 +64,8 @@ describe("record suites", () => {
     expect(result.slots?.findings.length).toBeGreaterThan(0);
     expect(result.message).toContain("Record suites (report only)");
     expect(result.message).toMatch(/Slot contracts: \d+ contracts, errors=0/);
-    expect(result.suites?.suites).toHaveLength(4);
+    expect(result.message).toMatch(/Ref verbatim: 0 pins, errors=0/);
+    expect(result.suites?.suites).toHaveLength(5);
     expect(await runCli(["check", "--suites", "--strict", "--root", root])).toMatchObject({ exitCode: 1 });
     const outside = mkdtempSync(join(tmpdir(), "producer-record-suites-none-"));
     temps.push(outside);

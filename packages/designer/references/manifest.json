@@ -11,9 +11,23 @@
       "version": "4.23.0",
       "versionBasis": "registry endpoint used by shadcn CLI 4.23.0, served at fetchedAt; upstream source commit recorded in upstream",
       "upstream": "github.com/shadcn-ui/ui@b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+      "style": "radix-nova",
       "license": "MIT",
       "licenseFiles": [
         "shadcn/LICENSE.md"
+      ]
+    },
+    "shadcn-aria": {
+      "namespace": "@shadcn-aria",
+      "source": "https://ui.shadcn.com/r/styles/aria-nova/{name}.json",
+      "version": "4.23.0",
+      "versionBasis": "registry endpoint used by shadcn CLI 4.23.0 for the aria-nova style (components.json style aria-nova), served at the registry's fetchedAt; upstream source commit recorded in upstream",
+      "upstream": "github.com/shadcn-ui/ui@b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+      "style": "aria-nova",
+      "fetchedAt": "2026-10-31T20:10:55Z",
+      "license": "MIT",
+      "licenseFiles": [
+        "shadcn-aria/LICENSE.md"
       ]
     },
     "magicui": {
@@ -33,6 +47,7 @@
       "version": "04aad54",
       "versionBasis": "registry endpoint served at fetchedAt; upstream HEAD commit at fetch time",
       "upstream": "github.com/sadmann7/diceui@04aad54e7cb02f209b31f294cea020208a3deed6",
+      "style": "new-york",
       "license": "MIT",
       "licenseFiles": [
         "diceui/LICENSE"
@@ -44,6 +59,7 @@
       "version": "8139698",
       "versionBasis": "registry host did not resolve; source files from the MIT GitHub repository (radix base, mist kit) at a pinned commit",
       "upstream": "github.com/tailark/blocks@8139698115c1341bfd2e3e286c04bb4d8146f472",
+      "style": "radix",
       "license": "MIT",
       "licenseFiles": [
         "tailark-oss/LICENCE.md"
@@ -107,6 +123,12 @@
       "sha256": "0147b84235ed916b8b4e89c1f80655351c5afe7d211b629be61f553a227b34ba",
       "bytes": 1060,
       "sourceUrl": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/LICENSE.md"
+    },
+    {
+      "path": "shadcn-aria/LICENSE.md",
+      "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f",
+      "bytes": 1063,
+      "sourceUrl": "https://raw.githubusercontent.com/shadcn-ui/ui/b8d7baa15b1dca5716f13153e63795fc3d741f6b/LICENSE.md"
     },
     {
       "path": "shadcn/LICENSE.md",
@@ -1631,6 +1653,1985 @@
           "bytes": 13864,
           "origin": "https://magicui.design/r/safari.json"
         }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "attachment",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/attachment@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/attachment.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "registryDependencies": [
+        "button"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:23054cd568da7835433c220f0826c83933ab3cc8c5fc215e9efa5f0f1eeb0d86",
+      "files": [
+        {
+          "path": "attachment.json",
+          "sha256": "2b2119f989b56a1e275883e640cc5f36f5e5888719db97aae26bafedcfca0213",
+          "bytes": 7150,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/attachment.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/attachment.tsx",
+          "sha256": "bbb2a887eeb9114e45f96ce205d2cf4ef0b30fd6e423efd9c9dd8b7eea9cde0f",
+          "bytes": 6281,
+          "origin": "attachment.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/message-scroller-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "avatar",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/avatar@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/avatar.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:82da2f3fcbf13031e2adc2e3dc1e490315b576c6766c1e4049ae0656807951d2",
+      "files": [
+        {
+          "path": "avatar.json",
+          "sha256": "4a6ae4e530d5b66182b8bc9a825e8bb6c0de0097e496277dd27541a2f98f890c",
+          "bytes": 3922,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/avatar.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/avatar.tsx",
+          "sha256": "54f4eb24f61c229a8c9cec9ca22e9f1ae2fd787593d06c38727ef1019ed656c2",
+          "bytes": 3255,
+          "origin": "avatar.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/dashboard-01",
+        "@shadcn-aria/sidebar-07",
+        "@shadcn-aria/sidebar-15"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "badge",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/badge@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/badge.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:4a0720dd79df4c98c849bc20cb809246b2f668673eea2e6aa7d94af74350580f",
+      "files": [
+        {
+          "path": "badge.json",
+          "sha256": "4a6f5d717642654641b61938ec4a6f1a240ff483882025a66eb852e74d23821f",
+          "bytes": 2584,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/badge.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/badge.tsx",
+          "sha256": "cafe6220375e4c0fab8855b191a1bb36f4d72a0796615720a7ee8d9ec4b9d74d",
+          "bytes": 2017,
+          "origin": "badge.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/dashboard-01"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "breadcrumb",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/breadcrumb@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/breadcrumb.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:7c80b6fd19640f0ab9e3ff830a3b803c6e048beb73436789e69aab038d0e1e5c",
+      "files": [
+        {
+          "path": "breadcrumb.json",
+          "sha256": "1cc174c92c91f994512bf3c30acf141ef930e8161016482c2a46f93455b6ac5d",
+          "bytes": 4034,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/breadcrumb.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/breadcrumb.tsx",
+          "sha256": "aa85b4834eb0375a53ccb46c6a5292dda3e79561737b16c332afa4d4627f4495",
+          "bytes": 3253,
+          "origin": "breadcrumb.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/dashboard-01",
+        "@shadcn-aria/sidebar-07",
+        "@shadcn-aria/sidebar-11",
+        "@shadcn-aria/sidebar-15"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "bubble",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/bubble@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/bubble.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:539d386cfefcfc7cc1074af0492a860415ec269a639a283ca5d823e27dc44b2a",
+      "files": [
+        {
+          "path": "bubble.json",
+          "sha256": "90917fc8d222c296d326556e28500aa8ae02afc95a3d944a5705c21aeba23172",
+          "bytes": 5958,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/bubble.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/bubble.tsx",
+          "sha256": "05ac55817211fd119b26c584a8548746ec76f6a279bf30ba1a62ec100731ed6e",
+          "bytes": 5254,
+          "origin": "bubble.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/message-example",
+        "@shadcn-aria/message-scroller-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "button",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/button@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/button.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:d32a713d4769acb8f8ce4b9e26cc731c1034d8d57138864bf45155e14268dc74",
+      "files": [
+        {
+          "path": "button.json",
+          "sha256": "529af5230f35e3e17d4bc82a7266a67ac893a87ced7a17e2eae54be070f00c68",
+          "bytes": 4654,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/button.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/button.tsx",
+          "sha256": "d08af6cec9b539a0996e84f4555d6b58a711b2963af1e30764a7656a937fa169",
+          "bytes": 3959,
+          "origin": "button.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/attachment",
+        "@shadcn-aria/calendar",
+        "@shadcn-aria/dashboard-01",
+        "@shadcn-aria/dialog",
+        "@shadcn-aria/empty-example",
+        "@shadcn-aria/input-group",
+        "@shadcn-aria/item-example",
+        "@shadcn-aria/message-example",
+        "@shadcn-aria/message-scroller",
+        "@shadcn-aria/message-scroller-example",
+        "@shadcn-aria/questionnaire",
+        "@shadcn-aria/questionnaire-example",
+        "@shadcn-aria/sheet",
+        "@shadcn-aria/sidebar"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "calendar",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/calendar@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/calendar.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "registryDependencies": [
+        "button",
+        "select"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:a226fe258219f24667af1e36100cef74b586bb3564f408a9649bf48729053956",
+      "files": [
+        {
+          "path": "calendar.json",
+          "sha256": "43d91ce35f8b424af01702d049da8d2be4893ece5f34bbe8b40bf4b6b472d7f8",
+          "bytes": 11236,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/calendar.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/calendar.tsx",
+          "sha256": "4fe4b0f66c779925e8d878587f77149bdab8f5fa716a6f27405add40f86ffe9e",
+          "bytes": 10207,
+          "origin": "calendar.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/sidebar-15"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "card",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/card@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/card.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:61bc38f49644576f405ca6bdb11ba9c60c261cf76c2fc7cb21d71f99db133ac8",
+      "files": [
+        {
+          "path": "card.json",
+          "sha256": "81d1bd6c3ac2e11098c67fcfbee7f1dc633e66361da4f78e3ea83b0fd704d2e6",
+          "bytes": 3251,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/card.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/card.tsx",
+          "sha256": "645c3d73e387a99f1492220cc619453b0c7f5454134ee3cd548be7a80f7eccde",
+          "bytes": 2623,
+          "origin": "card.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/chart",
+        "@shadcn-aria/dashboard-01",
+        "@shadcn-aria/message-scroller-example",
+        "@shadcn-aria/questionnaire-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "chart",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/chart@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/chart.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "registryDependencies": [
+        "card"
+      ],
+      "dependencies": [
+        "cn",
+        "recharts@3.8.0"
+      ],
+      "hash": "sha256:c70a1e3d399eb15cb24e8c19c4e92568c111b93f8922804f7788a73c1ce21ee4",
+      "files": [
+        {
+          "path": "chart.json",
+          "sha256": "908cdcf5601f2f1daa7abf598b612c9c4264f7ed430d5f1941f2c2f29f302eeb",
+          "bytes": 11555,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/chart.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/chart.tsx",
+          "sha256": "b11e0ffcf097e4a2dc64b024dfa13a9ac3fe6756f641afbd153465a21da96802",
+          "bytes": 10504,
+          "origin": "chart.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/dashboard-01"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "checkbox",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/checkbox@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/checkbox.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:561ec3fa1ab0940c03c79fdecb9be8dcb800a5a401c1a83fb93f64cc5a977ae9",
+      "files": [
+        {
+          "path": "checkbox.json",
+          "sha256": "ecef10651dbbd65ebb745f2e4f1da48affb4408c09f782f9b236144f27db0eef",
+          "bytes": 3090,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/checkbox.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/checkbox.tsx",
+          "sha256": "51713ea39e8cc597802a80f1c902a5987c8566ec388e854e6685162913510556",
+          "bytes": 2468,
+          "origin": "checkbox.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/dashboard-01"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "collapsible",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/collapsible@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/collapsible.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "hash": "sha256:c046a362195a304031b97e33bf7aca9c9e88cd9f6a4363ded4675ae0ba955193",
+      "files": [
+        {
+          "path": "collapsible.json",
+          "sha256": "333aa5f691ab1fff7b05f3aa714bfd659a3504b9c8fc6b54e29a52a0bdd09713",
+          "bytes": 1372,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/collapsible.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/collapsible.tsx",
+          "sha256": "45c7e65d7960b07e99cbacec399945ad2f8a1f484096e7b80c0199a776c699a1",
+          "bytes": 800,
+          "origin": "collapsible.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/sidebar-07",
+        "@shadcn-aria/sidebar-11",
+        "@shadcn-aria/sidebar-15"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "command",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/command@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/command.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "registryDependencies": [
+        "dialog",
+        "input-group"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:f96ae8f790d4420c870211b8faa0fce952c3601d6e8778819f4adf0a086e9a5a",
+      "files": [
+        {
+          "path": "command.json",
+          "sha256": "90963642f118642102916763cfe439f971c7fbbe3bef86de8531474f670038ab",
+          "bytes": 7532,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/command.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/command.tsx",
+          "sha256": "02975f81aa9f1fc1c80e86204b94e2cbf7caecee57772c04a375535c43076d61",
+          "bytes": 6554,
+          "origin": "command.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "dashboard-01",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/dashboard-01@4.23.0",
+      "type": "registry:block",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/dashboard-01.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "registryDependencies": [
+        "sidebar",
+        "breadcrumb",
+        "separator",
+        "label",
+        "chart",
+        "card",
+        "select",
+        "tabs",
+        "table",
+        "toggle-group",
+        "badge",
+        "button",
+        "checkbox",
+        "dropdown-menu",
+        "drawer",
+        "input",
+        "avatar",
+        "sheet",
+        "sonner"
+      ],
+      "dependencies": [
+        "@dnd-kit/core",
+        "@dnd-kit/modifiers",
+        "@dnd-kit/sortable",
+        "@dnd-kit/utilities",
+        "@tanstack/react-table",
+        "zod"
+      ],
+      "hash": "sha256:d9ae05741f3db5cabdd97ef60e39c8ef5cfb54b58d3bf34e361952826207cf3d",
+      "files": [
+        {
+          "path": "dashboard-01.json",
+          "sha256": "dacf3db815d9bdac7b45dc445dbfd9f95830733acebc10ef531e84c229c329a0",
+          "bytes": 86755,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/dashboard-01.json"
+        },
+        {
+          "path": "registry/aria-nova/blocks/dashboard-01/components/app-sidebar.tsx",
+          "sha256": "74398f6e977b298794b4cf8cc961a1421701c020243ac6695f3dd2e2c43b49b6",
+          "bytes": 6472,
+          "origin": "dashboard-01.json#files[2].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/dashboard-01/components/chart-area-interactive.tsx",
+          "sha256": "0802ffba88c296f38a370152269c20bfe6c28866da152296fcdc215e426522f6",
+          "bytes": 10900,
+          "origin": "dashboard-01.json#files[3].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/dashboard-01/components/data-table.tsx",
+          "sha256": "490f534b30dc10d59cbba5915d2c56b6fd9da2f2bbb83912c215871f97e49077",
+          "bytes": 29704,
+          "origin": "dashboard-01.json#files[4].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/dashboard-01/components/nav-documents.tsx",
+          "sha256": "6bbb15ee58a9e891c35355dcefd87e0227771ccf4856d09508bd697c932bf6df",
+          "bytes": 3408,
+          "origin": "dashboard-01.json#files[5].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/dashboard-01/components/nav-main.tsx",
+          "sha256": "1f776848ad94f7fea04ea0f64ff71dd79cedc8ca6279c946560ac96353954c94",
+          "bytes": 2120,
+          "origin": "dashboard-01.json#files[6].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/dashboard-01/components/nav-secondary.tsx",
+          "sha256": "2e779a70c06aac1d192aa5c6170d65201d0a1711dd3cff17bf0838be841e066a",
+          "bytes": 832,
+          "origin": "dashboard-01.json#files[7].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/dashboard-01/components/nav-user.tsx",
+          "sha256": "372508b0861f290c8c68be75d8bfb510205ba5e773d1b7c652bc245bca2b7ab5",
+          "bytes": 4277,
+          "origin": "dashboard-01.json#files[8].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/dashboard-01/components/section-cards.tsx",
+          "sha256": "4c68ec5039c107170c9aeb6b293931b9710121e6c94dc858d8ba8211dd97755a",
+          "bytes": 5586,
+          "origin": "dashboard-01.json#files[9].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/dashboard-01/components/site-header.tsx",
+          "sha256": "f4f1a49cf488c1e5a0fda0018676d1111f7d179b5732aafc9f90e4a1be5d3374",
+          "bytes": 699,
+          "origin": "dashboard-01.json#files[10].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/dashboard-01/data.json",
+          "sha256": "a8dcfbe6d014ab33adb4be2ccc221313d0bbf5d1d69a06bc08527b66148e849a",
+          "bytes": 12795,
+          "origin": "dashboard-01.json#files[1].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/dashboard-01/page.tsx",
+          "sha256": "f73ca9cf7b995a31de535cb91c739709e378aae506b52f89c362e2717dc29ec4",
+          "bytes": 1404,
+          "origin": "dashboard-01.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "dialog",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/dialog@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/dialog.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "registryDependencies": [
+        "button"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:8535339d00a591c14c7083205c6a05839cc7890ac7c542f0f08c0afad0d37653",
+      "files": [
+        {
+          "path": "dialog.json",
+          "sha256": "94ba621dca86e795873e69b972e92268df829cd08332843d387e9f5d9ede345f",
+          "bytes": 5678,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/dialog.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/dialog.tsx",
+          "sha256": "007f720da1d4863ca000b3bbcb89fefe021e5ef308ae0c17cf5ab715a5c7ebee",
+          "bytes": 4815,
+          "origin": "dialog.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/command",
+        "@shadcn-aria/questionnaire-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "drawer",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/drawer@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/drawer.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "dependencies": [
+        "cn",
+        "@base-ui/react"
+      ],
+      "hash": "sha256:8cce4f5022351283f41ac681aaa8c40990345a8e66065219a02a4b0c9abaf645",
+      "files": [
+        {
+          "path": "drawer.json",
+          "sha256": "39ff7bffa2c483fc3b0624527ed951f00852c1b151c8bd5ac833f4393828c9f2",
+          "bytes": 12247,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/drawer.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/drawer.tsx",
+          "sha256": "bf78b90781d6000c16d299f938875767356a250799909f56f0a783b172489f00",
+          "bytes": 11349,
+          "origin": "drawer.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/dashboard-01"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "dropdown-menu",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/dropdown-menu@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/dropdown-menu.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:141fa0475d6b5895cdd74bf917e260727847ab8535a52993e4dd161691a64953",
+      "files": [
+        {
+          "path": "dropdown-menu.json",
+          "sha256": "6866624306e7e63830b6dfb81f78223ffac969a357cc017e24860ba4d872afb5",
+          "bytes": 9397,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/dropdown-menu.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/dropdown-menu.tsx",
+          "sha256": "1e0da064f08ca625bbbeaef1af155a51609ce26eab06884a946d32856c587a2f",
+          "bytes": 8446,
+          "origin": "dropdown-menu.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/dashboard-01",
+        "@shadcn-aria/sidebar-07",
+        "@shadcn-aria/sidebar-15"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "empty-example",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/empty-example@4.23.0",
+      "type": "registry:example",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/empty-example.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "registryDependencies": [
+        "button",
+        "empty",
+        "input-group",
+        "kbd",
+        "example"
+      ],
+      "hash": "sha256:9755d227c33050c789d3050c03a0e272436aa47a7e891c7b8d0839f01aeb3623",
+      "files": [
+        {
+          "path": "empty-example.json",
+          "sha256": "4a341e469461132a996f7b3f542bf570889fc27acd6510f2be48fc6daf71db4c",
+          "bytes": 8173,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/empty-example.json"
+        },
+        {
+          "path": "registry/aria-nova/examples/empty-example.tsx",
+          "sha256": "eeb11730082e42336d0995ef908ff91853c0f0213c0561359c9f165f771a5407",
+          "bytes": 7359,
+          "origin": "empty-example.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "empty",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/empty@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/empty.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:e94427380eeb25617e622e70a2fbaccbaa7d16342621076a42a8fd4423fc76fa",
+      "files": [
+        {
+          "path": "empty.json",
+          "sha256": "16e2394e171f16c58a6910335e0cefabcd8934844ce46e7d49393ba552d0c24c",
+          "bytes": 3019,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/empty.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/empty.tsx",
+          "sha256": "5cac88b6f80f40cf4aa5e4c3d5a6810f43e132a24032d1c55a7aecdae446cf15",
+          "bytes": 2390,
+          "origin": "empty.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/empty-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "example",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/example@4.23.0",
+      "type": "registry:component",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/example.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:bde91607d2ac74d2e566887ecb54e0d52242a4d8b00f9918973c32d8571faaba",
+      "files": [
+        {
+          "path": "example.json",
+          "sha256": "1451bfe13032acc74500500babc793697892ce668c1929f018c1ced7362328f0",
+          "bytes": 1793,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/example.json"
+        },
+        {
+          "path": "registry/aria-nova/components/example.tsx",
+          "sha256": "4e8265534863b7291158a5341f305a3cac582cf762054bd2387adf20959e06bf",
+          "bytes": 1395,
+          "origin": "example.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/empty-example",
+        "@shadcn-aria/item-example",
+        "@shadcn-aria/message-example",
+        "@shadcn-aria/message-scroller-example",
+        "@shadcn-aria/questionnaire-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "field",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/field@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/field.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "registryDependencies": [
+        "label",
+        "separator"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:7d6d0e52ce333a53c39e9843b197bcad3cd432c82a217f49e4a6b50bca54f586",
+      "files": [
+        {
+          "path": "field.json",
+          "sha256": "17e4b3dce8cc287432700adaa2793a1e5ac8eb0fa5037bb48193148b1aba5bd3",
+          "bytes": 7300,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/field.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/field.tsx",
+          "sha256": "6729fff0e9ada3f63a807a25fdc1b81706d6d9a3b7d2facf5ead3bcaf008b594",
+          "bytes": 6418,
+          "origin": "field.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "input-group",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/input-group@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/input-group.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "registryDependencies": [
+        "button",
+        "input",
+        "textarea"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:1020bbb96fd8ece032b1792a53347bb61dfe876b8e433586833c26dedaef0feb",
+      "files": [
+        {
+          "path": "input-group.json",
+          "sha256": "c3e580222a1b8200c3a702994c18ccebba6b3d515ccf26c04eb0fea77d990cce",
+          "bytes": 6198,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/input-group.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/input-group.tsx",
+          "sha256": "33c847f4b9c3a899d01805fd9dba1b899075ff64680b5e9cd3ba01e3a6766281",
+          "bytes": 5308,
+          "origin": "input-group.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/command",
+        "@shadcn-aria/empty-example",
+        "@shadcn-aria/message-scroller-example",
+        "@shadcn-aria/select"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "input",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/input@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/input.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:6866498415f95ef30d92f1040678545fd18e63b4588bfcc16f389d35a0345bb6",
+      "files": [
+        {
+          "path": "input.json",
+          "sha256": "6f03c2888bfd10c7627bc40f0ae739feb3c1261f0e31cf3b3a8d31e4a046f7cf",
+          "bytes": 1736,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/input.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/input.tsx",
+          "sha256": "2b24feeec03c73edd23f6e154ef792391abcf268b85130b8ee5638a3141aaac6",
+          "bytes": 1157,
+          "origin": "input.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/dashboard-01",
+        "@shadcn-aria/input-group",
+        "@shadcn-aria/sidebar"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "item-example",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/item-example@4.23.0",
+      "type": "registry:example",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/item-example.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "registryDependencies": [
+        "button",
+        "item",
+        "example"
+      ],
+      "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c",
+      "files": [
+        {
+          "path": "item-example.json",
+          "sha256": "90d8c28094a82ab9e7d84d741b13bc3a4670b4f65a5cbf899bb8e1e6bb7b778f",
+          "bytes": 64101,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/item-example.json"
+        },
+        {
+          "path": "registry/aria-nova/examples/item-example.tsx",
+          "sha256": "f34ff2313d371967d214a6d83d48b0023f0bbd0ca0d536ae43debb6aff8f392f",
+          "bytes": 60386,
+          "origin": "item-example.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "item",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/item@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/item.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "registryDependencies": [
+        "separator"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:30e07bfad28dcc891479c2a1bc07842c1083a906e6b6f6108349b05383c95bc0",
+      "files": [
+        {
+          "path": "item.json",
+          "sha256": "cee44b725cb1aaf865324570f77c92d9bc0a5bf613f2a07fb8e0d9e03d64a467",
+          "bytes": 5735,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/item.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/item.tsx",
+          "sha256": "db938fa8d77837f7c751749cd069b3712708173720615072e0e496c7c670dc24",
+          "bytes": 4852,
+          "origin": "item.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/item-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "kbd",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/kbd@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/kbd.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:2113365d6ccb1c3b8a5dae02e7c9f669a1963d6fae2909ddc61af7577f917654",
+      "files": [
+        {
+          "path": "kbd.json",
+          "sha256": "5625eb9b56a4f9b0c2cb776c6ae01258cb10960fcc0d88cecafa0e6b71f3221d",
+          "bytes": 1442,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/kbd.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/kbd.tsx",
+          "sha256": "35c5a0f7fe48293d41710f398539b8907f22479704a358a8ebc431f15b2a0318",
+          "bytes": 925,
+          "origin": "kbd.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/empty-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "label",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/label@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/label.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:fe92cd62a392cd211cd128d271acf7fad7b510413cd15e63307be3138390da1e",
+      "files": [
+        {
+          "path": "label.json",
+          "sha256": "65092b58f34f5dcd4b725be8e99a18dca27b70207338adea27069e47f9ba2837",
+          "bytes": 1414,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/label.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/label.tsx",
+          "sha256": "0650d166a0287f009e4b1101cf047a121a876beff2b2d2c4e8481f31e630fc7e",
+          "bytes": 833,
+          "origin": "label.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/dashboard-01",
+        "@shadcn-aria/field"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "marker",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/marker@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/marker.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:c19106ffb94aed554c84d586fa4a153dafcee29f283e47853c457568dd2cd978",
+      "files": [
+        {
+          "path": "marker.json",
+          "sha256": "51599cc641b438abbc9ee5f9b95280d1cb86a719ef94e540ced886762cdfcec0",
+          "bytes": 2700,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/marker.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/marker.tsx",
+          "sha256": "65011aaea2d663181e15fbbd8488b0f3e251e5d3455d855dac00744dbf59a5ad",
+          "bytes": 2098,
+          "origin": "marker.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/message-scroller-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "message-example",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/message-example@4.23.0",
+      "type": "registry:example",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/message-example.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "registryDependencies": [
+        "bubble",
+        "message",
+        "button",
+        "example"
+      ],
+      "hash": "sha256:9ee2ae44a16a1b9974f8e6479cb253f0d13d51ddf938f6590a2a578c1899eff3",
+      "files": [
+        {
+          "path": "message-example.json",
+          "sha256": "53a55d49e920912887fc5e607e824311d445a2c2997f118cc3e135ee5e8714c5",
+          "bytes": 31417,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/message-example.json"
+        },
+        {
+          "path": "registry/aria-nova/examples/message-example.tsx",
+          "sha256": "aa01a80753b93e4e0f485567cbbce5be5b02271339b2cb6896c81b80ff4fc193",
+          "bytes": 29560,
+          "origin": "message-example.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "message-scroller-example",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/message-scroller-example@4.23.0",
+      "type": "registry:example",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/message-scroller-example.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "registryDependencies": [
+        "attachment",
+        "bubble",
+        "button",
+        "card",
+        "example",
+        "input-group",
+        "marker",
+        "message",
+        "message-scroller",
+        "spinner"
+      ],
+      "hash": "sha256:3a6384a882d3ba136e6fd1293d8ca9b08dd3d36c5c75cdf928d593416725e195",
+      "files": [
+        {
+          "path": "message-scroller-example.json",
+          "sha256": "ca9da478a40761532bb1ff0781fae92314b922337c353cfeb7b5c6b3731b0ce8",
+          "bytes": 9938,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/message-scroller-example.json"
+        },
+        {
+          "path": "registry/aria-nova/examples/message-scroller-example.tsx",
+          "sha256": "2d3dfaa27bde868bdcc1ce1cda2c7cff92c4613e2c4c8464f4e73160ca54a0be",
+          "bytes": 9021,
+          "origin": "message-scroller-example.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "message-scroller",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/message-scroller@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/message-scroller.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "registryDependencies": [
+        "button"
+      ],
+      "dependencies": [
+        "cn",
+        "@shadcn/react"
+      ],
+      "hash": "sha256:15a9cd4e8001fc5d25bd36d321e419c38c78433f45dc9dc55e2bd14215ec2bde",
+      "files": [
+        {
+          "path": "message-scroller.json",
+          "sha256": "578fa10f579bd7b49748b364e467c73fc8fc1b4c14d0aff6191e84e7d6fc8c2d",
+          "bytes": 5097,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/message-scroller.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/message-scroller.tsx",
+          "sha256": "54aa33f06b702a7803b24519cf7f2d7c6644befb821ffae0194230fb05309a76",
+          "bytes": 4312,
+          "origin": "message-scroller.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/message-scroller-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "message",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/message@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/message.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:4ff462abfdacdbb73af7038b71153a3602def23a92222599259d34a8da683c46",
+      "files": [
+        {
+          "path": "message.json",
+          "sha256": "72774536aa8dbf65b27cec52b7a00e04c36a212ee253cdd972306e1dcd49ab98",
+          "bytes": 2845,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/message.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/message.tsx",
+          "sha256": "64e9ae0f9d1e268b0ed7b738a53d374d273fe1e7e2dd7b35ad7417e50a9bbe6c",
+          "bytes": 2222,
+          "origin": "message.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/message-example",
+        "@shadcn-aria/message-scroller-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "popover",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/popover@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/popover.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:83ffd9794dd71c3245424b720562030bc46be6e50d499c5a8c71aa443c4f5cd4",
+      "files": [
+        {
+          "path": "popover.json",
+          "sha256": "b7516f7ae48c24f51ce52abe0ab4bb0a29b40da032d8cbc88579f95d33adb40e",
+          "bytes": 2798,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/popover.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/popover.tsx",
+          "sha256": "741232641198052fd896f495df06a5e95add784ce322931b7079451430f23e84",
+          "bytes": 2134,
+          "origin": "popover.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/sidebar-15"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "questionnaire-example",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/questionnaire-example@4.23.0",
+      "type": "registry:example",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/questionnaire-example.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "registryDependencies": [
+        "button",
+        "card",
+        "dialog",
+        "example",
+        "questionnaire",
+        "sonner"
+      ],
+      "hash": "sha256:d0dcd44450019b24df1dcc7a5f6f2c4ecd87e64b43833c5bb221b39d8b1b8b61",
+      "files": [
+        {
+          "path": "questionnaire-example.json",
+          "sha256": "5cc22cf9b2b6985c4d1c40c95c182b5b50d63adfdb16c65df3e32743e0dec68b",
+          "bytes": 16056,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/questionnaire-example.json"
+        },
+        {
+          "path": "registry/aria-nova/examples/questionnaire-example.tsx",
+          "sha256": "38d5435bc96f979f19de1cec16c439004b0d40b99b7a1d186f49d0a126f84f65",
+          "bytes": 14928,
+          "origin": "questionnaire-example.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "questionnaire",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/questionnaire@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/questionnaire.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "registryDependencies": [
+        "button"
+      ],
+      "dependencies": [
+        "cn",
+        "@shadcn/react"
+      ],
+      "hash": "sha256:bf91327cdab774e9ee19a17c2a4c6d5f3a23750233475d520e99da785e3ebb77",
+      "files": [
+        {
+          "path": "questionnaire.json",
+          "sha256": "ac53b5bc62134277f8b801da49f3c5250749ae87c3a0b5b9d04b1d02fd1c2eed",
+          "bytes": 11504,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/questionnaire.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/questionnaire.tsx",
+          "sha256": "9ecb994c21e5059b68364d7177cf7599aeccf3ef2b7d0656241f54e026de7f9b",
+          "bytes": 10435,
+          "origin": "questionnaire.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/questionnaire-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "scroll-area",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/scroll-area@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/scroll-area.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:c554e5d0060d064f4f23f70c64707de90db2631e9ba32b8c74e726ca77796bb9",
+      "files": [
+        {
+          "path": "registry/aria-nova/ui/scroll-area.tsx",
+          "sha256": "931151cc0fc34a336b518e25caaece3400a8f9dc47a0fbb9fe2e3468584ff627",
+          "bytes": 616,
+          "origin": "scroll-area.json#files[0].content"
+        },
+        {
+          "path": "scroll-area.json",
+          "sha256": "72306ebcb29dbce368f9b98047463652d0a3aa701cd298261d919a440e238e8b",
+          "bytes": 1156,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/scroll-area.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "select",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/select@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/select.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "registryDependencies": [
+        "input-group"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:eb52675018ef3dbf91059900005ca402f38d630629be175dc7acfa2eaf256ea9",
+      "files": [
+        {
+          "path": "registry/aria-nova/ui/select.tsx",
+          "sha256": "902b742b3f5784fd9ecae6d48a152283cd0ff318205b54066086c2c5ed4282f5",
+          "bytes": 8711,
+          "origin": "select.json#files[0].content"
+        },
+        {
+          "path": "select.json",
+          "sha256": "ff74d66b282f4cf65e8c0f6a50e704dc7740a11e9d3aa688d4953d4472deba11",
+          "bytes": 9735,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/select.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/calendar",
+        "@shadcn-aria/dashboard-01"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "separator",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/separator@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/separator.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:a82bd03221fea5a3e19ed40da6c50c910adcd30768ff1a047b392a702b758c22",
+      "files": [
+        {
+          "path": "registry/aria-nova/ui/separator.tsx",
+          "sha256": "482ee8e50eaf1095fb6874ac18d430704820d2444a3944e1f93f7ab99e39a793",
+          "bytes": 658,
+          "origin": "separator.json#files[0].content"
+        },
+        {
+          "path": "separator.json",
+          "sha256": "f12db4109c12fafdcec1695ade1a98414764214fa2ddfbe75a781c7a52b0c87a",
+          "bytes": 1247,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/separator.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/dashboard-01",
+        "@shadcn-aria/field",
+        "@shadcn-aria/item",
+        "@shadcn-aria/sidebar",
+        "@shadcn-aria/sidebar-07",
+        "@shadcn-aria/sidebar-11",
+        "@shadcn-aria/sidebar-15"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sheet",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/sheet@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/sheet.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "registryDependencies": [
+        "button"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:319e2e937cca8673468111fd54afc05011df1ce5a9fda1d6894a7fa32ee5c696",
+      "files": [
+        {
+          "path": "registry/aria-nova/ui/sheet.tsx",
+          "sha256": "82c335c1d0d090434c2add334c56cb8cc90e382e0f8f7d911a9cdf95f68e1cec",
+          "bytes": 5618,
+          "origin": "sheet.json#files[0].content"
+        },
+        {
+          "path": "sheet.json",
+          "sha256": "e3bd358ce790d337b995ffbf8683f4ec4ff01a04b8a2eb3de5f284fdaf7dbfa7",
+          "bytes": 6504,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/sheet.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/dashboard-01",
+        "@shadcn-aria/sidebar"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sidebar-07",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/sidebar-07@4.23.0",
+      "type": "registry:block",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/sidebar-07.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "registryDependencies": [
+        "sidebar",
+        "breadcrumb",
+        "separator",
+        "collapsible",
+        "dropdown-menu",
+        "avatar"
+      ],
+      "hash": "sha256:c5ffd395ad9418b12731dfabf9e9fc873f2fe6b231c9de5690ea7d09917048b1",
+      "files": [
+        {
+          "path": "registry/aria-nova/blocks/sidebar-07/components/app-sidebar.tsx",
+          "sha256": "1e58488792f5b06ce18b5b1b7db9a7680d280f9fea9275513a0fb695b63f6aa8",
+          "bytes": 5230,
+          "origin": "sidebar-07.json#files[1].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/sidebar-07/components/nav-main.tsx",
+          "sha256": "e7325ef0ed4519b23e61622c8eb083972988b3ee891e12e58e3bf0c8d72cd537",
+          "bytes": 2025,
+          "origin": "sidebar-07.json#files[2].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/sidebar-07/components/nav-projects.tsx",
+          "sha256": "ad305791630e6d798a1bf7ad5c56ad894e48c46c9f8f165fb7199abfedc5855f",
+          "bytes": 3462,
+          "origin": "sidebar-07.json#files[3].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/sidebar-07/components/nav-user.tsx",
+          "sha256": "3c180434d0f8f298db3568577d8042bb32072c073243fa7ac55cd662a294c258",
+          "bytes": 4504,
+          "origin": "sidebar-07.json#files[4].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/sidebar-07/components/team-switcher.tsx",
+          "sha256": "ba98b4f292e145442d1a3b9223fa02ee376f07bb89249f2fa3499de8c6045a2c",
+          "bytes": 3452,
+          "origin": "sidebar-07.json#files[5].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/sidebar-07/page.tsx",
+          "sha256": "97f4f93aa5840530e6ac8732ad079ca5efe0caaaf8eea0d9c9ff7cabf10ad584",
+          "bytes": 1928,
+          "origin": "sidebar-07.json#files[0].content"
+        },
+        {
+          "path": "sidebar-07.json",
+          "sha256": "466eb478babb5a70de322f0f7c19d99f0a7face3a71387097e36a0690e0a01fc",
+          "bytes": 23158,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/sidebar-07.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sidebar-11",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/sidebar-11@4.23.0",
+      "type": "registry:block",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/sidebar-11.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "registryDependencies": [
+        "sidebar",
+        "breadcrumb",
+        "separator",
+        "collapsible"
+      ],
+      "hash": "sha256:01faed5c8a5278f06c36cf0303a80b5fa41174fe68b9261d93ec000a9a3c8c2d",
+      "files": [
+        {
+          "path": "registry/aria-nova/blocks/sidebar-11/components/app-sidebar.tsx",
+          "sha256": "f8506b4f1e144ebe8358376b88d688e4c00d66ccaaef1d22793f1d8d4107d950",
+          "bytes": 4171,
+          "origin": "sidebar-11.json#files[1].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/sidebar-11/page.tsx",
+          "sha256": "2e68627b11e942fd06b388d294733cacd1d338e4882e0f866a2af87b608227bc",
+          "bytes": 1843,
+          "origin": "sidebar-11.json#files[0].content"
+        },
+        {
+          "path": "sidebar-11.json",
+          "sha256": "64c575304267c9604601ae3e07cf8f60d171bf190ad4e47d60af69df3040cef3",
+          "bytes": 7086,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/sidebar-11.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sidebar-15",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/sidebar-15@4.23.0",
+      "type": "registry:block",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/sidebar-15.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "registryDependencies": [
+        "sidebar",
+        "breadcrumb",
+        "separator",
+        "popover",
+        "collapsible",
+        "dropdown-menu",
+        "calendar",
+        "avatar"
+      ],
+      "hash": "sha256:3554eee448bcb9678315c96377bb302218085c4195ba7bfe319c3ded34bd2797",
+      "files": [
+        {
+          "path": "registry/aria-nova/blocks/sidebar-15/components/calendars.tsx",
+          "sha256": "3d35626b2de86f1fab520ffbdec3fcc0a8af99c4508cf9b013f513e62fd2bcab",
+          "bytes": 3013,
+          "origin": "sidebar-15.json#files[1].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/sidebar-15/components/date-picker.tsx",
+          "sha256": "2052c08a65d4e7663f6c1971efd4a802902ec0867d68f52d4e2c8255b11b21a1",
+          "bytes": 722,
+          "origin": "sidebar-15.json#files[2].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/sidebar-15/components/nav-favorites.tsx",
+          "sha256": "2f832f86188870400e5a7f9e8f6170cacacde539bcde3ffd9750cf093ccefd4b",
+          "bytes": 4068,
+          "origin": "sidebar-15.json#files[3].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/sidebar-15/components/nav-main.tsx",
+          "sha256": "f7f0693aa4b8cb4d27613acaafdcb3b7cb5f11c30ce4bc2bff9e608e4e4d06ae",
+          "bytes": 592,
+          "origin": "sidebar-15.json#files[4].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/sidebar-15/components/nav-secondary.tsx",
+          "sha256": "7a9f955b0364f9789db3c0cefa2c502272fe3d2dfe36d569f975e2ad0570a627",
+          "bytes": 955,
+          "origin": "sidebar-15.json#files[5].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/sidebar-15/components/nav-user.tsx",
+          "sha256": "76c3bd3e9f16d82b5a077a18ad9a5fd6d156ccac2cd503e49ef31332db6520a6",
+          "bytes": 4602,
+          "origin": "sidebar-15.json#files[6].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/sidebar-15/components/nav-workspaces.tsx",
+          "sha256": "4c3900d9d6d9fc6625c1ecbb9bce3219e7abdceaf84ff3c6aa31f7df29f35fa0",
+          "bytes": 3103,
+          "origin": "sidebar-15.json#files[7].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/sidebar-15/components/sidebar-left.tsx",
+          "sha256": "3398ae2396315df6fb1cf7f8f77270b5795f0c1927cf1c31f99b2775ccf40b0f",
+          "bytes": 8019,
+          "origin": "sidebar-15.json#files[8].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/sidebar-15/components/sidebar-right.tsx",
+          "sha256": "86cf204ea7b7ebc7aeabd8fa7e740f887e4c8cc32b8d897c8b61cf341c890061",
+          "bytes": 2017,
+          "origin": "sidebar-15.json#files[9].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/sidebar-15/components/team-switcher.tsx",
+          "sha256": "dcf9973466ec9901af86d93128fdcd952873fb42389d5f1934e3a8b81ef8704b",
+          "bytes": 3160,
+          "origin": "sidebar-15.json#files[10].content"
+        },
+        {
+          "path": "registry/aria-nova/blocks/sidebar-15/page.tsx",
+          "sha256": "d1849dcf35eaa7471961505e3d6b0639513cd1a35e36b3c574d075e74932b217",
+          "bytes": 1595,
+          "origin": "sidebar-15.json#files[0].content"
+        },
+        {
+          "path": "sidebar-15.json",
+          "sha256": "4d5cf3a5fea2b02a8b6191ff88c0ff0261998f672493125d3cbde56363da4995",
+          "bytes": 35882,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/sidebar-15.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sidebar",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/sidebar@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/sidebar.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "registryDependencies": [
+        "button",
+        "input",
+        "separator",
+        "sheet",
+        "skeleton",
+        "tooltip",
+        "use-mobile"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:aab21fbe877774b1f11aecfe573a855d340e78fcb777f2cc7be8056a90ae90eb",
+      "files": [
+        {
+          "path": "registry/aria-nova/ui/sidebar.tsx",
+          "sha256": "87725d5b2f5f256dec643964a31fc06e42dda2c0ad964809d8b58f94af2c3cda",
+          "bytes": 22514,
+          "origin": "sidebar.json#files[0].content"
+        },
+        {
+          "path": "sidebar.json",
+          "sha256": "d0fc2ac3889d65bce118fe9b21b666224f734f24440d9261a5cef410e0b58cf7",
+          "bytes": 24240,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/sidebar.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/dashboard-01",
+        "@shadcn-aria/sidebar-07",
+        "@shadcn-aria/sidebar-11",
+        "@shadcn-aria/sidebar-15"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "skeleton",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/skeleton@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/skeleton.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:e9257c4af37d0c5d6bfe4f92097bae52ef99221059752aa56059a7dc4d37545b",
+      "files": [
+        {
+          "path": "registry/aria-nova/ui/skeleton.tsx",
+          "sha256": "4c2af7fa9c645358a0fb188779deab6f0b981733b62befc25e18aaebea1350dc",
+          "bytes": 266,
+          "origin": "skeleton.json#files[0].content"
+        },
+        {
+          "path": "skeleton.json",
+          "sha256": "47103251bf6a7f6892315a8fc59ebb21f0ac6b654f5dd5627abd93fcc4cb310b",
+          "bytes": 777,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/skeleton.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/sidebar"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sonner",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/sonner@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/sonner.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "dependencies": [
+        "sonner",
+        "next-themes"
+      ],
+      "hash": "sha256:0232dc56278f389a81934dbbc209da14117ce867f3bfdec86349023671a1e1e4",
+      "files": [
+        {
+          "path": "registry/aria-nova/ui/sonner.tsx",
+          "sha256": "d5178ce4c7834d3f46d261698395b498b8f45fef29975585df7e26cb43aa3cc7",
+          "bytes": 2282,
+          "origin": "sonner.json#files[0].content"
+        },
+        {
+          "path": "sonner.json",
+          "sha256": "491bf532228458430547302b1c028f176e7d325055562ab0938e87bd14751afc",
+          "bytes": 3009,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/sonner.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/dashboard-01",
+        "@shadcn-aria/questionnaire-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "spinner",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/spinner@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/spinner.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:16413b384039f6fd0812cbdae2b761e7c0293bcdff22c40aefb61ce671ca7b68",
+      "files": [
+        {
+          "path": "registry/aria-nova/ui/spinner.tsx",
+          "sha256": "494f71fd2733709d0e43be44e3353d9df215b370137af0195251cbdfdcc9e17b",
+          "bytes": 531,
+          "origin": "spinner.json#files[0].content"
+        },
+        {
+          "path": "spinner.json",
+          "sha256": "2eb6c57feacfd22f15e47b948b8abdf4cbb30649a13840bc1ef82a3fce2de068",
+          "bytes": 1063,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/spinner.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/message-scroller-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "switch",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/switch@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/switch.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:22c5b574cefbb4ad0d1bdb4a5ed031c4cb4b41eb06c23af47a1d2f636c73fe9b",
+      "files": [
+        {
+          "path": "registry/aria-nova/ui/switch.tsx",
+          "sha256": "a7c1b1a943083b5c9c45b0b3ef37e250c0b8598fabca41b0274d515fafccabaa",
+          "bytes": 2728,
+          "origin": "switch.json#files[0].content"
+        },
+        {
+          "path": "switch.json",
+          "sha256": "c6405559b84513b1e0ef0cd004d9382130765706fa5952a5c57f664b691ef944",
+          "bytes": 3328,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/switch.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "table",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/table@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/table.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:8b6578dcaf946c6aa5aa9fb171567d0917d0322915ad79119d4141a5b3e78e1f",
+      "files": [
+        {
+          "path": "registry/aria-nova/ui/table.tsx",
+          "sha256": "a1101179b480ea7fc44b62ed49aa9918fdfd711e1e3945a5a47d59a1a4f22711",
+          "bytes": 2994,
+          "origin": "table.json#files[0].content"
+        },
+        {
+          "path": "table.json",
+          "sha256": "01826293520475810fc4cabc43157be1046a381ebff1689a2654f08aa7d9a5e3",
+          "bytes": 3710,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/table.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/dashboard-01"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "tabs",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/tabs@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/tabs.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:f2c16d8f43bd38331b719843e01954019fbbc5f23323d2eba5328e3a5a27649d",
+      "files": [
+        {
+          "path": "registry/aria-nova/ui/tabs.tsx",
+          "sha256": "e1ea9745e3039a2f48477cce21c222be4190ef50167e7bfcdbd34373c0d9cdc6",
+          "bytes": 3779,
+          "origin": "tabs.json#files[0].content"
+        },
+        {
+          "path": "tabs.json",
+          "sha256": "d0cbf78c376d396aafb018798fb5820d42cf3f3b8d194c3bdf0aa844f58ebfd8",
+          "bytes": 4439,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/tabs.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/dashboard-01"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "textarea",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/textarea@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/textarea.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:7a3de966679c36f1ff35a29f67b844abf00887e607e8d3eb3537d83efefeeb99",
+      "files": [
+        {
+          "path": "registry/aria-nova/ui/textarea.tsx",
+          "sha256": "2536ee5c16c363a1424e482845c900d6387ee2b468c376c823fdb85f07255c60",
+          "bytes": 1035,
+          "origin": "textarea.json#files[0].content"
+        },
+        {
+          "path": "textarea.json",
+          "sha256": "23cc22e83ef2cb044f0d7ee4442199db832870e8a156a35118be51c10d72d8f2",
+          "bytes": 1624,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/textarea.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/input-group"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "toggle-group",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/toggle-group@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/toggle-group.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "registryDependencies": [
+        "toggle"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:6ae8db2f28a60f2c3e5b993ff64512a30a8441f1a964c95fc67c6e4330ccefc8",
+      "files": [
+        {
+          "path": "registry/aria-nova/ui/toggle-group.tsx",
+          "sha256": "06d934f862727b33db16d1674b6ac2fdd58cb5351b3dd810ef83f4cd9cb8ec30",
+          "bytes": 3275,
+          "origin": "toggle-group.json#files[0].content"
+        },
+        {
+          "path": "toggle-group.json",
+          "sha256": "c65aa998e70a1267d4a90629be4b5025efab440caae4d5a05709839906de2e6a",
+          "bytes": 4034,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/toggle-group.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/dashboard-01"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "toggle",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/toggle@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/toggle.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:72407023f625e05a8ad3caa8c928350d8aafbcb98b87e118039236df5c854b99",
+      "files": [
+        {
+          "path": "registry/aria-nova/ui/toggle.tsx",
+          "sha256": "3ad55ed16d437805cbf0ba5a6a5c991e245f3efffb848808fb4e83736f9e509c",
+          "bytes": 1806,
+          "origin": "toggle.json#files[0].content"
+        },
+        {
+          "path": "toggle.json",
+          "sha256": "f4f048f6a2f22dffbaff7c4b41db2ad939a569b02b22e976f554f3be0e195195",
+          "bytes": 2427,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/toggle.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/toggle-group"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "tooltip",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/tooltip@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/tooltip.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:39f1a3962529386fd948552bb4db81e6fabea85ac2ddbc6e5a181472be2f859d",
+      "files": [
+        {
+          "path": "registry/aria-nova/ui/tooltip.tsx",
+          "sha256": "f3fe6bacb5dd5bcff2918c238964850358e7cfa7099bd31a13de493ac8699c08",
+          "bytes": 2548,
+          "origin": "tooltip.json#files[0].content"
+        },
+        {
+          "path": "tooltip.json",
+          "sha256": "6b76fc659a78eb57a4f96c678ae20dd2fcc283b02971774fc54c18ea119c66f2",
+          "bytes": 3213,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/tooltip.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/sidebar"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "use-mobile",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/use-mobile@4.23.0",
+      "type": "registry:hook",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/use-mobile.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "hash": "sha256:aba60a74f0cd304c44cd82d788da37cfcf0e44889c34352ffe2e2cb713f9dc31",
+      "files": [
+        {
+          "path": "registry/aria-nova/hooks/use-mobile.ts",
+          "sha256": "ad0936f84f1df79d3697bfbff9c18f8ad58431c1cbaf2359c6a853b0fcc9f28b",
+          "bytes": 565,
+          "origin": "use-mobile.json#files[0].content"
+        },
+        {
+          "path": "use-mobile.json",
+          "sha256": "8e4ec1ac5cef69e38056b3e6120c9668c5cc59125981b978e26ad8b7bb723b1f",
+          "bytes": 844,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/use-mobile.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/sidebar"
       ]
     },
     {

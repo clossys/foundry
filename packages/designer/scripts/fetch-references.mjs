@@ -9,7 +9,12 @@
 // upstream path so they can be read and diffed directly. The offline check is
 // scripts/check-references.mjs.
 //
-// Usage: node scripts/fetch-references.mjs [--out <dir>]
+// Usage: node scripts/fetch-references.mjs [--out <dir>] [--registry <id>]
+//
+// --registry <id> refreshes one registry in place: only that registry's direct
+// items and their same-registry dependencies are fetched, and every other
+// item, license and hash already in the manifest is kept byte-for-byte, so a
+// refresh of one registry can never move the hashes other pins were made from.
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, posix, resolve } from "node:path";
@@ -20,8 +25,13 @@ const packageRoot = resolve(here, "..");
 const args = process.argv.slice(2);
 const outIndex = args.indexOf("--out");
 const outDir = resolve(outIndex >= 0 ? args[outIndex + 1] : join(packageRoot, "references"));
+const registryIndex = args.indexOf("--registry");
+const only = registryIndex >= 0 ? args[registryIndex + 1] : undefined;
 const sources = JSON.parse(readFileSync(join(here, "references-sources.json"), "utf8"));
 const registries = sources.registries;
+if (only !== undefined && !registries[only]) throw new Error(`--registry ${only}: not in references-sources.json`);
+const prior = only ? JSON.parse(readFileSync(join(outDir, "manifest.json"), "utf8")) : undefined;
+const now = new Date().toISOString().replace(/\.\d+Z$/, "Z");
 const byNamespace = new Map(Object.entries(registries).map(([id, reg]) => [reg.namespace, id]));
 const HOSTS = new Map([
   ["ui.shadcn.com", "shadcn"],
@@ -70,6 +80,13 @@ function resolveDependency(parentRegistry, dep) {
     if (new RegExp(pattern).test(dep)) return { skip: reason };
   }
   if (/^https?:\/\//.test(dep)) {
+    // A URL under a listed registry-json source prefix belongs to that registry
+    // (several shadcn styles share one host); otherwise fall back to the host.
+    for (const [id, reg] of Object.entries(registries)) {
+      if (reg.kind !== "registry-json" || !reg.source.includes("{name}")) continue;
+      const prefix = reg.source.slice(0, reg.source.indexOf("{name}"));
+      if (dep.startsWith(prefix)) return { registry: id, name: dep.slice(prefix.length).replace(/\.json$/, "") };
+    }
     const url = new URL(dep);
     const registry = HOSTS.get(url.hostname);
     if (!registry) return { skip: `dependency on an unlisted registry host ${url.hostname}` };
@@ -81,8 +98,9 @@ function resolveDependency(parentRegistry, dep) {
     if (!registry) return { skip: `dependency on registry ${scoped[1]}, which is not in this unit's registry list` };
     return { registry, name: scoped[2] };
   }
-  // A bare name resolves against the shadcn core registry, as the shadcn CLI does.
-  return { registry: "shadcn", name: dep };
+  // A bare name resolves against the registry the CLI is pointed at: the shadcn
+  // core registry by default, or the parent itself for a style registry.
+  return { registry: parent.bareDependencies === "self" ? parentRegistry : "shadcn", name: dep };
 }
 
 const items = new Map();
@@ -102,7 +120,10 @@ function enqueue(registry, name, { slots = [], direct = false, requiredBy } = {}
   return entry;
 }
 
-for (const item of sources.direct) enqueue(item.registry, item.name, { slots: item.slots, direct: true });
+for (const item of sources.direct) {
+  if (only && item.registry !== only) continue;
+  enqueue(item.registry, item.name, { slots: item.slots, direct: true });
+}
 
 const staging = `${outDir}.staging-${process.pid}`;
 rmSync(staging, { recursive: true, force: true });
@@ -175,6 +196,11 @@ async function fetchItem(entry) {
       skipped.push({ ref: dep, reason: `no source listed for this Tailark item (required by ${ref})` });
       continue;
     }
+    if (only && resolved.registry !== only) {
+      const vendored = prior.items.some((row) => row.registry === resolved.registry && row.name === resolved.name);
+      if (!vendored) skipped.push({ ref: dep, reason: `not refreshed by --registry ${only} (required by ${ref})` });
+      continue;
+    }
     enqueue(resolved.registry, resolved.name, { requiredBy: ref });
   }
 
@@ -214,6 +240,7 @@ for (;;) {
 
 const licenses = [];
 for (const [id, reg] of Object.entries(registries)) {
+  if (only && id !== only) continue;
   for (const [file, url] of Object.entries(reg.licenseFiles)) {
     const { status, bytes } = await get(url);
     if (status !== 200) throw new Error(`license ${url}: HTTP ${status}`);
@@ -249,10 +276,21 @@ const skippedRows = [...skippedByRef.values()]
   .map(({ reasons, ...row }) => ({ ...row, ...(row.slots ? { slots: [...row.slots].sort() } : {}), reason: [...reasons].sort().join("; ") }))
   .sort((a, b) => (a.ref < b.ref ? -1 : 1));
 
+// In --registry mode the other registries' rows are carried over unchanged.
+const ownedBy = (ref) => ref.startsWith(`${registries[only]?.namespace}/`) || ref.includes(`(required by ${registries[only]?.namespace}/`);
+const keptItems = only ? prior.items.filter((row) => row.registry !== only) : [];
+const keptLicenses = only ? prior.licenses.filter((row) => !row.path.startsWith(`${only}/`)) : [];
+const refreshedRefs = new Set(skippedRows.map((row) => row.ref));
+const keptSkipped = only ? prior.skipped.filter((row) => !refreshedRefs.has(row.ref) && !ownedBy(row.ref) && !ownedBy(row.reason)) : [];
+const allItems = [...keptItems, ...manifestItems].sort((a, b) => (a.dir < b.dir ? -1 : 1));
+const allLicenses = [...keptLicenses, ...licenses].sort((a, b) => (a.path < b.path ? -1 : 1));
+const allSkipped = [...keptSkipped, ...skippedRows].sort((a, b) => (a.ref < b.ref ? -1 : 1));
+const fetchedAtOf = (id) => (only && id !== only ? prior.registries[id]?.fetchedAt : now);
+
 const manifest = {
   schema: "clossys.references-manifest/1",
   package: sources.package,
-  fetchedAt: new Date().toISOString().replace(/\.\d+Z$/, "Z"),
+  fetchedAt: only ? prior.fetchedAt : now,
   fetchedWith: sources.fetchedWith,
   hashAlgorithm: "sha256-tree/1",
   registries: Object.fromEntries(
@@ -264,19 +302,29 @@ const manifest = {
         version: reg.version,
         versionBasis: reg.versionBasis,
         upstream: reg.upstream,
+        ...(reg.style ? { style: reg.style } : {}),
+        ...(fetchedAtOf(id) ? { fetchedAt: fetchedAtOf(id) } : {}),
         license: reg.license,
         licenseFiles: Object.keys(reg.licenseFiles).map((file) => `${id}/${file}`),
       },
     ]),
   ),
-  licenses: licenses.sort((a, b) => (a.path < b.path ? -1 : 1)),
-  items: manifestItems,
-  skipped: skippedRows,
+  licenses: allLicenses,
+  items: allItems,
+  skipped: allSkipped,
 };
-writeFileSync(join(staging, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
 
-if (existsSync(outDir)) rmSync(outDir, { recursive: true });
-renameSync(staging, outDir);
+if (only) {
+  // Swap in only the refreshed registry's trees and licenses.
+  rmSync(join(outDir, only), { recursive: true, force: true });
+  if (existsSync(join(staging, only))) renameSync(join(staging, only), join(outDir, only));
+  writeFileSync(join(outDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  rmSync(staging, { recursive: true, force: true });
+} else {
+  writeFileSync(join(staging, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  if (existsSync(outDir)) rmSync(outDir, { recursive: true });
+  renameSync(staging, outDir);
+}
 
 const counts = {};
 for (const item of manifestItems) {

@@ -2,7 +2,16 @@ import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from "no
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+// The ref-verbatim pin gate has its own tests (ref-verbatim-gate.test.ts); these
+// record tests pin synthetic versions, so the gate passes them here.
+vi.mock("@clossys/designer/ref-verbatim", () => ({
+  checkElement: (_root: string, target: { slot: string; element: string; version: number }) => ({
+    key: `${target.slot}/${target.element}@v${target.version}`,
+    findings: [],
+  }),
+}));
 import {
   hashFiles,
   loadReferencesManifest,
@@ -179,10 +188,10 @@ describe("selection.json pins and history", () => {
   const el = (version: number, hash: Hash) => ({ slot: "sections.hero", id: "hero", version, hash });
 
   it("records pins as events; restore is a new event and history is never rewritten", () => {
-    let s = pin(emptySelection(), { element: el(1, H("1")), at: AT(1), by: "owner", from: "option" });
-    s = pin(s, { element: el(2, H("2")), at: AT(2), by: "owner", from: "version" });
+    let s = pin(emptySelection(), { root, element: el(1, H("1")), at: AT(1), by: "owner", from: "option" });
+    s = pin(s, { root, element: el(2, H("2")), at: AT(2), by: "owner", from: "version" });
     const before = s.history;
-    s = restore(s, "e1", { at: AT(3), by: "owner", reason: "back to v1" });
+    s = restore(s, "e1", { root, at: AT(3), by: "owner", reason: "back to v1" });
     expect(s.history.slice(0, 2)).toEqual(before);
     expect(s.history[2]).toMatchObject({ id: "e3", action: "restore", restores: "e1", version: 1 });
     expect(s.pins["sections.hero"]).toEqual({ element: "hero", version: 1, hash: H("1"), event: "e3" });
@@ -197,7 +206,7 @@ describe("selection.json pins and history", () => {
   });
 
   it("rejects pins that disagree with history, forged restores and out-of-order events", () => {
-    const s = pin(emptySelection(), { element: el(1, H("1")), at: AT(1), by: "owner" });
+    const s = pin(emptySelection(), { root, element: el(1, H("1")), at: AT(1), by: "owner" });
     expect(validateSelection({ ...s, pins: {} }).ok).toBe(false);
     const forged = {
       ...s,
@@ -212,7 +221,7 @@ describe("selection.json pins and history", () => {
 
 describe("releases/<n>.json", () => {
   it("snapshots the pins and never overwrites a release", () => {
-    const s = pin(emptySelection(), { element: { slot: "sections.hero", id: "hero", version: 1, hash: H("1") }, at: AT(1), by: "owner" });
+    const s = pin(emptySelection(), { root, element: { slot: "sections.hero", id: "hero", version: 1, hash: H("1") }, at: AT(1), by: "owner" });
     const release = createRelease(s, { number: 1, at: AT(2), by: "owner" });
     expect(release.pins).toEqual(s.pins);
     expect(release.selectionEvent).toBe("e1");
@@ -251,11 +260,11 @@ describe("slot status derivation", () => {
   const referenceHash = (ref: ReferenceRef) => upstream.get(`${ref.registry}/${ref.item}@${ref.version}`);
 
   it("derives pinned, missing, failing, stale and unreleased", () => {
-    let s = pin(emptySelection(), { element: { slot: "sections.hero", id: "hero", version: 1, hash: H("1") }, at: AT(1), by: "o" });
-    s = pin(s, { element: { slot: "sections.pricing", id: "pricing", version: 1, hash: H("2") }, at: AT(2), by: "o" });
-    s = pin(s, { element: { slot: "sections.faq", id: "faq", version: 1, hash: H("3") }, at: AT(3), by: "o" });
+    let s = pin(emptySelection(), { root, element: { slot: "sections.hero", id: "hero", version: 1, hash: H("1") }, at: AT(1), by: "o" });
+    s = pin(s, { root, element: { slot: "sections.pricing", id: "pricing", version: 1, hash: H("2") }, at: AT(2), by: "o" });
+    s = pin(s, { root, element: { slot: "sections.faq", id: "faq", version: 1, hash: H("3") }, at: AT(3), by: "o" });
     const release = createRelease(s, { number: 1, at: AT(4), by: "o" });
-    s = pin(s, { element: { slot: "sections.stats", id: "stats", version: 1, hash: H("4") }, at: AT(5), by: "o" });
+    s = pin(s, { root, element: { slot: "sections.stats", id: "stats", version: 1, hash: H("4") }, at: AT(5), by: "o" });
 
     const records: Record<string, ElementRecord> = {
       "sections.hero": record(),
@@ -292,8 +301,8 @@ describe("slot status derivation", () => {
   });
 
   it("marks a slot stale when a dependency element's pin moves", () => {
-    let s = pin(emptySelection(), { element: { slot: "components.button", id: "button", version: 1, hash: H("5") }, at: AT(1), by: "o" });
-    s = pin(s, { element: { slot: "sections.hero", id: "hero", version: 1, hash: H("1") }, at: AT(2), by: "o" });
+    let s = pin(emptySelection(), { root, element: { slot: "components.button", id: "button", version: 1, hash: H("5") }, at: AT(1), by: "o" });
+    s = pin(s, { root, element: { slot: "sections.hero", id: "hero", version: 1, hash: H("1") }, at: AT(2), by: "o" });
     const hero = record({ deps: { npm: {}, elements: [{ slot: "components.button", element: "button", version: 1, hash: H("5") }] } });
     const derive = () =>
       deriveSlotStatus({
@@ -304,7 +313,7 @@ describe("slot status derivation", () => {
         readPinned: (slot) => ({ record: slot === "sections.hero" ? hero : record({ slot: "components.button", layer: "components", id: "button", hash: H("5"), lineage: { mode: "original" } }), issues: [] }),
       }).find((row) => row.slot === "sections.hero")!;
     expect(derive().status).toBe("pinned");
-    s = pin(s, { element: { slot: "components.button", id: "button", version: 2, hash: H("6") }, at: AT(3), by: "o" });
+    s = pin(s, { root, element: { slot: "components.button", id: "button", version: 2, hash: H("6") }, at: AT(3), by: "o" });
     expect(derive().flags).toContain("stale");
   });
 
@@ -315,7 +324,7 @@ describe("slot status derivation", () => {
       preview,
       files: { "hero.tsx": "export const x = 1\n" },
     });
-    const s = pin(emptySelection(), { element: v1.element, at: AT(1), by: "o" });
+    const s = pin(emptySelection(), { root, element: v1.element, at: AT(1), by: "o" });
     writeSelection(root, s);
     writeRelease(root, createRelease(s, { number: 1, at: AT(2), by: "o" }));
     const read = () => workspaceSlotStatus(root, { slots: ["sections.hero", "sections.faq"], referenceHash });

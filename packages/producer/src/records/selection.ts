@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { ElementRecord, Pins, PinEvent, Release, Selection } from "./types.js";
 import { foldHistory, loadRelease, RecordError, validateRelease, validateSelection } from "./validate.js";
+import { checkElement, type RefVerbatimFinding } from "@clossys/designer/ref-verbatim";
 
 export const SELECTION_FILE = "selection.json";
 export const RELEASES_DIR = "releases";
@@ -22,7 +23,14 @@ function append(selection: Selection, event: PinEvent): Selection {
   return checked.value;
 }
 
-export type PinInput = {
+/** Where the pin gate reads the element version: the consumer's `clossys/` root (it holds `library/`). */
+export type PinGateInput = {
+  readonly root: string;
+  /** The consumer's components.json; default `<root>/components.json`, then `<root>/../components.json`. */
+  readonly components?: string;
+};
+
+export type PinInput = PinGateInput & {
   readonly element: Pick<ElementRecord, "slot" | "id" | "version" | "hash">;
   readonly at: string;
   readonly by: string;
@@ -30,9 +38,34 @@ export type PinInput = {
   readonly reason?: string;
 };
 
-/** Pin one element version to its slot. Returns a new selection; history only grows. */
+/** pin() or restore() refused an element version that fails the ref-verbatim gate. */
+export class PinRefusedError extends Error {
+  constructor(
+    readonly key: string,
+    readonly findings: readonly RefVerbatimFinding[],
+  ) {
+    super(`pin refused: ${key} fails the ref-verbatim gate\n- ${findings.map((f) => `${f.code}${f.file ? ` ${f.file}` : ""}: ${f.detail}`).join("\n- ")}`);
+    this.name = "PinRefusedError";
+  }
+}
+
+/**
+ * The pin gate (@clossys/designer/ref-verbatim, strict): every code file the
+ * version ships must be its recorded reference file plus allowed hunks only.
+ * The ref-verbatim baseline never applies here; every new pin passes or is refused.
+ */
+function gate(gateInput: PinGateInput, element: { slot: string; id: string; version: number }): void {
+  const checked = checkElement(gateInput.root, { slot: element.slot, element: element.id, version: element.version }, {
+    strict: true,
+    ...(gateInput.components ? { components: gateInput.components } : {}),
+  });
+  if (checked.findings.length) throw new PinRefusedError(checked.key, checked.findings);
+}
+
+/** Pin one element version to its slot, after the ref-verbatim gate. Returns a new selection; history only grows. */
 export function pin(selection: Selection, input: PinInput): Selection {
   const { element } = input;
+  gate(input, element);
   return append(selection, {
     id: nextEventId(selection),
     at: input.at,
@@ -48,9 +81,10 @@ export function pin(selection: Selection, input: PinInput): Selection {
 }
 
 /** Re-apply an earlier pin event as a new event. History is never rewritten. */
-export function restore(selection: Selection, eventId: string, input: { at: string; by: string; reason?: string }): Selection {
+export function restore(selection: Selection, eventId: string, input: PinGateInput & { at: string; by: string; reason?: string }): Selection {
   const target = selection.history.find((event) => event.id === eventId);
   if (!target || target.action === "unpin") throw new Error(`no pin event ${eventId} to restore`);
+  gate(input, { slot: target.slot, id: target.element!, version: target.version! });
   return append(selection, {
     id: nextEventId(selection),
     at: input.at,

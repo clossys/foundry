@@ -5,12 +5,27 @@
     "shadcn": {
       "namespace": "@shadcn",
       "kind": "registry-json",
+      "style": "radix-nova",
       "source": "https://ui.shadcn.com/r/styles/radix-nova/{name}.json",
       "special": {
         "neutral": "https://ui.shadcn.com/r/colors/neutral.json"
       },
       "version": "4.23.0",
       "versionBasis": "registry endpoint used by shadcn CLI 4.23.0, served at fetchedAt; upstream source commit recorded in upstream",
+      "upstream": "github.com/shadcn-ui/ui@b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+      "license": "MIT",
+      "licenseFiles": {
+        "LICENSE.md": "https://raw.githubusercontent.com/shadcn-ui/ui/b8d7baa15b1dca5716f13153e63795fc3d741f6b/LICENSE.md"
+      }
+    },
+    "shadcn-aria": {
+      "namespace": "@shadcn-aria",
+      "kind": "registry-json",
+      "style": "aria-nova",
+      "source": "https://ui.shadcn.com/r/styles/aria-nova/{name}.json",
+      "bareDependencies": "self",
+      "version": "4.23.0",
+      "versionBasis": "registry endpoint used by shadcn CLI 4.23.0 for the aria-nova style (components.json style aria-nova), served at the registry's fetchedAt; upstream source commit recorded in upstream",
       "upstream": "github.com/shadcn-ui/ui@b8d7baa15b1dca5716f13153e63795fc3d741f6b",
       "license": "MIT",
       "licenseFiles": {
@@ -32,6 +47,7 @@
     "diceui": {
       "namespace": "@diceui",
       "kind": "registry-json",
+      "style": "new-york",
       "source": "https://diceui.com/r/new-york/{name}.json",
       "version": "04aad54",
       "versionBasis": "registry endpoint served at fetchedAt; upstream HEAD commit at fetch time",
@@ -44,6 +60,7 @@
     "tailark-oss": {
       "namespace": "@tailark-oss",
       "kind": "github-files",
+      "style": "radix",
       "source": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/{path}",
       "version": "8139698",
       "versionBasis": "registry host did not resolve; source files from the MIT GitHub repository (radix base, mist kit) at a pinned commit",
@@ -1263,6 +1280,191 @@
       "slots": [
         "themes.font-heading"
       ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "avatar",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "badge",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "breadcrumb",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "button",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "card",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "checkbox",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "command",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "dialog",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "dropdown-menu",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "field",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "input-group",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "input",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "label",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "popover",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "scroll-area",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "select",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "separator",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sheet",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sidebar",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "skeleton",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "switch",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "table",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "tabs",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "textarea",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "tooltip",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sidebar-07",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sidebar-11",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sidebar-15",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "dashboard-01",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "empty",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "empty-example",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "item",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "item-example",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "message-scroller-example",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "message-example",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "questionnaire-example",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sonner",
+      "slots": []
     }
   ],
   "skipped": [

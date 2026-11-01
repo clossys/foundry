@@ -40,6 +40,13 @@ const referenceRef: JsonSchema = {
     version: { type: "string", minLength: 1 },
     hash: { type: "string", pattern: HASH },
     url: { type: "string", minLength: 1 },
+    files: {
+      type: "object",
+      description:
+        "Maps each payload file to the file inside the vendored reference item it was copied from (the ref-verbatim check diffs each pair).",
+      propertyNames: { type: "string", pattern: REL_PATH },
+      additionalProperties: { type: "string", pattern: REL_PATH },
+    },
   },
 };
 
@@ -314,6 +321,8 @@ export const REFERENCES_MANIFEST_SCHEMA: JsonSchema = {
           version: { type: "string", minLength: 1 },
           versionBasis: { type: "string" },
           upstream: { type: "string" },
+          style: { type: "string", pattern: ID, description: "shadcn style the registry serves (aria-nova, radix-nova, new-york, ...)." },
+          fetchedAt: { type: "string", pattern: ISO },
           license: { type: "string", minLength: 1 },
           licenseFiles: { type: "array", minItems: 1, items: { type: "string", pattern: REL_PATH } },
         },
