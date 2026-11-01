@@ -1,5 +1,6 @@
+import { guardDesignerFlow, type DesignerFlow } from "./owner-approval.js";
 import { existsSync, mkdirSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { hashFiles, listFiles } from "./hash.js";
 import type { SchemaIssue } from "./schema.js";
 import type { ElementRecord, PreviewRecord } from "./types.js";
@@ -85,6 +86,7 @@ export type NewElementVersion = {
   readonly preview: PreviewRecord;
   /** Payload files, path relative to the version directory. */
   readonly files: Readonly<Record<string, string | Uint8Array>>;
+  readonly designerFlow?: DesignerFlow;
 };
 
 /**
@@ -93,6 +95,7 @@ export type NewElementVersion = {
  * single rename so a half-written version is never visible.
  */
 export function writeElementVersion(libraryRoot: string, input: NewElementVersion): ElementVersion {
+  guardDesignerFlow(dirname(resolve(libraryRoot)), input.element, input.designerFlow);
   const { slot, id } = input.element;
   const version = (listVersions(libraryRoot, slot, id).at(-1) ?? 0) + 1;
   const dir = versionDir(libraryRoot, slot, id, version);
@@ -113,7 +116,8 @@ export function writeElementVersion(libraryRoot: string, input: NewElementVersio
       mkdirSync(dirname(target), { recursive: true });
       writeFileSync(target, input.files[path]!);
     }
-    const element = { ...input.element, version, hash: hashFiles(staging, paths), payload: input.element.payload ?? paths };
+    const element = { ...input.element,
+      ...(input.designerFlow ? { lineage: { ...input.element.lineage, path: input.designerFlow.path, ...(input.designerFlow.ownerRequest ? { ownerRequest: input.designerFlow.ownerRequest } : {}) } } : {}), version, hash: hashFiles(staging, paths), payload: input.element.payload ?? paths };
     const checked = validateElement(element);
     if (!checked.ok) throw new RecordError(`new element ${slot}/${id}/v${version}`, checked.issues);
     const preview = validatePreview(input.preview);

@@ -5,8 +5,8 @@
  * and Designer's ref-verbatim check over every pinned library version.
  *
  * Each suite is the owning package's own check, loaded from its shipped dist; Producer
- * only gathers inputs and prints. Report only: findings never change the exit code
- * unless `strict` is set.
+ * only gathers inputs and prints. Ref-verbatim always enforces; other suites
+ * remain report-only unless `strict` is set.
  */
 import { join } from "node:path";
 import { agentModule, readCells } from "../server/cells.js";
@@ -32,7 +32,7 @@ export interface RecordSuitesReport {
   readonly schemaVersion: 1;
   readonly root: string;
   readonly strict: boolean;
-  /** 1 only when strict and a suite failed or reported an error; otherwise 0. */
+  /** 1 when ref-verbatim fails, or when strict and any suite fails. */
   readonly exitCode: 0 | 1;
   readonly suites: readonly SuiteReport[];
 }
@@ -137,8 +137,7 @@ export async function slotContractSuite(): Promise<SuiteReport> {
 
 /**
  * Designer's ref-verbatim check over every pin in `clossys/selection.json`: each pinned
- * code file must be its recorded reference file plus allowed hunks. Pins in Designer's
- * shrink-only baseline are reported as info; everything else that fails is an error.
+ * code file must be its recorded reference file plus allowed hunks. The shrink-only baseline is inventory; every failure remains an error.
  */
 export async function refVerbatimSuite(root: string): Promise<SuiteReport> {
   const { refVerbatimReport } = await import("@clossys/designer/ref-verbatim");
@@ -147,8 +146,8 @@ export async function refVerbatimSuite(root: string): Promise<SuiteReport> {
     severity: "error", code: finding.code, message: finding.detail,
     where: `${finding.element}${finding.file ? ` ${finding.file}` : ""}${finding.range ? `:${finding.range.start.line}` : ""}`,
   }));
-  for (const key of result.baselined) findings.push({ severity: "info", code: "REF-BASELINED", where: key, message: "fails ref-verbatim; listed in the shrink-only baseline" });
-  return report("ref-verbatim", result.elements.length, findings);
+  for (const key of result.baselined) findings.push({ severity: "error", code: "REF-BASELINED", where: key, message: "fails ref-verbatim; listed in the shrink-only baseline" });
+  return { ...report("ref-verbatim", result.elements.length, findings), exitCode: findings.length ? 1 : 0 };
 }
 
 export async function runRecordSuites(rootIn: string, options: { strict?: boolean } = {}): Promise<RecordSuitesReport> {
@@ -162,7 +161,7 @@ export async function runRecordSuites(rootIn: string, options: { strict?: boolea
     await run("ref-verbatim", () => refVerbatimSuite(rootIn)),
   ];
   const failing = suites.some(suite => suite.status === "error" || suite.totals.error > 0 || suite.exitCode === 1);
-  return { schemaVersion: 1, root: rootIn, strict, exitCode: strict && failing ? 1 : 0, suites };
+  return { schemaVersion: 1, root: rootIn, strict, exitCode: (strict && failing) || suites.some(s => s.suite === "ref-verbatim" && (s.status === "error" || s.exitCode === 1)) ? 1 : 0, suites };
 }
 
 const LABEL: Record<SuiteReport["suite"], string> = { "archetypes": "Archetypes", "writer-slots": "Writer slots", "director-slots": "Director slots", "slot-contracts": "Slot contracts", "ref-verbatim": "Ref verbatim" };

@@ -58,3 +58,6 @@ export {
 export type { PinGateInput, PinInput } from "./selection.js";
 export { deriveSlotStatus, manifestReferenceHash, STATUS_PRECEDENCE, workspaceSlotStatus } from "./status.js";
 export type { SlotStatus, SlotStatusRow, StatusInput } from "./status.js";
+
+export { guardDesignerFlow, DesignerNeedError } from "./owner-approval.js";
+export type { DesignerFlow, DesignerPath, OwnerApproval } from "./owner-approval.js";

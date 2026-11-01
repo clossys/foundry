@@ -385,7 +385,7 @@
     "check:section-tokens": "node scripts/check-section-tokens.mjs --root",
     "check:page-overflow": "node scripts/check-page-overflow.mjs",
     "check:provenance": "node scripts/check-provenance.mjs --scan ..",
-    "check:ref-verbatim": "node scripts/check-ref-verbatim.mjs --root ../../clossys --pinned --components ui/components.json --report reports/ref-verbatim.json",
+    "check:ref-verbatim": "node scripts/check-ref-verbatim.mjs --root ../../clossys --pinned --components ui/components.json --report reports/ref-verbatim.json --release",
     "test:section-tokens": "node --test scripts/check-section-tokens.test.mjs",
     "test:references": "node --test scripts/check-references.test.mjs",
     "fetch:references": "node scripts/fetch-references.mjs",

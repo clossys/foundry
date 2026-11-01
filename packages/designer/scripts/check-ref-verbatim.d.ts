@@ -10,7 +10,8 @@ export type RefVerbatimCode =
   | "REF-HUNK-STRUCTURE"
   | "REF-HUNK-LOGIC"
   | "REF-HUNK-TEXT"
-  | "REF-NORMALIZE";
+  | "REF-NORMALIZE"
+  | "REF-ADAPTATION";
 
 export type RefVerbatimPosition = { readonly line: number; readonly column: number };
 export type RefVerbatimRange = { readonly start: RefVerbatimPosition; readonly end: RefVerbatimPosition };
@@ -90,4 +91,17 @@ export declare function refVerbatimReport(
   readonly findings: readonly RefVerbatimFinding[];
   readonly baselined: readonly string[];
   readonly stale: readonly string[];
+};
+
+export type AdaptationKind = "import-paths" | "token-mapping" | "data-binding" | "data-fit" | "slot-bound-copy" | "slot-bound-identity";
+export declare const ADAPTATION_KINDS: readonly AdaptationKind[];
+export declare function adaptationHash(hunk: RefVerbatimHunk, reference: string, candidate: string): string;
+
+export declare function checkRegistryItem(root: string, slot: string, candidate: any, options?: RefVerbatimOptions): RefVerbatimElement;
+
+export type DataFitOperation = "sidebar15-frame-split" | "sidebar15-right-offcanvas" | "sidebar07-single-option" | "sidebar-mirrored-edge" | "sidebar-resizable-panels";
+export type RecordedDataFit = {
+  readonly kind: "data-fit"; readonly file: string; readonly reason: string;
+  readonly operation: DataFitOperation; readonly sourceHash: string;
+  readonly bindings: Readonly<Record<string, unknown>>;
 };

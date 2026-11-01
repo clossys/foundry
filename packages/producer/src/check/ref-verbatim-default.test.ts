@@ -1,0 +1,25 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, expect, it, vi } from "vitest";
+vi.mock("./slot-resolve.js", () => ({ runSlotResolve: async () => ({ exitCode: 0 }), slotResolveSummary: () => "slot integrity passed" }));
+import { runCheck } from "../cli/check.js";
+import { parseArgs } from "../cli/args.js";
+const roots: string[] = [];
+afterEach(() => roots.splice(0).forEach(root => rmSync(root, { recursive: true, force: true })));
+it("default check enforces the actual reference gate without --suites or --strict", async () => {
+  const root = mkdtempSync(join(tmpdir(), "default-ref-check-")); roots.push(root);
+  const clossys = join(root, "clossys");
+  const dir = join(clossys, "library", "sections.hero", "hero", "v1"); mkdirSync(dir, { recursive: true });
+  writeFileSync(join(clossys, "clossys.config.ts"), "export default {};");
+  writeFileSync(join(dir, "hero.tsx"), "export const Hero = () => <section />");
+  writeFileSync(join(dir, "element.json"), JSON.stringify({ lineage: { mode: "original" }, payload: ["hero.tsx"] }));
+  writeFileSync(join(clossys, "selection.json"), JSON.stringify({ pins: { "sections.hero": { element: "hero", version: 1 } } }));
+  const args = parseArgs(["check", "--root", root]);
+  const failed = await runCheck(args, root);
+  expect(failed.exitCode).toBe(1);
+  expect(failed.message).toContain("REF-NO-SOURCE");
+  expect(failed.suites?.suites[0]?.suite).toBe("ref-verbatim");
+  writeFileSync(join(clossys, "selection.json"), JSON.stringify({ pins: {} }));
+  expect((await runCheck(args, root)).exitCode).toBe(0);
+});

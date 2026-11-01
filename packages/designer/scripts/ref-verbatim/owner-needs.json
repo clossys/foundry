@@ -1,0 +1,925 @@
+{
+  "schema": "clossys.ref-verbatim-needs/1",
+  "note": "Owner-directed inventory: every inherited baseline pin is either re-adopted exactly or remains NEED. These records grant no approval and remove no release blocker. Stock picks require provenance, not an owner approval.",
+  "rows": [
+    {
+      "slot": "components.skip-nav",
+      "element": "skip-nav",
+      "version": 1,
+      "hash": "sha256:2aa0a8d0170153bb145a14dfcc4414be82dc4b86c38b890313f18db61db8cdb4",
+      "codes": [
+        "REF-NO-SOURCE"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "No eligible shadcn skip-navigation source path has been recorded. Sidebar blocks are navigation candidates, not an asserted skip-link equivalent; a matching reference remains required.",
+      "resolutionOwner": "component adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "sidebar-07",
+          "version": "4.23.0",
+          "hash": "sha256:c5ffd395ad9418b12731dfabf9e9fc873f2fe6b231c9de5690ea7d09917048b1",
+          "path": "registry/aria-nova/blocks/sidebar-07/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "sidebar-15",
+          "version": "4.23.0",
+          "hash": "sha256:3554eee448bcb9678315c96377bb302218085c4195ba7bfe319c3ded34bd2797",
+          "path": "registry/aria-nova/blocks/sidebar-15/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "frames.module",
+      "element": "studio-module",
+      "version": 1,
+      "hash": "sha256:fd088e6336f8d3b03fd0fc3c3ebdab6e00cfaf9f120e90fd2232b0879ebc7872",
+      "codes": [
+        "REF-FLAVOR",
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE",
+        "REF-PRIMITIVE-AS-REF"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "frame adoption",
+      "candidates": [
+        {
+          "registry": "shadcn",
+          "item": "sidebar-15",
+          "version": "4.23.0",
+          "hash": "sha256:de94990d0f3ca773db4084e0adda5b96cde677015625c313285a79df960e93e4",
+          "path": "registry/radix-nova/blocks/sidebar-15/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn",
+          "item": "sidebar-07",
+          "version": "4.23.0",
+          "hash": "sha256:cb3b5a933d64347eb59403336ca1be71d991fcd50921142e7ed4fe974afe7d60",
+          "path": "registry/radix-nova/blocks/sidebar-07/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "frames.site-footer",
+      "element": "site-footer",
+      "version": 1,
+      "hash": "sha256:8bc5d41e70c2a879f5ccd29b97de3d5fa0c90e53d9dfe010e8f078d77d17951a",
+      "codes": [
+        "REF-HUNK-CLASS",
+        "REF-HUNK-STRUCTURE"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "frame adoption",
+      "candidates": [
+        {
+          "registry": "shadcn",
+          "item": "sidebar-15",
+          "version": "4.23.0",
+          "hash": "sha256:de94990d0f3ca773db4084e0adda5b96cde677015625c313285a79df960e93e4",
+          "path": "registry/radix-nova/blocks/sidebar-15/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn",
+          "item": "sidebar-07",
+          "version": "4.23.0",
+          "hash": "sha256:cb3b5a933d64347eb59403336ca1be71d991fcd50921142e7ed4fe974afe7d60",
+          "path": "registry/radix-nova/blocks/sidebar-07/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "frames.site-header",
+      "element": "site-header",
+      "version": 1,
+      "hash": "sha256:21873c6c01913cf9b82411b12edc70e3b2fb298e520d2fe5df5397d605787470",
+      "codes": [
+        "REF-HUNK-CLASS",
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "frame adoption",
+      "candidates": [
+        {
+          "registry": "shadcn",
+          "item": "sidebar-15",
+          "version": "4.23.0",
+          "hash": "sha256:de94990d0f3ca773db4084e0adda5b96cde677015625c313285a79df960e93e4",
+          "path": "registry/radix-nova/blocks/sidebar-15/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn",
+          "item": "sidebar-07",
+          "version": "4.23.0",
+          "hash": "sha256:cb3b5a933d64347eb59403336ca1be71d991fcd50921142e7ed4fe974afe7d60",
+          "path": "registry/radix-nova/blocks/sidebar-07/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "frames.site-shell",
+      "element": "site-shell",
+      "version": 1,
+      "hash": "sha256:bb5793e25c2d2bfd9c6b964f223ed57a14effb52461d08dcbaf2d1a7bef52969",
+      "codes": [
+        "REF-NO-SOURCE"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "frame adoption",
+      "candidates": [
+        {
+          "registry": "shadcn",
+          "item": "sidebar-15",
+          "version": "4.23.0",
+          "hash": "sha256:de94990d0f3ca773db4084e0adda5b96cde677015625c313285a79df960e93e4",
+          "path": "registry/radix-nova/blocks/sidebar-15/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn",
+          "item": "sidebar-07",
+          "version": "4.23.0",
+          "hash": "sha256:cb3b5a933d64347eb59403336ca1be71d991fcd50921142e7ed4fe974afe7d60",
+          "path": "registry/radix-nova/blocks/sidebar-07/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "frames.studio-shell",
+      "element": "studio-shell",
+      "version": 5,
+      "hash": "sha256:b5484448374b9371a86c7e2e536f4c6158f184423372d25c5af78257c598eb3f",
+      "codes": [
+        "REF-FILE-UNMAPPED",
+        "REF-FLAVOR",
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "frame adoption",
+      "candidates": [
+        {
+          "registry": "shadcn",
+          "item": "sidebar-15",
+          "version": "4.23.0",
+          "hash": "sha256:de94990d0f3ca773db4084e0adda5b96cde677015625c313285a79df960e93e4",
+          "path": "registry/radix-nova/blocks/sidebar-15/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn",
+          "item": "sidebar-07",
+          "version": "4.23.0",
+          "hash": "sha256:cb3b5a933d64347eb59403336ca1be71d991fcd50921142e7ed4fe974afe7d60",
+          "path": "registry/radix-nova/blocks/sidebar-07/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.call-to-action",
+      "element": "call-to-action",
+      "version": 1,
+      "hash": "sha256:156749ca2971156ed2353984d4fb046892ee8178b9850a434b1292228fa29ba4",
+      "codes": [
+        "REF-HUNK-CLASS",
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "dashboard-01",
+          "version": "4.23.0",
+          "hash": "sha256:d9ae05741f3db5cabdd97ef60e39c8ef5cfb54b58d3bf34e361952826207cf3d",
+          "path": "registry/aria-nova/blocks/dashboard-01/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "item-example",
+          "version": "4.23.0",
+          "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c",
+          "path": "registry/aria-nova/examples/item-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.comparison",
+      "element": "comparison",
+      "version": 2,
+      "hash": "sha256:54fc0a6f065560b2e673c0a61596935ceed7f321a95c33a19ba6440d6380f0c3",
+      "codes": [
+        "REF-HUNK-CLASS",
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "dashboard-01",
+          "version": "4.23.0",
+          "hash": "sha256:d9ae05741f3db5cabdd97ef60e39c8ef5cfb54b58d3bf34e361952826207cf3d",
+          "path": "registry/aria-nova/blocks/dashboard-01/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "item-example",
+          "version": "4.23.0",
+          "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c",
+          "path": "registry/aria-nova/examples/item-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.features",
+      "element": "features",
+      "version": 2,
+      "hash": "sha256:7a9ac81716f754d208a1f9305542867202fff5f1c9f6dd74cb25f6d9bc7af390",
+      "codes": [
+        "REF-HUNK-CLASS",
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "dashboard-01",
+          "version": "4.23.0",
+          "hash": "sha256:d9ae05741f3db5cabdd97ef60e39c8ef5cfb54b58d3bf34e361952826207cf3d",
+          "path": "registry/aria-nova/blocks/dashboard-01/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "item-example",
+          "version": "4.23.0",
+          "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c",
+          "path": "registry/aria-nova/examples/item-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.form",
+      "element": "contact-form",
+      "version": 2,
+      "hash": "sha256:56980397537f02cb18bebf7705a950fb4b70ad3b7938b42a9b2517e3d578e973",
+      "codes": [
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE",
+        "REF-PRIMITIVE-AS-REF"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "dashboard-01",
+          "version": "4.23.0",
+          "hash": "sha256:d9ae05741f3db5cabdd97ef60e39c8ef5cfb54b58d3bf34e361952826207cf3d",
+          "path": "registry/aria-nova/blocks/dashboard-01/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "item-example",
+          "version": "4.23.0",
+          "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c",
+          "path": "registry/aria-nova/examples/item-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.hero",
+      "element": "hero",
+      "version": 2,
+      "hash": "sha256:0180f7b781628756e0ae46827e0698a9a931720112602eb35108739ea97fb6fc",
+      "codes": [
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "dashboard-01",
+          "version": "4.23.0",
+          "hash": "sha256:d9ae05741f3db5cabdd97ef60e39c8ef5cfb54b58d3bf34e361952826207cf3d",
+          "path": "registry/aria-nova/blocks/dashboard-01/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "item-example",
+          "version": "4.23.0",
+          "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c",
+          "path": "registry/aria-nova/examples/item-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.legal-prose",
+      "element": "legal-prose",
+      "version": 2,
+      "hash": "sha256:32491c726f5f6d9fc8b148467046f15677807d074ea3d794d52dc2a191db0aa3",
+      "codes": [
+        "REF-NO-SOURCE"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "No eligible shadcn prose section source path has been recorded. Candidate blocks require contract-fit verification; typography ancestry alone does not qualify a section.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "dashboard-01",
+          "version": "4.23.0",
+          "hash": "sha256:d9ae05741f3db5cabdd97ef60e39c8ef5cfb54b58d3bf34e361952826207cf3d",
+          "path": "registry/aria-nova/blocks/dashboard-01/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "item-example",
+          "version": "4.23.0",
+          "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c",
+          "path": "registry/aria-nova/examples/item-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.module.checks",
+      "element": "module-checks",
+      "version": 1,
+      "hash": "sha256:abf76369a04d24fa3c504b5532bd98c1e00a55b792d591960c73c5f1ceebbc2a",
+      "codes": [
+        "REF-FLAVOR",
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE",
+        "REF-PRIMITIVE-AS-REF"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "item-example",
+          "version": "4.23.0",
+          "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c",
+          "path": "registry/aria-nova/examples/item-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "empty-example",
+          "version": "4.23.0",
+          "hash": "sha256:9755d227c33050c789d3050c03a0e272436aa47a7e891c7b8d0839f01aeb3623",
+          "path": "registry/aria-nova/examples/empty-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.module.explorer",
+      "element": "module-explorer",
+      "version": 1,
+      "hash": "sha256:f0211ba8426ad30640885ceaaf11d312207915d36efb1190ce7aa23f64cb78ae",
+      "codes": [
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE",
+        "REF-PRIMITIVE-AS-REF"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "item-example",
+          "version": "4.23.0",
+          "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c",
+          "path": "registry/aria-nova/examples/item-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "empty-example",
+          "version": "4.23.0",
+          "hash": "sha256:9755d227c33050c789d3050c03a0e272436aa47a7e891c7b8d0839f01aeb3623",
+          "path": "registry/aria-nova/examples/empty-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.module.outline",
+      "element": "module-outline",
+      "version": 1,
+      "hash": "sha256:01362c221c9f471fb4898d428c92de8a3f9cacf97fdfe7b8c6cb27ddf3e24726",
+      "codes": [
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE",
+        "REF-PRIMITIVE-AS-REF"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "item-example",
+          "version": "4.23.0",
+          "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c",
+          "path": "registry/aria-nova/examples/item-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "empty-example",
+          "version": "4.23.0",
+          "hash": "sha256:9755d227c33050c789d3050c03a0e272436aa47a7e891c7b8d0839f01aeb3623",
+          "path": "registry/aria-nova/examples/empty-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.page-header",
+      "element": "page-header",
+      "version": 1,
+      "hash": "sha256:ddd691fc0a52b28352617cd63b5a1f040ddfb823743d410de8a79f458deaed83",
+      "codes": [
+        "REF-HUNK-CLASS",
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "dashboard-01",
+          "version": "4.23.0",
+          "hash": "sha256:d9ae05741f3db5cabdd97ef60e39c8ef5cfb54b58d3bf34e361952826207cf3d",
+          "path": "registry/aria-nova/blocks/dashboard-01/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "item-example",
+          "version": "4.23.0",
+          "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c",
+          "path": "registry/aria-nova/examples/item-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.pricing",
+      "element": "pricing",
+      "version": 2,
+      "hash": "sha256:a9549d9d33c878274c91f2624e9d8c20471d8cce4f2916b20de08f878c39599b",
+      "codes": [
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "dashboard-01",
+          "version": "4.23.0",
+          "hash": "sha256:d9ae05741f3db5cabdd97ef60e39c8ef5cfb54b58d3bf34e361952826207cf3d",
+          "path": "registry/aria-nova/blocks/dashboard-01/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "item-example",
+          "version": "4.23.0",
+          "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c",
+          "path": "registry/aria-nova/examples/item-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.steps",
+      "element": "steps",
+      "version": 2,
+      "hash": "sha256:64ce8fcb9a9200c4bbce8bcf35dc2f4debb07eecfb51b9c0ccc9be291bce0718",
+      "codes": [
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE",
+        "REF-PRIMITIVE-AS-REF"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "dashboard-01",
+          "version": "4.23.0",
+          "hash": "sha256:d9ae05741f3db5cabdd97ef60e39c8ef5cfb54b58d3bf34e361952826207cf3d",
+          "path": "registry/aria-nova/blocks/dashboard-01/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "item-example",
+          "version": "4.23.0",
+          "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c",
+          "path": "registry/aria-nova/examples/item-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.studio.agent-gallery",
+      "element": "studio-agent-gallery",
+      "version": 3,
+      "hash": "sha256:d2eeb96c478da13e2a14bb9e4b0e4304ccaaea52121115279d921b10df5e899d",
+      "codes": [
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE",
+        "REF-PRIMITIVE-AS-REF"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "dashboard-01",
+          "version": "4.23.0",
+          "hash": "sha256:d9ae05741f3db5cabdd97ef60e39c8ef5cfb54b58d3bf34e361952826207cf3d",
+          "path": "registry/aria-nova/blocks/dashboard-01/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "sidebar-15",
+          "version": "4.23.0",
+          "hash": "sha256:3554eee448bcb9678315c96377bb302218085c4195ba7bfe319c3ded34bd2797",
+          "path": "registry/aria-nova/blocks/sidebar-15/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.studio.checks",
+      "element": "studio-checks",
+      "version": 1,
+      "hash": "sha256:c746dae76f3db9224c906705db343bbe1e3e96c4af4bb089f815ef23c8bf77e8",
+      "codes": [
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE",
+        "REF-PRIMITIVE-AS-REF"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "item-example",
+          "version": "4.23.0",
+          "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c",
+          "path": "registry/aria-nova/examples/item-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "empty-example",
+          "version": "4.23.0",
+          "hash": "sha256:9755d227c33050c789d3050c03a0e272436aa47a7e891c7b8d0839f01aeb3623",
+          "path": "registry/aria-nova/examples/empty-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.studio.contract",
+      "element": "studio-contract",
+      "version": 1,
+      "hash": "sha256:4cccd0fd1ae6390804388a6b1a3c709bc23d4aba85835b2d668d3e3e2639741d",
+      "codes": [
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE",
+        "REF-PRIMITIVE-AS-REF"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "item-example",
+          "version": "4.23.0",
+          "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c",
+          "path": "registry/aria-nova/examples/item-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "empty-example",
+          "version": "4.23.0",
+          "hash": "sha256:9755d227c33050c789d3050c03a0e272436aa47a7e891c7b8d0839f01aeb3623",
+          "path": "registry/aria-nova/examples/empty-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.studio.history",
+      "element": "studio-history",
+      "version": 1,
+      "hash": "sha256:afc0fc911775ac565e6df8a88abfd7ece8f5c3545f412355e157d2fd848aeee8",
+      "codes": [
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE",
+        "REF-PRIMITIVE-AS-REF"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "item-example",
+          "version": "4.23.0",
+          "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c",
+          "path": "registry/aria-nova/examples/item-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "empty-example",
+          "version": "4.23.0",
+          "hash": "sha256:9755d227c33050c789d3050c03a0e272436aa47a7e891c7b8d0839f01aeb3623",
+          "path": "registry/aria-nova/examples/empty-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.studio.home",
+      "element": "studio-home",
+      "version": 2,
+      "hash": "sha256:3a8aa87264b75e35f5c566b305375ada8efc8d779e44d541c3ad1f3321c4c9b8",
+      "codes": [
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE",
+        "REF-PRIMITIVE-AS-REF"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "dashboard-01",
+          "version": "4.23.0",
+          "hash": "sha256:d9ae05741f3db5cabdd97ef60e39c8ef5cfb54b58d3bf34e361952826207cf3d",
+          "path": "registry/aria-nova/blocks/dashboard-01/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "sidebar-15",
+          "version": "4.23.0",
+          "hash": "sha256:3554eee448bcb9678315c96377bb302218085c4195ba7bfe319c3ded34bd2797",
+          "path": "registry/aria-nova/blocks/sidebar-15/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.studio.leaf-header",
+      "element": "studio-leaf-header",
+      "version": 1,
+      "hash": "sha256:1b61a0fc138401c99dc6de006a2b62e7d30f3c3ccf4c2c3f753a72e04e3503ab",
+      "codes": [
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE",
+        "REF-PRIMITIVE-AS-REF"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "item-example",
+          "version": "4.23.0",
+          "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c",
+          "path": "registry/aria-nova/examples/item-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "empty-example",
+          "version": "4.23.0",
+          "hash": "sha256:9755d227c33050c789d3050c03a0e272436aa47a7e891c7b8d0839f01aeb3623",
+          "path": "registry/aria-nova/examples/empty-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.studio.options",
+      "element": "studio-options",
+      "version": 1,
+      "hash": "sha256:d04264150d45bf0d7ce1caeb0646b6605209d926198483640faf06c7ab2de369",
+      "codes": [
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE",
+        "REF-PRIMITIVE-AS-REF"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "item-example",
+          "version": "4.23.0",
+          "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c",
+          "path": "registry/aria-nova/examples/item-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "empty-example",
+          "version": "4.23.0",
+          "hash": "sha256:9755d227c33050c789d3050c03a0e272436aa47a7e891c7b8d0839f01aeb3623",
+          "path": "registry/aria-nova/examples/empty-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.studio.publications",
+      "element": "studio-publications",
+      "version": 2,
+      "hash": "sha256:c2945681ba2ebbee6af2ec9d4b0d50ae07311d13ddf56b9cfad792f96c7f5948",
+      "codes": [
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE",
+        "REF-PRIMITIVE-AS-REF"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "item-example",
+          "version": "4.23.0",
+          "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c",
+          "path": "registry/aria-nova/examples/item-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "empty-example",
+          "version": "4.23.0",
+          "hash": "sha256:9755d227c33050c789d3050c03a0e272436aa47a7e891c7b8d0839f01aeb3623",
+          "path": "registry/aria-nova/examples/empty-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.studio.references",
+      "element": "studio-references",
+      "version": 1,
+      "hash": "sha256:4faa7667cf6b9aa220ce982b4d9a502d39762e00ba2fa60906dfea7a98c103e5",
+      "codes": [
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE",
+        "REF-PRIMITIVE-AS-REF"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "item-example",
+          "version": "4.23.0",
+          "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c",
+          "path": "registry/aria-nova/examples/item-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "empty-example",
+          "version": "4.23.0",
+          "hash": "sha256:9755d227c33050c789d3050c03a0e272436aa47a7e891c7b8d0839f01aeb3623",
+          "path": "registry/aria-nova/examples/empty-example.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    },
+    {
+      "slot": "sections.studio.specimen",
+      "element": "studio-specimen",
+      "version": 2,
+      "hash": "sha256:55b39a4888d8ba1da2e925dc93317b2c3f8b14322e3647247d7789f4db75c61b",
+      "codes": [
+        "REF-FLAVOR",
+        "REF-HUNK-LOGIC",
+        "REF-HUNK-STRUCTURE",
+        "REF-PRIMITIVE-AS-REF"
+      ],
+      "status": "NEED",
+      "decision": "reference-required",
+      "reason": "The recorded pin does not pass strict source comparison. Re-adopt an exact eligible shadcn source or supply a matching reference; no custom layout or gate exemption is approved.",
+      "resolutionOwner": "section adoption",
+      "candidates": [
+        {
+          "registry": "shadcn-aria",
+          "item": "dashboard-01",
+          "version": "4.23.0",
+          "hash": "sha256:d9ae05741f3db5cabdd97ef60e39c8ef5cfb54b58d3bf34e361952826207cf3d",
+          "path": "registry/aria-nova/blocks/dashboard-01/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        },
+        {
+          "registry": "shadcn-aria",
+          "item": "sidebar-15",
+          "version": "4.23.0",
+          "hash": "sha256:3554eee448bcb9678315c96377bb302218085c4195ba7bfe319c3ded34bd2797",
+          "path": "registry/aria-nova/blocks/sidebar-15/page.tsx",
+          "fit": "Candidate for exact adoption; contract fit and any finite adaptations still require verification."
+        }
+      ]
+    }
+  ]
+}

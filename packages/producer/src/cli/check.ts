@@ -5,7 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import { lintPages } from "../check/page-lint.js";
 import { readPageCheckSource, readPageManifest } from "../check/page-manifest.js";
 import type { PageLintReport } from "../check/page-types.js";
-import { recordSuitesSummary, runRecordSuites } from "../check/record-suites.js";
+import { recordSuitesSummary, refVerbatimSuite, runRecordSuites } from "../check/record-suites.js";
 import { discoverWorkspace } from "./migrate.js";
 import type { CliArgs } from "./args.js";
 import type { CliResult } from "./main.js";
@@ -92,12 +92,17 @@ export async function runCheck(args: CliArgs, cwd: string): Promise<CliResult> {
   const page = args.pages !== undefined ? await runPageCheck(args, cwd) : undefined;
   const suites = args.suites || (page && consumerRoot(start))
     ? await runRecordSuites(root, { strict: args.strict }) : undefined;
-  const exitCode = Math.max(slots.exitCode, page?.exitCode ?? 0, suites?.exitCode ?? 0) as 0 | 1 | 2;
+  const reference = suites ? undefined : await refVerbatimSuite(root).catch(error => ({
+    suite: "ref-verbatim" as const, status: "error" as const, checked: 0,
+    totals: { error: 1, warning: 0, info: 0 }, findings: [], error: errorMessage(error), exitCode: 1 as const,
+  }));
+  const referenceReport = reference ? { schemaVersion: 1 as const, root, strict: true, exitCode: reference.exitCode ?? 0, suites: [reference] } : undefined;
+  const exitCode = Math.max(slots.exitCode, page?.exitCode ?? 0, suites?.exitCode ?? 0, reference?.exitCode ?? 0) as 0 | 1 | 2;
   return {
     ...(page ?? { verb: "check" as const, root, check: true }),
     exitCode,
-    message: [slotResolveSummary(slots, args.readiness), page?.message, suites && recordSuitesSummary(suites)].filter(Boolean).join("\n"),
+    message: [slotResolveSummary(slots, args.readiness), page?.message, suites && recordSuitesSummary(suites), referenceReport && recordSuitesSummary(referenceReport)].filter(Boolean).join("\n"),
     slots,
-    ...(suites ? { suites } : {}),
+    ...(suites || referenceReport ? { suites: suites ?? referenceReport } : {}),
   };
 }
