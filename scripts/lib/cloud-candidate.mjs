@@ -344,11 +344,13 @@ export function remoteGate(options) {
 }
 function nativeEnv() {
   // Normal Git configuration/hooks remain active. No inherited forge secret,
-  // Node preload, alternate index, or caller-selected Git configuration.
-  return { PATH: `${dirname(process.execPath)}:/usr/bin:/bin`, HOME: userInfo().homedir, LANG: 'C', LC_ALL: 'C', GIT_TERMINAL_PROMPT: '0' };
+  // Node preload, alternate index, or caller-selected Git configuration. Object
+  // identity is immutable before read-tree/commit: replacement refs (including
+  // alternate roots) and legacy grafts must never reinterpret qualified OIDs.
+  return { PATH: `${dirname(process.execPath)}:/usr/bin:/bin`, HOME: userInfo().homedir, LANG: 'C', LC_ALL: 'C', GIT_TERMINAL_PROMPT: '0', GIT_NO_REPLACE_OBJECTS: '1', GIT_GRAFT_FILE: '/dev/null', GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'advice.graftFileDeprecated', GIT_CONFIG_VALUE_0: 'false' };
 }
 function nativeGit(repo, args, ownedIndex, detached, input = '') {
-  return spawnSync('/usr/bin/git', ['-C', repo, ...args], { env: { ...nativeEnv(), ...(ownedIndex ? { GIT_INDEX_FILE: ownedIndex } : {}), ...detached }, input, encoding: null, maxBuffer: 8 * 1024 * 1024, timeout: 120000 });
+  return spawnSync('/usr/bin/git', ['--no-replace-objects', '-C', repo, ...args], { env: { ...nativeEnv(), ...(ownedIndex ? { GIT_INDEX_FILE: ownedIndex } : {}), ...detached }, input, encoding: null, maxBuffer: 8 * 1024 * 1024, timeout: 120000 });
 }
 function noActiveCommitHooks(repo, detached) {
   for (const name of ['core.fsmonitor', 'commit.gpgSign', 'extensions.worktreeConfig']) {
@@ -377,7 +379,7 @@ function noActiveCommitHooks(repo, detached) {
 // locked: Git rejects combining its implicit HEAD update with symref-verify in
 // one transaction. Requires native update-ref symref transaction support.
 async function holdHead(repo, branch) {
-  const child = spawn('/usr/bin/git', ['-C', repo, 'update-ref', '--stdin'], { env: nativeEnv(), stdio: ['pipe', 'pipe', 'pipe'] });
+  const child = spawn('/usr/bin/git', ['--no-replace-objects', '-C', repo, 'update-ref', '--stdin'], { env: nativeEnv(), stdio: ['pipe', 'pipe', 'pipe'] });
   const lines = createInterface({ input: child.stdout })[Symbol.asyncIterator]();
   child.stderr.resume(); // Native diagnostics can contain private path/identity.
   child.stdin.on('error', () => {});

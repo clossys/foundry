@@ -196,7 +196,7 @@ async function installedFixture(t, check = 'node -e "process.exit(0)"', transfor
   const artifactPath = join(f.temp, 'artifact'), receiptPath = join(f.temp, 'receipt'), messagePath = join(f.temp, 'message');
   writeFileSync(artifactPath, artifact); writeFileSync(receiptPath, receipt); writeFileSync(messagePath, f.message);
   const args = ['--repository-path', f.repo, '--artifact', artifactPath, '--receipt', receiptPath, '--message', messagePath];
-  const run = (command, extra = []) => spawnSync(process.execPath, [cli, command, ...args, ...extra], { encoding: 'utf8' });
+  const run = (command, extra = [], ambient = {}) => spawnSync(process.execPath, [cli, command, ...args, ...extra], { encoding: 'utf8', env: { ...process.env, ...ambient } });
   return { ...f, installation, policy, module, artifact, receipt, artifactPath, receiptPath, messagePath, run };
 }
 
@@ -363,6 +363,59 @@ test('HEAD retarget before prepare aborts, while prepared native lock blocks ret
     assert.equal(git(f.repo, 'rev-parse', 'refs/heads/other'), f.base);
     if (late) assert.equal(git(f.repo, 'rev-parse', `${original}^`), f.base);
     else assert.equal(git(f.repo, 'rev-parse', original), f.base);
+    assert.equal(existsSync(`${git(f.repo, 'rev-parse', '--path-format=absolute', '--git-path', 'HEAD')}.lock`), false);
+  }
+});
+
+
+test('native replacement refs and grafts cannot reinterpret qualified objects before commit', async t => {
+  for (const linked of [false, true]) {
+    const f = await installedFixture(t, undefined, source => {
+      const marker = '    verifyCommitted(input, repositoryPath, head);';
+      assert.equal(source.split(marker).length, 2);
+      // Observe materialized index entries immediately: Git's cache-tree can
+      // retain the original tree OID even when replacements changed the index.
+      const readTree = "    if (!scannerPass(nativeGit(repositoryPath, ['read-tree', input.candidate.tree], ownedIndex, detached))) fail('Could not freeze qualified tree');";
+      assert.equal(source.split(readTree).length, 2);
+      source = source.replace(readTree, readTree + `
+    const materialized = nativeGit(repositoryPath, ['ls-files', '--stage', '-z'], ownedIndex, detached);
+    if (!scannerPass(materialized)) fail('Fixture private index inspection failed');
+    writeFileSync(join(dirname(repositoryPath), 'private-index'), materialized.stdout);
+`);
+      // Also capture the real private commit BEFORE the postcommit verifier.
+      return source.replace(marker, "    writeFileSync(join(dirname(repositoryPath), 'private-created'), head);\n" + marker);
+    }, linked);
+    const candidate = JSON.parse(f.artifact);
+    const originalTree = git(f.repo, '--no-replace-objects', 'rev-parse', `${f.base}^{tree}`);
+    const graftParent = execFileSync('git', ['--no-replace-objects', 'commit-tree', originalTree], { cwd: f.repo, input: 'Independent graft fixture\n', encoding: 'utf8' }).trim();
+    const baseReplacement = execFileSync('git', ['--no-replace-objects', 'commit-tree', originalTree, '-p', graftParent], { cwd: f.repo, input: 'Replacement base fixture\n', encoding: 'utf8' }).trim();
+    const changedBlob = execFileSync('git', ['hash-object', '-w', '--stdin'], { cwd: f.repo, input: 'Unqualified replacement bytes\n', encoding: 'utf8' }).trim();
+    const changedTree = execFileSync('git', ['mktree'], { cwd: f.repo, input: `100644 blob ${changedBlob}\treadme.txt\n`, encoding: 'utf8' }).trim();
+    git(f.repo, 'config', 'core.useReplaceRefs', 'true');
+    for (const prefix of ['refs/replace/', 'refs/adversary/']) {
+      git(f.repo, 'update-ref', prefix + candidate.tree, changedTree);
+      git(f.repo, 'update-ref', prefix + f.base, baseReplacement);
+    }
+    const common = git(f.repo, 'rev-parse', '--path-format=absolute', '--git-common-dir');
+    mkdirSync(join(common, 'info'), { recursive: true });
+    const grafts = `${f.base} ${graftParent}\n`;
+    writeFileSync(join(common, 'info/grafts'), grafts);
+    const ambientGrafts = join(f.temp, 'ambient-grafts'); writeFileSync(ambientGrafts, grafts);
+    const admitted = f.run('admit-commit', [], { GIT_REPLACE_REF_BASE: 'refs/adversary/', GIT_GRAFT_FILE: ambientGrafts, GIT_NO_REPLACE_OBJECTS: '' });
+    assert.equal(existsSync(join(f.temp, 'private-index')), true, 'Private index was not captured after read-tree');
+    const entries = readFileSync(join(f.temp, 'private-index'), 'utf8').split('\0');
+    assert.equal(entries.pop(), '');
+    assert.deepEqual(entries, candidate.files.map(file => `${file.mode} ${file.blob} 0\t${file.path}`), 'Unqualified private index materialized before commit');
+    assert.equal(existsSync(join(f.temp, 'private-created')), true, 'Private commit was not captured before verification');
+    const privateHead = readFileSync(join(f.temp, 'private-created'), 'utf8');
+    const raw = execFileSync('git', ['--no-replace-objects', 'cat-file', 'commit', privateHead], { cwd: f.repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    const separator = raw.indexOf('\n\n'), header = raw.slice(0, separator).split('\n');
+    assert.equal(header[0], `tree ${candidate.tree}`, 'An unqualified private tree was created before verification');
+    assert.deepEqual(header.filter(line => line.startsWith('parent ')), [`parent ${f.base}`]);
+    assert.equal(raw.slice(separator + 2), f.message);
+    assert.equal(admitted.status, 0, admitted.stderr);
+    assert.equal(git(f.repo, '--no-replace-objects', 'rev-parse', 'HEAD'), privateHead);
+    assert.equal(f.run('admit-delivery').status, 0);
     assert.equal(existsSync(`${git(f.repo, 'rev-parse', '--path-format=absolute', '--git-path', 'HEAD')}.lock`), false);
   }
 });
