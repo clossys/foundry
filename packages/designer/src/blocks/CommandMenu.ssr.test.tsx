@@ -1,11 +1,12 @@
 // @vitest-environment node
 import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+import { withShellCopy } from "../frames/__fixtures__/shell-copy.js";
 import * as blocks from "./index.js";
 
 describe("CommandMenu closed SSR", () => {
   it("renders exact empty closed bytes without accessing client platform or registering shortcuts", () => {
-    const CommandMenu = (blocks as any).CommandMenu ?? (() => null);
+    const CommandMenu = withShellCopy((blocks as any).CommandMenu ?? (() => null));
     const useShortcut = (blocks as any).useCommandMenuShortcut ?? (() => {});
     const onOpen = vi.fn();
     function Host() {

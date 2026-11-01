@@ -53,7 +53,7 @@ function fixture(options: { failingDescendant?: boolean } = {}) {
     layoutRenderer: { id: "Stack", source: layoutSource, sourceHash: runtimeHash(layoutSource) }, cell: { theme: "light", state: "default", width: 320 },
     headerActions: { renderer: { id: "SYNTHETIC Actions", source: actionSource, sourceHash: runtimeHash(actionSource) }, state: { revision: 1 } },
   };
-  const measured: RegisteredRouteRuntime = { ...runtime, assembly: { ...runtime.assembly, stageMeasurements: { renderer: runtime.layoutRenderer!, environment: { kind: "SYNTHETIC independent Stage geometry" }, cells: runtimeAssemblyCells(resolve(engine), ["light"], ["default"]).map(cell => ({ cell, width: cell.width - 80 })) } } };
+  const measured: RegisteredRouteRuntime = { ...runtime, assembly: { ...runtime.assembly, stageMeasurements: { renderer: runtime.layoutRenderer!, environment: { kind: "SYNTHETIC independent Stage geometry" }, cells: runtimeAssemblyCells(["light"], ["default"]).map(cell => ({ cell, width: cell.width - 80 })) } } };
   const renderActions = ({ compact }: { compact: boolean }) => <button type="button">SYNTHETIC actions {String(compact)}</button>;
   return { route, registry, runtime: measured, registries, section, renderActions, binding: route.composition.binding };
 }

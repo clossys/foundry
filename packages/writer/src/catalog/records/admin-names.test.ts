@@ -137,7 +137,7 @@ describe("admin display-name drafts", () => {
     const refs = new Map(studio.bindings.map(row => [row.cellId, row.recordId]));
     const name = (cell: string) => all.find(record => record.id === refs.get(cell))!.text;
     const unique = (parent: string, names: string[]) => expect(new Set(names.map(normalize)).size, parent).toBe(names.length);
-    for (const layer of ["tokens", "assets", "components", "sections", "frames"]) {
+    for (const layer of ["themes", "assets", "components", "sections", "frames"]) {
       const tree = JSON.parse(read(`packages/designer/src/catalog/ia/${layer}.json`));
       const groups: string[] = [];
       unique(layer, tree.nodes.map((top: { id: string }) => name(`designer.ia.${layer}.${top.id}`)));

@@ -48,7 +48,7 @@ it("generated consumer runs the registered route binder with only public flow pr
         resolveContent: reference => { const value = reference.ref === "stage.label" ? "Flow workspace" : "Selected content"; return { reference, value, hash: runtimeHash(value) }; } },
       themes: ["light"], states: ["default"], css: [], assets: [],
       stage: { module: stage, bodyDigest: runtimeHash(body), label: { kind: "copy", ref: "stage.label" }, labels: { "sections.body.0": { kind: "copy", ref: "stage.section" } }, controller: stageRenderer, state: {} },
-      stageMeasurements: { renderer: layoutRenderer, environment: { kind: "SYNTHETIC independent Stage fixture" }, cells: runtimeAssemblyCells(resolve(engine), ["light"], ["default"]).map(cell => ({ cell, width: cell.width - 80 })) },
+      stageMeasurements: { renderer: layoutRenderer, environment: { kind: "SYNTHETIC independent Stage fixture" }, cells: runtimeAssemblyCells(["light"], ["default"]).map(cell => ({ cell, width: cell.width - 80 })) },
     },
     instanceLibrary: { id: engine.library.source.id, role: "consumer", resolveFill: () => undefined, resolveContent: ref => ref }, registries, cell: { theme: "light", state: "default", width: 320 },
   };

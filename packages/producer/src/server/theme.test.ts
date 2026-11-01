@@ -15,10 +15,13 @@ afterEach(async () => { await rm(root, { recursive: true, force: true }); });
 function adoptedDefaults(): LibraryData {
   const catalog = loadCatalog();
   const empty: LibraryData = { source: { id: "example", kind: "consumer", author: "consumer", license: "UNLICENSED" }, fills: [], adoptedAt: "2026-10-29" };
-  return applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes: catalog.fills.filter(fill => {
-    const meta = fill.$extensions["com.clossys.fill"];
-    return meta.source === "foundry" && meta.slot.startsWith("tokens.");
-  }).map(fill => ({ op: "adopt", slot: fill.$extensions["com.clossys.fill"].slot, source: "foundry" })) });
+  const sources = ["foundry", "shadcn@aria", "tailwind-default"];
+  const changes = catalog.slots.filter(slot => slot.layer === "themes").flatMap(slot => {
+    const offers = catalog.fills.filter(fill => fill.$extensions["com.clossys.fill"].slot === slot.id && fill.$extensions["com.clossys.fill"].mode !== "reference");
+    const fill = sources.map(source => offers.find(fill => fill.$extensions["com.clossys.fill"].source === source)).find(Boolean);
+    return fill ? [{ op: "adopt" as const, slot: slot.id, source: fill.$extensions["com.clossys.fill"].source }] : [];
+  });
+  return applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes });
 }
 
 async function brandedCells(composite = false, authored = true, consumerRoot = root, hue = 250): Promise<LibraryData> {
