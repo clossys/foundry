@@ -1009,17 +1009,17 @@
     {
       "slot": "sections.studio.options",
       "element": "studio-options",
-      "version": 1
+      "version": 2
     },
     {
       "slot": "sections.studio.checks",
       "element": "studio-checks",
-      "version": 1
+      "version": 2
     },
     {
       "slot": "sections.studio.contract",
       "element": "studio-contract",
-      "version": 1
+      "version": 2
     },
     {
       "slot": "sections.studio.history",
@@ -1029,7 +1029,7 @@
     {
       "slot": "sections.studio.references",
       "element": "studio-references",
-      "version": 1
+      "version": 2
     },
     {
       "slot": "sections.module.explorer",
@@ -1039,7 +1039,7 @@
     {
       "slot": "sections.studio.publications",
       "element": "studio-publications",
-      "version": 2
+      "version": 3
     }
   ],
   "pageActions": {
