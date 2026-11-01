@@ -158,9 +158,9 @@ function validateJsonCandidate(kind: SlotKind, value: Record<string, unknown>, s
     if (value.schema !== PAGE_SCHEMA) fail(`schema must be ${PAGE_SCHEMA}`);
     if (typeof value.title !== "string" || !value.title) fail("title is required");
     if ((typeof value.path === "string") === (typeof value.slug === "string")) fail("exactly one of path or slug is required");
-    if (value.frame !== null && typeof value.frame !== "string") fail("frame must be a slot id or null");
-    if (!strings(value.sections)) fail("sections must be a list of slot ids");
-    if (!object(value.copy) || Object.values(value.copy).some(target => typeof target !== "string")) fail("copy must map copy keys to Writer slots");
+    if (value.frame !== null && (typeof value.frame !== "string" || !SLOT_ID.test(value.frame))) fail("frame must be a slot id or null");
+    if (!strings(value.sections) || value.sections.some(target => !SLOT_ID.test(target))) fail("sections must be a list of slot ids");
+    if (!object(value.copy) || Object.values(value.copy).some(target => typeof target !== "string" || !SLOT_ID.test(target))) fail("copy must map copy keys to Writer slots");
   } else if (kind === "publication") {
     if (value.schema !== PUBLICATION_SCHEMA) fail(`schema must be ${PUBLICATION_SCHEMA}`);
     if (typeof value.format !== "string" || !value.format) fail("format is required");
