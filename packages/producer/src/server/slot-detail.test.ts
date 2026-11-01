@@ -1,25 +1,26 @@
 import { createHash } from 'node:crypto';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, unlinkSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, realpathSync, writeFileSync, rmSync, unlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { slotDetail } from './slot-detail.js';
 import { detailStrings, loadSlotDetail, slotDetailInputs } from '../../studio/lib/slot-detail';
-import { serializeFrontmatter } from '../records/slot-model/index.js';
+import { serializeFrontmatter, slotPositions, type IaDoc } from '../records/slot-model/index.js';
 
 const roots: string[] = [];
 const id = 'passages.example';
 const links = { gallery: (agent: string) => `/${agent}`, leaf: (agent: string, slot: string) => `/${agent}/${slot}` };
 function fixture() {
-  const root = mkdtempSync(join(tmpdir(), 'slot-detail-')); roots.push(root);
+  const root = realpathSync(mkdtempSync(join(tmpdir(), 'slot-detail-'))); roots.push(root);
   const agent = join(root, 'clossys/agents/writer');
   const dir = join(agent, 'passages.test/test-records', id);
   mkdirSync(join(dir, 'candidates'), { recursive: true });
-  writeFileSync(join(agent, 'ia.json'), JSON.stringify({ schema: 'clossys.ia/1', source: 'writer#fixture', extensions: [], nodes: [
+  const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic-test-only#B4-writer-detail', extensions: [], nodes: [
     { id: 'passages.test', label: 'Passages', children: [{ id: 'test-records', label: 'Test records', slots: [id] }] },
-  ] }));
+  ] };
+  writeFileSync(join(agent, 'ia.json'), JSON.stringify(ia));
   writeFileSync(join(dir, 'slot.json'), JSON.stringify({ schema: 'clossys.slot/1', id, agent: 'writer', kind: 'strings',
-    ia: { l0: 'passages', l1: 'passages.test', l2: 'test-records', order: 0 }, contract: { purpose: 'Example copy' }, inputs: [], uses: [] }));
+    ia: slotPositions('writer', ia).get(id), contract: { purpose: 'Example copy' }, inputs: [], uses: [] }));
   return { root, dir };
 }
 function candidate(dir: string, version: number, value: string) {
@@ -50,7 +51,8 @@ describe('slot details', () => {
     const first = candidate(dir, 1, full);
     candidate(dir, 2, 'An unapproved alternative');
     const sha256 = createHash('sha256').update(first.bytes).digest('hex');
-    writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: first.name, sha256, pinnedBy: 'owner', at: '2026-01-01T00:00:00Z' }));
+    // Attribution and date are synthetic test metadata, not an approval record.
+    writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: first.name, sha256, pinnedBy: 'owner:synthetic-test-only:B4-slot-detail-pin', at: '2026-01-01T00:00:00Z' }));
     const detail = slotDetail(root, 'writer', id)!;
     expect(detail.shown).toBe(first.name);
     expect(detail.checks.every(check => check.ok)).toBe(true);
@@ -74,8 +76,9 @@ describe('slot details', () => {
   it('reports broken hashes and derives used-by from slot.json rather than candidate prose', () => {
     const { root, dir } = fixture(); candidate(dir, 1, 'No references in this text');
     const file = join(dir, 'slot.json');
-    writeFileSync(file, JSON.stringify({ schema: 'clossys.slot/1', id, agent: 'writer', kind: 'strings', ia: {}, contract: {}, inputs: ['identity.missing'], uses: [id] }));
-    writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: 'copy-v1.md', sha256: '0'.repeat(64), pinnedBy: 'owner', at: '2026-01-01T00:00:00Z' }));
+    writeFileSync(file, JSON.stringify({ ...JSON.parse(readFileSync(file, 'utf8')), inputs: ['identity.missing'], uses: [id] }));
+    // Keep the deliberate byte mismatch within an otherwise valid synthetic pin.
+    writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: 'copy-v1.md', sha256: '0'.repeat(64), pinnedBy: 'owner:synthetic-test-only:B4-slot-detail-pin', at: '2026-01-01T00:00:00Z' }));
     const detail = slotDetail(root, 'writer', id)!;
     expect(detail.usedBy).toEqual([{ agent: 'writer', id }]);
     expect(detail.checks).toEqual(expect.arrayContaining([
@@ -108,10 +111,13 @@ describe('slot details', () => {
     const designer = join(consumer, 'agents/designer');
     const dir = join(designer, 'sections.test/test-records/sections.example');
     mkdirSync(join(dir, 'candidates'), { recursive: true });
-    writeFileSync(join(designer, 'ia.json'), JSON.stringify({ nodes: [{ id: 'sections.test', label: 'Sections', children: [{ id: 'test-records', label: 'Test records', slots: ['sections.example'] }] }] }));
-    writeFileSync(join(dir, 'slot.json'), JSON.stringify({ id: 'sections.example', kind: 'element', contract: {}, inputs: [], uses: [] }));
+    const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic-test-only#B4-designer-viewport', extensions: [],
+      nodes: [{ id: 'sections.test', label: 'Sections', children: [{ id: 'test-records', label: 'Test records', slots: ['sections.example'] }] }] };
+    writeFileSync(join(designer, 'ia.json'), JSON.stringify(ia));
+    writeFileSync(join(dir, 'slot.json'), JSON.stringify({ schema: 'clossys.slot/1', id: 'sections.example', agent: 'designer',
+      ia: slotPositions('designer', ia).get('sections.example'), kind: 'element', contract: {}, inputs: [], uses: [] }));
     const item = { name: 'example', type: 'registry:block', files: [{ path: 'index.tsx', type: 'registry:component', content: 'export default function Example() { return null; }' }] };
-    writeFileSync(join(dir, 'candidates/example-v1.json'), JSON.stringify({ ...item, meta: { slot: 'sections.example', source: { kind: 'registry', ref: ['example'] } } }));
+    writeFileSync(join(dir, 'candidates/example-v1.json'), JSON.stringify({ ...item, meta: { slot: 'sections.example', source: { kind: 'original', ref: [] } } }));
     const library = join(consumer, 'library/sections.example/example/v1'); mkdirSync(library, { recursive: true });
     writeFileSync(join(library, 'registry-item.json'), JSON.stringify(item));
     writeFileSync(join(consumer, 'selection.json'), JSON.stringify({ pins: { 'sections.example': { element: 'example', version: 1 } } }));
