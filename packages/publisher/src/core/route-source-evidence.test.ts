@@ -34,6 +34,69 @@ const client = (f: ReturnType<typeof serverSide>, payload: unknown, runtime = f.
 const edit = (f: ReturnType<typeof serverSide>, change: (payload: { library: string; source: Record<string, unknown> }) => void) => { const payload = structuredClone(f.wire) as { library: string; source: Record<string, unknown> }; change(payload); return payload; };
 
 describe("serialized route source bootstrap (synthetic fixtures; no runtime clearance)", () => {
+  it("Node evidence owns frozen nested snapshots while caller inputs remain mutable", () => {
+    const f = serverSide(), identity = { ...IDENTITY };
+    const files = { "app/tools/tools/page.tsx": runtimeHash("SYNTHETIC page") };
+    const css = { ...f.styling.css }, styling = { ...f.styling, css };
+    const source = recordRegisteredRouteSourceEvidence(f.registry, f.route, identity, files, runtimeHash("SYNTHETIC plan"), styling, f.materialization.digest);
+    const expected = structuredClone(source);
+    const bootstrap = () => JSON.stringify(registeredRouteSourceBootstrap({ registry: f.registry, route: f.route, source, engine: f.engine, materialization: f.materialization }));
+    const serialized = bootstrap();
+
+    identity.head = "3".repeat(40);
+    identity.tree = "4".repeat(40);
+    files["app/tools/tools/page.tsx"] = runtimeHash("SYNTHETIC changed page");
+    styling.profile = runtimeHash("SYNTHETIC changed profile");
+    styling.manifest = runtimeHash("SYNTHETIC changed manifest");
+    css["app/SYNTHETIC.css"] = runtimeHash("SYNTHETIC changed CSS");
+    expect(source).toEqual(expected);
+    expect(bootstrap()).toBe(serialized);
+    expect(isCurrentRegisteredRouteSourceEvidence(source, f.registry, f.route, f.materialization.digest)).toBe(true);
+    for (const [owned, original] of [[source.identity, identity], [source.files, files], [source.styling!, styling], [source.styling!.css, css]]) {
+      expect(owned).not.toBe(original);
+      expect(Object.isFrozen(owned)).toBe(true);
+      expect(Object.isFrozen(original)).toBe(false);
+    }
+    expect(Object.isFrozen(source)).toBe(true);
+    for (const [owned, key, value] of [[source.identity, "head", "5".repeat(40)], [source.files, "app/tools/tools/page.tsx", runtimeHash("SYNTHETIC forged page")], [source.styling!, "manifest", runtimeHash("SYNTHETIC forged manifest")], [source.styling!.css, "app/SYNTHETIC.css", runtimeHash("SYNTHETIC forged CSS")]] as const) {
+      expect(Reflect.set(owned, key, value)).toBe(false);
+    }
+    expect(source).toEqual(expected);
+    expect(bootstrap()).toBe(serialized);
+  }, 60_000);
+
+  it("two routes sharing mutable input maps receive independent frozen Node snapshots", () => {
+    const f = serverSide(), other = syntheticRoute("example.other");
+    const registry = { ...f.registry, routes: [f.route, other] };
+    const identity = { ...IDENTITY }, files = { "app/shared.tsx": runtimeHash("SYNTHETIC shared page") };
+    const css = { ...f.styling.css }, styling = { ...f.styling, css };
+    const first = recordRegisteredRouteSourceEvidence(registry, f.route, identity, files, undefined, styling, f.materialization.digest);
+    const second = recordRegisteredRouteSourceEvidence(registry, other, identity, files, undefined, styling);
+    const expected = [structuredClone(first), structuredClone(second)];
+    const bootstrap = () => JSON.stringify([
+      registeredRouteSourceBootstrap({ registry, route: f.route, source: first, engine: f.engine, materialization: f.materialization }),
+      registeredRouteSourceBootstrap({ registry, route: other, source: second, engine: f.engine }),
+    ]);
+    const serialized = bootstrap();
+    for (const [a, b, original] of [[first.identity, second.identity, identity], [first.files, second.files, files], [first.styling!, second.styling!, styling], [first.styling!.css, second.styling!.css, css]]) {
+      expect(a).not.toBe(b);
+      expect(a).not.toBe(original);
+      expect(b).not.toBe(original);
+      expect(Object.isFrozen(a) && Object.isFrozen(b)).toBe(true);
+      expect(Object.isFrozen(original)).toBe(false);
+    }
+    identity.head = "7".repeat(40);
+    files["app/shared.tsx"] = runtimeHash("SYNTHETIC changed shared page");
+    styling.manifest = runtimeHash("SYNTHETIC changed shared manifest");
+    css["app/SYNTHETIC.css"] = runtimeHash("SYNTHETIC changed shared CSS");
+    expect([first, second]).toEqual(expected);
+    expect(Reflect.set(first.files, "app/shared.tsx", runtimeHash("SYNTHETIC first route mutation"))).toBe(false);
+    expect([first, second]).toEqual(expected);
+    expect(bootstrap()).toBe(serialized);
+    expect(isCurrentRegisteredRouteSourceEvidence(first, registry, f.route, f.materialization.digest)).toBe(true);
+    expect(isCurrentRegisteredRouteSourceEvidence(second, registry, other)).toBe(true);
+  }, 60_000);
+
   it("server bootstrap is plain JSON of Node-verified evidence only", () => {
     const f = serverSide();
     expect(f.bootstrap).toEqual(f.wire);

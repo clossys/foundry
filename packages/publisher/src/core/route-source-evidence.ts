@@ -10,7 +10,14 @@ const verified = new WeakSet<object>();
  * they satisfy only the live browser route gate, never a Node, lifecycle or bootstrap path. */
 const rematerialized = new WeakSet<object>();
 export function recordRegisteredRouteSourceEvidence(registry: RouteRegistry, route: RouteRegistration, identity: RegisteredRouteSourceEvidence["identity"], files: RegisteredRouteSourceEvidence["files"], planDigest?: string, styling?: RegisteredRouteSourceEvidence["styling"], materialization?: string): RegisteredRouteSourceEvidence {
-  const evidence = Object.freeze({ routeId: route.routeId, registry: routeRegistryDigest(registry), composition: routeCompositionDigest(route), identity, files, ...(planDigest ? { planDigest } : {}), ...(styling ? { styling } : {}), ...(materialization ? { materialization } : {}) });
+  const evidence = Object.freeze({
+    routeId: route.routeId, registry: routeRegistryDigest(registry), composition: routeCompositionDigest(route),
+    identity: Object.freeze({ kind: identity.kind, head: identity.head, tree: identity.tree }),
+    files: Object.freeze({ ...files }),
+    ...(planDigest ? { planDigest } : {}),
+    ...(styling ? { styling: Object.freeze({ profile: styling.profile, manifest: styling.manifest, css: Object.freeze({ ...styling.css }) }) } : {}),
+    ...(materialization ? { materialization } : {}),
+  });
   verified.add(evidence);
   return evidence;
 }
