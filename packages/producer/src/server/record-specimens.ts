@@ -2,14 +2,8 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { recordSpecimenInput, type RecordSpecimenInput } from './slot-gallery.js';
 
-export const RECORD_SPECIMEN_THEME_HEADER = 'x-clossys-record-theme';
-export const RECORD_SPECIMEN_WIDTH_HEADER = 'x-clossys-record-width';
-
-/** Canonical viewport defaults shared by the direct transport and Studio host. */
-export function recordSpecimenViewport(params: URLSearchParams): { width: 375 | 768 | 1280; theme: 'light' | 'dark' } {
-  const width = Number(params.get('width'));
-  return { width: width === 375 || width === 768 ? width : 1280, theme: params.get('theme') === 'dark' ? 'dark' : 'light' };
-}
+import { recordSpecimenViewport } from './record-specimen-viewport.js';
+export { RECORD_SPECIMEN_THEME_HEADER, RECORD_SPECIMEN_WIDTH_HEADER, recordSpecimenViewport } from './record-specimen-viewport.js';
 
 export interface RecordSpecimenRenderer {
   (input: RecordSpecimenInput, viewport: { width: 375 | 768 | 1280; theme: 'light' | 'dark' }): string | Promise<string>;

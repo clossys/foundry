@@ -1,5 +1,5 @@
 import { headers } from 'next/headers';
-import { RECORD_SPECIMEN_THEME_HEADER, RECORD_SPECIMEN_WIDTH_HEADER } from '../../src/server/record-specimens';
+import { RECORD_SPECIMEN_THEME_HEADER, RECORD_SPECIMEN_WIDTH_HEADER } from '../../src/server/record-specimen-viewport';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
