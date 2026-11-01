@@ -11,7 +11,13 @@ const text = (value: unknown): string => typeof value === 'string' ? value : JSO
 export function detailStrings(content: string): { key: string; text: string }[] {
   const rows: { key: string; text: string }[] = [];
   let locale = '', key = '', lines: string[] = [];
-  const flush = () => { if (key) rows.push({ key: locale ? `${locale}/${key}` : key, text: lines.join('\n').trim() }); lines = []; };
+  const flush = () => {
+    // Markdown record separators are blank lines; spaces inside a string are content.
+    while (lines[0] === '') lines.shift();
+    while (lines.at(-1) === '') lines.pop();
+    if (key) rows.push({ key: locale ? `${locale}/${key}` : key, text: lines.join('\n') });
+    lines = [];
+  };
   for (const line of content.split('\n')) {
     if (line.startsWith('## ')) { flush(); key = ''; locale = line.slice(3); }
     else if (line.startsWith('### ')) { flush(); key = line.slice(4); }
@@ -29,7 +35,7 @@ function candidateRows(candidate: DetailCandidate, writer: boolean) {
 export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 'light' | 'dark'): Record<string, unknown> {
   const shown = detail.candidates.find(candidate => candidate.name === detail.shown);
   const pinned = !!shown?.pinned;
-  const statusLabel = !shown ? 'No candidate' : pinned ? 'Pinned' : 'No pin';
+  const statusLabel = !shown ? 'No candidate' : pinned ? 'Pinned' : detail.pin ? 'Pin unavailable' : 'No pin';
   const specimen: SpecimenInput = shown?.specimen ? {
     kind: 'viewports', name: detail.id, title: 'Specimen', description: shown.name,
     specimens: ([375, 768, 1280] as const).map(viewport => ({ viewport,
@@ -77,5 +83,9 @@ export async function loadSlotDetail(agent: string, slug: string, signal: AbortS
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Slot detail could not load (${response.status}).`);
   const value = await response.json();
-  return value.state === 'legacy' ? undefined : value.detail;
+  if (value?.state === 'legacy') return undefined;
+  if (value?.state !== 'ready' || !value.detail || !Array.isArray(value.detail.candidates) || typeof value.detail.id !== 'string') {
+    throw new Error('Slot detail response is invalid.');
+  }
+  return value.detail;
 }

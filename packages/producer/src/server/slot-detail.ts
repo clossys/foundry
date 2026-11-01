@@ -48,7 +48,9 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
         try {
           const { meta: _candidateMeta, ...payload } = JSON.parse(candidate.bytes);
           const { meta: _libraryMeta, ...installed } = JSON.parse(readFileSync(join(consumer, "library", id, element, `v${version}`, file), "utf8"));
-          if (isDeepStrictEqual(payload, installed)) specimen = `${id}/${element}`;
+          const selection = JSON.parse(readFileSync(join(consumer, "selection.json"), "utf8"));
+          const selected = selection.pins?.[id];
+          if (selected?.element === element && version >= selected.version && isDeepStrictEqual(payload, installed)) specimen = `${id}/${element}`;
         } catch { /* No matching render artifact: keep the candidate's content visible. */ }
       }
     }

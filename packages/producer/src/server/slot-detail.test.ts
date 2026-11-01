@@ -2,9 +2,9 @@ import { createHash } from 'node:crypto';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, unlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { slotDetail } from './slot-detail.js';
-import { detailStrings, slotDetailInputs } from '../../studio/lib/slot-detail';
+import { detailStrings, loadSlotDetail, slotDetailInputs } from '../../studio/lib/slot-detail';
 import { serializeFrontmatter } from '../records/slot-model/index.js';
 
 const roots: string[] = [];
@@ -29,7 +29,7 @@ function candidate(dir: string, version: number, value: string) {
   writeFileSync(join(dir, 'candidates', name), bytes);
   return { name, bytes };
 }
-afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
+afterEach(() => { vi.unstubAllGlobals(); for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
 
 describe('slot details', () => {
   it('keeps an empty IA detail available with honest empty sections', () => {
@@ -89,5 +89,39 @@ describe('slot details', () => {
     expect(detailStrings('## en\n### title\n<!-- {"id":"a"} -->\nHello\n## fr\n### title\n<!-- {"id":"b"} -->\nBonjour')).toEqual([
       { key: 'en/title', text: 'Hello' }, { key: 'fr/title', text: 'Bonjour' },
     ]);
+  });
+
+  it('falls back only for an explicit legacy response, never a missing or malformed detail', async () => {
+    const fetch = vi.fn(); vi.stubGlobal('fetch', fetch);
+    const signal = new AbortController().signal;
+    fetch.mockResolvedValueOnce(new Response(JSON.stringify({ state: 'legacy' })));
+    expect(await loadSlotDetail('writer', id, signal)).toBeUndefined();
+    fetch.mockResolvedValueOnce(new Response('', { status: 404 }));
+    expect(await loadSlotDetail('writer', id, signal)).toBeNull();
+    fetch.mockResolvedValueOnce(new Response(JSON.stringify({ state: 'ready' })));
+    await expect(loadSlotDetail('writer', id, signal)).rejects.toThrow('Slot detail response is invalid');
+  });
+
+  it('links all six live viewports only to a matching library artifact', () => {
+    const { root } = fixture();
+    const consumer = join(root, 'clossys');
+    const designer = join(consumer, 'agents/designer');
+    const dir = join(designer, 'sections.test/test-records/sections.example');
+    mkdirSync(join(dir, 'candidates'), { recursive: true });
+    writeFileSync(join(designer, 'ia.json'), JSON.stringify({ nodes: [{ id: 'sections.test', label: 'Sections', children: [{ id: 'test-records', label: 'Test records', slots: ['sections.example'] }] }] }));
+    writeFileSync(join(dir, 'slot.json'), JSON.stringify({ id: 'sections.example', kind: 'element', contract: {}, inputs: [], uses: [] }));
+    const item = { name: 'example', type: 'registry:block', files: [{ path: 'index.tsx', type: 'registry:component', content: 'export default function Example() { return null; }' }] };
+    writeFileSync(join(dir, 'candidates/example-v1.json'), JSON.stringify({ ...item, meta: { slot: 'sections.example', source: { kind: 'registry', ref: ['example'] } } }));
+    const library = join(consumer, 'library/sections.example/example/v1'); mkdirSync(library, { recursive: true });
+    writeFileSync(join(library, 'registry-item.json'), JSON.stringify(item));
+    writeFileSync(join(consumer, 'selection.json'), JSON.stringify({ pins: { 'sections.example': { element: 'example', version: 1 } } }));
+    const detail = slotDetail(root, 'designer', 'sections.example')!;
+    const inputs = slotDetailInputs(detail, links, 'dark');
+    expect(inputs.specimen).toMatchObject({ kind: 'viewports', specimens: [375, 768, 1280].map(viewport => ({ viewport,
+      light: `/__specimen?element=sections.example%2Fexample&theme=light&width=${viewport}&v=1`,
+      dark: `/__specimen?element=sections.example%2Fexample&theme=dark&width=${viewport}&v=1`,
+    })) });
+    writeFileSync(join(library, 'registry-item.json'), JSON.stringify({ ...item, files: [] }));
+    expect(slotDetail(root, 'designer', 'sections.example')!.candidates[0]!.specimen).toBeUndefined();
   });
 });
