@@ -7,7 +7,8 @@ import { readFileSync, readSync, writeFileSync, mkdirSync, mkdtempSync, rmSync, 
 import { dirname, join, resolve, isAbsolute, relative } from 'node:path';
 import { tmpdir, userInfo } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { spawnSync } from 'node:child_process';
+import { spawnSync, spawn } from 'node:child_process';
+import { createInterface } from 'node:readline';
 
 export const LIMITS = Object.freeze({ files: 20000, file: 16 * 1024 * 1024, total: 128 * 1024 * 1024, artifact: 180 * 1024 * 1024, message: 32768 });
 export const INPUTS = Object.freeze({ tree: 'scripts/check-public-safety.mjs', message: 'scripts/check-commit-messages.mjs', scope: 'package-scope.json', opaque: 'governance/opaque-content-exemptions.json', exceptions: 'governance/commit-message-history-exceptions.json' });
@@ -346,38 +347,76 @@ function nativeEnv() {
   // Node preload, alternate index, or caller-selected Git configuration.
   return { PATH: `${dirname(process.execPath)}:/usr/bin:/bin`, HOME: userInfo().homedir, LANG: 'C', LC_ALL: 'C', GIT_TERMINAL_PROMPT: '0' };
 }
-function nativeGit(repo, args, ownedIndex) {
-  return spawnSync('/usr/bin/git', ['-C', repo, ...args], { env: { ...nativeEnv(), ...(ownedIndex ? { GIT_INDEX_FILE: ownedIndex } : {}) }, input: '', encoding: null, maxBuffer: 8 * 1024 * 1024, timeout: 120000 });
+function nativeGit(repo, args, ownedIndex, detached, input = '') {
+  return spawnSync('/usr/bin/git', ['-C', repo, ...args], { env: { ...nativeEnv(), ...(ownedIndex ? { GIT_INDEX_FILE: ownedIndex } : {}), ...detached }, input, encoding: null, maxBuffer: 8 * 1024 * 1024, timeout: 120000 });
 }
-function noActiveCommitHooks(repo) {
-  for (const name of ['core.fsmonitor', 'commit.gpgSign']) {
-    const result = nativeGit(repo, ['config', '--bool', '--get', name]);
+function noActiveCommitHooks(repo, detached) {
+  for (const name of ['core.fsmonitor', 'commit.gpgSign', 'extensions.worktreeConfig']) {
+    const result = nativeGit(repo, ['config', '--bool', '--get', name], undefined, detached);
     if (result.status !== 1 && (result.status !== 0 || utf8.decode(result.stdout).trim() !== 'false')) fail('Active native execution configuration requires separate qualification');
   }
-  const configured = nativeGit(repo, ['config', '--path', '--get', 'core.hooksPath']);
+  const configured = nativeGit(repo, ['config', '--path', '--get', 'core.hooksPath'], undefined, detached);
   if (configured.status !== 0 && configured.status !== 1) fail('Cannot resolve native hook configuration');
   let hooks;
   if (configured.status === 0) hooks = resolve(repo, utf8.decode(configured.stdout).trim());
   else {
-    const result = nativeGit(repo, ['rev-parse', '--git-path', 'hooks']);
+    const result = nativeGit(repo, ['rev-parse', '--git-path', 'hooks'], undefined, detached);
     if (!scannerPass(result)) fail('Cannot resolve native hooks');
     hooks = resolve(repo, utf8.decode(result.stdout).trim());
   }
   // Do not run an unknown hook and discover only after commit that it changed
   // qualified bytes. No hook is installed, disabled, replaced or bypassed.
-  for (const name of ['pre-commit', 'prepare-commit-msg', 'commit-msg', 'post-commit', 'post-index-change', 'reference-transaction']) {
+  for (const name of ['pre-commit', 'prepare-commit-msg', 'commit-msg', 'post-commit', 'post-index-change', 'reference-transaction', 'pre-auto-gc']) {
     const path = join(hooks, name);
     if (existsSync(path) && (lstatSync(path).isSymbolicLink() || (lstatSync(path).mode & 0o111))) fail('Active native commit hook requires separate nonmutating qualification');
   }
 }
-export function admitCommit(options) {
+// Native Git's prepared transaction owns HEAD.lock for this entire critical
+// section. Do not create lockfiles ourselves or change the user's HEAD. Branch
+// publication is a separate compare-and-swap while this symbolic binding stays
+// locked: Git rejects combining its implicit HEAD update with symref-verify in
+// one transaction. Requires native update-ref symref transaction support.
+async function holdHead(repo, branch) {
+  const child = spawn('/usr/bin/git', ['-C', repo, 'update-ref', '--stdin'], { env: nativeEnv(), stdio: ['pipe', 'pipe', 'pipe'] });
+  const lines = createInterface({ input: child.stdout })[Symbol.asyncIterator]();
+  child.stderr.resume(); // Native diagnostics can contain private path/identity.
+  child.stdin.on('error', () => {});
+  const closed = new Promise(resolve => { child.once('error', () => resolve(-1)); child.once('close', code => resolve(code)); });
+  let expired;
+  const timeout = new Promise(resolve => { expired = setTimeout(() => { child.kill('SIGKILL'); resolve(-1); }, 120000); });
+  let released;
+  function release() {
+    return released ??= (async () => {
+      child.stdin.end('abort\n');
+      const status = await Promise.race([closed, timeout]);
+      clearTimeout(expired);
+      if (status !== 0) fail('Native HEAD transaction failed; no admission');
+    })();
+  }
+  try {
+    child.stdin.write(`start\noption no-deref\nsymref-verify HEAD ${branch}\nprepare\n`);
+    for (const expected of ['start: ok', 'prepare: ok']) {
+      const line = await Promise.race([lines.next(), timeout]);
+      if (!line || line === -1 || line.done || line.value !== expected) fail('Native HEAD transaction unavailable or binding changed');
+    }
+    return release;
+  } catch (error) {
+    try { await release(); } catch { /* Original refusal is sufficient. */ }
+    throw error;
+  }
+}
+export async function admitCommit(options) {
   const input = loadRemoteInputs(options), { repositoryPath } = options;
   noActiveCommitHooks(repositoryPath);
   if (gitText(repositoryPath, ['rev-parse', `${input.policy.base}^{tree}`]) === input.candidate.tree) fail('No candidate change to commit');
+  const symbolic = nativeGit(repositoryPath, ['symbolic-ref', '--quiet', '--no-recurse', 'HEAD']);
+  const branch = utf8.decode(symbolic.stdout ?? Buffer.alloc(0)).trim();
+  if (!scannerPass(symbolic) || branch.length > 1024 || !/^refs\/heads\/[A-Za-z0-9_./-]+$/.test(branch)) fail('Direct named branch HEAD required');
   const { record } = statePaths(input.policy);
   const state = { version: 1, phase: 'checking', candidateSha256: digest(input.artifact), receiptSha256: digest(input.receipt), base: input.policy.base, tree: input.candidate.tree, checkExit: null, head: null };
   writeFileSync(record, encode(state), { flag: 'wx', mode: 0o600 });
   const scratch = realpathSync(mkdtempSync(join(tmpdir(), 'cloud-candidate-admit-')));
+  let releaseHead;
   try {
     // Required native checks execute only on the uncredentialed consumer, never
     // the trusted signing runner. The receipt adapter has no local denylist.
@@ -393,21 +432,49 @@ export function admitCommit(options) {
     const message = join(scratch, 'message'); writeFileSync(message, input.message, { flag: 'wx', mode: 0o600 });
     // Freeze exact qualified Git objects in a private index; neither a caller's
     // alternate index nor a racing edit of the normal index supplies commit bytes.
-    const ownedIndex = join(scratch, 'index');
-    if (!scannerPass(nativeGit(repositoryPath, ['read-tree', input.candidate.tree], ownedIndex))) fail('Could not freeze qualified tree');
+    const ownedIndex = join(scratch, 'index'), gitDir = join(scratch, 'git');
+    mkdirSync(gitDir, { mode: 0o700 });
+    writeFileSync(join(gitDir, 'HEAD'), `${input.policy.base}\n`, { flag: 'wx', mode: 0o600 });
+    const common = nativeGit(repositoryPath, ['rev-parse', '--path-format=absolute', '--git-common-dir']);
+    if (!scannerPass(common)) fail('Native common Git directory unavailable');
+    const commonPath = realpathSync(utf8.decode(common.stdout).trim());
+    if (!isAbsolute(commonPath) || /[\r\n]/.test(commonPath)) fail('Absolute native common directory required');
+    writeFileSync(join(gitDir, 'commondir'), `${commonPath}\n`, { flag: 'wx', mode: 0o600 });
+    // Supported GIT_DIR/GIT_COMMON_DIR isolate only HEAD/index; objects, native
+    // configuration and hooks remain those of the original repository. No extra
+    // task worktree, checkout, commit-tree, hook override or ref rewrite exists.
+    const detached = { GIT_DIR: gitDir, GIT_COMMON_DIR: commonPath, GIT_WORK_TREE: realpathSync(repositoryPath) };
+    noActiveCommitHooks(repositoryPath, detached);
+    if (!scannerPass(nativeGit(repositoryPath, ['read-tree', input.candidate.tree], ownedIndex, detached))) fail('Could not freeze qualified tree');
     loadRemoteInputs(options);
     noActiveCommitHooks(repositoryPath);
-    const committed = nativeGit(repositoryPath, ['commit', '--cleanup=verbatim', '--file', message], ownedIndex);
+    releaseHead = await holdHead(repositoryPath, branch);
+    // Revalidate after acquiring the binding lock: a check child or another
+    // native Git process may have moved the branch before preparation.
+    loadRemoteInputs(options);
+    noActiveCommitHooks(repositoryPath, detached);
+    const committed = nativeGit(repositoryPath, ['commit', '--cleanup=verbatim', '--file', message], ownedIndex, detached);
     if (!scannerPass(committed)) fail('Native commit failed; receipt consumed');
-    const head = gitText(repositoryPath, ['rev-parse', 'HEAD']);
+    const frozenHead = nativeGit(repositoryPath, ['rev-parse', '--verify', 'HEAD'], ownedIndex, detached);
+    const head = utf8.decode(frozenHead.stdout ?? Buffer.alloc(0)).trim();
+    if (!scannerPass(frozenHead) || !OID.test(head)) fail('Native detached commit unavailable');
     verifyCommitted(input, repositoryPath, head);
+    noActiveCommitHooks(repositoryPath);
+    noActiveCommitHooks(repositoryPath, detached);
+    const published = nativeGit(repositoryPath, ['update-ref', '--no-deref', branch, head, input.policy.base], ownedIndex, detached);
+    if (!scannerPass(published)) fail('Qualified branch changed; no commit admitted');
+    await releaseHead(); releaseHead = undefined;
+    if (gitText(repositoryPath, ['rev-parse', 'HEAD']) !== head) fail('Published HEAD changed; no delivery admitted');
     state.phase = 'committed'; state.head = head;
     writeFileSync(record, encode(state), { mode: 0o600 });
     return { provenance: 'trusted-remote-FULL', admitted: 'commit', head, tree: input.candidate.tree, checkExit: 0 };
   } catch (error) {
     state.phase = 'refused'; writeFileSync(record, encode(state), { mode: 0o600 });
     throw error;
-  } finally { rmSync(scratch, { recursive: true, force: true }); }
+  } finally {
+    try { if (releaseHead) await releaseHead(); }
+    finally { rmSync(scratch, { recursive: true, force: true }); }
+  }
 }
 function verifyCommitted(input, repositoryPath, head) {
   const commit = git(repositoryPath, ['cat-file', 'commit', head]);

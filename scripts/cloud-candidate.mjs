@@ -35,7 +35,7 @@ try {
   if (['remote-check', 'admit-commit', 'admit-delivery'].includes(command)) {
     const o = options(args, ['repository-path', 'artifact', 'receipt', 'message']);
     const input = { repositoryPath: o['repository-path'], artifactPath: o.artifact, receiptPath: o.receipt, messagePath: o.message };
-    outcome = command === 'remote-check' ? remoteGate(input) : command === 'admit-commit' ? admitCommit(input) : admitDelivery(input);
+    outcome = command === 'remote-check' ? remoteGate(input) : command === 'admit-commit' ? await admitCommit(input) : admitDelivery(input);
   } else if (command === 'keygen') {
     const o = options(args, ['repository-path', 'private-key', 'public-key']);
     const parent = realpathSync(dirname(resolve(o['private-key'])));

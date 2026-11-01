@@ -10,13 +10,18 @@ import { exportCandidate, qualifyCandidate, verifyReceipt, digest, encode, engin
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-function fixture(t) {
+function fixture(t, linked = false) {
   const temp = makeTmpDirSync(t, 'cloud-candidate-');
-  const repo = join(temp, 'repository'); mkdirSync(repo);
+  let repo = join(temp, 'repository'); mkdirSync(repo);
   git(repo, 'init', '-q'); git(repo, 'config', 'user.name', 'Fixture'); git(repo, 'config', 'user.email', 'fixture@example.invalid');
   writeFileSync(join(repo, 'readme.txt'), 'safe\n');
   git(repo, 'add', '.'); git(repo, 'commit', '-qm', 'Initial fixture');
   const base = git(repo, 'rev-parse', 'HEAD');
+  if (linked) {
+    const linkedRepo = join(temp, 'linked');
+    git(repo, 'worktree', 'add', '-q', '-b', 'candidate', linkedRepo, base);
+    repo = linkedRepo;
+  }
   const trusted = join(temp, 'trusted'); mkdirSync(trusted);
   const inputs = {};
   for (const [id, path] of Object.entries(INPUTS)) {
@@ -167,8 +172,8 @@ test('CLI requires explicit local artifact and externally pinned policy; writes 
   assert.equal(spawnSync(process.execPath, [cli, 'verify', '--artifact', output, '--receipt', receipt, '--policy', internalPolicy, '--repository-path', f.repo, '--message', message]).status, 2);
 });
 
-async function installedFixture(t, check = 'node -e "process.exit(0)"', transform = source => source) {
-  const f = fixture(t), installation = join(f.temp, 'owner-installation');
+async function installedFixture(t, check = 'node -e "process.exit(0)"', transform = source => source, linked = false) {
+  const f = fixture(t, linked), installation = join(f.temp, 'owner-installation');
   mkdirSync(join(installation, 'lib'), { recursive: true });
   // Isolate the fixed native owner-home binding in a fixture installation. This
   // changes no real home/config and adds no runtime path override to the product.
@@ -195,20 +200,31 @@ async function installedFixture(t, check = 'node -e "process.exit(0)"', transfor
   return { ...f, installation, policy, module, artifact, receipt, artifactPath, receiptPath, messagePath, run };
 }
 
-test('enforced admission runs native checks, freezes exact commit and allows one delivery', async t => {
-  const f = await installedFixture(t);
-  assert.equal(f.run('remote-check').status, 0);
-  const admitted = f.run('admit-commit'); assert.equal(admitted.status, 0, admitted.stderr);
-  const result = JSON.parse(admitted.stdout);
-  assert.equal(result.provenance, 'trusted-remote-FULL'); assert.equal(result.checkExit, 0);
-  assert.equal(git(f.repo, 'rev-parse', 'HEAD^'), f.base);
-  assert.equal(git(f.repo, 'rev-parse', 'HEAD^{tree}'), JSON.parse(f.artifact).tree);
-  assert.equal(execFileSync('git', ['show', '-s', '--format=%B', 'HEAD'], { cwd: f.repo, encoding: 'utf8' }), `${f.message}\n`);
-  assert.equal(f.run('remote-check').status, 2);
-  assert.equal(f.run('admit-commit').status, 2);
-  const delivery = f.run('admit-delivery'); assert.equal(delivery.status, 0, delivery.stderr);
-  assert.equal(JSON.parse(delivery.stdout).pushExecuted, false);
-  assert.equal(f.run('admit-delivery').status, 2);
+test('enforced admission resolves common named branches in ordinary and linked repositories', async t => {
+  for (const linked of [false, true]) {
+    const f = await installedFixture(t, undefined, source => {
+      const marker = "    if (!scannerPass(nativeGit(repositoryPath, ['read-tree',";
+      assert.equal(source.split(marker).length, 2);
+      return source.replace(marker, `    const named = nativeGit(repositoryPath, ['rev-parse', '--verify', branch], ownedIndex, detached);
+    if (!scannerPass(named) || utf8.decode(named.stdout).trim() !== input.policy.base) fail('Native common branch resolution failed');
+    writeFileSync(join(dirname(repositoryPath), 'named-resolution'), utf8.decode(named.stdout).trim());
+` + marker);
+    }, linked);
+    assert.equal(f.run('remote-check').status, 0);
+    const admitted = f.run('admit-commit'); assert.equal(admitted.status, 0, admitted.stderr);
+    assert.equal(readFileSync(join(f.temp, 'named-resolution'), 'utf8'), f.base);
+    const result = JSON.parse(admitted.stdout);
+    assert.equal(result.provenance, 'trusted-remote-FULL'); assert.equal(result.checkExit, 0);
+    assert.equal(git(f.repo, 'rev-parse', 'HEAD^'), f.base);
+    assert.equal(git(f.repo, 'rev-parse', 'HEAD^{tree}'), JSON.parse(f.artifact).tree);
+    assert.equal(execFileSync('git', ['show', '-s', '--format=%B', 'HEAD'], { cwd: f.repo, encoding: 'utf8' }), `${f.message}\n`);
+    assert.equal(f.run('remote-check').status, 2);
+    assert.equal(f.run('admit-commit').status, 2);
+    const delivery = f.run('admit-delivery'); assert.equal(delivery.status, 0, delivery.stderr);
+    assert.equal(JSON.parse(delivery.stdout).pushExecuted, false);
+    assert.equal(f.run('admit-delivery').status, 2);
+    assert.equal(existsSync(`${git(f.repo, 'rev-parse', '--path-format=absolute', '--git-path', 'HEAD')}.lock`), false);
+  }
 });
 
 test('admission rejects actual working mutations, candidate signer, missing checks and hook mutation before commit', async t => {
@@ -284,10 +300,69 @@ test('racing normal-index mutation cannot change frozen qualified commit bytes',
     return source.replace(marker, "    nativeGit(repositoryPath, ['reset', '--quiet', input.policy.base, '--', 'readme.txt']);\n" + marker);
   });
   // The injected race changes only the ordinary index after final verification.
-  // Admission refuses delivery, while any created commit remains exactly qualified.
+  // The private commit remains qualified; no target branch update is published.
   assert.equal(f.run('admit-commit').status, 2);
-  assert.notEqual(git(f.repo, 'rev-parse', 'HEAD'), f.base);
-  assert.equal(git(f.repo, 'rev-parse', 'HEAD^'), f.base);
-  assert.equal(git(f.repo, 'rev-parse', 'HEAD^{tree}'), JSON.parse(f.artifact).tree);
+  assert.equal(git(f.repo, 'rev-parse', 'HEAD'), f.base);
+  assert.equal(existsSync(`${git(f.repo, 'rev-parse', '--path-format=absolute', '--git-path', 'HEAD')}.lock`), false);
   assert.equal(f.run('admit-delivery').status, 2);
+});
+
+
+test('check-child ref movement refuses admission before any consumer commit', async t => {
+  const f = await installedFixture(t, 'git commit --allow-empty -qm "Concurrent fixture"');
+  const branch = git(f.repo, 'symbolic-ref', 'HEAD');
+  assert.equal(f.run('admit-commit').status, 2);
+  const competing = git(f.repo, 'rev-parse', 'HEAD');
+  assert.notEqual(competing, f.base);
+  assert.equal(git(f.repo, 'show', '-s', '--format=%s', competing), 'Concurrent fixture');
+  assert.equal(git(f.repo, 'rev-parse', `${branch}^`), f.base);
+  assert.equal(f.run('admit-delivery').status, 2);
+  assert.equal(existsSync(`${git(f.repo, 'rev-parse', '--path-format=absolute', '--git-path', 'HEAD')}.lock`), false);
+});
+
+test('late native branch race fails CAS without publishing a wrong-parent commit', async t => {
+  for (const linked of [false, true]) {
+  const f = await installedFixture(t, undefined, source => {
+    const marker = '    const published = nativeGit(repositoryPath,';
+    assert.equal(source.split(marker).length, 2);
+    return source.replace(marker, `    const competitor = utf8.decode(readBounded(join(dirname(repositoryPath), 'competing-head'))).trim();
+    const raced = nativeGit(repositoryPath, ['update-ref', '--no-deref', branch, competitor, input.policy.base], ownedIndex, detached);
+    if (!scannerPass(raced)) fail('Fixture competitor could not move branch');
+    writeFileSync(join(dirname(repositoryPath), 'private-head'), head);
+` + marker);
+  }, linked);
+  const tree = git(f.repo, 'rev-parse', `${f.base}^{tree}`);
+  const competitor = execFileSync('git', ['commit-tree', tree, '-p', f.base], { cwd: f.repo, input: 'Competing fixture\n', encoding: 'utf8' }).trim();
+  writeFileSync(join(f.temp, 'competing-head'), competitor);
+  assert.equal(f.run('admit-commit').status, 2);
+  assert.equal(git(f.repo, 'rev-parse', 'HEAD'), competitor);
+  const privateHead = readFileSync(join(f.temp, 'private-head'), 'utf8');
+  assert.equal(git(f.repo, 'rev-parse', `${privateHead}^`), f.base);
+  assert.equal(git(f.repo, 'rev-parse', `${privateHead}^{tree}`), JSON.parse(f.artifact).tree);
+  assert.equal(execFileSync('git', ['cat-file', 'commit', privateHead], { cwd: f.repo, encoding: 'utf8' }).split('\n\n').slice(1).join('\n\n'), f.message);
+  assert.equal(f.run('admit-delivery').status, 2);
+  assert.equal(existsSync(`${git(f.repo, 'rev-parse', '--path-format=absolute', '--git-path', 'HEAD')}.lock`), false);
+  }
+});
+
+test('HEAD retarget before prepare aborts, while prepared native lock blocks retarget', async t => {
+  for (const linked of [false, true]) for (const late of [false, true]) {
+    const f = await installedFixture(t, undefined, source => {
+      const marker = late ? '    const committed = nativeGit(repositoryPath,' : '    releaseHead = await holdHead(repositoryPath, branch);';
+      assert.equal(source.split(marker).length, 2);
+      return source.replace(marker, `    const retarget = nativeGit(repositoryPath, ['symbolic-ref', 'HEAD', 'refs/heads/other']);
+    writeFileSync(join(dirname(repositoryPath), 'retarget-status'), String(retarget.status));
+` + marker);
+    }, linked);
+    git(f.repo, 'branch', 'other', f.base);
+    const original = git(f.repo, 'symbolic-ref', 'HEAD');
+    const admitted = f.run('admit-commit');
+    assert.equal(admitted.status, late ? 0 : 2, admitted.stderr);
+    assert.equal(readFileSync(join(f.temp, 'retarget-status'), 'utf8'), late ? '1' : '0');
+    assert.equal(git(f.repo, 'symbolic-ref', 'HEAD'), late ? original : 'refs/heads/other');
+    assert.equal(git(f.repo, 'rev-parse', 'refs/heads/other'), f.base);
+    if (late) assert.equal(git(f.repo, 'rev-parse', `${original}^`), f.base);
+    else assert.equal(git(f.repo, 'rev-parse', original), f.base);
+    assert.equal(existsSync(`${git(f.repo, 'rev-parse', '--path-format=absolute', '--git-path', 'HEAD')}.lock`), false);
+  }
 });
