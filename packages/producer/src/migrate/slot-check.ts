@@ -18,7 +18,7 @@ import {
 import { listSlots, readiness, slotIndex, type Readiness } from "../records/slots.js";
 import { agentModule } from "../server/cells.js";
 import { cmp, readJsonFile, writerRecords } from "./sources.js";
-import { readOldStores, type OldStores } from "./slots.js";
+import { readOldStores, writerHistoryName, type OldStores } from "./slots.js";
 
 const isDir = (path: string) => { try { const stat = lstatSync(path); return stat.isDirectory() && !stat.isSymbolicLink(); } catch { return false; } };
 const list = (path: string) => isDir(path) ? readdirSync(path).sort(cmp) : [];
@@ -161,6 +161,33 @@ async function compareDesigner(consumer: string, old: OldStores, diff: (message:
 function compareWriter(consumer: string, old: OldStores, diff: (message: string) => void): void {
   const model = modelSlots(consumer, "writer");
   const tuple = (leaf: string, row: { locale: string; key: string; id: unknown; bindings: unknown; text: string }) => JSON.stringify([leaf, row.locale, row.key, row.id, row.bindings ?? [], row.text]);
+  // Compare every source version, including retired versions and records no
+  // longer present in either the active snapshot or the newest draft. Arrays
+  // retain multiplicity, so dropping one of two equal records is detected.
+  for (const cell of old.writer?.cells ?? []) {
+    const expected = new Map<string, string[]>();
+    for (const record of writerRecords(cell.body)) {
+      const leaf = record.meta.leaf;
+      if (typeof leaf !== "string" || !model.has(leaf)) {
+        diff(`${cell.id}@${cell.version}: historical record has no declared Writer slot`);
+        continue;
+      }
+      const rows = expected.get(leaf) ?? [];
+      expected.set(leaf, rows);
+      rows.push(tuple(leaf, { locale: record.locale, key: record.key, id: record.meta.id, bindings: record.meta.bindings, text: record.text }));
+    }
+    for (const [leaf, records] of expected) {
+      const slot = model.get(leaf)!, name = writerHistoryName(cell);
+      if (!slot.candidates.includes(name)) { diff(`${cell.id}@${cell.version}: historical candidate missing from ${leaf}`); continue; }
+      const parsed = parseFrontmatter(readFileSync(join(candidatesDir(slot.dir), name), "utf8"));
+      if (!parsed.ok) { diff(`${cell.id}@${cell.version}: historical candidate unreadable in ${leaf}`); continue; }
+      const refs = [...new Set(Array.isArray(cell.fields.links) ? cell.fields.links.filter((ref): ref is string => typeof ref === "string") : [])].sort(cmp);
+      const source = parsed.value.fields.source as Record<string, unknown> | undefined;
+      if (source?.hash !== sha256Hex(cell.source) || !sameJson(source?.ref, refs)) diff(`${cell.id}@${cell.version}: historical source bytes or references differ in ${leaf}`);
+      const actual = writerRecords(parsed.value.body).map(record => tuple(leaf, { locale: record.locale, key: record.key, id: record.meta.id, bindings: record.meta.bindings, text: record.text }));
+      if (!sameJson(records.sort(cmp), actual.sort(cmp))) diff(`${cell.id}@${cell.version}: historical record bytes or multiplicity differ in ${leaf}`);
+    }
+  }
   const before = new Set<string>(), after = new Set<string>();
   for (const [id, version] of Object.entries(old.writer?.tree.active ?? {})) {
     if (typeof version !== "number") continue;

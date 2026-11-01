@@ -175,6 +175,9 @@ async function planDesigner(consumer: string, store: OldStore | null, library: r
 }
 
 // ---------- Writer ----------
+/** Stable per-source identity; history candidates are never pinned by migration. */
+export const writerHistoryName = (cell: Pick<OldCell, "id" | "version">) => candidateName(`history.${cell.id}`, cell.version, "md");
+
 function stringsBody(locales: string[], records: { locale: string; key: string; id: unknown; bindings: unknown; text: string }[]): string {
   let body = "";
   for (const locale of locales) {
@@ -188,6 +191,31 @@ function stringsBody(locales: string[], records: { locale: string; key: string; 
 function planWriter(consumer: string, store: OldStore | null): AgentPlan {
   const foundry = writerIa();
   const plan = emptyPlan(foundry, "writer", withExtensions("writer", foundry.ia, existingExtensions(consumer, "writer")));
+  // Preserve each source version independently of the active merged snapshot.
+  // A historic record can disappear from the latest version or move between
+  // leaves; taking only active + latest loses those earlier options.
+  for (const cell of store?.cells ?? []) {
+    const leaves = new Map<string, { locales: string[]; records: { locale: string; key: string; id: unknown; bindings: unknown; text: string }[] }>();
+    for (const record of writerRecords(cell.body)) {
+      const leaf = typeof record.meta.leaf === "string" ? record.meta.leaf : undefined;
+      if (!leaf || !plan.slots.has(leaf)) {
+        const id = leaf ?? `${cell.id}#${record.key}`;
+        if (!plan.offIa.includes(id)) plan.offIa.push(id);
+        continue;
+      }
+      const group = leaves.get(leaf) ?? { locales: [], records: [] };
+      leaves.set(leaf, group);
+      if (!group.locales.includes(record.locale)) group.locales.push(record.locale);
+      group.records.push({ locale: record.locale, key: record.key, id: record.meta.id, bindings: record.meta.bindings ?? [], text: record.text });
+    }
+    for (const [leaf, group] of leaves) plan.slots.get(leaf)!.candidates.push({
+      name: writerHistoryName(cell),
+      bytes: serializeFrontmatter({
+        slot: leaf, locales: group.locales,
+        source: sourceFrom(undefined, strings(cell.fields.links), { hash: sha256Hex(cell.source) }),
+      }, stringsBody(group.locales, group.records)),
+    });
+  }
   // D5: one candidate per leaf, merging the active records of every cell. Cells
   // with no active version contribute their latest version to a separate draft.
   const groups = new Map<string, { pinned: boolean; refs: string[]; locales: string[]; records: { locale: string; key: string; id: unknown; bindings: unknown; text: string }[]; updated: string[] }>();
