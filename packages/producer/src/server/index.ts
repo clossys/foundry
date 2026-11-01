@@ -1,3 +1,4 @@
+import { attachStudioUpgrade } from "./studio-upgrade.js";
 import { studioChecks } from './studio-checks.js';
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { once } from "node:events";
@@ -88,8 +89,9 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
   const server = createServer((request, response) => { void handle(request, response).catch(() => {
     if (!response.headersSent) json(response, 500, { error: "Request could not be completed" }); else response.destroy();
   }); });
+  const closeUpgrades = attachStudioUpgrade(server, { publicPort: () => port, childPort: () => child?.port, token });
   const close = (): Promise<void> => closing ??= (async () => {
-    aborter.abort(); stopWatch?.();
+    aborter.abort(); stopWatch?.(); closeUpgrades();
     for (const stream of streams) stream.end(); streams.clear();
     if (options.handleSignals !== false) { process.off("SIGINT", onSignal); process.off("SIGTERM", onSignal); }
     const stopServer = server.listening ? new Promise<void>(resolve => {
