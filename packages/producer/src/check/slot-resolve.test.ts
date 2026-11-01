@@ -101,7 +101,9 @@ describe("default native model enforcement", () => {
       expect(report.slots.rows).toHaveLength(4);
       expect(report.suites.suites).toMatchObject([{ suite: "ref-verbatim", exitCode: 0 }]);
       expect(report.slots.coverage.map((row: any) => [row.agent, row.slots, row.withCandidate, row.pinned])).toEqual(["director", "designer", "writer", "publisher"].map(agent => [agent, 1, 1, 1]));
-      expect(slotResolveSummary(await runSlotResolve(f.consumer), true)).toContain("publisher blocked-by: none");
+      const slots = await runSlotResolve(f.consumer);
+      expect(slots).toMatchObject({ reportOnly: false, exitCode: 0, verdict: "satisfied", findings: [] });
+      expect(slotResolveSummary(slots, true)).toContain("publisher blocked-by: none");
       expect(native(f.consumer, ["--slots", "--strict"]).status).toBe(0);
     } finally { rmSync(f.root, { recursive: true, force: true }); }
   });
@@ -147,16 +149,39 @@ describe("default native model enforcement", () => {
       renameSync(dir, join(parent, "components.synthetic"));
     }, "ia-path"],
   ];
-  it.each(mutations)("mutation proof: %s returns native rc 1", (_name, mutate, code) => {
+  it.each(mutations)("mutation proof: %s returns native rc 1", async (_name, mutate, code) => {
     const f = fixture();
     try {
       expect(native(f.root).status).toBe(0);
       mutate(f.dirs.designer!);
+      const slots = await runSlotResolve(f.consumer);
+      expect(slots).toMatchObject({ reportOnly: false, exitCode: 1, verdict: "violated" });
+      expect(slots.findings).toContainEqual(expect.objectContaining({ rule: code, severity: "error" }));
       const result = native(f.root);
       expect(result.status, result.stderr).toBe(1);
       const report = JSON.parse(result.stdout);
+      expect(report).toMatchObject({ exitCode: 1, verdict: "violated", slots: { exitCode: 1, verdict: "violated" } });
       expect(report.findings.some((row: any) => row.rule === code)).toBe(true);
       expect(report.slots.coverage).toHaveLength(4);
+    } finally { rmSync(f.root, { recursive: true, force: true }); }
+  });
+
+  it.each(["unreadable JSON", "unsupported schema"])("returns rc 2 and error findings for %s model inputs", async input => {
+    const f = fixture();
+    try {
+      const path = join(f.consumer, "agents", "designer", "ia.json");
+      if (input === "unreadable JSON") writeFileSync(path, "{");
+      else save(path, { ...JSON.parse(readFileSync(path, "utf8")), schema: "clossys.ia/unsupported" });
+      const slots = await runSlotResolve(f.consumer);
+      expect(slots).toMatchObject({ reportOnly: false, exitCode: 2, verdict: "indeterminate" });
+      expect(slots.findings).toContainEqual(expect.objectContaining({ rule: "schema", severity: "error", message: "Slot model inputs could not be read or validated." }));
+      for (const flags of [[], ["--slots", "--strict"]]) {
+        const result = native(f.root, flags);
+        expect(result.status, result.stderr).toBe(2);
+        const report = JSON.parse(result.stdout);
+        expect(report).toMatchObject({ exitCode: 2, verdict: "indeterminate", slots: { reportOnly: false, exitCode: 2, verdict: "indeterminate" } });
+        expect(report.findings).toEqual(expect.arrayContaining(slots.findings));
+      }
     } finally { rmSync(f.root, { recursive: true, force: true }); }
   });
 
@@ -182,7 +207,14 @@ describe("default native model enforcement", () => {
       const path = join(f.dirs.designer!, "candidates", "sample-v1.json");
       const target = join(f.root, "alias-target.json");
       renameSync(path, target); symlinkSync(target, path);
-      expect(await runSlotResolve(f.consumer)).toMatchObject({ reportOnly: false, exitCode: 1, verdict: "indeterminate" });
+      const slots = await runSlotResolve(f.consumer);
+      expect(slots).toMatchObject({ reportOnly: false, exitCode: 2, verdict: "indeterminate" });
+      expect(slots.findings).toContainEqual(expect.objectContaining({ rule: "schema", severity: "error" }));
+      const result = native(f.root);
+      expect(result.status, result.stderr).toBe(2);
+      const report = JSON.parse(result.stdout);
+      expect(report).toMatchObject({ exitCode: 2, verdict: "indeterminate", slots: { reportOnly: false, exitCode: 2, verdict: "indeterminate" } });
+      expect(report.findings).toEqual(expect.arrayContaining(slots.findings));
       rmSync(join(f.consumer, "agents"), { recursive: true, force: true });
       mkdirSync(join(f.consumer, "library")); save(join(f.consumer, "selection.json"), { pins: {} });
       expect(native(f.root).status).toBe(1);
