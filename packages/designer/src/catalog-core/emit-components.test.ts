@@ -117,7 +117,7 @@ describe("SYNTHETIC component code generation; no shipped conformance claims", (
     expect(() => assertComponentImportClosure(file('import * as React from "react";'), {})).toThrow(/unsupported import syntax/);
     expect(() => assertComponentImportClosure([...file('import * as Parts from "../_parts/utils/index.js";'), { path: "components/_parts/utils/index.ts", content: "export function cn() {}" }], { react: [] })).toThrow(/unsupported import syntax/);
     expect(() => assertComponentImportClosure(file('import React from "react";'), { react: [] })).toThrow(/unsupported import syntax/);
-    expect(() => assertComponentImportClosure(file('import * as React, { useState } from "react";'), { react: ["useState"] })).toThrow(/unsupported import syntax/);
+    expect(() => assertComponentImportClosure(file('import * as React, { useState } from "react";'), { react: ["useState"] })).toThrow(/unsupported namespace import syntax/);
   });
   it("closes React context and hook namespace members against observed runtime exports", () => {
     const source = 'import * as R from "react"; type Props = R.ComponentProps<"div">; const Context = R.createContext(null); function Part() { return R.useContext(Context); }';
@@ -385,7 +385,7 @@ describe("real source materialization requires an authenticated bundle", () => {
     const input = synthetic();
     const report = componentMaterializationReport({ ...input.catalog, fills });
     expect(stableStringify(report)).toBe(golden("real-blocked.json", stableStringify(report)));
-    expect(report.blockedCount).toBe(0); expect(report.descriptorCount).toBe(34);
+    expect(report.blockedCount).toBe(0); expect(report.descriptorCount).toBe(35);
     expect(report.runtimeConformance).toBe("unassessed");
     const adopt = (slot: string) => {
       const catalog = { ...input.catalog, slots: [{ ...input.catalog.slots[0]!, id: slot }], fills };
