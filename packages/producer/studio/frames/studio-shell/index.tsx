@@ -7,7 +7,7 @@ import type { ContentMapCommandGroup, ContentMapNavigation } from '@clossys/publ
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, Button,
   CommandDialog, Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut,
-  PopoverDescription, PopoverHeader, PopoverTitle, ScrollArea, Separator,
+  PopoverDescription, PopoverHeader, PopoverTitle, ScrollArea, HeaderEdgeToggle,
   ResizablePanel, ResizablePanelGroup, ResizableHandle, SidebarInset, SidebarProvider, SidebarTrigger,
   useSidebar,
 } from '@clossys/designer-ui';
@@ -273,11 +273,9 @@ export default function StudioShellFrame({ navigation, commands, breadcrumbs, po
     <SidebarInset className="h-full min-h-0 min-w-0 overflow-hidden">
       <header className="sticky top-0 flex h-14 shrink-0 items-center gap-2 bg-background">
         <div className="flex flex-1 items-center gap-2 px-3">
-          <HeaderTooltip label="Toggle Sidebar"><SidebarTrigger data-panel-toggle="left" /></HeaderTooltip>
-          <Separator
-            orientation="vertical"
-            className="mr-2 aria-[orientation=vertical]:h-4 aria-[orientation=vertical]:self-auto"
-          />
+          <HeaderEdgeToggle>
+            <HeaderTooltip label="Toggle Sidebar"><SidebarTrigger data-panel-toggle="left" /></HeaderTooltip>
+          </HeaderEdgeToggle>
           <Breadcrumb>
             <BreadcrumbList>
               {breadcrumbs.map((crumb, index) => index < breadcrumbs.length - 1
@@ -306,11 +304,9 @@ export default function StudioShellFrame({ navigation, commands, breadcrumbs, po
           onClick={() => setMode(resolved === 'dark' ? 'light' : 'dark')}>
           {resolved === 'dark' ? <SunIcon /> : <MoonIcon />}
         </HeaderIconButton>
-        <Separator
-          orientation="vertical"
-          className="aria-[orientation=vertical]:h-4 aria-[orientation=vertical]:self-auto"
-        />
-        <HeaderIconButton label="Toggle chat" aria-pressed={wide ? chatOpen : chatSheet} data-panel-toggle="chat" onClick={toggleChat}><PanelRightIcon /></HeaderIconButton>
+        <HeaderEdgeToggle separatorFirst>
+          <HeaderIconButton label="Toggle chat" aria-pressed={wide ? chatOpen : chatSheet} data-panel-toggle="chat" onClick={toggleChat}><PanelRightIcon /></HeaderIconButton>
+        </HeaderEdgeToggle>
         </div>
       </header>
       <main id="studio-main" data-body={body} className="@container/main flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-x-hidden overflow-y-auto overscroll-contain p-4 md:p-6 *:shrink-0">
