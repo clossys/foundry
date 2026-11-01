@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { ADMIN_STUDIO_COPY_EN } from "@clossys/writer/admin-studio";
 import { ADMIN_WRITER_COPY_EN } from "@clossys/writer/admin-copy";
 import { prepareAdminPageCopyEnvelopes } from "./admin-copy-source.js";
-import common from "../../../../../writer/src/catalog/records/common-labels.r1.en.json" with { type: "json" };
-import pages from "../../../../../writer/src/catalog/records/admin-pages.r1.en.json" with { type: "json" };
+import common from "../../../../writer/src/catalog/records/common-labels.r1.en.json" with { type: "json" };
+import pages from "../../../../writer/src/catalog/records/admin-pages.r1.en.json" with { type: "json" };
 import { createAdminPageCopy } from "./admin-copy.js";
 
 const record = ADMIN_STUDIO_COPY_EN.records.find(row => row.id === "st.7zkxq40fwy")!;
