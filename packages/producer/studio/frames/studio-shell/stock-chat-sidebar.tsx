@@ -26,9 +26,8 @@ export function ChatContent() {
   </>
 }
 
-export function StockChatSidebar() {
-  return <Sidebar collapsible="none" className="sticky top-0 hidden h-svh border-l lg:flex"
-    style={{ "--sidebar-width": "100%" } as CSSProperties} aria-label="Chat" data-panel="chat">
+export function StockChatSidebar(props: ComponentProps<typeof Sidebar>) {
+  return <Sidebar collapsible="none" {...props} aria-label="Chat" data-panel="chat">
     <ChatContent />
   </Sidebar>
 }

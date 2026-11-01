@@ -138,6 +138,7 @@ test('actual shell binds native resizing, shared dividers, container ancestry an
   const themeCalls = [];
   globalThis.__stockFrameTheme = { resolved: 'light', setMode: value => themeCalls.push(value) };
   document.cookie = 'chat_state=true';
+  document.cookie = 'sidebar_state=true';
   const navigation = { tree: [{ id: 'home', label: 'Home', href: '/', icon: 'home' }], activeId: 'home' };
   const view = await mounted(e(Frame, { homeHref: '/', navigation, commands: [], breadcrumbs: [{ id: 'home', label: 'Home' }] }, e('section', { id: 'body' }, 'Body')));
   try {
@@ -146,18 +147,51 @@ test('actual shell binds native resizing, shared dividers, container ancestry an
     assert.equal(separators[0].className.replace('mr-2 ', ''), separators[1].className);
     assert.ok(view.container.querySelector('#body').closest('[class*="@container/main"]'));
     assert.ok(view.container.querySelector('[data-slot="resizable-panel-group"]'));
-    const handle = view.container.querySelector('[data-slot="resizable-handle"]'); assert.ok(handle);
-    assert.equal(handle.getAttribute('role'), 'separator'); assert.equal(handle.getAttribute('aria-label'), 'Resize chat');
+    const handles = [...view.container.querySelectorAll('[data-slot="resizable-handle"]')];
+    assert.deepEqual(handles.map(handle => handle.getAttribute('aria-label')), ['Resize navigation', 'Resize chat']);
+    for (const handle of handles) assert.equal(handle.getAttribute('role'), 'separator');
+    const left = view.container.querySelector('#studio-navigation [data-slot="sidebar"]');
+    const right = view.container.querySelector('#studio-chat [data-slot="sidebar"]');
+    assert.ok(left); assert.ok(right);
+    assert.equal(left.querySelector('[data-sidebar="rail"]'), null, 'the stock resize separator is the only desktop edge handle');
+    assert.equal(left.className, right.className);
+    assert.equal(left.style.getPropertyValue('--sidebar-width'), right.style.getPropertyValue('--sidebar-width'));
+    assert.equal(header.querySelector('[data-panel-toggle="left"]').className, header.querySelector('[data-panel-toggle="chat"]').className);
+    for (const toggle of header.querySelectorAll('[data-panel-toggle]')) assert.equal(toggle.getAttribute('aria-expanded'), 'true');
     assert.ok(view.container.querySelector('#studio-chat [data-panel="chat"]'));
     assert.ok(header.classList.contains('h-14'));
     assert.ok(view.container.querySelector('#studio-chat [data-sidebar="header"]').classList.contains('h-14'), 'page and chat header heights share the qualified native h-14 binding');
     await click(header.querySelector('[data-theme-toggle]')); assert.deepEqual(themeCalls, ['dark']);
     await click(header.querySelector('[data-panel-toggle="chat"]'));
     assert.equal(view.container.querySelector('#studio-chat'), null);
+    assert.equal(view.container.querySelectorAll('[data-slot="resizable-handle"]').length, 1);
+    await click(header.querySelector('[data-panel-toggle="left"]'));
+    assert.equal(view.container.querySelector('#studio-navigation'), null);
     assert.equal(view.container.querySelector('[data-slot="resizable-handle"]'), null);
-  } finally { await view.close(); delete globalThis.__stockFrameTheme; document.cookie = 'chat_state=false'; }
+    for (const toggle of header.querySelectorAll('[data-panel-toggle]')) assert.equal(toggle.getAttribute('aria-expanded'), 'false');
+    await click(header.querySelector('[data-panel-toggle="left"]'));
+    await click(header.querySelector('[data-panel-toggle="chat"]'));
+    assert.ok(view.container.querySelector('#studio-navigation'));
+    assert.ok(view.container.querySelector('#studio-chat'));
+    assert.equal(view.container.querySelectorAll('[data-slot="resizable-handle"]').length, 2);
+  } finally { await view.close(); delete globalThis.__stockFrameTheme; document.cookie = 'chat_state=false'; document.cookie = 'sidebar_state=true'; }
 });
 
+
+
+test('768px navigation remains resizable while chat keeps its existing sheet breakpoint', async () => {
+  const Frame = shellComponent();
+  globalThis.__stockFrameTheme = { resolved: 'light', setMode() {} };
+  document.cookie = 'sidebar_state=true'; document.cookie = 'chat_state=true';
+  const view = await mounted(e(Frame, { homeHref: '/', navigation: { tree: [], activeId: 'home' }, commands: [], breadcrumbs: [] }, 'Body'), 768);
+  try {
+    assert.ok(view.container.querySelector('#studio-navigation'));
+    assert.equal(view.container.querySelector('[aria-label="Resize navigation"]').getAttribute('role'), 'separator');
+    assert.equal(view.container.querySelector('#studio-chat'), null);
+    await click(view.container.querySelector('[data-panel-toggle="chat"]'));
+    assert.ok(document.querySelector('[data-mobile="true"][data-panel="chat"]'));
+  } finally { await view.close(); delete globalThis.__stockFrameTheme; document.cookie = 'chat_state=false'; }
+});
 
 test('prompt action forwards text, substitutes every URL, handles clipboard failure/success and cleans its timer', async () => {
   const Frame = shellComponent();

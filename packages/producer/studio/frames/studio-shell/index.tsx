@@ -1,20 +1,20 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { MoonIcon, PanelRightIcon, SunIcon } from 'lucide-react';
+import { MoonIcon, PanelLeftIcon, PanelRightIcon, SunIcon } from 'lucide-react';
 import type { ContentMapCommandGroup, ContentMapNavigation } from '@clossys/publisher/content-map';
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, Button,
   CommandDialog, Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut,
   PopoverDescription, PopoverHeader, PopoverTitle, ScrollArea, Separator,
-  ResizablePanel, ResizablePanelGroup, ResizableHandle, SidebarInset, SidebarProvider, SidebarTrigger,
+  ResizablePanel, ResizablePanelGroup, ResizableHandle, SidebarInset, SidebarProvider,
   useSidebar,
 } from '@clossys/designer-ui';
 import { studioIcon } from '../../lib/studio-icons';
 import { AppSidebar } from './app-sidebar';
 import { useThemeMode } from '../../components/StudioProviders';
-import { HeaderIconButton, HeaderPopover, HeaderTooltip } from './stock-header-controls';
+import { HeaderIconButton, HeaderPopover } from './stock-header-controls';
 import { StockChatSheet, StockChatSidebar } from './stock-chat-sidebar';
 
 export { PageNotice, type PageNoticeData } from './PageNotice';
@@ -46,6 +46,8 @@ const LEFT_COOKIE = 'sidebar_state';
 const CHAT_COOKIE = 'chat_state';
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 const SPY_OFFSET = 96;
+const SIDEBAR_PANEL = { defaultSize: '16rem', minSize: '16rem', maxSize: '50%', groupResizeBehavior: 'preserve-pixel-size' } as const;
+const DESKTOP_SIDEBAR = { collapsible: 'none' as const, className: 'h-full', style: { '--sidebar-width': '100%' } as CSSProperties };
 
 function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(false);
@@ -144,6 +146,12 @@ function CloseMobileNavigation() {
   return null;
 }
 
+/** Both edge controls use the same stock button and disclosure semantics. */
+function NavigationToggle() {
+  const { toggleSidebar, open, openMobile, isMobile } = useSidebar();
+  return <HeaderIconButton label="Toggle navigation" aria-expanded={isMobile ? openMobile : open} data-panel-toggle="left" onClick={toggleSidebar}><PanelLeftIcon /></HeaderIconButton>;
+}
+
 /** The scroll-spy over the open popover's targets: the part at the top of the page column is active. */
 function useScrollSpy(targets: readonly string[]) {
   const [active, setActive] = useState<string | undefined>(undefined);
@@ -214,6 +222,7 @@ export default function StudioShellFrame({ navigation, commands, breadcrumbs, po
   const { resolved, setMode } = useThemeMode();
   const [searchOpen, setSearchOpen] = useState(false);
   const wide = useMediaQuery('(min-width: 1024px)');
+  const navigationWide = useMediaQuery('(min-width: 768px)');
   const [leftOpen, setLeftOpen] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatSheet, setChatSheet] = useState(false);
@@ -267,13 +276,19 @@ export default function StudioShellFrame({ navigation, commands, breadcrumbs, po
   const context: PopoverContext = { ...(spy.active ? { active: spy.active } : {}), select: spy.select };
   return <SidebarProvider open={leftOpen} onOpenChange={setLeftOpen} className="h-svh overflow-hidden">
     <CloseMobileNavigation />
-    <AppSidebar navigation={navigation} />
+    {!navigationWide && <AppSidebar navigation={navigation} />}
     <ResizablePanelGroup orientation="horizontal" className="min-h-0 min-w-0 flex-1">
+    {navigationWide && leftOpen && <>
+      <ResizablePanel id="studio-navigation" {...SIDEBAR_PANEL}>
+        <AppSidebar navigation={navigation} {...DESKTOP_SIDEBAR} />
+      </ResizablePanel>
+      <ResizableHandle aria-label="Resize navigation" />
+    </>}
     <ResizablePanel id="studio-page">
     <SidebarInset className="h-full min-h-0 min-w-0 overflow-hidden">
       <header className="sticky top-0 flex h-14 shrink-0 items-center gap-2 bg-background">
         <div className="flex flex-1 items-center gap-2 px-3">
-          <HeaderTooltip label="Toggle Sidebar"><SidebarTrigger data-panel-toggle="left" /></HeaderTooltip>
+          <NavigationToggle />
           <Separator
             orientation="vertical"
             className="mr-2 aria-[orientation=vertical]:h-4 aria-[orientation=vertical]:self-auto"
@@ -310,7 +325,7 @@ export default function StudioShellFrame({ navigation, commands, breadcrumbs, po
           orientation="vertical"
           className="aria-[orientation=vertical]:h-4 aria-[orientation=vertical]:self-auto"
         />
-        <HeaderIconButton label="Toggle chat" aria-pressed={wide ? chatOpen : chatSheet} data-panel-toggle="chat" onClick={toggleChat}><PanelRightIcon /></HeaderIconButton>
+        <HeaderIconButton label="Toggle chat" aria-expanded={wide ? chatOpen : chatSheet} data-panel-toggle="chat" onClick={toggleChat}><PanelRightIcon /></HeaderIconButton>
         </div>
       </header>
       <main id="studio-main" data-body={body} className="@container/main flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-x-hidden overflow-y-auto overscroll-contain p-4 md:p-6 *:shrink-0">
@@ -320,8 +335,8 @@ export default function StudioShellFrame({ navigation, commands, breadcrumbs, po
     </ResizablePanel>
     {wide && chatOpen && <>
       <ResizableHandle aria-label="Resize chat" />
-      <ResizablePanel id="studio-chat" defaultSize="16rem" minSize="16rem" maxSize="50%" groupResizeBehavior="preserve-pixel-size">
-        <StockChatSidebar />
+      <ResizablePanel id="studio-chat" {...SIDEBAR_PANEL}>
+        <StockChatSidebar {...DESKTOP_SIDEBAR} />
       </ResizablePanel>
     </>}
     </ResizablePanelGroup>
