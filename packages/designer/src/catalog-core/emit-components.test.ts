@@ -119,6 +119,75 @@ describe("SYNTHETIC component code generation; no shipped conformance claims", (
     expect(() => assertComponentImportClosure(file('import React from "react";'), { react: [] })).toThrow(/unsupported import syntax/);
     expect(() => assertComponentImportClosure(file('import * as React, { useState } from "react";'), { react: ["useState"] })).toThrow(/unsupported import syntax/);
   });
+  it("closes React context and hook namespace members against observed runtime exports", () => {
+    const source = 'import * as R from "react"; type Props = R.ComponentProps<"div">; const Context = R.createContext(null); function Part() { return R.useContext(Context); }';
+    const file = (content = source) => [{ path: "components/context/context.tsx", content }];
+    expect(() => assertComponentImportClosure(file(), { react: ["createContext", "useContext"] })).not.toThrow();
+    for (const names of [[], ["createContext"], ["useContext"]]) expect(() => assertComponentImportClosure(file(), { react: names })).toThrow(/namespace member/);
+    expect(() => assertComponentImportClosure(file(source.replace("import *", "import type *")), { react: ["createContext", "useContext"] })).toThrow(/namespace member/);
+    expect(() => assertComponentImportClosure(file(source.replace("R.useContext", 'R["useContext"]')), { react: ["createContext", "useContext"] })).toThrow(/computed namespace/);
+  });
+  it("requires actual case-sensitive exports for every namespace value, including JSX components", async () => {
+    const observed = { react: Object.keys(await import("react")), "react-dom": Object.keys(await import("react-dom")) };
+    const file = (content: string) => [{ path: "components/context/context.tsx", content }];
+    for (const content of [
+      'import * as UI from "react"; function Part() { return UI.Fragment; }',
+      'import * as UI from "react"; function Part() { return <UI.Fragment />; }',
+      'import * as DOM from "react-dom"; function Part() { return DOM.createPortal(null, document.body); }',
+    ]) expect(() => assertComponentImportClosure(file(content), observed)).not.toThrow();
+    for (const content of [
+      'import * as UI from "react"; function Part() { return UI.Missing; }',
+      'import * as UI from "react"; function Part() { return <UI.Missing />; }',
+      'import * as UI from "react"; function Part() { return UI.fragment; }',
+      'import * as DOM from "react-dom"; function Part() { return DOM.useState(); }',
+    ]) expect(() => assertComponentImportClosure(file(content), observed)).toThrow(/namespace member/);
+    // The same package key with an empty observed surface cannot qualify a member.
+    expect(() => assertComponentImportClosure(file('import * as UI from "react"; const Part = UI.Fragment;'), { react: [] })).toThrow(/namespace member Fragment/);
+  });
+  it.each([
+    'return R["Fragment"];',
+    'return R /* comment */ ["Fragment"];',
+    'return R[key];',
+    'return R /* comment */ ?.Fragment;',
+    'return R.Fragment?.();',
+    'const Alias = R; return Alias.Fragment;',
+    'const { Fragment } = R; return Fragment;',
+    'return R;',
+    'return take(R);',
+    'return { ...R };',
+    String.raw`return \u0052["Fragment"];`,
+    'return `${R[key]}`;',
+  ])("refuses dynamic or escaped namespace access: %s", body => {
+    const content = `import * as R from "react"; function Part() { ${body} }`;
+    expect(() => assertComponentImportClosure([{ path: "components/context/context.tsx", content }], { react: ["Fragment"] })).toThrow(/namespace|secondary/);
+  });
+  it("erases only explicit bounded types and preserves quoted and JSX text", () => {
+    const file = (content: string) => [{ path: "components/context/context.tsx", content: `import * as R from "react"; ${content}` }];
+    for (const content of [
+      'type Props = R.ComponentProps<"div">; function Part({ children }: Props) { return children; }',
+      'function Part({ children }: R.ComponentProps<"div">) { const style = {} as R.CSSProperties; return <div style={style}>R.missing R[key]</div>; }',
+      'const text = "R.missing R[key]"; const template = `R.missing R[key]`; function Part() { return <div title="R.missing">R.missing</div>; }',
+      'const Part = (props: R.ComponentProps<"div">) => props;',
+      'function Part<T extends R.ElementType = R.ElementType>(props: R.ComponentProps<T>) { return null; }',
+    ]) expect(() => assertComponentImportClosure(file(content), { react: [] })).not.toThrow();
+    for (const content of [
+      'type Props = R.ComponentProps<"div">; const value: Props = R.missing();',
+      'function Part(props: R.ComponentProps<"div"> = R.missing()) { return props; }',
+      'function Part(props: R.ComponentProps<"div">) { return R.Missing; }',
+      'type Value = typeof R.Missing;',
+      'const data = { value: R.Missing };',
+      'const text = "/*"; R.missing(); const end = "*/";',
+    ]) expect(() => assertComponentImportClosure(file(content), { react: [] })).toThrow(/namespace member/);
+    expect(() => assertComponentImportClosure([{ path: "components/context/context.tsx", content: 'import type * as R from "react"; type Props = R.ComponentProps<"div">;' }], { react: [] })).not.toThrow();
+    expect(() => assertComponentImportClosure([{ path: "components/context/context.tsx", content: 'import type * as R from "react"; const Part = R.Fragment;' }], { react: ["Fragment"] })).toThrow(/namespace member/);
+    expect(() => assertComponentImportClosure([{ path: "components/context/context.tsx", content: 'const text = "/*"; import * as R from "react"; R.missing(); const end = "*/";' }], { react: [] })).toThrow(/namespace/);
+  });
+  it("checks erased type queries against value exports without admitting runtime access to an erased import", () => {
+    const file = (content: string) => [{ path: "components/context/context.tsx", content: `import type * as R from "react"; ${content}` }];
+    expect(() => assertComponentImportClosure(file("type Part = typeof R.Fragment;"), { react: ["Fragment"] })).not.toThrow();
+    expect(() => assertComponentImportClosure(file("type Part = typeof R.Missing;"), { react: ["Fragment"] })).toThrow(/namespace member Missing/);
+    expect(() => assertComponentImportClosure(file("function Part() { return typeof R.Fragment; }"), { react: ["Fragment"] })).toThrow(/namespace member Fragment/);
+  });
   it("closes named imports and rejects unsupported mapping grammar or unavailable observations", () => {
     expect(() => assertComponentImportClosure([{ path: "components/calendar/calendar.tsx", content: 'import { buttonVariants } from "../button/index.js";' }, { path: "components/button/index.ts", content: 'export { Button } from "test-kit/components";' }], packageExports)).toThrow(/unavailable named import/);
     const profile = packageProfile();
