@@ -42,7 +42,7 @@ describe('slot details', () => {
     expect(detail.shown).toBeUndefined();
     const inputs = slotDetailInputs(detail, links, 'light');
     expect(inputs).toMatchObject({ header: { statusLabel: 'No candidate' }, specimen: { kind: 'record', rows: [], empty: 'No candidate' }, options: { rows: [] }, history: { rows: [] } });
-    expect(inputs.checks).toEqual(expect.arrayContaining([expect.objectContaining({ label: 'Candidate recorded', ok: false })]));
+    expect(inputs.checks).toMatchObject({ rows: expect.arrayContaining([expect.objectContaining({ label: 'Candidate recorded', ok: false })]) });
     expect(slotDetail(root, 'writer', 'passages.unknown')).toBeUndefined();
   });
 
@@ -59,7 +59,8 @@ describe('slot details', () => {
     expect(detail.checks.every(check => check.ok)).toBe(true);
     expect(detail.history).toEqual([expect.objectContaining({ candidate: first.name, commit: 'working-tree' })]);
     const inputs = slotDetailInputs(detail, links, 'dark');
-    expect(inputs.specimen).toMatchObject({ rows: [{ key: 'en/heading', text: full }] });
+    expect(inputs.specimen).toMatchObject({ kind: 'viewports', specimens: [375, 768, 1280].map(viewport => ({ viewport })) });
+    expect(detail.candidates[0]!.content).toContain(full);
     expect(inputs.options).toMatchObject({ rows: [{ pinned: true, preview: { rows: [{ text: full }] } }, { pinned: false, preview: { rows: [{ text: 'An unapproved alternative' }] } }] });
     expect(inputs.references).toMatchObject({ lineage: [expect.objectContaining({ source: '{"kind":"original","ref":[]}' }), expect.anything()] });
   });
@@ -138,6 +139,98 @@ describe('slot details', () => {
     expect(slotDetailInputs(slotDetail(root, 'publisher', id)!, links, 'light', publication)).toMatchObject({ header: { statusLabel: 'No pin' }, specimen: { kind: 'viewports', specimens: [] } });
     unlinkSync(join(dir, 'candidates/example-v1.json'));
     expect(slotDetailInputs(slotDetail(root, 'publisher', id)!, links, 'light', publication).specimen).toMatchObject({ kind: 'record', rows: [], empty: 'No candidate' });
+  });
+
+  it('binds only the native Writer strings pin to all six record iframe variants while preserving source and options', () => {
+    const { root, dir } = fixture();
+    const full = 'First line.\nSecond line.';
+    const first = candidate(dir, 1, full);
+    candidate(dir, 2, 'Newer draft');
+    const pin = { candidate: first.name, sha256: createHash('sha256').update(first.bytes).digest('hex'), pinnedBy: 'owner:synthetic-test-only:writer-viewports', at: '2026-01-01T00:00:00Z' };
+    const doc = JSON.parse(readFileSync(join(dir, 'slot.json'), 'utf8'));
+    const restore = () => {
+      writeFileSync(join(dir, 'slot.json'), JSON.stringify(doc));
+      writeFileSync(join(dir, 'candidates', first.name), first.bytes);
+      writeFileSync(join(dir, 'pin.json'), JSON.stringify(pin));
+    };
+    restore();
+    const detail = slotDetail(root, 'writer', id)!;
+    expect(detail.shown).toBe(first.name);
+    expect(detail.candidates[0]!.content).toContain(full);
+    expect(detail.candidates[1]!.specimenUrl).toBeUndefined();
+    const inputs = slotDetailInputs(detail, links, 'light');
+    expect(inputs.specimen).toMatchObject({ kind: 'viewports', specimens: [375, 768, 1280].map(viewport => ({ viewport,
+      light: `/__specimen?agent=writer&slot=${id}&candidate=copy-v1.md&theme=light&width=${viewport}`,
+      dark: `/__specimen?agent=writer&slot=${id}&candidate=copy-v1.md&theme=dark&width=${viewport}`,
+    })) });
+    expect(inputs.options).toMatchObject({ rows: [{ pinned: true, preview: { rows: [{ text: full }] } }, { pinned: false, preview: { rows: [{ text: 'Newer draft' }] } }] });
+    expect(inputs.contract).toMatchObject({ facts: expect.arrayContaining([{ label: 'purpose', value: 'Example copy' }]) });
+    for (const mutation of [
+      () => unlinkSync(join(dir, 'pin.json')),
+      () => writeFileSync(join(dir, 'pin.json'), '{}'),
+      () => writeFileSync(join(dir, 'pin.json'), JSON.stringify({ ...pin, candidate: 'absent-v1.md' })),
+      () => writeFileSync(join(dir, 'pin.json'), JSON.stringify({ ...pin, sha256: '0'.repeat(64) })),
+      () => writeFileSync(join(dir, 'slot.json'), JSON.stringify({ ...doc, id: 'passages.foreign' })),
+      ...[first.bytes.replace(JSON.stringify(id), JSON.stringify('passages.foreign')), serializeFrontmatter({ slot: id, source: { kind: 'original', ref: [] }, locales: [] }, 'Invalid strings')].map(bytes => () => {
+        writeFileSync(join(dir, 'candidates', first.name), bytes);
+        writeFileSync(join(dir, 'pin.json'), JSON.stringify({ ...pin, sha256: createHash('sha256').update(bytes).digest('hex') }));
+      }),
+    ]) {
+      restore(); mutation();
+      const detail = slotDetail(root, 'writer', id)!;
+      expect(detail.candidates.every(candidate => candidate.specimenUrl === undefined)).toBe(true);
+      expect(slotDetailInputs(detail, links, 'dark')).toMatchObject({ specimen: { kind: 'record', rows: [] }, options: { rows: [{ version: 1 }, { version: 2 }] } });
+    }
+  });
+
+  it('binds only the validated native Director pin to the existing record mount in all six viewport/theme variants', () => {
+    const { root } = fixture();
+    const id = 'context.market.size', agent = join(root, 'clossys/agents/director');
+    const dir = join(agent, 'context/market', id);
+    mkdirSync(join(dir, 'candidates'), { recursive: true });
+    const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic-test-only#director-viewports', extensions: [], nodes: [{ id: 'context', label: 'Context', children: [{ id: 'market', label: 'Market', slots: [id] }] }] };
+    writeFileSync(join(agent, 'ia.json'), JSON.stringify(ia));
+    const doc = { schema: 'clossys.slot/1', id, agent: 'director', ia: slotPositions('director', ia).get(id)!, kind: 'brief', contract: {}, inputs: [], uses: [] };
+    const fields = { slot: id, source: { kind: 'original', ref: [] }, feeds: [], functions: [] };
+    const body = '## Direction\nPinned demand\n## Because\nEvidence\n## Watch\nSignals';
+    const bytes = serializeFrontmatter(fields, body);
+    const pin = { candidate: 'brief-v1.md', sha256: createHash('sha256').update(bytes).digest('hex'), pinnedBy: 'owner:synthetic-test-only:director-viewports', at: '2026-01-01T00:00:00Z' };
+    const restore = () => {
+      writeFileSync(join(dir, 'slot.json'), JSON.stringify(doc));
+      writeFileSync(join(dir, 'candidates/brief-v1.md'), bytes);
+      writeFileSync(join(dir, 'pin.json'), JSON.stringify(pin));
+    };
+    restore();
+    writeFileSync(join(dir, 'candidates/brief-v2.md'), serializeFrontmatter(fields, body.replace('Pinned demand', 'Newer draft')));
+    const detail = slotDetail(root, 'director', id)!;
+    expect(detail.shown).toBe('brief-v1.md');
+    expect(detail.candidates[0]!.issues).toEqual([]);
+    expect(detail.candidates[0]!.specimenUrl).toBe(`/__specimen?agent=director&slot=${id}&candidate=brief-v1.md`);
+    expect(detail.candidates[1]!.specimenUrl).toBeUndefined();
+    const inputs = slotDetailInputs(detail, links, 'dark');
+    expect(inputs.specimen).toMatchObject({ kind: 'viewports', specimens: [375, 768, 1280].map(viewport => ({ viewport,
+      light: `/__specimen?agent=director&slot=${id}&candidate=brief-v1.md&theme=light&width=${viewport}`,
+      dark: `/__specimen?agent=director&slot=${id}&candidate=brief-v1.md&theme=dark&width=${viewport}`,
+    })) });
+    expect(inputs.options).toMatchObject({ rows: [{ label: 'brief-v1.md', pinned: true }, { label: 'brief-v2.md', pinned: false }] });
+    const noPreview = () => {
+      const detail = slotDetail(root, 'director', id)!;
+      expect(detail.candidates.every(candidate => candidate.specimenUrl === undefined)).toBe(true);
+      expect(slotDetailInputs(detail, links, 'light').specimen).toMatchObject({ kind: 'record', rows: [] });
+    };
+    for (const mutation of [
+      () => unlinkSync(join(dir, 'pin.json')),
+      () => writeFileSync(join(dir, 'pin.json'), '{}'),
+      () => writeFileSync(join(dir, 'pin.json'), JSON.stringify({ ...pin, candidate: 'absent-v1.md' })),
+      () => writeFileSync(join(dir, 'pin.json'), JSON.stringify({ ...pin, sha256: '0'.repeat(64) })),
+      () => writeFileSync(join(dir, 'slot.json'), JSON.stringify({ ...doc, id: 'context.foreign' })),
+      () => writeFileSync(join(dir, 'slot.json'), JSON.stringify({ ...doc, ia: { ...doc.ia, order: doc.ia.order + 1 } })),
+      ...[serializeFrontmatter({ ...fields, slot: 'context.foreign' }, body), serializeFrontmatter(fields, '## Direction\nMalformed brief')].map(bytes => () => {
+        writeFileSync(join(dir, 'candidates/brief-v1.md'), bytes);
+        writeFileSync(join(dir, 'pin.json'), JSON.stringify({ ...pin, sha256: createHash('sha256').update(bytes).digest('hex') }));
+      }),
+    ]) { restore(); mutation(); noPreview(); }
+    expect(slotDetail(root, 'director', 'context.unknown')).toBeUndefined();
   });
 
   it('links all six viewports only to the exact canonical pin without any legacy artifact', () => {

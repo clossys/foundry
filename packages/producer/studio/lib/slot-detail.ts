@@ -41,18 +41,19 @@ function candidateRows(candidate: DetailCandidate, writer: boolean) {
 export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 'light' | 'dark', publication?: PublicationResponse): Record<string, unknown> {
   const shown = detail.candidates.find(candidate => candidate.name === detail.shown);
   const pinned = !!shown?.pinned;
+  const recordAgent = detail.agent === 'director' || detail.agent === 'writer';
   const statusLabel = !shown ? studioCopy("studio.no-candidate") : pinned ? studioCopy("studio.pinned") : detail.pin ? studioCopy("studio.pin-unavailable") : studioCopy("studio.no-pin");
-  let specimen: SpecimenInput = shown?.specimen ? {
+  let specimen: SpecimenInput = shown?.specimen || shown?.specimenUrl ? {
     kind: 'viewports', name: detail.id, title: studioCopy("studio.specimen"), description: shown.name,
     specimens: ([375, 768, 1280] as const).map(viewport => ({ viewport,
-      light: specimenHref({ specimen: shown.specimen, version: shown.version }, 'light', viewport)!,
-      dark: specimenHref({ specimen: shown.specimen, version: shown.version }, 'dark', viewport)!,
+      light: shown.specimenUrl ? `${shown.specimenUrl}&${new URLSearchParams({ theme: 'light', width: String(viewport) })}` : specimenHref({ specimen: shown.specimen, version: shown.version }, 'light', viewport)!,
+      dark: shown.specimenUrl ? `${shown.specimenUrl}&${new URLSearchParams({ theme: 'dark', width: String(viewport) })}` : specimenHref({ specimen: shown.specimen, version: shown.version }, 'dark', viewport)!,
     })), empty: studioCopy("studio.no-candidate"),
   } : {
     kind: 'record', name: detail.id, title: detail.agent === 'writer' ? studioCopy("studio.strings") : studioCopy("studio.candidate"),
     description: shown ? shown.name : studioCopy("studio.this-slot-has-no-candidate-yet"),
-    rows: shown ? candidateRows(shown, detail.agent === 'writer').map(row => ({ ...row, label: row.key })) : [],
-    empty: studioCopy("studio.no-candidate"),
+    rows: shown && !recordAgent ? candidateRows(shown, detail.agent === 'writer').map(row => ({ ...row, label: row.key })) : [],
+    empty: recordAgent ? detail.pin ? studioCopy("studio.pin-unavailable") : statusLabel : studioCopy("studio.no-candidate"),
   };
   if (detail.agent === 'publisher' && detail.kind === 'page' && shown) {
     let path: unknown;
