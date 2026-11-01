@@ -103,8 +103,9 @@ test("the committed repository contract passes", () => {
   const result = loadAndEvaluate(repoRoot);
   assert.deepEqual(result.findings, []);
   assert.deepEqual(result.sequence.slice(0, 3), ["advisor", "starter", "controller"]);
-  assert.equal(result.sequence.at(-2), "publisher");
-  assert.equal(result.sequence.at(-1), "influencer");
+  assert.equal(result.sequence.at(-3), "publisher");
+  assert.equal(result.sequence.at(-2), "influencer");
+  assert.equal(result.sequence.at(-1), "producer");
 });
 
 test("the fixture matching the contract and runtime graph passes", () => {
