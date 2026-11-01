@@ -125,7 +125,7 @@ describe('IA-first gallery data', () => {
     expect(total).toBe(['director', 'designer', 'writer', 'publisher'].reduce((sum, agent) => sum + expected(consumer, agent).length, 0));
   });
 
-  it('keeps absent candidates and unpinned candidates distinct, without a mapped detail route', () => {
+  it('keeps Writer slots in IA order but advertises a record iframe only for the intact pin', () => {
     const root = realpathSync(mkdtempSync(join(tmpdir(), 'gallery-slots-')));
     try {
       const dir = join(root, 'agents/writer/strings.copy/copy/strings.label');
@@ -137,7 +137,15 @@ describe('IA-first gallery data', () => {
         ia: slotPositions('writer', ia).get('strings.label')!, kind: 'strings', contract: {}, inputs: [], uses: [],
       } satisfies SlotDoc));
       const cards = () => slotGallery(root, 'writer').sections.flatMap(section => section.cards);
+      const projected = () => agentGalleryLayers({ state: 'ready', agent: 'writer', ...slotGallery(root, 'writer') }, noRoutes).flatMap(layer => layer.groups.flatMap(group => group.cards));
+      const noFrame = () => {
+        expect(cards().map(card => card.id)).toEqual(expected(root, 'writer'));
+        expect(projected().map(card => card.key)).toEqual(expected(root, 'writer'));
+        expect(cards()[0]!.specimenUrl).toBeUndefined();
+        expect(projected()[0]!.specimen).toBeUndefined();
+      };
       expect(cards()).toMatchObject([{ id: 'strings.label', emptyState: 'No candidate', records: 0 }]);
+      noFrame();
       mkdirSync(join(dir, 'candidates'));
       const content = serializeFrontmatter({ slot: 'strings.label', locales: ['en'], source: { kind: 'original', ref: [] } }, '## en\n### greeting\n<!-- {"id":"greeting","bindings":[]} -->\nHello <script> & welcome\n');
       writeFileSync(join(dir, 'candidates/label-v1.md'), content);
@@ -145,12 +153,28 @@ describe('IA-first gallery data', () => {
       expect(recordSpecimenInput(root, 'writer', 'strings.label')?.rows).toEqual([{ key: '0', label: 'en: greeting', text: 'Hello <script> & welcome' }]);
       writeFileSync(join(dir, 'candidates/label-v2.md'), content.replace('Hello <script> & welcome', 'Newer draft'));
       expect(cards()[0]).toMatchObject({ version: 2, candidate: 'label-v2.md', emptyState: 'No pin' });
-      writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: 'label-v1.md', sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:gallery-pin', at: '2026-01-01T00:00:00Z' }));
+      noFrame();
+      expect(projected()[0]!.statusLabel).toBe('No pin');
+      const pin = { candidate: 'label-v1.md', sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:gallery-pin', at: '2026-01-01T00:00:00Z' };
+      writeFileSync(join(dir, 'pin.json'), JSON.stringify(pin));
       expect(cards()[0]).toMatchObject({ status: 'active', candidate: 'label-v1.md', version: 1 });
       expect(recordSpecimenInput(root, 'writer', 'strings.label')?.rows[0]?.text).toBe('Hello <script> & welcome');
       expect(cards()[0]!.emptyState).toBeUndefined();
+      expect(cards()[0]!.specimenUrl).toBe('/__specimen?agent=writer&slot=strings.label&candidate=label-v1.md');
+      const specimen = projected()[0]!.specimen!;
+      expect(specimen).toMatchObject({ kind: 'viewports', specimens: [{ light: cards()[0]!.specimenUrl }] });
+      expect(renderToStaticMarkup(createElement(SpecimenContent, { specimen }))).toContain('candidate=label-v1.md');
+      for (const invalid of [{}, { ...pin, candidate: 'absent-v1.md' }]) {
+        writeFileSync(join(dir, 'pin.json'), JSON.stringify(invalid));
+        noFrame();
+      }
+      // Explicit unpinned record rendering remains available to its existing consumers.
+      writeFileSync(join(dir, 'pin.json'), '{}');
+      expect(recordSpecimenInput(root, 'writer', 'strings.label', 'label-v2.md')?.rows[0]?.text).toBe('Newer draft');
+      writeFileSync(join(dir, 'pin.json'), JSON.stringify(pin));
       writeFileSync(join(dir, 'candidates/label-v1.md'), `${content}changed`);
       expect(cards()[0]).toMatchObject({ status: 'failing', records: 0 });
+      noFrame();
       expect(() => recordSpecimenInput(root, 'writer', 'strings.label')).toThrow('hash mismatch');
     } finally { rmSync(root, { recursive: true, force: true }); }
   });
