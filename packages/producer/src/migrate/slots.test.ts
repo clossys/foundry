@@ -9,7 +9,7 @@ import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { listSlots, readiness, slotIndex, usedBy } from "../records/slots.js";
-import { candidatesDir, pinFile, slotFile } from "../records/slot-model/index.js";
+import { candidatesDir, parseFrontmatter, pinFile, slotFile } from "../records/slot-model/index.js";
 import { inventory } from "../server/cells.js";
 import { checkSlotModel, compareSlotModel } from "./slot-check.js";
 import { planMigration, writePlan } from "./slots.js";
@@ -81,6 +81,101 @@ describe("clossys migrate slots", () => {
     expect(next.state).toBe("ready");
     expect(next.cells.find(cell => cell.id === "page.about")).toMatchObject({ status: "active", version: 1, fields: { path: "/about" } });
     expect((next.tree as { active: Record<string, number> }).active["page.about"]).toBe(1);
+  });
+
+  describe("Writer source history", () => {
+    const sourcePath = (version: number) => join(consumer, "agents/writer/cells/site.about", `v${version}.md`);
+    const addNewest = () => {
+      const prior = readFileSync(sourcePath(2), "utf8");
+      writeFileSync(sourcePath(3), prior.replace("version: 2", "version: 3").replace("About us", "Newest draft"));
+      return prior;
+    };
+    const historyPath = () => {
+      const slot = listSlots(consumer, "writer").find(entry => entry.id === "strings.common")!;
+      return join(candidatesDir(slot.dir), "history.site.about-v2.md");
+    };
+
+    it("preserves intermediate versions, their source hashes and the existing active pin", async () => {
+      const prior = addNewest();
+      const before = snapshot(join(consumer, "agents/writer/cells"));
+      await migrate();
+      const slot = listSlots(consumer, "writer").find(entry => entry.id === "strings.common")!;
+      expect(slot.candidates).toEqual(expect.arrayContaining(["history.site.about-v1.md", "history.site.about-v2.md", "history.site.about-v3.md", "migrated-v1.md", "draft-v1.md"]));
+      expect(slot.pin?.candidate).toBe("migrated-v1.md");
+      const history = parseFrontmatter(readFileSync(historyPath(), "utf8"));
+      expect(history.ok).toBe(true);
+      if (!history.ok) throw new Error("history candidate did not parse");
+      expect(history.value.body).toContain("About us");
+      expect(history.value.fields.source).toEqual({ kind: "derived", ref: ["director:identity.brand.essence@1"], hash: createHash("sha256").update(prior).digest("hex") });
+      expect(readFileSync(join(candidatesDir(slot.dir), "draft-v1.md"), "utf8")).toContain("Newest draft");
+      expect(snapshot(join(consumer, "agents/writer/cells"))).toEqual(before);
+      expect(checkSlotModel(consumer)).toEqual([]);
+      expect(await compareSlotModel(consumer)).toEqual([]);
+      const after = snapshot(consumer);
+      expect((await migrate()).written).toEqual([]);
+      expect(snapshot(consumer)).toEqual(after);
+    });
+
+    it("adds history on rerun without replacing a consumer's edited candidate or pin", async () => {
+      await migrate();
+      const slot = listSlots(consumer, "writer").find(entry => entry.id === "strings.common")!;
+      const path = join(candidatesDir(slot.dir), "draft-v1.md");
+      const edited = readFileSync(path, "utf8").replace("About us", "Consumer edit");
+      writeFileSync(path, edited);
+      const pin = readFileSync(pinFile(slot.dir), "utf8");
+      addNewest();
+      const result = await migrate();
+      expect(result.kept.some(path => path.endsWith("/draft-v1.md"))).toBe(true);
+      expect(result.written.some(path => path.endsWith("/history.site.about-v3.md"))).toBe(true);
+      expect(readFileSync(path, "utf8")).toBe(edited);
+      expect(readFileSync(pinFile(slot.dir), "utf8")).toBe(pin);
+      expect(await compareSlotModel(consumer)).toEqual([]);
+    });
+
+    it("fails comparison when a historical candidate is removed", async () => {
+      addNewest(); await migrate(); rmSync(historyPath());
+      expect((await compareSlotModel(consumer)).map(row => row.message)).toContain("site.about@2: historical candidate missing from strings.common");
+    });
+
+    it("fails comparison when unpinned history text changes", async () => {
+      addNewest(); await migrate();
+      writeFileSync(historyPath(), readFileSync(historyPath(), "utf8").replace("About us", "About us changed"));
+      expect((await compareSlotModel(consumer)).map(row => row.message)).toContain("site.about@2: historical record bytes or multiplicity differ in strings.common");
+    });
+
+    it("fails comparison when history source evidence changes", async () => {
+      addNewest(); await migrate();
+      const bytes = readFileSync(historyPath(), "utf8");
+      writeFileSync(historyPath(), bytes.replace(/"hash":"[a-f0-9]{64}"/, `"hash":"${"0".repeat(64)}"`));
+      expect((await compareSlotModel(consumer)).map(row => row.message)).toContain("site.about@2: historical source bytes or references differ in strings.common");
+    });
+
+    it("preserves historical locales, Unicode, bindings and repeated records", async () => {
+      addNewest();
+      const prior = readFileSync(sourcePath(2), "utf8");
+      const repeated = '\n### site.about.extra\n<!-- {"id":"st.sample0003","leaf":"strings.common","bindings":[{"target":"sections.hero","kind":"CopyRef","cellId":"sample.extra"}]} -->\nCafé — a second line.\n';
+      writeFileSync(sourcePath(2), prior.replace("locales: [en]", "locales: [en, fr]") + `\n## fr\n${repeated}${repeated}`);
+      await migrate();
+      const bytes = readFileSync(historyPath(), "utf8");
+      expect(bytes.match(/Café — a second line\./g)).toHaveLength(2);
+      const parsed = parseFrontmatter(bytes);
+      expect(parsed.ok && parsed.value.fields.locales).toEqual(["en", "fr"]);
+      expect(bytes).toContain('"cellId":"sample.extra"');
+      expect(await compareSlotModel(consumer)).toEqual([]);
+      const marker = '\n### site.about.extra\n';
+      const first = bytes.indexOf(marker), second = bytes.indexOf(marker, first + 1);
+      writeFileSync(historyPath(), bytes.slice(0, first) + bytes.slice(second));
+      expect((await compareSlotModel(consumer)).map(row => row.message)).toContain("site.about@2: historical record bytes or multiplicity differ in strings.common");
+    });
+
+    it("keeps unknown historical leaves visible as a migration coverage failure", async () => {
+      addNewest();
+      writeFileSync(sourcePath(2), readFileSync(sourcePath(2), "utf8").replaceAll('"leaf":"strings.common"', '"leaf":"strings.unknown"'));
+      const plan = await planMigration(consumer);
+      expect(plan.agents.writer.offIa).toContain("strings.unknown");
+      writePlan(plan);
+      expect((await compareSlotModel(consumer)).map(row => row.message)).toContain("site.about@2: historical record has no declared Writer slot");
+    });
   });
 
   describe("mutation proofs", () => {
