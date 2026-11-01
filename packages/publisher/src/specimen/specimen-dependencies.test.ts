@@ -76,4 +76,26 @@ describe('bounded specimen host dependency envelope', () => {
     expect(result.errors).toEqual([]);
     expect(result.js).toContain('payload authority');
   }, 30_000);
+
+  it('keeps native cycle targets reserved while ordinary alias siblings expand', async () => {
+    const input = record('import { label } from "../../lib/label"; import { addon } from "@/extensions/addon"; export const suffix = "payload authority"; export default function Example() { return <p>{label()}{addon}</p>; }');
+    const envelope = dependencies();
+    envelope.files[0] = { path: 'studio/lib/label.ts', content: 'import { suffix } from "../frames/example/index"; export const label = () => suffix;' };
+    const sibling = (extra: { path: string; content: string }[] = []) => specimenRecordFrom({
+      id: 'addon', version: 1, kind: 'registry:block', contentHash: 'sibling', preview: {},
+      files: [{ path: 'addon.json', content: JSON.stringify({ files: [{ path: 'extensions/addon.ts', content: 'export const addon = "ordinary sibling";' }, ...extra] }) }],
+    });
+    const withSibling = (extra?: { path: string; content: string }[]): SpecimenRecordSource => ({
+      ...source(envelope), read: async id => id === 'addon' ? sibling(extra) : undefined,
+    });
+    const ordinary = await createSpecimenBuilder({ workspace }).build(input, withSibling());
+    expect(ordinary.errors).toEqual([]);
+    expect(ordinary.js).toContain('ordinary sibling');
+    expect(ordinary.js).toContain('payload authority');
+    for (const path of ['studio/frames/example/index.tsx', 'staging/../studio/frames/example/index.tsx', 'index.tsx', 'studio/lib/label.ts']) {
+      const result = await createSpecimenBuilder({ workspace }).build(input, withSibling([{ path, content: 'export const suffix = "sibling override";' }]));
+      expect(result.errors).toContain(`conflicting sibling payload path ${path}`);
+      expect(result.js).toBeUndefined();
+    }
+  }, 30_000);
 });

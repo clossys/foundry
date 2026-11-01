@@ -31,7 +31,7 @@ function studioLocations(record: SpecimenRecord): SpecimenDependencies["location
   for (const file of manifest.files) {
     if (!safePath(file?.path) || !safePath(file?.target) || file.target !== `studio/${layer}/${element}/${file.path}` || paths.has(file.path) || targets.has(file.target)) throw new Error("invalid or conflicting Studio registry target");
     const payload = record.payload.files.filter(payload => payload.path === file.path);
-    if (payload.length !== 1 || typeof file.content !== "string" || payload[0]!.content !== file.content) throw new Error(`Studio registry target differs from payload ${file.path}`);
+    if (payload.length !== 1 || typeof payload[0]!.content !== "string" || (Object.hasOwn(file, "content") && (typeof file.content !== "string" || payload[0]!.content !== file.content))) throw new Error(`Studio registry target differs from payload ${file.path}`);
     paths.add(file.path); targets.add(file.target);
     locations.push({ path: file.path, target: file.target });
   }

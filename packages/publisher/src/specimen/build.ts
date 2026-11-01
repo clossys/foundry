@@ -122,6 +122,7 @@ async function compileCss(sources: readonly { content: string; extension: string
 async function closure(record: SpecimenRecord, source: SpecimenRecordSource | undefined, errors: string[]) {
   const files = new Map<string, string>();
   const locations = new Map<string, string>();
+  const targets = new Set<string>();
   let identity: string | undefined;
   for (const file of record.payload.files) {
     if (!safePath(file.path) || files.has(file.path)) errors.push(`invalid or duplicate payload path ${file.path}`);
@@ -133,7 +134,6 @@ async function closure(record: SpecimenRecord, source: SpecimenRecordSource | un
       identity = dependencies.identity;
       if (typeof identity !== "string" || !identity) throw new Error("host dependencies need an identity");
       // Copy primitive values into owned maps; the source cannot later change a cached build.
-      const targets = new Set<string>();
       for (const { path, target } of dependencies.locations) {
         if (!safePath(path) || !safePath(target) || !files.has(path) || locations.has(path) || targets.has(target) || (files.has(target) && target !== path)) throw new Error(`invalid or conflicting dependency location ${path}`);
         locations.set(path, target); targets.add(target);
@@ -157,7 +157,11 @@ async function closure(record: SpecimenRecord, source: SpecimenRecordSource | un
       const sibling = await source.read(name).catch(() => undefined);
       if (!sibling) { errors.push(`import @/${alias}: no file in the payload and no sibling record ${name}`); continue; }
       for (const file of sibling.payload.files) {
-        const key = posix.normalize(file.path);
+        const key = file.path;
+        if (!safePath(key) || targets.has(key) || (files.has(key) && files.get(key) !== file.content)) {
+          errors.push(`conflicting sibling payload path ${key}`);
+          continue;
+        }
         if (files.has(key)) continue;
         files.set(key, file.content);
         if (CODE.test(key)) pending.push(key);
@@ -181,8 +185,8 @@ function aliasTarget(files: ReadonlyMap<string, string>, alias: string): string 
 function relativeTarget(files: ReadonlyMap<string, string>, nativePaths: ReadonlyMap<string, string>, importer: string, specifier: string): string | undefined {
   const base = posix.normalize(posix.join(posix.dirname(importer), specifier));
   for (const path of [base, ...[".tsx", ".ts", ".jsx", ".js", "/index.tsx", "/index.ts"].map(ext => base + ext)]) {
-    if (files.has(path)) return path;
     if (nativePaths.has(path)) return nativePaths.get(path);
+    if (files.has(path)) return path;
   }
   return undefined;
 }
