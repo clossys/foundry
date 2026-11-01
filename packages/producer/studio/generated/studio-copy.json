@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "a7eb92ccf2e327e5d80ef925a8aaa6d020fbf74aecadb5f8db1f8ee445e7153b",
+  "revision": "b11332ac853980c6a53bf250d2c7be5313326c978302c1bae168b983269f346e",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -995,6 +995,24 @@
       "id": "studio.from-the-record-store-open-a-leaf",
       "text": "{value0} from the record store. Open a leaf for its contract, lineage and versions.",
       "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.first-recorded",
+      "text": "first recorded",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.local-preview",
+      "text": "local preview",
+      "context": "lib/publisher-preview.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.clossys-com-is-set-at-release-promotion",
+      "text": "clossys.com is set at release promotion.",
+      "context": "lib/publisher-preview.ts",
       "status": "draft"
     },
     {

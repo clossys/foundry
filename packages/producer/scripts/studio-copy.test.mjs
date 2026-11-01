@@ -63,6 +63,9 @@ test('Foundry migrated copy resolves counts and current visible wording without 
   assert.equal(resolve({ id: 'studio.page-attention-count', values: { count: 1 } })?.text, '1 item needs attention on this page.');
   assert.equal(resolve({ id: 'studio.page-attention-count', values: { count: 2 } })?.text, '2 items need attention on this page.');
   assert.equal(resolve({ id: 'studio.home' })?.text, 'Home');
+  assert.equal(resolve({ id: 'studio.first-recorded' })?.text, 'first recorded');
+  assert.equal(resolve({ id: 'studio.local-preview' })?.text, 'local preview');
+  assert.equal(resolve({ id: 'studio.clossys-com-is-set-at-release-promotion' })?.text, 'clossys.com is set at release promotion.');
   assert.equal(resolve({ id: 'studio.unknown' }), undefined);
 });
 

@@ -82,5 +82,5 @@ export function publicationStatus(page: PublicationPage) {
 export function siteRoot(publication: object): { root: string; rootNote: string } {
   const origin = (publication as { origin?: unknown }).origin;
   if (typeof origin === 'string' && /^https?:\/\/[^/]+\/?$/.test(origin)) return { root: origin.replace(/\/$/, ''), rootNote: studioCopy("studio.from-the-route-pack-origin") };
-  return { root: 'local preview', rootNote: 'clossys.com is set at release promotion.' };
+  return { root: studioCopy("studio.local-preview"), rootNote: studioCopy("studio.clossys-com-is-set-at-release-promotion") };
 }

@@ -183,7 +183,7 @@ function agentLineage(leaf: AgentLeafRecords): ReferencesInput['lineage'] {
   const versions = [...leaf.history].sort((a, b) => b.version - a.version);
   return versions.map((row, index) => {
     const previous = versions[index + 1];
-    return { key: `v${row.version}`, version: `v${row.version}`, mode: previous ? studioCopy("studio.revises-v", { value0: String(previous.version) }) : 'first recorded', source: studioCopy("studio.record", { value0: String(ADAPTERS[leaf.agent].label), value1: String(row.updated) }) };
+    return { key: `v${row.version}`, version: `v${row.version}`, mode: previous ? studioCopy("studio.revises-v", { value0: String(previous.version) }) : studioCopy("studio.first-recorded"), source: studioCopy("studio.record", { value0: String(ADAPTERS[leaf.agent].label), value1: String(row.updated) }) };
   });
 }
 
