@@ -60,7 +60,17 @@ const ROLES: Readonly<Record<GroupALeaf, (view: ReturnType<typeof within>, conta
   newsletter: (view, container) => { expect(view.getByRole("textbox", { name: new RegExp(S.newsletter.emailLabel) })).toHaveAttribute("type", "email"); expect(view.getByRole("button", { name: S.newsletter.submitLabel })).toBeInTheDocument(); expect(container.querySelector("form")).toHaveAttribute("action", S.newsletter.action); },
   people: view => { expect(view.getAllByRole("listitem")).toHaveLength(S.peopleGrid.people.length); expect(view.getByText(S.peopleGrid.people[0].name)).toBeInTheDocument(); },
   pricing: view => { for (const tier of S.pricing.tiers) expect(view.getByRole("link", { name: tier.cta })).toHaveAttribute("href", `#${tier.id}`); expect(view.getByText(S.pricing.tiers[1]!.price)).toBeInTheDocument(); },
-  testimonials: view => { expect(view.getAllByRole("listitem")).toHaveLength(S.testimonials.items.length); expect(view.getByText(S.testimonials.items[0]!.attributorName)).toBeInTheDocument(); },
+  testimonials: (view, container) => {
+    const rows = view.getAllByRole("listitem");
+    expect(rows).toHaveLength(S.testimonials.items.length);
+    for (const [index, row] of rows.entries()) {
+      const card = row.querySelector(':scope > [data-slot="card"]')!;
+      expect(card).not.toBeNull();
+      expect(card.querySelector('[data-slot="card-content"] > figure blockquote')).toHaveTextContent(S.testimonials.items[index]!.quote as string);
+      expect(card).toHaveTextContent(S.testimonials.items[index]!.attributorName as string);
+    }
+    expect(container.querySelectorAll('[data-slot="card"]')).toHaveLength(rows.length);
+  },
 };
 
 describe("group-a Section runtime renderers", () => {
