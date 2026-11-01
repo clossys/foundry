@@ -29,10 +29,9 @@ it("expands one frame and sections template across slot leaves with flat URLs", 
   expect(pages.every(entry => entry.source === map.entries[0]!.source)).toBe(true);
   expect(projectStaticParams(map)).toEqual([{ slug: ["designer"] }, { slug: ["designer", "hero"] }, { slug: ["designer", "rows"] }]);
 });
-it("projects Agents, agent, current L0-L2 anchors and leaf breadcrumbs", () => {
+it("projects agent and leaf breadcrumbs without grouping labels", () => {
   expect(projectBreadcrumbs(fixture(), "hero").map(row => [row.label, row.href])).toEqual([
-    ["Agents", "/"], ["Designer", "/designer"], ["Structure", "/designer#structure"],
-    ["Layout", "/designer#layout"], ["Grids", "/designer#grids"], ["Hero", "/designer/hero"],
+    ["Designer", "/designer"], ["Hero", "/designer/hero"],
   ]);
 });
 it("indexes agents, group anchors and leaves in cmdk and pinned navigation", () => {
@@ -40,12 +39,12 @@ it("indexes agents, group anchors and leaves in cmdk and pinned navigation", () 
   expect(items.map(item => item.href)).toEqual(["/designer", "/designer#structure", "/designer#layout", "/designer#grids", "/designer/hero", "/designer/rows", "/designer#typography"]);
   expect(projectNavigation(fixture(), "hero").tree[0]?.children?.[0]?.href).toBe("/designer#structure");
 });
-it("keeps leaf URLs stable while regrouping updates breadcrumbs", () => {
+it("keeps leaf URLs and breadcrumbs stable while regrouping", () => {
   const map = mutable();
   const before = projectStaticParams(map);
   map.entries[0].collection.leaves[0].parentId = "typography";
   expect(projectStaticParams(map).map(row => row.slug.join("/")).sort()).toEqual(before.map(row => row.slug.join("/")).sort());
-  expect(projectBreadcrumbs(map, "hero").map(row => row.href)).toEqual(["/", "/designer", "/designer#typography", "/designer/hero"]);
+  expect(projectBreadcrumbs(map, "hero").map(row => row.href)).toEqual(["/designer", "/designer/hero"]);
 });
 it("rejects duplicate leaf slugs per agent", () => {
   const map = mutable();
@@ -85,9 +84,9 @@ it("rejects missing parents, cycles, deep groups and identity or path collisions
   ];
   for (const mutate of mutations) { const map = mutable(); mutate(map); expect(checkContentMap(map)).not.toEqual([]); }
 });
-it("adds Agents for collections without groups", () => {
+it("projects the agent alone for collections without groups", () => {
   const map = mutable(); map.entries[0].collection.groups = []; map.entries[0].collection.leaves = [];
-  expect(projectBreadcrumbs(map, "designer").map(row => row.label)).toEqual(["Agents", "Designer"]);
+  expect(projectBreadcrumbs(map, "designer").map(row => row.label)).toEqual(["Designer"]);
 });
 
 it("projects gallery and leaf routes from the same registered frame template", () => {
