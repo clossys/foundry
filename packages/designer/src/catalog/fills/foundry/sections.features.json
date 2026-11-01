@@ -88,7 +88,7 @@
           },
           {
             "path": "packages/designer/src/blocks/FeatureGrid.tsx",
-            "sha256": "077032706dacb88fb4929b1bdc6cfe08d8a972032fc73cee87bc1791d3d75496"
+            "sha256": "3125e9af4b0a7ace0d4d2ab4003611c580c096f4b7f848012e6efe907deb507a"
           },
           {
             "path": "packages/designer/src/blocks/features/FeatureLayouts.tsx",
