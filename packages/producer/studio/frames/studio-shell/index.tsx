@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { MoonIcon, PanelRightIcon, SunIcon } from 'lucide-react';
 import type { ContentMapCommandGroup, ContentMapNavigation } from '@clossys/publisher/content-map';
@@ -15,7 +15,7 @@ import { studioIcon } from '../../lib/studio-icons';
 import { AppSidebar } from './app-sidebar';
 import { useThemeMode } from '../../components/StudioProviders';
 import { HeaderIconButton, HeaderPopover, HeaderTooltip } from './stock-header-controls';
-import { StockChatSheet, StockChatSidebar } from './stock-chat-sidebar';
+import { ChatContent, StockSidebarSheet, StockChatSidebar } from './stock-chat-sidebar';
 
 export { PageNotice, type PageNoticeData } from './PageNotice';
 
@@ -46,18 +46,6 @@ const LEFT_COOKIE = 'sidebar_state';
 const CHAT_COOKIE = 'chat_state';
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 const SPY_OFFSET = 96;
-
-function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
-  useEffect(() => {
-    const media = window.matchMedia(query);
-    const update = () => setMatches(media.matches);
-    update();
-    media.addEventListener('change', update);
-    return () => media.removeEventListener('change', update);
-  }, [query]);
-  return matches;
-}
 
 const readCookie = (name: string): boolean | undefined => {
   const row = document.cookie.split('; ').find(part => part.startsWith(`${name}=`));
@@ -132,16 +120,16 @@ function CommandMenu({ commands, pageCommands, open, onOpenChange }: { commands:
   </CommandDialog>;
 }
 
-/** The mobile navigation sheet closes once a destination is chosen. */
-function CloseMobileNavigation() {
+/** Desktop navigation and mobile dismissal follow the native Sidebar boundary. */
+function StudioNavigation({ navigation }: { navigation: ContentMapNavigation }) {
   const pathname = usePathname();
-  const { setOpenMobile } = useSidebar();
+  const { isMobile, setOpenMobile } = useSidebar();
   useEffect(() => {
     setOpenMobile(false);
     // The content column is the scroller, so a new page starts at its top.
     document.getElementById('studio-main')?.scrollTo({ top: 0 });
   }, [pathname, setOpenMobile]);
-  return null;
+  return !isMobile ? <AppSidebar navigation={navigation} /> : null;
 }
 
 /** The scroll-spy over the open popover's targets: the part at the top of the page column is active. */
@@ -206,21 +194,29 @@ export interface StudioShellProps {
  * (header, body and right chat) from the adopted shadcn sidebar-15 block.
  * The header's far-left icon toggles the left sidebar, its far-right icon (after a divider) the
  * chat; every other header icon opens its module or action as a popover anchored to it. Open
- * states persist: the sidebars in cookies, the popover in the URL (`?p=`). Below `md` the left
- * sidebar is a sheet, below `lg` the chat is.
+ * states persist: the sidebars in cookies, the popover in the URL (`?p=`). Both sidebars
+ * share one native sheet below the native `md` mobile boundary.
  */
-export default function StudioShellFrame({ navigation, commands, breadcrumbs, popovers = [], body = 'plain', head, children }: StudioShellProps) {
+export default function StudioShellFrame(props: StudioShellProps) {
+  const [leftOpen, setLeftOpen] = useState(true);
+  useEffect(() => { setLeftOpen(readCookie(LEFT_COOKIE) ?? true); }, []);
+  return <StudioAppFrame open={leftOpen} onOpenChange={setLeftOpen} navigation={<StudioNavigation navigation={props.navigation} />}>
+    <StudioShellContent {...props} />
+  </StudioAppFrame>;
+}
+
+function StudioShellContent({ navigation, commands, breadcrumbs, popovers = [], body = 'plain', head, children }: StudioShellProps) {
   const pathname = usePathname();
   const { resolved, setMode } = useThemeMode();
   const [searchOpen, setSearchOpen] = useState(false);
-  const wide = useMediaQuery('(min-width: 1024px)');
-  const [leftOpen, setLeftOpen] = useState(true);
+  const { isMobile, openMobile, setOpenMobile } = useSidebar();
+  const [mobilePanel, setMobilePanel] = useState<'left' | 'chat'>('left');
+  useEffect(() => { if (!openMobile) setMobilePanel('left'); }, [openMobile]);
+  useEffect(() => { setOpenMobile(false); }, [isMobile, setOpenMobile]);
   const [chatOpen, setChatOpen] = useState(false);
-  const [chatSheet, setChatSheet] = useState(false);
   const ids = useMemo(() => popovers.map(spec => spec.id), [popovers]);
   const [open, setOpen] = useState<string | undefined>(undefined);
   useEffect(() => {
-    setLeftOpen(readCookie(LEFT_COOKIE) ?? true);
     setChatOpen(readCookie(CHAT_COOKIE) ?? false);
   }, []);
   useEffect(() => { setOpen(readPopover(ids)); }, [ids.join(','), pathname]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -229,7 +225,11 @@ export default function StudioShellFrame({ navigation, commands, breadcrumbs, po
     setOpen(id);
   }, []);
   const toggleChat = () => {
-    if (!wide) { setChatSheet(value => !value); return; }
+    if (isMobile) {
+      setMobilePanel('chat');
+      setOpenMobile(mobilePanel !== 'chat' || !openMobile);
+      return;
+    }
     setChatOpen(value => { writeCookie(CHAT_COOKIE, !value); return !value; });
   };
 
@@ -265,17 +265,16 @@ export default function StudioShellFrame({ navigation, commands, breadcrumbs, po
   }, [popovers, show]);
 
   const context: PopoverContext = { ...(spy.active ? { active: spy.active } : {}), select: spy.select };
-  return <StudioAppFrame open={leftOpen} onOpenChange={setLeftOpen} navigation={<>
-    <CloseMobileNavigation />
-    <AppSidebar navigation={navigation} />
-  </>}>
-    <StudioPageFrame body={body} head={head} chatOpen={wide && chatOpen} chatResizeLabel="Resize chat"
+  return <>
+    <StudioPageFrame body={body} head={head} chatOpen={!isMobile && chatOpen} chatResizeLabel="Resize chat"
       chat={<StockChatSidebar />}
-      chatSheet={!wide && <StockChatSheet isOpen={chatSheet} onOpenChange={setChatSheet} />}
       header={<>
         <div className="flex flex-1 items-center gap-2 px-3">
           <HeaderEdgeToggle>
-            <HeaderTooltip label="Toggle Sidebar"><SidebarTrigger data-panel-toggle="left" /></HeaderTooltip>
+            <HeaderTooltip label="Toggle Sidebar"><SidebarTrigger data-panel-toggle="left" onPress={() => {
+              setMobilePanel('left');
+              if (isMobile && mobilePanel === 'chat') setOpenMobile(false);
+            }} /></HeaderTooltip>
           </HeaderEdgeToggle>
           <Breadcrumb>
             <BreadcrumbList>
@@ -306,13 +305,16 @@ export default function StudioShellFrame({ navigation, commands, breadcrumbs, po
           {resolved === 'dark' ? <SunIcon /> : <MoonIcon />}
         </HeaderIconButton>
         <HeaderEdgeToggle separatorFirst>
-          <HeaderIconButton label="Toggle chat" aria-pressed={wide ? chatOpen : chatSheet} data-panel-toggle="chat" onClick={toggleChat}><PanelRightIcon /></HeaderIconButton>
+          <HeaderIconButton label="Toggle chat" aria-pressed={isMobile ? openMobile && mobilePanel === 'chat' : chatOpen} data-panel-toggle="chat" onClick={toggleChat}><PanelRightIcon /></HeaderIconButton>
         </HeaderEdgeToggle>
         </div>
       </>}>
       {children}
     </StudioPageFrame>
     <CommandMenu commands={commands} pageCommands={pageCommands} open={searchOpen} onOpenChange={setSearchOpen} />
-  </StudioAppFrame>;
+    {isMobile && <StockSidebarSheet panel={mobilePanel} isOpen={openMobile} onOpenChange={setOpenMobile}>
+      {mobilePanel === 'chat' ? <ChatContent /> : <AppSidebar navigation={navigation} collapsible="none" style={{ '--sidebar-width': '100%' } as CSSProperties} />}
+    </StockSidebarSheet>}
+  </>;
 }
 
