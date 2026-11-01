@@ -432,3 +432,5 @@ export async function installAndBind(options: InstallOptions & Omit<BindOptions,
 
 export { planSite, applySiteNavigation, siteLinkFindings } from "./site.js";
 export type { SitePlan, SitePlanRoute, SiteLink, SiteRoutePack, SiteRoutePackRoute, SiteRouteSlot } from "./site.js";
+export { resolveNativeNextDraft } from "./native-next-draft.js";
+export type { NativeNextDraftCandidate, NativeNextDraftOptions, NativeNextDraftResult } from "./native-next-draft.js";
