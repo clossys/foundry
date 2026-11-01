@@ -1,6 +1,6 @@
 "use client"
 
-import type { ComponentProps, CSSProperties } from "react"
+import type { ComponentProps, CSSProperties, ReactNode } from "react"
 import { MessageSquareIcon, SparklesIcon } from "lucide-react"
 import {
   Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
@@ -27,18 +27,21 @@ export function ChatContent() {
 }
 
 export function StockChatSidebar() {
-  return <Sidebar collapsible="none" className="sticky top-0 hidden h-svh border-l lg:flex"
+  return <Sidebar collapsible="none" className="sticky top-0 hidden h-svh border-l md:flex"
     style={{ "--sidebar-width": "100%" } as CSSProperties} aria-label="Chat" data-panel="chat">
     <ChatContent />
   </Sidebar>
 }
 
 /** The same native Sheet width and content slots as Sidebar's mobile branch. */
-export function StockChatSheet(props: Pick<ComponentProps<typeof Sheet>, "isOpen" | "onOpenChange">) {
-  return <Sheet {...props} side="right" data-sidebar="sidebar" data-slot="sidebar" data-mobile="true" data-panel="chat"
+export function StockSidebarSheet({ panel, children, ...props }: Pick<ComponentProps<typeof Sheet>, "isOpen" | "onOpenChange"> & {
+  panel: "left" | "chat";
+  children: ReactNode;
+}) {
+  return <Sheet {...props} side={panel === "left" ? "left" : "right"} data-sidebar="sidebar" data-slot="sidebar" data-mobile="true" data-panel={panel}
     className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
     style={{ "--sidebar-width": "18rem" } as CSSProperties}>
-    <SheetHeader className="sr-only"><SheetTitle>Chat</SheetTitle><SheetDescription>Ask an agent about the open page.</SheetDescription></SheetHeader>
-    <div className="flex h-full w-full flex-col"><ChatContent /></div>
+    <SheetHeader className="sr-only"><SheetTitle>{panel === "left" ? "Sidebar" : "Chat"}</SheetTitle><SheetDescription>{panel === "left" ? "Displays the mobile sidebar." : "Ask an agent about the open page."}</SheetDescription></SheetHeader>
+    <div className="flex h-full w-full flex-col">{children}</div>
   </Sheet>
 }

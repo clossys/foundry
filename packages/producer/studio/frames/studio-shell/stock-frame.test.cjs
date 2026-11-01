@@ -28,7 +28,7 @@ const output = buildSync({
   stdin: { contents: `
     export {TeamSwitcher} from './team-switcher';
     export {NavUser} from './nav-user';
-    export {StockChatSidebar, StockChatSheet} from './stock-chat-sidebar';
+    export {StockChatSidebar, StockSidebarSheet} from './stock-chat-sidebar';
     export {HeaderPopover} from './stock-header-controls';
     export {SidebarProvider, SidebarTrigger, SidebarRail, Sidebar, SidebarMenuButton, HeaderEdgeToggle, useSidebar} from '@clossys/designer-ui';
   `, resolveDir: __dirname, loader: 'tsx' },
@@ -138,36 +138,96 @@ test('native Trigger calls onPress then toggles only its nearest provider once; 
   } finally { await view.close(); }
 });
 
-test('375px navigation and chat use native sheets with the same 18rem geometry', async () => {
-  const view = await mounted(e(api.SidebarProvider, null, e(api.SidebarTrigger), e(api.Sidebar, null, e('a', { href: '/' }, 'Home'))), 375);
-  let leftWidth;
+test('shared mobile sheet preserves native Sidebar styling, geometry, close CTA and Escape dismissal for either side', async () => {
+  const native = await mounted(e(api.SidebarProvider, null, e(api.SidebarTrigger), e(api.Sidebar, null, 'Navigation')), 375);
+  let expected;
+  const presentation = sheet => ({
+    className: sheet.className,
+    width: sheet.style.getPropertyValue('--sidebar-width'),
+    contentClass: sheet.querySelector('[data-slot="sheet-content"]').className,
+    close: sheet.querySelector('[data-slot="sheet-close"]').outerHTML.replace(/ id="[^"]*"/, ''),
+  });
   try {
-    await click(view.container.querySelector('[data-sidebar="trigger"]'));
-    const sheet = document.querySelector('[data-mobile="true"]'); assert.ok(sheet);
-    leftWidth = sheet.style.getPropertyValue('--sidebar-width'); assert.equal(leftWidth, '18rem');
-    assert.match(sheet.textContent, /Home/);
-  } finally { await view.close(); }
-  const chat = await mounted(e(api.SidebarProvider, null, e(api.StockChatSheet, { isOpen: true, onOpenChange() {} })), 375);
-  try {
-    const sheet = document.querySelector('[data-panel="chat"][data-mobile="true"]'); assert.ok(sheet);
-    assert.equal(sheet.style.getPropertyValue('--sidebar-width'), leftWidth);
-    assert.match(sheet.textContent, /No conversation yet/);
-  } finally { await chat.close(); }
+    await click(native.container.querySelector('[data-sidebar="trigger"]'));
+    expected = presentation(document.querySelector('[data-mobile="true"]'));
+    assert.equal(expected.width, '18rem');
+  } finally { await native.close(); }
+  for (const panel of ['left', 'chat']) {
+    function Harness() {
+      const [open, setOpen] = React.useState(true);
+      return e(api.StockSidebarSheet, { panel, isOpen: open, onOpenChange: setOpen }, panel === 'left' ? 'Navigation' : 'Chat');
+    }
+    const view = await mounted(e(Harness), 375);
+    try {
+      const sheet = document.querySelector('[data-mobile="true"]'); assert.ok(sheet);
+      assert.deepEqual(presentation(sheet), expected);
+      assert.equal(sheet.querySelector('[data-slot="sheet-content"]').getAttribute('data-side'), panel === 'left' ? 'left' : 'right');
+      assert.equal(document.querySelectorAll('[role="dialog"]').length, 1);
+      await act(async () => document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+      assert.equal(document.querySelector('[data-mobile="true"]'), null);
+    } finally { await view.close(); }
+  }
 });
 
-test('Tooltip and Popover share exactly one actual icon button and open its own content', async () => {
+test('375px shell component unit with stubbed navigation shares one native sheet, stock geometry, close CTA and dismissal for navigation/chat', async () => {
+  const Frame = shellComponent();
+  globalThis.__stockFrameTheme = { resolved: 'light', setMode() {} };
+  const navigation = { tree: [{ id: 'home', label: 'Home', href: '/', icon: 'home' }], activeId: 'home' };
+  const view = await mounted(e(Frame, { homeHref: '/', navigation, commands: [], breadcrumbs: [] }, 'Body'), 375);
+  const sheets = () => [...document.querySelectorAll('[data-mobile="true"]')];
+  async function escape() {
+    await act(async () => document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    assert.equal(sheets().length, 0);
+    assert.equal(document.querySelectorAll('[role="dialog"]').length, 0);
+  }
+  try {
+    await click(view.container.querySelector('[data-panel-toggle="left"]'));
+    const nav = sheets()[0]; assert.ok(nav); assert.equal(sheets().length, 1);
+    assert.equal(nav.style.getPropertyValue('--sidebar-width'), '18rem');
+    assert.match(nav.textContent, /Home/);
+    assert.equal(nav.querySelector('[data-mobile]'), null, 'navigation content cannot create a nested mobile sheet');
+    const geometry = nav.querySelector('[data-slot="sheet-content"]').className;
+    const styling = nav.className;
+    const close = nav.querySelector('[data-slot="sheet-close"]').outerHTML.replace(/ id="[^"]*"/, '');
+    await escape();
+    await click(view.container.querySelector('[data-panel-toggle="chat"]'));
+    const chat = sheets()[0]; assert.ok(chat); assert.equal(sheets().length, 1);
+    assert.equal(document.querySelectorAll('[role="dialog"]').length, 1);
+    assert.equal(chat.style.getPropertyValue('--sidebar-width'), '18rem');
+    assert.equal(chat.className, styling);
+    assert.equal(chat.querySelector('[data-slot="sheet-content"]').className, geometry);
+    assert.equal(chat.querySelector('[data-slot="sheet-close"]').outerHTML.replace(/ id="[^"]*"/, ''), close);
+    assert.match(chat.textContent, /No conversation yet/);
+    await escape();
+    await click(view.container.querySelector('[data-panel-toggle="left"]'));
+    // Invoke the other bound trigger while the modal is open to verify the shared state.
+    await click(view.container.querySelector('[data-panel-toggle="chat"]'));
+    assert.equal(sheets().length, 1);
+    assert.equal(sheets()[0].getAttribute('data-panel'), 'chat');
+    assert.equal(document.querySelectorAll('[role="dialog"]').length, 1);
+    await click(view.container.querySelector('[data-panel-toggle="left"]'));
+    assert.equal(sheets().length, 1, 'native left trigger switches from chat with one toggle');
+    assert.equal(sheets()[0].getAttribute('data-panel'), 'left');
+    assert.equal(document.querySelectorAll('[role="dialog"]').length, 1);
+    await escape();
+  } finally { await view.close(); delete globalThis.__stockFrameTheme; }
+});
+
+test('1280px module Popover keeps its body outside the page layout and shares one actual icon button', async () => {
   let open = false;
   function Harness() {
     const [value, setValue] = React.useState(false);
     return e(api.HeaderPopover, { label: 'Outline', 'data-popover-trigger': 'outline', open: value, onOpenChange(value) { open = value; setValue(value); }, content: e('p', null, 'Outline content') }, e('svg'));
   }
-  const view = await mounted(e(Harness));
+  const view = await mounted(e(Harness), 1280);
   try {
     assert.equal(view.container.querySelectorAll('button').length, 1);
     const button = view.container.querySelector('button'); assert.equal(button.getAttribute('aria-label'), 'Outline');
     assert.equal(button.getAttribute('aria-haspopup'), 'dialog');
     await click(button); assert.equal(open, true);
     const content = document.querySelector('[data-popover="outline"]'); assert.ok(content); assert.match(content.textContent, /Outline content/);
+    assert.equal(view.container.contains(content), false, 'opening a module portals its body outside the page layout');
+    assert.equal(view.container.children.length, 1, 'the module adds no column beside its header trigger');
     assert.equal(button.querySelectorAll('button').length, 0);
   } finally { await view.close(); }
 });
@@ -183,14 +243,15 @@ function shellComponent() {
   return load(bundled).default;
 }
 
-test('actual shell binds native resizing, shared dividers, container ancestry and the existing theme setter', async () => {
+for (const width of [768, 1280]) test(`shell component unit with stubbed navigation at ${width}px binds native desktop sidebars, resizing, shared dividers, container ancestry and the existing theme setter`, async () => {
   const Frame = shellComponent();
   const themeCalls = [];
   globalThis.__stockFrameTheme = { resolved: 'light', setMode: value => themeCalls.push(value) };
   document.cookie = 'chat_state=true';
   const navigation = { tree: [{ id: 'home', label: 'Home', href: '/', icon: 'home' }], activeId: 'home' };
-  const view = await mounted(e(Frame, { homeHref: '/', navigation, commands: [], breadcrumbs: [{ id: 'home', label: 'Home' }] }, e('section', { id: 'body' }, 'Body')));
+  const view = await mounted(e(Frame, { homeHref: '/', navigation, commands: [], breadcrumbs: [{ id: 'home', label: 'Home' }] }, e('section', { id: 'body' }, 'Body')), width);
   try {
+    assert.equal(document.querySelector('[data-mobile="true"]'), null, 'both sidebars use desktop behavior at the native md boundary');
     const header = view.container.querySelector('header'); assert.ok(header);
     const separators = [...header.querySelectorAll('[data-slot="separator"]')]; assert.equal(separators.length, 2);
     assert.equal(separators[0].className, separators[1].className, 'both header edges share separator height, alignment and spacing');
