@@ -57,7 +57,13 @@ export function SelectedComponentLeaf({ leaf, parts, componentProps }: { readonl
   }
   const secondary = parts.length === 1 ? componentSecondaryExports(chosen.descriptor, selection.profile.components.files).find(row => row.name === parts[0]) : undefined;
   if (chosen.impl.kind === "source" && parts.length && !secondary) throw new Error(`NEED component selection: undeclared ${leaf}.${parts.join(".")}`);
+  // Package anatomy can be a real named export (NavigationTreeItem), while
+  // Foundry compounds keep their existing static names (NavigationTree.Item).
+  // Only the independently inspected package inventory admits a named value.
+  const packagePart = chosen.impl.kind === "package" && parts.length === 1
+    && selection.profile.components.packageExports[specifier]?.includes(parts[0]!);
   if (secondary) Component = namespace?.[secondary.export];
+  else if (packagePart) Component = namespace && Object.hasOwn(namespace, parts[0]!) ? namespace[parts[0]!] : undefined;
   else for (const part of parts) Component = Component && (typeof Component === "function" || typeof Component === "object") && Object.hasOwn(Component, part) ? (Component as Record<string, unknown>)[part] : undefined;
   if (typeof Component !== "function" && (!Component || typeof Component !== "object" || !("$$typeof" in Component))) throw new Error(`NEED component selection: ${leaf}${parts.length ? `.${parts.join(".")}` : ""}`);
   return createElement(Component as ElementType, nextProps);

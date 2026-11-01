@@ -604,6 +604,26 @@ export const glyphs = {
       }
     ]
   ],
+  "assets.icon-panel-left": [
+    [
+      "rect",
+      {
+        "width": "18",
+        "height": "18",
+        "x": "3",
+        "y": "3",
+        "rx": "2",
+        "key": "afitv7"
+      }
+    ],
+    [
+      "path",
+      {
+        "d": "M9 3v18",
+        "key": "fh3hqa"
+      }
+    ]
+  ],
   "assets.icon-payment": [
     [
       "rect",

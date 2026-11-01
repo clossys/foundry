@@ -1,25 +1,25 @@
 import { createElement, forwardRef, type ComponentType } from "react";
-import { Button as Impl0 } from "../../../index.js";
-import { IconButton as Impl1 } from "../../../index.js";
-const stamp = {"data-ds-layer":"components","data-ds-leaf":"components.button","data-ds-fill":"foundry/components.button"} as const;
+import { Button as Impl0 } from "./button.js";
+export { LinkButton } from "./button.js";
+const stamp = {"data-ds-layer":"components","data-ds-leaf":"components.button","data-ds-fill":"shadcn@aria/components.button"} as const;
 const reactKeys = new Set(["$$typeof", "render", "type", "compare", "displayName", "propTypes", "defaultProps", "contextType", "contextTypes", "childContextTypes", "getDefaultProps", "getDerivedStateFromProps", "getDerivedStateFromError", "mixins", "length", "name", "prototype", "arguments", "caller"]);
 function statics(impl: unknown): Record<string, unknown> {
   const hoisted: Record<string, unknown> = {};
   if (typeof impl === "function" || (typeof impl === "object" && impl !== null)) for (const key of Object.getOwnPropertyNames(impl)) if (!reactKeys.has(key)) hoisted[key] = (impl as Record<string, unknown>)[key];
   return hoisted;
 }
-const targets = { Impl0, Impl1 } satisfies Record<string, ((props: never) => unknown) | (new (props: never) => unknown)>;
+const targets = { Impl0 } satisfies Record<string, ((props: never) => unknown) | (new (props: never) => unknown)>;
 const mappings: Record<string, Record<string, {target: string; property?: string; value?: unknown}>> = {
   "ground": {
     "base": {
-      "target": "Impl0",
-      "property": "ground",
-      "value": "base"
+      "target": "Impl0"
     }
   },
   "shape": {
     "icon-only": {
-      "target": "Impl1"
+      "target": "Impl0",
+      "property": "size",
+      "value": "icon"
     },
     "text": {
       "target": "Impl0"
@@ -34,7 +34,7 @@ const mappings: Record<string, Record<string, {target: string; property?: string
     "md": {
       "target": "Impl0",
       "property": "size",
-      "value": "md"
+      "value": "default"
     },
     "sm": {
       "target": "Impl0",
@@ -53,7 +53,7 @@ const mappings: Record<string, Record<string, {target: string; property?: string
     "danger": {
       "target": "Impl0",
       "property": "variant",
-      "value": "danger"
+      "value": "destructive"
     },
     "ghost": {
       "target": "Impl0",
@@ -68,7 +68,7 @@ const mappings: Record<string, Record<string, {target: string; property?: string
     "primary": {
       "target": "Impl0",
       "property": "variant",
-      "value": "primary"
+      "value": "default"
     },
     "secondary": {
       "target": "Impl0",
