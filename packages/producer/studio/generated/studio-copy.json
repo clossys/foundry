@@ -1,12 +1,84 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "b11332ac853980c6a53bf250d2c7be5313326c978302c1bae168b983269f346e",
+  "revision": "a6f8eb8a59d2e39ecb2902669c43d9ae1461dda475eb88dfdb9f2bd6450a5f8c",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
   },
   "entries": [
+    {
+      "id": "studio.contract-title",
+      "text": "Contract",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-description",
+      "text": "What this leaf promises and reads.",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-facts-label",
+      "text": "Contract facts",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-inputs-label",
+      "text": "Contract inputs",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-fact",
+      "text": "Fact",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-value",
+      "text": "Value",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-input",
+      "text": "Input",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-type",
+      "text": "Type",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-required",
+      "text": "Required",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-yes",
+      "text": "Yes",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-no",
+      "text": "No",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-none",
+      "text": "None",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
     {
       "id": "studio.finding",
       "text": "Finding",

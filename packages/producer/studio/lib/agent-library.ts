@@ -1,3 +1,4 @@
+import { contractCopy } from './contract-copy';
 import { studioCopy } from './studio-copy';
 /**
  * Studio agent library client: the Director, Writer and Publisher galleries and leaves read
@@ -224,7 +225,7 @@ export function agentLeafInputs(leaf: AgentLeafRecords, links: StudioLinks, extr
     statusDetail: leaf.statusDetail, trail: leaf.trail, galleryHref, galleryLabel: studioCopy("studio.agent-library-title", { value0: String(adapter.label) }),
   };
   const checks: CheckRow[] = leaf.checks.map((check, index) => ({ key: `${index}`, label: check.label, ok: check.ok, detail: check.detail ?? '' }));
-  const contract: ContractInput = { facts: leaf.contract.facts, lists: leaf.contract.lists };
+  const contract: ContractInput = { copy: contractCopy(), facts: leaf.contract.facts, lists: leaf.contract.lists };
   const history: HistoryInput = { rows: leaf.history.map(row => ({
     version: row.version, date: row.updated, note: row.note || '—',
     marks: [row.active && studioCopy("studio.active"), STATUS_LABEL[row.status]].filter((mark, index, all): mark is string => Boolean(mark) && all.indexOf(mark) === index),

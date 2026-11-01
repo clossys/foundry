@@ -1,3 +1,4 @@
+import { contractCopy } from './contract-copy';
 import { studioCopy } from './studio-copy';
 /** Gallery previews use the same canonical slot detail projection as the leaf page. */
 import type { SlotDetail } from '../../src/server/slot-detail';
@@ -35,7 +36,7 @@ export async function loadGalleryLeaves(agent: LibraryAgent, cards: readonly Age
 
 /** Preserve the native detail contract and an actually emitted page preview when available. */
 export function galleryLeafInputs(row: GalleryLeaf, links: StudioLinks, theme: 'light' | 'dark', pageUrl?: string): { specimen: SpecimenInput; contract: ContractInput } {
-  if (row.source === 'legacy') return { specimen: agentGalleryPreview(row.leaf, links, pageUrl), contract: row.leaf.contract };
+  if (row.source === 'legacy') return { specimen: agentGalleryPreview(row.leaf, links, pageUrl), contract: { ...row.leaf.contract, copy: contractCopy() } };
   const inputs = slotDetailInputs(row.detail, links, theme);
   const specimen = inputs.specimen as SpecimenInput;
   return {

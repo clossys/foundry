@@ -131,7 +131,7 @@ export async function studioCopyRegistry(clossysRoot) {
   catch (error) { if (error.code !== 'ENOENT') throw error; ia = { nodes: [] }; }
   const entries = [], revisions = [];
   for (const node of ia.nodes) for (const group of node.children) for (const slot of group.slots) {
-    if (!['strings.common', 'strings.statuses', 'strings.descriptions'].includes(slot)) continue;
+    if (!['strings.common', 'strings.statuses', 'strings.descriptions', 'strings.field-labels'].includes(slot)) continue;
     const dir = join(root, node.id, group.id, slot);
     let pin;
     try { pin = JSON.parse(await readFile(join(dir, 'pin.json'), 'utf8')); }

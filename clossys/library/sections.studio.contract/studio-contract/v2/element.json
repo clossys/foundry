@@ -1,0 +1,74 @@
+{
+  "schema": "clossys.element/1",
+  "id": "studio-contract",
+  "package": "producer",
+  "layer": "sections",
+  "slot": "sections.studio.contract",
+  "kind": "registry:block",
+  "lineage": {
+    "mode": "customized",
+    "source": {
+      "registry": "shadcn",
+      "item": "table",
+      "version": "4.23.0",
+      "hash": "sha256:7c761c65cbdd8a04693fbde181016cf3af26590ebc57c1073a47fd6a0e188561",
+      "url": "https://ui.shadcn.com/r/styles/radix-nova/table.json"
+    },
+    "parent": {
+      "version": 1,
+      "hash": "sha256:4cccd0fd1ae6390804388a6b1a3c709bc23d4aba85835b2d668d3e3e2639741d"
+    },
+    "adaptations": [
+      {
+        "kind": "data-binding",
+        "file": "index.tsx",
+        "reason": "Pass existing labels through the contract copy input without changing markup or styling."
+      }
+    ]
+  },
+  "license": {
+    "spdx": "MIT",
+    "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+    "file": "LICENCE.md"
+  },
+  "creator": {
+    "agent": "writer",
+    "model": "UNKNOWN",
+    "by": "studio-contract-copy"
+  },
+  "reason": "Bind the existing Contract section labels through display-ready Writer copy input.",
+  "createdAt": "2026-11-01T16:09:14Z",
+  "checks": [],
+  "deps": {
+    "npm": {},
+    "elements": []
+  },
+  "reads": {
+    "copyKeys": [
+      "studio.contract-title",
+      "studio.contract-description",
+      "studio.contract-facts-label",
+      "studio.contract-inputs-label",
+      "studio.contract-fact",
+      "studio.contract-value",
+      "studio.contract-input",
+      "studio.contract-type",
+      "studio.contract-required",
+      "studio.contract-yes",
+      "studio.contract-no",
+      "studio.contract-none"
+    ],
+    "themeVars": [
+      "--card",
+      "--border",
+      "--muted-foreground"
+    ]
+  },
+  "version": 2,
+  "hash": "sha256:4b19f88c68c98b0555dce70fa4b1cec2fb964eccb6e8bbb2e0112b3abaaa5d19",
+  "payload": [
+    "LICENCE.md",
+    "index.tsx",
+    "registry-item.json"
+  ]
+}

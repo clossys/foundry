@@ -1,3 +1,4 @@
+import { contractCopy } from './contract-copy';
 import { studioCopy } from './studio-copy';
 /**
  * Studio Designer library client: the gallery and leaf read Producer's record-store projection
@@ -141,6 +142,7 @@ export function designerLeafInputs(leaf: DesignerLeaf, theme: 'light' | 'dark', 
     statusDetail: leaf.statusDetail, trail: leaf.trail, galleryHref: links.gallery('designer') ?? '', galleryLabel: studioCopy("studio.designer-library"),
   };
   const contract: ContractInput = {
+    copy: contractCopy(),
     facts: [
       ...(leaf.contract.kind ? [{ label: studioCopy("studio.kind"), value: leaf.contract.kind }] : []),
       ...(leaf.contract.root ? [{ label: studioCopy("studio.root"), value: leaf.contract.root }] : []),
