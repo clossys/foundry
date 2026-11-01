@@ -70,7 +70,7 @@ export function AppSidebar({
       <SidebarFooter>
         <NavUser user={data.user} />
       </SidebarFooter>
-      <SidebarRail />
+      {props.collapsible !== "none" && <SidebarRail />}
     </Sidebar>
   )
 }
