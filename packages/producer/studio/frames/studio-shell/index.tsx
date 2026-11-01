@@ -7,8 +7,8 @@ import type { ContentMapCommandGroup, ContentMapNavigation } from '@clossys/publ
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, Button,
   CommandDialog, Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut,
-  PopoverDescription, PopoverHeader, PopoverTitle, ScrollArea, Separator,
-  ResizablePanel, ResizablePanelGroup, ResizableHandle, SidebarInset, SidebarProvider, SidebarTrigger,
+  PopoverDescription, PopoverHeader, PopoverTitle, ScrollArea, HeaderEdgeToggle,
+  StudioAppFrame, StudioPageFrame, SidebarTrigger,
   useSidebar,
 } from '@clossys/designer-ui';
 import { studioIcon } from '../../lib/studio-icons';
@@ -202,8 +202,8 @@ export interface StudioShellProps {
 }
 
 /**
- * `frames.studio-shell`: the shadcn sidebar-15 block (a left and a right sidebar) as Studio's app
- * shell. The left sidebar is the N1 navigation (sidebar-07 content); the right sidebar is chat.
+ * `frames.studio-shell` composes Designer's app frame (left navigation only) and page frame
+ * (header, body and right chat) from the adopted shadcn sidebar-15 block.
  * The header's far-left icon toggles the left sidebar, its far-right icon (after a divider) the
  * chat; every other header icon opens its module or action as a popover anchored to it. Open
  * states persist: the sidebars in cookies, the popover in the URL (`?p=`). Below `md` the left
@@ -265,19 +265,18 @@ export default function StudioShellFrame({ navigation, commands, breadcrumbs, po
   }, [popovers, show]);
 
   const context: PopoverContext = { ...(spy.active ? { active: spy.active } : {}), select: spy.select };
-  return <SidebarProvider open={leftOpen} onOpenChange={setLeftOpen} className="h-svh overflow-hidden">
+  return <StudioAppFrame open={leftOpen} onOpenChange={setLeftOpen} navigation={<>
     <CloseMobileNavigation />
     <AppSidebar navigation={navigation} />
-    <ResizablePanelGroup orientation="horizontal" className="min-h-0 min-w-0 flex-1">
-    <ResizablePanel id="studio-page">
-    <SidebarInset className="h-full min-h-0 min-w-0 overflow-hidden">
-      <header className="sticky top-0 flex h-14 shrink-0 items-center gap-2 bg-background">
+  </>}>
+    <StudioPageFrame body={body} head={head} chatOpen={wide && chatOpen} chatResizeLabel="Resize chat"
+      chat={<StockChatSidebar />}
+      chatSheet={!wide && <StockChatSheet isOpen={chatSheet} onOpenChange={setChatSheet} />}
+      header={<>
         <div className="flex flex-1 items-center gap-2 px-3">
-          <HeaderTooltip label="Toggle Sidebar"><SidebarTrigger data-panel-toggle="left" /></HeaderTooltip>
-          <Separator
-            orientation="vertical"
-            className="mr-2 aria-[orientation=vertical]:h-4 aria-[orientation=vertical]:self-auto"
-          />
+          <HeaderEdgeToggle>
+            <HeaderTooltip label="Toggle Sidebar"><SidebarTrigger data-panel-toggle="left" /></HeaderTooltip>
+          </HeaderEdgeToggle>
           <Breadcrumb>
             <BreadcrumbList>
               {breadcrumbs.map((crumb, index) => index < breadcrumbs.length - 1
@@ -306,27 +305,14 @@ export default function StudioShellFrame({ navigation, commands, breadcrumbs, po
           onClick={() => setMode(resolved === 'dark' ? 'light' : 'dark')}>
           {resolved === 'dark' ? <SunIcon /> : <MoonIcon />}
         </HeaderIconButton>
-        <Separator
-          orientation="vertical"
-          className="aria-[orientation=vertical]:h-4 aria-[orientation=vertical]:self-auto"
-        />
-        <HeaderIconButton label="Toggle chat" aria-pressed={wide ? chatOpen : chatSheet} data-panel-toggle="chat" onClick={toggleChat}><PanelRightIcon /></HeaderIconButton>
+        <HeaderEdgeToggle separatorFirst>
+          <HeaderIconButton label="Toggle chat" aria-pressed={wide ? chatOpen : chatSheet} data-panel-toggle="chat" onClick={toggleChat}><PanelRightIcon /></HeaderIconButton>
+        </HeaderEdgeToggle>
         </div>
-      </header>
-      <main id="studio-main" data-body={body} className="@container/main flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-x-hidden overflow-y-auto overscroll-contain p-4 md:p-6 *:shrink-0">
-        {head}{children}
-      </main>
-    </SidebarInset>
-    </ResizablePanel>
-    {wide && chatOpen && <>
-      <ResizableHandle aria-label="Resize chat" />
-      <ResizablePanel id="studio-chat" defaultSize="16rem" minSize="16rem" maxSize="50%" groupResizeBehavior="preserve-pixel-size">
-        <StockChatSidebar />
-      </ResizablePanel>
-    </>}
-    </ResizablePanelGroup>
+      </>}>
+      {children}
+    </StudioPageFrame>
     <CommandMenu commands={commands} pageCommands={pageCommands} open={searchOpen} onOpenChange={setSearchOpen} />
-    {!wide && <StockChatSheet isOpen={chatSheet} onOpenChange={setChatSheet} />}
-  </SidebarProvider>;
+  </StudioAppFrame>;
 }
 

@@ -370,7 +370,8 @@
     "!src/**/__tests__/**",
     "!src/**/__mocks__/**",
     "!src/**/__snapshots__/**",
-    "!src/**/*.test.*"
+    "!src/**/*.test.*",
+    "!scripts/**/*.test.*"
   ],
   "scripts": {
     "check": "npm run check:usage-graph",

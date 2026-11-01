@@ -5,6 +5,7 @@ const codes = (issues: readonly { code: string }[]) => issues.map(issue => issue
 const ia = { schema: "clossys.ia/1", source: "@clossys/designer#leaf-freeze", extensions: [], nodes: [{ id: "components", label: "Components", children: [{ id: "actions", label: "Actions", slots: ["components.button"] }] }] };
 const slot = { schema: "clossys.slot/1", id: "components.button", agent: "designer", ia: { l1: "components", l2: "actions", order: 0 }, kind: "element", contract: {}, inputs: [], uses: [] };
 const pin = { candidate: "button-v1.json", sha256: "a".repeat(64), pinnedBy: "migration:SLOT-MODEL", at: "2026-10-31T00:00:00Z" };
+const page = { schema: "clossys.page/1", path: "/", title: "Home", frame: null, sections: [], copy: {}, meta: { source: { kind: "original", ref: [] } } };
 
 describe("slot model schema (F1)", () => {
   it("accepts a well-formed ia.json, slot.json and pin.json", () => {
@@ -22,11 +23,36 @@ describe("slot model schema (F1)", () => {
   });
 
   it("refuses pin state and legacy provenance on a candidate", () => {
-    const page = { schema: "clossys.page/1", path: "/", title: "Home", frame: null, sections: [], copy: {}, meta: { source: { kind: "original", ref: [] } } };
     expect(validateCandidate("page", "page.home", "page-v1.json", JSON.stringify(page))).toEqual([]);
     expect(codes(validateCandidate("page", "page.home", "page-v1.json", JSON.stringify({ ...page, status: "active" })))).toContain("candidate-status");
     expect(codes(validateCandidate("page", "page.home", "page-v1.md", "{}"))).toEqual(["candidate-name"]);
     expect(codes(validateCandidate("page", "page.home", "page.json", "{}"))).toEqual(["candidate-name"]);
+  });
+
+  it.each([null, "frames.studio-shell"])("accepts page slot references with frame %j", frame => {
+    const candidate = { ...page, frame, sections: ["sections.studio.home", "sections.studio.agent-gallery"], copy: { "home.link": "patterns.inline-link" } };
+    expect(validateCandidate("page", "page.home", "page-v1.json", JSON.stringify(candidate))).toEqual([]);
+  });
+
+  it("accepts well-formed page references without requiring their targets to exist", () => {
+    const candidate = { ...page, frame: "frames.not-in-ia", sections: ["sections.not-in-ia"], copy: { heading: "custom.future.copy.target" } };
+    expect(validateCandidate("page", "page.home", "page-v1.json", JSON.stringify(candidate))).toEqual([]);
+  });
+
+  it.each(["", "frames", "../frames.studio-shell", "frames.studio-shell/extra", "frames..shell", "writer:patterns.inline-link", "frames.shell@1", "frames.studio.shell.extra.nested"])("rejects malformed page target %j in each reference field", target => {
+    for (const fields of [{ frame: target }, { sections: ["sections.studio.home", target] }, { copy: { link: "patterns.inline-link", heading: target } }]) {
+      expect(codes(validateCandidate("page", "page.home", "page-v1.json", JSON.stringify({ ...page, ...fields })))).toEqual(["candidate-invalid"]);
+    }
+  });
+
+  it.each([
+    { frame: undefined }, { frame: false }, { frame: 1 }, { frame: {} }, { frame: [] },
+    { sections: undefined }, { sections: null }, { sections: "sections.studio.home" }, { sections: {} },
+    { sections: ["sections.studio.home", null] }, { sections: [1] },
+    { copy: undefined }, { copy: null }, { copy: [] }, { copy: "patterns.inline-link" },
+    { copy: { link: null } }, { copy: { link: 1 } }, { copy: { link: false } }, { copy: { link: {} } }, { copy: { link: [] } },
+  ])("rejects incorrectly typed page references %j", fields => {
+    expect(codes(validateCandidate("page", "page.home", "page-v1.json", JSON.stringify({ ...page, ...fields })))).toEqual(["candidate-invalid"]);
   });
 });
 

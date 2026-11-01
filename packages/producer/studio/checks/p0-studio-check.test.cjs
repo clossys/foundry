@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { test } = require('node:test');
-const { discoverRoutePlan, expandContentRoutes, checkCommand, parseArgs, browserRuntime } = require('./p0-studio-check.cjs');
+const { initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, expandContentRoutes, checkCommand, parseArgs, browserRuntime } = require('./p0-studio-check.cjs');
 
 const repositoryRoot = path.resolve(__dirname, '../../../..');
 const evidenceRoot = path.join(repositoryRoot, 'tmp/p0b-resume/browser/unit');
@@ -31,7 +31,8 @@ test('checked-in publication and every real App Router route are discovered', ()
   const plan = discoverRoutePlan();
   assert.ok(plan.routes.includes('/'));
   assert.ok(plan.routes.length > 1);
-  assert.deepEqual(plan.templates, ['/[[...route]]'], 'one generic App Router page');
+  assert.deepEqual(plan.templates, ['/%5F_specimen', '/[[...route]]'], 'generic Studio page plus query-dependent record transport');
+  assert.ok(!plan.routes.includes('/%5F_specimen'), 'record transport needs agent and slot query parameters');
   assert.equal(plan.contentRoute, false, 'the standalone content route is retired');
 });
 
@@ -84,4 +85,56 @@ test('CLI rejects ambiguous or unknown options', () => {
   assert.deepEqual(parseArgs(['--origin', 'http://127.0.0.1:4300']), { origin: 'http://127.0.0.1:4300' });
   assert.throws(() => parseArgs(['--routes', '/']), /Usage/);
   assert.throws(() => parseArgs(['--origin', 'http://one', '--origin', 'http://two']), /Usage/);
+});
+
+// These are comparator unit tests, not claims that a browser hydrated or reached Producer.
+test('initial resources follow the publication paths and only require each page own data channel', () => {
+  const plan = { home: '/', agents: ['designer', 'writer'], galleries: { '/design-library': 'designer', '/copy': 'writer' } };
+  assert.equal(initialResource(plan, '/').path, '/api/slots/census');
+  assert.equal(initialResource(plan, '/design-library').path, '/api/designer/library');
+  assert.equal(initialResource(plan, '/copy').path, '/api/agents/writer/library');
+  assert.equal(initialResource(plan, '/copy/strings.label'), undefined);
+});
+
+test('Home rejects initial loading and stale totals while accepting a real zero census', () => {
+  const expected = initialExpectation({ kind: 'home', agents: ['writer'] }, {
+    writer: { state: 'ready', total: 0, withCandidate: 0, pinned: 0 },
+  });
+  const ready = { loading: false, agents: [{ agent: 'writer', state: 'ready', total: '0', totalLabel: '0 slots',
+    candidates: '0', candidatesLabel: '0 slots with candidates', pinned: '0 pinned slots' }] };
+  assert.deepEqual(initialDataFindings(expected, ready), []);
+  assert.match(initialDataFindings(expected, { loading: false, agents: [{ agent: 'writer', state: 'loading' }] }).join('; '), /native census/);
+  assert.match(initialDataFindings(expected, { ...ready, agents: [{ ...ready.agents[0], total: '435' }] }).join('; '), /native census/);
+  assert.throws(() => initialExpectation({ kind: 'home', agents: ['writer'] }, { writer: { state: 'error' } }), /unavailable/);
+});
+
+test('gallery requires every native slot link but an unfilled slot needs no specimen', () => {
+  const resource = { kind: 'gallery', agent: 'writer', route: '/writer' };
+  const expected = initialExpectation(resource, { state: 'ready', count: 1, sections: [{ cards: [
+    { id: 'strings.label', slug: 'strings.label', name: 'Labels', records: 0, emptyState: 'No candidate' },
+  ] }] });
+  const ready = { loading: false, gallery: true, cards: [{ key: 'strings.label', name: 'Labels', href: '/writer/strings.label' }], headings: [] };
+  assert.deepEqual(initialDataFindings(expected, ready), []);
+  assert.match(initialDataFindings(expected, { loading: true, gallery: false, cards: [], headings: ['Writer'] }).join('; '), /initial loading notice/);
+  assert.match(initialDataFindings(expected, { ...ready, cards: [{ ...ready.cards[0], href: '' }] }).join('; '), /native slot/);
+  const designer = initialExpectation({ ...resource, agent: 'designer', route: '/designer' }, {
+    state: 'ready', count: 1, sections: [{ cards: [{ slot: 'components.button', slug: 'components.button', name: 'Button', emptyState: 'No pin' }] }],
+  });
+  assert.equal(designer.cards[0].key, 'components.button');
+});
+
+test('an empty native library needs its loaded empty state, not a heading with a skeleton', () => {
+  const expected = initialExpectation({ kind: 'gallery', agent: 'writer', route: '/writer' }, { state: 'ready', count: 0, sections: [] });
+  assert.deepEqual(initialDataFindings(expected, { loading: false, gallery: false, cards: [], headings: ['No Writer records yet'] }), []);
+  assert.ok(initialDataFindings(expected, { loading: true, gallery: false, cards: [], headings: ['Writer'] }).length);
+  assert.throws(() => initialExpectation({ kind: 'gallery', agent: 'writer', route: '/writer' }, { state: 'ready', count: 1, sections: [] }), /count differs/);
+});
+
+test('only the exact record transport page is excluded from static UI coverage', () => {
+  const fixture = projectionFixture();
+  write(fixture.root, 'studio/app/%5F_specimen/page.tsx', 'Record specimen transport');
+  write(fixture.root, 'studio/app/specimen-help/page.tsx', 'Specimen help');
+  const plan = discoverRoutePlan(fixture.options);
+  assert.ok(!plan.routes.includes('/%5F_specimen'));
+  assert.ok(plan.routes.includes('/specimen-help'));
 });

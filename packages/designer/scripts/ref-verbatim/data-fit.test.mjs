@@ -13,6 +13,28 @@ function stock(item, path, registry = "shadcn-aria") {
 const page = () => stock("sidebar-15", "registry/aria-nova/blocks/sidebar-15/page.tsx");
 const record = (source, operation, bindings) => ({ kind: "data-fit", file: "index.tsx", reason: "Fit the one recorded frame/slot input", sourceHash: sourceHash(source.raw), operation, bindings });
 const replay = (source, operation, bindings) => replayDataFit(source.text, source.path, record(source, operation, bindings), source);
+function invokeContentFunction(text, name, props) {
+  const ts = loadTypeScript();
+  const parsed = ts.createSourceFile("slots.tsx", text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const fn = parsed.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === name);
+  assert.ok(fn);
+  const tags = new Set(["Fragment"]);
+  const visit = node => {
+    if ((ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) && /^[A-Z]/.test(node.tagName.getText(parsed))) tags.add(node.tagName.getText(parsed));
+    ts.forEachChild(node, visit);
+  };
+  visit(fn);
+  const compiled = ts.transpileModule(fn.getText(parsed), {
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS,
+      jsx: ts.JsxEmit.React, jsxFactory: "element", jsxFragmentFactory: "Fragment" }, reportDiagnostics: true,
+  });
+  assert.deepEqual(compiled.diagnostics.filter(d => d.category === ts.DiagnosticCategory.Error), []);
+  const element = (type, props, ...children) => ({ type, props, children });
+  // Symbolic stock tags collect JSX; only the actual replayed declaration runs.
+  const execute = new Function("exports", "element", ...tags,
+    `${compiled.outputText}\nreturn exports.${name === "Page" ? "default" : name};`)({}, element, ...tags);
+  return execute(props);
+}
 test("finite frame split keeps copied provider/navigation or inset/header/body/right subtrees", () => {
   const source = page();
   const app = replay(source, "sidebar15-frame-split", { region: "app" });
@@ -69,6 +91,69 @@ test("right sidebar changes only none/hidden-lg defaults to right/offcanvas", ()
   assert.match(result, /className="sticky top-0 h-svh border-l"/);
   assert.equal(result.replace('side="right" collapsible="offcanvas"', 'collapsible="none"').replace('className="sticky top-0 h-svh border-l"', 'className="sticky top-0 hidden h-svh border-l lg:flex"'), source.text);
   assert.throws(() => replay(source, "sidebar15-right-offcanvas", { side: "left", collapsible: "offcanvas" }));
+});
+test("page children body invokes supplied content inside the unchanged stock inset/header/body wrappers", () => {
+  const source = page(), bindings = { region: "page", body: "children" };
+  const result = replay(source, "sidebar15-frame-split", bindings);
+  const child = { content: "page input" };
+  const tree = invokeContentFunction(result, "Page", { children: child });
+  assert.equal(tree.type, "Fragment");
+  assert.equal(tree.children[0].type, "SidebarInset");
+  const [header, body] = tree.children[0].children;
+  assert.equal(header.type, "header");
+  assert.equal(header.props.className, "sticky top-0 flex h-14 shrink-0 items-center gap-2 bg-background");
+  assert.equal(body.type, "div");
+  assert.equal(body.props.className, "flex flex-1 flex-col gap-4 p-4");
+  assert.deepEqual(body.children, [child]);
+  assert.equal(tree.children[1].type, "SidebarRight");
+  const expected = replay(source, "sidebar15-frame-split", { region: "page" })
+    .replace("function Page()", "function Page({ children }: { children: React.ReactNode })")
+    .replace(/(<div className="flex flex-1 flex-col gap-4 p-4">)[\s\S]*?(<\/div>)/, "$1{children}$2");
+  assert.equal(result, expected);
+  for (const bindings of [{ body: "children" }, { region: "app", body: "children" }, { region: "page", body: false },
+    { region: "page", body: "other" }, { region: "page", body: "children", jsx: "<div />" }])
+    assert.throws(() => replay(source, "sidebar15-frame-split", bindings), /NEED/);
+  for (const text of [source.text.replace("function Page()", "function Page(props: unknown)"),
+    source.text.replace('<SidebarInset>', '<SidebarInset><section>').replace('</SidebarInset>', '</section></SidebarInset>'),
+    source.text.replace('<SidebarRight />', '<SidebarRight /><SidebarInset />'),
+    source.text.replace('h-24 w-full', 'h-32 w-full'),
+    source.text.replace('<div className="flex flex-1 flex-col gap-4 p-4">', '<div className="flex flex-1 flex-col gap-4 p-4">{/* extra */}'),
+    source.text.replace('      </SidebarInset>', '      </SidebarInset><div className="flex flex-1 flex-col gap-4 p-4" />')])
+    assert.throws(() => replay({ ...source, text }, "sidebar15-frame-split", bindings), /NEED/);
+});
+test("right content slots invoke required header/body/footer inputs and preserve stock wrappers and native props", () => {
+  const source = stock("sidebar-15", "registry/aria-nova/blocks/sidebar-15/components/sidebar-right.tsx");
+  const bindings = { side: "right", collapsible: "offcanvas", contentSlots: true };
+  const result = replay(source, "sidebar15-right-offcanvas", bindings);
+  const header = { content: "header" }, child = { content: "chat" }, footer = { content: "footer" };
+  const tree = invokeContentFunction(result, "SidebarRight", { header, children: child, footer, id: "chat" });
+  assert.equal(tree.type, "Sidebar");
+  assert.deepEqual(tree.props, { side: "right", collapsible: "offcanvas", className: "sticky top-0 h-svh border-l", id: "chat" });
+  assert.deepEqual(tree.children.map(node => [node.type, node.props, node.children]), [
+    ["SidebarHeader", { className: "h-16 border-b border-sidebar-border" }, [header]],
+    ["SidebarContent", null, [child]], ["SidebarFooter", null, [footer]],
+  ]);
+  assert.deepEqual(invokeContentFunction(result, "SidebarRight", { header: null, children: child, footer: null })
+    .children.map(node => node.children), [[null], [child], [null]]);
+  assert.match(result, /header: React.ReactNode; footer: React.ReactNode/);
+  for (const bindings of [{ contentSlots: true }, { side: "right", collapsible: "offcanvas", contentSlots: false },
+    { side: "right", collapsible: "offcanvas", contentSlots: "true" },
+    { side: "right", collapsible: "offcanvas", contentSlots: true, header: "<div />" }])
+    assert.throws(() => replay(source, "sidebar15-right-offcanvas", bindings), /NEED/);
+  for (const text of [source.text.replace('...props', '...other'),
+    source.text.replace('React.ComponentProps<typeof Sidebar>', 'unknown'),
+    source.text.replace('<SidebarContent>', '<section><SidebarContent>').replace('</SidebarContent>', '</SidebarContent></section>'),
+    source.text.replace('</SidebarContent>', '</SidebarContent><SidebarContent />'),
+    source.text.replace('<DatePicker />', '{/* extra */}<DatePicker />'),
+    source.text.replace('h-16 border-b', 'h-20 border-b')])
+    assert.throws(() => replay({ ...source, text }, "sidebar15-right-offcanvas", bindings), /NEED/);
+  for (const context of [{ ...source, raw: source.raw + "\n" },
+    { ...source, source: { ...source.source, version: "next" } },
+    { ...source, source: { ...source.source, registry: "custom" } },
+    { ...source, source: { ...source.source, item: "sidebar-07" } }])
+    assert.throws(() => replayDataFit(source.text, source.path, record(source, "sidebar15-right-offcanvas", bindings), context), /NEED/);
+  assert.throws(() => replayDataFit(source.text, source.path.replace("sidebar-right.tsx", "other.tsx"),
+    record(source, "sidebar15-right-offcanvas", bindings), source), /NEED/);
 });
 test("both single-option stock row bodies retain avatar/button classes and remove only choice chrome", () => {
   for (const registry of ["shadcn-aria", "shadcn"]) for (const name of ["team-switcher", "nav-user"]) {

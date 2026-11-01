@@ -71,11 +71,8 @@ export function projectCommands(map: ContentMap): readonly ContentMapCommandGrou
   return [...groups.values()];
 }
 export function projectBreadcrumbs(map: ContentMap, currentId: string): readonly ContentMapBreadcrumb[] {
-  const agents = new Set(map.entries.filter(entry => entry.kind === "collection").map(entry => entry.id));
   map = web(map);
-  const chain = ancestry(map, currentId);
-  const collection = chain.some(entry => agents.has(entry.id));
-  return [...(collection ? [{ id: "agents", label: "Agents", href: "/" }] : []), ...chain.map(entry => ({ id: entry.id, label: entry.title, ...(entry.kind === "external" ? { href: entry.href } : (navigable(entry) || anchored(entry)) ? { href: contentMapPath(entry) } : {}) }))];
+  return ancestry(map, currentId).filter(entry => entry.kind !== "group").map(entry => ({ id: entry.id, label: entry.title, ...(entry.kind === "external" ? { href: entry.href } : navigable(entry) ? { href: contentMapPath(entry) } : {}) }));
 }
 /** Only public site page URLs enter a sitemap. Sections are query/subpath views
  * of their owning pages; admin, app and other channels cannot emit a sitemap. */

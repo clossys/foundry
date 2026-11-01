@@ -110,7 +110,7 @@ it("keeps left navigation as the pinned subset of command destinations", () => {
 });
 it("projects breadcrumb and public-only sitemap goldens", () => {
   const map = adminContentMap();
-  expect(projectBreadcrumbs(map, "designer")).toEqual([{ id: "agents", label: "Agents" }, { id: "designer", label: "Designer", href: "/agents/designer" }]);
+  expect(projectBreadcrumbs(map, "designer")).toEqual([{ id: "designer", label: "Designer", href: "/agents/designer" }]);
   expect(() => projectSitemap(map, { channel: "admin", origin: "https://example.com" })).toThrow(/admin/);
   expect(projectSitemap(map, { channel: "site", origin: "https://example.com" })).toEqual([
     { url: "https://example.com/agents/designer" }, { url: "https://example.com/agents/writer" }, { url: "https://example.com/agents/publisher" },
@@ -136,7 +136,7 @@ it("retains generic section capacity at depth three without publishing applicati
     { id: "guide", label: "Guide", href: "/guides/guide", children: [{ id: "guide.overview", label: "Overview", href: "/guides/guide/overview" }] },
   ] }], activeId: "guide.overview" });
   expect(projectCommands(map)).toEqual([{ id: "guides", label: "Guides", items: [{ id: "guide", label: "Guide", href: "/guides/guide" }, { id: "guide.overview", label: "Overview", href: "/guides/guide/overview" }] }]);
-  expect(projectBreadcrumbs(map, "guide.overview")).toEqual([{ id: "guides", label: "Guides" }, { id: "guide", label: "Guide", href: "/guides/guide" }, { id: "guide.overview", label: "Overview", href: "/guides/guide/overview" }]);
+  expect(projectBreadcrumbs(map, "guide.overview")).toEqual([{ id: "guide", label: "Guide", href: "/guides/guide" }, { id: "guide.overview", label: "Overview", href: "/guides/guide/overview" }]);
   const query = { ...map, entries: map.entries.map(entry => entry.id === "guide.overview" ? { ...entry, path: "/guides/guide?view=overview" } : entry) };
   expect(checkContentMap(query)).toEqual([]);
 });

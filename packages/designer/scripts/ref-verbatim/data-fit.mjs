@@ -1,6 +1,7 @@
 /** Finite owner-directed source replays. Records supply data, never replacement JSX. */
 import { createHash } from "node:crypto";
 import { loadTypeScript } from "./typescript.mjs";
+import { ICON_LIBRARIES, normalizeReference } from "./normalize.mjs";
 export const DATA_FIT_OPERATIONS = Object.freeze([
   "sidebar15-frame-split", "sidebar15-right-offcanvas", "sidebar07-single-option",
   "sidebar-mirrored-edge", "sidebar-resizable-panels",
@@ -35,11 +36,48 @@ export function replayDataFit(text, file, record, context) {
   const requireFile = (item, suffix) => {
     if (context.source.item !== item || !file.endsWith(suffix)) throw new Error(`NEED: ${record.operation} requires ${item}/${suffix}`);
   };
+  const children = node => node && ts.isJsxElement(node)
+    ? node.children.filter(child => !ts.isJsxText(child) || child.text.trim()) : [];
+  const replaceChildren = (node, name) => edits.push([
+    node.openingElement.getEnd(), node.closingElement.getStart(source), `{${name}}`,
+  ]);
+  // These opt-ins consume stock content, so verify the complete function before
+  // discarding any child list. Only existing CLI icon rewrites may differ.
+  const stockFunction = name => {
+    const functions = source.statements.filter(node => ts.isFunctionDeclaration(node) && node.name?.text === name);
+    const fn = functions[0];
+    const matches = fn && Object.keys(ICON_LIBRARIES).some(iconLibrary => {
+      const normalized = normalizeReference(context.raw, file, { aliases: {}, rsc: true, iconLibrary });
+      const raw = ts.createSourceFile(file, normalized, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+      const stock = raw.statements.filter(node => ts.isFunctionDeclaration(node) && node.name?.text === name);
+      return stock.length === 1 && bytes(fn) === stock[0].getText(raw);
+    });
+    if (functions.length !== 1 || !matches) throw new Error(`NEED: content slots require the stock ${name} function`);
+    return fn;
+  };
   const bind = record.bindings;
   if (record.operation === "sidebar15-right-offcanvas") {
     requireFile("sidebar-15", "/components/sidebar-right.tsx");
-    if (!exactKeys(bind, ["side", "collapsible"]) || bind.side !== "right" || bind.collapsible !== "offcanvas") throw new Error("NEED: right sidebar binds only right/offcanvas");
+    const contentSlots = exactKeys(bind, ["side", "collapsible", "contentSlots"]) && bind.contentSlots === true;
+    if (!(exactKeys(bind, ["side", "collapsible"]) || contentSlots) || bind.side !== "right" || bind.collapsible !== "offcanvas") throw new Error("NEED: right sidebar binds only right/offcanvas with optional true contentSlots");
     const sidebar = one("Sidebar");
+    if (contentSlots) {
+      const fn = stockFunction("SidebarRight");
+      const parameter = fn.parameters[0];
+      if (fn.parameters.length !== 1 || !ts.isObjectBindingPattern(parameter.name)
+        || parameter.name.elements.length !== 1 || !parameter.name.elements[0].dotDotDotToken
+        || parameter.name.elements[0].name.getText(source) !== "props"
+        || parameter.type?.getText(source) !== "React.ComponentProps<typeof Sidebar>"
+        || parameter.initializer || parameter.questionToken || fn.typeParameters?.length || fn.type || fn.asteriskToken)
+        throw new Error("NEED: content slots require stock SidebarRight props binding");
+      const regions = [one("SidebarHeader"), one("SidebarContent"), one("SidebarFooter")];
+      const direct = children(sidebar);
+      if (!ts.isJsxElement(sidebar) || direct.length !== regions.length
+        || regions.some((node, index) => !ts.isJsxElement(node) || direct[index] !== node))
+        throw new Error("NEED: content slots require direct stock header/content/footer regions");
+      replace(parameter, "{ header, children, footer, ...props }: React.ComponentProps<typeof Sidebar> & { header: React.ReactNode; footer: React.ReactNode }");
+      regions.forEach((node, index) => replaceChildren(node, ["header", "children", "footer"][index]));
+    }
     const attrs = sidebar.openingElement.attributes.properties;
     const collapsible = attrs.find(a => ts.isJsxAttribute(a) && a.name.getText(source) === "collapsible");
     const classes = attrs.find(a => ts.isJsxAttribute(a) && a.name.getText(source) === "className");
@@ -77,9 +115,10 @@ export function replayDataFit(text, file, record, context) {
     const provider = one("SidebarProvider");
     if (!ts.isJsxElement(provider)) throw new Error("NEED: stock provider anatomy differs");
     if (record.operation === "sidebar15-frame-split") {
-      if (!exactKeys(bind, ["region"]) || !["app", "page"].includes(bind.region)) throw new Error("NEED: frame split selects app or page");
+      const body = exactKeys(bind, ["region", "body"]) && bind.region === "page" && bind.body === "children";
+      if (!(exactKeys(bind, ["region"]) || body) || !["app", "page"].includes(bind.region)) throw new Error("NEED: frame split selects app or page with optional page children body");
       const inset = one("SidebarInset"), left = one("SidebarLeft"), right = one("SidebarRight");
-      if (bind.region === "app") {
+      if (bind.region === "app" || body) {
         const pages = source.statements.filter(node => ts.isFunctionDeclaration(node)
           && node.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword));
         const page = pages[0];
@@ -92,9 +131,24 @@ export function replayDataFit(text, file, record, context) {
           || page.body?.statements.length !== 1 || returned !== provider)
           throw new Error("NEED: app frame requires stock zero-parameter default Page returning the provider");
         edits.push([page.parameters.pos, page.parameters.end, "{ children }: { children: React.ReactNode }"]);
+      }
+      if (bind.region === "app") {
         replace(inset, "{children}"); replace(right, "");
       }
-      else { replace(provider.openingElement, "<>"); replace(provider.closingElement, "</>"); replace(left, ""); }
+      else {
+        if (body) {
+          stockFunction("Page");
+          const direct = children(inset), wrapper = direct[1];
+          const placeholders = children(wrapper);
+          if (direct.length !== 2 || tag(direct[0]) !== "header" || !ts.isJsxElement(wrapper)
+            || bytes(wrapper.openingElement) !== '<div className="flex flex-1 flex-col gap-4 p-4">'
+            || placeholders.length !== 2 || placeholders.some((node, index) => !ts.isJsxSelfClosingElement(node)
+              || bytes(node) !== `<div className="mx-auto ${index ? "h-[100vh]" : "h-24"} w-full max-w-3xl rounded-xl bg-muted/50" />`))
+            throw new Error("NEED: page body requires the two direct stock placeholders");
+          replaceChildren(wrapper, "children");
+        }
+        replace(provider.openingElement, "<>"); replace(provider.closingElement, "</>"); replace(left, "");
+      }
     } else if (record.operation === "sidebar-mirrored-edge") {
       if (!exactKeys(bind, ["side"]) || !["left", "right"].includes(bind.side)) throw new Error("NEED: mirrored edge selects left or right");
       const trigger = bytes(one("SidebarTrigger"));

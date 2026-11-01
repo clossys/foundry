@@ -56,13 +56,13 @@
   },
   "consumerAdaptations": [
     "Import paths bind to the existing native Designer UI exports and Studio modules.",
-    "Sidebar-15 left slots retain existing Publisher navigation, consumer brand endpoint and local workspace profile; fallback display name is Clossys Studio.",
+    "Sidebar-15 left slots retain existing Publisher navigation, consumer brand endpoint and local workspace profile; workspace display name is Clossys Studio regardless of brand loading state.",
     "Sidebar-07 single-option workspace/profile rows omit only dropdown/action affordances and retain all native SidebarMenuButton base/default/lg classes. Static div adapter explicitly calls the native useSidebar context guard.",
     "Existing profile initials remain the fallback; no avatar image or account data is fabricated.",
     "Sidebar-15 right calendar sample slots bind to the existing unconnected chat empty state. Stock resizable Panel/Separator handles right width; sidebar width binds to its panel at 100%, with native 16rem default/minimum and 50% maximum.",
     "Chat mobile Sheet mirrors native Sidebar mobile attributes/classes and 18rem width, with existing chat open state and accessible title/description.",
     "Stock asChild PopoverTrigger and TooltipTrigger share one stock icon button. Existing URL, keyboard, scroll-spy, prompt and command behavior is retained; legacy link clipboard fallback is excluded.",
-    "Header Separator data selectors adapt to the actual native Aria orientation attribute; the mirrored right separator omits mr-2 only.",
+    "Designer HeaderEdgeToggle shares the sidebar-15 header trigger/Separator pair on both edges, mirrored by child order only. Separator data selectors adapt to the actual native Aria orientation attribute and self alignment; stock header gap-2 supplies equal spacing, replacing the left-only mr-2.",
     "Theme button binds existing resolved/setMode provider API; body retains the required @container/main ancestor.",
     "The qualified header alignment patch binds the right chat header to the page header h-14; the exact stock h-16 source remains recorded above."
   ],

@@ -1,6 +1,6 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,6 +23,91 @@ const ids = (sections: readonly { cards: readonly { id?: string; slot?: string }
 const expected = (root: string, agent: string) => (JSON.parse(readFileSync(join(root, 'agents', agent, 'ia.json'), 'utf8')) as IaDoc).nodes.flatMap(node => node.children.flatMap(child => child.slots));
 
 describe('IA-first gallery data', () => {
+  it.each(['{ malformed JSON', 'null'])('keeps every Designer row when the pinned candidate is %s', bytes => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), 'gallery-designer-')));
+    try {
+      const wanted = ['components.empty', 'components.bad', 'components.healthy', 'components.absent'];
+      const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic-test-only#gallery-malformed', extensions: [], nodes: [{ id: 'components', label: 'Components', children: [{ id: 'controls', label: 'Controls', slots: wanted }] }] };
+      mkdirSync(join(root, 'agents/designer'), { recursive: true });
+      writeFileSync(join(root, 'agents/designer/ia.json'), JSON.stringify(ia));
+      for (const id of wanted.slice(0, -1)) {
+        const dir = join(root, 'agents/designer/components/controls', id);
+        mkdirSync(join(dir, 'candidates'), { recursive: true });
+        writeFileSync(join(dir, 'slot.json'), JSON.stringify({
+          schema: 'clossys.slot/1', id, agent: 'designer', ia: slotPositions('designer', ia).get(id)!,
+          kind: 'element', contract: {}, inputs: [], uses: [],
+        } satisfies SlotDoc));
+        if (id === 'components.empty') continue;
+        const content = id === 'components.bad' ? bytes : JSON.stringify({ name: 'healthy' });
+        writeFileSync(join(dir, 'candidates/element-v1.json'), content);
+        writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: 'element-v1.json', sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:gallery-malformed', at: '2026-01-01T00:00:00Z' }));
+        if (id === 'components.bad') writeFileSync(join(dir, 'candidates/element-v2.json'), JSON.stringify({ name: 'newer' }));
+      }
+      const gallery = slotGallery(root, 'designer');
+      expect(gallery.count).toBe(wanted.length);
+      expect(ids(gallery.sections)).toEqual(wanted);
+      const cards = gallery.sections.flatMap(section => section.cards);
+      expect(cards[0]).toMatchObject({ id: wanted[0], status: 'missing', emptyState: 'No candidate', records: 0 });
+      expect(cards[1]).toMatchObject({ id: wanted[1], status: 'failing', candidate: 'element-v1.json', version: 1, records: 0 });
+      expect(cards[1]!.element).toBeUndefined();
+      expect(cards[1]!.specimen).toBeUndefined();
+      expect(cards[1]!.specimenUrl).toBeUndefined();
+      expect(cards[2]).toMatchObject({ id: wanted[2], status: 'active', element: 'healthy', specimen: 'components.healthy/healthy', records: 1 });
+      expect(cards[3]).toMatchObject({ id: wanted[3], status: 'failing', emptyState: 'No candidate', records: 0 });
+      const designer = designerGallery(root);
+      expect(designer.count).toBe(wanted.length);
+      expect(ids(designer.sections)).toEqual(wanted);
+      expect(designer.sections.flatMap(section => section.cards)[1]).toMatchObject({ status: 'failing', pinned: false, options: [], candidate: 'element-v1.json', version: 1 });
+    } finally { rmSync(root, { recursive: true, force: true }); }
+  });
+
+  it('keeps unpinned Designer slots visible without a specimen and previews only the intact native pin', () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), 'gallery-designer-pin-')));
+    try {
+      const wanted = ['components.empty', 'components.example'];
+      const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic-test-only#designer-pin', extensions: [], nodes: [{ id: 'components', label: 'Components', children: [{ id: 'controls', label: 'Controls', slots: wanted }] }] };
+      mkdirSync(join(root, 'agents/designer'), { recursive: true });
+      writeFileSync(join(root, 'agents/designer/ia.json'), JSON.stringify(ia));
+      for (const id of wanted) {
+        const dir = join(root, 'agents/designer/components/controls', id);
+        mkdirSync(join(dir, 'candidates'), { recursive: true });
+        writeFileSync(join(dir, 'slot.json'), JSON.stringify({ schema: 'clossys.slot/1', id, agent: 'designer', ia: slotPositions('designer', ia).get(id)!, kind: 'element', contract: {}, inputs: [], uses: [] } satisfies SlotDoc));
+      }
+      const dir = join(root, 'agents/designer/components/controls/components.example');
+      const content = JSON.stringify({ name: 'example', type: 'registry:component', files: [{ path: 'index.tsx', type: 'registry:component', content: 'export default function Example() { return null; }' }], meta: { source: { kind: 'original', ref: [] } } });
+      writeFileSync(join(dir, 'candidates/example-v1.json'), content);
+      writeFileSync(join(dir, 'candidates/example-v2.json'), content.replace('"example"', '"newer"'));
+      const pin = { candidate: 'example-v1.json', sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:designer-pin', at: '2026-01-01T00:00:00Z' };
+      const layers = () => designerGalleryLayers({ state: 'ready', ...designerGallery(root) }, 'light', noRoutes);
+      const assertNoPreview = (noPin: boolean) => {
+        const cards = slotGallery(root, 'designer').sections.flatMap(section => section.cards);
+        expect(cards.map(card => card.id)).toEqual(wanted);
+        expect(cards[0]).toMatchObject({ emptyState: 'No candidate', records: 0 });
+        if (noPin) expect(cards[1]).toMatchObject({ emptyState: 'No pin', status: 'draft', records: 1 });
+        expect(cards[1]!.element).toBeUndefined();
+        expect(cards[1]!.specimen).toBeUndefined();
+        expect(cards[1]!.specimenUrl).toBeUndefined();
+        const projected = layers().flatMap(layer => layer.groups.flatMap(group => group.cards));
+        expect(projected.map(card => card.key)).toEqual(wanted);
+        expect(projected[1]!.specimen).toBeUndefined();
+        if (noPin) expect(projected[1]!.statusLabel).toBe('No pin');
+      };
+      assertNoPreview(true);
+      writeFileSync(join(dir, 'pin.json'), JSON.stringify(pin));
+      const pinned = slotGallery(root, 'designer').sections.flatMap(section => section.cards)[1]!;
+      expect(pinned).toMatchObject({ candidate: 'example-v1.json', version: 1, status: 'active', element: 'example', specimen: 'components.example/example' });
+      const specimen = layers().flatMap(layer => layer.groups.flatMap(group => group.cards))[1]!.specimen!;
+      expect(specimen).toMatchObject({ kind: 'viewports', specimens: [{ light: '/__specimen?element=components.example%2Fexample&theme=light&width=1280&v=1' }] });
+      expect(renderToStaticMarkup(createElement(SpecimenContent, { specimen }))).toContain('components.example%2Fexample');
+      unlinkSync(join(dir, 'pin.json'));
+      assertNoPreview(true);
+      for (const invalid of [{}, { ...pin, sha256: '0'.repeat(64) }, { ...pin, candidate: 'absent-v1.json' }]) {
+        writeFileSync(join(dir, 'pin.json'), JSON.stringify(invalid));
+        assertNoPreview(!('candidate' in invalid));
+      }
+    } finally { rmSync(root, { recursive: true, force: true }); }
+  });
+
   it('projects all source IA entries, in exact order, through the real server and client adapters', async () => {
     let total = 0;
     for (const agent of ['director', 'designer', 'writer', 'publisher'] as const) {

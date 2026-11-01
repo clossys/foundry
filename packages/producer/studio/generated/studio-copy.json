@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "f4353683794ec1189909b2099e57ef653b2e84387973967bd6eae8d42dcc13bf",
+  "revision": "dd8e83bd72980f6519fda19262c8ecbcea687fd9dc77e4b74fee471d49344b9e",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -1256,6 +1256,12 @@
       "status": "draft"
     },
     {
+      "id": "studio.the-open-request",
+      "text": "the open request",
+      "context": "lib/studio-text.ts",
+      "status": "draft"
+    },
+    {
       "id": "studio.compiled",
       "text": "Compiled",
       "context": "components/StudioPage.tsx",
@@ -1445,6 +1451,12 @@
       "id": "studio.options-same",
       "text": "Same",
       "context": "lib/options-copy.ts, sections/studio-options/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.awaiting-owner-input",
+      "text": "awaiting owner input",
+      "context": "lib/studio-text.ts",
       "status": "draft"
     },
     {
