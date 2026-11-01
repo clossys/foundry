@@ -12,14 +12,26 @@
       "path": "apps/v4/registry/bases/aria/blocks/dashboard-01/components/section-cards.tsx",
       "bytes": 5588,
       "sha256": "43e5041dee1804cba02c5ac1359dfb4eb4cebc3cf7d34d457765587cbf880197",
-      "gitBlob": "4ee21e780a053f7e5535555afb28f78dcd9fa35b"
+      "gitBlob": "4ee21e780a053f7e5535555afb28f78dcd9fa35b",
+      "reference": {
+        "registry": "shadcn-app",
+        "item": "studio-home-section-cards",
+        "version": "b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+        "hash": "sha256:09fe57bbfe3aef57d3d7945bf6fdb09a305a77d40f027b7251d3b2d47d6a3c0d"
+      }
     },
     {
       "file": "card-example.tsx.source",
       "path": "apps/v4/registry/bases/aria/examples/card-example.tsx",
       "bytes": 15164,
       "sha256": "8df73f6f5241bfa3823f19aea8da37103904ebe4d0d8a8a13aae1c29f9cdf3fa",
-      "gitBlob": "e5185d544ffb67391a33ec81f5eb93f1839202ea"
+      "gitBlob": "e5185d544ffb67391a33ec81f5eb93f1839202ea",
+      "reference": {
+        "registry": "shadcn-app",
+        "item": "card-example",
+        "version": "b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+        "hash": "sha256:edec06e15a64fbde974f05a30da46589bd54fcc55a5b6a2003af537d1cbb304e"
+      }
     },
     {
       "file": "LICENSE.md",

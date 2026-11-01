@@ -1823,6 +1823,28 @@
       ]
     },
     {
+      "registry": "shadcn-app",
+      "name": "studio-home-section-cards",
+      "version": "b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+      "dir": "shadcn-app/studio-home-section-cards@b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+      "type": "application:component",
+      "sourceUrl": "https://raw.githubusercontent.com/shadcn-ui/ui/b8d7baa15b1dca5716f13153e63795fc3d741f6b/apps/v4/registry/bases/aria/blocks/dashboard-01/components/section-cards.tsx",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.studio.home"
+      ],
+      "hash": "sha256:09fe57bbfe3aef57d3d7945bf6fdb09a305a77d40f027b7251d3b2d47d6a3c0d",
+      "files": [
+        {
+          "path": "apps/v4/registry/bases/aria/blocks/dashboard-01/components/section-cards.tsx",
+          "sha256": "43e5041dee1804cba02c5ac1359dfb4eb4cebc3cf7d34d457765587cbf880197",
+          "bytes": 5588,
+          "origin": "https://raw.githubusercontent.com/shadcn-ui/ui/b8d7baa15b1dca5716f13153e63795fc3d741f6b/apps/v4/registry/bases/aria/blocks/dashboard-01/components/section-cards.tsx"
+        }
+      ]
+    },
+    {
       "registry": "shadcn-aria",
       "name": "attachment",
       "version": "4.23.0",

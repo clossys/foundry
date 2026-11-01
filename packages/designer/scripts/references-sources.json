@@ -390,6 +390,12 @@
           "files": [
             "apps/v4/registry/bases/aria/examples/card-example.tsx"
           ]
+        },
+        "studio-home-section-cards": {
+          "type": "application:component",
+          "files": [
+            "apps/v4/registry/bases/aria/blocks/dashboard-01/components/section-cards.tsx"
+          ]
         }
       }
     }
@@ -1531,6 +1537,13 @@
       "registry": "shadcn-app",
       "name": "card-example",
       "slots": []
+    },
+    {
+      "registry": "shadcn-app",
+      "name": "studio-home-section-cards",
+      "slots": [
+        "sections.studio.home"
+      ]
     }
   ],
   "skipped": [
