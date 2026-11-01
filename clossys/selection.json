@@ -43,12 +43,6 @@
       "hash": "sha256:c746dae76f3db9224c906705db343bbe1e3e96c4af4bb089f815ef23c8bf77e8",
       "event": "e7"
     },
-    "sections.studio.contract": {
-      "element": "studio-contract",
-      "version": 1,
-      "hash": "sha256:4cccd0fd1ae6390804388a6b1a3c709bc23d4aba85835b2d668d3e3e2639741d",
-      "event": "e8"
-    },
     "sections.studio.history": {
       "element": "studio-history",
       "version": 1,
@@ -439,6 +433,14 @@
       "hash": "sha256:300440386e553b250dda2bd708fef7f1bff1177ed7ee34768543355231125101",
       "from": "option",
       "reason": "FRAME-PANELS (foundry#2553 L6): popover rows stay open on select."
+    },
+    {
+      "id": "e31",
+      "at": "2026-11-01T16:06:16.577Z",
+      "by": "designer/source-helper",
+      "action": "unpin",
+      "slot": "sections.studio.contract",
+      "reason": "NEED: sections.studio.contract has no matching eligible stock reference for its facts, inputs and lists contract. studio-contract v1 cites only the shadcn table primitive, which does not establish section provenance. Withdraw the unsupported pin; preserve the candidate and history pending an eligible matching reference, with no custom layout approved."
     }
   ]
 }
