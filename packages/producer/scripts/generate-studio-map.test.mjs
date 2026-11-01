@@ -4,14 +4,15 @@ import { cp, mkdir, mkdtemp, readFile, realpath, writeFile, rm } from 'node:fs/p
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { contentMapFromCells, compileContentMaps } from '@clossys/publisher/content-map/cells';
+import { createHash } from 'node:crypto';
+import { readPinnedPublication } from '@clossys/publisher/content-map/slots';
 import { projectNavigation, projectCommands } from '@clossys/publisher/content-map';
 import { checkManifest, generateStudioMap } from './generate-studio-map.mjs';
 
 const clossys = fileURLToPath(new URL('../../../clossys/', import.meta.url));
 const GENERIC_PAGE = { file: 'studio/app/[[...route]]/page.tsx', export: 'default' };
 
-/** A copy of the Studio library: Publisher cells, Designer slot contracts, library records and the selection. */
+/** A copy of the Studio library: pinned Publisher candidates, Designer slot contracts, library records and the selection. */
 async function fixture(t) {
   const dir = await realpath(await mkdtemp(join(tmpdir(), 'studio-map-')));
   t.after(() => rm(dir, { recursive: true, force: true }));
@@ -21,7 +22,7 @@ async function fixture(t) {
   await cp(join(clossys, 'agents', 'designer', 'slot-contracts'), join(clossysRoot, 'agents', 'designer', 'slot-contracts'), { recursive: true });
   await cp(join(clossys, 'library'), join(clossysRoot, 'library'), { recursive: true });
   await cp(join(clossys, 'selection.json'), join(clossysRoot, 'selection.json'));
-  return { clossysRoot, outputDir, cellRoot: join(clossysRoot, 'agents', 'publisher') };
+  return { clossysRoot, outputDir, publisherRoot: join(clossysRoot, 'agents', 'publisher') };
 }
 async function replace(path, before, after) {
   const source = await readFile(path, 'utf8');
@@ -30,9 +31,36 @@ async function replace(path, before, after) {
 }
 const run = (options, extra = {}) => generateStudioMap({ clossysRoot: options.clossysRoot, outputDir: options.outputDir, ...extra });
 
-test('every Studio page is a Publisher assembly: frame + ordered sections + bindings, from the ordinary map', async t => {
+// Locate the actual copied native slot through its IA, never through legacy cells.
+async function selected(options, id) {
+  const ia = JSON.parse(await readFile(join(options.publisherRoot, 'ia.json'), 'utf8'));
+  for (const node of ia.nodes) for (const child of node.children) if (child.slots.includes(id)) {
+    const dir = join(options.publisherRoot, node.id, child.id, id);
+    const pinPath = join(dir, 'pin.json'), pin = JSON.parse(await readFile(pinPath, 'utf8'));
+    const path = join(dir, 'candidates', pin.candidate);
+    return { path, pinPath, pin, record: JSON.parse(await readFile(path, 'utf8')) };
+  }
+  assert.fail(`Missing native fixture slot ${id}`);
+}
+async function editPinned(options, id, edit) {
+  const value = await selected(options, id);
+  edit(value.record);
+  const bytes = `${JSON.stringify(value.record, null, 2)}\n`;
+  await writeFile(value.path, bytes);
+  await writeFile(value.pinPath, JSON.stringify({ ...value.pin, sha256: createHash('sha256').update(bytes).digest('hex') }));
+}
+async function selectedBytes(options) {
+  const ia = JSON.parse(await readFile(join(options.publisherRoot, 'ia.json'), 'utf8'));
+  const records = await Promise.all(ia.nodes.flatMap(node => node.children.flatMap(child => child.slots)).map(id => selected(options, id)));
+  return await Promise.all(records.flatMap(record => [readFile(record.path), readFile(record.pinPath)]));
+}
+
+
+test('every Studio page is a Publisher assembly: frame + ordered sections + bindings, from the native pinned map', async t => {
   const options = await fixture(t), projection = await run(options);
-  const map = await contentMapFromCells(options.cellRoot, 'studio');
+  const { map, routePack } = await readPinnedPublication(options.publisherRoot, 'studio');
+  assert.deepEqual(projection.root, routePack.root);
+  assert.equal(projection.homeId, routePack.homeRouteId);
   assert.deepEqual(projection.map, map);
   assert.deepEqual(projection.pages.map(page => [page.id, page.path, page.frameId]), [
     ['home', '/', 'frames.studio-shell'], ['director', '/director', 'frames.studio-shell'], ['designer', '/designer', 'frames.studio-shell'],
@@ -62,9 +90,7 @@ test('every Studio page is a Publisher assembly: frame + ordered sections + bind
 test('active title and path edits drive the map, the page records and the commands', async t => {
   const options = await fixture(t);
   await run(options);
-  const cell = join(options.cellRoot, 'cells/page.designer/v2.md');
-  await replace(cell, 'title: Designer', 'title: Visual design');
-  await replace(cell, 'path: /designer', 'path: /design');
+  await editPinned(options, 'page.designer', record => { record.title = 'Visual design'; record.path = '/design'; });
   await assert.rejects(run(options, { check: true }), /drift/i);
   const changed = await run(options);
   assert.deepEqual(changed.routes.find(row => row.instanceId === 'designer'), { instanceId: 'designer', path: '/design', label: 'Visual design', entry: GENERIC_PAGE });
@@ -74,10 +100,11 @@ test('active title and path edits drive the map, the page records and the comman
 });
 
 test('pin changes select navigation without hiding command discovery', async t => {
-  const options = await fixture(t), path = join(options.cellRoot, 'tree.json');
-  const tree = JSON.parse(await readFile(path, 'utf8'));
-  delete tree.meta.publications[0].entryMeta['page.writer'].pin;
-  await writeFile(path, JSON.stringify(tree));
+  const options = await fixture(t);
+  await editPinned(options, 'page.writer', record => {
+    delete record.nav;
+    if (record.meta.entry.entryMeta) delete record.meta.entry.entryMeta.pin;
+  });
   const changed = await run(options);
   const nav = projectNavigation(changed.map, 'home');
   assert.ok(!nav.tree.flatMap(row => [row, ...(row.children ?? [])]).some(row => row.id === 'writer'));
@@ -86,7 +113,7 @@ test('pin changes select navigation without hiding command discovery', async t =
 
 test('a section bound to anything but its contract input fails closed', async t => {
   const options = await fixture(t);
-  await replace(join(options.cellRoot, 'cells/page.designer/v2.md'), '"sections.studio.agent-gallery": "gallery"', '"sections.studio.agent-gallery": "cards"');
+  await editPinned(options, 'page.designer', record => { record.meta.entry.blocks.Route.inputs['sections.studio.agent-gallery'] = 'cards'; });
   await assert.rejects(run(options), /contract input is "gallery"/);
 });
 
@@ -102,15 +129,6 @@ test('a slot with no pin, or an item with no trusted reference, fails closed', a
   await assert.rejects(run(options), /no pin/);
 });
 
-/** Rewrite the Route json of a page cell: `edit` changes the parsed route in place. */
-async function editRoute(path, edit) {
-  const source = await readFile(path, 'utf8');
-  const blocks = [...source.matchAll(/```json\n([\s\S]*?)\n```/g)].filter(match => match[1].includes('"manifest"'));
-  assert.equal(blocks.length, 1, `${path} has one Route json with a manifest`);
-  const route = JSON.parse(blocks[0][1]);
-  edit(route);
-  await writeFile(path, source.replace(blocks[0][1], JSON.stringify(route, null, 2)));
-}
 
 test('a page manifest missing its explorer, modules or actions fails closed (mutation proof)', async t => {
   const mutations = [
@@ -130,7 +148,7 @@ test('a page manifest missing its explorer, modules or actions fails closed (mut
   await run(clean);
   for (const [label, edit, error] of mutations) {
     const options = await fixture(t);
-    await editRoute(join(options.cellRoot, 'cells/page.designer/v2.md'), edit);
+    await editPinned(options, 'page.designer', record => edit(record.meta.entry.blocks.Route));
     await assert.rejects(run(options), error, label);
   }
 });
@@ -158,21 +176,39 @@ test('stale generated products and unexpected files fail closed', async t => {
   await assert.rejects(run(options, { check: true }), /Unexpected file/);
 });
 
-test('ordinary CELL-P output drift is checked before accepting the projection', async t => {
-  const options = await fixture(t);
-  await run(options);
-  await replace(join(options.cellRoot, 'route-pack/studio.json'), '"Home"', '"Stale label"');
-  await assert.rejects(run(options, { check: true }), /drift/);
-  await compileContentMaps(options.cellRoot);
-  await run(options, { check: true });
+test('intact native pins generate without legacy stores and preserve selected bytes', async t => {
+  const options = await fixture(t), before = await selectedBytes(options);
+  const expected = await run(options);
+  for (const name of ['tree.json', 'cells', 'compile.json', 'content-map', 'route-pack']) {
+    await rm(join(options.publisherRoot, name), { recursive: true, force: true });
+  }
+  assert.deepEqual(await run(options, { check: true }), expected);
+  assert.deepEqual(await selectedBytes(options), before);
 });
 
-test('Foundry Publisher inventory exposes the Studio publication and five authored page cells', async () => {
-  const { inventory } = await import('../dist/server/cells.js');
-  const foundryRoot = fileURLToPath(new URL('../../../', import.meta.url));
-  const result = await inventory(foundryRoot, 'publisher');
-  assert.equal(result.state, 'ready');
-  assert.deepEqual(result.cells.map(cell => cell.id).sort(), ['page.designer', 'page.director', 'page.home', 'page.publisher', 'page.writer']);
-  assert.equal(result.tree.tree[0].id, 'studio');
-  assert.equal(result.tree.meta.publications[0].id, 'studio');
+test('a missing native page pin rejects despite intact legacy stores', async t => {
+  const options = await fixture(t), record = await selected(options, 'page.designer');
+  await rm(record.pinPath);
+  await assert.rejects(run(options), /pin.json.*Missing native record/);
+});
+
+test('selected candidate hash drift rejects despite intact legacy stores', async t => {
+  const options = await fixture(t), record = await selected(options, 'page.designer');
+  await replace(record.path, '"title": "Designer"', '"title": "Tampered"');
+  await assert.rejects(run(options), /hash drift/);
+});
+
+test('unselected legacy compiled output cannot replace the pinned publication', async t => {
+  const options = await fixture(t);
+  const expected = await run(options);
+  await mkdir(join(options.publisherRoot, 'route-pack'), { recursive: true });
+  await writeFile(join(options.publisherRoot, 'route-pack/studio.json'), '{"routes":[]}');
+  assert.deepEqual(await run(options, { check: true }), expected);
+});
+
+test('Foundry pinned Publisher inventory exposes the Studio publication and five authored pages', async () => {
+  const { map, routePack } = await readPinnedPublication(join(clossys, 'agents', 'publisher'), 'studio');
+  assert.equal(map.publicationId, 'studio');
+  assert.equal(routePack.packId, 'studio');
+  assert.deepEqual(map.entries.filter(entry => entry.kind === 'page').map(entry => entry.id).sort(), ['designer', 'director', 'home', 'publisher', 'writer']);
 });

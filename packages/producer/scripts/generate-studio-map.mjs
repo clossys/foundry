@@ -1,13 +1,13 @@
 import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { contentMapFromCells, compileContentMaps } from '@clossys/publisher/content-map/cells';
+import { readPinnedPublication } from '@clossys/publisher/content-map/slots';
 import { checkPayload } from './studio-payload.mjs';
 
 const studioRoot = fileURLToPath(new URL('../studio/', import.meta.url));
 const defaultClossysRoot = fileURLToPath(new URL('../../../clossys/', import.meta.url));
 const json = value => `${JSON.stringify(value, null, 2)}\n`;
-const banner = '// Generated from Foundry Publisher cells and the Studio library selection. Run npm run generate:studio-map.\n';
+const banner = '// Generated from pinned Foundry Publisher candidates and the Studio library selection. Run npm run generate:studio-map.\n';
 const LAYER_FOLDER = { frames: 'frames', sections: 'sections' };
 
 function fail(message) { throw new Error(`Studio assembly: ${message}`); }
@@ -77,7 +77,7 @@ export function checkManifest(owner, manifest, contracts) {
 }
 
 /**
- * One assembly per Publisher page cell: the frame, the ordered sections and, per section, the
+ * One assembly per pinned Publisher page: the frame, the ordered sections and, per section, the
  * data field its single contract input reads. A page with a `leaf` template also assembles every
  * leaf beneath it at runtime from the same frame.
  */
@@ -124,15 +124,11 @@ async function pinnedItem(clossysRoot, selection, slot) {
 
 /** Build-time authoring only. Runtime consumers read the generated projection. */
 export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outputDir = resolve(studioRoot, 'generated'), check = false, payloads = true } = {}) {
-  const cellRoot = join(clossysRoot, 'agents', 'publisher');
-  const tree = await readJson(join(cellRoot, 'tree.json'));
-  const publication = tree.meta.publications.find(value => value.id === 'studio');
-  if (!publication?.routePack) fail('the studio publication has no route metadata');
-  const root = publication.routePack.root;
+  const publisherRoot = join(clossysRoot, 'agents', 'publisher');
+  const { map, routePack } = await readPinnedPublication(publisherRoot, 'studio');
+  if (!routePack) fail('the studio publication has no route metadata');
+  const root = routePack.root;
   if (!object(root) || typeof root.kind !== 'string' || typeof root.note !== 'string') fail('the studio publication config names no root');
-  const map = await contentMapFromCells(cellRoot, publication.id);
-  await compileContentMaps(cellRoot, { check });
-  const routePack = await readJson(join(cellRoot, 'route-pack', `${publication.id}.json`));
   const contracts = new Map((await readJson(join(clossysRoot, 'agents', 'designer', 'slot-contracts', 'studio.json'))).map(contract => [contract.slot, contract]));
   const routes = new Map(routePack.routes.map(route => [route.instanceId, route]));
   const pages = map.entries.filter(entry => entry.kind === 'page').map(entry => {
