@@ -1,0 +1,92 @@
+{
+  "name": "studio-specimen",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:file",
+      "content": "import { Badge, Card, CardContent, CardDescription, CardGrid, CardHeader, CardTitle, LinkButton, SpecimenFrame, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';\n\nexport type SpecimenTone = 'secondary' | 'outline' | 'destructive';\n\n/** One viewport's specimen URLs; the frame renders the page at `viewport` CSS px and scales it to fit. */\nexport interface ViewportSpecimen {\n  viewport: 375 | 768 | 1280; light: string; dark?: string;\n  /** False for a preview in a list (a gallery card): the frame is view-only so the page scrolls past it. */\n  interactive?: boolean;\n}\n\n/** A structured record kind (Writer voice, claims, names; Director direction): one titled table. */\nexport interface SpecimenTable {\n  id: string;\n  label: string;\n  columns: readonly string[];\n  /** The prose column, given a readable minimum width. */\n  prose?: number;\n  rows: readonly { key: string; cells: readonly { text: string; href?: string; statusLabel?: string; statusTone?: SpecimenTone }[] }[];\n}\n\n/**\n * The `specimen` input of `sections.studio.specimen`, one shape for every agent:\n * `viewports` frames rendered output (Designer items, Publisher pages) at 375/768/1280 in light\n * and, when the source has one, dark; `record` lays out a record's own content as tables or rows.\n */\nexport type SpecimenInput = { name: string; title: string; description: string } & (\n  | { kind: 'viewports'; specimens: readonly ViewportSpecimen[]; empty: string }\n  | { kind: 'record'; tables?: readonly SpecimenTable[]; rows?: readonly { key: string; label: string; text: string; href?: string }[]; status?: { label: string; tone: SpecimenTone; description: string }; empty: string }\n);\n\nconst RATIO = { 375: 'mobile', 768: 'tablet', 1280: 'desktop' } as const;\n\n/**\n * Every viewport in one vertical run, widest first, each a headed row of its light and dark frames\n * (no tabs). A single viewport, as a gallery card shows it, is the frame alone at full width.\n */\nfunction Viewports({ name, specimens, empty }: { name: string; specimens: readonly ViewportSpecimen[]; empty: string }) {\n  if (!specimens.length) return <CardContent><Badge variant=\"outline\" data-preview-status=\"empty\">{empty}</Badge></CardContent>;\n  const rows = [...specimens].sort((a, b) => b.viewport - a.viewport);\n  return <CardContent className=\"flex flex-col gap-4\">\n    {rows.map(row => <CardContent key={row.viewport} className=\"flex flex-col gap-2 px-0\" data-specimen-viewport={row.viewport}>\n      {rows.length > 1 && <CardDescription role=\"heading\" aria-level={3} className=\"font-medium text-foreground\">{row.viewport} px</CardDescription>}\n      <CardGrid density={row.dark ? 'specimens' : undefined} className={row.dark ? undefined : 'grid-cols-1'}>\n        <SpecimenFrame interactive={row.interactive ?? true} ratio={RATIO[row.viewport]} title={`${name} at ${row.viewport} px${row.dark ? ', light' : ''}`} src={row.light} />\n        {row.dark && <SpecimenFrame interactive={row.interactive ?? true} ratio={RATIO[row.viewport]} title={`${name} at ${row.viewport} px, dark`} src={row.dark} />}\n      </CardGrid>\n    </CardContent>)}\n  </CardContent>;\n}\n\nfunction RecordTable({ name, table, titled }: { name: string; table: SpecimenTable; titled: boolean }) {\n  return <CardContent className=\"flex flex-col gap-2\">\n    {titled && <CardDescription role=\"heading\" aria-level={3} className=\"font-medium text-foreground\">{table.label}</CardDescription>}\n    <Table aria-label={`${name} ${table.label}`}>\n      <TableHeader>\n        {table.columns.map((column, index) => <TableHead key={column} isRowHeader={index === 0}>{column}</TableHead>)}\n      </TableHeader>\n      <TableBody>\n        {table.rows.map(row => <TableRow key={row.key} id={row.key}>\n          {row.cells.map((cell, index) => <TableCell key={index} className={index === table.prose ? 'min-w-48 whitespace-normal' : 'whitespace-normal'}>\n            {cell.href ? <LinkButton href={cell.href} variant=\"link\" size=\"sm\" className=\"h-auto px-0 text-left whitespace-normal break-words\">{cell.text}</LinkButton> : cell.text}\n            {cell.statusLabel && <Badge variant={cell.statusTone ?? 'outline'} className=\"ml-2\">{cell.statusLabel}</Badge>}\n          </TableCell>)}\n        </TableRow>)}\n      </TableBody>\n    </Table>\n  </CardContent>;\n}\n\n/** The specimen body without its card: what the leaf produces. A gallery card places it under its own header. */\nexport function SpecimenContent({ specimen }: { specimen: SpecimenInput }) {\n  if (specimen.kind === 'viewports') return <Viewports name={specimen.name} specimens={specimen.specimens} empty={specimen.empty} />;\n  if (specimen.tables?.length) return <>{specimen.tables.map(table => <RecordTable key={table.id} name={specimen.name} table={table} titled={specimen.tables!.length > 1} />)}</>;\n  if (specimen.rows?.length) return <CardContent>\n    <Table aria-label={`${specimen.name} specimen`}>\n      <TableHeader>\n        <TableHead isRowHeader>Key</TableHead>\n        <TableHead>Content</TableHead>\n      </TableHeader>\n      <TableBody>\n        {specimen.rows.map(row => <TableRow key={row.key} id={row.key}>\n          <TableCell>{row.label}</TableCell>\n          <TableCell className=\"whitespace-normal\">\n            {row.href ? <LinkButton href={row.href} variant=\"link\" size=\"sm\" className=\"h-auto px-0\">{row.text}</LinkButton> : row.text}\n          </TableCell>\n        </TableRow>)}\n      </TableBody>\n    </Table>\n  </CardContent>;\n  if (specimen.status) return <CardContent className=\"flex flex-col items-start gap-2\">\n    <Badge variant={specimen.status.tone} data-preview-status=\"status\">{specimen.status.label}</Badge>\n    <CardDescription>{specimen.status.description}</CardDescription>\n  </CardContent>;\n  return <CardContent><Badge variant=\"outline\" data-preview-status=\"empty\">{specimen.empty}</Badge></CardContent>;\n}\n\n/** `sections.studio.specimen`: what the leaf produces, framed at every viewport or laid out as its record content. */\nexport default function SpecimenSection({ specimen }: { specimen: SpecimenInput }) {\n  return <Card size=\"sm\" data-studio-section=\"specimen\">\n    <CardHeader>\n      <CardTitle role=\"heading\" aria-level={2}>{specimen.title}</CardTitle>\n      <CardDescription className=\"max-w-(--measure)\">{specimen.description}</CardDescription>\n    </CardHeader>\n    <SpecimenContent specimen={specimen} />\n  </Card>;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"studio-specimen\",\n  \"type\": \"registry:block\",\n  \"title\": \"Leaf Specimen\",\n  \"description\": \"What a leaf produces, for every agent: rendered output framed at 375, 768 and 1280 px in light and dark, or the record content as titled tables.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [],\n  \"registryDependencies\": [\n    \"tabs\"\n  ],\n  \"files\": [\n    {\n      \"path\": \"index.tsx\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/studio-specimen/index.tsx\"\n    }\n  ]\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.studio.specimen",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "{\"registry\":\"shadcn\",\"item\":\"tabs\",\"version\":\"4.23.0\",\"hash\":\"sha256:3694a0147e4ed8eccfc7644b7cb5214b76f9e0f76780740faf9f1908cef3d0f7\",\"url\":\"https://ui.shadcn.com/r/styles/radix-nova/tabs.json\"}",
+        "{\"version\":1,\"hash\":\"sha256:0b166e71f94a55ca63bab24deecc2eb56d2be2ac49c18d0516384a5583815b2f\"}"
+      ],
+      "hash": "sha256:55b39a4888d8ba1da2e925dc93317b2c3f8b14322e3647247d7789f4db75c61b",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "studio-specimen",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.studio.specimen",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "STUDIO-PUB"
+      },
+      "reason": "Round 2 (A2, M6): the specimen body is exported on its own so a gallery card places the same preview the leaf page shows; viewports run in one vertical scroll, widest first, each a headed row of light and dark frames, with no tabs; a single viewport is the frame alone, view-only in a list.",
+      "createdAt": "2026-10-31T21:00:00Z",
+      "checks": [
+        {
+          "id": "lineage.reference",
+          "suite": "studio",
+          "type": "fixed",
+          "status": "pass",
+          "at": "2026-10-31T21:00:00Z"
+        },
+        {
+          "id": "studio.ds-only",
+          "suite": "studio",
+          "type": "fixed",
+          "status": "pass",
+          "at": "2026-10-31T21:00:00Z"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--card",
+          "--border",
+          "--muted-foreground"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

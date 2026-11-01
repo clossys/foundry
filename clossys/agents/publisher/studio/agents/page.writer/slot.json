@@ -10,17 +10,21 @@
   "kind": "page",
   "contract": {},
   "inputs": [
+    "frames.studio-shell",
     "sections.content",
     "sections.explorer",
     "sections.record-detail",
     "sections.status-list",
+    "sections.studio.agent-gallery",
     "sections.task-list"
   ],
   "uses": [
+    "frames.studio-shell",
     "sections.content",
     "sections.explorer",
     "sections.record-detail",
     "sections.status-list",
+    "sections.studio.agent-gallery",
     "sections.task-list"
   ]
 }
