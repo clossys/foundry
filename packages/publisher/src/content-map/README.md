@@ -51,3 +51,12 @@ standard URLs and choosing an appropriate expiry.
 All map projections validate the map before emitting output. Route and static
 parameter order follows the existing hierarchy, order and identity sorting;
 redirect output is sorted by source. Input arrays and records are not mutated.
+
+The Node entry `@clossys/publisher/content-map/slots` exposes
+`await readPinnedPublication(publisherRoot, publicationId)`, returning
+`{ map, routePack? }`. The root is the consumer's `agents/publisher` folder.
+The reader discovers slots through `ia.json`, verifies each selected candidate's
+raw bytes against `pin.json`, and projects the publication's embedded tree.
+It preserves entry identities, format, route headers and route metadata, and
+validates the complete map. Missing or invalid native records fail without a
+legacy fallback. Reading writes no files and grants no serving approval.
