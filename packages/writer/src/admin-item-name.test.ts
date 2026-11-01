@@ -75,6 +75,19 @@ describe("current common item owners and original Studio carriers", () => {
     }
     for (const id of ["st.mn2v0dgaj8", "st.17r7xa6wg9"]) expect(resolveAdminCopyRef({ id }, store(), preview)).toBeUndefined();
   });
+  it("protects canonical common item ids when supplied context removes the item prefix", () => {
+    for (const id of [...ids, "st.mn2v0dgaj8", "st.17r7xa6wg9"]) {
+      for (const status of ["draft", "approved"] as const) {
+        const changed = structuredClone(common);
+        const owner = changed.records.find(row => row.id === id)!;
+        owner.context = "ordinary.context";
+        owner.status = status;
+        const copy = createAdminCopy([changed as AdminCopyEnvelope]);
+        expect(resolveAdminCopyRef({ id }, copy, preview), `${id}/${status}/preview`).toBeUndefined();
+        expect(resolveAdminCopyRef({ id }, copy, { target: "production" }), `${id}/${status}/production`).toBeUndefined();
+      }
+    }
+  });
   it("refuses missing, duplicate, altered owners, original usage, declaration and carrier", () => {
     for (const id of ids) {
       const owner = common.records.find(row => row.id === id)!;

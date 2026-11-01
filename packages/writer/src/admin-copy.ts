@@ -74,6 +74,10 @@ const designerItemNames = new Map(ADMIN_STUDIO_COPY_EN.records.filter(record =>
   record.leaf === "strings.names" && record.context.startsWith("designer.item.")
 ).map(record => [record.id, record]));
 
+const commonItemIds = new Set(commonSource.records.filter(record =>
+  record.context.startsWith("designer.item.")
+).map(record => record.id));
+
 interface ExternalDeclaration { readonly recordId: string; readonly source: string; readonly sourceContext: string }
 function declarations(envelope: AdminCopyEnvelope): readonly ExternalDeclaration[] {
   return "externalRecords" in envelope ? envelope.externalRecords as readonly ExternalDeclaration[] : [];
@@ -129,7 +133,7 @@ export function getAdminPageItemNameAuthority(alias: string) {
 /** Authenticate an item name against the shipped Writer source binding.
  * A context-shaped string alone grants no authority to name a Designer item. */
 export function getAdminItemNameBinding(id: string, copy: AdminCopy = ADMIN_COPY_EN): AdminItemNameBinding | undefined {
-  if (commonSource.records.some(row => row.id === id && row.context.startsWith("designer.item."))) return commonItemBinding(id, copy);
+  if (commonItemIds.has(id)) return commonItemBinding(id, copy);
   const canonicalRecord = designerItemNames.get(id);
   const record = getAdminCopyRecord(id, copy);
   if (!canonicalRecord || !record || record.leaf !== canonicalRecord.leaf || record.context !== canonicalRecord.context) return undefined;
@@ -154,7 +158,7 @@ export function resolveAdminCopyRef(ref: AdminCopyRef, copy: AdminCopy = ADMIN_C
   const record = getAdminCopyRecord(ref.id, copy);
   const envelope = copy.envelopes.find(envelope => envelope.records.some(row => row.id === ref.id));
   if (!record || !envelope || envelope.locale !== "en") return undefined;
-  if ((designerItemNames.has(ref.id) || record.context.startsWith("designer.item.")) && !getAdminItemNameBinding(ref.id, copy)) return undefined;
+  if ((designerItemNames.has(ref.id) || commonItemIds.has(ref.id) || record.context.startsWith("designer.item.")) && !getAdminItemNameBinding(ref.id, copy)) return undefined;
   const resolve = createCopyResolver({
     id: "admin-copy",
     locale: envelope.locale,
