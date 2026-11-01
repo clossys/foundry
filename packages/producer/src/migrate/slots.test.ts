@@ -131,6 +131,31 @@ describe("clossys migrate slots", () => {
       expect(plan.agents.designer.ia.extensions).toEqual([]);
     });
 
+    it("preserves actual registry theme variables and font metadata without files", async () => {
+      const records = [
+        { slot: "themes.consumer-fixture", path: join(here, "../specimen/__fixtures__/library/themes.preset/neutral/v1/theme.json") },
+        { slot: "assets.consumer-font", path: join(here, "../../../designer/references/shadcn/font-inter@4.23.0/font-inter.json") },
+      ];
+      writeFileSync(join(consumer, "agents/designer/ia.json"), jsonBytes(withExtensions("designer", designerIa().ia, records.map(row => row.slot))));
+      const originals = records.map(({ slot, path }) => {
+        const raw = readFileSync(path, "utf8"), item = JSON.parse(raw);
+        const dir = join(consumer, "library", slot, item.name, "v1");
+        mkdirSync(dir, { recursive: true });
+        writeFileSync(join(dir, "item.json"), raw);
+        writeFileSync(join(dir, "element.json"), jsonBytes({ id: item.name, slot, kind: item.type, payload: ["item.json"], hash: hashFiles(dir, ["item.json"]), lineage: { mode: "original" } }));
+        return { slot, item };
+      });
+      await migrate();
+      for (const { slot: id, item } of originals) {
+        const slot = listSlots(consumer, "designer").find(entry => entry.id === id)!;
+        const migrated = JSON.parse(readFileSync(join(candidatesDir(slot.dir), `${item.name}-v1.json`), "utf8"));
+        expect(migrated.type).toBe(item.type);
+        expect(migrated.cssVars).toEqual(item.cssVars);
+        expect(migrated.font).toEqual(item.font);
+        expect(migrated.files).toEqual(item.files ?? []);
+      }
+    });
+
     it("refuses malformed or duplicate source contracts", async () => {
       prepare(true);
       const path = join(consumer, "agents/designer/slot-contracts/consumer.json");

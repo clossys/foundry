@@ -20,7 +20,7 @@ export const DEFAULT_THUMBNAIL_CACHE = join("node_modules", ".cache", "clossys",
 export const DEFAULT_THUMBNAIL_WIDTHS = [480] as const;
 
 export interface SnapshotOptions {
-  /** Library roots (`<root>/<slot>/<element>/v<n>/`), read through the slot engine loaders. */
+  /** Canonical consumer roots, read through the common slot reader. */
   readonly records: readonly string[];
   readonly element: string;
   readonly version?: number;

@@ -1,7 +1,7 @@
 /**
  * `clossys specimen serve|snapshot`: the one preview URL for element records, and headless
- * thumbnails of it. Publisher renders; this verb only wires library roots
- * (`<root>/<slot>/<element>/v<n>/`, read through the slot engine loaders) to it.
+ * thumbnails of it. Publisher renders; this verb supplies canonical consumer
+ * roots to the common slot reader.
  */
 import { resolve } from "node:path";
 import { specimenUrl, startSpecimenServer } from "@clossys/publisher/specimen";
@@ -10,7 +10,8 @@ import { snapshotSpecimen, type SnapshotResult } from "../specimen/thumbnails.js
 import { CliUsageError } from "./args.js";
 
 export const SPECIMEN_USAGE = "Usage: clossys specimen serve --records <dir> [--theme <id>] [--port <n>] [--workspace <dir>]\n"
-  + "       clossys specimen snapshot --records <dir> --element <id> [--v <n>] [--theme <t>] [--width <px,px>] [--cache <dir>] [--workspace <dir>] [--json]";
+  + "       clossys specimen snapshot --records <dir> --element <id> [--v <n>] [--theme <t>] [--width <px,px>] [--cache <dir>] [--workspace <dir>] [--json]\n"
+  + "  --records names a canonical consumer directory containing agents/designer/ia.json";
 
 export interface SpecimenCliResult {
   exitCode: 0 | 1 | 2;

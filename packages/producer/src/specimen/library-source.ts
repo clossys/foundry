@@ -1,63 +1,49 @@
 /**
- * Specimen records from a consumer library (`library/<slot>/<element>/v<n>/`), read only
- * through the slot engine's own loaders and validators (`../records`). Publisher renders;
- * it sees only the validated version this store hands it, so Publisher never depends on
- * Producer and the record schema has one owner.
- *
- * Specimen ids are `<slot>/<element>`. A bare `<element>` (how a payload names a sibling
- * it imports through `@/`) resolves when exactly one slot in the roots holds it.
+ * Publisher's specimen transport over canonical Designer slots. Consumer roots
+ * hold agents/designer/ia.json; no legacy library or selection store is read.
+ * Publisher renders the validated inline registry item and its recorded preview.
  */
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { resolve } from "node:path";
 import { recordStoreSource, type SpecimenElementVersion, type SpecimenRecordSource, type SpecimenRecordStore } from "@clossys/publisher/specimen";
-import { hashFiles } from "../records/hash.js";
-import { ELEMENT_FILE, listVersions, payloadFiles, PREVIEW_FILE, readElementVersion, verifyElementVersion } from "../records/library.js";
-import { SELECTION_FILE } from "../records/selection.js";
-import { loadSelection, RecordError } from "../records/validate.js";
+import { listSlots, readCandidate, readSlot, type SlotEntry } from "../records/slots.js";
+import { CANDIDATE_NAME, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
+import { RecordError } from "../records/validate.js";
 
 const SEGMENT = /^[a-z0-9][a-z0-9.-]*$/;
-
 export interface LibrarySourceOptions {
-  /** Library roots (each holds `<slot>/<element>/v<n>/`), searched in order. */
+  /** Canonical consumer roots, searched in order. */
   readonly roots: readonly string[];
-  /** Theme id used when neither the URL nor the record names one. */
   readonly defaultTheme?: string;
 }
 
-const isDir = (path: string) => { try { return statSync(path).isDirectory(); } catch { return false; } };
+function versions(entry: SlotEntry, element: string): { name: string; version: number }[] {
+  return entry.candidates.flatMap(name => {
+    const match = CANDIDATE_NAME.exec(name);
+    return match?.[1] === element && match[3] === "json" ? [{ name, version: Number(match[2]) }] : [];
+  });
+}
 
-/** Where one specimen id lives: `{ root, slot, element }`, or undefined when no root holds it. */
+/** Locate only candidates placed in the Designer IA; a bare name must be unique. */
 export function locateLibraryElement(roots: readonly string[], id: string): { root: string; slot: string; element: string } | undefined {
   const parts = id.split("/");
   if (parts.length > 2 || !parts.every(part => SEGMENT.test(part) && !part.includes(".."))) return undefined;
-  if (parts.length === 2) {
-    const [slot, element] = parts as [string, string];
-    const root = roots.find(candidate => isDir(join(candidate, slot, element)));
-    return root ? { root, slot, element } : undefined;
-  }
-  const element = parts[0]!;
+  const element = parts.at(-1)!;
   for (const root of roots) {
-    if (!isDir(root)) continue;
-    const slots = readdirSync(root).filter(slot => SEGMENT.test(slot) && isDir(join(root, slot, element)));
-    if (slots.length > 1) throw new Error(`element ${element} is in ${slots.length} slots (${slots.join(", ")}); name it as <slot>/${element}`);
-    if (slots.length === 1) return { root, slot: slots[0]!, element };
+    const matches = listSlots(root, "designer").filter(entry => (parts.length === 1 || entry.id === parts[0]) && versions(entry, element).length);
+    if (matches.length > 1) throw new Error(`element ${element} is in ${matches.length} slots (${matches.map(entry => entry.id).join(", ")}); name it as <slot>/${element}`);
+    if (matches.length) return { root, slot: matches[0]!.id, element };
   }
   return undefined;
 }
 
-/**
- * The version a read without an explicit version resolves to: the version the workspace's
- * `selection.json` (beside the library root) pins for that slot and element. Pinned is not
- * newest; only a slot with no pin for this element falls back to its newest version.
- */
+/** A missing or invalid pin never selects the newest candidate. */
 export function pinnedLibraryVersion(root: string, slot: string, element: string): number | undefined {
-  const file = join(dirname(root), SELECTION_FILE);
-  if (!existsSync(file)) return undefined;
-  const pin = loadSelection(file).pins[slot];
-  return pin?.element === element ? pin.version : undefined;
+  const pin = listSlots(root, "designer").find(entry => entry.id === slot)?.pin;
+  const match = pin && CANDIDATE_NAME.exec(pin.candidate);
+  return match && match[1] === element ? Number(match[2]) : undefined;
 }
 
-/** A record store over library roots: every read is schema-validated and hash-verified. */
+/** Every byte and the pin come from the common model reader. No store fallback. */
 export function libraryRecordStore(rootsIn: readonly string[]): SpecimenRecordStore {
   const roots = rootsIn.map(root => resolve(root));
   return {
@@ -65,39 +51,40 @@ export function libraryRecordStore(rootsIn: readonly string[]): SpecimenRecordSt
       const where = locateLibraryElement(roots, id);
       if (!where) return undefined;
       const { root, slot, element } = where;
-      const versions = listVersions(root, slot, element);
-      const chosen = version ?? pinnedLibraryVersion(root, slot, element) ?? versions.at(-1);
-      if (chosen === undefined || !versions.includes(chosen)) return undefined;
-      const read = readElementVersion(root, slot, element, chosen);
-      const issues = verifyElementVersion(root, slot, element, chosen);
-      if (issues.length) throw new RecordError(`element ${slot}/${element}@v${chosen}`, issues);
-      const payload = payloadFiles(read.dir, read.element);
-      const files = payload.map(path => ({ path, content: readFileSync(join(read.dir, path), "utf8") }));
-      const own = [ELEMENT_FILE, PREVIEW_FILE, ...payload];
+      const entry = listSlots(root, "designer").find(entry => entry.id === slot)!;
+      const chosen = version ?? pinnedLibraryVersion(root, slot, element);
+      if (chosen === undefined) return undefined;
+      const candidate = versions(entry, element).find(candidate => candidate.version === chosen);
+      if (!candidate) return undefined;
+      const doc = readSlot(root, "designer", slot);
+      const docIssues = validateSlotDoc(doc);
+      if (docIssues.length) throw new RecordError(`slot ${slot}`, docIssues);
+      if (doc.id !== slot || doc.agent !== "designer" || doc.kind !== "element" || doc.ia.l0 !== entry.position.l0 || doc.ia.l1 !== entry.position.l1 || doc.ia.l2 !== entry.position.l2 || doc.ia.order !== entry.position.order) docIssues.push({ code: "slot-mismatch", path: "slot.json", message: "slot identity or position differs from the IA" });
+      if (docIssues.length) throw new RecordError(`slot ${slot}`, docIssues);
+      const read = readCandidate(root, "designer", slot, candidate.name);
+      const issues = validateCandidate("element", slot, candidate.name, read.bytes);
+      if (entry.pin?.candidate === candidate.name && entry.pin.sha256 !== read.sha256) issues.push({ code: "pin-hash", path: "pin.json", message: "pinned candidate bytes do not match sha256" });
+      if (issues.length) throw new RecordError(`candidate ${slot}/${candidate.name}`, issues);
+      const item = JSON.parse(read.bytes);
       const row: SpecimenElementVersion = {
-        id: `${slot}/${element}`, version: chosen, kind: read.element.kind, layer: read.element.layer,
-        files, preview: read.preview, contentHash: hashFiles(read.dir, own).replace(/^sha256:/, ""),
+        id: `${slot}/${element}`, version: chosen, kind: item.type, layer: entry.position.l0 ?? slot.split(".")[0]!,
+        files: [{ path: `${element}.json`, content: read.bytes }], preview: item.meta?.preview ?? {}, contentHash: read.sha256,
       };
       return row;
     },
   };
 }
 
-/** The specimen source for consumer libraries. */
 export function libraryRecordSource(options: LibrarySourceOptions): SpecimenRecordSource {
   return recordStoreSource(libraryRecordStore(options.roots), options.defaultTheme ? { defaultTheme: options.defaultTheme } : {});
 }
 
-/** Every `<slot>/<element>` id in the roots, sorted (first root wins on a repeat). */
+/** Actual candidate identities, in IA slots only; first consumer wins a repeat. */
 export function listLibraryElements(rootsIn: readonly string[]): string[] {
   const ids = new Set<string>();
-  for (const root of rootsIn.map(path => resolve(path))) {
-    if (!isDir(root)) continue;
-    for (const slot of readdirSync(root).filter(name => SEGMENT.test(name) && isDir(join(root, name)))) {
-      for (const element of readdirSync(join(root, slot)).filter(name => SEGMENT.test(name) && isDir(join(root, slot, name)))) {
-        if (listVersions(root, slot, element).length) ids.add(`${slot}/${element}`);
-      }
-    }
+  for (const root of rootsIn) for (const entry of listSlots(resolve(root), "designer")) for (const name of entry.candidates) {
+    const match = CANDIDATE_NAME.exec(name);
+    if (match?.[3] === "json") ids.add(`${entry.id}/${match[1]}`);
   }
   return [...ids].sort();
 }

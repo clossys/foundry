@@ -36,7 +36,7 @@ export interface PublishInstallOptions {
   /** Resolves a page record file path; defaults to the process cwd. */
   readonly cwd?: string;
   readonly out?: string;
-  /** Library roots; defaults to `<root>/clossys/library`. */
+  /** Canonical consumer roots; defaults to <root>/clossys. */
   readonly records?: readonly string[];
   readonly runner?: ShadcnRunner;
   /** Runs npm in the substrate (`["install", ...]`); never through a shell. */

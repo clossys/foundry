@@ -4,19 +4,24 @@
  * both, and its compiled Writer copy holds every key the page binds. The real shadcn CLI
  * runs; `REGISTRY_URL` points its one base-color fetch at a loopback stub.
  */
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { runCli } from "../cli/main.js";
+import { migrateFixtureLibrary } from "../specimen/__fixtures__/canonical-library.js";
 
-const fixture = join(import.meta.dirname, "__fixtures__", "install-consumer");
+const fixtureSource = join(import.meta.dirname, "__fixtures__", "install-consumer");
+let fixture: string;
 const temps: string[] = [];
 let stub: Server, previous: string | undefined;
-const temp = (prefix: string) => { const dir = mkdtempSync(join(tmpdir(), prefix)); temps.push(dir); return dir; };
+const temp = (prefix: string) => { const dir = realpathSync(mkdtempSync(join(tmpdir(), prefix))); temps.push(dir); return dir; };
 
 beforeAll(async () => {
+  fixture = temp("producer-install-fixture-");
+  cpSync(fixtureSource, fixture, { recursive: true });
+  await migrateFixtureLibrary(join(fixture, "clossys"));
   stub = createServer((request, response) => {
     if (request.url?.startsWith("/r/colors/")) {
       response.setHeader("content-type", "application/json");

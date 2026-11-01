@@ -4,7 +4,7 @@
  * page cell binds its copy. The real shadcn CLI runs against a loopback registry stub; the
  * Vite build is a stub runner so no bundler runs here.
  */
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -12,14 +12,19 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { runCli } from "../cli/main.js";
 import { parseArgs } from "../cli/args.js";
 import { publishSite } from "./install-site.js";
+import { migrateFixtureLibrary } from "../specimen/__fixtures__/canonical-library.js";
 
-const fixture = join(import.meta.dirname, "__fixtures__", "install-consumer");
+const fixtureSource = join(import.meta.dirname, "__fixtures__", "install-consumer");
+let fixture: string;
 const base = join("clossys", "agents", "publisher");
 const temps: string[] = [];
 let stub: Server, previous: string | undefined;
-const temp = (prefix: string) => { const dir = mkdtempSync(join(tmpdir(), prefix)); temps.push(dir); return dir; };
+const temp = (prefix: string) => { const dir = realpathSync(mkdtempSync(join(tmpdir(), prefix))); temps.push(dir); return dir; };
 
 beforeAll(async () => {
+  fixture = temp("producer-install-site-fixture-");
+  cpSync(fixtureSource, fixture, { recursive: true });
+  await migrateFixtureLibrary(join(fixture, "clossys"));
   stub = createServer((request, response) => {
     if (request.url?.startsWith("/r/colors/")) {
       response.setHeader("content-type", "application/json");

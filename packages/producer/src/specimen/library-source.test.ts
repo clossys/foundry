@@ -1,77 +1,96 @@
-import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { RecordError } from "../records/validate.js";
+import { listSlots, readCandidate } from "../records/slots.js";
+import { candidatesDir, jsonBytes, pinFile, slotFile } from "../records/slot-model/index.js";
+import { sha256Hex } from "../records/hash.js";
+import { canonicalLibrary } from "./__fixtures__/canonical-library.js";
 import { libraryRecordSource, libraryRecordStore, listLibraryElements, locateLibraryElement, pinnedLibraryVersion } from "./library-source.js";
 
-const library = fileURLToPath(new URL("./__fixtures__/library/", import.meta.url));
-const temps: string[] = [];
-afterAll(() => { for (const dir of temps) rmSync(dir, { recursive: true, force: true }); });
-const copy = () => {
-  const dir = mkdtempSync(join(tmpdir(), "producer-library-source-"));
-  temps.push(dir);
-  cpSync(library, dir, { recursive: true });
-  return dir;
-};
+let root: string;
+beforeEach(async () => { root = await canonicalLibrary(mkdtempSync(join(tmpdir(), "producer-slot-source-"))); });
+afterEach(() => rmSync(root, { recursive: true, force: true }));
+const card = () => listSlots(root, "designer").find(entry => entry.id === "components.card")!;
+const candidate = () => join(candidatesDir(card().dir), "sample-card-v1.json");
 
-describe("library record source (SU-2A records through the slot engine loaders)", () => {
-  it("lists and locates elements by slot/element or a bare element", () => {
-    expect(listLibraryElements([library])).toEqual(["components.button/sample-button", "components.card/sample-card", "themes.preset/neutral"]);
-    expect(locateLibraryElement([library], "sample-card")).toMatchObject({ slot: "components.card", element: "sample-card" });
-    expect(locateLibraryElement([library], "components.card/sample-card")).toMatchObject({ slot: "components.card" });
-    expect(locateLibraryElement([library], "../sample-card")).toBeUndefined();
-    expect(locateLibraryElement([library], "missing")).toBeUndefined();
+describe("canonical specimen records through the common slot reader", () => {
+  it("lists and locates IA candidates by slot/element or a unique bare name", () => {
+    expect(listLibraryElements([root])).toEqual(["components.button/sample-button", "components.card/sample-card", "themes.preset/neutral"]);
+    expect(locateLibraryElement([root], "sample-card")).toMatchObject({ slot: "components.card", element: "sample-card" });
+    expect(locateLibraryElement([root], "components.card/sample-card")).toMatchObject({ slot: "components.card" });
+    expect(locateLibraryElement([root], "../sample-card")).toBeUndefined();
+    expect(locateLibraryElement([root], "missing")).toBeUndefined();
   });
 
-  it("hands Publisher a validated record with its preview adapted", async () => {
-    const source = libraryRecordSource({ roots: [library], defaultTheme: "neutral" });
-    const card = await source.read("sample-card");
-    expect(card).toMatchObject({ id: "components.card/sample-card", version: 1, kind: "visual" });
-    expect(card!.payload.path).toBe("sample-card.json");
-    expect(card!.payload.files.map(file => file.path)).toEqual(["registry/blocks/sample-card.tsx"]);
-    expect(card!.preview).toMatchObject({ width: 480, container: "canvas" });
-    // A clossys.preview/1 theme is a mode ("light"), never a theme id; the default theme applies.
-    expect(card!.preview.theme).toBeUndefined();
-    expect(card!.preview.copy?.["card.title"]).toBeDefined();
-    expect(card!.contentHash).toMatch(/^[0-9a-f]{64}$/);
+  it("preserves inline payload, preview and theme after all old specimen stores are removed", async () => {
+    const source = libraryRecordSource({ roots: [root], defaultTheme: "neutral" });
+    const expected = JSON.parse(readFileSync(candidate(), "utf8"));
+    const record = await source.read("sample-card");
+    expect(record).toMatchObject({ id: "components.card/sample-card", version: 1, kind: "visual" });
+    expect(record!.payload.path).toBe("sample-card.json");
+    expect(record!.payload.files).toEqual(expected.files.map((file: { path: string; content: string; type?: string }) => ({ path: file.path, content: file.content, ...(file.type ? { type: file.type } : {}) })));
+    expect((await libraryRecordStore([root]).load("sample-card"))!.preview).toEqual(expected.meta.preview);
+    expect(record!.preview).toMatchObject({ width: 480, container: "canvas", copy: Object.fromEntries(Object.entries(expected.meta.preview.copy).map(([key, text]) => [key, { text }])) });
+    expect(record!.preview.theme).toBeUndefined();
+    expect(record!.contentHash).toBe(sha256Hex(readFileSync(candidate())));
     expect(await source.read("sample-card", 2)).toBeUndefined();
-    const theme = await source.theme();
-    expect(theme).toMatchObject({ id: "themes.preset/neutral" });
+    expect(await source.theme()).toMatchObject({ id: "themes.preset/neutral" });
   });
 
-  it("refuses a record whose payload no longer matches its hash", async () => {
-    const dir = copy();
-    writeFileSync(join(dir, "components.button/sample-button/v1/sample-button.json"), "{}\n");
-    await expect(libraryRecordStore([dir]).load("sample-button")).rejects.toBeInstanceOf(RecordError);
-  });
-
-  it("names both slots when a bare element is ambiguous", () => {
-    const dir = copy();
-    cpSync(join(dir, "components.card/sample-card"), join(dir, "components.panel/sample-card"), { recursive: true });
-    expect(() => locateLibraryElement([dir], "sample-card")).toThrow(/2 slots/);
-  });
-
-  it("reads the version selection.json pins, not the newest one", async () => {
-    const workspace = mkdtempSync(join(tmpdir(), "producer-library-pins-"));
-    temps.push(workspace);
-    const root = join(workspace, "library");
-    mkdirSync(root);
-    cpSync(library, root, { recursive: true });
-    const pin = (version: number) => writeFileSync(join(workspace, "selection.json"), `${JSON.stringify({
-      schema: "clossys.selection/1",
-      pins: { "components.card": { element: "sample-card", version, hash: `sha256:${"0".repeat(64)}`, event: "e1" } },
-      history: [{ id: "e1", at: "2026-10-31T00:00:00Z", by: "test", action: "pin", slot: "components.card", element: "sample-card", version, hash: `sha256:${"0".repeat(64)}`, from: "option", reason: "Test pin." }],
-    })}\n`);
-    pin(1);
-    expect(pinnedLibraryVersion(root, "components.card", "sample-card")).toBe(1);
+  it("reads an older pin and exposes newer options only by explicit version", async () => {
+    const slot = card();
+    const draft = JSON.parse(readFileSync(candidate(), "utf8"));
+    draft.files[0].content += "\n// newer option\n";
+    writeFileSync(join(candidatesDir(slot.dir), "sample-card-v2.json"), jsonBytes(draft));
+    expect(pinnedLibraryVersion(root, slot.id, "sample-card")).toBe(1);
     expect(await libraryRecordStore([root]).load("sample-card")).toMatchObject({ version: 1 });
-    // A pin to a version the library does not hold resolves to nothing, never to the newest version.
-    pin(7);
-    expect(pinnedLibraryVersion(root, "components.card", "sample-card")).toBe(7);
+    expect(await libraryRecordStore([root]).load("sample-card", 2)).toMatchObject({ version: 2 });
+  });
+
+  it("does not fall back to a newer candidate when the pin is missing or invalid", async () => {
+    const slot = card();
+    rmSync(pinFile(slot.dir));
     expect(await libraryRecordStore([root]).load("sample-card")).toBeUndefined();
-    // A slot without a pin keeps the newest version.
-    expect(await libraryRecordStore([root]).load("sample-button")).toMatchObject({ version: 1 });
+    writeFileSync(pinFile(slot.dir), "{}\n");
+    expect(await libraryRecordStore([root]).load("sample-card")).toBeUndefined();
+    expect(await libraryRecordStore([root]).load("sample-card", 1)).toMatchObject({ version: 1 });
+  });
+
+  it("does not fall back when a pin names a missing candidate", async () => {
+    const slot = card();
+    writeFileSync(pinFile(slot.dir), jsonBytes({ ...slot.pin, candidate: "sample-card-v7.json" }));
+    expect(pinnedLibraryVersion(root, slot.id, "sample-card")).toBe(7);
+    expect(await libraryRecordStore([root]).load("sample-card")).toBeUndefined();
+  });
+
+  it("rejects pinned byte drift and malformed candidate content", async () => {
+    writeFileSync(candidate(), readFileSync(candidate(), "utf8").replace("Weekly report ready", "Changed report title"));
+    await expect(libraryRecordStore([root]).load("sample-card")).rejects.toBeInstanceOf(RecordError);
+    writeFileSync(candidate(), "{}\n");
+    await expect(libraryRecordStore([root]).load("sample-card")).rejects.toBeInstanceOf(RecordError);
+  });
+
+  it("rejects slot identity drift even when the payload remains valid", async () => {
+    const slot = card(), doc = JSON.parse(readFileSync(slotFile(slot.dir), "utf8"));
+    writeFileSync(slotFile(slot.dir), jsonBytes({ ...doc, id: "components.button" }));
+    await expect(libraryRecordStore([root]).load("sample-card")).rejects.toBeInstanceOf(RecordError);
+  });
+
+  it("ignores legacy library and selection stores when canonical pins are absent", async () => {
+    const slot = card(); rmSync(pinFile(slot.dir));
+    mkdirSync(join(root, "library/components.card/sample-card/v1"), { recursive: true });
+    writeFileSync(join(root, "selection.json"), jsonBytes({ pins: { "components.card": { element: "sample-card", version: 1 } } }));
+    expect(await libraryRecordStore([root]).load("sample-card")).toBeUndefined();
+    expect(readCandidate(root, "designer", slot.id, "sample-card-v1.json").bytes).toContain("sample-card");
+  });
+
+  it("requires a qualified id when two IA slots carry the same element name", () => {
+    const other = listSlots(root, "designer").find(entry => entry.id === "themes.background")!;
+    mkdirSync(candidatesDir(other.dir), { recursive: true });
+    writeFileSync(join(candidatesDir(other.dir), "sample-card-v1.json"), readFileSync(candidate()));
+    expect(() => locateLibraryElement([root], "sample-card")).toThrow(/2 slots/);
+    expect(locateLibraryElement([root], "components.card/sample-card")).toMatchObject({ slot: "components.card" });
   });
 });
