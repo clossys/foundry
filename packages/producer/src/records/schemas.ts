@@ -51,7 +51,7 @@ const referenceRef: JsonSchema = {
 };
 
 /** Closed opt-in byte proof; the reference guard performs byte replay and closure checks. */
-const exactPartDefinitions = {
+const exactPartDefinitions: Readonly<Record<string, JsonSchema>> = {
   "exactPartSource": {
     "type": "object",
     "required": [
@@ -318,7 +318,7 @@ const exactPartDefinitions = {
       }
     }
   }
-} satisfies Readonly<Record<string, JsonSchema>>;
+};
 
 const exactParts: JsonSchema = {
   "type": "object",
