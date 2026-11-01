@@ -1,0 +1,96 @@
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { sha256Hex } from "./hash.js";
+import { jsonBytes, serializeFrontmatter, slotPositions, type IaDoc, type SlotAgent } from "./slot-model/index.js";
+import { listSlots, readCandidate, readIa, readiness, slotIndex, usedBy } from "./slots.js";
+
+let root: string;
+let dirs: Record<string, string>;
+const save = (path: string, value: unknown) => writeFileSync(path, jsonBytes(value));
+const load = (path: string) => JSON.parse(readFileSync(path, "utf8"));
+const ids = { director: "brief.synthetic", designer: "components.synthetic", writer: "strings.synthetic", publisher: "page.synthetic" };
+const source = { kind: "original", ref: [] };
+
+beforeEach(() => {
+  root = realpathSync(mkdtempSync(join(tmpdir(), "slot-reader-")));
+  dirs = {};
+  for (const agent of Object.keys(ids) as SlotAgent[]) {
+    const id = ids[agent];
+    const ia: IaDoc = { schema: "clossys.ia/1", source: "synthetic#fixture", extensions: [], nodes: [{ id: "examples", label: "Examples", children: [{ id: "group", label: "Group", slots: [id] }] }] };
+    const dir = join(root, "agents", agent, "examples", "group", id);
+    dirs[agent] = dir;
+    mkdirSync(join(dir, "candidates"), { recursive: true });
+    save(join(root, "agents", agent, "ia.json"), ia);
+    const kind = agent === "director" ? "brief" : agent === "designer" ? "element" : agent === "writer" ? "strings" : "page";
+    save(join(dir, "slot.json"), {
+      schema: "clossys.slot/1", id, agent, ia: slotPositions(agent, ia).get(id), kind, contract: {},
+      inputs: agent === "director" ? [] : [ids.director], uses: agent === "publisher" ? [ids.designer] : [],
+    });
+    const bytes = agent === "director"
+      ? serializeFrontmatter({ slot: id, source, feeds: [], functions: [] }, "## Direction\n- example: Direction\n\n## Because\n- example: Evidence\n\n## Watch\n- example: Constraint\n")
+      : agent === "writer"
+        ? serializeFrontmatter({ slot: id, source, locales: ["en"] }, '## en\n### example.title\n<!-- {"id":"example-title","bindings":[]} -->\nExample title\n')
+        : jsonBytes(agent === "designer"
+          ? { name: "example", type: "registry:item", files: [], meta: { source } }
+          : { schema: "clossys.page/1", path: "/", title: "example.title", frame: null, sections: [], copy: {}, meta: { source } });
+    const name = `sample-v1.${agent === "director" || agent === "writer" ? "md" : "json"}`;
+    writeFileSync(join(dir, "candidates", name), bytes);
+    save(join(dir, "pin.json"), { candidate: name, sha256: sha256Hex(bytes), pinnedBy: "migration:SLOT-MODEL", at: "2026-10-31T00:00:00Z" });
+  }
+});
+afterEach(() => rmSync(root, { recursive: true, force: true }));
+
+describe("shared slot reader input integrity", () => {
+  it("lists IA slots and clears intact upstream pins", () => {
+    expect(listSlots(root, "designer").map(entry => entry.id)).toEqual([ids.designer]);
+    expect(readiness(root, "designer", ids.designer)).toEqual({ ready: true, blockedBy: [] });
+    expect(readiness(root, "director", ids.director)).toEqual({ ready: true, blockedBy: [] });
+    expect(usedBy(root, ids.designer)).toEqual([{ agent: "publisher", id: ids.publisher }]);
+  });
+
+  const mutations: [string, () => void, string][] = [
+    ["missing pin", () => rmSync(join(dirs.director!, "pin.json")), "unpinned"],
+    ["missing sha", () => { const path = join(dirs.director!, "pin.json"); const pin = load(path); delete pin.sha256; save(path, pin); }, "invalid-pin"],
+    ["malformed pin", () => writeFileSync(join(dirs.director!, "pin.json"), "{"), "invalid-pin"],
+    ["missing candidate", () => rmSync(join(dirs.director!, "candidates", "sample-v1.md")), "missing-candidate"],
+    ["changed candidate", () => { const path = join(dirs.director!, "candidates", "sample-v1.md"); writeFileSync(path, readFileSync(path, "utf8") + "Changed\n"); }, "hash-drift"],
+    ["status with matching hash", () => {
+      const path = join(dirs.director!, "candidates", "sample-v1.md");
+      const bytes = readFileSync(path, "utf8").replace("---\n", "---\nstatus: active\n");
+      writeFileSync(path, bytes);
+      const pinPath = join(dirs.director!, "pin.json"); save(pinPath, { ...load(pinPath), sha256: sha256Hex(bytes) });
+    }, "invalid-candidate"],
+  ];
+  it.each(mutations)("blocks %s even with a previously computed index", (_name, mutate, reason) => {
+    const index = slotIndex(root);
+    mutate();
+    const expected = { ready: false, blockedBy: [{ slot: ids.director, reason }] };
+    expect(readiness(root, "designer", ids.designer, index)).toEqual(expected);
+    expect(readiness(root, "designer", ids.designer)).toEqual(expected);
+  });
+
+  it("does not read a candidate alias", () => {
+    const path = join(dirs.director!, "candidates", "sample-v1.md");
+    const outside = join(root, "outside.md");
+    writeFileSync(outside, readFileSync(path));
+    rmSync(path); symlinkSync(outside, path);
+    expect(() => readCandidate(root, "director", ids.director, "sample-v1.md")).toThrow(/Symbolic links/);
+    expect(readiness(root, "designer", ids.designer).ready).toBe(false);
+  });
+
+  it("rejects an invalid IA before building a path", () => {
+    const path = join(root, "agents", "designer", "ia.json");
+    const ia = load(path); ia.nodes[0].id = "../../outside"; save(path, ia);
+    expect(() => readIa(root, "designer")).toThrow(/Invalid designer IA/);
+    expect(() => listSlots(root, "designer")).toThrow(/Invalid designer IA/);
+  });
+
+  it("derives used-by again when uses change and reports missing inputs", () => {
+    const path = join(dirs.publisher!, "slot.json");
+    save(path, { ...load(path), uses: [], inputs: ["brief.missing"] });
+    expect(usedBy(root, ids.designer)).toEqual([]);
+    expect(readiness(root, "publisher", ids.publisher)).toEqual({ ready: false, blockedBy: [{ slot: "brief.missing", reason: "missing" }] });
+  });
+});
