@@ -123,7 +123,8 @@ function relativeSpecifierFile(from: string, specifier: string): string | undefi
  * binding table, never matched as a set of refused patterns:
  * - value imports are exactly the registered component from its registered module and
  *   plain named hooks (`use*`, also as imported) from the route's registered runtime
- *   module by its exact path; any other import is type-only, so erased;
+ *   module by its exact path; any other import is `import type`, so erased, and the
+ *   component's one value binding is read from that parse, never from raw text;
  * - every name (import, export function, `children`, body binding) is bound once, so
  *   no hook is ever shadowed or rebound;
  * - the one function's body is only `const` bindings, each initialized either by a
@@ -158,35 +159,48 @@ function nonvisualRouteProvider(source: string, file: string, runtime: string | 
     if (/^(?:const|let|var)$/.test(before!)) continue;
     if (!/^\s*(?:"[^"\n]*"|'[^'\n]*')?\s*$/.test(key!)) return false;
   }
-  // One unaliased import of the registered component from its original module, used only by the mount.
-  const imports = module.match(new RegExp(`import\\s*\\{\\s*${component}\\s*\\}\\s*from\\s*["']${escapeRegExp(known.module)}["'];?`, "g")) ?? [];
-  if (imports.length !== 1 || (module.match(new RegExp(`(?<![\\w$])${component}(?![\\w$])`, "g")) ?? []).length !== 3) return false;
   if ((module.match(/(?<![\w$])export(?![\w$])/g) ?? []).length !== 1) return false;
   // The module grammar is an allowlist, not a list of refused operations: import
   // declarations, then the one exported function, whose body (below) only binds reads.
-  // No module-level statement runs anywhere else. Each import is read into the binding
-  // table: a value import is the registered component or a registered runtime hook.
+  // No module-level statement runs anywhere else. Each import is parsed into the binding
+  // table, and the registered component's identity comes only from that table, never
+  // from import-shaped text (a module string can spell a whole fake import):
+  // - `import type ...` is erased: it binds type names only, never a value;
+  // - any other declaration evaluates its module, so its module string must be exactly
+  //   the registered component module or the registered runtime module, whatever its
+  //   specifiers; a `type X` specifier in it binds a type name only, never a value;
+  // - the one value binding of the component is the unaliased `{ <component> }` from
+  //   the component module; each runtime value specifier is a hook, `use*` as imported.
   const quoted = `(?:"[^"\\n]*"|'[^'\\n]*')`, hookName = /^use[A-Z][\w$]*$/;
   const declaration = new RegExp(`\\s*import\\s+(type\\s+)?(?:(${id})|\\*\\s*as\\s+(${id})|\\{([^{}]*)\\})\\s*from\\s*(${quoted})\\s*;`, "y");
+  const specifierShape = new RegExp(`^(type\\s+)?(${id})(?:\\s+as\\s+(${id}))?$`);
   const taken = new Set<string>(hasLoader ? ["children", "data"] : ["children"]), hooks = new Set<string>();
   const bind = (name: string) => { if (taken.has(name)) return false; taken.add(name); return true; };
-  let at = 0;
+  let at = 0, componentBound = false;
   for (let match = declaration.exec(module); match; declaration.lastIndex = at, match = declaration.exec(module)) {
     at = declaration.lastIndex;
     const [, typeOnly, defaultName, namespace, list, specifier] = match;
     const elements = list === undefined ? [] : list.split(",").map(part => part.trim());
     if (list !== undefined && elements.at(-1) === "") elements.pop();
-    const names = elements.map(part => new RegExp(`^(${id})(?:\\s+as\\s+(${id}))?$`).exec(part));
-    if (names.some(name => !name) || list !== undefined && !names.length) return false;
-    const locals = [defaultName, namespace, ...names.map(name => name![2] ?? name![1])].filter((name): name is string => name !== undefined);
+    const parsed = elements.map(part => specifierShape.exec(part));
+    if (parsed.some(element => !element) || list !== undefined && !parsed.length) return false;
+    const specifiers = parsed.map(element => ({ type: element![1] !== undefined, imported: element![2]!, local: element![3] ?? element![2]!, aliased: element![3] !== undefined }));
+    const locals = [defaultName, namespace, ...specifiers.map(row => row.local)].filter((name): name is string => name !== undefined);
     if (!locals.every(bind)) return false;
     if (typeOnly) continue;
-    const from = specifier!.slice(1, -1);
-    if (from === known.module && names.length === 1 && !names[0]![2] && names[0]![1] === known.component) continue;
+    if (list === undefined) return false; // A value default or namespace import binds no allowlisted value.
+    const from = specifier!.slice(1, -1), values = specifiers.filter(row => !row.type);
+    if (from === known.module) {
+      if (values.length !== 1 || values[0]!.aliased || values[0]!.imported !== known.component || componentBound) return false;
+      componentBound = true;
+      continue;
+    }
     // Hooks only from the route's registered runtime module, by its exact path.
-    if (list === undefined || runtime === undefined || relativeSpecifierFile(file, from) !== runtime) return false;
-    for (const name of names) { if (!hookName.test(name![1]!) || !hookName.test(name![2] ?? name![1]!)) return false; hooks.add(name![2] ?? name![1]!); }
+    if (runtime === undefined || relativeSpecifierFile(file, from) !== runtime) return false;
+    for (const row of values) { if (!hookName.test(row.imported) || !hookName.test(row.local)) return false; hooks.add(row.local); }
   }
+  // No value binding of the registered component means the mount names an ambient substitute.
+  if (!componentBound) return false;
   const rest = module.slice(at);
   if (!/^\s*export\s/.test(rest)) return false;
   const head = mount.source.export === "default" ? `export\\s+default\\s+function(?:\\s+(${id}))?` : `export\\s+function\\s+(${escapeRegExp(mount.source.export)})`;

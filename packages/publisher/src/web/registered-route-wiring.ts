@@ -58,7 +58,10 @@ export async function registeredRouteWiringRoutes(input: RegisteredRouteCheckInp
     try { emitted = emitRegisteredRoutePage(contract.registry.module, route); } catch { emitted = undefined; }
     const bytes = typeof providerFile === "string" ? before.get(providerFile) : undefined;
     const proved = registryStable && routeProviderMount(route) !== undefined && emitted === content && bytes !== undefined && await readOrMissing(root, providerFile) === bytes
-      && checked.classifications.some(row => row.file === providerFile && row.kind === "provider") && !checked.findings.some(row => row.file === providerFile);
+      // Any finding fails the proof, not only one filed against the provider: a source
+      // resolution (RR5) or closure finding elsewhere means the checked graph is not the
+      // graph that runs.
+      && checked.classifications.some(row => row.file === providerFile && row.kind === "provider") && checked.findings.length === 0;
     if (!proved) { refused.push(`${id}: registered provider has no current nonvisual proof at the exact emitted mount`); continue; }
     const fields = { kind: "publisher.registered-provider-check" as const, version: 1 as const, route: { path: page!, hash: sha(content) }, provider: { file: providerFile!, export: provider.source.export, hash: sha(bytes!) }, mount: provider.id };
     const digest = sha(JSON.stringify([fields.kind, fields.version, fields.route.path, fields.route.hash, fields.provider.file, fields.provider.export, fields.provider.hash, fields.mount]));

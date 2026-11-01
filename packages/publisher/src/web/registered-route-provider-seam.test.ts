@@ -412,6 +412,36 @@ describe("registered nonvisual provider ownership seam (synthetic fixtures; no r
       nonvisual.replace(inputs, `${inputs}\n  const studio = inputs;\n  const { adapter } = studio;\n  const [first] = inputs.items;`).replace("adapter={inputs.adapter}", "adapter={adapter}"),
     ]) expect(providerRefused((await check(await setup(designerRoute(), source))).findings), source).toBe(false);
   }, SCAN_TIMEOUT);
+
+  it("(m) the registered component's identity comes only from its one parsed value import, never from import text", async () => {
+    const componentImport = 'import { WholeStudioProvider } from "@clossys/designer/studio/state";';
+    const typeImport = 'import type { ReactNode } from "react";';
+    // Fake original-provider import text inside a type-only import's module string.
+    const spoof = `import type { ReactNode } from "${componentImport.replaceAll('"', "'")}";`;
+    const probes = [
+      // The closure reviewer's spoof: the component is never bound, so the mount is an ambient substitute.
+      nonvisual.replace(typeImport, spoof).replace(`${componentImport}\n`, ""),
+      // The component bound only through a type-only import or a type-only specifier.
+      nonvisual.replace(componentImport, 'import type { WholeStudioProvider } from "@clossys/designer/studio/state";'),
+      nonvisual.replace(typeImport, spoof).replace(componentImport, 'import type { WholeStudioProvider } from "./fake-provider";'),
+      nonvisual.replace(componentImport, 'import { type WholeStudioProvider } from "@clossys/designer/studio/state";'),
+      nonvisual.replace(typeImport, spoof).replace(componentImport, 'import { type WholeStudioProvider } from "@clossys/designer/studio/state";'),
+      // A value import whose module only resembles the registered one.
+      nonvisual.replace(componentImport, 'import { WholeStudioProvider } from "@clossys/designer/studio/state/";'),
+      nonvisual.replace(componentImport, 'import { WholeStudioProvider } from " @clossys/designer/studio/state";'),
+      // A type-only specifier from any other module still evaluates that module.
+      nonvisual.replace(typeImport, 'import { type ReactNode } from "react";'),
+    ];
+    const refused: boolean[] = [];
+    for (const source of probes) refused.push(providerRefused((await check(await setup(designerRoute(), source))).findings));
+    expect(refused, `refused per probe: ${refused}`).toEqual(probes.map(() => true));
+    // Admitted: the exact fixture, and type-only specifiers beside the value bindings.
+    for (const source of [
+      nonvisual,
+      nonvisual.replace(componentImport, 'import { WholeStudioProvider, type WholeStudioProviderProps } from "@clossys/designer/studio/state";'),
+      nonvisual.replace('import { useStudioInputs } from "../runtime.ts";', 'import { useStudioInputs, type StudioInputs } from "../runtime.ts";'),
+    ]) expect(providerRefused((await check(await setup(designerRoute(), source))).findings), source).toBe(false);
+  }, SCAN_TIMEOUT);
 });
 
 /** Identifier names whose source text is an escape, as the TypeScript parser resolves them. */

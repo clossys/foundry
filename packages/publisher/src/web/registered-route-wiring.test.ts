@@ -110,6 +110,16 @@ describe("WL10 checked registered nonvisual provider from the registered-route c
     expect(proved, `proof issued per probe: ${proved}`).toEqual(probes.map(() => false));
   }, SCAN_TIMEOUT);
 
+  it("a valid provider gets no proof while any source-resolution finding stands", async () => {
+    const route = await setup();
+    // The provider and the emitted page stay exact; the reached graph no longer resolves.
+    await write("runtime.ts", 'import "./missing-runtime-helper";\nexport function useRuntime(){throw new Error(\'SYNTHETIC unresolved runtime\')}\nexport function useStudioInputs(){throw new Error(\'SYNTHETIC unresolved provider inputs\')}');
+    const { routes, refused } = await produce(route);
+    expect(routes.providers).toEqual([]);
+    expect(refused).toHaveLength(1);
+    expect(wrapperReported(routes)).toBe(true);
+  }, SCAN_TIMEOUT);
+
   it("an altered emitted mount gets no proof and still fails", async () => {
     const route = await setup(), emitted = emitRegisteredRoutePage("routes.ts", route);
     for (const altered of [
