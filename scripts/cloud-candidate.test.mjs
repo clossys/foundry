@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdirSync, existsSync, chmodSync, symlinkSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
-import { generateKeyPairSync, sign } from 'node:crypto';
+import { createHash, generateKeyPairSync, sign } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { makeTmpDirSync } from './lib/tmp-fixture.mjs';
-import { exportCandidate, qualifyCandidate, verifyReceipt, digest, encode, engineDigest, INPUTS } from './lib/cloud-candidate.mjs';
+import { exportCandidate, parseCandidate, treeDigest, assertWorkingSnapshot, qualifyCandidate, verifyReceipt, digest, encode, engineDigest, INPUTS } from './lib/cloud-candidate.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
@@ -82,6 +82,36 @@ test('immutable FULL clearance binds staged bytes, deletions, mode and export at
   assert.throws(() => verifyReceipt({ artifact, receipt, policy: { ...f.policy, expiresAt: 1 }, message: f.message }));
   writeFileSync(join(f.repo, 'new.txt'), 'changed index\n'); git(f.repo, 'add', 'new.txt');
   assert.throws(() => verifyReceipt({ artifact, receipt, policy: f.policy, repositoryPath: f.repo, message: f.message }));
+});
+
+test('literal bracket paths export distinct bytes and remain covered by real FULL scanners', t => {
+  const f = fixture(t);
+  const route = 'packages/producer/studio/app/[[...route]]/page.tsx';
+  const values = new Map([[route, 'export default null;\n'], ['[ab].txt', 'literal bracket bytes\n'], ['a.txt', 'only a bytes\n'], ['b.txt', 'only b bytes\n']]);
+  mkdirSync(join(f.repo, 'packages/producer/studio/app/[[...route]]'), { recursive: true });
+  for (const [path, bytes] of values) writeFileSync(join(f.repo, path), bytes);
+  git(f.repo, 'add', '.');
+  const artifact = f.exportNow(), candidate = parseCandidate(artifact, f.policy);
+  assert.equal(candidate.tree, git(f.repo, 'write-tree'));
+  for (const [path, bytes] of values) assert.equal(Buffer.from(candidate.files.find(file => file.path === path).bytes, 'base64').toString(), bytes);
+  assertWorkingSnapshot(f.repo, candidate);
+  const receipt = f.qualify(artifact);
+  assert.equal(verifyReceipt({ artifact, receipt, policy: f.policy, repositoryPath: f.repo, message: f.message }).status, 'FULL');
+  for (const unsafe of ['fixture-forbidden-identity\n', ['gh', 'p_', 'A'.repeat(36)].join('')]) {
+    writeFileSync(join(f.repo, '[ab].txt'), unsafe); git(f.repo, 'add', '.');
+    assert.throws(() => f.qualify(f.exportNow()), /clearance refused/);
+  }
+});
+
+test('bracket path validation rejects escapes and controls before any tree comparison', () => {
+  const file = path => {
+    const bytes = Buffer.from('safe\n');
+    return { path, mode: '100644', blob: createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex'), bytes: bytes.toString('base64') };
+  };
+  for (const path of ['[[...route]]/../escape', '/[route]', 'a\\[route]', '[route]/.git/config', '[route]/.GIT/config', '[route]/node_modules/data', '[route]/CON.txt', '[route]/nul.[x]', '[route]/com1.txt', '[route]//data', '[route]/./data', '[route]/name.', '[route]/name ', '[route]/*', '[route]/?', ':(literal)[route]', '[route]/:(top)data', '[route]\0data', '[route]\ndata', '[route]\rdata', '[route]\tdata', '[route]\x7fdata', '[route]/nonascii-\u00e9']) {
+    assert.throws(() => treeDigest([file(path)]), /path|bounded text/, JSON.stringify(path));
+  }
+  for (const files of [[file('[A]/one'), file('[a]/two')], [file('[route]'), file('[route]/page.tsx')]]) assert.throws(() => treeDigest(files), /collision/);
 });
 
 test('native scanners fail closed for identity, secret, proposed message, history and PARTIAL', t => {

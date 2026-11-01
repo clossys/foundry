@@ -39,7 +39,7 @@ function canonical(bytes, limit) {
 function safePath(path) {
   // Deliberately portable ASCII: reject Unicode normalization/case ambiguities,
   // device names, alternate streams and directory names scanners skip entirely.
-  text(path, 1024, /^[A-Za-z0-9_.@+ /-]+$/);
+  text(path, 1024, /^[A-Za-z0-9_.@+ /\[\]-]+$/);
   for (const part of path.split('/')) {
     if (!part || part.length > 255 || part === '.' || part === '..' || /^ |[ .]$/.test(part) || /^(?:\.git|node_modules)$/i.test(part) || /^(?:con|prn|aux|nul|com[0-9]|lpt[0-9])(?:\.|$)/i.test(part)) fail('Unsafe candidate path');
   }
