@@ -37,7 +37,8 @@ import { loadPublication, publisherFrameUrl, safePreviewUrl, siteRoot, type Publ
 import { studioIcon } from '../lib/studio-icons';
 import type { StudioReport } from '../lib/studio-report';
 import { resolveStudioRoute, studioHref, studioLeafCount, studioLeafHref, studioPageEntries, studioShellProjection, type StudioRoute } from '../lib/studio-route-map';
-import { LEAF_STATUS_LABEL, leafCountLabel } from '../lib/leaf-status';
+import { LEAF_STATUS_LABEL } from '../lib/leaf-status';
+import { useSlotCensus } from '../lib/slot-census';
 import { useStudioData, useThemeMode, type Resource } from './StudioProviders';
 import { useStudioRoutes } from './StudioRouteMap';
 
@@ -124,19 +125,18 @@ function mapLinks(map: ContentMap): StudioLinks {
 /* Loaders: Producer data -> section inputs, one per page record loader. */
 
 function useHomeInputs(): Loaded {
-  const { reports } = useStudioData();
-  const { map, galleries } = useStudioRoutes();
+  const { reports, revision } = useStudioData();
+  const { map } = useStudioRoutes();
+  const census = useSlotCensus(revision);
   return useMemo(() => {
     const list: readonly StudioReport[] = reports.state === 'ready' ? reports.value : [];
     const agents = AGENTS.flatMap(agent => {
       const href = studioHref(map, agent);
       if (!href) return [];
-      const gallery = galleries[agent];
       const Icon = studioIcon(undefined, agent);
-      // Leaves are the one count unit: the gallery's leaf entries in the map, as its own header counts them.
       return [{
         id: agent, label: AGENT_LABELS[agent], purpose: AGENT_PURPOSE[agent] ?? '', icon: <Icon className="size-4" />,
-        ...(!gallery || gallery.state === 'loading' ? {} : { count: gallery.state === 'ready' ? { label: leafCountLabel(studioLeafCount(map, agent)), tone: 'secondary' as const } : { label: 'Unavailable', tone: 'outline' as const } }),
+        census: census[agent],
         href, openLabel: `Open ${AGENT_LABELS[agent]}`, openIcon: <ArrowRightIcon data-icon="inline-end" />,
       }];
     });
@@ -144,7 +144,7 @@ function useHomeInputs(): Loaded {
     const needs = openNeeds(list).map(needRow);
     const checks = checksInput(needs.filter(row => row.tone === 'destructive'), [], needs.filter(row => row.tone !== 'destructive'));
     return { state: 'ready', inputs: { home }, modules: { checks } };
-  }, [reports, map, galleries]);
+  }, [reports, map, census]);
 }
 
 /** Every route the Studio publication serves: the compiled pages and the leaves the record stores add. */

@@ -20,6 +20,7 @@ import { agentGallery, agentLeaf, isLibraryAgent } from "./agent-library.js";
 import { slotDetail } from "./slot-detail.js";
 import { hasSlotModel } from "../records/slots.js";
 import { SLOT_AGENTS, type SlotAgent } from "../records/slot-model/index.js";
+import { slotCensus } from "./slot-census.js";
 import { specimenMount } from "../publish/site-server.js";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -118,6 +119,7 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
     }
     if (pathname === "/api" || pathname.startsWith("/api/")) {
       if (request.method !== "GET") { json(response, 405, { error: "API is read-only" }); return; }
+      if (pathname === "/api/slots/census") { json(response, 200, slotCensus(library)); return; }
       if (pathname === "/api/health") { json(response, 200, { ok: !!child, studio: child ? "ready" : "starting" }); return; }
       const slotMatch = /^\/api\/slots\/([a-z]+)\/([a-z0-9][a-z0-9.-]*)$/.exec(pathname);
       if (slotMatch) {
