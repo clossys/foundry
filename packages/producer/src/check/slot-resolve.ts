@@ -4,7 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { createRequire } from "node:module";
 import type { AgentKind } from "../agents.js";
 import { resolveAgent } from "../agents.js";
-import { buildCheckOutputEnvelope } from "../generated/check-output-envelope.js";
+import { buildCheckOutputEnvelope, envelopeToExitCode } from "../generated/check-output-envelope.js";
 import { sha256Hex } from "../records/hash.js";
 import { loadReferencesManifest } from "../records/validate.js";
 import { listSlots, readCandidate, readIa, readSlot } from "../records/slots.js";
@@ -198,7 +198,7 @@ export async function runSlotResolve(rootIn: string) {
   ];
   const version = createRequire(import.meta.url)("../../package.json").version as string;
   const envelope = buildCheckOutputEnvelope({ package: "@clossys/producer", version, verdict: inputErrors.length ? "indeterminate" : findings.length ? "violated" : "satisfied", summary: `Slot integrity found ${findings.length} findings across ${rows.length} slots.`, findings });
-  return { ...envelope, reportOnly: false as const, exitCode: (findings.length ? 1 : 0) as 0 | 1, rows, coverage, sources: { references: { source: referenceSource, hash: referenceHash }, ia: stores.map(store => ({ agent: store.agent, source: store.iaSource, slotsHash: `sha256:${sha256Hex(JSON.stringify(store.ia))}` })), root } };
+  return { ...envelope, reportOnly: false as const, exitCode: envelopeToExitCode(envelope), rows, coverage, sources: { references: { source: referenceSource, hash: referenceHash }, ia: stores.map(store => ({ agent: store.agent, source: store.iaSource, slotsHash: `sha256:${sha256Hex(JSON.stringify(store.ia))}` })), root } };
 }
 export type SlotResolveReport = Awaited<ReturnType<typeof runSlotResolve>>;
 export function slotResolveSummary(report: SlotResolveReport, readiness = false): string {
