@@ -8,6 +8,10 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
+    "./slot-body": {
+      "types": "./dist/slot-body.d.ts",
+      "import": "./dist/slot-body.js"
+    },
     "./front-door/strict": {
       "types": "./dist/front-door.d.ts",
       "import": "./dist/front-door.js"
