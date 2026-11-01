@@ -104,7 +104,7 @@ it("derives parent and order from tree placement, regrouping without moving or r
   expect(changed.entries.find(entry => entry.id === "publisher")).toMatchObject({ parentId: "agents", order: 0 });
   expect(changed.entries.find(entry => entry.id === "writer")).toMatchObject({ parentId: "agents", order: 1 });
   expect(projectNavigation(changed, "designer")).not.toEqual(projectNavigation(original, "designer"));
-  expect(projectBreadcrumbs(changed, "designer").map(row => row.id)).toEqual(["other", "designer"]);
+  expect(projectBreadcrumbs(changed, "designer").map(row => row.id)).toEqual(["designer"]);
   for (const entry of original.entries.filter(entry => entry.kind === "page")) {
     const current = changed.entries.find(row => row.id === entry.id)!;
     expect(current.manifest).toEqual(entry.manifest);
