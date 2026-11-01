@@ -86,6 +86,18 @@ describe("clossys migrate slots", () => {
   describe("mutation proofs", () => {
     beforeEach(async () => { await migrate(); });
 
+    it("retains code-written Director requests and reports while unknown entries still fail", () => {
+      for (const name of ["requests", "reports"]) mkdirSync(join(consumer, "agents/director", name), { recursive: true });
+      expect(checkSlotModel(consumer)).toEqual([]);
+      mkdirSync(join(consumer, "agents/director", "unknown-support-store"));
+      expect(checkSlotModel(consumer)).toContainEqual(expect.objectContaining({ code: "orphan", path: "agents/director/unknown-support-store" }));
+    });
+
+    it("does not infer support-entry exceptions for other agents", () => {
+      mkdirSync(join(consumer, "agents/writer/reports"));
+      expect(checkSlotModel(consumer)).toContainEqual(expect.objectContaining({ code: "orphan", path: "agents/writer/reports" }));
+    });
+
     it("pin-candidate: the pinned candidate is gone", () => {
       const entry = pinnedSlot("publisher");
       rmSync(join(candidatesDir(entry.dir), entry.pin!.candidate));
