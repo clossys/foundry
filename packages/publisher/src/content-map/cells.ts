@@ -4,12 +4,12 @@ import { join, resolve, dirname, relative, isAbsolute, sep } from "node:path";
 import { readActive, serializeScalar, parseLinkRef, isoDate, type GenericTreeNode, type StoredCell } from "@clossys/strategist/cell-format";
 import { checkContentMap, checkedContentMap } from "./check.js";
 import type { ContentMap, ContentMapNode } from "./contract.js";
+import { PAGE_ID, pageId } from "./page-identity.js";
 
 type JsonObject = Record<string, any>;
 export interface CellCompileFinding { readonly severity: "warning" | "error"; readonly message: string }
 export interface CellCompileOptions { readonly check?: boolean; readonly agentRoots?: Readonly<Record<string, string>> }
 interface Publication extends JsonObject { id: string; format: ContentMap["format"]; entryIds: Record<string, string>; entryOrder: string[]; entryMeta: Record<string, JsonObject> }
-const PAGE_ID = /^page\.[a-z][a-z0-9-]*$/;
 const KEYS = new Set(["id", "version", "status", "updated", "links", "confirmed", "note", "kind", "title", "path", "slug", "pageConfig", "icon", "description", "keywords", "planItemId", "frame", "sections", "href", "indexing", "indexingReason", "lastModified"]);
 const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
 const object = (value: unknown): value is JsonObject => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -31,7 +31,6 @@ async function put(root: string, path: string, source: string) {
   const target = await safe(root, path); await mkdir(dirname(target), { recursive: true }); await writeFile(target, source);
 }
 async function readJson(root: string, path: string): Promise<any> { return JSON.parse(await readFile(await safe(root, path), "utf8")); }
-function pageId(id: string) { const value = `page.${id.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`; if (!PAGE_ID.test(value)) error(id, "Cannot derive a permanent page cell id"); return value; }
 function publicationId(id: unknown): asserts id is string { if (typeof id !== "string" || !/^[a-z][a-z0-9.-]*$/.test(id) || id.includes("..")) error("publication", "Expected a safe publication identity"); }
 function fields(source: JsonObject): string { return Object.entries(source).map(([key, value]) => `${key}: ${Array.isArray(value) ? `[${value.map(serializeScalar).join(", ")}]` : serializeScalar(value)}`).join("\n"); }
 function cellSource(entry: ContentMapNode, id: string, date: string, route?: JsonObject): string {
