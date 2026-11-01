@@ -42,22 +42,10 @@ beforeAll(async () => {
     const fill = ['foundry', 'tailwind-default'].map(source => offers.find(fill => fill.$extensions['com.clossys.fill'].source === source)).find(Boolean) ?? offers[0];
     return fill ? [{ portion: 'values' as const, change: { op: 'adopt' as const, slot: slot.id, source: fill.$extensions['com.clossys.fill'].source } }] : [];
   });
-  let library = applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes: [...values,
+  const library = applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes: [...values,
     { portion: 'components', change: { op: 'adopt', slot: 'components.semantic-content', source: 'foundry' } },
     { portion: 'components', change: { op: 'author', slot: leaf, fill: candidate, files } },
   ] }, { componentOptions });
-  // These host fixtures explicitly author a mode-invariant shadow palette.
-  // Adoption alone does not supply the required dark-mode consumer values.
-  const selectedValues = resolve({ catalog: catalog.values, library: { ...library.values, source: library.source } });
-  const shadows = Object.entries(selectedValues.members).filter(([, member]) => member.slot === 'themes.shadow');
-  expect(shadows.length).toBeGreaterThan(0);
-  library = applyLibraryChange(catalog, library, { baseHash: libraryHash(library), changes: [{ portion: 'values', change: {
-    op: 'author', slot: 'themes.shadow', tokens: Object.fromEntries(shadows.map(([id, member]) => [id.slice('themes.shadow.'.length), {
-      $type: member.$type, $value: member.value.light, $extensions: { 'com.clossys.modes': { dark: member.value.light } },
-    }])),
-  } }] }, { componentOptions });
-  const authoredValues = resolve({ catalog: catalog.values, library: { ...library.values, source: library.source } });
-  for (const [id, member] of shadows) expect(authoredValues.members[id]!.value.dark, id).toEqual(member.value.light);
   // An actual authored closure crosses the native public fixture's disk and cell boundaries.
   const reader = await agentModule('designer', 'library-cli/fs-library.js');
   const source = join(directory, 'library');

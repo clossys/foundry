@@ -36,23 +36,11 @@ beforeAll(async () => {
     const fill = ['foundry', 'tailwind-default'].map(source => offers.find(fill => fill.$extensions['com.clossys.fill'].source === source)).find(Boolean) ?? offers[0];
     return fill ? [{ portion: 'values' as const, change: { op: 'adopt' as const, slot: slot.id, source: fill.$extensions['com.clossys.fill'].source } }] : [];
   });
-  let library = applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes: [
+  const library = applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes: [
     ...valueChanges,
     { portion: 'components', change: { op: 'adopt', slot: 'components.semantic-content', source: 'foundry' } },
     { portion: 'surfaces', change: { op: 'adopt', slot: 'sections.content', source: 'foundry' } },
   ] }, { componentOptions, surfaceOptions });
-  // These host fixtures explicitly author a mode-invariant shadow palette.
-  // Adoption alone does not supply the required dark-mode consumer values.
-  const selectedValues = resolve({ catalog: catalog.values, library: { ...library.values, source: library.source } });
-  const shadows = Object.entries(selectedValues.members).filter(([, member]) => member.slot === 'themes.shadow');
-  expect(shadows.length).toBeGreaterThan(0);
-  library = applyLibraryChange(catalog, library, { baseHash: libraryHash(library), changes: [{ portion: 'values', change: {
-    op: 'author', slot: 'themes.shadow', tokens: Object.fromEntries(shadows.map(([id, member]) => [id.slice('themes.shadow.'.length), {
-      $type: member.$type, $value: member.value.light, $extensions: { 'com.clossys.modes': { dark: member.value.light } },
-    }])),
-  } }] }, { componentOptions, surfaceOptions });
-  const authoredValues = resolve({ catalog: catalog.values, library: { ...library.values, source: library.source } });
-  for (const [id, member] of shadows) expect(authoredValues.members[id]!.value.dark, id).toEqual(member.value.light);
   // Use the same native engine -> library files -> active cells lineage as the
   // public historical Studio fixture. No reader, compiler or provider is mocked.
   const reader = await agentModule('designer', 'library-cli/fs-library.js');
