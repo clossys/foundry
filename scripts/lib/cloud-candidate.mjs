@@ -3,14 +3,15 @@
 // owner supplies policy and public-key anchors out of band, never in an artifact.
 // A receipt authorizes only this verification; native FULL checks/hooks still run.
 import { createHash, createPublicKey, sign, verify } from 'node:crypto';
-import { readFileSync, readSync, writeFileSync, mkdirSync, mkdtempSync, rmSync, realpathSync, openSync, closeSync, fstatSync, constants } from 'node:fs';
+import { readFileSync, readSync, writeFileSync, mkdirSync, mkdtempSync, rmSync, realpathSync, openSync, closeSync, fstatSync, lstatSync, existsSync, constants } from 'node:fs';
 import { dirname, join, resolve, isAbsolute, relative } from 'node:path';
-import { tmpdir } from 'node:os';
+import { tmpdir, userInfo } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 export const LIMITS = Object.freeze({ files: 20000, file: 16 * 1024 * 1024, total: 128 * 1024 * 1024, artifact: 180 * 1024 * 1024, message: 32768 });
 export const INPUTS = Object.freeze({ tree: 'scripts/check-public-safety.mjs', message: 'scripts/check-commit-messages.mjs', scope: 'package-scope.json', opaque: 'governance/opaque-content-exemptions.json', exceptions: 'governance/commit-message-history-exceptions.json' });
+export const TRUST_ROOT = join(userInfo().homedir, '.config', 'public-safety', 'cloud-candidate');
 const HEX = /^[a-f0-9]{64}$/;
 const OID = /^[a-f0-9]{40}$/;
 const MAX_AGE = 15 * 60 * 1000;
@@ -162,7 +163,7 @@ function validatePolicy(policy) {
   if (policy.version !== 1 || !OID.test(policy.base) || !HEX.test(policy.messageSha256) || !HEX.test(policy.nonce) || !HEX.test(policy.engineSha256) || !HEX.test(policy.denylistSha256)) fail('Invalid policy pins');
   text(policy.repository, 160, /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/); text(policy.owner, 80, /^[A-Za-z0-9_.-]+$/); text(policy.unit, 160, /^[A-Za-z0-9_.:-]+$/);
   if (policy.repository.split('/')[0] !== policy.owner || !Number.isSafeInteger(policy.expiresAt) || policy.expiresAt <= Date.now() || policy.expiresAt > Date.now() + 24 * 60 * 60 * 1000) fail('Stale or invalid policy');
-  keys(policy.inputs, [...Object.keys(INPUTS), 'history']);
+  keys(policy.inputs, [...Object.keys(INPUTS), 'history', 'historyConfig', 'historyExceptions']);
   for (const pin of Object.values(policy.inputs)) {
     keys(pin, ['path', 'sha256']); text(pin.path, 4096);
     if (!isAbsolute(pin.path) || !HEX.test(pin.sha256)) fail('Invalid scanner/config pin');
@@ -182,7 +183,7 @@ function pinnedInputs(policy, destination) {
     if (realpathSync(pin.path) !== resolve(pin.path)) fail('Scanner/config pin follows a link');
     const bytes = readBounded(pin.path, id === 'history' ? 128 * 1024 * 1024 : 8 * 1024 * 1024);
     if (digest(bytes) !== pin.sha256) fail('Scanner/config pin mismatch');
-    paths[id] = join(destination, id === 'history' ? 'history' : `${id}.mjs`);
+    paths[id] = join(destination, id === 'history' ? 'history' : id === 'historyConfig' ? 'native.toml' : id === 'historyExceptions' ? '.gitleaksignore' : `${id}.mjs`);
     writeFileSync(paths[id], bytes, { flag: 'wx', mode: id === 'history' ? 0o700 : 0o600 });
   }
   return paths;
@@ -230,11 +231,12 @@ export function qualifyCandidate({ artifact, policy, trustedRepository, denylist
     const messages = run(process.execPath, [pins.message, candidate.base, '--title', candidate.message, '--exceptions', pins.exceptions, ...full], trustedRepository);
     const output = messages.stdout?.toString('utf8') ?? '';
     if (!scannerPass(messages) || !/^mode: FULL \(/m.test(output) || !output.endsWith('PASS — no private identity found in scanned commit message text.\n')) fail('FULL clearance refused: message/history scanner failed');
-    // Explicit built-in native rules: no candidate-selected config, allowlist,
-    // ignore file, baseline or ambient tool setting. Only the base and ancestors
-    // are in history; the entire staged tree was scanned above, including adds.
-    const config = join(tools, 'native.toml'); writeFileSync(config, '[extend]\nuseDefault = true\n', { flag: 'wx', mode: 0o600 });
-    const history = run(pins.history, ['git', trustedRepository, `--log-opts=${candidate.base} --no-ext-diff --no-textconv --no-show-signature`, '--config', config, '--gitleaks-ignore-path', tools, '--ignore-gitleaks-allow', '--redact=100', '--no-banner', '--log-level', 'error', '--exit-code', '1'], tools);
+    // Separately pinned native defaults and reviewed exact fingerprints. No
+    // candidate-selected config, blanket allowlist, baseline or other refs.
+    const ignore = readBounded(pins.historyExceptions, 1024 * 1024).toString('utf8');
+    const fingerprints = ignore.split('\n').filter(line => line && !line.startsWith('#'));
+    if (new Set(fingerprints).size !== fingerprints.length || fingerprints.some(line => !/^[a-f0-9]{40}:[A-Za-z0-9_.@+ /-]+:[a-z0-9-]+:[1-9][0-9]*$/.test(line))) fail('Exact approved history fingerprints required');
+    const history = run(pins.history, ['git', trustedRepository, `--log-opts=${candidate.base} --no-ext-diff --no-textconv --no-show-signature`, '--config', pins.historyConfig, '--gitleaks-ignore-path', pins.historyExceptions, '--ignore-gitleaks-allow', '--redact=100', '--no-banner', '--log-level', 'error', '--exit-code', '1'], tools);
     // Some native scanner versions return 0 when git writes an error to stderr
     // and no patch stream gets scanned. A zero status alone is not clearance.
     if (!scannerPass(history) || history.stderr.length !== 0) fail('FULL clearance refused: native history scanner failed');
@@ -284,4 +286,148 @@ export function writeArtifact(path, bytes, repositoryPath) {
   const parent = realpathSync(dirname(resolve(path)));
   if (repositoryPath && !outside(parent, realpathSync(repositoryPath))) fail('Private artifact output must be outside repository');
   writeFileSync(join(parent, path.split(/[\\/]/).at(-1)), bytes, { flag: 'wx', mode: 0o600 });
+}
+
+/** Compare physical bytes, not Git's stat cache/assume-unchanged flags. */
+export function assertWorkingSnapshot(repositoryPath, candidate) {
+  const root = realpathSync(repositoryPath);
+  const paths = utf8.decode(git(root, ['ls-files', '-z'])).split('\0').filter(Boolean).sort();
+  const expected = candidate.files.map(file => file.path).sort();
+  if (JSON.stringify(paths) !== JSON.stringify(expected) || git(root, ['ls-files', '--others', '--exclude-standard', '-z']).length) fail('Working file set differs from candidate');
+  for (const file of candidate.files) {
+    const path = join(root, file.path);
+    if (realpathSync(path) !== path) fail('Working candidate follows a link');
+    const stat = lstatSync(path);
+    if (!stat.isFile() || Boolean(stat.mode & 0o111) !== (file.mode === '100755') || !readBounded(path, LIMITS.file).equals(decodedFile(file))) fail('Working bytes/mode differ from candidate');
+  }
+  if (gitText(root, ['write-tree']) !== candidate.tree) fail('Staged tree differs from candidate');
+}
+
+/** The installation and signer are fixed native-owner state, never CLI inputs. */
+export function loadConsumerTrust(repositoryPath) {
+  const root = realpathSync(repositoryPath);
+  const own = fileURLToPath(import.meta.url);
+  if (own !== join(TRUST_ROOT, 'lib', 'cloud-candidate.mjs') || !outside(TRUST_ROOT, root) || realpathSync(TRUST_ROOT) !== TRUST_ROOT) fail('Independently installed consumer required');
+  const authority = canonical(externalFile(join(TRUST_ROOT, 'authority.json'), root), 16384);
+  keys(authority, ['version', 'repository', 'owner', 'publicKey', 'engineSha256', 'cliSha256', 'npmPath', 'npmSha256']);
+  if (authority.version !== 1 || authority.engineSha256 !== engineDigest() || !HEX.test(authority.cliSha256) || digest(readBounded(join(TRUST_ROOT, 'cloud-candidate.mjs'), 128 * 1024)) !== authority.cliSha256) fail('Installed consumer pin mismatch');
+  const policy = canonical(externalFile(join(TRUST_ROOT, 'policy.json'), root), 1024 * 1024);
+  validatePolicy(policy);
+  if (policy.publicKey !== authority.publicKey || policy.repository !== authority.repository || policy.owner !== authority.owner || policy.engineSha256 !== authority.engineSha256) fail('Policy differs from fixed owner authority');
+  text(authority.npmPath, 4096);
+  if (!isAbsolute(authority.npmPath) || !outside(realpathSync(authority.npmPath), root) || !HEX.test(authority.npmSha256) || digest(readBounded(realpathSync(authority.npmPath), 8 * 1024 * 1024)) !== authority.npmSha256) fail('Native check runner pin mismatch');
+  return { authority, policy };
+}
+function loadRemoteInputs({ repositoryPath, artifactPath, receiptPath, messagePath }) {
+  const trust = loadConsumerTrust(repositoryPath);
+  noActiveCommitHooks(repositoryPath);
+  const artifact = readBounded(artifactPath), receipt = readBounded(receiptPath, 16384), message = utf8.decode(readBounded(messagePath, LIMITS.message));
+  const candidate = parseCandidate(artifact, trust.policy);
+  verifyReceipt({ artifact, receipt, policy: trust.policy, repositoryPath, message });
+  assertWorkingSnapshot(repositoryPath, candidate);
+  return { ...trust, artifact, receipt, message, candidate };
+}
+function statePaths(policy) {
+  const state = join(TRUST_ROOT, 'state');
+  if (!existsSync(state)) mkdirSync(state, { mode: 0o700 });
+  if (realpathSync(state) !== state || !lstatSync(state).isDirectory() || (lstatSync(state).mode & 0o077)) fail('Private owner replay state required');
+  return { record: join(state, `${policy.nonce}.json`), delivery: join(state, `${policy.nonce}.delivered`) };
+}
+export function remoteGate(options) {
+  const input = loadRemoteInputs(options), { record } = statePaths(input.policy);
+  if (existsSync(record)) {
+    const state = canonical(readBounded(record, 16384), 16384);
+    if (state.phase !== 'checking' || state.candidateSha256 !== digest(input.artifact) || state.receiptSha256 !== digest(input.receipt)) fail('Receipt already consumed');
+  }
+  return { provenance: 'trusted-remote-FULL', verified: true, base: input.policy.base, tree: input.candidate.tree, messageSha256: input.policy.messageSha256, candidateSha256: digest(input.artifact), unit: input.policy.unit };
+}
+function nativeEnv() {
+  // Normal Git configuration/hooks remain active. No inherited forge secret,
+  // Node preload, alternate index, or caller-selected Git configuration.
+  return { PATH: `${dirname(process.execPath)}:/usr/bin:/bin`, HOME: userInfo().homedir, LANG: 'C', LC_ALL: 'C', GIT_TERMINAL_PROMPT: '0' };
+}
+function nativeGit(repo, args, ownedIndex) {
+  return spawnSync('/usr/bin/git', ['-C', repo, ...args], { env: { ...nativeEnv(), ...(ownedIndex ? { GIT_INDEX_FILE: ownedIndex } : {}) }, input: '', encoding: null, maxBuffer: 8 * 1024 * 1024, timeout: 120000 });
+}
+function noActiveCommitHooks(repo) {
+  for (const name of ['core.fsmonitor', 'commit.gpgSign']) {
+    const result = nativeGit(repo, ['config', '--bool', '--get', name]);
+    if (result.status !== 1 && (result.status !== 0 || utf8.decode(result.stdout).trim() !== 'false')) fail('Active native execution configuration requires separate qualification');
+  }
+  const configured = nativeGit(repo, ['config', '--path', '--get', 'core.hooksPath']);
+  if (configured.status !== 0 && configured.status !== 1) fail('Cannot resolve native hook configuration');
+  let hooks;
+  if (configured.status === 0) hooks = resolve(repo, utf8.decode(configured.stdout).trim());
+  else {
+    const result = nativeGit(repo, ['rev-parse', '--git-path', 'hooks']);
+    if (!scannerPass(result)) fail('Cannot resolve native hooks');
+    hooks = resolve(repo, utf8.decode(result.stdout).trim());
+  }
+  // Do not run an unknown hook and discover only after commit that it changed
+  // qualified bytes. No hook is installed, disabled, replaced or bypassed.
+  for (const name of ['pre-commit', 'prepare-commit-msg', 'commit-msg', 'post-commit', 'post-index-change', 'reference-transaction']) {
+    const path = join(hooks, name);
+    if (existsSync(path) && (lstatSync(path).isSymbolicLink() || (lstatSync(path).mode & 0o111))) fail('Active native commit hook requires separate nonmutating qualification');
+  }
+}
+export function admitCommit(options) {
+  const input = loadRemoteInputs(options), { repositoryPath } = options;
+  noActiveCommitHooks(repositoryPath);
+  if (gitText(repositoryPath, ['rev-parse', `${input.policy.base}^{tree}`]) === input.candidate.tree) fail('No candidate change to commit');
+  const { record } = statePaths(input.policy);
+  const state = { version: 1, phase: 'checking', candidateSha256: digest(input.artifact), receiptSha256: digest(input.receipt), base: input.policy.base, tree: input.candidate.tree, checkExit: null, head: null };
+  writeFileSync(record, encode(state), { flag: 'wx', mode: 0o600 });
+  const scratch = realpathSync(mkdtempSync(join(tmpdir(), 'cloud-candidate-admit-')));
+  try {
+    // Required native checks execute only on the uncredentialed consumer, never
+    // the trusted signing runner. The receipt adapter has no local denylist.
+    const env = { ...cleanEnv(), PATH: `${dirname(process.execPath)}:/usr/bin:/bin`, HOME: scratch, PUBLIC_SAFETY_REMOTE_REPOSITORY: realpathSync(repositoryPath), PUBLIC_SAFETY_REMOTE_ARTIFACT: resolve(options.artifactPath), PUBLIC_SAFETY_REMOTE_RECEIPT: resolve(options.receiptPath), PUBLIC_SAFETY_REMOTE_MESSAGE: resolve(options.messagePath) };
+    const checked = spawnSync(process.execPath, [realpathSync(input.authority.npmPath), 'run', 'check'], { cwd: repositoryPath, env, input: '', encoding: null, maxBuffer: 32 * 1024 * 1024, timeout: 30 * 60 * 1000 });
+    if (!scannerPass(checked)) fail('Required native check failed; no commit admitted');
+    // Any index/worktree/message/receipt/policy mutation during check fails.
+    const current = loadRemoteInputs(options);
+    if (!current.artifact.equals(input.artifact) || !current.receipt.equals(input.receipt)) fail('Admission inputs changed during checks');
+    noActiveCommitHooks(repositoryPath);
+    state.phase = 'attempted'; state.checkExit = 0;
+    writeFileSync(record, encode(state), { mode: 0o600 });
+    const message = join(scratch, 'message'); writeFileSync(message, input.message, { flag: 'wx', mode: 0o600 });
+    // Freeze exact qualified Git objects in a private index; neither a caller's
+    // alternate index nor a racing edit of the normal index supplies commit bytes.
+    const ownedIndex = join(scratch, 'index');
+    if (!scannerPass(nativeGit(repositoryPath, ['read-tree', input.candidate.tree], ownedIndex))) fail('Could not freeze qualified tree');
+    loadRemoteInputs(options);
+    noActiveCommitHooks(repositoryPath);
+    const committed = nativeGit(repositoryPath, ['commit', '--cleanup=verbatim', '--file', message], ownedIndex);
+    if (!scannerPass(committed)) fail('Native commit failed; receipt consumed');
+    const head = gitText(repositoryPath, ['rev-parse', 'HEAD']);
+    verifyCommitted(input, repositoryPath, head);
+    state.phase = 'committed'; state.head = head;
+    writeFileSync(record, encode(state), { mode: 0o600 });
+    return { provenance: 'trusted-remote-FULL', admitted: 'commit', head, tree: input.candidate.tree, checkExit: 0 };
+  } catch (error) {
+    state.phase = 'refused'; writeFileSync(record, encode(state), { mode: 0o600 });
+    throw error;
+  } finally { rmSync(scratch, { recursive: true, force: true }); }
+}
+function verifyCommitted(input, repositoryPath, head) {
+  const commit = git(repositoryPath, ['cat-file', 'commit', head]);
+  const separator = commit.indexOf(Buffer.from('\n\n'));
+  if (separator < 0) fail('Malformed committed object');
+  const header = utf8.decode(commit.subarray(0, separator));
+  const parents = header.split('\n').filter(line => line.startsWith('parent '));
+  if (parents.length !== 1 || parents[0] !== `parent ${input.policy.base}` || header.split('\n')[0] !== `tree ${input.candidate.tree}` || !commit.subarray(separator + 2).equals(Buffer.from(input.message))) fail('Committed bytes/message/base differ from receipt');
+  assertWorkingSnapshot(repositoryPath, input.candidate);
+}
+export function admitDelivery(options) {
+  const { authority, policy } = loadConsumerTrust(options.repositoryPath);
+  noActiveCommitHooks(options.repositoryPath);
+  const artifact = readBounded(options.artifactPath), receipt = readBounded(options.receiptPath, 16384), message = utf8.decode(readBounded(options.messagePath, LIMITS.message));
+  const candidate = parseCandidate(artifact, policy);
+  verifyReceipt({ artifact, receipt, policy, message });
+  const { record, delivery } = statePaths(policy), state = canonical(readBounded(record, 16384), 16384);
+  const head = gitText(options.repositoryPath, ['rev-parse', 'HEAD']);
+  if (state.phase !== 'committed' || state.checkExit !== 0 || state.head !== head || state.candidateSha256 !== digest(artifact) || state.receiptSha256 !== digest(receipt)) fail('No current checked commit admission');
+  verifyCommitted({ authority, policy, candidate, message }, options.repositoryPath, head);
+  writeFileSync(delivery, encode({ head, tree: candidate.tree }), { flag: 'wx', mode: 0o600 });
+  return { provenance: 'trusted-remote-FULL', admitted: 'delivery', head, tree: candidate.tree, pushExecuted: false };
 }

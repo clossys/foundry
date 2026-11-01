@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync, mkdirSync, existsSync, chmodSync, symlinkSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, chmodSync, symlinkSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { generateKeyPairSync, sign } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -28,6 +28,10 @@ function fixture(t) {
   const history = join(trusted, 'history');
   writeFileSync(history, '#!/bin/sh\ncase "$*" in *--log-opts=*) exit 0;; *) exit 2;; esac\n'); chmodSync(history, 0o700);
   inputs.history = { path: history, sha256: digest(readFileSync(history)) };
+  const historyConfig = join(trusted, 'native.toml'); writeFileSync(historyConfig, '[extend]\nuseDefault = true\n');
+  inputs.historyConfig = { path: historyConfig, sha256: digest(readFileSync(historyConfig)) };
+  const historyExceptions = join(trusted, '.gitleaksignore'); writeFileSync(historyExceptions, '# Exact approved fixture fingerprints only.\n');
+  inputs.historyExceptions = { path: historyExceptions, sha256: digest(readFileSync(historyExceptions)) };
   const scope = join(trusted, 'scope'); writeFileSync(scope, '{"scope":"@sample","registry":"https://registry.npmjs.org"}');
   inputs.scope = { path: scope, sha256: digest(readFileSync(scope)) };
   const exemptions = join(trusted, 'exceptions');
@@ -78,6 +82,13 @@ test('immutable FULL clearance binds staged bytes, deletions, mode and export at
 test('native scanners fail closed for identity, secret, proposed message, history and PARTIAL', t => {
   const f = fixture(t); const original = f.exportNow();
   const receipt = f.qualify(original);
+  for (const id of ['historyConfig', 'historyExceptions']) {
+    const policy = structuredClone(f.policy); policy.inputs[id].sha256 = '0'.repeat(64);
+    assert.throws(() => qualifyCandidate({ artifact: original, policy, trustedRepository: f.repo, denylistPath: f.denylist, privateKey: f.privateKey }), /pin/);
+  }
+  const wildcard = join(f.trusted, 'wildcard-ignore'); writeFileSync(wildcard, '*\n');
+  const broadPolicy = structuredClone(f.policy); broadPolicy.inputs.historyExceptions = { path: wildcard, sha256: digest(readFileSync(wildcard)) };
+  assert.throws(() => qualifyCandidate({ artifact: original, policy: broadPolicy, trustedRepository: f.repo, denylistPath: f.denylist, privateKey: f.privateKey }), /Exact approved history fingerprints/);
   for (const text of ['fixture-forbidden-identity\n', ['gh', 'p_', 'A'.repeat(36)].join('')]) {
     writeFileSync(join(f.repo, 'readme.txt'), text); git(f.repo, 'add', '.');
     assert.throws(() => f.qualify(f.exportNow()), /clearance refused/);
@@ -154,4 +165,129 @@ test('CLI requires explicit local artifact and externally pinned policy; writes 
   assert.equal(spawnSync(process.execPath, [cli, 'verify', '--artifact', output, '--receipt', receipt, '--policy', policyPath, '--repository-path', f.repo, '--message', message]).status, 0);
   const internalPolicy = join(f.repo, 'policy.json'); writeFileSync(internalPolicy, JSON.stringify(policy));
   assert.equal(spawnSync(process.execPath, [cli, 'verify', '--artifact', output, '--receipt', receipt, '--policy', internalPolicy, '--repository-path', f.repo, '--message', message]).status, 2);
+});
+
+async function installedFixture(t, check = 'node -e "process.exit(0)"', transform = source => source) {
+  const f = fixture(t), installation = join(f.temp, 'owner-installation');
+  mkdirSync(join(installation, 'lib'), { recursive: true });
+  // Isolate the fixed native owner-home binding in a fixture installation. This
+  // changes no real home/config and adds no runtime path override to the product.
+  const source = readFileSync(join(root, 'scripts/lib/cloud-candidate.mjs'), 'utf8');
+  const fixed = "join(userInfo().homedir, '.config', 'public-safety', 'cloud-candidate')";
+  assert.equal(source.split(fixed).length, 2);
+  const engine = transform(source.replace(fixed, JSON.stringify(installation)));
+  writeFileSync(join(installation, 'lib/cloud-candidate.mjs'), engine);
+  const cli = join(installation, 'cloud-candidate.mjs'); writeFileSync(cli, readFileSync(join(root, 'scripts/cloud-candidate.mjs')));
+  const module = await import(`${new URL(`file://${installation}/lib/cloud-candidate.mjs`).href}`);
+  const policy = { ...f.policy, engineSha256: digest(engine) };
+  const npmPath = realpathSync(execFileSync('which', ['npm'], { encoding: 'utf8' }).trim());
+  const authority = { version: 1, repository: policy.repository, owner: policy.owner, publicKey: policy.publicKey, engineSha256: policy.engineSha256, cliSha256: digest(readFileSync(cli)), npmPath, npmSha256: digest(readFileSync(npmPath)) };
+  writeFileSync(join(installation, 'authority.json'), encode(authority));
+  writeFileSync(join(installation, 'policy.json'), encode(policy));
+  writeFileSync(join(f.repo, 'package.json'), JSON.stringify({ private: true, scripts: { check } }));
+  writeFileSync(join(f.repo, 'readme.txt'), 'Qualified new bytes\n'); git(f.repo, 'add', '.');
+  const artifact = module.exportCandidate({ repositoryPath: f.repo, ...policy, message: f.message });
+  const receipt = module.qualifyCandidate({ artifact, policy, trustedRepository: f.repo, denylistPath: f.denylist, privateKey: f.privateKey });
+  const artifactPath = join(f.temp, 'artifact'), receiptPath = join(f.temp, 'receipt'), messagePath = join(f.temp, 'message');
+  writeFileSync(artifactPath, artifact); writeFileSync(receiptPath, receipt); writeFileSync(messagePath, f.message);
+  const args = ['--repository-path', f.repo, '--artifact', artifactPath, '--receipt', receiptPath, '--message', messagePath];
+  const run = (command, extra = []) => spawnSync(process.execPath, [cli, command, ...args, ...extra], { encoding: 'utf8' });
+  return { ...f, installation, policy, module, artifact, receipt, artifactPath, receiptPath, messagePath, run };
+}
+
+test('enforced admission runs native checks, freezes exact commit and allows one delivery', async t => {
+  const f = await installedFixture(t);
+  assert.equal(f.run('remote-check').status, 0);
+  const admitted = f.run('admit-commit'); assert.equal(admitted.status, 0, admitted.stderr);
+  const result = JSON.parse(admitted.stdout);
+  assert.equal(result.provenance, 'trusted-remote-FULL'); assert.equal(result.checkExit, 0);
+  assert.equal(git(f.repo, 'rev-parse', 'HEAD^'), f.base);
+  assert.equal(git(f.repo, 'rev-parse', 'HEAD^{tree}'), JSON.parse(f.artifact).tree);
+  assert.equal(execFileSync('git', ['show', '-s', '--format=%B', 'HEAD'], { cwd: f.repo, encoding: 'utf8' }), `${f.message}\n`);
+  assert.equal(f.run('remote-check').status, 2);
+  assert.equal(f.run('admit-commit').status, 2);
+  const delivery = f.run('admit-delivery'); assert.equal(delivery.status, 0, delivery.stderr);
+  assert.equal(JSON.parse(delivery.stdout).pushExecuted, false);
+  assert.equal(f.run('admit-delivery').status, 2);
+});
+
+test('admission rejects actual working mutations, candidate signer, missing checks and hook mutation before commit', async t => {
+  const changed = await installedFixture(t);
+  git(changed.repo, 'update-index', '--assume-unchanged', 'readme.txt');
+  writeFileSync(join(changed.repo, 'readme.txt'), 'Unstaged bytes\n');
+  assert.equal(changed.run('admit-commit').status, 2); assert.equal(git(changed.repo, 'rev-parse', 'HEAD'), changed.base);
+  const signer = await installedFixture(t);
+  const alternate = generateKeyPairSync('ed25519');
+  writeFileSync(join(signer.installation, 'policy.json'), encode({ ...signer.policy, publicKey: alternate.publicKey.export({ type: 'spki', format: 'pem' }).toString() }));
+  assert.equal(signer.run('admit-commit').status, 2);
+  assert.equal(signer.run('admit-commit', ['--policy', join(signer.installation, 'policy.json')]).status, 2);
+  assert.equal(git(signer.repo, 'rev-parse', 'HEAD'), signer.base);
+  const red = await installedFixture(t, 'node -e "process.exit(1)"');
+  assert.equal(red.run('admit-commit').status, 2); assert.equal(git(red.repo, 'rev-parse', 'HEAD'), red.base);
+  assert.equal(red.run('admit-delivery').status, 2);
+  const mutating = await installedFixture(t, 'node -e "require(\'node:fs\').writeFileSync(\'readme.txt\',\'changed\')"');
+  assert.equal(mutating.run('admit-commit').status, 2); assert.equal(git(mutating.repo, 'rev-parse', 'HEAD'), mutating.base);
+  const hook = await installedFixture(t); const marker = join(hook.temp, 'hook-executed');
+  const hookPath = join(hook.repo, '.git/hooks/pre-commit');
+  writeFileSync(hookPath, `#!/bin/sh\ntouch '${marker}'\nprintf changed > readme.txt\ngit add readme.txt\n`); chmodSync(hookPath, 0o700);
+  assert.equal(hook.run('admit-commit').status, 2); assert.equal(git(hook.repo, 'rev-parse', 'HEAD'), hook.base); assert.equal(existsSync(marker), false);
+});
+
+test('existing native gates expose trusted remote provenance and reject unknown flags/strict local downgrade', async t => {
+  const f = await installedFixture(t);
+  const env = { PATH: process.env.PATH, PUBLIC_SAFETY_REMOTE_ARTIFACT: f.artifactPath, PUBLIC_SAFETY_REMOTE_RECEIPT: f.receiptPath, PUBLIC_SAFETY_REMOTE_MESSAGE: f.messagePath };
+  for (const name of ['check-public-safety.mjs', 'check-commit-messages.mjs']) {
+    const source = readFileSync(join(root, 'scripts', name), 'utf8');
+    const fixed = "candidateJoin(candidateUser().homedir, '.config', 'public-safety', 'cloud-candidate')";
+    assert.equal(source.split(fixed).length, 2);
+    const script = join(f.temp, name); writeFileSync(script, source.replace(fixed, JSON.stringify(f.installation)));
+    const baseArgs = name === 'check-public-safety.mjs' ? ['.', '--json', '--trusted-remote-full'] : ['--trusted-remote-full', '--title', f.message];
+    const run = extra => spawnSync(process.execPath, [script, ...baseArgs, ...extra], { cwd: f.repo, env, encoding: 'utf8' });
+    const good = run([]); assert.equal(good.status, 0, good.stderr);
+    const result = JSON.parse(good.stdout); assert.equal(result.provenance, 'trusted-remote-FULL'); assert.equal(result.mode, 'TRUSTED_REMOTE_FULL'); assert.equal(result.localScan, false);
+    assert.equal(run(['--require-denylist']).status, 2);
+    assert.equal(run(['--unknown']).status, 2);
+    if (name === 'check-public-safety.mjs') {
+      const args = [script, '.', '--json'];
+      const implicit = spawnSync(process.execPath, args, { cwd: f.repo, encoding: 'utf8', env: { ...env, PUBLIC_SAFETY_REMOTE_REPOSITORY: f.repo, npm_lifecycle_event: 'check:safety' } });
+      assert.equal(implicit.status, 0, implicit.stderr); assert.equal(JSON.parse(implicit.stdout).mode, 'TRUSTED_REMOTE_FULL');
+      const regression = spawnSync(process.execPath, args, { cwd: f.repo, encoding: 'utf8', env: { ...env, PUBLIC_SAFETY_REMOTE_REPOSITORY: f.repo, npm_lifecycle_event: 'check:gates' } });
+      assert.equal(regression.status, 0, regression.stderr); assert.equal(JSON.parse(regression.stdout).mode, 'PARTIAL');
+    }
+  }
+});
+
+test('unqualified native index hooks, fsmonitor and signing never execute or commit', async t => {
+  for (const name of ['commit-msg', 'post-index-change']) {
+    const f = await installedFixture(t); const marker = join(f.temp, 'native-hook-ran');
+    const hook = join(f.repo, '.git/hooks', name);
+    writeFileSync(hook, `#!/bin/sh\ntouch '${marker}'\n`); chmodSync(hook, 0o700);
+    assert.equal(f.run('admit-commit').status, 2, name);
+    assert.equal(git(f.repo, 'rev-parse', 'HEAD'), f.base);
+    assert.equal(existsSync(marker), false);
+  }
+  for (const key of ['core.fsmonitor', 'commit.gpgSign']) {
+    const f = await installedFixture(t); const marker = join(f.temp, 'native-config-ran');
+    const command = join(f.temp, 'native-command'); writeFileSync(command, `#!/bin/sh\ntouch '${marker}'\n`); chmodSync(command, 0o700);
+    if (key === 'core.fsmonitor') git(f.repo, 'config', key, command);
+    else { git(f.repo, 'config', key, 'true'); git(f.repo, 'config', 'gpg.program', command); }
+    assert.equal(f.run('admit-commit').status, 2, key);
+    assert.equal(git(f.repo, 'rev-parse', 'HEAD'), f.base);
+    assert.equal(existsSync(marker), false);
+  }
+});
+
+test('racing normal-index mutation cannot change frozen qualified commit bytes', async t => {
+  const f = await installedFixture(t, undefined, source => {
+    const marker = '    const committed = nativeGit(repositoryPath,';
+    assert.equal(source.split(marker).length, 2);
+    return source.replace(marker, "    nativeGit(repositoryPath, ['reset', '--quiet', input.policy.base, '--', 'readme.txt']);\n" + marker);
+  });
+  // The injected race changes only the ordinary index after final verification.
+  // Admission refuses delivery, while any created commit remains exactly qualified.
+  assert.equal(f.run('admit-commit').status, 2);
+  assert.notEqual(git(f.repo, 'rev-parse', 'HEAD'), f.base);
+  assert.equal(git(f.repo, 'rev-parse', 'HEAD^'), f.base);
+  assert.equal(git(f.repo, 'rev-parse', 'HEAD^{tree}'), JSON.parse(f.artifact).tree);
+  assert.equal(f.run('admit-delivery').status, 2);
 });

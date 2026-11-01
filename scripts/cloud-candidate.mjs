@@ -1,12 +1,14 @@
 #!/usr/bin/env node
-// Local artifact I/O only. No transport, commit, hook exemption or push exists.
+// Local artifacts and explicit native commit/delivery admission; no push or hook
+// installation exists. Admission uses only a fixed native owner installation.
 // TRUST: execute from an independently pinned installation, never the snapshot.
 // Provision a canonical external policy JSON with version, repository, owner,
 // base (exact HEAD), unit, messageSha256, nonce (64 hex), expiresAt (epoch ms,
 // at most 24 h), engineSha256, denylistSha256 (native private configuration
 // digest), inputs and Ed25519 publicKey (SPKI PEM). inputs
 // pins {path,sha256} for tree/message scanners, scope/opaque/exceptions config,
-// and history (native gitleaks binary). See INPUTS in the library for source
+// history (native gitleaks binary), historyConfig and historyExceptions (reviewed
+// exact fingerprints). See INPUTS in the library for source
 // paths. Pins and keys are provisioned by the owner, never from candidate data.
 // Qualify uses only pinned code/config copies plus a separate trusted full Git
 // history repository. A receipt expires within 15 min; verify also compares the
@@ -15,7 +17,7 @@
 import { createPublicKey, generateKeyPairSync } from 'node:crypto';
 import { lstatSync, realpathSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
-import { exportCandidate, qualifyCandidate, verifyReceipt, externalFile, readBounded, writeArtifact } from './lib/cloud-candidate.mjs';
+import { exportCandidate, qualifyCandidate, verifyReceipt, externalFile, readBounded, writeArtifact, remoteGate, admitCommit, admitDelivery } from './lib/cloud-candidate.mjs';
 
 function options(args, names) {
   const result = {};
@@ -29,7 +31,12 @@ function options(args, names) {
 }
 try {
   const [command, ...args] = process.argv.slice(2);
-  if (command === 'keygen') {
+  let outcome;
+  if (['remote-check', 'admit-commit', 'admit-delivery'].includes(command)) {
+    const o = options(args, ['repository-path', 'artifact', 'receipt', 'message']);
+    const input = { repositoryPath: o['repository-path'], artifactPath: o.artifact, receiptPath: o.receipt, messagePath: o.message };
+    outcome = command === 'remote-check' ? remoteGate(input) : command === 'admit-commit' ? admitCommit(input) : admitDelivery(input);
+  } else if (command === 'keygen') {
     const o = options(args, ['repository-path', 'private-key', 'public-key']);
     const parent = realpathSync(dirname(resolve(o['private-key'])));
     if ((lstatSync(parent).mode & 0o077) !== 0) throw new Error('Private signing state directory must have mode 0700');
@@ -57,7 +64,7 @@ try {
     const message = new TextDecoder('utf-8', { fatal: true }).decode(readBounded(o.message, 32768));
     verifyReceipt({ artifact: readBounded(o.artifact), receipt: readBounded(o.receipt, 16384), policy, repositoryPath: o['repository-path'], message });
   } else throw new Error('Use export, qualify, verify or keygen with explicit local paths');
-  console.log('Candidate operation verified; native FULL checks and hooks remain required.');
+  console.log(JSON.stringify(outcome ?? { operation: command, admission: false }));
 } catch {
   // No scanner output, candidate strings, file names, denylist metadata or keys.
   console.error('Candidate operation refused; explicit trusted inputs and native FULL success required.');
