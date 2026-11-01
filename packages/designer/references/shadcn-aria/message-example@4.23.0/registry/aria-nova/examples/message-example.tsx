@@ -474,8 +474,8 @@ function MessageGroupChat() {
 
 - Error: No users found
 - Stack trace:
-  - at src/users/services/user-service.ts:123
-  - at src/users/services/get-user.ts:230
+  - at src/example.ts:123
+  - at src/example.ts:230
 
 Can you check if the users are being created?`}
                 </span>
