@@ -432,7 +432,7 @@ function exactPartClosure(ts, root, record, proof, payloadBytes, codeFiles, opts
     const domain = { kind: "element", label: `library/${identity}/`, bytes, record: dependency, hash: target.hash };
     elementRoots.set(identity, domain); return domain;
   };
-  const publicNpm = (domain, specifier) => {
+  const publicNpm = (domain, specifier, typeOnly) => {
     need(specifier === domain.package || specifier.startsWith(domain.package + "/"), "npm target differs from its import");
     const subpath = specifier === domain.package ? "." : "./" + specifier.slice(domain.package.length + 1);
     const exports = domain.manifest.exports;
@@ -440,7 +440,9 @@ function exactPartClosure(ts, root, record, proof, payloadBytes, codeFiles, opts
     const leaves = value => {
       if (typeof value === "string") { need(value.startsWith("./") && partPath(value.slice(2)), "unsupported npm export path"); return [value.slice(2)]; }
       need(value && typeof value === "object", "missing/conditional-null npm export");
-      return Object.values(value).flatMap(leaves);
+      // A types condition is a declaration entry, never a runtime alternative.
+      // Keep checking every other conditional branch against the byte proof.
+      return Object.entries(value).filter(([condition]) => typeOnly || condition !== "types").flatMap(([, target]) => leaves(target));
     };
     if (exports !== undefined) return [...new Set(leaves(selected))];
     if (subpath !== ".") return [resolveRelative(domain, "root.js", subpath)];
@@ -459,7 +461,7 @@ function exactPartClosure(ts, root, record, proof, payloadBytes, codeFiles, opts
       need(entries[0] === target.path, "payload import resolution differs");
     } else if (target.kind === "npm") {
       destination = npmRoot(target);
-      entries = request.startsWith(".") && domain === destination ? [resolveRelative(domain, file, request)] : publicNpm(destination, request);
+      entries = request.startsWith(".") && domain === destination ? [resolveRelative(domain, file, request)] : publicNpm(destination, request, typeOnly);
       need(entries.includes(target.entry), "npm entry is not its actual public/local resolution");
     } else {
       destination = elementRoot(target);

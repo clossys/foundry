@@ -144,7 +144,10 @@ const gate = (root: string, spec: string, options = {}) => codes(refVerbatimFind
 
 // Synthetic byte-proof regression only: this does not qualify actual R6/R7 sources.
 // Reuses the real application:component manifest shape without calling it a block.
-function specimenExactPartFixture({ missingExport = false, relocate = false, external = false, missingExternalExport = false, bindings = false, missingBinding = false } = {}) {
+function specimenExactPartFixture({
+  missingExport = false, relocate = false, external = false, missingExternalExport = false, bindings = false, missingBinding = false,
+  npmExports = { ".": "./index.js" } as Record<string, unknown> | string, npmEntry = "index.js", externalTypeOnly = false,
+} = {}) {
   const referencesDir = mkdtempSync(join(tmpdir(), "ref-exact-specimen-"));
   const license = "Synthetic test-only license bytes\n";
   const licensePath = "fixture/LICENSE";
@@ -159,7 +162,7 @@ function specimenExactPartFixture({ missingExport = false, relocate = false, ext
   };
   if (missingBinding) files["BlockViewerIframe.tsx"] = "export function BlockViewerIframe() { return MissingHelper() }\n";
   if (bindings) files["RecordTable.tsx"] = 'export function RecordTable({ label = "Record" }: { label?: string } = {}) { return <table className="bg-surface"><tbody><tr><td>{label}</td></tr></tbody></table> }\n';
-  if (external) files["BlockViewerIframe.tsx"] = 'import { Marker } from "fixture-dependency"\n' + files["BlockViewerIframe.tsx"];
+  if (external) files["BlockViewerIframe.tsx"] = `import ${externalTypeOnly ? "type " : ""}{ Marker } from "fixture-dependency"\n` + files["BlockViewerIframe.tsx"];
   if (missingExport) files["Figure.tsx"] = files["Figure.tsx"].replace("{ BlockViewerIframe }", "{ MissingIframe as BlockViewerIframe }");
   const itemFiles = [Object.entries(files).slice(0, 2), Object.entries(files).slice(2, 4)];
   const proofs: Record<string, unknown> = {};
@@ -244,8 +247,9 @@ function specimenExactPartFixture({ missingExport = false, relocate = false, ext
   } : undefined;
   if (dependency) {
     const packageFiles = {
-      "package.json": JSON.stringify({ name: "fixture-dependency", version: "1.0.0", type: "module", license: "LicenseRef-TestFixture", exports: { ".": "./index.js" } }),
+      "package.json": JSON.stringify({ name: "fixture-dependency", version: "1.0.0", type: "module", license: "LicenseRef-TestFixture", exports: npmExports }),
       "index.js": `export function ${missingExternalExport ? "Other" : "Marker"}() { return null }\n`,
+      "index.d.ts": `export declare function ${missingExternalExport ? "Other" : "Marker"}(): null;\n`,
       "LICENSE": license,
     };
     mkdirSync(dependency.installed, { recursive: true });
@@ -258,7 +262,7 @@ function specimenExactPartFixture({ missingExport = false, relocate = false, ext
     const hash = treeHash(rows);
     fixtureManifest.items.push({ registry, name: "fixture-dependency", version: "1.0.0", dir: "fixture/dependency@1.0.0", type: "application:component", sourceUrl: "https://example.invalid/authored-dependency", license: "LicenseRef-TestFixture", direct: true, slots: [], hash, files: rows });
     record.deps.npm["fixture-dependency"] = "1.0.0";
-    record.lineage.exactParts.closure.imports.push({ file: "BlockViewerIframe.tsx", specifier: "fixture-dependency", target: { kind: "npm", package: "fixture-dependency", version: "1.0.0", entry: "index.js", hash } });
+    record.lineage.exactParts.closure.imports.push({ file: "BlockViewerIframe.tsx", specifier: "fixture-dependency", target: { kind: "npm", package: "fixture-dependency", version: "1.0.0", entry: npmEntry, hash } });
   }
   const save = (rehash = false) => {
     if (rehash) {
@@ -288,6 +292,54 @@ describe("specimen exact-part graph and bundled helper", () => {
     expect(specimenGate(specimenExactPartFixture({ external: true, missingExternalExport: true }))).toContain("REF-PART-CLOSURE");
   });
 
+  it("resolves conditional npm types/import exports to the measured runtime entry", () => {
+    for (const npmExports of [
+      { types: "./index.d.ts", import: "./index.js" },
+      { ".": { types: "./index.d.ts", import: "./index.js" } },
+      { ".": { import: { types: "./index.d.ts", default: "./index.js" } } },
+    ]) {
+      expect(specimenGate(specimenExactPartFixture({ external: true, npmExports }))).toEqual([]);
+    }
+    expect(specimenGate(specimenExactPartFixture({
+      external: true, npmExports: { types: "./index.d.ts", import: "./index.js" }, missingExternalExport: true,
+    }))).toContain("REF-PART-CLOSURE");
+  });
+
+  it("rejects conditional npm declaration-only, missing, and invalid runtime targets", () => {
+    for (const [npmExports, npmEntry] of [
+      [{ types: "./index.d.ts" }, "index.d.ts"],
+      [{ types: "./index.d.ts", import: "./index.d.ts" }, "index.d.ts"],
+      [{ types: "./index.d.ts", import: "./missing.js" }, "missing.js"],
+      [{ types: "./index.d.ts", import: "../index.js" }, "index.js"],
+      [{ types: "./index.d.ts", import: "./index.js", default: "./missing.js" }, "index.js"],
+      [{ types: "./index.d.ts", import: "./index.js", default: null }, "index.js"],
+      [{ types: "./index.d.ts", import: "./index.js" }, "index.d.ts"],
+      [{ types: "./index.d.ts", import: "./index.js" }, "private.js"],
+    ] as const) {
+      const fixture = specimenExactPartFixture({ external: true, npmExports, npmEntry });
+      expect(specimenGate(fixture), JSON.stringify({ npmExports, npmEntry })).toContain("REF-PART-CLOSURE");
+    }
+  });
+
+  it("verifies type-only npm entries without using them as executable closure", () => {
+    const options = { external: true, externalTypeOnly: true, npmExports: { types: "./index.d.ts" }, npmEntry: "index.d.ts" };
+    expect(specimenGate(specimenExactPartFixture(options))).toEqual([]);
+    expect(specimenGate(specimenExactPartFixture({ ...options, missingExternalExport: true }))).toContain("REF-PART-CLOSURE");
+  });
+
+  it("rejects a rehashed invalid npm export against its trusted package identity", () => {
+    const fixture = specimenExactPartFixture({ external: true, npmExports: { types: "./index.d.ts", import: "./index.js" } });
+    const packageDir = fixture.dependency!.installed;
+    const packagePath = join(packageDir, "package.json");
+    const changed = JSON.parse(readFileSync(packagePath, "utf8"));
+    changed.exports.import = "../index.js";
+    writeFileSync(packagePath, JSON.stringify(changed));
+    const anchor = fixture.options.manifest.items.find(item => item.name === "fixture-dependency")!;
+    fixture.record.lineage.exactParts.closure.imports.at(-1).target.hash = treeHash(anchor.files.map(({ path }) => ({ path, sha256: sha(readFileSync(join(packageDir, path), "utf8")) })));
+    fixture.save();
+    expect(specimenGate(fixture)).toContain("REF-PART-CLOSURE");
+  });
+
   it("rejects changed dependency/code/license bytes even when attacker recomputes the dependency proof digest", () => {
     for (const mutation of ["code", "license", "version", "vendored", "undeclared", "private-entry"]) {
       const fixture = specimenExactPartFixture({ external: true });
@@ -296,7 +348,7 @@ describe("specimen exact-part graph and bundled helper", () => {
       if (mutation === "code" || mutation === "license") {
         const file = mutation === "code" ? "index.js" : "LICENSE";
         writeFileSync(join(packageDir, file), readFileSync(join(packageDir, file), "utf8") + "changed\n");
-        target.hash = treeHash(["package.json", "index.js", "LICENSE"].map(path => ({ path, sha256: sha(readFileSync(join(packageDir, path), "utf8")) })));
+        target.hash = treeHash(["package.json", "index.js", "index.d.ts", "LICENSE"].map(path => ({ path, sha256: sha(readFileSync(join(packageDir, path), "utf8")) })));
       } else if (mutation === "vendored") {
         const path = join(fixture.dependency!.vendored, "index.js");
         writeFileSync(path, readFileSync(path, "utf8") + "changed\n");
