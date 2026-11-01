@@ -4,10 +4,15 @@ import type { ComponentFile, ResolvedComponents } from "./resolve-components.js"
 interface Token {
     text: string;
     literal?: boolean;
+    jsx?: true;
+    start?: number;
+    end?: number;
 }
 export interface ParsedSurfaceModule {
     functions: readonly string[];
     values: readonly string[];
+    /** Export identities differ from local function names for a default declaration. */
+    functionExports: readonly { export: string; local: string }[];
     types: readonly string[];
     imports: readonly {
         module: string;
@@ -18,6 +23,8 @@ export interface ParsedSurfaceModule {
     client: boolean;
 }
 const refuse = (): never => { throw new Error("unsupported or malformed surface source"); };
+// Default import/function locals are strict-mode bindings, not export identities.
+const reservedDefaultBindings = new Set("arguments await break case catch class const continue debugger default delete do else enum eval export extends false finally for function if implements import in instanceof interface let new null package private protected public return static super switch this throw true try typeof var void while with yield".split(" "));
 /** Strings/comments/JSX text never manufacture declarations, edges or exports. */
 export function parseSurfaceModule(source: string, richer = true): ParsedSurfaceModule {
     let i = 0;
@@ -144,8 +151,8 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
                 prior = { text: "literal", literal: true };
                 continue;
             }
-            if (c === "<" && /^[A-Za-z>]/.test(source.slice(i)) && (!prior || ["return", "=", "(", "?", ":", ",", ">", "&&", "||"].includes(prior.text))) {
-                tokens.push({ text: "(" });
+            if (c === "<" && /^[A-Za-z>]/.test(source.slice(i)) && (!prior || ["return", "=", "(", "?", ":", ",", ">", "=>", "&&", "||"].includes(prior.text))) {
+                tokens.push({ text: "(", jsx: true });
                 jsx();
                 tokens.push({ text: ")" });
                 prior = { text: ")" };
@@ -166,13 +173,17 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
                 const close = ({ "{": "}", "[": "]", "(": ")" } as Record<string, string>)[c]!;
                 tokens.push({ text: c });
                 scan(close);
-                tokens.push({ text: close });
-                prior = { text: close };
+                prior = { text: close, start: i - 1, end: i };
+                tokens.push(prior);
                 continue;
             }
             if (["}", "]", ")"].includes(c))
                 return refuse();
-            if ((c === "&" || c === "|") && source[i] === c) {
+            if (c === "=" && source[i] === ">") {
+                prior = { text: "=>", start: i - 1, end: i + 1 };
+                i++;
+            }
+            else if ((c === "&" || c === "|") && source[i] === c) {
                 i++;
                 prior = { text: c + c };
             }
@@ -185,9 +196,10 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
     };
     scan();
     let at = 0;
-    const functions = new Set<string>(), exports = new Set<string>(), types = new Set<string>(), typeExports = new Set<string>(), locals = new Set<string>();
+    const functions = new Set<string>(), exports = new Map<string, string>(), types = new Set<string>(), typeExports = new Set<string>(), locals = new Set<string>();
     const imports: ParsedSurfaceModule["imports"][number][] = [];
     const peek = () => tokens[at];
+    const is = (text: string) => !!peek() && !peek()!.literal && peek()!.text === text;
     const take = (text: string) => { const token = tokens[at++]; if (!token || token.literal || token.text !== text)
         return refuse(); };
     const id = () => { const token = tokens[at++]; if (!token || token.literal || !/^[A-Za-z_$][\w$]*$/.test(token.text))
@@ -224,47 +236,72 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
             continue;
         }
         let exported = false;
+        let defaultExport = false;
         if (peek()!.text === "export") {
             at++;
             exported = true;
+            if (peek()?.text === "default" && !peek()?.literal) {
+                at++;
+                defaultExport = true;
+            }
         }
         const token = peek();
-        if (!token)
+        if (!token || token.literal || defaultExport && token.text !== "function")
             return refuse();
         if (token.text === "import" && !exported) {
             at++;
             let allType = false;
-            if (peek()?.text === "type") {
+            if (is("type")) {
                 allType = true;
                 at++;
             }
-            take("{");
             const rows: {
                 name: string;
                 local: string;
                 kind: "value" | "type";
             }[] = [];
-            while (peek()?.text !== "}") {
-                let kind: "value" | "type" = allType ? "type" : "value";
-                if (peek()?.text === "type") {
-                    kind = "type";
-                    at++;
-                }
-                const name = id();
-                let local = name;
-                if (peek()?.text === "as") {
-                    at++;
-                    local = id();
-                }
+            const binding = (name: string, local: string, kind: "value" | "type") => {
                 if (locals.has(local))
                     return refuse();
                 locals.add(local);
                 rows.push({ name, local, kind });
-                if (peek()?.text !== ",")
-                    break;
-                at++;
+            };
+            if (peek()?.text !== "{") {
+                const local = id();
+                if (reservedDefaultBindings.has(local))
+                    return refuse();
+                binding("default", local, allType ? "type" : "value");
+                if (is(",")) {
+                    at++;
+                    if (allType || peek()?.text !== "{")
+                        return refuse();
+                }
+                else if (!is("from"))
+                    return refuse();
             }
-            take("}");
+            if (peek()?.text === "{") {
+                take("{");
+                while (peek()?.text !== "}") {
+                    let kind: "value" | "type" = allType ? "type" : "value";
+                    if (is("type")) {
+                        kind = "type";
+                        at++;
+                    }
+                    const name = id();
+                    let local = name;
+                    if (is("as")) {
+                        at++;
+                        local = id();
+                    }
+                    if (local === "default")
+                        return refuse();
+                    binding(name, local, kind);
+                    if (!is(","))
+                        break;
+                    at++;
+                }
+                take("}");
+            }
             take("from");
             const module = tokens[at++];
             if (!module?.literal || module.text.includes("\\"))
@@ -290,7 +327,10 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
                 const local = id();
                 if ((erased ? typeExports : exports).has(local))
                     return refuse();
-                (erased ? typeExports : exports).add(local);
+                if (erased)
+                    typeExports.add(local);
+                else
+                    exports.set(local, local);
                 if (peek()?.text !== ",")
                     break;
                 at++;
@@ -303,6 +343,8 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
         if (token.text === "function") {
             at++;
             const local = id();
+            if (local === "default" || defaultExport && reservedDefaultBindings.has(local))
+                return refuse();
             add(functions, local);
             if (peek()?.text === "<")
                 balanced("<");
@@ -322,8 +364,12 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
                     }
             }
             balanced("{");
-            if (exported)
-                exports.add(local);
+            if (exported) {
+                const name = defaultExport ? "default" : local;
+                if (exports.has(name))
+                    return refuse();
+                exports.set(name, local);
+            }
             continue;
         }
         if (richer && ["type", "interface"].includes(token.text)) {
@@ -363,6 +409,25 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
             if (locals.has(local))
                 return refuse();
             locals.add(local);
+            const initializerAt = at;
+            // The untouched Tailark helper ends at EOF with this bounded form:
+            // const Local = (parameters) => (<JSX />). Other declarations need ';'.
+            if (is("=") && tokens[at + 1]?.text === "(") {
+                take("=");
+                balanced("(");
+                const parametersEnd = tokens[at - 1]?.end, arrowStart = peek()?.start;
+                if (is("=>") && parametersEnd !== undefined && arrowStart !== undefined && !/[\r\n\u2028\u2029]/.test(source.slice(parametersEnd, arrowStart)) && tokens[at + 1]?.text === "(" && tokens[at + 2]?.jsx) {
+                    take("=>");
+                    take("(");
+                    balanced("(");
+                    if (peek()?.text === ")") {
+                        at++;
+                        if (!peek())
+                            continue;
+                    }
+                }
+                at = initializerAt;
+            }
             let equal = false;
             while (peek() && peek()!.text !== ";") {
                 if (peek()!.text === "=")
@@ -379,9 +444,9 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
         }
         return refuse();
     }
-    if ([...exports].some(local => !functions.has(local)) || [...typeExports].some(local => !types.has(local)))
+    if ([...exports.values()].some(local => !functions.has(local)) || [...typeExports].some(local => !types.has(local)))
         return refuse();
-    return { functions: [...functions], values: [...exports], types: [...typeExports], imports, client };
+    return { functions: [...functions], values: [...exports.keys()], functionExports: [...exports].map(([name, local]) => ({ export: name, local })), types: [...typeExports], imports, client };
 }
 export interface SurfaceSourceProof {
     values: readonly {
@@ -490,7 +555,7 @@ export function analyzeSurfaceSource(input: {
     visit(fill.impl.entry);
     const entry = read(fill.impl.entry);
     for (const api of fill.api.exports) {
-        if (!entry?.functions.includes(api.export) || !entry.values.includes(api.export))
+        if (!entry?.functionExports.some(row => row.export === api.export && entry.functions.includes(row.local)) || !entry.values.includes(api.export))
             add("S4", `API is not a concrete same-entry function ${api.export}`);
         else
             values.push({ file: fill.impl.entry, name: api.name, export: api.export });

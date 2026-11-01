@@ -90,7 +90,7 @@ function inputRef(value: unknown): void {
     if (value.kind !== "dependency" && !(value.kind === "component" ? /^components\.[a-z][a-z0-9-]*$/ : value.kind === "surface" ? /^(sections|frames)\.[a-z][a-z0-9-]*$/ : /^(themes|assets)\.[a-z][a-z0-9.-]*$/).test(value.id))
         surfaceFault("S6 invalid input reference");
 }
-function binding(value: unknown): void { object(value, ["export", "path"]); if (!pascal(value.export))
+function binding(value: unknown): void { object(value, ["export", "path"]); if (value.export !== "default" && !pascal(value.export))
     surfaceFault("S1 binding target invalid"); list(value.path, item => { if (item !== "[]" && !name(item))
     surfaceFault("S1 binding path invalid"); }, true); if ((value.path as string[])[0] === "[]" || (value.path as string[]).some((item, i, all) => item === "[]" && all[i - 1] === "[]"))
     surfaceFault("S1 binding path invalid"); }
@@ -143,7 +143,7 @@ export function assertSurfaceCandidate(value: unknown, installed = false): asser
     choice(value.rendering, ["client", "server"]);
     object(value.impl, ["kind", "entry", "export"]);
     choice(value.impl.kind, ["source"]);
-    if (!pascal(value.impl.export))
+    if (value.impl.export !== "default" && !pascal(value.impl.export))
         surfaceFault("S1 implementation identifier");
     string(value.impl.entry);
     surfacePath(value.impl.entry, value.slot);
@@ -156,7 +156,7 @@ export function assertSurfaceCandidate(value: unknown, installed = false): asser
     strings(value.reads.assets);
     object(value.api, ["version", "exports"]);
     choice(value.api.version, [1]);
-    list(value.api.exports, row => { object(row, ["name", "export"]); if (!pascal(row.name) || !pascal(row.export) || row.name === "LibraryProvider" || row.export === "LibraryProvider")
+    list(value.api.exports, row => { object(row, ["name", "export"]); if (!pascal(row.name) || (row.export !== "default" && !pascal(row.export)) || row.name === "LibraryProvider" || row.export === "LibraryProvider")
         surfaceFault("S1 unsafe API"); }, true);
     const api = value.api.exports as SurfaceCandidate["api"]["exports"];
     if (new Set(api.map(row => row.name)).size !== api.length || new Set(api.map(row => row.export)).size !== api.length || api.filter(row => row.name === surfacePrimary(value.slot as string) && row.export === (value.impl as SurfaceCandidate["impl"]).export).length !== 1)
@@ -169,25 +169,23 @@ export function assertSurfaceCandidate(value: unknown, installed = false): asser
         surfaceFault("S1 duplicate dependency/binding");
     manifest(value.outputSha256);
     list(value.blockers, row => { object(row, ["code", "message"]); string(row.code); string(row.message); });
-    map(value.propMap, binding);
+    const visitBinding = (row: unknown) => { binding(row); const target = row as {
+        export: string;
+    }; if (!api.some(api => api.export === target.export))
+        surfaceFault("S1 unknown local API binding"); };
+    map(value.propMap, visitBinding);
     if (value.kind === "section") {
-        map(value.slotMap, binding);
+        map(value.slotMap, visitBinding);
         map(value.configs, (config, key) => { if (!/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(key))
-            surfaceFault("S1 config id"); object(config, ["members", "props"]); strings(config.members); list(config.props, row => { object(row, ["export", "path", "value"]); const { value: _literal, ...target } = row; binding(target); }); });
+            surfaceFault("S1 config id"); object(config, ["members", "props"]); strings(config.members); list(config.props, row => { object(row, ["export", "path", "value"]); const { value: _literal, ...target } = row; visitBinding(target); }); });
     }
     else {
-        map(value.slots, binding);
-        map(value.statePorts, row => { object(row, ["value", "change"]); binding(row.value); binding(row.change); if ((row.change as {
+        map(value.slots, visitBinding);
+        map(value.statePorts, row => { object(row, ["value", "change"]); visitBinding(row.value); visitBinding(row.change); if ((row.change as {
             path: string[];
         }).path.length !== 1)
             surfaceFault("S1 direct change prop required"); });
     }
-    const visitBinding = (row: unknown) => { const target = row as {
-        export: string;
-    }; if (!api.some(api => api.export === target.export))
-        surfaceFault("S1 unknown local API binding"); };
-    Object.values(value.propMap as Node).forEach(visitBinding);
-    Object.values((value.kind === "section" ? value.slotMap : value.slots) as Node).forEach(visitBinding);
     if (installed)
         origin(value.origin);
 }
