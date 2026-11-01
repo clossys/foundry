@@ -30,6 +30,24 @@ it.each(tailarkHeroes)(`parses unchanged Tailark ${tailarkRef} Hero $variant wit
     { module: "next/image", name: "default", local: "Image", kind: "value" },
   ]);
 });
+const tailarkGrammarSources = [
+  { file: "../../references/tailark-oss/mist-hero-section-1-header@8139698/mist/blocks/hero-section/one/header.tsx", bytes: 6505, sha256: "60f97bef245c33eb1227512d8441ab2cae7c23e3a85e29c14f3fa87a9daff1e1", blob: "90a55f15278fd03eaf9154b4cd7512c4f1879a4d", values: ["HeroHeader"], functions: ["HeroHeader"] },
+  { file: "../../references/tailark-oss/mist-button@8139698/mist/ui/button.tsx", bytes: 2095, sha256: "f682b8eabcab62c245a4a4ca3c56baf310bdd88f066c9ddf285da19a6c55ad28", blob: "37eb8d0da1bf5adc70a24cc8ef81c80283718c0d", values: ["Button", "buttonVariants"], functions: [] },
+];
+it.each(tailarkGrammarSources)("parses complete immutable Tailark grammar $file", row => {
+  const bytes = readFileSync(new URL(row.file, import.meta.url));
+  expect(bytes.length).toBe(row.bytes);
+  expect(createHash("sha256").update(bytes).digest("hex")).toBe(row.sha256);
+  expect(createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex")).toBe(row.blob);
+  const proof = parseSurfaceModule(bytes.toString("utf8"));
+  expect(proof.values).toEqual(row.values);
+  expect(proof.functions).toEqual(row.functions);
+  expect(proof.functionExports.map(row => row.export)).toEqual(row.functions);
+  if (!row.functions.length) expect(proof.imports.filter(row => row.local === "React")).toEqual([
+    { module: "react", name: "ButtonHTMLAttributes", local: "React", kind: "type" },
+    { module: "react", name: "forwardRef", local: "React", kind: "value" },
+  ]);
+});
 it("retains the exact MIT notice for the copied Tailark sources", () => {
   const license = readFileSync(new URL("./__fixtures__/surface-engine/tailark-defaults/LICENCE.md", import.meta.url));
   expect(createHash("sha256").update(license).digest("hex")).toBe("9ceb2565db4149b699df9fb53b16963f59675f5308de1143679639b2c561410c");
@@ -153,19 +171,11 @@ it.each([
   'export function Main() {} const Helper = () /*\n*/ => (<div />)',
   'const Missing =',
   'const Unclosed = (1',
-  'const Hidden = 1\nexport function Main() {}',
-  'const Hidden = 1\nimport Main from "module"',
-  'const Hidden = 1\nfunction Main() {}',
   'const Hidden = 1\nasync function Main() {}',
   'const Hidden = 1\ntype Item = string',
   'const Hidden = 1\nvar Other = 2',
-  'const Hidden = 1\nconst Other = 2',
-  'const Helper = () => (<div />)\nexport function Main() {}',
-  'const Helper = () => (<div />)\nimport Main from "module"',
-  'const Helper = () => (<div />)\nconst Other = 2',
   'const Helper = () => (null)',
   'const Helper = () => ()',
-  'export const Main = () => null',
 ])("refuses malformed defaults and declaration boundaries %s", source => {
   expect(() => parseSurfaceModule(source)).toThrow();
 });
@@ -177,6 +187,156 @@ it("resolves the emitter's extensionless relative source uniquely and refuses mi
   expect(relativeSurfacePath(entry, "./button", ["components/button/button.ts", "components/button/button.tsx"])).toBeUndefined();
   expect(relativeSurfacePath(entry, "../../../outside", ["outside.ts"])).toBeUndefined();
 });
-it("separates erased types, concrete functions and spoof text",()=>{const proof=parseSurfaceModule('export interface Item { value: string }\nexport type Alias = Item;\nconst x = "export function Fake() {}";\nfunction Main(value: Item): string { return `${value.value} ${1 / 2}`; }\nexport { Main };');expect(proof.values).toEqual(["Main"]);expect(proof.types).toEqual(["Item","Alias"]);expect(()=>parseSurfaceModule('export type { Item };')).toThrow();expect(()=>parseSurfaceModule('export const Main = () => null;')).toThrow();});
+it("separates erased types, concrete functions and spoof text",()=>{const proof=parseSurfaceModule('export interface Item { value: string }\nexport type Alias = Item;\nconst x = "export function Fake() {}";\nfunction Main(value: Item): string { return `${value.value} ${1 / 2}`; }\nexport { Main };');expect(proof.values).toEqual(["Main"]);expect(proof.types).toEqual(["Item","Alias"]);expect(()=>parseSurfaceModule('export type { Item };')).toThrow();expect(parseSurfaceModule('export const Main = () => null;').functionExports).toEqual([{export:"Main",local:"Main"}]);});
 it.each(['export * from "x";','export { X } from "x";','import * as React from "react";','export function X() { return <React.X />; }','export function X() { return `${import("x")}`; }','export function X() { return /hidden/; }','export function X() { return `unterminated; }','declare function X(): void;','class X {}','export { Imported }; import { Imported } from "x";'])("refuses unsupported source %s",source=>{expect(()=>parseSurfaceModule(source)).toThrow();});
 it("retains static edges inside actual type-cycle closure and rejects unavailable type/value",()=>{const {input,candidate}=syntheticSurface();const files=[{path:candidate.impl.entry,content:'import type { Item } from "./types.js"; export function Synthetic(value: Item) { return `${value.name}`; }'},{path:"sections/synthetic/types.ts",content:'import type { Synthetic } from "./Synthetic.js"; export interface Item { name: string }'}];const proof=analyzeSurfaceSource({fill:candidate,files,components:resolve(input).components,componentFiles:[],packages:[]});expect(proof.findings).toEqual(expect.arrayContaining([expect.objectContaining({code:"S4"})]));expect(proof.imports).toHaveLength(2);files[1]!.content='export interface Item { name: string }';expect(analyzeSurfaceSource({fill:candidate,files,components:resolve(input).components,componentFiles:[],packages:[]}).findings).toEqual([]);files[0]!.content=files[0]!.content.replace("import type","import");expect(analyzeSurfaceSource({fill:candidate,files,components:resolve(input).components,componentFiles:[],packages:[]}).findings.some(f=>f.code==="S4")).toBe(true);});
+
+it.each([
+  'const Hidden = 1\nexport function Main() {}',
+  'const Hidden = 1\nimport Main from "module"',
+  'const Hidden = 1\nfunction Main() {}',
+  'const Hidden = 1\nconst Other = 2',
+  'const Helper = () => (<div />)\nexport function Main() {}',
+  'const Helper = () => (<div />)\nimport Main from "module"',
+  'const Helper = () => (<div />)\nconst Other = 2',
+  'const Items = [\n { title: "one" },\n { title: "two" },\n] /* boundary\n */ export const Main = () => { return null; }',
+])("retains separate declarations at real ASI boundaries %s", source => {
+  expect(() => parseSurfaceModule(source)).not.toThrow();
+});
+it.each([
+  'const Hidden = 1 export function Main() {}',
+  'const Hidden = 1\nexport function Main() {}; unknown()',
+  'const Hidden = 1\n[unknown()]',
+  'const Hidden = 1\n(unknown())',
+  'const Hidden = 1\n+ unknown()',
+  'const Hidden = []\n.map(unknown)',
+  'const Hidden = 1\n`continued`',
+  'const Hidden = 1\n? unknown() : other()',
+  'import * as React from "react"; type Item = string\nconst Hidden = React.useState(false); export function Main() {}',
+  'const Hidden = unknownFactory(); export { Hidden };',
+  'import { cva } from "wrong-package"; const Hidden = cva(); export { Hidden };',
+  'import type { cva } from "class-variance-authority"; const Hidden = cva(); export { Hidden };',
+  'import * as React from "wrong-package"; const Hidden = React.forwardRef(() => null); export { Hidden };',
+  'import * as React from "react"; const Hidden = React.memo(() => null); export { Hidden };',
+  'import * as React from "react"; const Hidden = React.forwardRef(() => null); Hidden.other = "x"; export { Hidden };',
+  'import * as React from "react"; const Hidden = React.forwardRef(() => null); Hidden["displayName"] = "x"; export { Hidden };',
+  'import * as React from "react"; const Hidden = React.forwardRef(() => null); Hidden.displayName = other; export { Hidden };',
+  'const Hidden = () => null; Hidden.displayName = "x"; export { Hidden };',
+])("refuses continuation splitting and unproven helper mutations %s", source => {
+  expect(() => parseSurfaceModule(source)).toThrow();
+});
+it("emits exact runtime and erased namespace members without a wildcard", () => {
+  const proof = parseSurfaceModule('import * as React from "react"; export interface Props extends React.ButtonHTMLAttributes<Element> {} export function Main() { React.useState(false); React.useState(true); }');
+  expect(proof.imports).toEqual([
+    { module: "react", name: "ButtonHTMLAttributes", local: "React", kind: "type" },
+    { module: "react", name: "useState", local: "React", kind: "value" },
+  ]);
+  expect(parseSurfaceModule('import type * as React from "react"; export interface Props extends React.ButtonHTMLAttributes<Element> {}').imports).toEqual([
+    { module: "react", name: "ButtonHTMLAttributes", local: "React", kind: "type" },
+  ]);
+});
+it.each([
+  'import * as React from "react"; export function Main() { return React; }',
+  'import * as React from "react"; export function Main() { return React["useState"](); }',
+  'import * as React from "react"; export function Main(key: string) { return React[key](); }',
+  'import * as React from "react"; export function Main() { const Alias = React; return Alias.useState(); }',
+  'import * as React from "react"; export function Main() { const Alias = React.useState; return Alias(); }',
+  'import * as React from "react"; export function Main() { return React.deep.useState(); }',
+  'import * as React from "react"; export function Main() { return React.useState < value; }',
+  'import type * as React from "react"; export function Main() { return React.useState(); }',
+])("refuses bare, aliased, computed and erased runtime namespace access %s", source => {
+  expect(() => parseSurfaceModule(source)).toThrow();
+});
+it("checks namespace members against exact module/type/value evidence and refuses helper API promotion", () => {
+  const { input, candidate } = syntheticSurface();
+  candidate.dependencies = [{ module: "react", version: "1.0.0", license: "MIT" }];
+  const files = [{ path: candidate.impl.entry, content: 'import * as React from "react"; export function Synthetic() { return React.useState(false); }' }];
+  const evidence = { module: "react", version: "1.0.0", artifactSha256: "a".repeat(64), values: ["useState"], types: [] as string[] };
+  const analyze = (packages = [evidence]) => analyzeSurfaceSource({ fill: candidate, files, components: resolve(input).components, componentFiles: [], packages });
+  expect(analyze().findings).toEqual([]);
+  expect(analyze().imports).toEqual([{ file: candidate.impl.entry, module: "react", name: "useState", local: "React", kind: "value", target: "react" }]);
+  expect(analyze([]).findings).toContainEqual(expect.objectContaining({ code: "S4" }));
+  evidence.values = ["*"];
+  expect(analyze().findings).toContainEqual(expect.objectContaining({ code: "S4" }));
+  evidence.values = [];
+  evidence.types = ["useState"];
+  expect(analyze().findings).toContainEqual(expect.objectContaining({ code: "S4" }));
+  evidence.values = ["forwardRef"];
+  evidence.types = [];
+  files[0]!.content = 'import * as React from "react"; const Synthetic = React.forwardRef(() => null); Synthetic.displayName = "Synthetic"; export { Synthetic };';
+  expect(analyze().findings).toContainEqual(expect.objectContaining({ message: "API is not a concrete same-entry function Synthetic" }));
+  const helper = parseSurfaceModule(files[0]!.content);
+  expect(helper.values).toEqual(["Synthetic"]);
+  expect(helper.functions).toEqual([]);
+  expect(helper.functionExports).toEqual([]);
+  evidence.module = "other-module";
+  expect(analyze().findings).toContainEqual(expect.objectContaining({ message: "unproven dependency export react#forwardRef" }));
+});
+it("retains namespace relative-path traversal and export-substitution rejection", () => {
+  const { input, candidate } = syntheticSurface();
+  const files = [{ path: candidate.impl.entry, content: 'import * as Local from "./helper.js"; export function Synthetic() { return Local.Actual(); }' }, { path: "sections/synthetic/helper.ts", content: 'export function Other() {}' }];
+  const analyze = () => analyzeSurfaceSource({ fill: candidate, files, components: resolve(input).components, componentFiles: [], packages: [] });
+  expect(analyze().findings).toContainEqual(expect.objectContaining({ message: "unknown value export Actual" }));
+  files[1]!.content = 'export function Actual() {}';
+  expect(analyze().findings).toEqual([]);
+  files[0]!.content = files[0]!.content.replace("./helper.js", "../../../helper.js");
+  expect(analyze().findings).toContainEqual(expect.objectContaining({ code: "S4" }));
+});
+
+it("keeps proven direct helper exports value-only and rejects complete raw source mutations", () => {
+  const cva = parseSurfaceModule('import { cva } from "class-variance-authority"; export const variants = cva("x", {});');
+  expect(cva.values).toEqual(["variants"]);
+  expect(cva.functionExports).toEqual([]);
+  const ref = parseSurfaceModule('import * as React from "react"; export const View = React.forwardRef(() => null);');
+  expect(ref.values).toEqual(["View"]);
+  expect(ref.functionExports).toEqual([]);
+  const header = readFileSync(new URL(tailarkGrammarSources[0]!.file, import.meta.url), "utf8");
+  const button = readFileSync(new URL(tailarkGrammarSources[1]!.file, import.meta.url), "utf8");
+  for (const mutated of [
+    header.replace("export const HeroHeader = () => {", "export const HeroHeader = unknownFactory(() => {").replace(/\n}\s*$/, "\n})\n"),
+    button.replace("React.forwardRef<", "React.unknownFactory<"),
+    button.replace("React.forwardRef<", 'React["forwardRef"]<'),
+    button.replace("Button.displayName = 'Button'", "Button.displayName = unknownValue"),
+    button.replace("from 'class-variance-authority'", "from 'other-package'"),
+  ]) expect(() => parseSurfaceModule(mutated)).toThrow();
+});
+
+it("classifies exported concrete arrow locals without promoting internal JSX helpers", () => {
+  const proof = parseSurfaceModule('const Helper = () => (<div />)\nconst Main = () => { return null; }\nexport { Main };');
+  expect(proof.functions).toEqual(["Main"]);
+  expect(proof.functionExports).toEqual([{ export: "Main", local: "Main" }]);
+});
+
+it.each([
+  'import { cva } from "class-variance-authority"; const Hidden = cva(unknownFactory()); export { Hidden };',
+  'import { cva } from "class-variance-authority"; const Hidden = cva("x", unknownOptions); export { Hidden };',
+  'import { cva } from "class-variance-authority"; const Hidden = cva("x", { variants: { color: { red: unknownFactory() } } }); export { Hidden };',
+  'import { cva } from "class-variance-authority"; const Hidden = cva("x", { variants: { [unknownKey]: "red" } }); export { Hidden };',
+  'import { cva } from "class-variance-authority"; const Hidden = cva("x", { variants: { color: { red: source[key] } } }); export { Hidden };',
+  'import { cva } from "class-variance-authority"; const Hidden = cva("x", { ...unknownOptions }); export { Hidden };',
+  'import * as React from "react"; const Hidden = React.forwardRef(unknownFactory()); Hidden.displayName = "Hidden"; export { Hidden };',
+  'import * as React from "react"; const Hidden = React.forwardRef(opaqueCallback); export { Hidden };',
+  'import * as React from "react"; const Hidden = React.forwardRef((() => null)()); export { Hidden };',
+  'import * as React from "react"; const Hidden = React.forwardRef(() => null, unknownFactory()); export { Hidden };',
+])("refuses eagerly evaluated or opaque factory arguments %s", source => {
+  expect(() => parseSurfaceModule(source)).toThrow();
+});
+it("admits concrete callback bodies and literal static CVA configuration", () => {
+  const source = 'import * as React from "react"; import { cva } from "class-variance-authority"; const variants = cva("x", { variants: { active: { true: "yes", false: null } }, defaultVariants: { active: true }, compoundVariants: [{ active: false, class: ["a", "b"] }] }); const View = React.forwardRef((props, ref) => { const value = runtimeCall(props); return value; }); export { View, variants };';
+  const proof = parseSurfaceModule(source);
+  expect(proof.values).toEqual(["View", "variants"]);
+  expect(proof.functionExports).toEqual([]);
+  expect(parseSurfaceModule('import * as React from "react"; const View = React.forwardRef(() => runtimeCall()); export { View };').values).toEqual(["View"]);
+});
+
+it.each([
+  'const items = [unknownFactory()]; export function Main() {}',
+  'const items = [{ value: unknownFactory() }]; export function Main() {}',
+  'const items = { values: [unknownFactory()] }; export function Main() {}',
+  'const items = { [unknownKey]: "value" }; export function Main() {}',
+  'const items = { ...unknownOptions }; export function Main() {}',
+  'const items = [...unknownItems]; export function Main() {}',
+  'const items = { value: source[key] }; export function Main() {}',
+])("refuses unknown eager construction inside plain initializers %s", source => {
+  expect(() => parseSurfaceModule(source)).toThrow();
+});
