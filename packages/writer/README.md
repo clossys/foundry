@@ -49,3 +49,71 @@ the parser never returns partial records. It does not read files or validate
 candidate frontmatter, slot schemas, binding targets, approval, activation,
 pins, hashes, selection, or source authority. Those checks belong to callers.
 The legacy `parseWriterCell` contract is unchanged.
+
+Native alias and section declarations are authored separately in
+`declarations.json` at the native Writer root. This is control metadata, with
+no copy records or inferred mappings:
+
+```json
+{
+  "schema": "clossys.writer-declarations/1",
+  "locales": {
+    "en": {
+      "aliases": { "example.title": "title-1" },
+      "sections": [{
+        "sectionId": "sections.hero",
+        "configId": "ground.base",
+        "passageAlias": "ps.example.hero",
+        "fields": [{
+          "key": "header.heading",
+          "locale": "en",
+          "source": "writer",
+          "ref": { "id": "title-1" }
+        }]
+      }]
+    }
+  }
+}
+```
+
+```ts
+import { parseWriterDeclarations, projectWriterDeclarations } from "@clossys/writer/declarations";
+
+const declarations = parseWriterDeclarations(declarationsJsonText);
+const selected = projectWriterDeclarations(declarations, "en", {
+  completeRecords: nativeRows, // optional; caller asserts this is the complete selected set
+});
+// selected.aliases and selected.sections can accompany the actual native records.
+```
+
+Both functions and their types are also root exports. Parsing requires the
+schema tag and at least one explicit locale, each with an `aliases` object and
+`sections` array. Missing source, locale, or maps raise
+`WriterDeclarationsParseError` with a JSON Pointer `path`; authored empty
+`aliases: {}` and `sections: []` are valid. No fallback locale is chosen.
+Duplicate JSON keys, repeated sectionId/configId pairs, and repeated field keys
+are rejected. Alias and metadata keys such as `__proto__`, `constructor`, and
+`prototype` remain own data properties; projection does not assign them into
+object prototypes.
+
+Aliases explicitly map nonempty names to record ids. Each section explicitly
+names `sectionId`, `configId`, and `fields` (including empty arrays). Fields
+require `key` and `ref.id`. Optional `field.locale` must equal its containing
+locale. `source` and `passageAlias` are opaque nonempty strings when present;
+the parser does not infer links from either. Unknown JSON metadata at every
+level is retained, including section/field/ref extras, with array order intact.
+Pass the parsed document to projection, rather than an arbitrary JavaScript
+object. Projection returns a fresh copy of the selected locale declaration,
+preserving parsed values and array order through structured cloning.
+
+Without `completeRecords`, external alias and field target ids are preserved
+without asserting they resolve. With it, projection rejects missing target ids
+and conflicting record identities within the selected locale. Row bindings are
+opaque and are never turned into section mappings; record contexts never
+generate aliases. Top-level metadata remains available on the parsed document.
+
+The caller reads this file and owns native selection, pins, hashes, source
+authority, approval, and activation. A format-valid declaration does not prove
+those properties. The public fixtures establish the declaration shape; they do
+not provide a consumer's native declarations. Keep legacy declarations until
+the actual authored native file and selected records are available and checked.

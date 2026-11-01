@@ -1,6 +1,8 @@
 export { pseudoLocalize, pseudoLocaleFields, type WriterPseudoLocale } from "./pseudo.js";
 export { parseWriterSlotBody, WriterSlotBodyParseError } from "./slot-body.js";
 export type { WriterSlotBinding, WriterSlotRecord, WriterSlotBodyRecord } from "./slot-body.js";
+export { parseWriterDeclarations, projectWriterDeclarations, WriterDeclarationsParseError, WRITER_DECLARATIONS_SCHEMA, WRITER_DECLARATIONS_FILENAME } from "./declarations.js";
+export type { WriterDeclarations, WriterLocaleDeclarations, WriterDeclarationSection, WriterDeclarationField, WriterDeclarationRef, WriterDeclarationsProjectOptions } from "./declarations.js";
 /**
  * @clossys/writer — public entry point. See README.md for the full
  * picture: the machinery-vs-values split this package mirrors from
