@@ -1,9 +1,16 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { studioTestCopy } from "./__fixtures__/copy.js";
 import { Scorecard } from "./Scorecard.js";
 import type { MatrixSummary } from "./matrix-model.js";
 import type { StudioLabels } from "./types.js";
+
+const findingCopy = { "fixture.surface": "Choose a surface", "fixture.library": "Inspect library evidence", "fixture.spacing": "Inspect spacing" };
+const copy = { ...studioTestCopy, messages: { "designer.scorecard.resolved-count": { id: "fixture.resolved" } }, resolver(ref: Parameters<typeof studioTestCopy.resolver>[0]) {
+  const text = ref.id === "fixture.resolved" ? `${ref.values!.resolved}/${ref.values!.total}` : findingCopy[ref.id as keyof typeof findingCopy];
+  return text === undefined ? studioTestCopy.resolver(ref) : { ref, text, servedLocale: ref.locale, chain: [ref.locale!] };
+} };
 
 const labels = {
   scorecard: {
@@ -30,9 +37,9 @@ function measuredSummary(): MatrixSummary {
       { id: "coverage", supported: false, codes: [] },
     ],
     issues: [
-      { finding: { code: "C1", severity: "error", subject: "themes.background", message: "Choose a surface" }, slotId: "themes.background" },
-      { finding: { code: "C1", severity: "notice", subject: "library", message: "Inspect library evidence" } },
-      { finding: { code: "C1", severity: "notice", subject: "themes.spacing", message: "Inspect spacing" }, slotId: "themes.spacing" },
+      { finding: { code: "C1", severity: "error", subject: "themes.background", message: "Choose a surface", copy: { id: "fixture.surface" } }, slotId: "themes.background" },
+      { finding: { code: "C1", severity: "notice", subject: "library", message: "Inspect library evidence", copy: { id: "fixture.library" } } },
+      { finding: { code: "C1", severity: "notice", subject: "themes.spacing", message: "Inspect spacing", copy: { id: "fixture.spacing" } }, slotId: "themes.spacing" },
     ],
   };
 }
@@ -41,7 +48,7 @@ afterEach(cleanup);
 
 it("presents the measured categories as a named grid with row headers and no invented target counts", () => {
   const summary = measuredSummary();
-  render(<Scorecard summary={summary} labels={labels} onClose={() => {}} onIssue={() => {}} />);
+  render(<Scorecard copy={copy} summary={summary} labels={labels} onClose={() => {}} onIssue={() => {}} />);
   const region = screen.getByRole("region", { name: labels.scorecard.title });
   const grid = within(region).getByRole("grid", { name: labels.scorecard.title });
   expect(within(region).getByText("5/8")).toBeInTheDocument();
@@ -66,7 +73,7 @@ it("presents the measured categories as a named grid with row headers and no inv
 
 it("uses the public table keyboard navigation without activating an issue", async () => {
   const onIssue = vi.fn();
-  render(<Scorecard summary={measuredSummary()} labels={labels} onClose={() => {}} onIssue={onIssue} />);
+  render(<Scorecard copy={copy} summary={measuredSummary()} labels={labels} onClose={() => {}} onIssue={onIssue} />);
   const grid = screen.getByRole("grid", { name: labels.scorecard.title });
   await act(async () => { grid.focus(); });
   expect(screen.getByRole("row", { name: labels.scorecard.categories.contract })).toHaveFocus();
@@ -77,7 +84,7 @@ it("uses the public table keyboard navigation without activating an issue", asyn
 
 it("reveals only actual mapped issue slots and keeps unmapped issues disabled", async () => {
   const onIssue = vi.fn();
-  render(<Scorecard summary={measuredSummary()} labels={labels} onClose={() => {}} onIssue={onIssue} />);
+  render(<Scorecard copy={copy} summary={measuredSummary()} labels={labels} onClose={() => {}} onIssue={onIssue} />);
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Choose a surface" }));
   expect(onIssue).toHaveBeenLastCalledWith("themes.background");
@@ -92,7 +99,7 @@ it("reveals only actual mapped issue slots and keeps unmapped issues disabled", 
 it("closes from a keyboard-focused category or the close action without leaking Escape", async () => {
   const onClose = vi.fn();
   const parentKey = vi.fn();
-  render(<div onKeyDown={parentKey}><Scorecard summary={measuredSummary()} labels={labels} onClose={onClose} onIssue={() => {}} /></div>);
+  render(<div onKeyDown={parentKey}><Scorecard copy={copy} summary={measuredSummary()} labels={labels} onClose={onClose} onIssue={() => {}} /></div>);
   await act(async () => { screen.getByRole("grid", { name: labels.scorecard.title }).focus(); });
   const user = userEvent.setup();
   await user.keyboard("{Escape}");
@@ -103,7 +110,7 @@ it("closes from a keyboard-focused category or the close action without leaking 
 });
 
 it("retains the empty issue state", () => {
-  render(<Scorecard summary={{ ...measuredSummary(), issues: [] }} labels={labels} onClose={() => {}} onIssue={() => {}} />);
+  render(<Scorecard copy={copy} summary={{ ...measuredSummary(), issues: [] }} labels={labels} onClose={() => {}} onIssue={() => {}} />);
   expect(screen.getByText(labels.scorecard.noIssues)).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Choose a surface" })).toBeNull();
 });

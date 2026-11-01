@@ -146,7 +146,7 @@ it("covers metadata, shell states and preview/action proposals for all three rou
 
 it("covers actual IA groups and every registered item with a display-name binding", () => {
   const envelope = draft(files[1]);
-  for (const layer of ["tokens", "assets", "components", "sections", "frames"]) {
+  for (const layer of ["themes", "assets", "components", "sections", "frames"]) {
     const tree = JSON.parse(read(`packages/designer/src/catalog/ia/${layer}.json`));
     for (const l1 of tree.nodes) {
       expect(envelope.bindings.some(row => row.cellId === `designer.ia.${layer}.${l1.id}`)).toBe(true);

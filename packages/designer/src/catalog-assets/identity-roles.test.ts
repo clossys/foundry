@@ -18,7 +18,7 @@ import {emitWebIcons,faviconForScheme} from './emit.js';
 const catalog=withAssetCatalog(loadCatalog());
 const INK='#111111', ON_INVERSE='#ffffff';
 function base():LibraryData{
- let library:LibraryData={source:{id:'example',kind:'consumer',author:'consumer',license:'MIT',extends:'foundry'},fills:[],adoptedAt:'2026-10-23',rubricVersion:'test',strategy:{posture:'proven'},direction:{rule:'identity-mark@1'}};
+ let library:LibraryData={source:{id:'example',kind:'consumer',author:'consumer',license:'MIT',extends:'foundry'},fills:[],adoptedAt:'2026-10-23',rubricVersion:'test'};
  const token=(value:string,dark?:string):DtcgToken=>({$type:'color',$value:value,$extensions:{'com.clossys.css':{raw:value},...(dark?{'com.clossys.modes':{dark}}:{})}});
  library=applyLibraryChange(catalog,library,{baseHash:libraryHash(library),changes:[{op:'author',slot:'themes.foreground',tokens:{primary:token(INK,ON_INVERSE),'on-inverse':token(ON_INVERSE),'on-accent':token(ON_INVERSE)}},{op:'author',slot:'themes.background',tokens:{base:token(ON_INVERSE,INK),inverse:token(INK)}},{op:'author',slot:'themes.primary',tokens:{default:token('#2255aa')}},{op:'author',slot:'themes.font-sans',tokens:{display:{$type:'fontFamily',$value:['sans-serif']}}}]});
  return library;
@@ -155,7 +155,7 @@ const KIT_BODY=`\n  <rect width="100" height="100" rx="21.875" fill="#0A0A0A"/>\
 const KIT_MARK=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" role="img" aria-label="Example" data-clear-space="0.2">${KIT_BODY}</svg>\n`;
 const KIT_LOCKUP=`<svg aria-label="Example" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 48" data-clear-space="0.2"><svg x="0" y="0" width="48" height="48" viewBox="0 0 100 100">${KIT_BODY}</svg><text x="56" y="31" font-size="22" font-family="sans-serif" fill="#0A0A0A">Example</text></svg>`;
 function kitLibrary():LibraryData{
- let library:LibraryData={source:{id:'example',kind:'consumer',author:'consumer',license:'MIT',extends:'foundry'},fills:[],adoptedAt:'2026-10-23',rubricVersion:'test',strategy:{posture:'proven'},direction:{rule:'identity-mark@1'}};
+ let library:LibraryData={source:{id:'example',kind:'consumer',author:'consumer',license:'MIT',extends:'foundry'},fills:[],adoptedAt:'2026-10-23',rubricVersion:'test'};
  const color=(value:string,dark?:string):DtcgToken=>({$type:'color',$value:value,$extensions:{'com.clossys.css':{raw:value},...(dark?{'com.clossys.modes':{dark}}:{})}});
  const svg=(value:string):DtcgToken=>({$type:'svg',$value:value,$extensions:{'com.clossys.origin':{kind:'authored',license:'MIT',note:'Consumer identity seed'}}});
  library=applyLibraryChange(catalog,library,{baseHash:libraryHash(library),changes:[

@@ -19,7 +19,7 @@ const fills=importPhosphor();
 const glyph=(index:number)=>Object.values(flatten(fills[index]!))[0]!.$value;
 function adopted() {
  const catalog=loadCatalog();
- let library:LibraryData={source:{id:'example',kind:'consumer',author:'consumer',license:'MIT',extends:'foundry'},fills:[],adoptedAt:'2026-10-24',rubricVersion:'test',strategy:{posture:'proven'},direction:{}};
+ let library:LibraryData={source:{id:'example',kind:'consumer',author:'consumer',license:'MIT',extends:'foundry'},fills:[],adoptedAt:'2026-10-24',rubricVersion:'test'};
  library=applyLibraryChange(catalog,library,{baseHash:libraryHash(library),changes:fills.map(fill=>({op:'adopt' as const,slot:fill.$extensions['com.clossys.fill'].slot,source:'phosphor'}))});
  return {catalog,library,profile:resolve({catalog,library})};
 }

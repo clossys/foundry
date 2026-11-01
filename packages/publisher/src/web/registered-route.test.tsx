@@ -83,11 +83,11 @@ function fixture(hostContent = false) {
     registries,
     layoutRenderer: { id: "Stack", source: layoutSource, sourceHash: runtimeHash(layoutSource) }, cell: { theme: "light", state: "default", width: 320 }, headerActions: { renderer: { id: "SYNTHETIC Actions", source: actionSource, sourceHash: runtimeHash(actionSource) }, state: { revision: 1 } },
   };
-  return { route, registry, runtime: { ...runtime, assembly: { ...runtime.assembly, stageMeasurements: { renderer: runtime.layoutRenderer!, environment: { kind: "SYNTHETIC independent Stage geometry" }, cells: runtimeAssemblyCells(resolve(engine), ["light"], ["default"]).map(cell => ({ cell, width: cell.width - 80 })) } } } };
+  return { route, registry, runtime: { ...runtime, assembly: { ...runtime.assembly, stageMeasurements: { renderer: runtime.layoutRenderer!, environment: { kind: "SYNTHETIC independent Stage geometry" }, cells: runtimeAssemblyCells(["light"], ["default"]).map(cell => ({ cell, width: cell.width - 80 })) } } } };
 }
 function canvasFixture() {
   const f = fixture(), { layout: _layout, ...canonical } = f.route.composition.binding as FlowInstanceBinding;
-  const body = { kind: "canvas" as const, source: { kind: "static" as const }, boards: [{ id: "assets/icons", section: { slot: "body", index: 0 }, groups: { domain: "assets" } }], arrangement: { kind: "grid" as const, columns: 1, gap: { x: 0, y: 0 } }, collapseBelow: "tokens.breakpoint.tablet" as const };
+  const body = { kind: "canvas" as const, source: { kind: "static" as const }, boards: [{ id: "assets/icons", section: { slot: "body", index: 0 }, groups: { domain: "assets" } }], arrangement: { kind: "grid" as const, columns: 1, gap: { x: 0, y: 0 } }, collapseBelow: "md" as const };
   Object.assign(f.route.composition, { binding: { ...canonical, body } });
   const source = { entry: "frames/FrameStage.tsx", files: { "frames/FrameStage.tsx": "// SYNTHETIC source declaration for actual imported Stage; no qualification" }, dependencies: {} }, renderer = { id: "SYNTHETIC Stage", source, sourceHash: runtimeHash(source) }, module = { package: "@clossys/designer/frames" as const, export: "FrameStage" as const, renderer };
   const { layoutRenderer: _renderer, ...runtime } = f.runtime, frame = runtime.assembly.ports.manifest.fills.find(fill => fill.kind === "frame")!, section = runtime.assembly.ports.manifest.fills.find(fill => fill.kind === "section" && fill.leaf === "sections.content")!;

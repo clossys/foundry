@@ -25,7 +25,7 @@ import { OPEN_PROPS_NOTICES } from './open-props-license.js';
 import type {LibraryData,DtcgToken} from '../catalog-core/types.js';
 const catalog=withAssetCatalog(loadCatalog());
 function base():LibraryData{
- let library:LibraryData={source:{id:'example',kind:'consumer',author:'consumer',license:'MIT',extends:'foundry'},fills:[],adoptedAt:'2026-10-23',rubricVersion:'test',strategy:{posture:'proven'},direction:{rule:'identity-mark@1'}};
+ let library:LibraryData={source:{id:'example',kind:'consumer',author:'consumer',license:'MIT',extends:'foundry'},fills:[],adoptedAt:'2026-10-23',rubricVersion:'test'};
  const token=(value:string,dark?:string):DtcgToken=>({$type:'color',$value:value,$extensions:{'com.clossys.css':{raw:value},...(dark?{'com.clossys.modes':{dark}}:{})}});
  library=applyLibraryChange(catalog,library,{baseHash:libraryHash(library),changes:[{op:'author',slot:'themes.foreground',tokens:{primary:token('#111111','#ffffff'),'on-inverse':token('#ffffff'),'on-accent':token('#ffffff')}},{op:'author',slot:'themes.background',tokens:{base:token('#ffffff','#111111'),inverse:token('#111111')}},{op:'author',slot:'themes.primary',tokens:{default:token('#2255aa')}},{op:'author',slot:'themes.font-sans',tokens:{display:{$type:'fontFamily',$value:['sans-serif']}}}]});
  return library;

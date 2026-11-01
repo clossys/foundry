@@ -69,7 +69,7 @@ const componentKind: CatalogBrowserKind<ComponentEntry> = {
   filters: [{ id: "status", label: "Status", options: [{ id: "main", label: "On main" }, { id: "gap", label: "Gap" }], value: entry => entry.status }],
 };
 const tokenKind: CatalogBrowserKind<TokenEntry> = { label: "Tokens", preview: tokenPreview, fields: entry => [{ label: "Tier", value: entry.tier }] };
-const kinds = { components: componentKind, tokens: tokenKind };
+const kinds = { components: componentKind, themes: tokenKind };
 const base = { catalogs, kinds, label: "Design catalog", labels };
 
 function media() {

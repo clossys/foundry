@@ -29,9 +29,9 @@ beforeAll(async () => {
   const surfaces = (await agentModule('designer', 'library-cli/surface-catalog.js')).foundrySurfaceCatalog();
   const catalog: CompositeCatalogData = { values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: importFoundryComponents().fills }, surfaces };
   const empty: CompositeLibraryData = { source: { id: 'example', kind: 'consumer', author: 'consumer', license: 'MIT' }, adoptedAt: '2026-10-30', values: { fills: [] }, components: { fills: [], files: [] }, surfaces: { version: 1, fills: [], files: [] } };
-  const componentOptions = { packageExports: { '@clossys/designer/components': Object.keys(components) } };
+  const componentOptions = { packageExports: Object.fromEntries(await Promise.all(['react', 'clsx', 'tailwind-merge', '@clossys/designer/components'].map(async module => [module, Object.keys(await import(module))]))) };
   const surfaceOptions = { packages: await (await agentModule('designer', 'library-cli/surface-package-evidence.js')).readSurfacePackageEvidence(surfaces.fills), measurements: [] };
-  const valueChanges = catalog.values.slots.filter(slot => slot.layer === 'tokens').flatMap(slot => {
+  const valueChanges = catalog.values.slots.filter(slot => slot.layer === 'themes').flatMap(slot => {
     const offers = catalog.values.fills.filter(fill => fill.$extensions['com.clossys.fill'].slot === slot.id && fill.$extensions['com.clossys.fill'].mode !== 'reference');
     const fill = ['foundry', 'tailwind-default'].map(source => offers.find(fill => fill.$extensions['com.clossys.fill'].source === source)).find(Boolean) ?? offers[0];
     return fill ? [{ portion: 'values' as const, change: { op: 'adopt' as const, slot: slot.id, source: fill.$extensions['com.clossys.fill'].source } }] : [];

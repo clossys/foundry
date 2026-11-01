@@ -52,7 +52,7 @@ it("keeps every consumed IA heading bound after canonical record sharing", () =>
   const en = english(), sourceRows = sources(), records = sourceRows.flatMap(row => row.envelope.records);
   const common = read("../records/common-labels.r1.en.json") as Envelope & { usages: { source: string; context: string; recordId: string }[] };
   const source = (path: string) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
-  for (const [owner, layers] of Object.entries({ writer: ["lexicon", "strings", "patterns", "passages", "narratives"], designer: ["tokens", "assets", "components", "sections", "frames"] })) {
+  for (const [owner, layers] of Object.entries({ writer: ["lexicon", "strings", "patterns", "passages", "narratives"], designer: ["themes", "assets", "components", "sections", "frames"] })) {
     for (const layer of layers) {
       const path = owner === "writer" ? `../ia/${layer}.json` : `../../../../designer/src/catalog/ia/${layer}.json`;
       for (const node of source(path).nodes) for (const heading of [node, ...(node.children ?? [])]) {
