@@ -10,7 +10,6 @@ export interface StockPageFrameProps {
   chatResizeLabel: string
   chatSheet?: ReactNode
   body?: "plain" | "detail"
-  head?: ReactNode
   children?: ReactNode
   groupProps?: ComponentProps<typeof ResizablePanelGroup>
   insetProps?: ComponentProps<typeof SidebarInset>
@@ -19,7 +18,7 @@ export interface StockPageFrameProps {
 }
 
 export default function StockPageFrame({
-  header, chat, chatOpen, chatResizeLabel, chatSheet, body = "plain", head, children,
+  header, chat, chatOpen, chatResizeLabel, chatSheet, body = "plain", children,
   groupProps, insetProps, bodyProps: { className, ...bodyAttributes } = {}, chatPanelProps,
 }: StockPageFrameProps) {
   return (
@@ -35,7 +34,6 @@ export default function StockPageFrame({
               className={["flex flex-1 flex-col gap-4 p-4", className].filter(Boolean).join(" ")}
               {...bodyAttributes}
             >
-              {head}
               {children}
             </div>
           </SidebarInset>

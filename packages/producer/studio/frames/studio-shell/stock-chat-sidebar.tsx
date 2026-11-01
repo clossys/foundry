@@ -7,6 +7,7 @@ import {
   Sheet, SheetDescription, SheetHeader, SheetTitle,
   Sidebar, SidebarContent, SidebarGroupLabel, SidebarHeader,
 } from "@clossys/designer-ui"
+import { SidebarRight } from "./stock-sidebar-right"
 
 /** sidebar-15 right-side slots, bound to Studio's existing unconnected chat state. */
 export function ChatContent() {
@@ -27,10 +28,16 @@ export function ChatContent() {
 }
 
 export function StockChatSidebar() {
-  return <Sidebar collapsible="none" className="sticky top-0 hidden h-svh border-l lg:flex"
-    style={{ "--sidebar-width": "100%" } as CSSProperties} aria-label="Chat" data-panel="chat">
-    <ChatContent />
-  </Sidebar>
+  return <SidebarRight header={<SidebarGroupLabel><SparklesIcon />Chat</SidebarGroupLabel>} footer={null}
+    collapsible="none" style={{ "--sidebar-width": "100%" } as CSSProperties} aria-label="Chat" data-panel="chat">
+    <Empty data-chat-empty>
+      <EmptyHeader>
+        <EmptyMedia variant="icon"><MessageSquareIcon /></EmptyMedia>
+        <EmptyTitle>No conversation yet</EmptyTitle>
+        <EmptyDescription>Chat with Director, Designer, Writer and Publisher will open here. Agents work through the CLI for now.</EmptyDescription>
+      </EmptyHeader>
+    </Empty>
+  </SidebarRight>
 }
 
 /** The same native Sheet width and content slots as Sidebar's mobile branch. */

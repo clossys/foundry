@@ -227,7 +227,7 @@ export default function StudioShellFrame({ navigation, commands, breadcrumbs, po
     <CloseMobileNavigation />
     <AppSidebar navigation={navigation} />
   </>}>
-    <StockPageFrame body={body} head={head} chatOpen={wide && chatOpen} chatResizeLabel="Resize chat"
+    <StockPageFrame body={body} chatOpen={wide && chatOpen} chatResizeLabel="Resize chat"
       groupProps={{ className: 'min-h-0 min-w-0 flex-1' }}
       insetProps={{ className: 'h-full min-h-0 min-w-0 overflow-hidden' }}
       bodyProps={{ id: 'studio-main', className: '@container/main min-h-0 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain *:shrink-0' }}
@@ -272,7 +272,7 @@ export default function StudioShellFrame({ navigation, commands, breadcrumbs, po
         </HeaderEdgeToggle>
         </div>
       </>}>
-      {children}
+      {head}{children}
     </StockPageFrame>
     <CommandMenu commands={commands} pageCommands={pageCommands} open={searchOpen} onOpenChange={setSearchOpen} />
   </StockAppFrame>;
