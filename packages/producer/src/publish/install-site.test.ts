@@ -13,6 +13,9 @@ import { runCli } from "../cli/main.js";
 import { parseArgs } from "../cli/args.js";
 import { publishSite } from "./install-site.js";
 import { migrateFixtureLibrary } from "../specimen/__fixtures__/canonical-library.js";
+import { contentMapToCells } from "@clossys/publisher/content-map/cells";
+import { planMigration, writePlan } from "../migrate/slots.js";
+import { listSlots } from "../records/slots.js";
 
 const fixtureSource = join(import.meta.dirname, "__fixtures__", "install-consumer");
 let fixture: string;
@@ -20,6 +23,30 @@ const base = join("clossys", "agents", "publisher");
 const temps: string[] = [];
 let stub: Server, previous: string | undefined;
 const temp = (prefix: string) => { const dir = realpathSync(mkdtempSync(join(tmpdir(), prefix))); temps.push(dir); return dir; };
+
+/** Migrate neutral authored inputs with the native writer; pins exist only in this temp fixture. */
+async function nativeFixture(removeLegacy = true): Promise<string> {
+  const consumer = temp("producer-site-native-");
+  cpSync(fixture, consumer, { recursive: true });
+  const publisher = join(consumer, base);
+  const map = JSON.parse(readFileSync(join(publisher, "content-map", "example-site.json"), "utf8"));
+  const pack = JSON.parse(readFileSync(join(publisher, "route-pack", "example-site.json"), "utf8"));
+  rmSync(publisher, { recursive: true });
+  await contentMapToCells(map, publisher, { date: "2026-10-31", routePack: pack });
+  for (const id of ["home", "about"]) {
+    const path = join(publisher, "cells", `page.${id}`, "v1.md");
+    const copy = id === "home"
+      ? "- frame.title: writer:site.name\n- hero.heading: writer:home.hero.heading\n- hero.body: writer:home.hero.body\n"
+      : "- frame.title: writer:site.studio.name\n- hero.heading: writer:site.studio.heading\n";
+    writeFileSync(path, readFileSync(path, "utf8").replace("## Copy\n", `## Copy\n${copy}`));
+  }
+  const plan = await planMigration(join(consumer, "clossys"));
+  writePlan({ ...plan, files: new Map([...plan.files].filter(([path]) => path.startsWith("agents/publisher/"))) });
+  if (removeLegacy) for (const name of ["tree.json", "cells", "content-map", "route-pack", "compile.json"]) {
+    rmSync(join(publisher, name), { recursive: true, force: true });
+  }
+  return consumer;
+}
 
 beforeAll(async () => {
   fixture = temp("producer-install-site-fixture-");
@@ -51,10 +78,11 @@ describe("clossys publish --install --site", () => {
     expect(parseArgs(["publish", "--install", "--site", "s", "--origin", "https://example.test"]).origin).toBe("https://example.test");
   });
 
-  it("builds one routed app whose routes are exactly the content-map paths", async () => {
+  it("builds real HTML and Writer text from a migrated native site without legacy Publisher stores", async () => {
+    const consumer = await nativeFixture();
     const out = join(temp("producer-site-"), "out");
     const calls: string[][] = [];
-    const result = await publishSite({ root: fixture, site: "example-site", out, build: true, origin: "https://example.test", vite: async (args, { cwd }) => { calls.push([...args, cwd]); return { code: 0, stdout: "", stderr: "" }; } });
+    const result = await publishSite({ root: consumer, site: "example-site", out, build: true, origin: "https://example.test", vite: async (args, { cwd }) => { calls.push([...args, cwd]); return { code: 0, stdout: "", stderr: "" }; } });
     expect(result.findings.filter(row => row.severity !== "info")).toEqual([]);
     const map = JSON.parse(readFileSync(join(fixture, base, "content-map", "example-site.json"), "utf8"));
     const paths = map.entries.filter((entry: { kind: string }) => entry.kind === "page").map((entry: { path: string }) => entry.path);
@@ -67,6 +95,7 @@ describe("clossys publish --install --site", () => {
     for (const id of ["home", "about"]) expect(existsSync(join(result.substrate, "clossys", "pages", `${id}.tsx`))).toBe(true);
     expect(readFileSync(join(out, "site", "index.html"), "utf8")).toContain("Pages assembled from records");
     const about = readFileSync(join(out, "site", "about", "index.html"), "utf8");
+    expect(readFileSync(result.html["/"]!, "utf8")).toContain("Every word here comes from a Writer key.");
     for (const text of ["About Example Studio", "Read straight from the page cell"]) expect(about).toContain(text);
     expect(readFileSync(join(result.substrate, "main.tsx"), "utf8")).toContain("location.pathname");
     expect(calls).toEqual([["build", result.substrate]]);
@@ -79,9 +108,33 @@ describe("clossys publish --install --site", () => {
     expect(readFileSync(join(result.substrate, "vite.config.ts"), "utf8")).not.toMatch(/localhost|example\.test|clossys\.com/);
   }, 180_000);
 
+  it.each(["missing pin", "hash drift"])("refuses native %s even with legacy outputs present", async problem => {
+    const consumer = await nativeFixture(false);
+    const publication = listSlots(join(consumer, "clossys"), "publisher").find(slot => slot.id === "publication.example-site")!;
+    if (problem === "missing pin") rmSync(join(publication.dir, "pin.json"));
+    else {
+      const path = join(publication.dir, "candidates", publication.pin!.candidate);
+      writeFileSync(path, readFileSync(path, "utf8") + "\n");
+    }
+    const out = join(temp("producer-site-refused-"), "out");
+    await expect(publishSite({ root: consumer, site: "example-site", out })).rejects.toThrow(problem === "hash drift" ? /hash drift/ : /Missing native record/);
+    expect(existsSync(out)).toBe(false);
+  });
+
+  it("requires the exact native publication id without falling back to an available site", async () => {
+    const consumer = await nativeFixture();
+    await expect(publishSite({ root: consumer, site: "missing-site" })).rejects.toThrow(/Slot is not declared/);
+  });
+
+  it("refuses legacy publication outputs once another agent has an IA", async () => {
+    await expect(publishSite({ root: fixture, site: "example-site" })).rejects.toThrow(/Missing native record/);
+  });
+
   it("exits 1 before installing when the route pack and content map disagree", async () => {
     const consumer = temp("producer-site-consumer-");
     cpSync(fixture, consumer, { recursive: true });
+    // Exercise the legacy JSON branch: no agent has opted into the native model.
+    rmSync(join(consumer, "clossys", "agents", "designer", "ia.json"));
     const packPath = join(consumer, base, "route-pack", "example-site.json");
     const pack = JSON.parse(readFileSync(packPath, "utf8"));
     writeFileSync(packPath, JSON.stringify({ ...pack, routes: pack.routes.slice(0, 1) }));

@@ -1,6 +1,6 @@
 /**
  * `clossys publish --install --site <packId> [--build]`: one routed site app from a consumer's
- * route pack and content map (`clossys/agents/publisher/{route-pack,content-map}/<packId>.json`).
+ * pinned native publication, or legacy route pack and content map when no slot model exists.
  *
  * Publisher plans the site (`planSite`: real paths from the content map, sections from the
  * route pack, one shared frame) and binds each route exactly as `publish --install --page`
@@ -15,7 +15,9 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { applySiteNavigation, installAndBind, isBlocking, planSite, siteLinkFindings, substrateDependencies, type BoundPage, type InstallFinding, type InstallPins, type InstallResult, type ShadcnRunner, type SitePlan, type SiteRoutePack } from "@clossys/publisher/install";
+import { readPinnedPublication } from "@clossys/publisher/content-map/slots";
 import { loadSelection, SELECTION_FILE } from "../records/index.js";
+import { hasSlotModel } from "../records/slots.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
 import { specimenRoots } from "./publish.js";
 import { ensureSubstrate, ensureSubstrateDependencies, npmRunner, pageRecordFromCell, renderBoundPage, shadcnRunner, writerCopy } from "./install.js";
@@ -144,8 +146,12 @@ export async function publishSite(options: PublishSiteOptions): Promise<PublishS
   const root = resolve(options.root);
   if (!/^[a-z0-9][a-z0-9-]*$/.test(options.site)) throw new Error(`publish --install --site: ${options.site} needs a pack id ([a-z0-9-])`);
   const base = join(root, "clossys", "agents", "publisher");
-  const pack = await readJson(join(base, "route-pack", `${options.site}.json`), "route pack") as SiteRoutePack;
-  const map = await readJson(join(base, "content-map", `${options.site}.json`), "content map") as Parameters<typeof planSite>[0];
+  const native = hasSlotModel(join(root, "clossys")) ? await readPinnedPublication(base, options.site) : undefined;
+  if (native && !native.routePack) throw new Error(`publish --install --site: native publication ${options.site} has no route pack`);
+  const pack = (native ? native.routePack
+    : await readJson(join(base, "route-pack", `${options.site}.json`), "route pack")) as SiteRoutePack;
+  const map = native ? native.map
+    : await readJson(join(base, "content-map", `${options.site}.json`), "content map") as Parameters<typeof planSite>[0];
   const out = resolve(options.out ?? join(installOutRoot(root), `site-${options.site}`));
   if (existsSync(out) && !existsSync(join(out, INSTALL_MARKER))) throw new Error(`publish: ${out} exists and was not written by clossys publish --install`);
   await mkdir(out, { recursive: true });
