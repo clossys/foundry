@@ -7,6 +7,7 @@
  *
  * REPLACE with the Publisher content-map projection when it lands, as for `designer-library`.
  */
+import { hasAgentSlots, slotGallery, type SlotEmptyState } from "./slot-gallery.js";
 import { join } from "node:path";
 import type { AgentKind } from "../agents.js";
 import { agentModule, agentRoot, hasCellTree, readStudioCells } from "./cells.js";
@@ -17,7 +18,7 @@ export const LIBRARY_AGENTS = ["director", "writer", "publisher"] as const;
 export type LibraryAgent = typeof LIBRARY_AGENTS[number];
 export const isLibraryAgent = (value: string): value is LibraryAgent => (LIBRARY_AGENTS as readonly string[]).includes(value);
 
-export type AgentLeafStatus = "active" | "draft" | "retired";
+export type AgentLeafStatus = "active" | "draft" | "retired" | "missing" | "failing";
 export interface AgentRef { readonly label: string; readonly agent?: AgentKind; readonly slug?: string }
 export interface AgentCard {
   readonly id: string;
@@ -27,6 +28,8 @@ export interface AgentCard {
   readonly status: AgentLeafStatus;
   /** One or two short lines of the specimen for the gallery card. */
   readonly excerpt: readonly string[];
+  readonly emptyState?: SlotEmptyState;
+  readonly specimenUrl?: string;
   /** Records the shown version holds, when the agent counts them; 0 means there is nothing to preview. */
   readonly records?: number;
 }
@@ -305,6 +308,8 @@ const kindPlacement = (id: string): Placement => {
 
 /** The gallery: L0 layers and L1-L2 groups in IA order, leaves the IA does not place last. */
 export async function agentGallery(root: string, agent: LibraryAgent): Promise<AgentGallery | undefined> {
+  const consumer = join(root, "clossys");
+  if (hasAgentSlots(consumer, agent)) return { agent, grouping: "ia", ...slotGallery(consumer, agent) };
   const loaded = await load(root, agent);
   if (!loaded) return undefined;
   const adapter = ADAPTERS[agent];

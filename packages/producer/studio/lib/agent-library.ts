@@ -23,9 +23,9 @@ export const isLibraryAgent = (value: string): value is LibraryAgent => (LIBRARY
 /** Map-backed links: the served path of an agent's gallery or one of its leaves, when the map has it. */
 export interface StudioLinks { gallery: (agent: string) => string | undefined; leaf: (agent: string, slug: string) => string | undefined }
 
-export type AgentLeafStatus = 'active' | 'draft' | 'retired';
+export type AgentLeafStatus = 'active' | 'draft' | 'retired' | 'missing' | 'failing';
 export interface AgentRef { label: string; agent?: string; slug?: string }
-export interface AgentCard { id: string; slug: string; name: string; version: number; status: AgentLeafStatus; excerpt: string[]; records?: number }
+export interface AgentCard { id: string; slug: string; name: string; version: number; status: AgentLeafStatus; excerpt: string[]; records?: number; emptyState?: 'No candidate' | 'No pin'; specimenUrl?: string }
 export interface AgentSpecimenTable { id: string; label: string; columns: string[]; prose?: number; rows: { key: string; cells: { text: string; ref?: AgentRef; status?: string }[] }[] }
 export interface AgentSection { id: string; label: string; level: 0 | 1 | 2; cards: AgentCard[] }
 export interface AgentGalleryRecords { state: 'ready' | 'missing'; agent: LibraryAgent; grouping?: 'ia' | 'kind'; sections: AgentSection[]; count: number }
@@ -111,12 +111,11 @@ export function agentGalleryLayers(records: AgentGalleryRecords, links: StudioLi
       id: section.id, label: section.label, level: section.level,
       cards: section.cards.flatMap(card => {
         const href = links.leaf(records.agent, card.slug);
-        if (!href) return [];
         const empty = emptyStatus(card);
         return [{
-          key: card.id, name: card.name, version: card.version,
-          statusLabel: STATUS_LABEL[card.status], statusTone: STATUS_TONE[card.status],
-          href, ...previewFields(card, empty, previews),
+          key: card.id, name: card.name, ...(card.version ? { version: card.version } : {}),
+          statusLabel: card.emptyState ?? STATUS_LABEL[card.status], statusTone: STATUS_TONE[card.status],
+          href: href ?? '', ...previewFields(card, empty, previews),
         }];
       }),
     });
@@ -125,6 +124,8 @@ export function agentGalleryLayers(records: AgentGalleryRecords, links: StudioLi
 }
 
 function previewFields(card: AgentCard, empty: LeafStatus | undefined, previews: GalleryPreviews): Pick<GalleryCardData, 'specimen' | 'specimenStatus'> {
+  if (card.specimenUrl && card.records !== 0) return { specimen: { kind: 'viewports', name: card.name, title: card.name, description: '', empty: card.emptyState ?? '', specimens: [{ viewport: 1280, light: card.specimenUrl, interactive: false }] } };
+  if (card.emptyState && card.records === 0) return { specimenStatus: { label: card.emptyState, tone: 'outline' } };
   if (empty) return { specimenStatus: status(empty) };
   const preview = previews.get(card.id);
   if (preview) return { specimen: preview };

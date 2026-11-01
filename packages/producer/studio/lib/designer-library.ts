@@ -21,7 +21,7 @@ export interface DesignerCard {
   slot: string; slug: string; name: string; layer: string; status: DesignerStatus;
   element?: string; version?: number; pinned: boolean; specimen?: string;
   /** Options pending approval: versions newer than the pin, or every version when nothing is pinned. */
-  options: number[];
+  options: number[]; candidate?: string; emptyState?: 'No candidate' | 'No pin';
 }
 export interface DesignerSection { id: string; label: string; level: 0 | 1 | 2; cards: DesignerCard[] }
 export interface DesignerGallery { state: 'ready' | 'missing'; sections: DesignerSection[]; count: number }
@@ -89,7 +89,6 @@ export function designerGalleryLayers(records: DesignerGallery, theme: 'light' |
       id: section.id, label: section.label, level: section.level,
       cards: section.cards.flatMap(card => {
         const href = links.leaf('designer', card.slug);
-        if (!href) return [];
         // The full live preview: the active state framed view-only at desktop width in the page's theme.
         const src = specimenHref(card, theme, GALLERY_WIDTH);
         const specimen: SpecimenInput | undefined = src ? {
@@ -98,8 +97,8 @@ export function designerGalleryLayers(records: DesignerGallery, theme: 'light' |
         } : undefined;
         return [{
           key: card.slot, name: card.name, ...(card.version !== undefined ? { version: card.version } : {}),
-          statusLabel: LEAF_STATUS_LABEL[card.status], statusTone: LEAF_STATUS_TONE[card.status],
-          href, ...(specimen ? { specimen } : { specimenStatus: { label: 'Nothing to preview yet', tone: 'outline' as const } }),
+          statusLabel: card.emptyState ?? LEAF_STATUS_LABEL[card.status], statusTone: LEAF_STATUS_TONE[card.status],
+          href: href ?? '', ...(specimen ? { specimen } : { specimenStatus: { label: card.emptyState ?? 'Nothing to preview yet', tone: 'outline' as const } }),
         }];
       }),
     });

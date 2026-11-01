@@ -6,6 +6,7 @@
  * REPLACE: this module and its two API routes are the minimal route table PROOF-2 allows
  * while the Publisher content-map projection has not landed; the projection supersedes it.
  */
+import { hasAgentSlots, slotGallery, type SlotEmptyState } from "./slot-gallery.js";
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { loadBuildCatalog, type BuildCatalogData, type PlacementNode } from "@clossys/designer/catalog";
@@ -30,6 +31,8 @@ export interface DesignerCard {
   readonly specimen?: string;
   /** Options pending approval, oldest first: versions newer than the pin, or every version when nothing is pinned. */
   readonly options: readonly number[];
+  readonly emptyState?: SlotEmptyState;
+  readonly candidate?: string;
 }
 export type DesignerStatus = SlotStatus | "pending";
 
@@ -147,6 +150,17 @@ function placementPaths(): Map<string, { layer: string; groups: { id: string; la
 
 /** The gallery: one section per non-empty L0 layer and L1/L2 group, in IA order; deeper groups fold into L2. */
 export function designerGallery(root: string): DesignerGallery {
+  if (hasAgentSlots(root, "designer")) {
+    const gallery = slotGallery(root, "designer");
+    return { count: gallery.count, sections: gallery.sections.map(section => ({ ...section, cards: section.cards.map(card => ({
+      slot: card.id, slug: card.slug, name: card.name, layer: card.id.split(".")[0]!,
+      status: card.status === "active" ? "pinned" as const : card.status === "draft" ? "pending" as const : card.status,
+      pinned: card.status === "active", options: card.status === "draft" ? [card.version] : [],
+      ...(card.candidate ? { candidate: card.candidate } : {}),
+      ...(card.element ? { element: card.element, specimen: card.specimen } : {}),
+      ...(card.version ? { version: card.version } : {}), ...(card.emptyState ? { emptyState: card.emptyState } : {}),
+    })) })) };
+  }
   const ws = readWorkspace(root);
   const all = cards(ws);
   const seen = new Set<string>();
