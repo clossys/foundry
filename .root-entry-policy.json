@@ -3,6 +3,7 @@
   "entries": {
     ".changesets": { "kind": "config", "purpose": "pending release changesets, applied by the release PR (#1255)" },
     ".github": { "kind": "automation", "purpose": "GitHub workflows and repository configuration" },
+    ".gitleaksignore": { "kind": "config", "purpose": "exact historical scanner fingerprints with structurally proven individual adjudications" },
     ".gitignore": { "kind": "config", "purpose": "tracked versus generated-file boundary" },
     ".npmrc.example": { "kind": "config", "purpose": "public npm registry routing example for the published scope" },
     ".root-entry-policy.json": { "kind": "policy", "purpose": "tracked repository-root allowlist" },

@@ -24,6 +24,7 @@
   "rootEntries": [
     { "name": ".changesets", "classification": "canonical", "disposition": "required" },
     { "name": ".github", "classification": "canonical", "disposition": "required" },
+    { "name": ".gitleaksignore", "classification": "canonical", "disposition": "required" },
     { "name": ".gitignore", "classification": "canonical", "disposition": "required" },
     { "name": ".npmrc.example", "classification": "canonical", "disposition": "required" },
     { "name": ".root-entry-policy.json", "classification": "canonical", "disposition": "required" },
