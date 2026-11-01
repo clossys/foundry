@@ -49,12 +49,6 @@
       "hash": "sha256:4cccd0fd1ae6390804388a6b1a3c709bc23d4aba85835b2d668d3e3e2639741d",
       "event": "e8"
     },
-    "sections.studio.history": {
-      "element": "studio-history",
-      "version": 1,
-      "hash": "sha256:afc0fc911775ac565e6df8a88abfd7ece8f5c3545f412355e157d2fd848aeee8",
-      "event": "e9"
-    },
     "sections.studio.references": {
       "element": "studio-references",
       "version": 1,
@@ -439,6 +433,14 @@
       "hash": "sha256:300440386e553b250dda2bd708fef7f1bff1177ed7ee34768543355231125101",
       "from": "option",
       "reason": "FRAME-PANELS (foundry#2553 L6): popover rows stay open on select."
+    },
+    {
+      "id": "e31",
+      "at": "2026-11-01T15:58:10.445Z",
+      "by": "designer/source-helper",
+      "action": "unpin",
+      "slot": "sections.studio.history",
+      "reason": "NEED: No matching vendored history reference supplies the version, date, note, marks, conditional lineage and hash anatomy verbatim; a matching reference is required."
     }
   ]
 }
