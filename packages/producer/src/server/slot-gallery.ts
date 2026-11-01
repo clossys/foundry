@@ -73,13 +73,15 @@ export function slotGallery(consumer: string, agent: SlotAgent): { sections: Slo
     const missing = !entry.candidates.length;
     let kind: SlotKind = agent === 'director' ? 'brief' : agent === 'writer' ? 'strings' : agent === 'designer' ? 'element' : 'page';
     let failing = !!entry.pin && !candidate;
-    try { kind = readSlot(consumer, agent, id).kind; } catch { failing = true; }
-    if (candidate && entry.pin && readCandidate(consumer, agent, id, candidate).sha256 !== entry.pin.sha256) failing = true;
     let element: string | undefined;
-    if (!failing && candidate && agent === 'designer') {
-      const item = JSON.parse(readCandidate(consumer, agent, id, candidate).bytes);
-      if (typeof item.name === 'string') element = item.name;
-    }
+    try {
+      kind = readSlot(consumer, agent, id).kind;
+      if (candidate && entry.pin && readCandidate(consumer, agent, id, candidate).sha256 !== entry.pin.sha256) failing = true;
+      if (!failing && candidate && agent === 'designer') {
+        const item = JSON.parse(readCandidate(consumer, agent, id, candidate).bytes);
+        if (typeof item.name === 'string') element = item.name;
+      }
+    } catch { failing = true; }
     target.cards.push({ id, slug: id, name: label(id), kind, version: candidate ? candidateVersion(candidate) : 0,
       status: failing ? 'failing' : missing ? 'missing' : entry.pin ? 'active' : 'draft', records: candidate && !failing ? 1 : 0,
       excerpt: [], ...(candidate ? { candidate } : {}), ...(element ? { element, specimen: `${id}/${element}` } : {}), ...(missing || !entry.pin ? { emptyState: missing ? 'No candidate' as const : 'No pin' as const } : {}),
