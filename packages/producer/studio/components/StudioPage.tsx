@@ -1,4 +1,6 @@
 'use client';
+import { studioCopy } from '../lib/studio-copy';
+
 
 /**
  * The one Studio renderer. A served path resolves through the Studio map to a Publisher page
@@ -49,10 +51,10 @@ interface ModuleData { explorer?: readonly ExplorerGroup[]; checks?: ModuleCheck
 type Loaded = { state: 'loading' } | { state: 'notice'; notice: PageNoticeData } | { state: 'ready'; inputs: Inputs; modules?: ModuleData };
 
 const AGENT_PURPOSE: Record<string, string> = {
-  director: 'Strategy: the direction, reasoning and signals the business runs on.',
-  designer: 'Design decisions: tokens, sections and frames the product is built from.',
-  writer: 'Copy: the voice and every string the product shows.',
-  publisher: 'Pages: what gets published, where, and its preview state.',
+  director: studioCopy("studio.strategy-the-direction-reasoning-and-signals-the"),
+  designer: studioCopy("studio.design-decisions-tokens-sections-and-frames-the"),
+  writer: studioCopy("studio.copy-the-voice-and-every-string-the"),
+  publisher: studioCopy("studio.pages-what-gets-published-where-and-its"),
 };
 const SEVERITY_TONE: Record<string, ModuleCheckRow['tone']> = { error: 'destructive', warning: 'outline', info: 'secondary' };
 const sentence = (value: string) => value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
@@ -68,11 +70,11 @@ const openNeeds = (reports: readonly StudioReport[], keep: (report: StudioReport
 function checksInput(failing: readonly ModuleCheckRow[], options: readonly ModuleCheckRow[], needs: readonly ModuleCheckRow[]): ModuleChecksInput {
   const total = failing.length + options.length + needs.length;
   return {
-    summary: total ? `${total} ${total === 1 ? 'item needs' : 'items need'} attention on this page.` : 'Nothing needs attention on this page.',
+    summary: total ? studioCopy("studio.page-attention-count", { count: total }) : studioCopy("studio.nothing-needs-attention-on-this-page"),
     groups: [
-      { id: 'failing', label: 'Failing checks', empty: 'No check reports a finding.', rows: failing },
-      { id: 'options', label: 'Pending options', empty: 'No option waits for approval.', rows: options },
-      { id: 'needs', label: 'Open needs', empty: 'Nothing is waiting on you.', rows: needs },
+      { id: 'failing', label: studioCopy("studio.failing-checks"), empty: studioCopy("studio.no-check-reports-a-finding"), rows: failing },
+      { id: 'options', label: studioCopy("studio.pending-options"), empty: studioCopy("studio.no-option-waits-for-approval"), rows: options },
+      { id: 'needs', label: studioCopy("studio.open-needs"), empty: studioCopy("studio.nothing-is-waiting-on-you"), rows: needs },
     ] satisfies ModuleCheckGroup[],
   };
 }
@@ -90,7 +92,7 @@ function galleryExplorer(gallery: AgentGalleryInput): ExplorerGroup[] {
 
 function galleryChecks(gallery: AgentGalleryInput, reports: readonly StudioReport[], agent: string): ModuleChecksInput {
   const cards = gallery.layers.flatMap(layer => layer.groups.flatMap(group => group.cards));
-  const cardRow = (card: (typeof cards)[number]): ModuleCheckRow => ({ id: card.key, badge: card.statusLabel, tone: card.statusTone, title: card.name, href: card.href, openLabel: `Open ${card.name}` });
+  const cardRow = (card: (typeof cards)[number]): ModuleCheckRow => ({ id: card.key, badge: card.statusLabel, tone: card.statusTone, title: card.name, href: card.href, openLabel: studioCopy("studio.open", { value0: String(card.name) }) });
   return checksInput(
     cards.filter(card => card.statusTone === 'destructive').map(cardRow),
     cards.filter(card => card.statusLabel === LEAF_STATUS_LABEL.pending).map(cardRow),
@@ -102,7 +104,7 @@ function leafChecks(inputs: Inputs, reports: readonly StudioReport[], agent: str
   const checks = (inputs.checks as readonly CheckRow[] | undefined) ?? [];
   const options = inputs.options as OptionsInput | undefined;
   return checksInput(
-    checks.filter(row => !row.ok).map(row => ({ id: row.key, badge: 'Finding', tone: 'destructive', title: row.label, detail: row.detail })),
+    checks.filter(row => !row.ok).map(row => ({ id: row.key, badge: studioCopy("studio.finding"), tone: 'destructive', title: row.label, detail: row.detail })),
     (options?.rows ?? []).filter(row => !row.pinned).map(row => ({ id: `v${row.version}`, badge: `v${row.version}`, tone: 'outline', title: row.label, detail: row.reason })),
     openNeeds(reports, report => report.agent === agent && `${report.title} ${report.detail}`.includes(slug)).map(needRow),
   );
@@ -110,8 +112,8 @@ function leafChecks(inputs: Inputs, reports: readonly StudioReport[], agent: str
 
 /** Outline labels for the sections a page places, by the section's short name. */
 const OUTLINE_LABEL: Record<string, string> = {
-  home: 'Agents', 'agent-gallery': 'Library', publications: 'Publications', 'leaf-header': 'Overview', specimen: 'Specimen',
-  options: 'Options', checks: 'Checks', contract: 'Contract', history: 'History', references: 'References',
+  home: studioCopy("studio.agents"), 'agent-gallery': studioCopy("studio.library"), publications: studioCopy("studio.publications"), 'leaf-header': studioCopy("studio.overview"), specimen: studioCopy("studio.specimen"),
+  options: studioCopy("studio.options"), checks: studioCopy("studio.checks"), contract: studioCopy("studio.contract"), history: studioCopy("studio.history"), references: studioCopy("studio.references"),
 };
 const shortName = (slot: string) => slot.replace(/^sections\.studio\./, '');
 
@@ -138,10 +140,10 @@ function useHomeInputs(): Loaded {
       return [{
         id: agent, label: AGENT_LABELS[agent], purpose: AGENT_PURPOSE[agent] ?? '', icon: <Icon className="size-4" />,
         census: census[agent],
-        href, openLabel: `Open ${AGENT_LABELS[agent]}`, openIcon: <ArrowRightIcon data-icon="inline-end" />,
+        href, openLabel: studioCopy("studio.open", { value0: String(AGENT_LABELS[agent]) }), openIcon: <ArrowRightIcon data-icon="inline-end" />,
       }];
     });
-    const home: HomeInput = { title: 'Home', description: 'Your agents and what they have written for this workspace.', agentsLabel: 'Agents', agents };
+    const home: HomeInput = { title: studioCopy("studio.home"), description: studioCopy("studio.your-agents-and-what-they-have-written"), agentsLabel: studioCopy("studio.agents"), agents };
     const needs = openNeeds(list).map(needRow);
     const checks = checksInput(needs.filter(row => row.tone === 'destructive'), [], needs.filter(row => row.tone !== 'destructive'));
     return { state: 'ready', inputs: { home }, modules: { checks } };
@@ -152,12 +154,12 @@ function useHomeInputs(): Loaded {
 function studioPublication(map: ContentMap, origin: string): Publication {
   const entries = studioPageEntries(map);
   return {
-    id: map.publicationId, title: 'Studio', root: origin || 'localhost', rootNote: studioPublicationRoot.note,
+    id: map.publicationId, title: studioCopy("studio.studio"), root: origin || 'localhost', rootNote: studioPublicationRoot.note,
     routes: entries.map(entry => {
       const compiled = !entry.id.includes(':');
       return {
         key: entry.id, path: entry.path, pageId: entry.id, frame: entry.source?.frameId ?? '—', sections: entry.source?.sectionIds ?? [],
-        status: compiled ? { label: 'Compiled', tone: 'secondary' as const } : { label: 'From records', tone: 'outline' as const },
+        status: compiled ? { label: studioCopy("studio.compiled"), tone: 'secondary' as const } : { label: studioCopy("studio.from-records"), tone: 'outline' as const },
         leaf: { label: entry.title, href: entry.path },
       };
     }),
@@ -166,16 +168,16 @@ function studioPublication(map: ContentMap, origin: string): Publication {
 
 /** The consumer site's routes, from its installed publication and the Publisher records that assemble each page. */
 function sitePublication(publication: PublicationResponse | undefined, error: string | undefined, links: StudioLinks): Publication | undefined {
-  if (error) return { id: 'clossys-site', title: 'clossys-site', root: 'Unavailable', rootNote: '', routes: [], notice: error };
+  if (error) return { id: 'clossys-site', title: 'clossys-site', root: studioCopy("studio.unavailable"), rootNote: '', routes: [], notice: error };
   if (!publication) return undefined;
-  if (publication.state !== 'ready') return { id: 'site', title: 'Site', root: 'Unavailable', rootNote: '', routes: [], notice: publication.message };
+  if (publication.state !== 'ready') return { id: 'site', title: studioCopy("studio.site"), root: studioCopy("studio.unavailable"), rootNote: '', routes: [], notice: publication.message };
   return {
     id: publication.publication, title: publication.publication, ...siteRoot(publication),
     routes: publication.pages.map(page => {
       const href = page.cellId ? links.leaf('publisher', page.cellId) : undefined;
       return {
         key: page.id, path: page.route, pageId: page.id, frame: '—', sections: [],
-        status: page.emitted ? { label: 'Emitted', tone: 'secondary' as const } : { label: 'Not emitted', tone: 'outline' as const },
+        status: page.emitted ? { label: studioCopy("studio.emitted"), tone: 'secondary' as const } : { label: studioCopy("studio.not-emitted"), tone: 'outline' as const },
         ...(href ? { leaf: { label: page.cellId!, href } } : {}),
       };
     }),
@@ -195,7 +197,7 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
   useEffect(() => {
     if (!withPublications) return;
     const controller = new AbortController();
-    loadPublication(controller.signal).then(value => setPublication({ state: 'ready', value }), error => { if (!controller.signal.aborted) setPublication({ state: 'error', message: message(error, 'The publication could not load.') }); });
+    loadPublication(controller.signal).then(value => setPublication({ state: 'ready', value }), error => { if (!controller.signal.aborted) setPublication({ state: 'error', message: message(error, studioCopy("studio.the-publication-could-not-load")) }); });
     return () => controller.abort();
   }, [withPublications]);
   // Every leaf's records, for its full card preview (and, on Publisher, each page's frame and sections).
@@ -241,12 +243,12 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
         }),
       } : site;
       const publications: PublicationsInput = {
-        title: 'Publications',
-        description: 'Every publication with the root its config names and every route after it: the page that renders each path, its frame and sections, and the leaf that records it.',
+        title: studioCopy("studio.publications"),
+        description: studioCopy("studio.every-publication-with-the-root-its-config"),
         publications: [studioPublication(map, origin), ...(withSite ? [withSite] : [])],
       };
       inputs.publications = publications;
-      explorer.push({ id: 'publications', label: 'Publications', items: publications.publications.map(row => ({ id: `publication:${row.id}`, label: row.title, depth: 0, target: byId(`publication-${row.id}`) })) });
+      explorer.push({ id: 'publications', label: studioCopy("studio.publications"), items: publications.publications.map(row => ({ id: `publication:${row.id}`, label: row.title, depth: 0, target: byId(`publication-${row.id}`) })) });
     }
     return { state: 'ready', inputs, modules };
   }, [map, gallery, resolved, page, withPublications, publication, leaves, origin, reports]);
@@ -291,14 +293,14 @@ function useLeafInputs(page: StudioPageRecord, slug: string): Loaded {
   useEffect(() => {
     const controller = new AbortController();
     setRecord({ state: 'loading' });
-    loadLeaf(agent, slug, controller.signal).then(value => setRecord({ state: 'ready', value }), error => { if (!controller.signal.aborted) setRecord({ state: 'error', message: message(error, 'This leaf could not load.') }); });
+    loadLeaf(agent, slug, controller.signal).then(value => setRecord({ state: 'ready', value }), error => { if (!controller.signal.aborted) setRecord({ state: 'error', message: message(error, studioCopy("studio.this-leaf-could-not-load")) }); });
     return () => controller.abort();
   }, [agent, slug, revision]);
   return useMemo((): Loaded => {
-    const label = agent === 'designer' ? 'Designer' : isLibraryAgent(agent) ? AGENT_LABELS[agent as Agent] : agent;
+    const label = agent === 'designer' ? studioCopy("studio.designer") : isLibraryAgent(agent) ? AGENT_LABELS[agent as Agent] : agent;
     if (record.state === 'loading') return { state: 'loading' };
-    if (record.state === 'error') return { state: 'notice', notice: { title: 'This leaf could not load', description: record.message } };
-    if (!record.value) return { state: 'notice', notice: { title: 'This leaf is gone', description: `${label} no longer records ${slug}.` } };
+    if (record.state === 'error') return { state: 'notice', notice: { title: studioCopy("studio.this-leaf-could-not-load-61e548"), description: record.message } };
+    if (!record.value) return { state: 'notice', notice: { title: studioCopy("studio.this-leaf-is-gone"), description: studioCopy("studio.no-longer-records", { value0: String(label), value1: String(slug) }) } };
     const links = mapLinks(map);
     const list: readonly StudioReport[] = reports.state === 'ready' ? reports.value : [];
     const ready = (inputs: Inputs): Loaded => ({ state: 'ready', inputs, modules: { checks: leafChecks(inputs, list, agent, slug) } });
@@ -307,7 +309,7 @@ function useLeafInputs(page: StudioPageRecord, slug: string): Loaded {
     const { leaf, previews, specimens } = record.value;
     const specimen = specimens
       ? specimens.length
-        ? viewportSpecimen(leaf, specimens, 'The page as its last install emitted it, framed at each viewport.')
+        ? viewportSpecimen(leaf, specimens, studioCopy("studio.the-page-as-its-last-install-emitted"))
         : agentRecordSpecimen(leaf, links)
       : undefined;
     const options = agentOptionsInput(leaf, previews);
@@ -353,11 +355,11 @@ function useManifestPopovers(entry: ContentMapEntry, spec: StudioAssemblySpec, l
       const Section = studioSections[module.section];
       const explorer = data.explorer ?? [];
       const content = module.source === 'page.explorer'
-        ? { label: `${entry.title} explorer`, searchLabel: `Search ${entry.title}`, empty: pending ? 'Loading…' : 'Nothing matches.', groups: explorer }
+        ? { label: studioCopy("studio.explorer", { value0: String(entry.title) }), searchLabel: studioCopy("studio.search", { value0: String(entry.title) }), empty: pending ? studioCopy("studio.loading") : studioCopy("studio.nothing-matches"), groups: explorer }
         : module.source === 'page.outline'
-          ? { label: `${entry.title} outline`, heading: 'On this page', items: outline }
+          ? { label: studioCopy("studio.outline", { value0: String(entry.title) }), heading: studioCopy("studio.on-this-page"), items: outline }
           : module.source === 'page.versions'
-            ? { label: `${entry.title} versions`, heading: 'Recorded versions', items: versions }
+            ? { label: studioCopy("studio.versions", { value0: String(entry.title) }), heading: studioCopy("studio.recorded-versions"), items: versions }
             : data.checks ?? checksInput([], [], []);
       const targets = module.source === 'page.explorer' ? explorer.flatMap(group => group.items.map(item => item.target))
         : module.source === 'page.outline' ? outline.map(item => item.target)
@@ -384,7 +386,7 @@ function Frame({ entry, page, spec, loaded = { state: 'loading' }, children, hea
   const Shell = studioFrames[page.frameId];
   const projection = useMemo(() => studioShellProjection(map, entry.id), [map, entry.id]);
   const popovers = useManifestPopovers(entry, spec, loaded);
-  if (!Shell) return <PageNotice notice={{ title: 'This page has no frame', description: `Nothing is pinned for ${page.frameId}.` }} />;
+  if (!Shell) return <PageNotice notice={{ title: studioCopy("studio.this-page-has-no-frame"), description: studioCopy("studio.nothing-is-pinned-for", { value0: String(page.frameId) }) }} />;
   return <Shell {...projection} popovers={popovers} body={spec.body} head={head}>{children}</Shell>;
 }
 
@@ -417,6 +419,6 @@ export function StudioPage({ segments }: { segments: readonly string[] }) {
   }
   if (route.state === 'leaf') return <LeafPage key={route.key} entry={route.entry} page={route.page} spec={route.spec} slug={route.slug} />;
   const Loader = LOADERS[route.spec.data.loader as keyof typeof LOADERS];
-  if (!Loader) return <Frame entry={route.entry} page={route.page} spec={route.spec}><PageNotice notice={{ title: 'This page cannot load', description: `Studio has no loader named ${route.spec.data.loader}.` }} /></Frame>;
+  if (!Loader) return <Frame entry={route.entry} page={route.page} spec={route.spec}><PageNotice notice={{ title: studioCopy("studio.this-page-cannot-load"), description: studioCopy("studio.studio-has-no-loader-named", { value0: String(route.spec.data.loader) }) }} /></Frame>;
   return <Loader key={route.key} entry={route.entry} page={route.page} spec={route.spec} />;
 }

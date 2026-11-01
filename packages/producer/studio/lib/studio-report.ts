@@ -1,3 +1,4 @@
+import { studioCopy } from './studio-copy';
 /**
  * Studio reports: Producer facts that used to replace the page now render as
  * a non-blocking list. The session token in /api/config is never read here.
@@ -29,21 +30,21 @@ function slotLabel(message: string): string | undefined {
 }
 
 export function studioReports(config: unknown): StudioReport[] {
-  if (!object(config)) return [{ id: 'config', area: 'selection', severity: 'error', title: 'Producer configuration unavailable', detail: 'Studio could not read the Producer configuration.' }];
+  if (!object(config)) return [{ id: 'config', area: 'selection', severity: 'error', title: studioCopy("studio.producer-configuration-unavailable"), detail: studioCopy("studio.studio-could-not-read-the-producer-configuration") }];
   const reports: StudioReport[] = [];
   const selection = object(config.selection) ? config.selection : undefined;
-  if (!selection) reports.push({ id: 'selection', area: 'selection', severity: 'warning', title: 'Designer selection unavailable', detail: 'Producer supplied no Designer selection. Studio renders with the stock component layer.' });
+  if (!selection) reports.push({ id: 'selection', area: 'selection', severity: 'warning', title: studioCopy("studio.designer-selection-unavailable"), detail: studioCopy("studio.producer-supplied-no-designer-selection-studio-renders") });
   else if (typeof selection.runtimeUrl !== 'string') {
-    const message = typeof selection.message === 'string' ? selection.message : 'The Designer selection is not compiled.';
+    const message = typeof selection.message === 'string' ? selection.message : studioCopy("studio.the-designer-selection-is-not-compiled");
     const slot = slotLabel(message);
     const reason = reportText(message).split(': ').at(-1)!.replace(/\s+for slot .*$/, '').replace(/\.$/, '');
-    reports.push({ id: 'selection', area: 'selection', severity: 'warning', title: slot ? `Designer selection not qualified: ${slot}` : 'Designer selection not qualified', detail: `${reason.charAt(0).toUpperCase()}${reason.slice(1)}. Studio renders with the stock component layer until the selection qualifies.` });
+    reports.push({ id: 'selection', area: 'selection', severity: 'warning', title: slot ? studioCopy("studio.designer-selection-detail", { value0: String(slot) }) : studioCopy("studio.designer-selection-not-qualified"), detail: studioCopy("studio.selection-fallback-detail", { reason: reason.charAt(0).toUpperCase() + reason.slice(1) }) });
   }
   const theme = object(config.theme) ? config.theme : undefined;
-  if (theme?.source === 'foundry') reports.push({ id: 'theme', area: 'theme', severity: 'info', title: 'Consumer theme not compiled', detail: typeof theme.message === 'string' ? reportText(theme.message) : 'Producer is using the Foundry theme.' });
+  if (theme?.source === 'foundry') reports.push({ id: 'theme', area: 'theme', severity: 'info', title: studioCopy("studio.consumer-theme-not-compiled"), detail: typeof theme.message === 'string' ? reportText(theme.message) : studioCopy("studio.producer-is-using-the-foundry-theme") });
   if (Array.isArray(config.compilation)) for (const row of config.compilation) {
     if (!object(row) || typeof row.agent !== 'string' || row.state !== 'error') continue;
-    reports.push({ id: `compile:${row.agent}`, area: 'compile', severity: 'error', agent: row.agent, title: `${row.agent.charAt(0).toUpperCase()}${row.agent.slice(1)} cells did not compile`, detail: typeof row.message === 'string' ? reportText(row.message) : 'Producer could not compile these cells.' });
+    reports.push({ id: `compile:${row.agent}`, area: 'compile', severity: 'error', agent: row.agent, title: studioCopy("studio.agent-compile-failed", { agent: row.agent.charAt(0).toUpperCase() + row.agent.slice(1) }), detail: typeof row.message === 'string' ? reportText(row.message) : studioCopy("studio.producer-could-not-compile-these-cells") });
   }
   return reports;
 }

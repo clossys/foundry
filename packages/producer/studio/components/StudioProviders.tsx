@@ -1,4 +1,6 @@
 'use client';
+import { studioCopy } from '../lib/studio-copy';
+
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
@@ -37,7 +39,7 @@ function applyMode(mode: ThemeMode): 'light' | 'dark' {
 
 async function loadReports(signal: AbortSignal): Promise<StudioReport[]> {
   const response = await fetch('/api/config', { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
-  if (!response.ok) throw new Error(`Producer could not load its configuration (${response.status}).`);
+  if (!response.ok) throw new Error(studioCopy("studio.producer-could-not-load-its-configuration", { value0: String(response.status) }));
   const config = await response.json() as Record<string, unknown>;
   // Only the report fields leave this function; the session token is never retained.
   return studioReports({ selection: config.selection, theme: config.theme, compilation: config.compilation });
@@ -84,11 +86,11 @@ export function StudioProviders({ children }: { children: ReactNode }) {
   }, []);
   useEffect(() => {
     const controller = new AbortController();
-    loadCells(controller.signal).then(value => setCells({ state: 'ready', value }), error => { if (!controller.signal.aborted) setCells({ state: 'error', message: error instanceof Error ? error.message : 'Producer is unavailable.' }); });
-    loadReports(controller.signal).then(value => setReports({ state: 'ready', value }), error => { if (!controller.signal.aborted) setReports({ state: 'error', message: error instanceof Error ? error.message : 'Producer is unavailable.' }); });
+    loadCells(controller.signal).then(value => setCells({ state: 'ready', value }), error => { if (!controller.signal.aborted) setCells({ state: 'error', message: error instanceof Error ? error.message : studioCopy("studio.producer-is-unavailable") }); });
+    loadReports(controller.signal).then(value => setReports({ state: 'ready', value }), error => { if (!controller.signal.aborted) setReports({ state: 'error', message: error instanceof Error ? error.message : studioCopy("studio.producer-is-unavailable") }); });
     loadBrand(controller.signal).then(value => {
       setBrand({ state: 'ready', value });
-      document.title = value.name ? `${value.name} Studio` : 'Studio';
+      document.title = value.name ? studioCopy("studio.branded-title", { value0: String(value.name) }) : studioCopy("studio.studio");
     }, () => { if (!controller.signal.aborted) setBrand({ state: 'ready', value: {} }); });
     return () => controller.abort();
   }, [revision]);

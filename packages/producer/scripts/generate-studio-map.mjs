@@ -1,4 +1,5 @@
 import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { resolve, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { contentMapFromCells, compileContentMaps } from '@clossys/publisher/content-map/cells';
@@ -122,7 +123,39 @@ async function pinnedItem(clossysRoot, selection, slot) {
   return { slot, element: pin.element, version: pin.version, versionDir, payload: element.payload, studioDir: join(studioRoot, folder, pin.element), module: `../${folder}/${pin.element}` };
 }
 
-/** Build-time authoring only. Runtime consumers read the generated projection. */
+/** Project the dogfood Writer pins; an unpinned candidate or corrupt pin never becomes fallback copy. */
+export async function studioCopyRegistry(clossysRoot) {
+  const root = join(clossysRoot, 'agents/writer');
+  let ia;
+  try { ia = JSON.parse(await readFile(join(root, 'ia.json'), 'utf8')); }
+  catch (error) { if (error.code !== 'ENOENT') throw error; ia = { nodes: [] }; }
+  const entries = [], revisions = [];
+  for (const node of ia.nodes) for (const group of node.children) for (const slot of group.slots) {
+    if (!['strings.common', 'strings.statuses', 'strings.descriptions'].includes(slot)) continue;
+    const dir = join(root, node.id, group.id, slot);
+    let pin;
+    try { pin = JSON.parse(await readFile(join(dir, 'pin.json'), 'utf8')); }
+    catch (error) { if (error.code === 'ENOENT') continue; throw error; }
+    if (!/^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\.md$/.test(pin.candidate)) throw new Error(`Invalid Studio Writer pin: ${slot}`);
+    const bytes = await readFile(join(dir, 'candidates', pin.candidate), 'utf8');
+    if (createHash('sha256').update(bytes).digest('hex') !== pin.sha256) throw new Error(`Studio Writer pin hash mismatch: ${slot}`);
+    revisions.push(pin.sha256);
+    if (!bytes.startsWith('---\n') || !bytes.includes('\nlocales: ["en"]\n')) throw new Error(`Invalid Studio Writer locale: ${slot}`);
+    const records = bytes.split(/^### /m).slice(1);
+    for (const record of records) {
+      const match = /^([^\n]+)\n<!-- (.+) -->\n([\s\S]*)$/.exec(record);
+      if (!match) throw new Error(`Invalid Studio Writer record: ${slot}`);
+      const meta = JSON.parse(match[2]);
+      if (typeof meta.id !== 'string' || !meta.id.startsWith('studio.')) continue;
+      if (!Array.isArray(meta.bindings) || !meta.bindings.every(binding => typeof binding === 'string')) throw new Error(`Invalid Studio Writer bindings: ${meta.id}`);
+      if (entries.some(row => row.id === meta.id)) throw new Error(`Duplicate Studio Writer copy: ${meta.id}`);
+      entries.push({ id: meta.id, text: match[3].replace(/\n\n?$/, ''), context: meta.bindings.join(', '), status: 'draft' });
+    }
+  }
+  return { id: 'studio-copy', locale: 'en', revision: createHash('sha256').update(revisions.join('')).digest('hex'),
+    source: { kind: 'consumer', reference: 'clossys/agents/writer' }, entries };
+}
+
 export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outputDir = resolve(studioRoot, 'generated'), check = false, payloads = true } = {}) {
   const cellRoot = join(clossysRoot, 'agents', 'publisher');
   const tree = await readJson(join(cellRoot, 'tree.json'));
@@ -195,7 +228,7 @@ export const studioSections: Record<string, ComponentType<any>> = {
 ${sections.map((item, i) => `  ${JSON.stringify(item.slot)}: Section${i},`).join('\n')}
 };
 `;
-  const files = { 'studio-map.json': json(projection), 'studio-map.ts': module, 'assembly-bindings.ts': bindings };
+  const files = { 'studio-copy.json': json(await studioCopyRegistry(clossysRoot)), 'studio-map.json': json(projection), 'studio-map.ts': module, 'assembly-bindings.ts': bindings };
   if (check && (await readdir(outputDir)).some(name => !Object.hasOwn(files, name))) throw new Error('Unexpected file in generated Studio projection');
   if (!check) {
     await mkdir(outputDir, { recursive: true });
