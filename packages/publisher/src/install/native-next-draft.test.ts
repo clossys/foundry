@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { CompositeCatalogData, CompositeLibraryData } from "@clossys/designer/catalog";
 import { directoryRecordSource, recordStoreSource } from "../specimen/source.js";
 import type { SpecimenRecordSource } from "../specimen/types.js";
 import { installAndBind, resolveNativeNextDraft, type InstallPageRecord, type InstallPins, type NativeNextDraftCandidate, type ShadcnRunner } from "./index.js";
@@ -267,11 +268,33 @@ describe("native server/client module composition", () => {
 // The mandatory package globalSetup builds dist. Do not run this test in a source-only cloud session.
 // Mutation proof: restoring the whole-page "use client" fails the real Designer server graph;
 // replacing prepared copy data with client-module export reflection fails the Next client proxy.
+// Provider mutation: in the generated layout value replace profile.components.components
+// with {} while retaining its real selectionHash and descriptors; Next build must fail
+// with "NEED component selection: components.link". Restore before the normal run.
 it.skipIf(!process.env.FOUNDRY_NATIVE_NEXT_ROOT)("builds a genuine Next16 consumer with Designer SiteFrame and a native client island", async () => {
   const consumer = process.env.FOUNDRY_NATIVE_NEXT_ROOT!;
   const nativeRequire = createRequire(join(consumer, "package.json"));
   expect(JSON.parse(await readFile(nativeRequire.resolve("next/package.json"), "utf8")).version).toMatch(/^16\./);
   const dir = await mkdtemp(join(consumer, ".native-next-draft-")); temps.push(dir);
+  const { loadCatalog, loadComponentRegistry, importFoundryComponents, applyLibraryChange, libraryHash, resolve } = await import("@clossys/designer/catalog");
+  const components = await import("@clossys/designer/components");
+  const catalog: CompositeCatalogData = { values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: importFoundryComponents().fills } };
+  const empty: CompositeLibraryData = { source: { id: "native-next-draft", kind: "consumer", author: "consumer", license: "MIT" }, adoptedAt: new Date().toISOString().slice(0, 10), values: { fills: [] }, components: { fills: [], files: [] } };
+  const valueChanges = catalog.values.slots.filter(slot => slot.layer === "themes").flatMap(slot => {
+    const offers = catalog.values.fills.filter(fill => fill.$extensions["com.clossys.fill"].slot === slot.id && fill.$extensions["com.clossys.fill"].mode !== "reference");
+    const fill = ["foundry", "tailwind-default"].map(source => offers.find(fill => fill.$extensions["com.clossys.fill"].source === source)).find(Boolean) ?? offers[0];
+    return fill ? [{ portion: "values" as const, change: { op: "adopt" as const, slot: slot.id, source: fill.$extensions["com.clossys.fill"].source } }] : [];
+  });
+  const componentOptions = { packageExports: { "@clossys/designer/components": Object.keys(components) } };
+  const library = applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes: [...valueChanges, { portion: "components", change: { op: "adopt", slot: "components.link", source: "foundry" } }] }, { componentOptions });
+  const profile = resolve({ catalog, library, componentOptions });
+  const chosen = profile.components.components["components.link"]!;
+  expect(chosen.origin.kind).toBe("adopted");
+  if (chosen.origin.kind !== "adopted") throw new Error("native fixture requires adopted components.link");
+  expect(chosen.origin.pin).toEqual(expect.objectContaining({ package: "@clossys/designer", export: "./components#Link" }));
+  expect(profile.components.check.findings).toContainEqual(expect.objectContaining({ subject: "components.link", severity: "notice", message: "Source and runtime observations are unavailable" }));
+  // Real adopted descriptors and source modules are runtime-pending, not qualified fills.
+  const selection = { profile: { components: profile.components }, selectionHash: profile.components.selectionHash, descriptors: { "components.link": chosen.origin.sha256 } };
   const template = join(import.meta.dirname, "../../templates/site");
   await writeFile(join(dir, "package.json"), await readFile(join(template, "package.json")));
   await writeFile(join(dir, "tsconfig.json"), JSON.stringify({ compilerOptions: { paths: { "@/*": ["./*"] }, jsx: "react-jsx" } }));
@@ -295,7 +318,13 @@ export function NativeFrame({ children, copy }: { children?: ReactNode; copy: { 
   expect(installed.page).toEqual(draft.page);
   await mkdir(join(dir, "app")); await mkdir(join(dir, "public"));
   await writeFile(join(dir, "app/page.tsx"), draft.module!);
-  await writeFile(join(dir, "app/layout.tsx"), 'import type { ReactNode } from "react"; export default function Layout({children}: {children: ReactNode}) { return <html lang="en"><body>{children}</body></html>; }');
+  await writeFile(join(dir, "app/layout.tsx"), `"use client";
+import type { ReactNode } from "react";
+import { ConsumerComponentProvider, type ConsumerComponentSelection } from "@clossys/designer/frames";
+import { Link } from "@clossys/designer/components";
+const value: ConsumerComponentSelection = { profile: ${JSON.stringify(selection.profile)}, selectionHash: ${JSON.stringify(selection.selectionHash)}, descriptors: ${JSON.stringify(selection.descriptors)}, modules: { "@clossys/designer/components": { Link } } };
+export default function Layout({children}: {children: ReactNode}) { return <html lang="en"><body><ConsumerComponentProvider value={value}>{children}</ConsumerComponentProvider></body></html>; }
+`);
   await writeFile(join(dir, "public/mark.svg"), '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><circle cx="24" cy="24" r="20"/></svg>');
   const result = await new Promise<{ code: number; stdout: string; stderr: string }>(done => execFile(process.execPath, [nativeRequire.resolve("next/dist/bin/next"), "build"], { cwd: dir, timeout: 180_000 }, (error, stdout, stderr) => done({ code: error ? 1 : 0, stdout, stderr })));
   expect(result, JSON.stringify(result)).toMatchObject({ code: 0 });
