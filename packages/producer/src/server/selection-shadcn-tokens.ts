@@ -1,4 +1,4 @@
-import type { Resolved, ResolvedMember } from "@clossys/designer/catalog";
+import type { CatalogData, Resolved, ResolvedMember } from "@clossys/designer/catalog";
 
 /** The installed Designer contract supplies names; the consumer supplies values. */
 export interface SelectionShadcnTokenContract {
@@ -21,7 +21,8 @@ export interface SelectionShadcnTokens {
  * Wildcard scale namespaces remain the existing Designer emitter's responsibility.
  * No preset or contract default value can substitute for a missing consumer token.
  */
-export function selectionShadcnTokens(resolved: Pick<Resolved, "members">, contract: SelectionShadcnTokenContract): SelectionShadcnTokens {
+export function selectionShadcnTokens(resolved: Pick<Resolved, "members">, contract: SelectionShadcnTokenContract, catalogSlots: CatalogData["slots"]): SelectionShadcnTokens {
+  const lightOnlySlots = new Set(catalogSlots.filter(slot => slot.contract.modes.length === 1 && slot.contract.modes[0] === "light").map(slot => slot.id));
   const targets = new Map<string, { id: string; kind: string }[]>();
   for (const [slot, leaf] of Object.entries(contract.leaves)) {
     for (const [name, member] of Object.entries(leaf.members ?? {})) {
@@ -57,9 +58,12 @@ export function selectionShadcnTokens(resolved: Pick<Resolved, "members">, contr
     if (seen.has(id)) throw new Error(`NEED: selected shadcn token ${id} has a cyclic ${mode} alias`);
     seen.add(id);
     const member = memberFor(id);
-    const alias = member.alias[mode] ?? (mode === "dark" && member.value.dark === undefined ? member.alias.light : undefined);
-    if (alias) return literal(alias, mode, seen);
-    const value = member.css[mode] ?? (mode === "dark" && !["color", "shadow"].includes(member.$type) ? member.css.light : undefined);
+    // Only the selected catalog can declare a token invariant across themes.
+    // Follow an invariant's light alias in light mode, preserving its light value.
+    const actualMode = mode === "dark" && lightOnlySlots.has(member.slot) && member.value.dark === undefined && member.css.dark === undefined && member.alias.dark === undefined ? "light" : mode;
+    const alias = member.alias[actualMode];
+    if (alias) return literal(alias, actualMode, seen);
+    const value = member.css[actualMode];
     if (!value?.trim()) throw new Error(`NEED: selected shadcn token ${id} has no ${mode} value`);
     return value;
   };
