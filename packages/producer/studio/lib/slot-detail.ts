@@ -18,16 +18,18 @@ export function detailStrings(content: string): { key: string; text: string }[] 
   const rows: { key: string; text: string }[] = [];
   let locale = '', key = '', lines: string[] = [];
   const flush = () => {
-    // Markdown record separators are blank lines; spaces inside a string are content.
-    while (lines[0] === '') lines.shift();
-    while (lines.at(-1) === '') lines.pop();
+    // Writer's grammar adds one separator; other blank lines belong to the text.
+    if (lines.at(-1) === '') lines.pop();
     if (key) rows.push({ key: locale ? `${locale}/${key}` : key, text: lines.join('\n') });
     lines = [];
   };
-  for (const line of content.split('\n')) {
+  // Ignore the file's final newline independently of each record's separator.
+  for (const line of content.replace(/\n$/, '').split('\n')) {
     if (line.startsWith('## ')) { flush(); key = ''; locale = line.slice(3); }
     else if (line.startsWith('### ')) { flush(); key = line.slice(4); }
-    else if (!/^<!-- .* -->$/.test(line)) lines.push(line);
+    // Interpret structure before unescaping, as parseWriterCell does: escaped
+    // headings and comments are literal content, and one backslash is removed.
+    else if (!/^<!-- .* -->$/.test(line)) lines.push(line.startsWith('\\') ? line.slice(1) : line);
   }
   flush();
   return rows;
