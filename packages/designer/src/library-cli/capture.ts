@@ -1,3 +1,4 @@
+import { cliErrorDetail } from "../cli-remedies.js";
 import * as fs from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -9,6 +10,9 @@ import type { ThumbnailIndex } from "../studio/system-canvas/thumbnails/thumbnai
 import { checkLibraryReceipt, LibraryInputError } from "./fs-library.js";
 import { digest, readReceipt } from "./write-receipt.js";
 
+class CaptureFailure extends Error {
+  constructor(readonly diagnostic: "No specimen" | "Driver output is not WebP") { super(diagnostic); }
+}
 interface CaptureDriver { shoot(input: { html: string; width: number; height: number }): Promise<Uint8Array>; render(leaf: string): ReactNode | undefined }
 export function thumbnailPath(output: string, leaf: string): string {
   const match = /^(components|sections|frames)\.[a-z0-9-]+$/.exec(leaf);
@@ -54,14 +58,14 @@ export async function capture(input: { root: string; driver: string; out: string
   for (const leaf of leaves.filter(leaf => input.leaf === undefined || leaf === input.leaf)) {
     try {
       const specimen = driver.render(leaf);
-      if (specimen === undefined) throw new Error("No specimen");
+      if (specimen === undefined) throw new CaptureFailure("No specimen");
       const width = leaf.startsWith("components.") ? 640 : 1280, height = leaf.startsWith("components.") ? 400 : 800;
       const html = '<!doctype html><html><head><meta charset="utf-8"><style>' + styles.join("\n") + "</style></head><body>" + renderToStaticMarkup(specimen) + "</body></html>";
       const bytes = await driver.shoot({ html, width, height });
-      if (!(bytes instanceof Uint8Array) || bytes.length < 12 || Buffer.from(bytes.subarray(0, 4)).toString() !== "RIFF" || Buffer.from(bytes.subarray(8, 12)).toString() !== "WEBP") throw new Error("Driver output is not WebP");
+      if (!(bytes instanceof Uint8Array) || bytes.length < 12 || Buffer.from(bytes.subarray(0, 4)).toString() !== "RIFF" || Buffer.from(bytes.subarray(8, 12)).toString() !== "WEBP") throw new CaptureFailure("Driver output is not WebP");
       await atomic(thumbnailPath(output, leaf), bytes);
       index.leaves[leaf] = { fill: receipt.files[`fills/${leaf}.json`]!, sha256: digest(bytes), width, height };
-    } catch (error) { failures.push({ leaf, reason: error instanceof Error ? error.message : String(error) }); }
+    } catch (error) { failures.push({ leaf, reason: error instanceof CaptureFailure ? error.diagnostic : cliErrorDetail(error) }); }
   }
   await atomic(join(output, "index.json"), stableStringify(index));
   return { ok: failures.length === 0, captured: Object.keys(index.leaves), failures };

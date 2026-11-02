@@ -131,5 +131,5 @@ export const APP_FRAME_CONTRACT = freeze({
     { owner: "@clossys/designer", subpath: "theme", export: "ThemeToggle" },
     { owner: "@clossys/designer", subpath: "shell", export: "SkipLink" },
   ],
-  specimen: { owner: "@clossys/designer", subpath: "frames", export: "AppFrameSpecimen", source: "src/frames/AppFrame.specimen.tsx" },
+  specimen: { owner: "@clossys/designer", subpath: "studio", export: "AppFrameSpecimen", source: "src/frames/AppFrame.specimen.tsx" },
 } as const);

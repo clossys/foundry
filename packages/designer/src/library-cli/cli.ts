@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { cliErrorDetail, cliRemedy } from "../cli-remedies.js";
 import * as fs from "node:fs/promises";
 import { constants, realpathSync } from "node:fs";
 import { resolve as pathResolve, dirname, relative, join } from "node:path";
@@ -236,10 +237,10 @@ async function libraryUsageGraphInputs(root: string, catalog: ReturnType<typeof 
 
 /** Testable CLI entry point; importing this module never writes to a consumer library. */
 export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promise<number> {
-  if (argv[0] === "cells") return (await import("./cells.js")).runCellsCli(argv.slice(1), io);
-  if (argv[0] === "ia-coverage") return (await import("../catalog/ia/check-coverage/cli.js")).main(argv.slice(1), io);
   if (argv.length === 1 && ["--help", "-h"].includes(argv[0]!)) { io.out(USAGE); return 0; }
   try {
+    if (argv[0] === "cells") return await (await import("./cells.js")).runCellsCli(argv.slice(1), io);
+    if (argv[0] === "ia-coverage") return await (await import("../catalog/ia/check-coverage/cli.js")).main(argv.slice(1), io);
     const args = parseArgs(argv);
     if (args.command === "recommend") { io.error("recommend unavailable: the chooser has not shipped; no library was changed"); return 2; }
     if (args.command === "select") return selectStarter();
@@ -373,7 +374,8 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
     if (error instanceof LibraryCheckError) {
       io.error(JSON.stringify({ ok: false, findings: error.result.findings })); return 1;
     }
-    io.error(`designer-library: ${error instanceof Error ? error.message : String(error)}`);
+    io.error(`designer-library: ${cliErrorDetail(error, error instanceof LibraryConflictError ? "conflict" : error instanceof LibraryInputError ? "invalid-input" : undefined)}`);
+    io.error(cliRemedy("designer-library"));
     return error instanceof LibraryConflictError ? 1 : 2;
   }
 }

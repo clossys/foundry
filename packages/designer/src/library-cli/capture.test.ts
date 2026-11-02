@@ -52,3 +52,17 @@ it("lists every missing specimen and requires both driver exports", async () => 
   const invalid = join(directory, "invalid.mjs"); await fs.writeFile(invalid, "export const shoot = async () => new Uint8Array();");
   expect(await main(["capture", "--root", root, "--driver", invalid, "--out", output])).toBe(2);
 });
+
+it("keeps rejected driver payloads and stacks out of CLI stdout and stderr", async () => {
+  const marker = "rejected-payload-marker";
+  const throwing = join(directory, "throwing.mjs");
+  await fs.writeFile(throwing, `export function render() { throw Object.assign(new Error("${marker}"), {stack:"${marker}"}); } export async function shoot() { return new Uint8Array(); }`);
+  const stdout: string[] = [], stderr: string[] = [];
+  expect(await main(["capture", "--root", root, "--driver", throwing, "--out", output], {
+    out: value => stdout.push(value), error: value => stderr.push(value),
+  })).toBe(1);
+  const result = JSON.parse(stdout[0]!);
+  expect(result.failures).toHaveLength(leaves.length);
+  expect(result.failures.every((row: { reason: string }) => row.reason === "unexpected error; the operation could not complete")).toBe(true);
+  expect([...stdout, ...stderr].join("\n")).not.toContain(marker);
+});

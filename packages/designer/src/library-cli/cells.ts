@@ -1,3 +1,4 @@
+import { cliErrorDetail, cliRemedy } from "../cli-remedies.js";
 /** Designer's cell profile. The shared store owns version paths and activation. */
 import * as fs from "node:fs/promises";
 import { dirname, join, resolve, relative, isAbsolute, sep } from "node:path";
@@ -241,5 +242,5 @@ export async function runCellsCli(argv: string[], io = { out: (s: string) => con
       } else throw new Error("Expected cells compile|check|migrate|propose|activate");
     }
     return 0;
-  } catch (error) { io.error(error instanceof Error ? error.message : String(error)); return 2; }
+  } catch (error) { io.error(`designer-library cells: ${cliErrorDetail(error)}`); io.error(cliRemedy("designer-library")); return 2; }
 }
