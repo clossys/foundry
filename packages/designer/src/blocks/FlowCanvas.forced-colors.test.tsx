@@ -1,7 +1,27 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it } from "vitest";
+import { generate, parse, walk, type CssNode } from "css-tree";
 import { FlowCanvas } from "./FlowCanvas.js";
+
+it("ships the selected perimeter's dashed border rule inside forced-colors media", () => {
+  const css = readFileSync(resolve(import.meta.dirname, "../../styles/compiled.css"), "utf8");
+  const ancestors: CssNode[] = [];
+  const declarations = new Set<string>();
+  walk(parse(css), {
+    enter(node) {
+      ancestors.push(node);
+      if (node.type !== "Declaration" || generate(node.value).trim() !== "dashed") return;
+      const selected = ancestors.some(parent => parent.type === "Rule" && generate(parent.prelude) === ".forced-colors\\:border-dashed");
+      const forced = ancestors.some(parent => parent.type === "Atrule" && parent.name === "media" && parent.prelude && /\(forced-colors:\s*active\)/.test(generate(parent.prelude)));
+      if (selected && forced) declarations.add(node.property);
+    },
+    leave() { ancestors.pop(); },
+  });
+  expect(declarations).toEqual(new Set(["--tw-border-style", "border-style"]));
+});
 
 it("keeps the selected forced-colors perimeter dashed while keyboard focus stays solid", async () => {
   const user = userEvent.setup();

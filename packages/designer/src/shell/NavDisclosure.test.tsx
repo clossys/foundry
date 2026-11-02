@@ -246,10 +246,10 @@ function motionTokens(panel: HTMLElement, duration = "240ms") {
 }
 
 describe("NavDisclosure panel motion", () => {
-  it("slides the sheet in on its motion tokens, then keeps a closing sheet painted but inert", async () => {
+  it.each(["header", "standalone"])("slides the %s sheet in on its motion tokens, then keeps a closing sheet painted but inert", async placement => {
     const motion = mockAnimate();
     try {
-      const view = renderNav();
+      const view = placement === "header" ? renderNav() : render(<NavDisclosure><a href="#about">About</a><a href="#contact"><span>Contact</span></a></NavDisclosure>);
       const toggle = screen.getByRole("button", { name: "Menu" });
       const link = screen.getByRole("link", { name: "About" });
       const panel = link.parentElement!;

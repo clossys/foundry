@@ -64,7 +64,7 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
     if (!open.current) return;
     if (restore) toggle.current?.focus();
     // Inert at once, while a closing panel may still be painted.
-    if (nav.current?.closest("header")) panel.current?.setAttribute("inert", "");
+    panel.current?.setAttribute("inert", "");
     setExpanded(false);
   };
   useEffect(() => {
@@ -171,7 +171,7 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
   useBeforePaint(() => {
     const element = panel.current;
     if (!element) return;
-    element.toggleAttribute("inert", mobile && !expanded && Boolean(nav.current?.closest("header")));
+    element.toggleAttribute("inert", mobile && !expanded);
     const running = motion.current;
     const changed = shown.current !== expanded;
     shown.current = expanded;
