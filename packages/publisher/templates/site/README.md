@@ -28,6 +28,21 @@ These guards are static. They check declared ranges and property names;
 they do not check that an install resolves those ranges, that a value
 applies at its cascade scope, or that the template builds.
 
+To create `apps/site` as a standalone project in a repository that manages
+its apps separately, run the installed public bin:
+
+```sh
+publisher-site-instantiate --root . --pins approved-pins.json --site-dir apps/site --standalone
+```
+
+The pins file maps every template `@clossys/*` dependency to an exact
+`major.minor.patch` version. Standalone mode does not read, create or edit
+the root `package.json`, workspace configuration or lockfiles, and leaves
+existing apps alone. Choosing a package manager, installing dependencies
+and qualifying the site's lockfile remain consumer work. Without
+`--standalone`, the root `package.json` is required and its npm workspaces
+are updated to cover the site.
+
 ## What it contains
 
 - `package.json` — Next.js (App Router), `@clossys/publisher/web` and

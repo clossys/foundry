@@ -1,6 +1,7 @@
 /**
  * Copies the site template into a consumer repository's `apps/site` with
- * exact `@clossys/*` pins, and makes the root manifest's workspaces cover it.
+ * exact `@clossys/*` pins. By default, root manifest workspaces cover it;
+ * standalone mode leaves repository manifests and package-manager files alone.
  *
  * Every refusal is decided before the first write. Messages name a rule and a
  * relative path only: never a pin, the root path or any file content.
@@ -29,6 +30,7 @@ export type SiteInstantiateRule =
   | "site-dir-outside-root"
   | "target-not-empty"
   | "pins-not-object"
+  | "standalone-invalid"
   | "missing-pin"
   | "pin-not-exact"
   | "root-manifest-missing"
@@ -66,6 +68,8 @@ export interface SiteInstantiateOptions {
   pins: unknown;
   /** Repository-relative site directory. Defaults to `apps/site`. */
   siteDir?: string;
+  /** Copy a standalone project without reading or updating the root manifest. */
+  standalone?: boolean;
   /** Overrides the template found next to the installed package. */
   templateDir?: string;
   /** Test seam: runs after the site is in place and before the root manifest is written. */
@@ -291,10 +295,13 @@ function firstMissingAncestor(dir: string): string | null {
 }
 
 export function instantiateSite(options: SiteInstantiateOptions): SiteInstantiateResult {
+  if (options.standalone !== undefined && typeof options.standalone !== "boolean") {
+    throw new SiteInstantiateRefusal("standalone-invalid", "--standalone");
+  }
   const siteDir = normaliseSiteDir(options.siteDir ?? DEFAULT_SITE_DIR);
   const pins = validatePins(options.pins, siteDir);
   const root = resolve(options.root);
-  const rootPlan = planRootManifest(root, siteDir);
+  const rootPlan = options.standalone === true ? { text: null } : planRootManifest(root, siteDir);
   const templateDir = options.templateDir ?? defaultTemplateDir();
   const tree = (() => {
     try {
