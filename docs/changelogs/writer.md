@@ -3,6 +3,8 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+Native record API documentation: [Writer native records](../contracts/writer-native-records.md).
+
 ## 0.6.0 - 2026-10-13
 
 - Resolve not-authorized and sign-in variants for staff-only and invitation-only surfaces, plus a neutral identifier-failure notice.

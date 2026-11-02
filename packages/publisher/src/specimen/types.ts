@@ -40,6 +40,8 @@ export interface SpecimenPreview {
   /** Visual only: the payload file to mount (registry `path`) and its export name. */
   readonly entry?: string;
   readonly export?: string;
+  /** Named payload export mapping copy props to Writer slot names. */
+  readonly copyKeys?: string;
 }
 
 /** One file of a payload, in shadcn registry-item form (`files[]`). */
