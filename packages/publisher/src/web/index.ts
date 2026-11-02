@@ -75,6 +75,8 @@ export type {
 
 export { LegalView } from "./views/index.js";
 export type { LegalViewFramedLabels, LegalViewLabels, LegalViewProps } from "./views/index.js";
+export { NativeLegalView } from "./views/index.js";
+export type { NativeLegalViewDocument, NativeLegalViewProps } from "./views/index.js";
 
 // The contact handler is server-only: import it from server code, never a client bundle.
 export {

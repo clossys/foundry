@@ -96,6 +96,8 @@ export type {
 
 export { LegalView } from "#publisher-web-views";
 export type { LegalViewFramedLabels, LegalViewLabels, LegalViewProps } from "#publisher-web-views";
+export { NativeLegalView } from "#publisher-web-views";
+export type { NativeLegalViewDocument, NativeLegalViewProps } from "#publisher-web-views";
 
 // The contact handler is server-only: import it from server code, never a client bundle.
 export {
