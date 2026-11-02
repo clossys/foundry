@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { listSlots, readCandidate, readIa, readSlot, type SlotEntry } from '../records/slots.js';
 import { iaPath, parseFrontmatter, validateCandidate, validateSlotDoc, type SlotAgent, type SlotKind } from '../records/slot-model/index.js';
-import { writerRecords } from '../migrate/sources.js';
+import { parseWriterSlotBody } from '@clossys/writer/slot-body';
 
 export type SlotEmptyState = 'No candidate' | 'No pin';
 export interface RecordSpecimenInput {
@@ -53,7 +53,10 @@ export function recordSpecimenInput(consumer: string, agent: 'director' | 'write
   const parsed = parseFrontmatter(source.bytes);
   if (!parsed.ok) throw new Error(`Invalid record candidate: ${id}`);
   if (agent === 'writer') {
-    out.rows = writerRecords(parsed.value.body).map((row, index) => ({ key: `${index}`, label: `${row.locale}: ${row.key}`, text: row.text || JSON.stringify(row.meta) }));
+    out.rows = parseWriterSlotBody(parsed.value.body, parsed.value.fields.locales as readonly string[]).map((row, index) => ({
+      key: `${index}`, label: `${row.locale}: ${row.record.context}`,
+      text: typeof row.record.text === 'string' ? row.record.text : JSON.stringify(row.record),
+    }));
   } else {
     const sections = parsed.value.body.split(/^## /m).slice(1);
     out.rows = sections.map((section, index) => { const newline = section.indexOf('\n'); return { key: `${index}`, label: newline < 0 ? section : section.slice(0, newline), text: newline < 0 ? '' : section.slice(newline + 1).trim() }; });
