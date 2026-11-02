@@ -51,6 +51,7 @@
           "leaves": [
             "sections.content",
             "sections.article",
+            "sections.sectioned-document",
             "sections.legal-prose"
           ]
         },

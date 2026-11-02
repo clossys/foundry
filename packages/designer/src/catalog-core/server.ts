@@ -9,3 +9,6 @@ export type { ConsumerDogfoodContract } from "../library-cli/consumer-dogfood.js
 // Host package-export evidence for Section and Frame package pointers (the disk boundary reads it itself when a host passes none).
 export { readSurfacePackageEvidence } from "../library-cli/surface-package-evidence.js";
 export type { SurfaceAnyDocument } from "./surface-types.js";
+
+/** Native package-pointer catalog, including public providers owned by other Foundry roles. */
+export { foundrySurfaceCatalog } from "../library-cli/surface-catalog.js";
