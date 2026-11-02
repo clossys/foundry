@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deriveRefs, toSlotId, validateCandidate, validateIa, validatePin, validateSlotDoc } from "./index.js";
+import { deriveRefs, parseFrontmatter, serializeFrontmatter, toSlotId, validateCandidate, validateIa, validatePin, validateSlotDoc } from "./index.js";
 
 const codes = (issues: readonly { code: string }[]) => issues.map(issue => issue.code);
 const ia = { schema: "clossys.ia/1", source: "@clossys/designer#leaf-freeze", extensions: [], nodes: [{ id: "components", label: "Components", children: [{ id: "actions", label: "Actions", slots: ["components.button"] }] }] };
@@ -8,6 +8,19 @@ const pin = { candidate: "button-v1.json", sha256: "a".repeat(64), pinnedBy: "mi
 const page = { schema: "clossys.page/1", path: "/", title: "Home", frame: null, sections: [], copy: {}, meta: { source: { kind: "original", ref: [] } } };
 
 describe("slot model schema (F1)", () => {
+  it("accepts Writer CRLF structural lines without changing raw body or relaxing provenance", () => {
+    const body = '## en\r\n### greeting\r\n<!-- {"id":"greeting","bindings":[]} -->\r\n  Exact text  \r\n';
+    const fields = { slot: 'strings.common', locales: ['en'], source: { kind: 'original', ref: [] } };
+    const bytes = serializeFrontmatter(fields, body);
+    expect(validateCandidate('strings', 'strings.common', 'copy-v1.md', bytes)).toEqual([]);
+    const parsed = parseFrontmatter(bytes);
+    expect(parsed.ok && parsed.value.body).toBe(`\n${body}`);
+    const { source: _source, ...missingSource } = fields;
+    for (const invalid of [missingSource, { ...fields, lineage: {} }, { ...fields, unknown: true }, { ...fields, status: 'active' }]) {
+      expect(validateCandidate('strings', 'strings.common', 'copy-v1.md', serializeFrontmatter(invalid, body)).length).toBeGreaterThan(0);
+    }
+  });
+
   it("accepts a well-formed ia.json, slot.json and pin.json", () => {
     expect(validateIa(ia)).toEqual([]);
     expect(validateSlotDoc(slot)).toEqual([]);

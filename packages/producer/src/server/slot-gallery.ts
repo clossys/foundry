@@ -1,8 +1,8 @@
 /** IA-first Studio gallery data. Empty slots never depend on a candidate or a route. */
-import { existsSync } from 'node:fs';
+import { existsSync, lstatSync } from 'node:fs';
 import { join } from 'node:path';
 import { listSlots, readCandidate, readIa, readSlot, type SlotEntry } from '../records/slots.js';
-import { iaPath, parseFrontmatter, validateCandidate, validateSlotDoc, type SlotAgent, type SlotKind } from '../records/slot-model/index.js';
+import { iaPath, pinFile, parseFrontmatter, validateCandidate, validateSlotDoc, type SlotAgent, type SlotKind } from '../records/slot-model/index.js';
 import { parseWriterSlotBody } from '@clossys/writer/slot-body';
 
 export type SlotEmptyState = 'No candidate' | 'No pin';
@@ -21,17 +21,34 @@ export const candidateVersion = (name: string) => Number(/-v(\d+)\.(?:md|json)$/
 export const hasAgentSlots = (consumer: string, agent: SlotAgent) => existsSync(iaPath(consumer, agent));
 const label = (id: string) => id.replace(/[.-]/g, ' ').replace(/^\w/, c => c.toUpperCase());
 
+function hasPinFile(entry: SlotEntry): boolean {
+  try { lstatSync(pinFile(entry.dir)); return true; }
+  catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false; throw error; }
+}
+
+function checkedSlot(consumer: string, agent: SlotAgent, entry: SlotEntry) {
+  const doc = readSlot(consumer, agent, entry.id);
+  if (validateSlotDoc(doc).length || doc.id !== entry.id || doc.agent !== agent
+    || doc.ia.l0 !== entry.position.l0 || doc.ia.l1 !== entry.position.l1 || doc.ia.l2 !== entry.position.l2 || doc.ia.order !== entry.position.order) {
+    throw new Error(`Invalid slot: ${entry.id}`);
+  }
+  return doc;
+}
+
 /** The pin wins; an invalid pin never silently falls back to a newer candidate. */
 export function shownCandidate(entry: SlotEntry): string | undefined {
-  return entry.pin ? (entry.candidates.includes(entry.pin.candidate) ? entry.pin.candidate : undefined) : entry.candidates.at(-1);
+  return entry.pin ? (entry.candidates.includes(entry.pin.candidate) ? entry.pin.candidate : undefined) : hasPinFile(entry) ? undefined : entry.candidates.at(-1);
 }
 
 /** Director brief and Writer strings -> the existing Studio specimen component's input. */
 export function recordSpecimenInput(consumer: string, agent: 'director' | 'writer', id: string, candidate?: string): RecordSpecimenInput | undefined {
   const entry = listSlots(consumer, agent).find(row => row.id === id);
   if (!entry) return undefined;
+  if (!entry.pin && hasPinFile(entry)) return undefined;
   const name = agent === 'director' ? entry.pin?.candidate : candidate ?? shownCandidate(entry);
   if (agent === 'director' && (!name || (candidate !== undefined && candidate !== name))) return undefined;
+  let doc: ReturnType<typeof checkedSlot>;
+  try { doc = checkedSlot(consumer, agent, entry); } catch { return undefined; }
   const empty = entry.candidates.length ? 'No pin' : 'No candidate';
   const out: RecordSpecimenInput = { kind: 'record', name: id, title: agent === 'director' ? 'Direction' : 'Strings', description: '', empty, rows: [] };
   if (!name) return out;
@@ -41,14 +58,10 @@ export function recordSpecimenInput(consumer: string, agent: 'director' | 'write
     if (agent === 'director') return undefined;
     throw error;
   }
-  if (agent === 'director') {
-    try {
-      const doc = readSlot(consumer, agent, id);
-      if (validateSlotDoc(doc).length || doc.id !== id || doc.agent !== agent || doc.kind !== 'brief'
-        || doc.ia.l0 !== entry.position.l0 || doc.ia.l1 !== entry.position.l1 || doc.ia.l2 !== entry.position.l2 || doc.ia.order !== entry.position.order
-        || source.sha256 !== entry.pin!.sha256 || validateCandidate('brief', id, name, source.bytes).length) return undefined;
-    } catch { return undefined; }
-  }
+  try {
+    if (validateCandidate(doc.kind, id, name, source.bytes).length) return undefined;
+    if (agent === 'director' && source.sha256 !== entry.pin!.sha256) return undefined;
+  } catch { return undefined; }
   if (entry.pin?.candidate === name && source.sha256 !== entry.pin.sha256) throw new Error(`Candidate hash mismatch: ${id}`);
   const parsed = parseFrontmatter(source.bytes);
   if (!parsed.ok) throw new Error(`Invalid record candidate: ${id}`);
@@ -88,11 +101,26 @@ export function slotGallery(consumer: string, agent: SlotAgent): { sections: Slo
     const candidate = shownCandidate(entry);
     const missing = !entry.candidates.length;
     let kind: SlotKind = agent === 'director' ? 'brief' : agent === 'writer' ? 'strings' : agent === 'designer' ? 'element' : 'page';
-    let failing = !!entry.pin && !candidate;
+    const pinPresent = hasPinFile(entry);
+    let failing = pinPresent && (!entry.pin || !candidate);
     let element: string | undefined;
     try {
-      kind = readSlot(consumer, agent, id).kind;
-      if (candidate && entry.pin && readCandidate(consumer, agent, id, candidate).sha256 !== entry.pin.sha256) failing = true;
+      kind = checkedSlot(consumer, agent, entry).kind;
+      if (candidate) {
+        const source = readCandidate(consumer, agent, id, candidate);
+        if (validateCandidate(kind, id, candidate, source.bytes).length || (entry.pin && source.sha256 !== entry.pin.sha256)) failing = true;
+        if (!failing && agent === 'writer') {
+          const parsed = parseFrontmatter(source.bytes);
+          if (!parsed.ok) failing = true;
+          else parseWriterSlotBody(parsed.value.body, parsed.value.fields.locales as readonly string[]);
+        }
+        if (!failing && agent === 'designer') {
+          const item = JSON.parse(source.bytes);
+          const name = candidate.replace(/-v\d+\.json$/, '');
+          if (item.name !== name || (item.meta?.element?.id !== undefined && item.meta.element.id !== name)
+            || (item.meta?.element?.slot !== undefined && item.meta.element.slot !== id)) failing = true;
+        }
+      }
       if (!failing && candidate && agent === 'designer' && entry.pin?.candidate === candidate) {
         const item = JSON.parse(readCandidate(consumer, agent, id, candidate).bytes);
         if (typeof item.name === 'string') element = item.name;
@@ -100,7 +128,7 @@ export function slotGallery(consumer: string, agent: SlotAgent): { sections: Slo
     } catch { failing = true; }
     target.cards.push({ id, slug: id, name: label(id), kind, version: candidate ? candidateVersion(candidate) : 0,
       status: failing ? 'failing' : missing ? 'missing' : entry.pin ? 'active' : 'draft', records: candidate && !failing ? 1 : 0,
-      excerpt: [], ...(candidate ? { candidate } : {}), ...(element ? { element, specimen: `${id}/${element}` } : {}), ...(missing || !entry.pin ? { emptyState: missing ? 'No candidate' as const : 'No pin' as const } : {}),
+      excerpt: [], ...(candidate ? { candidate } : {}), ...(element ? { element, specimen: `${id}/${element}` } : {}), ...(!failing && (missing || !entry.pin) ? { emptyState: missing ? 'No candidate' as const : 'No pin' as const } : {}),
       ...(!failing && ((agent === 'writer' && candidate && entry.pin?.candidate === candidate) || (agent === 'director' && recordSpecimenInput(consumer, agent, id, candidate))) ? { specimenUrl: recordSpecimenHref(agent, id, candidate) } : {}),
     });
   }

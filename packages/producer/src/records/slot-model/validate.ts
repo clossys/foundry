@@ -121,7 +121,7 @@ function validateStrings(fields: Record<string, unknown>, body: string, slot: st
   for (const key of Object.keys(fields)) if (!["slot", "locales", "source"].includes(key) && !(CANDIDATE_STATUS_KEYS as readonly string[]).includes(key) && !(LEGACY_PROVENANCE_KEYS as readonly string[]).includes(key)) fail(`unknown frontmatter key ${key}`);
   if (fields.slot !== slot) fail(`slot must be ${slot}`);
   if (!strings(fields.locales) || !fields.locales.length) { fail("locales must be a non-empty list"); return issues; }
-  const lines = body.split("\n");
+  const lines = body.split(/\r?\n/);
   const seen: string[] = [];
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
