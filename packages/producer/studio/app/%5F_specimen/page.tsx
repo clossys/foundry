@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import type { RecordSpecimenInput } from '../../../src/server/slot-gallery';
-import { SpecimenContent } from '../../sections/studio-specimen';
+import { SpecimenContent } from '../../components/RecordSpecimenView';
 
 /** Producer owns the record bytes; Studio supplies the existing shared specimen markup. */
 export default async function RecordSpecimenPage({ searchParams }: {

@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { PHASE_DEVELOPMENT_SERVER } from 'next/constants.js';
 import { checkPayload } from '../scripts/studio-payload.mjs';
 import { generateStudioMap } from '../scripts/generate-studio-map.mjs';
+import { previewOptionsFromEnvironment } from '../scripts/studio-draft-items.mjs';
 
 /** Only the payload check's two provenance mismatch outcomes are preview reports. */
 export function reportPreviewPayloadMismatch(error) {
@@ -20,13 +21,14 @@ const config = {
 };
 
 export default async function nextConfig(phase) {
+  const preview = await previewOptionsFromEnvironment();
   if (phase !== PHASE_DEVELOPMENT_SERVER) {
-    await generateStudioMap();
+    await generateStudioMap(preview);
     return config;
   }
   // Keep record, pin, reference, manifest and compiler checks; preview reports
   // every actual file/byte mismatch without claiming release qualification.
-  const projection = await generateStudioMap({ payloads: false });
+  const projection = await generateStudioMap({ payloads: false, ...preview });
   const library = fileURLToPath(new URL('../../../clossys/library/', import.meta.url));
   for (const item of projection.items) {
     const versionDir = join(library, item.slot, item.element, `v${item.version}`);

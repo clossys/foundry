@@ -17,7 +17,7 @@ export async function checkPayload(item) {
     .map(entry => entry.name).sort() : [];
   if (JSON.stringify(code) !== JSON.stringify(present)) fail(`${item.slot}: studio folder files [${present}] differ from the pinned payload [${code}]`);
   for (const file of code) {
-    const [stored, running] = await Promise.all([readFile(join(item.versionDir, file), 'utf8'), readFile(join(item.studioDir, file), 'utf8')]);
-    if (stored !== running) fail(`${item.slot}: ${file} differs from ${item.element} v${item.version} in the library`);
+    const [stored, running] = await Promise.all([readFile(join(item.versionDir, file)), readFile(join(item.studioDir, file))]);
+    if (!stored.equals(running)) fail(`${item.slot}: ${file} differs from ${item.element} v${item.version} in the library`);
   }
 }

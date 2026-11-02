@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { createHash, randomBytes } from 'node:crypto';
 import { checkClientBoundary } from './check-client-boundary.mjs';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -34,6 +35,30 @@ test('complete namespace graph includes unused exports and production/developmen
   assert.equal(report.graphs.length, 4);
   assert(report.graphs.every(graph => graph.inputs.length >= 1));
   assert(report.source.head.match(/^[a-f0-9]{40}$/));
+});
+test('source binding captures large binary diffs completely and refuses oversized or failed Git output', async t => {
+  const sourceRoot = fs.mkdtempSync(path.join(evidence, 'source-binding-'));
+  t.after(() => fs.rmSync(sourceRoot, { recursive: true, force: true }));
+  const git = args => execFileSync('git', ['-C', sourceRoot, ...args], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
+  git(['init', '--quiet']);
+  const payload = path.join(sourceRoot, 'payload.bin');
+  fs.writeFileSync(payload, Buffer.from([0]));
+  git(['add', 'payload.bin']);
+  git(['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.test', 'commit', '--quiet', '-m', 'Fixture baseline']);
+  const root = fixture('large-source-binding', { 'web.js': 'export const safe = 1;' });
+  fs.writeFileSync(payload, randomBytes(1024 * 1024));
+  const diff = git(['diff', 'HEAD', '--binary']);
+  assert(diff.includes('GIT binary patch'));
+  assert(Buffer.byteLength(diff) > 1024 * 1024);
+  let report;
+  await assert.doesNotReject(async () => { report = await checkClientBoundary(root, { repositoryRoot: sourceRoot }); },
+    'the complete binary diff above 1 MiB must fit the bounded Git capture');
+  assert.equal(report.exitCode, 0);
+  assert.equal(report.source.trackedDiffSha256, createHash('sha256').update(diff.trim()).digest('hex'));
+  fs.writeFileSync(payload, randomBytes(14 * 1024 * 1024));
+  assert(Buffer.byteLength(git(['diff', 'HEAD', '--binary'])) > 16 * 1024 * 1024);
+  await assert.rejects(checkClientBoundary(root, { repositoryRoot: sourceRoot }), error => error.code === 'ENOBUFS');
+  await assert.rejects(checkClientBoundary(root, { repositoryRoot: path.join(sourceRoot, 'missing') }), error => error.status === 128);
 });
 for (const [name, files, last] of [
   ['direct', { 'web.js': 'import "node:fs"; export const value = 1;' }, 'node:fs'],

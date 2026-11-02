@@ -1,4 +1,4 @@
-// Generated from pinned Foundry Publisher candidates and the Studio library selection. Run npm run generate:studio-map.
+// Generated Studio DRAFT preview from explicit native bindings; unapproved and not release qualified.
 import type { ContentMap, ContentMapPageAction } from '@clossys/publisher/content-map';
 import projection from './studio-map.json';
 

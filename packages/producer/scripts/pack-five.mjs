@@ -5,12 +5,13 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpath
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { assertPreviewContext, previewArguments } from './studio-draft-items.mjs';
 
 const producerRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = resolve(producerRoot, "../..");
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 
-const help = `Usage: node packages/producer/scripts/pack-five.mjs --out-dir <directory>
+const help = `Usage: node packages/producer/scripts/pack-five.mjs --out-dir <directory> [--preview-bindings FILE]
 
 Clean-build and npm pack Controller, the four mapped agents and Producer from this checkout.
 The output directory must be outside the checkout. Existing artifacts are never
@@ -20,10 +21,11 @@ reports studio.status=missing-source and complete=false (scaffold tarballs only)
 Build output goes to stderr; the final JSON summary goes to stdout and summary.json.
 For clean sources with built Studio, artifacts.json carries the source head/tree
 and paths with SHA-256/SHA-512 hashes. Other results have summary.json only.
+Explicit preview bindings produce a DRAFT/unapproved/not-release-qualified Studio artifact.
 `;
 
-function run(command, args, cwd = repoRoot) {
-  const result = spawnSync(command, args, { cwd, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+function run(command, args, cwd = repoRoot, env) {
+  const result = spawnSync(command, args, { cwd, env, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
   if (result.stderr) process.stderr.write(result.stderr);
   if (result.error) throw result.error;
   if (result.status !== 0) {
@@ -99,11 +101,12 @@ export function artifactManifest(source, packages, studio) {
   if (source.dirty !== false || studio.status !== "built" || !studio.serverEntry) {
     throw new Error("Artifact manifest requires clean source and completed Studio build.");
   }
-  return { schemaVersion: 1, head: source.head, tree: source.tree, source, complete: true, studio, artifacts: packages };
+  return { schemaVersion: 1, head: source.head, tree: source.tree, source, complete: true, studio, ...(studio.preview ? { preview: studio.preview } : {}), artifacts: packages };
 }
 
 async function main() {
-  const args = process.argv.slice(2);
+  const invocation = await previewArguments(process.argv.slice(2));
+  const args = invocation.args;
   if (args.length === 1 && ["--help", "-h"].includes(args[0])) {
     process.stdout.write(help);
     return;
@@ -169,7 +172,7 @@ async function main() {
       if (workspace.root === targets.find((target) => target.role === "writer")?.root) {
         args.push("--", "--report", join(reports, "writer-record-drift.json"));
       }
-      process.stderr.write(run(npm, args, workspace.root));
+      process.stderr.write(run(npm, args, workspace.root, invocation.env));
     }
   } finally {
     rmSync(reports, { recursive: true, force: true });
@@ -182,20 +185,21 @@ async function main() {
   if (hasStudioApp && hasStudioConfig) {
     const script = join(producerRoot, "scripts/build-studio.mjs");
     if (!existsSync(script)) throw new Error("Studio source exists but scripts/build-studio.mjs is missing.");
-    process.stderr.write(run(process.execPath, [script]));
+    process.stderr.write(run(process.execPath, [script, ...(invocation.bindingsPath ? ['--preview-bindings', invocation.bindingsPath] : [])], repoRoot, invocation.env));
     const studioRoot = join(producerRoot, "dist/studio");
     const manifest = JSON.parse(readFileSync(join(studioRoot, "manifest.json"), "utf8"));
     const entry = resolve(studioRoot, manifest.serverEntry ?? "");
     if (!manifest.serverEntry || !inside(studioRoot, entry) || !statSync(entry).isFile()) throw new Error("Studio manifest must name an existing standalone serverEntry inside dist/studio.");
-    studio = { status: "built", serverEntry: manifest.serverEntry };
-  }
+    assertPreviewContext(manifest.preview, invocation.descriptor);
+    studio = { status: "built", serverEntry: manifest.serverEntry, ...(manifest.preview ? { preview: manifest.preview } : {}) };
+  } else if (invocation.descriptor) throw new Error('Explicit Studio Draft preview requires Studio source.');
 
   mkdirSync(outDir, { recursive: true });
   const staging = mkdtempSync(join(outDir, ".pack-five-"));
   try {
     const packages = [];
     for (const target of targets) {
-      const packed = packResult(run(npm, ["pack", "--json", "--workspaces=false", "--pack-destination", staging], target.root));
+      const packed = packResult(run(npm, ["pack", "--json", "--workspaces=false", "--pack-destination", staging], target.root, invocation.env));
       if (packed.name !== target.manifest.name || packed.version !== target.manifest.version || packed.filename !== target.filename) throw new Error(`npm pack identity mismatch for ${target.manifest.name}.`);
       for (const entry of [target.manifest.main, target.manifest.types, ...Object.values(target.manifest.bin ?? {})].filter(Boolean)) {
         if (!packed.files?.some((file) => file.path === entry.replace(/^\.\//, ""))) throw new Error(`Tarball is missing ${target.manifest.name} entry: ${entry}`);

@@ -4,6 +4,7 @@ import { resolve, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readPinnedPublication } from '@clossys/publisher/content-map/slots';
 import { checkPayload } from './studio-payload.mjs';
+import { draftStudioItems, previewArguments, previewDescriptor, previewOptionsFromEnvironment } from './studio-draft-items.mjs';
 
 const studioRoot = fileURLToPath(new URL('../studio/', import.meta.url));
 const defaultClossysRoot = fileURLToPath(new URL('../../../clossys/', import.meta.url));
@@ -127,40 +128,76 @@ async function pinnedItem(clossysRoot, selection, slot) {
   return { slot, element: pin.element, version: pin.version, versionDir, payload: element.payload, studioDir: join(studioRoot, folder, pin.element), module: `../${folder}/${pin.element}` };
 }
 
-/** Project the dogfood Writer pins; an unpinned candidate or corrupt pin never becomes fallback copy. */
-export async function studioCopyRegistry(clossysRoot) {
+const STUDIO_COPY_PLACEMENTS = new Set([
+  'strings.metadata/metadata-descriptions/strings.descriptions',
+  'strings.interface/interface-statuses/strings.statuses',
+  'strings.interface/interface-field-labels/strings.common',
+  'strings.interface/interface-field-labels/strings.field-labels',
+]);
+const candidateVersion = name => /^[a-z0-9][a-z0-9.-]*-v([1-9][0-9]*)\.md$/.exec(name)?.[1];
+
+/** Pins remain authoritative. Only explicit preview may read an absent pin's newest draft. */
+export async function studioCopyRegistry(clossysRoot, { target, absentPin } = {}) {
+  if (absentPin !== undefined && (target !== 'preview' || absentPin !== 'newest-draft')) throw new Error('Studio Writer draft selection requires explicit newest-draft preview');
+  const previewDrafts = target === 'preview' && absentPin === 'newest-draft';
   const root = join(clossysRoot, 'agents/writer');
   let ia;
   try { ia = JSON.parse(await readFile(join(root, 'ia.json'), 'utf8')); }
   catch (error) { if (error.code !== 'ENOENT') throw error; ia = { nodes: [] }; }
-  const entries = [], revisions = [];
+  const entries = [], revisions = [], sources = [];
   for (const node of ia.nodes) for (const group of node.children) for (const slot of group.slots) {
-    if (!['strings.common', 'strings.statuses', 'strings.descriptions', 'strings.field-labels'].includes(slot)) continue;
-    const dir = join(root, node.id, group.id, slot);
-    let pin;
+    const placement = `${node.id}/${group.id}/${slot}`;
+    if (!STUDIO_COPY_PLACEMENTS.has(placement)) continue;
+    const dir = join(root, placement);
+    let pin, candidate, selectedBy;
     try { pin = JSON.parse(await readFile(join(dir, 'pin.json'), 'utf8')); }
-    catch (error) { if (error.code === 'ENOENT') continue; throw error; }
-    if (!/^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\.md$/.test(pin.candidate)) throw new Error(`Invalid Studio Writer pin: ${slot}`);
-    const bytes = await readFile(join(dir, 'candidates', pin.candidate), 'utf8');
-    if (createHash('sha256').update(bytes).digest('hex') !== pin.sha256) throw new Error(`Studio Writer pin hash mismatch: ${slot}`);
-    revisions.push(pin.sha256);
+    catch (error) { if (error.code !== 'ENOENT') throw error; }
+    if (pin !== undefined) {
+      if (!object(pin) || !candidateVersion(pin.candidate)) throw new Error(`Invalid Studio Writer pin: ${slot}`);
+      candidate = pin.candidate;
+      selectedBy = 'pin';
+    } else {
+      if (!previewDrafts) continue;
+      const candidates = (await readdir(join(dir, 'candidates'))).filter(name => name.endsWith('.md')).map(name => {
+        const version = candidateVersion(name);
+        if (!version) throw new Error(`Invalid Studio Writer draft candidate: ${placement}/${name}`);
+        return { name, version: BigInt(version) };
+      });
+      if (!candidates.length) throw new Error(`No Studio Writer draft candidate: ${placement}`);
+      const newest = candidates.reduce((latest, row) => row.version > latest ? row.version : latest, 0n);
+      const matches = candidates.filter(row => row.version === newest);
+      if (matches.length !== 1) throw new Error(`Ambiguous Studio Writer draft version: ${placement}/v${newest}`);
+      candidate = matches[0].name;
+      selectedBy = 'absent-pin-preview';
+    }
+    const content = await readFile(join(dir, 'candidates', candidate));
+    const sha256 = createHash('sha256').update(content).digest('hex');
+    const bytes = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(content);
+    if (pin !== undefined && sha256 !== pin.sha256) throw new Error(`Studio Writer pin hash mismatch: ${slot}`);
+    revisions.push(sha256);
+    sources.push({ placement, candidate, version: candidateVersion(candidate), sha256, selectedBy });
     if (!bytes.startsWith('---\n') || !bytes.includes('\nlocales: ["en"]\n')) throw new Error(`Invalid Studio Writer locale: ${slot}`);
     const records = bytes.split(/^### /m).slice(1);
+    if (!records.length) throw new Error(`Invalid Studio Writer records: ${slot}`);
     for (const record of records) {
       const match = /^([^\n]+)\n<!-- (.+) -->\n([\s\S]*)$/.exec(record);
       if (!match) throw new Error(`Invalid Studio Writer record: ${slot}`);
       const meta = JSON.parse(match[2]);
-      if (typeof meta.id !== 'string' || !meta.id.startsWith('studio.')) continue;
+      if (!object(meta) || typeof meta.id !== 'string') throw new Error(`Invalid Studio Writer metadata: ${slot}`);
+      if (!meta.id.startsWith('studio.')) continue;
       if (!Array.isArray(meta.bindings) || !meta.bindings.every(binding => typeof binding === 'string')) throw new Error(`Invalid Studio Writer bindings: ${meta.id}`);
       if (entries.some(row => row.id === meta.id)) throw new Error(`Duplicate Studio Writer copy: ${meta.id}`);
       entries.push({ id: meta.id, text: match[3].replace(/\n\n?$/, ''), context: meta.bindings.join(', '), status: 'draft' });
     }
   }
-  return { id: 'studio-copy', locale: 'en', revision: createHash('sha256').update(revisions.join('')).digest('hex'),
-    source: { kind: 'consumer', reference: 'clossys/agents/writer' }, entries };
+  const reference = previewDrafts ? `clossys/agents/writer#${JSON.stringify(sources)}` : 'clossys/agents/writer';
+  const revision = previewDrafts ? JSON.stringify(sources) : revisions.join('');
+  return { id: 'studio-copy', locale: 'en', revision: createHash('sha256').update(revision).digest('hex'),
+    source: { kind: 'consumer', reference }, entries };
 }
 
-export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outputDir = resolve(studioRoot, 'generated'), check = false, payloads = true } = {}) {
+export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outputDir = resolve(studioRoot, 'generated'), check = false, payloads = true, target, previewItems } = {}) {
+  if ((target !== undefined && target !== 'preview') || (target !== 'preview' && previewItems !== undefined)) fail('Draft bindings require an explicit preview target');
   const publisherRoot = join(clossysRoot, 'agents', 'publisher');
   const { map, routePack } = await readPinnedPublication(publisherRoot, 'studio');
   if (!routePack) fail('the studio publication has no route metadata');
@@ -173,23 +210,27 @@ export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outp
     if (!route) fail(`${entry.id} has no Route metadata`);
     return assemblyOf(entry, route, contracts);
   });
-  const selection = await readJson(join(clossysRoot, 'selection.json'));
   const manifestSlots = manifest => manifest.modules.map(module => module.section);
   const slots = [...new Set(pages.flatMap(page => [page.frameId, ...page.sectionIds, ...(page.leaf?.sectionIds ?? []), ...manifestSlots(page.manifest), ...(page.leaf ? manifestSlots(page.leaf.manifest) : [])]))];
-  const items = [];
-  for (const slot of slots) items.push(await pinnedItem(clossysRoot, selection, slot));
+  const items = target === 'preview' ? await draftStudioItems(clossysRoot, studioRoot, previewItems, slots) : [];
+  if (target !== 'preview') {
+    const selection = await readJson(join(clossysRoot, 'selection.json'));
+    for (const slot of slots) items.push(await pinnedItem(clossysRoot, selection, slot));
+  }
   if (payloads) for (const item of items) await checkPayload(item);
   const frames = items.filter(item => item.slot.startsWith('frames.'));
   const sections = items.filter(item => item.slot.startsWith('sections.'));
   const projection = {
     publicationId: map.publicationId, homeId: routePack.homeRouteId, root, map, pages,
-    items: items.map(item => ({ slot: item.slot, element: item.element, version: item.version })),
+    ...(target === 'preview' ? { assembly: previewDescriptor(previewItems) } : {}),
+    items: items.map(item => ({ slot: item.slot, element: item.element, version: item.version, ...(item.previewEvidence ? { previewEvidence: item.previewEvidence } : {}) })),
     // Page module actions per page, for the selected-runtime module census.
     pageActions: Object.fromEntries(map.entries.filter(entry => entry.kind === 'page').map(entry => [entry.id, entry.actions ?? []])),
     // Every page renders through the one generic App Router page.
     routes: pages.map(page => ({ instanceId: page.id, path: page.path, label: page.title, entry: { file: 'studio/app/[[...route]]/page.tsx', export: 'default' } })),
   };
-  const module = `${banner}import type { ContentMap, ContentMapPageAction } from '@clossys/publisher/content-map';
+  const assemblyBanner = target === 'preview' ? '// Generated Studio DRAFT preview from explicit native bindings; unapproved and not release qualified.\n' : banner;
+  const module = `${assemblyBanner}import type { ContentMap, ContentMapPageAction } from '@clossys/publisher/content-map';
 import projection from './studio-map.json';
 
 /** One page module: a header icon whose popover places a pinned module section, fed from a named source. */
@@ -213,22 +254,22 @@ export type StudioPageAction = ContentMapPageAction;
 export const studioPageActions = projection.pageActions as unknown as Readonly<Record<string, readonly ContentMapPageAction[]>>;
 export const studioAgents = studioMap.entries.filter(row => row.kind === 'page' && row.parentId === 'agents').sort((a, b) => a.order - b.order).map(row => ({ id: row.id, label: row.title }));
 `;
-  const bindings = `${banner}import type { ComponentType } from 'react';
+  const bindings = `${assemblyBanner}import type { ComponentType } from 'react';
 import type { StudioShellProps } from '../frames/studio-shell';
 ${frames.map((item, i) => `import Frame${i} from ${JSON.stringify(item.module)};`).join('\n')}
 ${sections.map((item, i) => `import Section${i} from ${JSON.stringify(item.module)};`).join('\n')}
 
-/** Pinned page frame per frame slot. */
+/** ${target === 'preview' ? 'Draft preview' : 'Pinned'} page frame per frame slot. */
 export const studioFrames: Record<string, ComponentType<StudioShellProps>> = {
 ${frames.map((item, i) => `  ${JSON.stringify(item.slot)}: Frame${i},`).join('\n')}
 };
-/** Pinned section per section slot; each takes one prop, named by its contract input. */
+/** ${target === 'preview' ? 'Draft preview' : 'Pinned'} section per section slot; each takes one prop, named by its contract input. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- each section types its own input; the assembly binds it by name.
 export const studioSections: Record<string, ComponentType<any>> = {
 ${sections.map((item, i) => `  ${JSON.stringify(item.slot)}: Section${i},`).join('\n')}
 };
 `;
-  const files = { 'studio-copy.json': json(await studioCopyRegistry(clossysRoot)), 'studio-map.json': json(projection), 'studio-map.ts': module, 'assembly-bindings.ts': bindings };
+  const files = { 'studio-copy.json': json(await studioCopyRegistry(clossysRoot, { target: 'preview', absentPin: 'newest-draft' })), 'studio-map.json': json(projection), 'studio-map.ts': module, 'assembly-bindings.ts': bindings };
   if (check && (await readdir(outputDir)).some(name => !Object.hasOwn(files, name))) throw new Error('Unexpected file in generated Studio projection');
   if (!check) {
     await mkdir(outputDir, { recursive: true });
@@ -245,5 +286,7 @@ ${sections.map((item, i) => `  ${JSON.stringify(item.slot)}: Section${i},`).join
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  await generateStudioMap({ check: process.argv.includes('--check') });
+  const invocation = await previewArguments(process.argv.slice(2));
+  const preview = invocation.options.target ? invocation.options : await previewOptionsFromEnvironment();
+  await generateStudioMap({ check: invocation.args.includes('--check'), ...preview });
 }

@@ -52,7 +52,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "node scripts/generate-studio-map.mjs && tsc -p tsconfig.json && node scripts/generate-page-check-receipt.mjs",
+    "build": "tsc -p tsconfig.json && node scripts/generate-studio-map.mjs && node scripts/generate-page-check-receipt.mjs",
     "generate:studio-map": "node scripts/generate-studio-map.mjs",
     "check:studio-map": "node studio/checks/check-studio-map.cjs",
     "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
@@ -64,28 +64,30 @@
     "studio:compose": "node scripts/compose-studio.mjs"
   },
   "dependencies": {
-    "@tailwindcss/oxide": "4.3.3",
-    "@clossys/strategist": "0.6.0",
     "@clossys/designer": "0.12.0",
-    "@clossys/writer": "0.6.0",
     "@clossys/publisher": "0.13.0",
+    "@clossys/strategist": "0.6.0",
+    "@clossys/writer": "0.6.0",
+    "@tailwindcss/oxide": "4.3.3",
     "esbuild": "0.28.2",
     "next": "16.4.1",
     "react": "19.3.0",
-    "react-dom": "19.3.0",
     "react-aria-components": "1.21.1",
+    "react-dom": "19.3.0",
     "shadcn": "4.23.0",
     "tailwind-merge": "3.7.0",
     "tailwindcss": "4.3.3"
   },
   "devDependencies": {
+    "@clossys/designer-ui": "0.0.0",
     "@tailwindcss/postcss": "4.3.3",
+    "@types/jsdom": "21.1.7",
     "@types/node": "^26.6.3",
-    "typescript": "~6.0.0",
-    "vitest": "^5.0.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@clossys/designer-ui": "0.0.0"
+    "jsdom": "26.1.0",
+    "typescript": "~6.0.0",
+    "vitest": "^5.0.1"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",
