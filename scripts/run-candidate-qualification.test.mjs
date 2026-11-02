@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { promisify } from "node:util";
+import { loadReleaseCatalog } from "./check-release-catalog.mjs";
 import { validateReleaseQualificationContract, validateReleaseQualificationPolicy, validateReleaseQualificationPortfolio } from "./lib/release-qualification-contract.mjs";
 
 const execFile = promisify(execFileCallback);
@@ -98,9 +99,9 @@ test("repository Trio policy, adapters, and current-candidate fixtures bind the 
   assert.notEqual(duplicateVersion, controllerVersion);
 });
 
-test("every publishable package is exact-source bound to the catalogue and qualification policy", async () => {
+test("qualification covers every publishable package while release order covers the approved target", async () => {
   const policy = await repositoryJson("governance/release-qualification-policy.json");
-  const catalog = await repositoryJson("governance/release-catalog.json");
+  const catalog = loadReleaseCatalog({ path: fileURLToPath(new URL("../governance/release-catalog.json", import.meta.url)) });
 
   const packageKeys = (await readdir(new URL("../packages", import.meta.url))).sort();
   const manifests = await Promise.all(packageKeys.map((key) => repositoryJson(`packages/${key}/package.json`)));
@@ -125,6 +126,7 @@ test("every publishable package is exact-source bound to the catalogue and quali
   const sourceNames = new Set(manifests.map((manifest) => manifest.name));
   for (const manifest of manifests) {
     const key = manifest.name.split("/")[1];
+    if (!releasePosition.has(key)) continue;
     const firstPartyDependencies = Object.keys({
       ...manifest.dependencies,
       ...manifest.optionalDependencies,
@@ -167,9 +169,9 @@ test("every publishable package is exact-source bound to the catalogue and quali
   });
 });
 
-test("portfolio closure fails when policy or catalogue omits one source package", async () => {
+test("qualification requires every source package independently of release admission", async () => {
   const policy = await repositoryJson("governance/release-qualification-policy.json");
-  const catalog = await repositoryJson("governance/release-catalog.json");
+  const catalog = loadReleaseCatalog({ path: fileURLToPath(new URL("../governance/release-catalog.json", import.meta.url)) });
   const manifests = await Promise.all((await readdir(new URL("../packages", import.meta.url))).sort().map((key) => repositoryJson(`packages/${key}/package.json`)));
   const target = catalog.targets.find((item) => item.id === catalog.defaultTarget);
   assert.deepEqual(validateReleaseQualificationPortfolio({ policy, manifests, releasePackages: target.packages }), []);
@@ -177,6 +179,24 @@ test("portfolio closure fails when policy or catalogue omits one source package"
     const missingPolicy = structuredClone(policy);
     delete missingPolicy.packages[`@clossys/${key}`];
     assert.deepEqual(validateReleaseQualificationPortfolio({ policy: missingPolicy, manifests, releasePackages: target.packages }).map((item) => item.rule), ["portfolio-policy"], key);
-    assert.deepEqual(validateReleaseQualificationPortfolio({ policy, manifests, releasePackages: target.packages.filter((item) => item !== key) }).map((item) => item.rule), ["portfolio-catalog"], key);
+  }
+  assert.ok(policy.packages["@clossys/producer"]);
+  assert.ok(!target.packages.includes("producer"));
+  for (const packages of [target.packages.filter((key) => key !== "observer"), [...target.packages, "producer"]]) {
+    const changedCatalog = structuredClone(catalog);
+    changedCatalog.targets.find((item) => item.id === changedCatalog.defaultTarget).packages = packages;
+    assert.throws(() => loadReleaseCatalog({ path: "catalog.json", readFile: () => JSON.stringify(changedCatalog) }), /exact dependency-ordered all-package public-npm allowlist/);
+  }
+});
+
+test("qualification portfolio rejects unknown, private, duplicate, empty, or missing release members", async () => {
+  const policy = await repositoryJson("governance/release-qualification-policy.json");
+  const catalog = loadReleaseCatalog({ path: fileURLToPath(new URL("../governance/release-catalog.json", import.meta.url)) });
+  const manifests = await Promise.all((await readdir(new URL("../packages", import.meta.url))).sort().map((key) => repositoryJson(`packages/${key}/package.json`)));
+  manifests.push({ name: "@example/private-package", private: true });
+  const target = catalog.targets.find((item) => item.id === catalog.defaultTarget);
+  assert.deepEqual(validateReleaseQualificationPortfolio({ policy, manifests, releasePackages: target.packages }), []);
+  for (const releasePackages of [[...target.packages, "not-a-package"], [...target.packages, "private-package"], [...target.packages, target.packages[0]], [], undefined, "all"]) {
+    assert.deepEqual(validateReleaseQualificationPortfolio({ policy, manifests, releasePackages }).map((item) => item.rule), ["portfolio-catalog"]);
   }
 });

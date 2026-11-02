@@ -10,6 +10,7 @@ import { argsFrom, assertEvidenceNpmFloor, buildLaterPublicationRecord, createLa
 import { buildPublicationRecordWithFallback, verifyPublicationProvenance } from "./lib/publication-evidence-run.mjs";
 import { comparableTranscriptSha256, currentQualificationJoins } from "./lib/candidate-qualification.mjs";
 import { publicNpmVersionUrl, PUBLIC_NPM_REGISTRY } from "./lib/public-npm-registry.mjs";
+import { makeTmpDirSync } from "./lib/tmp-fixture.mjs";
 
 const hex = (value, length) => value.repeat(length);
 const digest = (algorithm, value) => createHash(algorithm).update(value).digest("hex");
@@ -242,8 +243,7 @@ test("creator writes one canonical owner-present record in a synthetic git repos
 // returns that repository without calling the creator, so a caller can drive
 // the real fallback with the same fixture.
 async function replayScenario(t, { driftFiles = ["package.json", "package-lock.json"], packageChange = false, expectRecord = true, refusal, changedTarball = false, prepareOnly = false, npmVersion = "11.17.0\n", env = {}, isExecutable = anyExecutable } = {}) {
-  const root = realpathSync(mkdtempSync(join(tmpdir(), "record-later-publication-replay-e2e-")));
-  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const root = makeTmpDirSync(t, "record-later-publication-replay-e2e-");
   const sourceRoot = process.cwd();
   const copied = [
     "package.json", "package-lock.json", "package-scope.json", "governance/release-catalog.json",
