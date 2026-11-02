@@ -23,7 +23,7 @@ describe("fresh check invocation context", () => {
     expect(findings.some(finding => finding.code === "A3" && finding.severity === "error")).toBe(true);
     const identity = structuredClone(complete);
     tokenAt(identity, "assets.favicon.vector").$value = '<svg viewBox="0 0 24 24"><path d="M0 0"/></svg>';
-    expect(check({ catalog, library: identity, valueOptions: { assetScope: "adopted" } }).findings.some(finding => finding.code === "C10" && finding.message.includes("identity output differs"))).toBe(true);
+    expect(check({ catalog, library: identity, valueOptions: { assetScope: "adopted" } }).findings.some(finding => finding.code === "A12" && finding.subject === "assets.identity" && finding.severity === "error" && finding.message.includes("identity output differs"))).toBe(true);
   });
 
   it("resolves the actual library once while checking every saved identity derivation", () => {
@@ -69,7 +69,7 @@ describe("fresh check invocation context", () => {
     origin.inputsHash = derivationInputsHash(catalog, library, origin.inputs);
     expect(errors(catalog, library).some(finding => finding.code === "C10" && finding.message.includes("declared inputs"))).toBe(true);
     token.$value = '<svg viewBox="0 0 24 24"><path d="M0 0"/></svg>';
-    expect(errors(catalog, library).some(finding => finding.message.includes("identity output differs"))).toBe(true);
+    expect(errors(catalog, library).some(finding => finding.code === "A12" && finding.subject === "assets.identity" && finding.message.includes("identity output differs"))).toBe(true);
   });
 
   it("keeps dark input changes stale and rechecks mutable rule registration", () => {
@@ -87,6 +87,8 @@ describe("fresh check invocation context", () => {
     const library = structuredClone(complete);
     const supplied = resolve({ catalog, library });
     tokenAt(library, "assets.favicon.vector").$value = '<svg viewBox="0 0 24 24"><path d="M0 0"/></svg>';
-    expect(checkAssetProfile(catalog, library, { resolved: supplied }).some(finding => finding.verdict === "violated" && finding.message.includes("identity output differs"))).toBe(true);
+    const refused = checkAssetProfile(catalog, library, { resolved: supplied });
+    expect(refused.some(finding => finding.code === "A12" && finding.subject === "assets.identity" && finding.verdict === "violated" && finding.message.includes("identity output differs"))).toBe(true);
+    expect(refused.some(finding => finding.code === "A12" && finding.subject === "assets.resolution" && finding.verdict === "violated")).toBe(true);
   });
 });
