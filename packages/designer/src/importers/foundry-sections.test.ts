@@ -94,6 +94,21 @@ describe("Foundry section package descriptors", () => {
     expect(docs.find(doc => doc.slot === "sections.comparison")!.configs).toEqual({ arrangement: "grid" });
   });
 
+  it("maps Hero supporting copy through optional dotted ports without widening the required heading", () => {
+    const contract = slots.find(slot => slot.id === "sections.hero")!.contract;
+    expect(contract.slots.find(slot => slot.name === "header")).toEqual({ name: "header", type: "region", required: true });
+    for (const name of ["header.eyebrow", "header.description"]) expect(contract.slots.find(slot => slot.name === name)).toEqual({ name, type: "copy", required: false });
+    const descriptor = imported().fills.find(fill => fill.$extensions["com.clossys.fill"].slot === "sections.hero")!.sections.hero!;
+    expect(descriptor.slotMap.header).toBe("./blocks#Hero.heading");
+    expect(descriptor.slotMap["header.eyebrow"]).toBe("./blocks#Hero.eyebrow");
+    expect(descriptor.slotMap["header.description"]).toBe("./blocks#Hero.description");
+    expect(contract.copy.fields.filter(field => ["header.heading", "header.eyebrow", "header.description"].includes(field.key))).toEqual([
+      { key: "header.heading", kind: "plain", required: true, maxLength: { en: 160 }, dir: "auto" },
+      { key: "header.eyebrow", kind: "plain", required: false, maxLength: { en: 120 }, dir: "auto" },
+      { key: "header.description", kind: "plain", required: false, maxLength: { en: 480 }, dir: "auto" },
+    ]);
+  });
+
   it("maps the ContentSection summary aside and retains its optional Card and authored copy contract", () => {
     const result = imported();
     const row = result.coverage.find(candidate => candidate.slot === "sections.content")!;
