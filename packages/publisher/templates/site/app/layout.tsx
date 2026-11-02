@@ -5,6 +5,7 @@ import { errorCopyIds, requireCopy, siteFrameCopyIds } from "./site-copy";
 import { SiteCopyProvider } from "./site-copy-context";
 import { createSiteCopyResolver, loadBrandFacts, siteLocale, siteOrigin, siteTarget } from "./site-records";
 import "./globals.css";
+import { nativeFontVariables } from "../src/clossys/fonts";
 
 // Reads brand tokens from clossys/designer/brand.css at build time — the
 // repository's own file, never copied into this template. See this
@@ -33,7 +34,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   const errorCopy = requireCopy(createSiteCopyResolver(siteTarget()), [...errorCopyIds(), ...siteFrameCopyIds()]);
   const { brandLabel, entity } = loadBrandFacts();
   return (
-    <html lang={siteLocale()} data-brand-bound suppressHydrationWarning>
+    <html lang={siteLocale()} data-brand-bound className={nativeFontVariables} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: getThemeInitScript() }} />
       </head>
