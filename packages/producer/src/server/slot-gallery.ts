@@ -2,7 +2,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { listSlots, readCandidate, readIa, readSlot, type SlotEntry } from '../records/slots.js';
-import { iaPath, parseFrontmatter, validateCandidate, validateSlotDoc, type SlotAgent, type SlotKind } from '../records/slot-model/index.js';
+import { CANDIDATE_NAME, iaPath, parseFrontmatter, validateCandidate, validateSlotDoc, type SlotAgent, type SlotKind } from '../records/slot-model/index.js';
 import { parseWriterSlotBody } from '@clossys/writer/slot-body';
 
 export type SlotEmptyState = 'No candidate' | 'No pin';
@@ -91,13 +91,25 @@ export function slotGallery(consumer: string, agent: SlotAgent): { sections: Slo
     let failing = !!entry.pin && !candidate;
     let element: string | undefined;
     try {
-      kind = readSlot(consumer, agent, id).kind;
-      if (candidate && entry.pin && readCandidate(consumer, agent, id, candidate).sha256 !== entry.pin.sha256) failing = true;
-      if (!failing && candidate && agent === 'designer' && entry.pin?.candidate === candidate) {
-        const item = JSON.parse(readCandidate(consumer, agent, id, candidate).bytes);
-        if (typeof item.name === 'string') element = item.name;
+      const doc = readSlot(consumer, agent, id);
+      if (validateSlotDoc(doc).length || doc.id !== id || doc.agent !== agent
+        || doc.ia.l0 !== entry.position.l0 || doc.ia.l1 !== entry.position.l1 || doc.ia.l2 !== entry.position.l2 || doc.ia.order !== entry.position.order) failing = true;
+      else kind = doc.kind;
+      if (candidate && !failing) {
+        const source = readCandidate(consumer, agent, id, candidate);
+        if (validateCandidate(kind, id, candidate, source.bytes).length || (entry.pin && source.sha256 !== entry.pin.sha256)) failing = true;
+        if (!failing && agent === 'designer' && kind === 'element') {
+          const item = JSON.parse(source.bytes);
+          const name = CANDIDATE_NAME.exec(candidate)![1]!;
+          if (item.name !== name || (item.meta?.element?.id !== undefined && item.meta.element.id !== name)
+            || (item.meta?.element?.slot !== undefined && item.meta.element.slot !== id)) failing = true;
+          else if (entry.pin?.candidate === candidate) element = name;
+        }
       }
-    } catch { failing = true; }
+    } catch (error) {
+      if (['EACCES', 'EPERM'].includes((error as NodeJS.ErrnoException).code ?? '')) throw error;
+      failing = true;
+    }
     target.cards.push({ id, slug: id, name: label(id), kind, version: candidate ? candidateVersion(candidate) : 0,
       status: failing ? 'failing' : missing ? 'missing' : entry.pin ? 'active' : 'draft', records: candidate && !failing ? 1 : 0,
       excerpt: [], ...(candidate ? { candidate } : {}), ...(element ? { element, specimen: `${id}/${element}` } : {}), ...(missing || !entry.pin ? { emptyState: missing ? 'No candidate' as const : 'No pin' as const } : {}),

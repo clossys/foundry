@@ -5,12 +5,13 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { agentGallery } from './agent-library.js';
 import { designerGallery } from './designer-library.js';
 import { recordSpecimens } from './record-specimens.js';
 import { recordSpecimenInput, slotGallery } from './slot-gallery.js';
-import { serializeFrontmatter, slotPositions, type IaDoc, type SlotDoc } from '../records/slot-model/index.js';
+import { serializeFrontmatter, slotPositions, validateCandidate, type IaDoc, type SlotDoc, type SlotKind } from '../records/slot-model/index.js';
+import * as slotReader from '../records/slots.js';
 import { sha256Hex } from '../records/hash.js';
 import { agentGalleryLayers } from '../../studio/lib/agent-library';
 import { designerGalleryLayers } from '../../studio/lib/designer-library';
@@ -39,6 +40,64 @@ function writerRecordFixture(body: string, locales: readonly string[] = ['en']) 
 }
 
 describe('IA-first gallery data', () => {
+
+  it.each(['director', 'designer', 'writer', 'publisher'] as const)('keeps every %s IA card while rejecting invalid native records and slot metadata', async agent => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), 'gallery-native-validation-')));
+    const consumer = join(root, 'clossys');
+    try {
+      const wanted = ['records.healthy', 'records.bad-candidate', 'records.foreign-id', 'records.foreign-agent', 'records.position-l0', 'records.position-l1', 'records.position-l2', 'records.position-order', 'records.bad-doc', 'records.absent', 'records.empty'];
+      const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic-test-only#F3-gallery-validation', extensions: [],
+        nodes: [{ id: 'one', label: 'One', children: [{ id: 'two', label: 'Two', slots: wanted }] }] };
+      mkdirSync(join(consumer, 'agents', agent), { recursive: true });
+      writeFileSync(join(consumer, 'agents', agent, 'ia.json'), JSON.stringify(ia));
+      const kind: SlotKind = agent === 'director' ? 'brief' : agent === 'writer' ? 'strings' : agent === 'designer' ? 'element' : 'page';
+      const candidate = kind === 'brief' || kind === 'strings' ? 'record-v1.md' : 'record-v1.json';
+      for (const id of wanted) {
+        if (id === 'records.absent') continue;
+        const dir = join(consumer, 'agents', agent, 'one/two', id);
+        mkdirSync(join(dir, 'candidates'), { recursive: true });
+        const position = slotPositions(agent, ia).get(id)!;
+        const doc: SlotDoc = { schema: 'clossys.slot/1', id, agent, ia: position, kind, contract: {}, inputs: [], uses: [] };
+        writeFileSync(join(dir, 'slot.json'), JSON.stringify({ ...doc,
+          ...(id === 'records.foreign-id' ? { id: 'foreign.slot' } : {}),
+          ...(id === 'records.foreign-agent' ? { agent: agent === 'writer' ? 'director' : 'writer' } : {}),
+          ...(id.startsWith('records.position-') ? { ia: { ...position, [id.slice('records.position-'.length)]: id.endsWith('-order') ? position.order + 1 : 'foreign' } } : {}),
+          ...(id === 'records.bad-doc' ? { schema: 'invalid' } : {}),
+        }));
+        if (id === 'records.empty') continue;
+        const source = { kind: 'original', ref: [] };
+        const valid = kind === 'brief' ? serializeFrontmatter({ slot: id, source, feeds: [], functions: [] }, '## Direction\nDemand\n## Because\nEvidence\n## Watch\nSignals')
+          : kind === 'strings' ? serializeFrontmatter({ slot: id, source, locales: ['en'] }, '## en\n### greeting\n<!-- {"id":"greeting","bindings":[]} -->\nHello\n')
+          : JSON.stringify(kind === 'element' ? { name: 'record', type: 'registry:component', files: [{ path: 'index.tsx', type: 'registry:component', content: 'export default function Example() { return null; }' }], meta: { source } }
+            : { schema: 'clossys.page/1', title: 'Example', path: '/', frame: null, sections: [], copy: {}, meta: { source } });
+        expect(validateCandidate(kind, id, candidate, valid)).toEqual([]);
+        const bytes = id === 'records.bad-candidate' ? 'not a native candidate' : valid;
+        writeFileSync(join(dir, 'candidates', candidate), bytes);
+        writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate, sha256: sha256Hex(bytes), pinnedBy: 'owner:synthetic-test-only:F3-gallery-validation', at: '2026-01-01T00:00:00Z' }));
+      }
+      const gallery = slotGallery(consumer, agent);
+      expect(ids(gallery.sections)).toEqual(wanted);
+      expect(gallery.count).toBe(wanted.length);
+      const cards = gallery.sections.flatMap(section => section.cards);
+      expect(cards[0]).toMatchObject({ status: 'active', records: 1, candidate, version: 1 });
+      for (const card of cards.slice(1, -1)) {
+        expect(card).toMatchObject({ status: 'failing', records: 0 });
+        expect(card.specimen).toBeUndefined();
+        expect(card.specimenUrl).toBeUndefined();
+      }
+      expect(cards.at(-1)).toMatchObject({ status: 'missing', records: 0, emptyState: 'No candidate' });
+      const projected = agent === 'designer' ? designerGallery(consumer) : await agentGallery(root, agent);
+      expect(ids(projected!.sections)).toEqual(wanted);
+      const layers = agent === 'designer' ? designerGalleryLayers({ state: 'ready', ...projected! } as never, 'light', noRoutes)
+        : agentGalleryLayers({ state: 'ready', ...projected! } as never, noRoutes);
+      expect(layers.flatMap(layer => layer.groups.flatMap(group => group.cards.map(card => card.key)))).toEqual(wanted);
+      for (const method of ['readSlot', 'readCandidate'] as const) for (const code of ['EACCES', 'EPERM']) {
+        const error = Object.assign(new Error('Candidate cannot be read'), { code });
+        const read = vi.spyOn(slotReader, method).mockImplementationOnce(() => { throw error; });
+        try { expect(() => slotGallery(consumer, agent)).toThrow(error); } finally { read.mockRestore(); }
+      }
+    } finally { rmSync(root, { recursive: true, force: true }); }
+  });
 
   it('preserves native Writer empty text, escaped structural lines, locale order and full textless payloads', async () => {
     const context = '  exact.context  ';
@@ -100,7 +159,7 @@ describe('IA-first gallery data', () => {
           kind: 'element', contract: {}, inputs: [], uses: [],
         } satisfies SlotDoc));
         if (id === 'components.empty') continue;
-        const content = id === 'components.bad' ? bytes : JSON.stringify({ name: 'healthy' });
+        const content = id === 'components.bad' ? bytes : JSON.stringify({ name: 'element', type: 'registry:component', files: [{ path: 'index.tsx', type: 'registry:component', content: 'export default function Example() { return null; }' }], meta: { source: { kind: 'original', ref: [] } } });
         writeFileSync(join(dir, 'candidates/element-v1.json'), content);
         writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: 'element-v1.json', sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:gallery-malformed', at: '2026-01-01T00:00:00Z' }));
         if (id === 'components.bad') writeFileSync(join(dir, 'candidates/element-v2.json'), JSON.stringify({ name: 'newer' }));
@@ -114,7 +173,7 @@ describe('IA-first gallery data', () => {
       expect(cards[1]!.element).toBeUndefined();
       expect(cards[1]!.specimen).toBeUndefined();
       expect(cards[1]!.specimenUrl).toBeUndefined();
-      expect(cards[2]).toMatchObject({ id: wanted[2], status: 'active', element: 'healthy', specimen: 'components.healthy/healthy', records: 1 });
+      expect(cards[2]).toMatchObject({ id: wanted[2], status: 'active', element: 'element', specimen: 'components.healthy/element', records: 1 });
       expect(cards[3]).toMatchObject({ id: wanted[3], status: 'failing', emptyState: 'No candidate', records: 0 });
       const designer = designerGallery(root);
       expect(designer.count).toBe(wanted.length);
@@ -138,7 +197,7 @@ describe('IA-first gallery data', () => {
       const dir = join(root, 'agents/designer/components/controls/components.example');
       const content = JSON.stringify({ name: 'example', type: 'registry:component', files: [{ path: 'index.tsx', type: 'registry:component', content: 'export default function Example() { return null; }' }], meta: { source: { kind: 'original', ref: [] } } });
       writeFileSync(join(dir, 'candidates/example-v1.json'), content);
-      writeFileSync(join(dir, 'candidates/example-v2.json'), content.replace('"example"', '"newer"'));
+      writeFileSync(join(dir, 'candidates/example-v2.json'), content.replace('return null', 'return <div />'));
       const pin = { candidate: 'example-v1.json', sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:designer-pin', at: '2026-01-01T00:00:00Z' };
       const layers = () => designerGalleryLayers({ state: 'ready', ...designerGallery(root) }, 'light', noRoutes);
       const assertNoPreview = (noPin: boolean) => {
