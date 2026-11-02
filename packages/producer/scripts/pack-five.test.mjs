@@ -82,3 +82,12 @@ test("snapshot binds HEAD to the measured Git tree and retains dirty source dete
   assert.notEqual(second.digest, first.digest);
   assert.equal(second.dirty, false);
 });
+
+test('preview artifact manifest preserves the explicit Draft and unapproved qualification boundary', t => {
+  const root = temporary(t), targets = packTargets(mapped, root);
+  const preview = { target: 'preview', status: 'DRAFT', approved: false, referenceQualified: false, releaseQualified: false, bindingDigest: 'd'.repeat(64) };
+  const manifest = artifactManifest(source, targets, { ...studio, preview });
+  assert.deepEqual(manifest.preview, preview);
+  assert.deepEqual(manifest.studio.preview, preview);
+  assert.equal(Object.hasOwn(artifactManifest(source, targets, studio), 'preview'), false);
+});

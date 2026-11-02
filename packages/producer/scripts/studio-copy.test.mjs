@@ -7,15 +7,16 @@ import { createHash } from 'node:crypto';
 import { studioCopyRegistry } from './generate-studio-map.mjs';
 import { createCopyResolver, resolveCopyRef } from '@clossys/writer/resolve';
 
-const slot = 'strings.common';
-async function fixture(t) {
+const preview = { target: 'preview', absentPin: 'newest-draft' };
+async function fixture(t, placement = 'strings.interface/interface-field-labels/strings.common') {
+  const [nodeId, groupId, slot] = placement.split('/');
   const root = await mkdtemp(join(tmpdir(), 'studio-copy-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   const writer = join(root, 'agents/writer');
-  const dir = join(writer, 'strings.interface/interface-field-labels', slot);
+  const dir = join(writer, placement);
   await mkdir(join(dir, 'candidates'), { recursive: true });
   await writeFile(join(writer, 'ia.json'), JSON.stringify({ nodes: [
-    { id: 'strings.interface', children: [{ id: 'interface-field-labels', slots: [slot] }] },
+    { id: nodeId, children: [{ id: groupId, slots: [slot] }] },
     { id: 'lexicon.voice', children: [{ id: 'voice-tone', slots: ['lexicon.warmth'] }] },
   ] }));
   const unrelated = join(writer, 'lexicon.voice/voice-tone/lexicon.warmth');
@@ -26,7 +27,7 @@ async function fixture(t) {
     await writeFile(join(dir, 'candidates', name), bytes);
     if (pin) await writeFile(join(dir, 'pin.json'), JSON.stringify({ candidate: name, sha256: createHash('sha256').update(bytes).digest('hex') }));
   }
-  return { root, dir, candidate };
+  return { root, writer, dir, candidate };
 }
 
 test('Studio copy reads the pinned Writer candidate, ignores newer drafts and unrelated leaves', async t => {
@@ -36,6 +37,10 @@ test('Studio copy reads the pinned Writer candidate, ignores newer drafts and un
   let registry = await studioCopyRegistry(f.root);
   assert.equal(registry.entries[0].text, 'Hello, {name}.\nSecond line.');
   assert.equal(registry.entries[0].status, 'draft');
+  assert.equal((await studioCopyRegistry(f.root, preview)).entries[0].text, registry.entries[0].text);
+  assert.equal(registry.source.reference, 'clossys/agents/writer');
+  const pin = JSON.parse(await readFile(join(f.dir, 'pin.json'), 'utf8'));
+  assert.equal(registry.revision, createHash('sha256').update(pin.sha256).digest('hex'));
   assert.equal(createCopyResolver(registry)({ id: 'studio.greeting', values: { name: 'Reader' } }), undefined);
   const resolve = createCopyResolver(registry, { target: 'preview' });
   assert.equal(resolve({ id: 'studio.greeting', values: { name: 'Reader' } }).text, 'Hello, Reader.\nSecond line.');
@@ -50,13 +55,15 @@ test('Studio copy refuses relevant corrupt pins and never selects an unpinned ca
   await f.candidate('Original');
   await writeFile(join(f.dir, 'candidates/studio-v1.md'), 'changed');
   await assert.rejects(studioCopyRegistry(f.root), /hash mismatch/);
+  await f.candidate('Newer draft', 'studio-v2.md', false);
+  await assert.rejects(studioCopyRegistry(f.root, preview), /hash mismatch/);
   await rm(join(f.dir, 'pin.json'));
   assert.deepEqual((await studioCopyRegistry(f.root)).entries, []);
 });
 
 test('Foundry migrated copy resolves counts and current visible wording without approval claims', async () => {
   const root = new URL('../../../clossys/', import.meta.url).pathname;
-  const registry = await studioCopyRegistry(root);
+  const registry = await studioCopyRegistry(root, preview);
   const stored = JSON.parse(await readFile(new URL('../studio/generated/studio-copy.json', import.meta.url), 'utf8'));
   assert.deepEqual(registry, stored);
   const resolve = createCopyResolver(registry, { target: 'preview' });
@@ -71,7 +78,7 @@ test('Foundry migrated copy resolves counts and current visible wording without 
 
 
 test('Every migrated Studio message uses Writer ICU and retains singular/plural option wording', async () => {
-  const registry = await studioCopyRegistry(new URL('../../../clossys/', import.meta.url).pathname);
+  const registry = await studioCopyRegistry(new URL('../../../clossys/', import.meta.url).pathname, preview);
   for (const entry of registry.entries) {
     const missing = resolveCopyRef(registry, { id: entry.id }, { target: 'preview' });
     const values = Object.fromEntries(missing.issues.filter(issue => issue.reason === 'missing-placeholder-value')
@@ -84,4 +91,92 @@ test('Every migrated Studio message uses Writer ICU and retains singular/plural 
     '1 newer version is not pinned. The site keeps the pinned version until one is approved.');
   assert.equal(resolve({ id: 'studio.unpinned-options-description', values: { count: 2, noun: 'active' } }).text,
     'Nothing is active yet. 2 recorded versions wait for approval.');
+});
+
+
+test('Absent-pin draft selection requires explicit preview and chooses the newest numeric version with byte provenance', async t => {
+  const f = await fixture(t);
+  await f.candidate('Version two', 'studio-v2.md', false);
+  await f.candidate('Version ten', 'studio-v10.md', false);
+  assert.deepEqual((await studioCopyRegistry(f.root)).entries, []);
+  await assert.rejects(studioCopyRegistry(f.root, { absentPin: 'newest-draft' }), /explicit newest-draft preview/);
+  await assert.rejects(studioCopyRegistry(f.root, { target: 'production', absentPin: 'newest-draft' }), /explicit newest-draft preview/);
+  const registry = await studioCopyRegistry(f.root, preview);
+  assert.equal(registry.entries[0].text, 'Version ten');
+  assert.equal(registry.entries[0].status, 'draft');
+  assert.equal(createCopyResolver(registry)({ id: 'studio.greeting' }), undefined);
+  assert.equal(createCopyResolver(registry, { target: 'production' })({ id: 'studio.greeting' }), undefined);
+  assert.equal(createCopyResolver(registry, { target: 'preview' })({ id: 'studio.greeting' }).text, 'Version ten');
+  const sources = JSON.parse(registry.source.reference.slice('clossys/agents/writer#'.length));
+  assert.deepEqual(sources, [{
+    placement: 'strings.interface/interface-field-labels/strings.common', candidate: 'studio-v10.md', version: '10',
+    sha256: createHash('sha256').update(await readFile(join(f.dir, 'candidates/studio-v10.md'))).digest('hex'), selectedBy: 'absent-pin-preview',
+  }]);
+  assert.equal(registry.revision, createHash('sha256').update(JSON.stringify(sources)).digest('hex'));
+  assert.deepEqual(await studioCopyRegistry(f.root, preview), registry);
+});
+
+test('A valid pin beats newer drafts and preview provenance names the actual pinned candidate', async t => {
+  const f = await fixture(t);
+  await f.candidate('Pinned', 'studio-v1.md');
+  await f.candidate('Newer', 'studio-v10.md', false);
+  const registry = await studioCopyRegistry(f.root, preview);
+  assert.equal(registry.entries[0].text, 'Pinned');
+  const [source] = JSON.parse(registry.source.reference.slice('clossys/agents/writer#'.length));
+  assert.equal(source.candidate, 'studio-v1.md');
+  assert.equal(source.version, '1');
+  assert.equal(source.selectedBy, 'pin');
+  await writeFile(join(f.dir, 'pin.json'), '{');
+  await assert.rejects(studioCopyRegistry(f.root, preview), SyntaxError);
+});
+
+test('Preview refuses a corrupt newest draft rather than falling back to an older valid draft', async t => {
+  const f = await fixture(t);
+  await f.candidate('Older valid', 'studio-v1.md', false);
+  await f.candidate('Newest', 'studio-v2.md', false);
+  const newest = join(f.dir, 'candidates/studio-v2.md');
+  await writeFile(newest, 'corrupt');
+  await assert.rejects(studioCopyRegistry(f.root, preview), /Invalid Studio Writer locale/);
+  await writeFile(newest, '---\nlocales: ["en"]\n---\n');
+  await assert.rejects(studioCopyRegistry(f.root, preview), /Invalid Studio Writer records/);
+  await f.candidate('Newest', 'studio-v2.md', false);
+  const validNewest = await readFile(newest, 'utf8');
+  for (const meta of [null, {}, { id: 42 }, { id: null }]) {
+    await writeFile(newest, validNewest.replace(/<!-- .* -->/, `<!-- ${JSON.stringify(meta)} -->`));
+    await assert.rejects(studioCopyRegistry(f.root, preview), /Invalid Studio Writer metadata/);
+  }
+  await writeFile(newest, validNewest.replace(/<!-- .* -->/, '<!-- {"id":"ordinary.greeting","bindings":["test"]} -->'));
+  assert.deepEqual((await studioCopyRegistry(f.root, preview)).entries, []);
+  await writeFile(newest, Buffer.from([0xff]));
+  await assert.rejects(studioCopyRegistry(f.root, preview), TypeError);
+});
+
+test('Preview refuses numeric-version ties and compares large versions without rounding', async t => {
+  const f = await fixture(t);
+  await f.candidate('Lower', 'studio-v9007199254740992.md', false);
+  await f.candidate('Higher', 'studio-v9007199254740993.md', false);
+  assert.equal((await studioCopyRegistry(f.root, preview)).entries[0].text, 'Higher');
+  await f.candidate('Conflicting higher', 'other-v9007199254740993.md', false);
+  await assert.rejects(studioCopyRegistry(f.root, preview), /Ambiguous Studio Writer draft version/);
+});
+
+test('Preview is limited to the four exact approved IA placements', async t => {
+  for (const placement of [
+    'strings.metadata/metadata-descriptions/strings.descriptions',
+    'strings.interface/interface-statuses/strings.statuses',
+    'strings.interface/interface-field-labels/strings.common',
+    'strings.interface/interface-field-labels/strings.field-labels',
+  ]) {
+    const f = await fixture(t, placement);
+    await f.candidate('Allowed draft', 'studio-v1.md', false);
+    const ia = JSON.parse(await readFile(join(f.writer, 'ia.json'), 'utf8'));
+    const slot = placement.split('/')[2];
+    ia.nodes.push({ id: 'unrelated', children: [{ id: 'wrong-group', slots: [slot] }] });
+    await writeFile(join(f.writer, 'ia.json'), JSON.stringify(ia));
+    const wrong = join(f.writer, 'unrelated/wrong-group', slot);
+    await mkdir(wrong, { recursive: true });
+    await writeFile(join(wrong, 'pin.json'), '{');
+    assert.equal((await studioCopyRegistry(f.root, preview)).entries[0].text, 'Allowed draft');
+    assert.deepEqual((await studioCopyRegistry(f.root)).entries, []);
+  }
 });

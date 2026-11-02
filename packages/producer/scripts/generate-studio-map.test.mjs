@@ -31,6 +31,86 @@ async function replace(path, before, after) {
 }
 const run = (options, extra = {}) => generateStudioMap({ clossysRoot: options.clossysRoot, outputDir: options.outputDir, ...extra });
 
+async function writerCallerFixture(t) {
+  const options = await fixture(t);
+  const writer = join(options.clossysRoot, 'agents/writer');
+  const placement = 'strings.interface/interface-field-labels/strings.common';
+  const dir = join(writer, placement);
+  await mkdir(join(dir, 'candidates'), { recursive: true });
+  await writeFile(join(writer, 'ia.json'), JSON.stringify({ nodes: [
+    { id: 'strings.interface', children: [{ id: 'interface-field-labels', slots: ['strings.common'] }] },
+  ] }));
+  const replacements = {
+    'frames.studio-shell': 7,
+    'sections.studio.home': 3,
+    'sections.studio.agent-gallery': 5,
+    'sections.studio.leaf-header': 2,
+    'sections.studio.specimen': 4,
+  };
+  const selection = JSON.parse(await readFile(join(options.clossysRoot, 'selection.json'), 'utf8'));
+  const previewItems = await Promise.all(Object.entries(selection.pins).map(async ([slot, pin]) => {
+    const version = replacements[slot] ?? pin.version;
+    const record = JSON.parse(await readFile(join(options.clossysRoot, 'library', slot, pin.element, `v${version}`, 'element.json'), 'utf8'));
+    return { slot, element: pin.element, version, hash: record.hash };
+  }));
+  assert.equal(previewItems.length, 14);
+  async function candidate(text, version, pin = false) {
+    const name = `studio-v${version}.md`;
+    const bytes = `---\nslot: "strings.common"\nlocales: ["en"]\nsource: {"kind":"original","ref":[]}\n---\n\n## en\n\n### studio.greeting\n<!-- {"id":"studio.greeting","bindings":["test"]} -->\n${text}\n`;
+    await writeFile(join(dir, 'candidates', name), bytes);
+    const sha256 = createHash('sha256').update(bytes).digest('hex');
+    if (pin) await writeFile(join(dir, 'pin.json'), JSON.stringify({ candidate: name, sha256 }));
+    return { placement, candidate: name, version: String(version), sha256 };
+  }
+  async function generate(preview) {
+    // Only the default path skips old Designer payload parity. Preview validates all 14 native bindings.
+    const projection = await run(options, preview ? { target: 'preview', previewItems } : { payloads: false });
+    if (preview) {
+      assert.equal(projection.items.length, 14);
+      assert.equal(projection.assembly.status, 'DRAFT');
+      for (const item of projection.items) {
+        assert.equal(item.previewEvidence.status, 'DRAFT');
+        assert.equal(item.previewEvidence.approved, false);
+        assert.equal(item.previewEvidence.selectionGranted, false);
+      }
+    }
+    return JSON.parse(await readFile(join(options.outputDir, 'studio-copy.json'), 'utf8'));
+  }
+  return { dir, candidate, generate };
+}
+
+test('Studio Writer caller keeps absent pins empty by default and projects drafts only in explicit preview', async t => {
+  const f = await writerCallerFixture(t);
+  const selected = await f.candidate('Preview greeting', 1);
+  assert.deepEqual((await f.generate(false)).entries, []);
+  const preview = await f.generate(true);
+  assert.deepEqual(preview.entries, [{ id: 'studio.greeting', text: 'Preview greeting', context: 'test', status: 'draft' }]);
+  assert.deepEqual(JSON.parse(preview.source.reference.split('#')[1]), [{ ...selected, selectedBy: 'absent-pin-preview' }]);
+});
+
+test('Studio Writer caller honors a valid pin over a newer draft in default and preview generation', async t => {
+  const f = await writerCallerFixture(t);
+  const selected = await f.candidate('Pinned greeting', 1, true);
+  await f.candidate('Newer draft', 2);
+  for (const preview of [false, true]) {
+    const copy = await f.generate(preview);
+    assert.deepEqual(copy.entries, [{ id: 'studio.greeting', text: 'Pinned greeting', context: 'test', status: 'draft' }]);
+    if (preview) assert.deepEqual(JSON.parse(copy.source.reference.split('#')[1]), [{ ...selected, selectedBy: 'pin' }]);
+  }
+});
+
+test('Studio Writer caller refuses malformed present pins and wrong hashes in default and preview generation', async t => {
+  const f = await writerCallerFixture(t);
+  await f.candidate('Greeting', 1);
+  for (const [pin, error] of [
+    [{ candidate: '../studio-v1.md' }, /Invalid Studio Writer pin/],
+    [{ candidate: 'studio-v1.md', sha256: '0'.repeat(64) }, /Studio Writer pin hash mismatch/],
+  ]) {
+    await writeFile(join(f.dir, 'pin.json'), JSON.stringify(pin));
+    for (const preview of [false, true]) await assert.rejects(f.generate(preview), error);
+  }
+});
+
 // Locate the actual copied native slot through its IA, never through legacy cells.
 async function selected(options, id) {
   const ia = JSON.parse(await readFile(join(options.publisherRoot, 'ia.json'), 'utf8'));
@@ -231,6 +311,13 @@ test('a slot with no pin, or an item with no trusted reference, fails closed', a
   delete selection.pins['sections.studio.history'];
   await writeFile(path, JSON.stringify(selection));
   await assert.rejects(run(options), /no pin/);
+});
+
+test('Draft assembly requires an explicit preview target and complete native bindings', async t => {
+  const options = await fixture(t);
+  await assert.rejects(run(options, { previewItems: [] }), /explicit preview target/);
+  await assert.rejects(run(options, { target: 'preview' }), /explicit native bindings/);
+  await assert.rejects(run(options, { target: 'preview', previewItems: [] }), /explicit native bindings/);
 });
 
 
