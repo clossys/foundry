@@ -223,7 +223,7 @@ export interface CompositeEngineInput {
   strategy?: import("./selection-strategy.js").SelectionStrategyReader;
 }
 /** Explicit checking context retained through staged and committed surface changes. */
-export type CompositeApplyOptions = import("./surface-types.js").SurfaceApplyOptions & Pick<CompositeEngineInput, "valueOptions">;
+export type CompositeApplyOptions = import("./surface-types.js").SurfaceApplyOptions & { valueOptions?: ValueCheckOptions };
 export interface CompositeResolved {
   consumer: string;
   selectionHash: string;
