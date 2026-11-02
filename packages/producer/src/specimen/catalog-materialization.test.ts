@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it } from "vitest";
@@ -15,7 +15,7 @@ import { materializeCatalogCandidate, type CatalogCandidateInput } from "./catal
 const roots: string[] = [];
 afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
 async function fixture() {
-  const root = mkdtempSync(join(tmpdir(), "catalog-candidate-")); roots.push(root);
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "catalog-candidate-"))); roots.push(root);
   const build = loadBuildCatalog(), frames = importFoundryFrames(), sections = importFoundrySections();
   const catalog: CompositeCatalogData = {
     values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: [] },
@@ -104,7 +104,7 @@ it("refuses native identity, evidence, port and canonical path mismatches before
   writeFileSync(slotFile(entry.dir), originalSlot.replace('"frames.site-shell"', '"frames.other"'));
   await reject({}, /target slot identity/);
   writeFileSync(slotFile(entry.dir), originalSlot);
-  const external = mkdtempSync(join(tmpdir(), "catalog-outside-")); roots.push(external);
+  const external = realpathSync(mkdtempSync(join(tmpdir(), "catalog-outside-"))); roots.push(external);
   symlinkSync(external, candidatesDir(entry.dir), "dir");
   await expect(materializeCatalogCandidate(input)).rejects.toThrow(/ymbolic link/);
   rmSync(candidatesDir(entry.dir));
