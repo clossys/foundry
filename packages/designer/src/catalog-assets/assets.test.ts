@@ -24,6 +24,19 @@ import { PHOSPHOR_NOTICES } from '../importers/phosphor-license.js';
 import { OPEN_PROPS_NOTICES } from './open-props-license.js';
 import type {LibraryData,DtcgToken} from '../catalog-core/types.js';
 const catalog=withAssetCatalog(loadCatalog());
+describe('actual adopted asset scope',()=>{
+ it('checks only materialized leaves while the default still checks all 49',()=>{
+  const library=applyLibraryChange(catalog,base(),{baseHash:libraryHash(base()),changes:[{op:'adopt',slot:'assets.icon-info',source:'lucide'},{op:'adopt',slot:'assets.icon-close',source:'lucide'}]});
+  const scoped=checkAssetProfile(catalog,library,{scope:'adopted'});
+  expect(scoped.filter(f=>f.code==='A12').map(f=>f.subject)).toEqual(['assets.icon-close','assets.icon-info']);
+  expect(scoped.some(f=>f.code==='A6')).toBe(false);
+  expect(checkAssetProfile(catalog,library).filter(f=>f.code==='A12'&&catalog.slots.some(s=>s.id===f.subject))).toHaveLength(49);
+  const forged=resolve({catalog,library});delete forged.members['assets.icon-info.default'];
+  expect(checkAssetProfile(catalog,library,{scope:'adopted',resolved:forged}).some(f=>f.subject==='assets.resolution'&&f.verdict==='violated')).toBe(true);
+  const damaged=structuredClone(library);delete (damaged.fills.find(f=>f.$extensions['com.clossys.fill'].slot==='assets.icon-info')!.assets!['icon-info'] as Record<string,unknown>).default;
+  expect(checkAssetProfile(catalog,damaged,{scope:'adopted'}).some(f=>f.code==='A12'&&f.subject==='assets.icon-info'&&f.verdict==='violated')).toBe(true);
+ });
+});
 function base():LibraryData{
  let library:LibraryData={source:{id:'example',kind:'consumer',author:'consumer',license:'MIT',extends:'foundry'},fills:[],adoptedAt:'2026-10-23',rubricVersion:'test'};
  const token=(value:string,dark?:string):DtcgToken=>({$type:'color',$value:value,$extensions:{'com.clossys.css':{raw:value},...(dark?{'com.clossys.modes':{dark}}:{})}});

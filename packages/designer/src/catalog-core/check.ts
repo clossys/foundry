@@ -25,6 +25,7 @@ const THEME_CONTRAST_PAIRS: readonly { foreground: string; background: string; m
 ].map(([foreground, background]) => ({ foreground: foreground!, background: background!, minimumRatio: 4.5 }));
 const LICENSES = new Set(["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "OFL-1.1", "CC0-1.0"]);
 export function check(input: EngineInput & { resolved?: Resolved; fileExists?: (path: string) => boolean; strategy?: SelectionStrategyReader }): CheckResult {
+  if (input.valueOptions?.assetScope !== undefined && !["catalog", "adopted"].includes(input.valueOptions.assetScope)) throw new Error("Unknown asset check scope");
   const { resolved: fresh, chosen, fills, flattened } = resolveForCheck(input);
   const tokensOf = (fill: FillDoc): Record<string, DtcgToken> => {
     let tokens = flattened.get(fill);
@@ -69,18 +70,19 @@ export function check(input: EngineInput & { resolved?: Resolved; fileExists?: (
     if (slot.contract.kind === "asset" && slot.contract.optional?.some(name => slot.contract.members.mode !== "closed" || !slot.contract.members.names.includes(name))) add("C1", "contract", slot.id, { message: `contract: ${slot.id} optional members must be declared closed members`, copy: { id: "st.9z67w1pg64", values: { item: (slot.id ?? "") } } });
     for (const clause of slot.requires) if (!clauses.has(clause)) add("C3", "standards", slot.id, { message: `standards: unknown clause ${clause} in ${slot.id}`, copy: { id: "st.3chprq1k2v", values: { item: (slot.id ?? ""), clause: (clause ?? "") } } });
     const hasFill = filledSlots.has(slot.id);
+    const complete = input.library.complete && !(slot.contract.kind === "asset" && input.valueOptions?.assetScope === "adopted");
     if (slot.contract.kind === "token") for (const [relative, css] of Object.entries(slot.contract.emit ?? {})) {
       const id = `${slot.id}.${relative}`; bound.set(css, [...(bound.get(css) ?? []), id]);
       if (!shipped.has(css)) add("C4", "binding", css, { message: `binding: ${css} is not a shipped token`, copy: { id: "st.y89003hb02", values: { property: (css ?? "") } } });
-      if (!fresh.members[id] && (input.library.complete || hasFill)) add("C4", "coverage", id, { message: `coverage: ${id} (emits ${css}) has no value in profile ${input.library.source.id}`, copy: { id: "st.rhhgjm5eg2", values: { item: (id ?? ""), source: (input.library.source.id ?? "") } } });
+      if (!fresh.members[id] && (complete || hasFill)) add("C4", "coverage", id, { message: `coverage: ${id} (emits ${css}) has no value in profile ${input.library.source.id}`, copy: { id: "st.rhhgjm5eg2", values: { item: (id ?? ""), source: (input.library.source.id ?? "") } } });
     }
-    if (!hasFill) add("C4", "coverage", slot.id, { message: `coverage: slot ${slot.id} has no consumer fill`, copy: { id: "st.q4xjgfd4fz", values: { item: (slot.id ?? "") } } }, input.library.complete ? "error" : "notice");
+    if (!hasFill) add("C4", "coverage", slot.id, { message: `coverage: slot ${slot.id} has no consumer fill`, copy: { id: "st.q4xjgfd4fz", values: { item: (slot.id ?? "") } } }, complete ? "error" : "notice");
     const requiredMembers = slot.contract.members.mode === "closed" ? slot.contract.members.names : slot.contract.members.required ?? [];
     for (const relative of requiredMembers) {
       if (slot.contract.kind === "asset" && slot.contract.optional?.includes(relative)) continue;
       if (slot.contract.kind === "token" && slot.contract.emit?.[relative]) continue;
       const member = `${slot.id}.${relative}`;
-      if (!fresh.members[member] && (input.library.complete || hasFill)) add("C4", "coverage", member, { message: `coverage: ${member} has no value in profile ${input.library.source.id}`, copy: { id: "st.fnhr7mxb8y", values: { option: (member ?? ""), source: (input.library.source.id ?? "") } } });
+      if (!fresh.members[member] && (complete || hasFill)) add("C4", "coverage", member, { message: `coverage: ${member} has no value in profile ${input.library.source.id}`, copy: { id: "st.fnhr7mxb8y", values: { option: (member ?? ""), source: (input.library.source.id ?? "") } } });
     }
   }
   for (const [css, members] of bound) if (members.length > 1) {
@@ -271,7 +273,7 @@ export function check(input: EngineInput & { resolved?: Resolved; fileExists?: (
     }
   }
   if (input.catalog.slots.some(slot => slot.layer === "assets" && slot.contract.kind === "asset") && (input.library.complete || fills.some(fill => !!fill.assets))) {
-    for (const finding of checkAssetProfileWithContext(input.catalog, input.library, { resolved: fresh }, () => checkIdentityDerivationsWithContext(input.library, () => fresh, hashInputs, tokensOf))) {
+    for (const finding of checkAssetProfileWithContext(input.catalog, input.library, { resolved: fresh, scope: input.valueOptions?.assetScope }, () => checkIdentityDerivationsWithContext(input.library, () => fresh, hashInputs, tokensOf))) {
       if (finding.verdict === "satisfied") continue;
       if (finding.verdict === "exempt") {
         findings.push({ code: finding.code, rule: "asset", subject: finding.subject, severity: finding.code === "A5" ? "notice" : "error", message: finding.code === "A5" ? finding.message : "Invalid asset exemption: only A5 contrast can be exempt" });

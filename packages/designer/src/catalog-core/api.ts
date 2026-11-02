@@ -52,9 +52,9 @@ export function emit(profile: Resolved | CompositeResolved, targets: readonly Co
   if (targets.some(target => target === "component-index" || target === "components-consumption" || target === "surface-index" || target === "surfaces-consumption")) throw new CatalogError("emit: component targets require a composite profile");
   return emitValues(profile, targets as readonly EmitTarget[], options);
 }
-export function applyLibraryChange(catalog: CompositeCatalogData, library: CompositeLibraryData, cs: CompositeChangeSet, options?: import("./surface-types.js").SurfaceApplyOptions): CompositeLibraryData;
+export function applyLibraryChange(catalog: CompositeCatalogData, library: CompositeLibraryData, cs: CompositeChangeSet, options?: import("./types.js").CompositeApplyOptions): CompositeLibraryData;
 export function applyLibraryChange(catalog: CatalogData, library: LibraryData, cs: ChangeSet): LibraryData;
-export function applyLibraryChange(catalog: CatalogData | CompositeCatalogData, library: LibraryData | CompositeLibraryData, cs: ChangeSet | CompositeChangeSet, options?: import("./surface-types.js").SurfaceApplyOptions): LibraryData | CompositeLibraryData {
+export function applyLibraryChange(catalog: CatalogData | CompositeCatalogData, library: LibraryData | CompositeLibraryData, cs: ChangeSet | CompositeChangeSet, options?: import("./types.js").CompositeApplyOptions): LibraryData | CompositeLibraryData {
   if (isCompositeLibrary(library)) {
     if (!("values" in catalog) || cs.changes.some(operation => !("portion" in operation))) throw new CatalogError("composite: explicit catalog and operation portions required");
     return applyCompositeLibraryChange(catalog, library, cs as CompositeChangeSet, options);

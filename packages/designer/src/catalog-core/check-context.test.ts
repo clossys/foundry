@@ -14,6 +14,18 @@ const tokenAt = (library: LibraryData, member: string) => flatten(library.fills.
 afterEach(() => vi.restoreAllMocks());
 
 describe("fresh check invocation context", () => {
+  it("preserves identity and provenance refusals under adopted coverage", () => {
+    const library = structuredClone(complete);
+    const token = tokenAt(library, "assets.icon-info.default");
+    token.$value = [];
+    const findings = check({ catalog, library, valueOptions: { assetScope: "adopted" } }).findings;
+    expect(findings.some(finding => finding.code === "C10" && finding.severity === "error")).toBe(true);
+    expect(findings.some(finding => finding.code === "A3" && finding.severity === "error")).toBe(true);
+    const identity = structuredClone(complete);
+    tokenAt(identity, "assets.favicon.vector").$value = '<svg viewBox="0 0 24 24"><path d="M0 0"/></svg>';
+    expect(check({ catalog, library: identity, valueOptions: { assetScope: "adopted" } }).findings.some(finding => finding.code === "C10" && finding.message.includes("identity output differs"))).toBe(true);
+  });
+
   it("resolves the actual library once while checking every saved identity derivation", () => {
     const nested = vi.spyOn(resolution, "resolve");
     const fresh = vi.spyOn(resolution, "resolveForCheck");
