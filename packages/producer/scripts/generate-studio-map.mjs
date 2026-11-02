@@ -269,7 +269,10 @@ export const studioSections: Record<string, ComponentType<any>> = {
 ${sections.map((item, i) => `  ${JSON.stringify(item.slot)}: Section${i},`).join('\n')}
 };
 `;
-  const files = { 'studio-copy.json': json(await studioCopyRegistry(clossysRoot, { target: 'preview', absentPin: 'newest-draft' })), 'studio-map.json': json(projection), 'studio-map.ts': module, 'assembly-bindings.ts': bindings };
+  const copy = target === 'preview'
+    ? await studioCopyRegistry(clossysRoot, { target: 'preview', absentPin: 'newest-draft' })
+    : await studioCopyRegistry(clossysRoot);
+  const files = { 'studio-copy.json': json(copy), 'studio-map.json': json(projection), 'studio-map.ts': module, 'assembly-bindings.ts': bindings };
   if (check && (await readdir(outputDir)).some(name => !Object.hasOwn(files, name))) throw new Error('Unexpected file in generated Studio projection');
   if (!check) {
     await mkdir(outputDir, { recursive: true });
