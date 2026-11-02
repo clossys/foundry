@@ -6,6 +6,7 @@ import { resolveShell } from "../frames/site-frame/internal/resolveShell.js";
 import { importFoundryFrames } from "../importers/foundry-frames.js";
 import { runtimeHash, type RuntimeJson, type RuntimeRenderInput } from "../catalog-core/runtime-ports.js";
 import { surfaceRuntimeRenderers } from "../runtime/index.js";
+import { ArrowRight } from "../icons/ArrowRight.js";
 
 export const headerNavSpecimenCopy = {
   "example.header.home": "ExampleCo home",
@@ -31,7 +32,7 @@ export const headerNavSpecimenShell: SiteShellInput = {
       { href: "#contact", label: { id: "example.header.contact" } },
     ],
   },
-  actions: [{ href: "#start", label: { id: "example.header.start" }, emphasis: "primary" }],
+  actions: [{ href: "#start", label: { id: "example.header.start" }, emphasis: "primary", icon: ArrowRight }],
 };
 
 const mark = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 4h24v24H4z'/%3E%3C/svg%3E";
@@ -51,7 +52,7 @@ export function createHeaderNavSpecimen(resolveCopy: CopyResolver, shell: SiteSh
   const values: Readonly<Record<string, RuntimeJson>> = {
     brand: { label: resolved.brand.label, wordmark: resolved.brand.wordmark ?? "", markSrc: resolved.brand.markSrc, size: resolved.brand.size },
     nav: { label: resolved.nav!.label, triggerLabel: resolved.nav!.triggerLabel, links: resolved.nav!.links.map((link, index) => ({ id: `example-nav-${index}`, ...link })) },
-    actions: resolved.actions.map((action, index) => ({ id: `example-action-${index}`, href: action.href, label: action.label, variant: action.emphasis })),
+    actions: resolved.actions.map((action, index) => ({ id: `example-action-${index}`, href: action.href, label: action.label, variant: action.emphasis, ...(action.icon === undefined ? {} : { icon: action.icon }) })),
   };
   const content = Object.fromEntries(Object.entries(values).map(([slot, value]) => [slot, {
     reference: { kind: "region" as const, ref: `specimen:frames.site-header/${slot}` }, value, hash: runtimeHash(value),
