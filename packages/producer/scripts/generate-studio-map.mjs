@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readPinnedPublication } from '@clossys/publisher/content-map/slots';
 import { readIa, readSlot } from '../dist/records/slots.js';
 import { slotPositions, validateSlotDoc } from '../dist/records/slot-model/index.js';
+import { validateSlotContract } from '../dist/records/validate.js';
 import { checkPayload } from './studio-payload.mjs';
 import { draftStudioItems, previewArguments, previewDescriptor, previewOptionsFromEnvironment } from './studio-draft-items.mjs';
 
@@ -128,7 +129,7 @@ function designerContracts(clossysRoot) {
         ['l0', 'l1', 'l2', 'order'].some(key => doc.ia[key] !== position[key])) fail(`invalid Designer slot ${id}`);
     const contract = doc.contract;
     if (contract.schema !== 'clossys.slot-contract/1') continue;
-    if (contract.slot !== id || !Array.isArray(contract.inputs) || !contract.inputs.length ||
+    if (!validateSlotContract(contract).ok || contract.slot !== id || !Array.isArray(contract.inputs) || !contract.inputs.length ||
         !contract.inputs.every(input => object(input) && nonEmpty(input.name))) fail(`invalid Designer contract ${id}`);
     contracts.set(id, contract);
   }

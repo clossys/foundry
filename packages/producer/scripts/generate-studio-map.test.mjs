@@ -57,7 +57,7 @@ test('canonical Designer contracts work without the retired map and ignore a con
   await writeFile(join(legacy, 'studio.json'), JSON.stringify([{ slot: 'sections.module.explorer', inputs: [{ name: 'poison' }] }]));
   assert.deepEqual(await run(options, { payloads: false }), expected);
   await editSlot(await designerSlot(options, 'sections.module.explorer'), doc => {
-    doc.contract.inputs.unshift({ name: 'first', kind: 'data', required: true });
+    doc.contract.inputs.unshift({ name: 'first', kind: 'data', required: true, description: 'First input' });
   });
   const changed = await run(options, { payloads: false });
   assert.ok(changed.pages.flatMap(page => page.manifest.modules).filter(module => module.section === 'sections.module.explorer').every(module => module.input === 'first'));
@@ -73,6 +73,8 @@ test('missing, malformed or foreign Designer slots and contracts refuse assembly
     ['malformed slot schema', 'sections.module.explorer', async path => editSlot(path, doc => { doc.schema = 'wrong'; })],
     ['foreign contract', 'sections.module.explorer', async path => editSlot(path, doc => { doc.contract.slot = 'sections.module.outline'; })],
     ['malformed contract', 'sections.module.explorer', async path => editSlot(path, doc => { doc.contract.inputs = []; })],
+    ['missing contract purpose', 'sections.module.explorer', async path => editSlot(path, doc => { delete doc.contract.purpose; })],
+    ['invalid input kind', 'sections.module.explorer', async path => editSlot(path, doc => { doc.contract.inputs[0].kind = 'invalid'; })],
     ['missing frame contract', 'frames.studio-shell', async path => editSlot(path, doc => { doc.contract = {}; })],
   ]) {
     const options = await fixture(t);
