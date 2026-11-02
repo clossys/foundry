@@ -76,6 +76,22 @@ describe("Foundry section package descriptors", () => {
     expect(docs.find(doc => doc.slot === "sections.comparison")!.configs).toEqual({ arrangement: "grid" });
   });
 
+  it("maps the ContentSection summary aside and retains its optional Card and authored copy contract", () => {
+    const result = imported();
+    const row = result.coverage.find(candidate => candidate.slot === "sections.content")!;
+    const descriptor = result.fills.find(candidate => candidate.$extensions["com.clossys.fill"].slot === "sections.content")!.sections.content!;
+    expect(descriptor.slotMap.aside).toBe("./blocks#ContentSection.aside");
+    expect(row.supportedSlots).toContain("aside");
+    expect(row.missingSlots).not.toContain("aside");
+    const contract = slots.find(slot => slot.id === "sections.content")!.contract;
+    expect(contract.slots.find(slot => slot.name === "aside")).toEqual({ name: "aside", type: "region", required: false });
+    expect(contract.allowedComposes).toContain("components.card");
+    expect(contract.copy!.fields.filter(field => field.key.startsWith("aside[]"))).toEqual([
+      { key: "aside[].label", kind: "plain", required: false, maxLength: { en: 120 }, dir: "auto" },
+      { key: "aside[].value", kind: "plain", required: false, maxLength: { en: 480 }, dir: "auto" },
+    ]);
+  });
+
   it("maps the comparison library-board member and controls records to the real Matrix library-board API", () => {
     const row = imported().coverage.find(candidate => candidate.slot === "sections.comparison")!;
     expect(row).toMatchObject({ status: "candidate", supportedSlots: ["columns", "controls", "highlight", "rows"], missingSlots: [], supportedMembers: ["arrangement.library-board"], missingMembers: [] });
