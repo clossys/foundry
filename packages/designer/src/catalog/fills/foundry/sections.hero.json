@@ -187,6 +187,8 @@
         "actions": "./blocks#Hero.actions",
         "backdrop": "./blocks#Hero.backdrop",
         "header": "./blocks#Hero.heading",
+        "header.description": "./blocks#Hero.description",
+        "header.eyebrow": "./blocks#Hero.eyebrow",
         "media": "./blocks#Hero.media"
       },
       "source": "foundry"
