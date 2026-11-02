@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,7 +19,7 @@ describe("Studio selection faults keep the actual compiler exception", () => {
   const logs = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
   beforeAll(async () => {
-    directory = await mkdtemp(join(tmpdir(), "producer-selection-failure-"));
+    directory = await realpath(await mkdtemp(join(tmpdir(), "producer-selection-failure-")));
     const root = join(directory, "consumer");
     const cells = join(root, "clossys/agents/designer");
     await mkdir(cells, { recursive: true });

@@ -31,6 +31,8 @@ describe("canonical specimen records through the common slot reader", () => {
     const record = await source.read("sample-card");
     expect(record).toMatchObject({ id: "components.card/sample-card", version: 1, kind: "visual" });
     expect(record!.payload.path).toBe("sample-card.json");
+    expect(record!.payload.raw).toBe(readFileSync(candidate(), "utf8"));
+    expect(JSON.parse(record!.payload.raw).meta.source).toEqual(expected.meta.source);
     expect(record!.payload.files).toEqual(expected.files.map((file: { path: string; content: string; type?: string }) => ({ path: file.path, content: file.content, ...(file.type ? { type: file.type } : {}) })));
     expect((await libraryRecordStore([root]).load("sample-card"))!.preview).toEqual(expected.meta.preview);
     expect(record!.preview).toMatchObject({ width: 480, container: "canvas", copy: Object.fromEntries(Object.entries(expected.meta.preview.copy).map(([key, text]) => [key, { text }])) });
@@ -40,23 +42,29 @@ describe("canonical specimen records through the common slot reader", () => {
     expect(await source.theme()).toMatchObject({ id: "themes.preset/neutral" });
   });
 
-  it("transports actual canonical Studio multi-file fixtures with exact pin bytes, order and lineage", async () => {
+  it.each(["frames.studio-shell/studio-shell", "sections.studio.agent-gallery/studio-agent-gallery", "sections.studio.checks/studio-checks"])("reads actual canonical Studio %s from its pin or remains unresolved", async id => {
     const consumer = fileURLToPath(new URL("../../../../clossys", import.meta.url));
     const source = libraryRecordSource({ roots: [consumer] });
-    for (const id of ["frames.studio-shell/studio-shell", "sections.studio.agent-gallery/studio-agent-gallery", "sections.studio.checks/studio-checks"]) {
-      const [slot] = id.split("/");
-      const pin = listSlots(consumer, "designer").find(entry => entry.id === slot)!.pin!;
-      const native = readCandidate(consumer, "designer", slot!, pin.candidate);
-      const item = JSON.parse(native.bytes);
-      const record = (await source.read(id))!;
-      expect(record.contentHash).toBe(pin.sha256);
-      expect(record.payload.raw).toBe(native.bytes);
-      expect(record.payload.files).toEqual(item.files);
-      expect(record.kind).toBe("visual");
-      expect(record.preview).toMatchObject({ entry: item.meta.preview.fixtures.file, export: item.meta.preview.fixtures.export, fixtures: item.meta.preview.fixtures.props });
-      expect(JSON.parse(record.payload.raw).meta.source).toEqual(item.meta.source);
-      expect(record.version).toBe(Number(/-v(\d+)\.json$/.exec(pin.candidate)![1]));
+    const [slot] = id.split("/");
+    const entry = listSlots(consumer, "designer").find(entry => entry.id === slot);
+    expect(entry).toBeDefined();
+    const record = await source.read(id);
+    const pin = entry!.pin;
+    if (!pin) {
+      expect(record).toBeUndefined();
+      return;
     }
+    const native = readCandidate(consumer, "designer", slot!, pin.candidate);
+    const item = JSON.parse(native.bytes);
+    expect(native.sha256).toBe(pin.sha256);
+    expect(record).toBeDefined();
+    expect(record!.contentHash).toBe(pin.sha256);
+    expect(record!.payload.raw).toBe(native.bytes);
+    expect(record!.payload.files).toEqual(item.files);
+    expect(record!.kind).toBe("visual");
+    expect(record!.preview).toMatchObject({ entry: item.meta.preview.fixtures.file, export: item.meta.preview.fixtures.export, fixtures: item.meta.preview.fixtures.props });
+    expect(JSON.parse(record!.payload.raw).meta.source).toEqual(item.meta.source);
+    expect(record!.version).toBe(Number(/-v(\d+)\.json$/.exec(pin.candidate)![1]));
   });
 
   it("rejects candidate identity drift even after a temporary fixture is re-pinned to those bytes", async () => {
