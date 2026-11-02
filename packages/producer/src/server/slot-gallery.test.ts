@@ -22,7 +22,69 @@ const noRoutes = { gallery: () => undefined, leaf: () => undefined };
 const ids = (sections: readonly { cards: readonly { id?: string; slot?: string }[] }[]) => sections.flatMap(section => section.cards.map(card => card.id ?? card.slot));
 const expected = (root: string, agent: string) => (JSON.parse(readFileSync(join(root, 'agents', agent, 'ia.json'), 'utf8')) as IaDoc).nodes.flatMap(node => node.children.flatMap(child => child.slots));
 
+function writerRecordFixture(body: string, locales: readonly string[] = ['en']) {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), 'writer-native-specimen-')));
+  const id = 'strings.label', candidate = 'record-v1.md';
+  const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic-test-only#native-writer-projection', extensions: [],
+    nodes: [{ id: 'strings.copy', label: 'Copy', children: [{ id: 'copy', label: 'Labels', slots: [id] }] }] };
+  const dir = join(root, 'agents/writer/strings.copy/copy', id);
+  mkdirSync(join(dir, 'candidates'), { recursive: true });
+  writeFileSync(join(root, 'agents/writer/ia.json'), JSON.stringify(ia));
+  writeFileSync(join(dir, 'slot.json'), JSON.stringify({ schema: 'clossys.slot/1', id, agent: 'writer',
+    ia: slotPositions('writer', ia).get(id)!, kind: 'strings', contract: {}, inputs: [], uses: [],
+  } satisfies SlotDoc));
+  const source = serializeFrontmatter({ slot: id, locales, source: { kind: 'original', ref: [] } }, body);
+  writeFileSync(join(dir, 'candidates', candidate), source);
+  return { root, id, candidate, dir, source };
+}
+
 describe('IA-first gallery data', () => {
+
+  it('preserves native Writer empty text, escaped structural lines, locale order and full textless payloads', async () => {
+    const context = '  exact.context  ';
+    const payload = { id: 'payload', context: 'payload.context', parts: { heading: 'Native payload' }, state: false };
+    const body = [
+      '## en', '### empty.context', '<!-- {"id":"shared","bindings":[]} -->', '',
+      `### ${context}`, '<!-- {"id":"literal","bindings":[]} -->', '', '  first  ',
+      '\\## literal locale', '\\### literal context', '\\<!-- literal comment -->', '\\\\one slash',
+      '\\```json', '{"literal":true}', '```', '', '',
+      '### payload.context', '<!-- {"id":"payload","bindings":[],"metadataOnly":true} -->',
+      '```json', JSON.stringify(payload), '```', '',
+      '## ar', '### arabic.context', '<!-- {"id":"shared","bindings":[]} -->', 'لغة', '',
+    ].join('\n').replaceAll('\n', '\r\n');
+    const f = writerRecordFixture(body, ['en', 'ar']);
+    try {
+      const input = recordSpecimenInput(f.root, 'writer', f.id, f.candidate)!;
+      expect(input.rows).toEqual([
+        { key: '0', label: 'en: empty.context', text: '' },
+        { key: '1', label: `en: ${context}`, text: '\n  first  \n## literal locale\n### literal context\n<!-- literal comment -->\n\\one slash\n```json\n{"literal":true}\n```\n' },
+        { key: '2', label: 'en: payload.context', text: JSON.stringify({ id: 'payload', metadataOnly: true, context: 'payload.context', parts: payload.parts, state: false }) },
+        { key: '3', label: 'ar: arabic.context', text: 'لغة' },
+      ]);
+      expect(JSON.parse(input.rows[2]!.text)).not.toHaveProperty('text');
+      const render = (value: NonNullable<ReturnType<typeof recordSpecimenInput>>) => renderToStaticMarkup(createElement(SpecimenContent, { specimen: value }));
+      const mount = recordSpecimens({ consumer: f.root, render });
+      let code = 0, html = '';
+      const response = { writeHead(status: number) { code = status; }, end(value?: string) { html = value ?? ''; } } as ServerResponse;
+      expect(await mount.handle({ method: 'GET', url: `/__specimen?agent=writer&slot=${f.id}&candidate=${f.candidate}` } as IncomingMessage, response, '/__specimen')).toBe(true);
+      expect(code).toBe(200);
+      expect(html).toBe(render(input));
+      expect(readFileSync(join(f.dir, 'candidates', f.candidate), 'utf8')).toBe(f.source);
+    } finally { rmSync(f.root, { recursive: true, force: true }); }
+  });
+
+  it.each([
+    ['invalid metadata', '## en\n### first\n<!-- {"id":42,"bindings":[]} -->\ntext\n'],
+    ['duplicate id', '## en\n### first\n<!-- {"id":"same","bindings":[]} -->\nfirst\n\n### second\n<!-- {"id":"same","bindings":[]} -->\nsecond\n'],
+  ])('refuses native Writer %s without partial projection', (_problem, body) => {
+    const f = writerRecordFixture(body);
+    try {
+      let projected: ReturnType<typeof recordSpecimenInput>;
+      expect(() => { projected = recordSpecimenInput(f.root, 'writer', f.id, f.candidate); }).toThrow(/Writer slot body/);
+      expect(projected).toBeUndefined();
+    } finally { rmSync(f.root, { recursive: true, force: true }); }
+  });
+
   it.each(['{ malformed JSON', 'null'])('keeps every Designer row when the pinned candidate is %s', bytes => {
     const root = realpathSync(mkdtempSync(join(tmpdir(), 'gallery-designer-')));
     try {
