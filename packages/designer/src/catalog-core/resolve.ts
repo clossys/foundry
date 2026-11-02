@@ -4,7 +4,7 @@ import { aliasOf, compare, cssText, flatten, leafOf, malformed, metaOf, modeValu
 import { gradientColorAlias, gradientRoleColor, gradientStops } from "../tokens/expressive.js";
 import type { CatalogData, DtcgToken, DtcgValue, FillDoc, Finding, LibraryData, Mode, Resolved, ResolvedMember, Slot } from "./types.js";
 
-export interface EngineInput { catalog: CatalogData; library: LibraryData }
+export interface EngineInput { catalog: CatalogData; library: LibraryData; valueOptions?: import("./types.js").ValueCheckOptions }
 export interface Chosen { slot: Slot; fill: FillDoc; token: DtcgToken; via: ResolvedMember["via"] }
 /** Only materialized consumer fills participate in engine resolution and checks. */
 export function allFills(input: EngineInput): FillDoc[] {
