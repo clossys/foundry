@@ -5540,6 +5540,16 @@
           "name": "backdrop",
           "type": "media",
           "required": false
+        },
+        {
+          "name": "header.eyebrow",
+          "type": "copy",
+          "required": false
+        },
+        {
+          "name": "header.description",
+          "type": "copy",
+          "required": false
         }
       ],
       "members": {

@@ -540,6 +540,8 @@
         "actions",
         "backdrop",
         "header",
+        "header.description",
+        "header.eyebrow",
         "media"
       ],
       "unresolvedMemberAxes": []
