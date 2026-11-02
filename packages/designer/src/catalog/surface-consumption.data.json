@@ -6,32 +6,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.primary",
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -52,7 +27,7 @@
         },
         {
           "path": "packages/designer/src/catalog-core/frame-header-options.ts",
-          "sha256": "22434fadf5f294cc28bba10e8d92891d5d43a20b8ec323b039aa21adaa96d474"
+          "sha256": "f71b58c6ee2f652a2058b3f58cb938735c16aaf1cbe39a139e158e15e132fb0a"
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
@@ -68,7 +43,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -94,7 +69,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -116,32 +91,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.primary",
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -246,7 +196,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         },
         {
           "path": "packages/designer/src/shell/FrameSlots.tsx",
@@ -340,7 +290,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         },
         {
           "code": "DF2",
@@ -365,32 +315,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.primary",
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -451,7 +376,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -507,7 +432,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -524,29 +449,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.primary",
-          "themes.radius",
-          "themes.spacing",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -563,7 +466,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         },
         {
           "path": "packages/designer/src/shell/SkipLink.tsx",
@@ -587,7 +490,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         },
         {
           "code": "DF2",
@@ -610,20 +513,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.radius",
-          "themes.spacing",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -644,7 +534,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -658,7 +548,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -675,9 +565,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.primary"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -710,13 +598,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.primary",
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.spacing"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -741,11 +623,11 @@
         },
         {
           "path": "packages/designer/src/frames/right-panel-config.ts",
-          "sha256": "2ee8f0200da935f594212fc6cd4095c1f373dad8eabb3e28e46caa69fce4f160"
+          "sha256": "6ec16fdd02b06c1285e72b71adacb7567558f9c7c49fd17ab31308a5144e1fe9"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -771,7 +653,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -788,9 +670,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.spacing"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -811,7 +691,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -843,7 +723,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -868,33 +748,7 @@
           "components.logo",
           "components.semantic-content"
         ],
-        "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.spacing",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -915,7 +769,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         },
         {
           "path": "packages/designer/src/shell/internal/shell-ground.ts",
@@ -947,7 +801,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -968,35 +822,12 @@
         "components": [
           "components.icon"
         ],
-        "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.spacing",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
           "path": "packages/designer/src/catalog-core/frame-header-options.ts",
-          "sha256": "22434fadf5f294cc28bba10e8d92891d5d43a20b8ec323b039aa21adaa96d474"
+          "sha256": "f71b58c6ee2f652a2058b3f58cb938735c16aaf1cbe39a139e158e15e132fb0a"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -1008,7 +839,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         },
         {
           "path": "packages/designer/src/shell/internal/shell-ground.ts",
@@ -1040,7 +871,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -1074,21 +905,7 @@
           "components.logo",
           "components.semantic-content"
         ],
-        "themes": [
-          "themes.primary",
-          "themes.input",
-          "themes.spacing",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "scanStatus": "lower-bound",
       "scannedComposes": [
@@ -1105,21 +922,7 @@
           "components.logo",
           "components.semantic-content"
         ],
-        "themes": [
-          "themes.primary",
-          "themes.input",
-          "themes.spacing",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -1183,31 +986,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -1236,7 +1015,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -1262,7 +1041,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -1281,19 +1060,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.spacing",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -1310,7 +1077,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -1336,7 +1103,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -1355,35 +1122,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.primary",
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -1412,7 +1151,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -1444,7 +1183,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -1462,31 +1201,6 @@
         "assets": [],
         "components": [],
         "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
           "themes.font-mono"
         ]
       },
@@ -1509,7 +1223,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -1529,7 +1243,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -1546,9 +1260,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.spacing"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -1565,7 +1277,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -1591,7 +1303,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -1608,31 +1320,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -1657,7 +1345,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -1677,7 +1365,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -1696,19 +1384,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.spacing",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -1725,7 +1401,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -1745,7 +1421,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -1762,35 +1438,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.tracking-tight",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -1811,7 +1459,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -1831,7 +1479,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -1850,19 +1498,7 @@
           "assets.image"
         ],
         "components": [],
-        "themes": [
-          "themes.spacing",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -1887,7 +1523,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -1907,7 +1543,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -1925,31 +1561,6 @@
         "assets": [],
         "components": [],
         "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
           "themes.font-mono"
         ]
       },
@@ -1984,7 +1595,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -2016,7 +1627,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -2033,27 +1644,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.spacing",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -2082,7 +1673,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -2102,7 +1693,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -2122,34 +1713,6 @@
         "assets": [],
         "components": [],
         "themes": [
-          "themes.primary",
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.tracking-tight",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
           "themes.font-mono"
         ]
       },
@@ -2184,7 +1747,7 @@
         },
         {
           "path": "packages/designer/src/blocks/library-board/model.ts",
-          "sha256": "adedbad572ac67e5a7584027e74f0e3b7a9e0828fbf16fc88339d9819fff64a4"
+          "sha256": "d508a6c800a4163bde5c987512bc15104b00db5c9ee1923128b7fce7e1a69c88"
         },
         {
           "path": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
@@ -2244,7 +1807,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -2282,7 +1845,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -2299,34 +1862,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -2347,7 +1883,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -2373,7 +1909,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -2390,36 +1926,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.primary",
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.tracking-tight",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -2452,7 +1959,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -2472,7 +1979,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -2494,34 +2001,7 @@
           "assets.icon-chevron-right"
         ],
         "components": [],
-        "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -2586,7 +2066,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -2624,7 +2104,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -2646,34 +2126,7 @@
           "assets.icon-chevron-right"
         ],
         "components": [],
-        "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -2738,7 +2191,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -2776,7 +2229,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -2795,19 +2248,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.spacing",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -2824,7 +2265,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -2844,7 +2285,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -2863,9 +2304,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.spacing"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -2882,7 +2321,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -2902,7 +2341,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -2919,22 +2358,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.spacing",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -2967,7 +2391,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -3011,7 +2435,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -3030,33 +2454,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.primary",
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -3085,7 +2483,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -3105,7 +2503,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -3119,80 +2517,17 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.badge",
-        "components.semantic-content",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [
-          "components.badge",
-          "components.semantic-content"
-        ],
-        "themes": [
-          "themes.primary",
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.tracking-tight",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "components": [],
+        "themes": []
       },
       "sourceFiles": [
         {
-          "path": "packages/designer/src/blocks/Faq.server.tsx",
-          "sha256": "ac11eeb6bc4559f788be6bc9f7d6c938935acd86c0c6804446534dd4ff5e6e73"
-        },
-        {
           "path": "packages/designer/src/blocks/FeatureGrid.tsx",
-          "sha256": "077032706dacb88fb4929b1bdc6cfe08d8a972032fc73cee87bc1791d3d75496"
-        },
-        {
-          "path": "packages/designer/src/blocks/features/FeatureLayouts.tsx",
-          "sha256": "81eb8f042c18ca68a81a98b27fdefb9fc9bda02b41ac840f8327c99e349b542b"
-        },
-        {
-          "path": "packages/designer/src/blocks/features/FeatureSurface.tsx",
-          "sha256": "ec0f0586f3a1294b4d0742f730a8c04783f1dcf68240b73d54ca0b80ce2c7509"
-        },
-        {
-          "path": "packages/designer/src/blocks/features/parts.tsx",
-          "sha256": "245ebabf9eabc74bc94ac32db854f252c482253dc7247c8d58bd7897a57fdbd1"
-        },
-        {
-          "path": "packages/designer/src/blocks/internal/block-vars.ts",
-          "sha256": "33e9c7bd8700ff201b8ba138ca4f10dd7de910a23d260019e676470b918cceb5"
-        },
-        {
-          "path": "packages/designer/src/blocks/internal/disclosure-row.tsx",
-          "sha256": "9c20a5226a3a94b1718208b89dcd67d992b7e1c97d0bb1427d3c9f8859b71e6e"
-        },
-        {
-          "path": "packages/designer/src/blocks/internal/trend.ts",
-          "sha256": "4aa7cce812d8e68674aca3ccfe5580fa421661d7652e2c2d1eabfd69d1c1b466"
+          "sha256": "3125e9af4b0a7ace0d4d2ab4003611c580c096f4b7f848012e6efe907deb507a"
         },
         {
           "path": "packages/designer/src/blocks/items/anatomy.tsx",
@@ -3201,42 +2536,6 @@
         {
           "path": "packages/designer/src/blocks/items/compat-features.tsx",
           "sha256": "dde7091159c3f7f50c10ca635acfb81873a0f8d66c4dad29a53b0fe66cdaf166"
-        },
-        {
-          "path": "packages/designer/src/blocks/items/Item.tsx",
-          "sha256": "905e6b261973fd09a04d03dbf13142da2f001bb662807081475cfbd830c2bc74"
-        },
-        {
-          "path": "packages/designer/src/blocks/items/Items.tsx",
-          "sha256": "d8fa5e1146c7200797cee5a14970c8a87133ba77e15402fd864218fe245fc683"
-        },
-        {
-          "path": "packages/designer/src/blocks/items/ItemsStatic.tsx",
-          "sha256": "5960ebcfe2394927f14a489d004d6a6b3460382dc26dd2839a2c69e19dbc6f59"
-        },
-        {
-          "path": "packages/designer/src/blocks/items/order-classes.ts",
-          "sha256": "ad18d9bf94966b8576a616848b72b49f754359a270ea16ed3813feab05f4a395"
-        },
-        {
-          "path": "packages/designer/src/blocks/items/order.tsx",
-          "sha256": "cabd33aadfedeb0ecd83c25aa57d6bf9d641279bc8dbe89d2c2e970071cbf311"
-        },
-        {
-          "path": "packages/designer/src/blocks/items/policies.ts",
-          "sha256": "64cb8c3d85df5e6d1cc846d6bdb36755dbb26b935be7e4964d8e636a3f78631a"
-        },
-        {
-          "path": "packages/designer/src/blocks/items/render.tsx",
-          "sha256": "ecf9c180fdc864f9fe3cbc0729c289ab85a264638290da5732fa1c425802aeb4"
-        },
-        {
-          "path": "packages/designer/src/blocks/items/reveal-policy.tsx",
-          "sha256": "5d5402274b543321f6a932fbd4bc9a6139178c8882e9f7f40bb443a2fa67aafb"
-        },
-        {
-          "path": "packages/designer/src/blocks/items/reveal.tsx",
-          "sha256": "b0fc30cd5a5132feda5e41fa028025f3616c47b9ec57d627cc315d5a435f940d"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
@@ -3255,39 +2554,15 @@
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
         },
         {
-          "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
-        },
-        {
-          "path": "packages/designer/src/icons/ArrowRight.ts",
-          "sha256": "bb43905ab80409bed61222fce503e06df8489bafe2c4c2dff98a0f625e4c6d31"
-        },
-        {
           "path": "packages/designer/src/icons/ChevronRight.ts",
           "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
-        },
-        {
-          "path": "packages/designer/src/styles/section-reveal.tsx",
-          "sha256": "4a6f7b05d5a83e6e8a369fecc3378e7bb563446c24860bbfe049a1fc6c41401b"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
-        {
-          "code": "DF5",
-          "evidence": "unregistered asset import ../../icons/ArrowRight.js#ArrowRight",
-          "file": "packages/designer/src/blocks/items/order.tsx",
-          "line": 5
-        },
-        {
-          "code": "DF2",
-          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
-          "file": "packages/designer/src/blocks/items/order.tsx",
-          "line": 71
-        },
         {
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/ChevronRight.js#ChevronRight",
@@ -3310,7 +2585,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -3327,31 +2602,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -3368,7 +2619,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -3388,7 +2639,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -3405,25 +2656,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.primary",
-          "themes.radius",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -3448,7 +2681,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -3468,7 +2701,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -3491,28 +2724,7 @@
           "components.button",
           "components.dialog"
         ],
-        "themes": [
-          "themes.radius",
-          "themes.spacing",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -3558,36 +2770,7 @@
           "assets.backdrop-graphic"
         ],
         "components": [],
-        "themes": [
-          "themes.primary",
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.tracking-tight",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -3624,11 +2807,11 @@
         },
         {
           "path": "packages/designer/src/catalog-assets/a276-backdrop-graphic.contribution.ts",
-          "sha256": "b80231c94a71bf4a9488c6da8585bf33c00dac05600a8162242360a1c2577c51"
+          "sha256": "2dc92ffd4758acbebfc30f7e2e87209ecb4ccad3dca49fc7fba7bf542ae20a45"
         },
         {
           "path": "packages/designer/src/catalog-assets/backdrop-graphic.ts",
-          "sha256": "9182512c104a8cd7290b1497559d3112cb4a385ab96860adb4a08a5c2aad7bc9"
+          "sha256": "f6b8c5a66ab9808dce684bc8a6a25363a0e32adabc28481c7a57ead30b55b5e2"
         },
         {
           "path": "packages/designer/src/catalog-assets/media.ts",
@@ -3644,7 +2827,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         },
         {
           "path": "packages/designer/src/tokens/color.ts",
@@ -3694,7 +2877,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -3714,19 +2897,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.spacing",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -3743,7 +2914,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -3763,7 +2934,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -3780,37 +2951,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.primary",
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.tracking-tight",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -3863,7 +3004,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -3889,7 +3030,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -3906,33 +3047,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.primary",
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -3957,7 +3072,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -3977,7 +3092,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -4007,7 +3122,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -4021,7 +3136,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -4038,31 +3153,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -4087,7 +3178,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -4107,7 +3198,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -4128,32 +3219,7 @@
         "components": [
           "components.semantic-content"
         ],
-        "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -4202,7 +3268,7 @@
         },
         {
           "path": "packages/designer/src/importers/image-ratio.ts",
-          "sha256": "d984ee9d3be70e3c3d39b5041e248f7d986d48fdd13f7acb0f52d9e0b6aa8122"
+          "sha256": "68f745f2ad1938be85590d0adbbff69b244a2d659c9df65cf3e77b7946153dab"
         }
       ],
       "unresolved": [
@@ -4241,32 +3307,7 @@
           "components.icon",
           "components.text-field"
         ],
-        "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -4328,9 +3369,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.spacing"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -4351,7 +3390,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -4371,7 +3410,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -4390,9 +3429,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.spacing"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -4439,19 +3476,7 @@
           "assets.icon-chevron-right"
         ],
         "components": [],
-        "themes": [
-          "themes.spacing",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -4476,7 +3501,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -4502,7 +3527,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -4519,33 +3544,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.primary",
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -4578,7 +3577,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -4604,7 +3603,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -4621,35 +3620,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.primary",
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -4670,7 +3641,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -4690,7 +3661,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -4709,19 +3680,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.spacing",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -4738,7 +3697,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -4764,7 +3723,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -4783,19 +3742,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.spacing",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -4824,7 +3771,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -4850,7 +3797,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -4867,36 +3814,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.primary",
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.tracking-tight",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -4917,7 +3835,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -4937,7 +3855,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -4954,34 +3872,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -5002,7 +3893,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -5022,7 +3913,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -5039,25 +3930,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.primary",
-          "themes.radius",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -5082,7 +3955,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -5102,7 +3975,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -5119,23 +3992,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.spacing",
-          "themes.destructive",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -5172,7 +4029,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -5192,7 +4049,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -5211,35 +4068,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -5260,7 +4089,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -5280,7 +4109,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -5299,37 +4128,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.primary",
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.tracking-tight",
-          "themes.radius",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -5350,7 +4149,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -5370,7 +4169,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -5387,24 +4186,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.primary",
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -5445,7 +4227,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -5465,7 +4247,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -5484,33 +4266,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.primary",
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -5543,7 +4299,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -5569,7 +4325,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -5590,35 +4346,7 @@
         "components": [
           "components.semantic-content"
         ],
-        "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -5670,24 +4398,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.primary",
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -5704,7 +4415,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -5724,7 +4435,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -5743,22 +4454,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.spacing",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -5779,7 +4475,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -5799,7 +4495,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },
@@ -5816,31 +4512,7 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -5857,7 +4529,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
         }
       ],
       "unresolved": [
@@ -5877,7 +4549,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 2
+          "line": 3
         }
       ]
     },

@@ -34,13 +34,7 @@
         "scannedReads": {
           "assets": [],
           "components": [],
-          "themes": [
-            "themes.primary",
-            "themes.border",
-            "themes.input",
-            "themes.sidebar-border",
-            "themes.spacing"
-          ]
+          "themes": []
         },
         "sourceFiles": [
           {
@@ -65,11 +59,11 @@
           },
           {
             "path": "packages/designer/src/frames/right-panel-config.ts",
-            "sha256": "2ee8f0200da935f594212fc6cd4095c1f373dad8eabb3e28e46caa69fce4f160"
+            "sha256": "6ec16fdd02b06c1285e72b71adacb7567558f9c7c49fd17ab31308a5144e1fe9"
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+            "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
           }
         ],
         "unresolved": [
@@ -95,7 +89,7 @@
             "code": "DF2",
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/runtime/component-leaf.tsx",
-            "line": 2
+            "line": 3
           }
         ]
       },
@@ -116,13 +110,7 @@
       },
       "reads": {
         "assets": [],
-        "themes": [
-          "themes.primary",
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.spacing"
-        ]
+        "themes": []
       },
       "slot": "frames.inspector",
       "slots": {

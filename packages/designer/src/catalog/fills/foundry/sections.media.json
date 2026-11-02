@@ -40,32 +40,7 @@
           "components": [
             "components.semantic-content"
           ],
-          "themes": [
-            "themes.border",
-            "themes.input",
-            "themes.sidebar-border",
-            "themes.radius",
-            "themes.spacing",
-            "themes.destructive",
-            "themes.background",
-            "themes.card",
-            "themes.popover",
-            "themes.secondary",
-            "themes.accent",
-            "themes.muted",
-            "themes.sidebar",
-            "themes.sidebar-accent",
-            "themes.foreground",
-            "themes.card-foreground",
-            "themes.popover-foreground",
-            "themes.primary-foreground",
-            "themes.secondary-foreground",
-            "themes.accent-foreground",
-            "themes.muted-foreground",
-            "themes.sidebar-foreground",
-            "themes.sidebar-primary-foreground",
-            "themes.sidebar-accent-foreground"
-          ]
+          "themes": []
         },
         "sourceFiles": [
           {
@@ -114,7 +89,7 @@
           },
           {
             "path": "packages/designer/src/importers/image-ratio.ts",
-            "sha256": "d984ee9d3be70e3c3d39b5041e248f7d986d48fdd13f7acb0f52d9e0b6aa8122"
+            "sha256": "68f745f2ad1938be85590d0adbbff69b244a2d659c9df65cf3e77b7946153dab"
           }
         ],
         "unresolved": [
@@ -157,32 +132,7 @@
       },
       "reads": {
         "assets": [],
-        "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.radius",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "slot": "sections.media",
       "slotMap": {

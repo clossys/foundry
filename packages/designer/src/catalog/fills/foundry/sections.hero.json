@@ -36,36 +36,7 @@
             "assets.backdrop-graphic"
           ],
           "components": [],
-          "themes": [
-            "themes.primary",
-            "themes.border",
-            "themes.input",
-            "themes.sidebar-border",
-            "themes.tracking-tight",
-            "themes.spacing",
-            "themes.destructive",
-            "themes.background",
-            "themes.card",
-            "themes.popover",
-            "themes.secondary",
-            "themes.accent",
-            "themes.muted",
-            "themes.sidebar",
-            "themes.sidebar-accent",
-            "themes.foreground",
-            "themes.card-foreground",
-            "themes.popover-foreground",
-            "themes.primary-foreground",
-            "themes.secondary-foreground",
-            "themes.accent-foreground",
-            "themes.muted-foreground",
-            "themes.sidebar-foreground",
-            "themes.sidebar-primary-foreground",
-            "themes.sidebar-accent-foreground",
-            "themes.font-sans",
-            "themes.font-heading",
-            "themes.font-mono"
-          ]
+          "themes": []
         },
         "sourceFiles": [
           {
@@ -102,11 +73,11 @@
           },
           {
             "path": "packages/designer/src/catalog-assets/a276-backdrop-graphic.contribution.ts",
-            "sha256": "b80231c94a71bf4a9488c6da8585bf33c00dac05600a8162242360a1c2577c51"
+            "sha256": "2dc92ffd4758acbebfc30f7e2e87209ecb4ccad3dca49fc7fba7bf542ae20a45"
           },
           {
             "path": "packages/designer/src/catalog-assets/backdrop-graphic.ts",
-            "sha256": "9182512c104a8cd7290b1497559d3112cb4a385ab96860adb4a08a5c2aad7bc9"
+            "sha256": "f6b8c5a66ab9808dce684bc8a6a25363a0e32adabc28481c7a57ead30b55b5e2"
           },
           {
             "path": "packages/designer/src/catalog-assets/media.ts",
@@ -122,7 +93,7 @@
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+            "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
           },
           {
             "path": "packages/designer/src/tokens/color.ts",
@@ -172,7 +143,7 @@
             "code": "DF2",
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/runtime/component-leaf.tsx",
-            "line": 2
+            "line": 3
           }
         ]
       },
@@ -209,36 +180,7 @@
         "assets": [
           "assets.backdrop-graphic"
         ],
-        "themes": [
-          "themes.primary",
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.tracking-tight",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "themes": []
       },
       "slot": "sections.hero",
       "slotMap": {

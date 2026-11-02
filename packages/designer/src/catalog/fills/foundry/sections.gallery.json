@@ -43,28 +43,7 @@
             "components.button",
             "components.dialog"
           ],
-          "themes": [
-            "themes.radius",
-            "themes.spacing",
-            "themes.background",
-            "themes.card",
-            "themes.popover",
-            "themes.secondary",
-            "themes.accent",
-            "themes.muted",
-            "themes.sidebar",
-            "themes.sidebar-accent",
-            "themes.foreground",
-            "themes.card-foreground",
-            "themes.popover-foreground",
-            "themes.primary-foreground",
-            "themes.secondary-foreground",
-            "themes.accent-foreground",
-            "themes.muted-foreground",
-            "themes.sidebar-foreground",
-            "themes.sidebar-primary-foreground",
-            "themes.sidebar-accent-foreground"
-          ]
+          "themes": []
         },
         "sourceFiles": [
           {
@@ -117,28 +96,7 @@
       },
       "reads": {
         "assets": [],
-        "themes": [
-          "themes.radius",
-          "themes.spacing",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "slot": "sections.gallery",
       "slotMap": {
