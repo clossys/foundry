@@ -31,7 +31,7 @@ export function browserTarget(value, mode) {
 }
 
 function binding(root) {
-  const git = args => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim();
+  const git = args => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 }).trim();
   const untracked = git(['ls-files', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean).sort();
   return {
     head: git(['rev-parse', 'HEAD']), tree: git(['rev-parse', 'HEAD^{tree}']),
