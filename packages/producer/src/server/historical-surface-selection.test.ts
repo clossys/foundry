@@ -26,7 +26,12 @@ describe("historical package surfaces through native consumer operations", () =>
     const directory = await mkdtemp(join(await realpath(tmpdir()), "producer-historical-surface-"));
     consumer = join(directory, "consumer");
     const registrations = new Map(historicalHolds.map(([slot, hash]) => [slot as string, loadFoundrySurfaceHistory()[hash]![0]!]));
-    for (const [slot, registration] of registrations) expect(registration.contract.id).toBe(slot);
+    for (const [slot, registration] of registrations) {
+      expect(registration.contract.id).toBe(slot);
+      const entry = Object.values(registration.document.frames ?? registration.document.sections!)[0]!;
+      expect(entry.reads).toHaveProperty("tokens");
+      expect(entry.reads).not.toHaveProperty("themes");
+    }
     const surfaceApi = await agentModule("designer", "library-cli/surface-catalog.js");
     const current = surfaceApi.foundrySurfaceCatalog() as NonNullable<CompositeCatalogData["surfaces"]>;
     // Adopt using the authentic prior source catalog, never a hand-edited held origin.
@@ -39,7 +44,7 @@ describe("historical package surfaces through native consumer operations", () =>
     const surfaceOptions = { packages: await evidence.readSurfacePackageEvidence(surfaces.fills), measurements: [] };
     const empty: CompositeLibraryData = { source: { id: "example", kind: "consumer", author: "consumer", license: "MIT" }, adoptedAt: "2026-10-30", values: { fills: [] }, components: { fills: [], files: [] }, surfaces: { version: 1, fills: [], files: [] } };
     const library = applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes: [
-      { portion: "values", change: { op: "adopt", slot: "themes.primary", source: "foundry" } },
+      { portion: "values", change: { op: "adopt", slot: "themes.primary", source: "shadcn@aria" } },
       ...historicalHolds.map(([slot]) => ({ portion: "surfaces" as const, change: { op: "adopt" as const, slot, source: "foundry" } })),
     ] }, { surfaceOptions });
     const reader = await agentModule("designer", "library-cli/fs-library.js");
@@ -69,13 +74,19 @@ describe("historical package surfaces through native consumer operations", () =>
     expect(verdict.findings).not.toContainEqual(expect.objectContaining({ code: "A1", severity: "error", subject: "assets.image.default" }));
     for (const [slot, hash] of historicalHolds) expect(verdict.findings).toContainEqual(expect.objectContaining({ code: "S2", severity: "notice", subject: slot, actualHash: hash, nextOperation: { op: "refresh", slot, source: "foundry" } }));
     expect(result.stderr).not.toContain("unique registered historical upstream required");
+    expect(result.stderr).not.toContain("TypeError");
   }, 90_000);
 
   it("actual in-process Studio selection reads the historical hold and exposes later qualification findings", async () => {
     const stored = await readStudioDesignerLibrary(consumer);
     expect(stored).toBeDefined();
     const prepared = await prepareStudioSelection(stored);
+    const beforeLibrary = libraryHash(prepared.input.library);
+    const beforeSurfaces = JSON.stringify(prepared.input.library.surfaces);
+    expect(() => resolve(prepared.input)).not.toThrow();
     expect(resolve(prepared.input).surfaces!.check.findings).toContainEqual(expect.objectContaining({ code: "S2", severity: "notice", subject: "sections.hero", actualHash: historicalHash }));
+    expect(libraryHash(prepared.input.library)).toBe(beforeLibrary);
+    expect(JSON.stringify(prepared.input.library.surfaces)).toBe(beforeSurfaces);
     const held = prepared.input.library.surfaces!.fills.find(doc => doc.$extensions["com.clossys.fill"].slot === "sections.hero")!;
     expect(Object.values(held.sections!)[0]!.origin).toMatchObject({ descriptorHash: historicalHash, fill: "foundry/sections.hero" });
     const selection = await studioSelection(consumer);
