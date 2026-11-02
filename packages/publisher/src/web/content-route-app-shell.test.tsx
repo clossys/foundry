@@ -11,6 +11,8 @@ import { AppFrame } from "@clossys/designer/frames";
 import { SectionHeader } from "@clossys/designer/blocks/server";
 import { JSDOM } from "jsdom";
 import type { CopyResolver } from "@clossys/writer";
+import { validateCopyRegistryShape } from "@clossys/writer";
+import { getAdminCopyRecord, resolveAdminCopyRef } from "@clossys/writer/admin-copy";
 import type { RuntimeRenderInput } from "@clossys/designer/catalog";
 import type { ReactNode } from "react";
 import { mainPublisherContent } from "../content/cli/index.js";
@@ -60,7 +62,13 @@ describe("active admin candidate AppFrame adapter", () => {
     const packet = JSON.parse(await readFile(new URL("../../../writer/src/catalog/records/admin-meta.r1.en.json", import.meta.url), "utf8"));
     expect(packet.activation).toBe("none");
     for (const page of ["designer", "writer", "publisher"] as const) for (const [key, reference] of Object.entries(ADMIN_PAGE_COPY_REFS[page])) {
-      expect(packet.records.find((record: { context: string }) => record.context === `admin.${page}.${key}`)).toMatchObject({ id: reference.id, status: "draft" });
+      expect(packet.bindings.find((binding: { cellId: string }) => binding.cellId === `admin.${page}.${key}`))
+        .toMatchObject({ recordId: reference.id, target: `/agents/${page}` });
+      expect(packet.externalRecords).toContainEqual(expect.objectContaining({ recordId: reference.id, source: "common-labels.r1.en.json" }));
+      const record = getAdminCopyRecord(reference.id);
+      expect(record).toMatchObject({ id: reference.id, status: "draft" });
+      expect(record).not.toHaveProperty("approval");
+      expect(resolveAdminCopyRef(reference)).toBeUndefined();
     }
   });
   it("runs all three slots through the real CLI and review, separate approval and activation, then binds all rendered copy", async () => {
@@ -71,8 +79,12 @@ describe("active admin candidate AppFrame adapter", () => {
     await writeFile(catalogFile, JSON.stringify(catalog));
     await writeContentStore(root, emptyRegistry());
     const ids = (["designer", "writer", "publisher"] as const).flatMap(name => [ref(`${name}.heading`).id, ...adminPageMeta(name, "en").map(field => field.ref!.id)]);
-    await writeFile(writerFile, JSON.stringify({ registry: { id: "synthetic", revision: "1", locale: "en", source: { kind: "consumer", reference: "fixture" },
-      entries: ids.map(id => ({ id, text: `[[${id}]]`, context: "Synthetic CLI fixture", status: "approved" })) } }));
+    const registry = { id: "synthetic", revision: "1", locale: "en", source: { kind: "consumer", reference: "fixture" },
+      entries: [...new Set(ids)].map(id => ({ id, text: `[[${id}]]`, context: "Synthetic CLI fixture", status: "approved" })) };
+    expect(ids).toHaveLength(15);
+    expect(validateCopyRegistryShape(registry)).toEqual([]);
+    expect(registry.entries).toHaveLength(9);
+    await writeFile(writerFile, JSON.stringify({ registry }));
     let n = 0;
     const command = async (name: PublisherCommand, input: unknown, withWriter = true) => {
       const file = join(parent, `command-${++n}.json`); await writeFile(file, JSON.stringify(input));
@@ -103,6 +115,20 @@ describe("active admin candidate AppFrame adapter", () => {
         const missingWriter = await command("review", { candidateId: candidate.id }, false);
         expect(missingWriter.exitCode).toBe(1);
         expect(missingWriter.findings.some(finding => finding.rule === "copy-resolver-required")).toBe(true);
+      }
+      if (name === "designer") {
+        const duplicate = { ...registry, entries: [...registry.entries, registry.entries[0]!] };
+        expect(validateCopyRegistryShape(duplicate).some(finding => finding.rule === "id-unique")).toBe(true);
+        await writeFile(writerFile, JSON.stringify({ registry: duplicate }));
+        try {
+          const invalid = await command("review", { candidateId: candidate.id });
+          expect(invalid.exitCode).toBe(1);
+          expect(invalid.findings.some(finding => finding.rule === "unresolved-copy")).toBe(true);
+          const invalidStages = (invalid.data as { stages: ReturnType<typeof computeStageReport> }).stages;
+          expect(invalidStages.stages.assemble.status).toBe("Failing");
+          expect(invalidStages.stages.review.status).toBe("Failing");
+          expect((invalid.data as { candidate: ContentCandidate }).candidate.approval).toBeUndefined();
+        } finally { await writeFile(writerFile, JSON.stringify({ registry })); }
       }
       const reviewed = await command("review", { candidateId: candidate.id });
       expect(reviewed.findings).toEqual([]); expect(reviewed.exitCode).toBe(0);
