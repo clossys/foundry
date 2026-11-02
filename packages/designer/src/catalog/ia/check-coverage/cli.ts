@@ -1,3 +1,4 @@
+import { cliErrorDetail, cliRemedy } from "../../../cli-remedies.js";
 import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { basename, dirname, isAbsolute, relative, resolve } from "node:path";
@@ -71,5 +72,5 @@ export async function main(argv: string[], io: IO = defaultIO): Promise<number> 
     writeReport(out, report, inputRoots(options), [args.get("--input"), options.publisherInput, options.checksInput].filter((path): path is string => !!path));
     io.out(summaryTable(report)); io.out(`Report: ${resolve(out)}`);
     return report.findings.length ? 1 : 0;
-  } catch (error) { io.error(`ia-coverage: ${error instanceof Error ? error.message : String(error)}`); return 2; }
+  } catch (error) { io.error(`ia-coverage: ${cliErrorDetail(error)}`); io.error(cliRemedy("designer-library")); return 2; }
 }

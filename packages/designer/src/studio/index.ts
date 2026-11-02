@@ -89,3 +89,7 @@ export type { SpecimenAgent, SpecimenCoverageCell, RegisteredSpecimenCases, Spec
 export { studioSpecimenLeaves, enumerateRegisteredDesignerSpecimenCases } from "./specimen-registry.js";
 export { projectAgentSpecimenPlan, bindAgentSpecimenPlan } from "./specimen-plan.js";
 export type { NativeAgentSpecimenPlan } from "./specimen-plan.js";
+
+/** Interactive application frame specimen, owned by Studio. */
+export { AppFrameSpecimen } from "../frames/AppFrame.specimen.js";
+export type { AppFrameSpecimenProps } from "../frames/AppFrame.specimen.js";

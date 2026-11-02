@@ -540,10 +540,10 @@ export type { SettingsSectionGroup, SettingsSectionLabels, SettingsSectionProps 
 export { FormWizard } from "./blocks/FormWizard.js";
 export type { FormWizardStep, FormWizardLabels, FormWizardProps } from "./blocks/FormWizard.js";
 
-export { AppFrame, AppFrameSpecimen, APP_FRAME_CONTRACT, APP_FRAME_CONFIG_SCHEMA } from "./frames/index.js";
+export { AppFrame, APP_FRAME_CONTRACT, APP_FRAME_CONFIG_SCHEMA } from "./frames/index.js";
 export { InspectorFrame } from "./frames/index.js";
 export type { InspectorFrameProps, InspectorFramePresentation } from "./frames/index.js";
-export type { AppFrameProps, AppFrameBrand, AppFrameAccount, AppFrameRightPanel, AppFrameLayout, AppFrameStage, AppFrameNotice, AppFrameDock, AppFrameSpecimenProps } from "./frames/index.js";
+export type { AppFrameProps, AppFrameBrand, AppFrameAccount, AppFrameRightPanel, AppFrameLayout, AppFrameStage, AppFrameNotice, AppFrameDock } from "./frames/index.js";
 
 export { SemanticContent } from "./components/SemanticContent.js";
 export type { SemanticContentTag, SemanticContentProps } from "./components/SemanticContent.js";
