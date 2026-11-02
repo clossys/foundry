@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import sectionSlots from "../catalog/slots/sections.json" with { type: "json" };
 import type { SectionSlot } from "../catalog-core/sections-contract.js";
+import { specimenSectionSourceCatalog } from "./specimen-sections.js";
 import {
   FOUNDRY_SECTION_MAP, generatedFoundrySectionFiles, importFoundrySections,
 } from "./foundry-sections.js";
@@ -13,18 +14,21 @@ const directory = resolve(here, "../catalog/fills/foundry");
 const barrel = readFileSync(resolve(here, "../blocks/index.ts"), "utf8");
 const exports = [...barrel.matchAll(/export\s*\{([^}]+)\}/g)].flatMap(match => match[1]!.split(",").map(binding => binding.trim().split(/\s+as\s+/).at(-1)!));
 const slots = sectionSlots as unknown as readonly SectionSlot[];
+const specimenSourceSlots = specimenSectionSourceCatalog().fills.map(fill => fill.$extensions["com.clossys.fill"].slot).sort();
+const nativePackageSlots = slots.filter(slot => !specimenSourceSlots.includes(slot.id)).map(slot => slot.id).sort();
 const imported = () => importFoundrySections({ exports });
 const change = (leaf: string, patch: Partial<(typeof FOUNDRY_SECTION_MAP)[string]>) => ({ ...FOUNDRY_SECTION_MAP, [leaf]: { ...FOUNDRY_SECTION_MAP[leaf]!, ...patch } });
 
 describe("Foundry section package descriptors", () => {
-  it("regenerates exactly 51 descriptors and coverage for all 51 leaves", () => {
+  it("regenerates native package descriptors and coverage for every authored section contract", () => {
     const files = generatedFoundrySectionFiles({ exports });
     if (process.env.UPDATE_FOUNDRY_SECTION_FILLS === "1") for (const [name, bytes] of Object.entries(files)) writeFileSync(resolve(directory, name), bytes);
     expect(readdirSync(directory).filter(name => name.startsWith("sections.") && name.endsWith(".json")).sort()).toEqual(Object.keys(files).sort());
     for (const [name, bytes] of Object.entries(files)) expect(readFileSync(resolve(directory, name), "utf8"), name).toBe(bytes);
-    expect(imported().fills).toHaveLength(51);
+    expect(imported().fills.map(fill => fill.$extensions["com.clossys.fill"].slot).sort()).toEqual(nativePackageSlots);
+    expect(Object.keys(FOUNDRY_SECTION_MAP).map(leaf => `sections.${leaf}`).sort()).toEqual(nativePackageSlots);
+    expect(slots.filter(slot => specimenSourceSlots.includes(slot.id)).map(slot => slot.id).sort()).toEqual(specimenSourceSlots);
     expect(imported().coverage.map(row => row.slot)).toEqual(slots.map(slot => slot.id).sort());
-    expect(imported().coverage).toHaveLength(51);
     expect(generatedFoundrySectionFiles({ exports, slots: [...slots].reverse() })).toEqual(files);
   });
 
@@ -68,9 +72,15 @@ describe("Foundry section package descriptors", () => {
     }
   });
 
-  it("keeps unavailable sections and aggregate recipes explicit", () => {
-    expect(imported().coverage.filter(row => row.status === "unavailable").map(row => row.slot)).toEqual([
-    ].map(leaf => `sections.${leaf}`));
+  it("keeps package-unavailable specimen sources and aggregate recipes explicit", () => {
+    const result = imported();
+    expect(result.coverage.filter(row => row.status === "unavailable").map(row => row.slot).sort()).toEqual(specimenSourceSlots);
+    for (const id of specimenSourceSlots) {
+      const row = result.coverage.find(row => row.slot === id)!;
+      expect(row.supportedSlots, id).toEqual([]);
+      expect(row.missingRequiredSlots, id).toEqual(slots.find(slot => slot.id === id)!.contract.slots.filter(slot => slot.required).map(slot => slot.name).sort());
+      expect(result.fills.some(fill => fill.$extensions["com.clossys.fill"].slot === id), id).toBe(false);
+    }
     const docs = imported().fills.flatMap(doc => Object.values(doc.sections));
     for (const name of ["EventItem", "Stat", "UsageMeter", "Items"]) expect(docs.some(doc => doc.impl.export === name)).toBe(false);
     expect(docs.find(doc => doc.slot === "sections.comparison")!.configs).toEqual({ arrangement: "grid" });
@@ -177,7 +187,10 @@ describe("Foundry section package descriptors", () => {
     expect(source("Hero.tsx")).toContain('import { HeroIntro } from "./hero/HeroIntro.js"');
     expect(source("Hero.tsx")).toMatch(/<HeroIntro[\s\S]*heading=[\s\S]*description=\{description\}[\s\S]*actions=\{actions\}/);
     const heroIntro = source("hero/HeroIntro.tsx");
-    expect(heroIntro).toContain('import { SemanticContent } from "../../components/SemanticContent.js"');
+    const semanticTypeImport = /import type \{ SemanticContent as ([A-Za-z_$][\w$]*) \} from "\.\.\/\.\.\/components\/SemanticContent\.js"/.exec(heroIntro);
+    expect(semanticTypeImport).not.toBeNull();
+    expect(heroIntro).toContain('import { componentLeaf } from "../../runtime/component-leaf.js"');
+    expect(heroIntro).toContain(`const SemanticContent = componentLeaf<typeof ${semanticTypeImport![1]}>("components.semantic-content");`);
     expect(heroIntro).toMatch(/<SemanticContent as=\{HeadingTag\}[\s\S]*\{heading\}[\s\S]*<\/SemanticContent>/);
     expect(heroIntro).toMatch(/<SemanticContent as="p"[\s\S]*\{description\}[\s\S]*<\/SemanticContent>/);
     expect(heroIntro).toMatch(/data-section-intro-actions=""[\s\S]*\{actions\}/);
