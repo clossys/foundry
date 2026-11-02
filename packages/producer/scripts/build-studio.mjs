@@ -5,6 +5,7 @@ import { cp, lstat, mkdir, readFile, rm, stat, writeFile } from "node:fs/promise
 import { createRequire } from "node:module";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { assertPreviewContext, previewArguments } from './studio-draft-items.mjs';
 
 const producerDir = fileURLToPath(new URL("../", import.meta.url));
 const studioDir = join(producerDir, "studio");
@@ -47,7 +48,7 @@ async function refuseSymlink(path) {
 const portable = (path) => path.split(sep).join("/");
 
 /** Copy real Next output, preserving its monorepo layout and traced dependencies. */
-export async function packageStandalone(appDir, destination) {
+export async function packageStandalone(appDir, destination, preview) {
   // The only directory this script removes is the dedicated dist/studio output.
   if (destination !== join(dirname(appDir), "dist", "studio")) {
     throw new Error("Studio output must be the package's dist/studio directory.");
@@ -65,6 +66,10 @@ export async function packageStandalone(appDir, destination) {
   await requirePath(join(standaloneApp, "server.js"), "file", "Next standalone output is missing the Studio server.js entry.");
   await requirePath(join(buildDir, "static"), "directory", "Next build is missing .next/static assets.");
   const publicSource = join(appDir, "public");
+  let projection;
+  try { projection = JSON.parse(await readFile(join(appDir, 'generated/studio-map.json'), 'utf8')); }
+  catch (error) { if (error.code !== 'ENOENT') throw error; }
+  assertPreviewContext(projection?.assembly, preview);
   let hasPublic = false;
   try {
     const info = await stat(publicSource);
@@ -96,6 +101,7 @@ export async function packageStandalone(appDir, destination) {
     serverEntry,
     staticDir: portable(relative(destination, join(targetApp, ".next", "static"))),
     publicDir: hasPublic ? portable(relative(destination, join(targetApp, "public"))) : null,
+    ...(preview ? { preview } : {}),
   };
   await writeFile(join(destination, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
   return manifest;
@@ -103,10 +109,11 @@ export async function packageStandalone(appDir, destination) {
 
 export async function buildStudio(args = process.argv.slice(2)) {
   if (args.length === 1 && (args[0] === "--help" || args[0] === "-h")) {
-    console.log("Usage: node packages/producer/scripts/build-studio.mjs\nBuild the Studio Next app and copy standalone output into packages/producer/dist/studio.");
+    console.log("Usage: node packages/producer/scripts/build-studio.mjs [--preview-bindings FILE]\nBuild the Studio Next app and copy standalone output into packages/producer/dist/studio. Explicit preview uses exact native bindings and remains DRAFT/unapproved/unqualified.");
     return 0;
   }
-  if (args.length) throw new Error("Unexpected arguments. Use --help for usage.");
+  const invocation = await previewArguments(args);
+  if (invocation.args.length) throw new Error("Unexpected arguments. Use --help for usage.");
   await requirePath(studioDir, "directory", "Studio app is missing: packages/producer/studio. Add the Studio app before building it.");
   const require = createRequire(join(studioDir, "package.json"));
   let nextCli;
@@ -118,11 +125,12 @@ export async function buildStudio(args = process.argv.slice(2)) {
   const result = spawnSync(process.execPath, [nextCli, "build", studioDir], {
     cwd: producerDir,
     stdio: "inherit",
+    env: invocation.env,
   });
   if (result.error) throw result.error;
   if (result.signal) throw new Error(`Studio Next build stopped by ${result.signal}.`);
   if (result.status !== 0) return result.status ?? 1;
-  const manifest = await packageStandalone(studioDir, outputDir);
+  const manifest = await packageStandalone(studioDir, outputDir, invocation.descriptor);
   console.log(`Studio standalone ready: dist/studio/${manifest.serverEntry}`);
   return 0;
 }

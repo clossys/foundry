@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { packageStandalone } from "./build-studio.mjs";
+import { previewDescriptor } from './studio-draft-items.mjs';
 
 async function fixture(t, relativeAppDir = "packages/producer/studio") {
   const root = await mkdtemp(join(tmpdir(), "studio package "));
@@ -51,6 +52,27 @@ test("supports an app-root standalone entry and replaces stale output repeatably
   assert.equal(second.serverEntry, "server.js");
   assert.equal(second.publicDir, null);
   await assert.rejects(lstat(join(f.output, "stale.js")), { code: "ENOENT" });
+});
+
+test('explicit Draft packaging binds the built projection digest and marks the artifact without input host paths', async t => {
+  const f = await fixture(t);
+  const preview = previewDescriptor([{ slot: 'sections.example', element: 'example', version: 1, hash: `sha256:${'a'.repeat(64)}` }]);
+  await f.put(join(f.app, 'generated/studio-map.json'), JSON.stringify({ assembly: { ...preview, bindingDigest: 'wrong' } }));
+  await assert.rejects(packageStandalone(f.app, f.output, preview), /binding digest/);
+  await f.put(join(f.app, 'generated/studio-map.json'), JSON.stringify({ assembly: preview }));
+  const manifest = await packageStandalone(f.app, f.output, preview);
+  assert.deepEqual(manifest.preview, preview);
+  assert.equal(manifest.preview.status, 'DRAFT');
+  assert.equal(manifest.preview.approved, false);
+  assert.equal(manifest.preview.releaseQualified, false);
+  assert.equal(JSON.stringify(manifest).includes(f.app), false);
+});
+
+test('standalone packaging refuses to strip Draft metadata when explicit preview context is omitted', async t => {
+  const f = await fixture(t);
+  const preview = previewDescriptor([{ slot: 'sections.example', element: 'example', version: 1, hash: `sha256:${'a'.repeat(64)}` }]);
+  await f.put(join(f.app, 'generated/studio-map.json'), JSON.stringify({ assembly: preview }));
+  await assert.rejects(packageStandalone(f.app, f.output), /explicit preview context/);
 });
 
 test("missing real output fails before replacing an existing artifact", async (t) => {

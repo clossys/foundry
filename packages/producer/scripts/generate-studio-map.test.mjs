@@ -233,6 +233,13 @@ test('a slot with no pin, or an item with no trusted reference, fails closed', a
   await assert.rejects(run(options), /no pin/);
 });
 
+test('Draft assembly requires an explicit preview target and complete native bindings', async t => {
+  const options = await fixture(t);
+  await assert.rejects(run(options, { previewItems: [] }), /explicit preview target/);
+  await assert.rejects(run(options, { target: 'preview' }), /explicit native bindings/);
+  await assert.rejects(run(options, { target: 'preview', previewItems: [] }), /explicit native bindings/);
+});
+
 
 test('a page manifest missing its explorer, modules or actions array fails closed (mutation proof)', async t => {
   const mutations = [
