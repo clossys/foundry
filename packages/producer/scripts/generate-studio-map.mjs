@@ -3,6 +3,8 @@ import { createHash } from 'node:crypto';
 import { resolve, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readPinnedPublication } from '@clossys/publisher/content-map/slots';
+import { readIa, readSlot } from '../dist/records/slots.js';
+import { slotPositions, validateSlotDoc } from '../dist/records/slot-model/index.js';
 import { checkPayload } from './studio-payload.mjs';
 import { draftStudioItems, previewArguments, previewDescriptor, previewOptionsFromEnvironment } from './studio-draft-items.mjs';
 
@@ -89,6 +91,7 @@ export function checkManifest(owner, manifest, contracts) {
 export function assemblyOf(entry, route, contracts) {
   const { source } = entry;
   if (!object(source) || typeof source.frameId !== 'string' || !Array.isArray(source.sectionIds)) fail(`${entry.id} is not a frame + sections assembly`);
+  if (!contracts.has(source.frameId)) fail(`${entry.id} places ${source.frameId}, which has no slot contract`);
   const checkInputs = (owner, sections, inputs) => {
     if (!object(inputs)) fail(`${owner} has no section inputs`);
     for (const slot of sections) {
@@ -113,6 +116,24 @@ export function assemblyOf(entry, route, contracts) {
 }
 
 async function readJson(path) { return JSON.parse(await readFile(path, 'utf8')); }
+
+/** Read Designer's IA in order and use only contracts belonging to their slot. */
+function designerContracts(clossysRoot) {
+  const ia = readIa(clossysRoot, 'designer');
+  if (!ia) fail('Designer IA is missing');
+  const contracts = new Map();
+  for (const [id, position] of slotPositions('designer', ia)) {
+    const doc = readSlot(clossysRoot, 'designer', id);
+    if (validateSlotDoc(doc).length || doc.id !== id || doc.agent !== 'designer' ||
+        ['l0', 'l1', 'l2', 'order'].some(key => doc.ia[key] !== position[key])) fail(`invalid Designer slot ${id}`);
+    const contract = doc.contract;
+    if (contract.schema !== 'clossys.slot-contract/1') continue;
+    if (contract.slot !== id || !Array.isArray(contract.inputs) || !contract.inputs.length ||
+        !contract.inputs.every(input => object(input) && nonEmpty(input.name))) fail(`invalid Designer contract ${id}`);
+    contracts.set(id, contract);
+  }
+  return contracts;
+}
 
 /** The pinned element for a slot, and the Studio folder that runs it. */
 async function pinnedItem(clossysRoot, selection, slot) {
@@ -203,7 +224,7 @@ export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outp
   if (!routePack) fail('the studio publication has no route metadata');
   const root = routePack.root;
   if (!object(root) || typeof root.kind !== 'string' || typeof root.note !== 'string') fail('the studio publication config names no root');
-  const contracts = new Map((await readJson(join(clossysRoot, 'agents', 'designer', 'slot-contracts', 'studio.json'))).map(contract => [contract.slot, contract]));
+  const contracts = designerContracts(clossysRoot);
   const routes = new Map(routePack.routes.map(route => [route.instanceId, route]));
   const pages = map.entries.filter(entry => entry.kind === 'page').map(entry => {
     const route = routes.get(entry.id);
