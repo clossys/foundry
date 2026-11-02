@@ -2,6 +2,7 @@ import { CatalogError } from "./api.js";
 import { stableStringify } from "./stable.js";
 import { assertComponentDescriptor, assertComponentIdentifier, assertComponentPath, assertPackageSpecifier, componentDescriptorHash, sortedComponentIds, verifyComponentOutput } from "./resolve-components.js";
 import { componentSecondaryExports } from "./component-secondary-exports.js";
+import { assertComponentNamespaceClosure } from "./component-source-values.js";
 import { isObservationPending } from "./check-components.js";
 import { inspectGlyph } from "../catalog-assets/svg.js";
 import { dsAttrs, type DsAttrs } from "./provenance-attrs.js";
@@ -49,13 +50,17 @@ export function assertComponentImportClosure(files: readonly ComponentFile[], pa
   for (const file of files.filter(file => /\.tsx?$/.test(file.path))) {
     // Comments can contain import-looking text; strip them without modifying quoted module text.
     const commentless = file.content.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
-    // A namespace import binds no individual name, so its closure is the package itself being an observed dependency.
-    const code = commentless.replace(/\bimport\s+(?:type\s+)?\*\s+as\s+[A-Za-z_$][\w$]*\s+from\s*["']([^"']+)["']\s*;?/g, (statement, specifier: string) => {
+    const namespaces = new Map<string, { module: string; erased: boolean }>();
+    // Every runtime member must exist on the imported module, including components.
+    const code = commentless.replace(/\bimport\s+(type\s+)?\*\s+as\s+([A-Za-z_$][\w$]*)\s+from\s*["']([^"']+)["']\s*;?/g, (statement, erased: string | undefined, local: string, specifier: string) => {
       if (specifier.startsWith(".")) throw new CatalogError(`components: unsupported import syntax in ${file.path}`);
       assertPackageSpecifier(specifier);
       if (!Object.hasOwn(packageExports, specifier)) throw new CatalogError(`components: unsupported import syntax in ${file.path}`);
+      if (namespaces.has(local)) throw new CatalogError(`components: duplicate namespace import in ${file.path}`);
+      namespaces.set(local, { module: specifier, erased: !!erased });
       return "";
     });
+    assertComponentNamespaceClosure(file.content, namespaces, packageExports);
     if (/\b(?:import|require)\s*\(/.test(code) || /\bimport\s+(?!type\s*\{|\{)[^;\n]*\bfrom\b/.test(code) || /\bimport\s*["']/.test(code)) throw new CatalogError(`components: unsupported import syntax in ${file.path}`);
     for (const match of code.matchAll(/\b(?:import|export)\s+(type\s+)?\{([^}]+)\}\s*from\s*["']([^"']+)["']/g)) {
       const specifier = match[3]!, typeOnlyStatement = match[1] !== undefined;
