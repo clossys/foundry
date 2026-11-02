@@ -106,7 +106,14 @@ export interface Selection {
   slots: readonly { slot: string; originKinds: readonly Origin["kind"][]; sources: readonly string[]; rationale: DtcgValue }[];
 }
 export type ResolvedValue = DtcgValue;
+export interface LocalFontSource { readonly ref: string; readonly version: string; readonly sha256: string }
+export interface LocalFontPayload {
+  readonly kind: "local"; readonly family: string; readonly fallback: readonly string[];
+  readonly licenses: readonly { readonly id: string; readonly spdx: string; readonly path: string; readonly sha256: string; readonly bytes: number; readonly source: LocalFontSource }[];
+  readonly files: readonly { readonly path: string; readonly sha256: string; readonly bytes: number; readonly weight: string; readonly style: "normal" | "italic"; readonly subsets: readonly string[]; readonly languages: readonly string[]; readonly license: string; readonly source: LocalFontSource; readonly coverage: { readonly ref: string; readonly sha256: string } }[];
+}
 export type FontPayload =
+  | LocalFontPayload
   | { kind: "system" }
   | { kind: "fontsource"; package: string; version: string; weights: readonly number[]; styles: readonly ("normal" | "italic")[]; license: string };
 export interface ResolvedMember {

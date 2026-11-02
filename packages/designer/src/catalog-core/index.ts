@@ -190,3 +190,6 @@ export { COMPONENT_DISPLAY_TREE } from "../catalog/display.js";
 export type { ComponentDisplayTree } from "../catalog/display.js";
 export { resolveComponentId } from "../catalog/component-aliases.js";
 export { componentSelection } from "../catalog/component-selection.js";
+
+export { parseLocalFontPayload } from "./local-font.js";
+export type { LocalFontPayload, LocalFontSource } from "./types.js";

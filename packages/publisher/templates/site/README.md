@@ -357,3 +357,66 @@ template. Publisher's `GlobalErrorDocument` is the document for one, but Next
 requires that file to be a client module, and this template resolves copy
 only on the server (Writer's root reads the file system), so the file would
 need its copy built into the client bundle another way first.
+
+### Native local font output
+
+The template imports `nativeFontVariables` from `src/clossys/fonts.ts` and applies
+it to `<html>`. The shipped module exports an empty string, preserving the
+existing system font defaults until canonical font references are supplied.
+
+The consumer's native assembly can invoke the public font API alongside its
+page API and pass the returned files to its normal native output writer:
+
+```ts
+import { resolveNativeNextFonts } from "@clossys/publisher/install";
+
+const fonts = await resolveNativeNextFonts({
+  bindings: canonicalFontReferences,
+  source: canonicalRecordSource,
+  readFile: readAdmittedRelativeAsset,
+});
+if (fonts.findings.length) throw new Error("Native font inputs are needed");
+// Write each fonts.files entry at its exact path, preserving Uint8Array contents.
+// src/clossys/fonts.ts replaces the template default; JSX needs no patch.
+```
+
+Each reference is `{ slot, element, version, contentHash }`: `slot` is one of
+`themes.font-sans`, `themes.font-heading`, `themes.font-serif`, or
+`themes.font-mono`; `contentHash` is the raw SHA-256 of the current canonical
+candidate JSON. The source must return that exact id/version/raw candidate,
+with `type: "registry:font"`, matching `name` and `meta.slot`, and the Designer
+`LocalFontPayload` at `meta.font`. The same payload is the DTCG
+`com.clossys.font` extension. FillDocs and provider catalog metadata do not
+substitute for canonical records.
+
+`readFile(relativePath)` returns `Promise<Uint8Array | undefined>`. The caller
+confines this read-only provider to its admitted font/license assets. The API
+validates relative paths before invoking it, snapshots every returned byte,
+and verifies font and license lengths/digests against both the descriptor and
+its unchanged provider source digest. Output contains only `src/clossys/**`:
+direct module-scope `next/font/local` calls, content-addressed font copies and
+license copies. It performs no filesystem writes, downloads or package lookup.
+
+No bindings produce no files. Any missing record or invalid evidence produces
+`NEED` findings and no usable files. Every result remains `status: "DRAFT"`,
+`approved: false`, `selectionGranted: false`; reference input does not grant
+Producer selection or owner approval. Designer retains ownership of coverage
+content semantics. Returned source/coverage evidence is preserved, not newly
+qualified by this compiler.
+
+The focused compiler tests use explicitly synthetic byte arrays; they prove no
+font validity or native Next build. A positive Next 16 build must use actual
+admitted local font/license artifacts and real canonical record references.
+Run normal package test configuration (including its global setup) locally:
+
+```sh
+npm run test --workspace packages/designer -- src/catalog-core/local-font.test.ts src/catalog-core/emit.golden.test.ts
+npm run test --workspace packages/publisher -- src/install/native-next-fonts.test.ts
+```
+
+A byte-verification mutation check can replace only
+`sha256(snapshot) !== descriptor.sha256` with `false` in
+`src/install/native-next-fonts.ts`, then run the Publisher command above. The
+named `rejects actual font byte drift before any output` assertion must fail
+because changed same-length bytes become output. Restore that mutation before
+normal checks. This is a runtime assertion check, not a compile-failure test.
