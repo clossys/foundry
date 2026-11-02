@@ -8024,6 +8024,46 @@
     "status": "draft"
   },
   {
+    "id": "sections.sectioned-document",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "div",
+      "anatomy": {
+        "band": null,
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "document",
+          "type": "records",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "landmark.none"
+        ]
+      },
+      "allowedComposes": [],
+      "parts": [],
+      "allowedReads": {
+        "themes": [],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "site",
+      "passageSchema": "passages.sectioned-document",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
     "id": "sections.settings",
     "layer": "sections",
     "contract": {
