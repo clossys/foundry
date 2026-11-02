@@ -16,7 +16,7 @@ export interface SpecimenTable {
   id: string;
   label: string;
   columns: readonly string[];
-  /** The prose column, given a readable minimum width. */
+  /** The column containing prose. */
   prose?: number;
   rows: readonly { key: string; cells: readonly { text: string; href?: string; statusLabel?: string; statusTone?: SpecimenTone }[] }[];
 }
@@ -52,7 +52,7 @@ function Viewports({ name, specimens, empty }: { name: string; specimens: readon
 }
 
 function RecordTable({ name, table, titled }: { name: string; table: SpecimenTable; titled: boolean }) {
-  return <CardContent className="flex flex-col gap-2">
+  return <CardContent className="flex min-w-0 flex-col gap-2">
     {titled && <CardDescription role="heading" aria-level={3} className="font-medium text-foreground">{table.label}</CardDescription>}
     <Table aria-label={`${name} ${table.label}`}>
       <TableHeader>
@@ -60,8 +60,8 @@ function RecordTable({ name, table, titled }: { name: string; table: SpecimenTab
       </TableHeader>
       <TableBody>
         {table.rows.map(row => <TableRow key={row.key} id={row.key}>
-          {row.cells.map((cell, index) => <TableCell key={index} className={index === table.prose ? 'min-w-48 whitespace-pre-wrap' : 'whitespace-pre-wrap'}>
-            {cell.href ? <LinkButton href={cell.href} variant="link" size="sm" className="h-auto px-0 text-left whitespace-pre-wrap break-words">{cell.text}</LinkButton> : cell.text}
+          {row.cells.map((cell, index) => <TableCell key={index} className="whitespace-pre-wrap" style={{ overflowWrap: 'anywhere' }}>
+            {cell.href ? <LinkButton href={cell.href} variant="link" size="sm" className="h-auto min-w-0 max-w-full px-0 text-left whitespace-pre-wrap" style={{ overflowWrap: 'anywhere' }}>{cell.text}</LinkButton> : cell.text}
             {cell.statusLabel && <Badge variant={cell.statusTone ?? 'outline'} className="ml-2">{cell.statusLabel}</Badge>}
           </TableCell>)}
         </TableRow>)}
@@ -74,7 +74,7 @@ function RecordTable({ name, table, titled }: { name: string; table: SpecimenTab
 export function SpecimenContent({ specimen }: { specimen: SpecimenInput }) {
   if (specimen.kind === 'viewports') return <Viewports name={specimen.name} specimens={specimen.specimens} empty={specimen.empty} />;
   if (specimen.tables?.length) return <>{specimen.tables.map(table => <RecordTable key={table.id} name={specimen.name} table={table} titled={specimen.tables!.length > 1} />)}</>;
-  if (specimen.rows?.length) return <CardContent>
+  if (specimen.rows?.length) return <CardContent className="min-w-0">
     <Table aria-label={`${specimen.name} specimen`}>
       <TableHeader>
         <TableHead isRowHeader>Key</TableHead>
@@ -82,9 +82,9 @@ export function SpecimenContent({ specimen }: { specimen: SpecimenInput }) {
       </TableHeader>
       <TableBody>
         {specimen.rows.map(row => <TableRow key={row.key} id={row.key}>
-          <TableCell>{row.label}</TableCell>
-          <TableCell className="whitespace-pre-wrap">
-            {row.href ? <LinkButton href={row.href} variant="link" size="sm" className="h-auto px-0 text-left whitespace-pre-wrap break-words">{row.text}</LinkButton> : row.text}
+          <TableCell className="whitespace-pre-wrap" style={{ overflowWrap: 'anywhere' }}>{row.label}</TableCell>
+          <TableCell className="whitespace-pre-wrap" style={{ overflowWrap: 'anywhere' }}>
+            {row.href ? <LinkButton href={row.href} variant="link" size="sm" className="h-auto min-w-0 max-w-full px-0 text-left whitespace-pre-wrap" style={{ overflowWrap: 'anywhere' }}>{row.text}</LinkButton> : row.text}
           </TableCell>
         </TableRow>)}
       </TableBody>

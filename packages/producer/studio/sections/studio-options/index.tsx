@@ -31,8 +31,8 @@ function Preview({ name, row, copy }: { name: string; row: OptionRow & { copy: O
     </TableHeader>
     <TableBody>
       {row.preview.rows.map(line => <TableRow key={line.key} id={line.key}>
-        <TableCell>{line.key}</TableCell>
-        <TableCell className="min-w-48 whitespace-normal">
+        <TableCell className="whitespace-pre-wrap" style={{ overflowWrap: 'anywhere' }}>{line.key}</TableCell>
+        <TableCell className="whitespace-pre-wrap" style={{ overflowWrap: 'anywhere' }}>
           {line.text}
           {line.change !== 'same' && <Badge variant={CHANGE_TONE[line.change]} className="ml-2">{copy.changeLabels[line.change]}</Badge>}
         </TableCell>
@@ -48,7 +48,7 @@ export default function OptionsSection({ options }: { options: OptionsInput }) {
       <CardTitle role="heading" aria-level={2}>{options.copy.title}</CardTitle>
       <CardDescription>{options.description}</CardDescription>
     </CardHeader>
-    <CardContent>
+    <CardContent className="min-w-0">
       <CardGrid density="specimens">
         {options.rows.map(row => <SpecimenFigure key={row.version} caption={<>
           <Badge variant={row.pinned ? 'secondary' : 'outline'}>{row.label}</Badge>
