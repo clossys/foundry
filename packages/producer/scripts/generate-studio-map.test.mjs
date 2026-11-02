@@ -19,7 +19,14 @@ async function fixture(t) {
   const clossysRoot = join(dir, 'clossys'), outputDir = join(dir, 'generated');
   await mkdir(join(clossysRoot, 'agents', 'designer'), { recursive: true });
   await cp(join(clossys, 'agents', 'publisher'), join(clossysRoot, 'agents', 'publisher'), { recursive: true });
-  await cp(join(clossys, 'agents', 'designer', 'slot-contracts'), join(clossysRoot, 'agents', 'designer', 'slot-contracts'), { recursive: true });
+  const designer = join(clossys, 'agents', 'designer'), copy = join(clossysRoot, 'agents', 'designer');
+  const ia = JSON.parse(await readFile(join(designer, 'ia.json'), 'utf8'));
+  await cp(join(designer, 'ia.json'), join(copy, 'ia.json'));
+  for (const node of ia.nodes) for (const child of node.children) for (const slot of child.slots) {
+    const path = join(node.id, child.id, slot, 'slot.json');
+    await mkdir(join(copy, node.id, child.id, slot), { recursive: true });
+    await cp(join(designer, path), join(copy, path));
+  }
   await cp(join(clossys, 'library'), join(clossysRoot, 'library'), { recursive: true });
   await cp(join(clossys, 'selection.json'), join(clossysRoot, 'selection.json'));
   return { clossysRoot, outputDir, publisherRoot: join(clossysRoot, 'agents', 'publisher') };
@@ -30,6 +37,65 @@ async function replace(path, before, after) {
   await writeFile(path, source.replace(before, after));
 }
 const run = (options, extra = {}) => generateStudioMap({ clossysRoot: options.clossysRoot, outputDir: options.outputDir, ...extra });
+
+async function designerSlot(options, id) {
+  const root = join(options.clossysRoot, 'agents/designer');
+  const ia = JSON.parse(await readFile(join(root, 'ia.json'), 'utf8'));
+  for (const node of ia.nodes) for (const child of node.children) if (child.slots.includes(id)) return join(root, node.id, child.id, id, 'slot.json');
+  assert.fail(`Missing Designer slot ${id}`);
+}
+
+test('canonical Designer contracts work without the retired map and ignore a conflicting map', async t => {
+  const options = await fixture(t);
+  const expected = await run(options, { payloads: false });
+  assert.ok(expected.pages.some(page => page.manifest.modules.some(module => module.section === 'sections.module.explorer')));
+  for (const page of expected.pages) for (const module of page.manifest.modules) {
+    if (module.section === 'sections.module.explorer') assert.equal(module.input, 'explorer');
+  }
+  const legacy = join(options.clossysRoot, 'agents/designer/slot-contracts');
+  await mkdir(legacy, { recursive: true });
+  await writeFile(join(legacy, 'studio.json'), JSON.stringify([{ slot: 'sections.module.explorer', inputs: [{ name: 'poison' }] }]));
+  assert.deepEqual(await run(options, { payloads: false }), expected);
+  await editSlot(await designerSlot(options, 'sections.module.explorer'), doc => {
+    doc.contract.inputs.unshift({ name: 'first', kind: 'data', required: true, description: 'First input' });
+  });
+  const changed = await run(options, { payloads: false });
+  assert.ok(changed.pages.flatMap(page => page.manifest.modules).filter(module => module.section === 'sections.module.explorer').every(module => module.input === 'first'));
+});
+
+test('missing, malformed or foreign Designer slots and contracts refuse assembly', async t => {
+  for (const [label, id, edit] of [
+    ['missing slot', 'sections.module.explorer', async path => rm(path)],
+    ['malformed slot', 'sections.module.explorer', async path => writeFile(path, '{')],
+    ['foreign id', 'sections.module.explorer', async path => editSlot(path, doc => { doc.id = 'sections.module.outline'; })],
+    ['foreign agent', 'sections.module.explorer', async path => editSlot(path, doc => { doc.agent = 'publisher'; })],
+    ['foreign position', 'sections.module.explorer', async path => editSlot(path, doc => { doc.ia.order++; })],
+    ['malformed slot schema', 'sections.module.explorer', async path => editSlot(path, doc => { doc.schema = 'wrong'; })],
+    ['foreign contract', 'sections.module.explorer', async path => editSlot(path, doc => { doc.contract.slot = 'sections.module.outline'; })],
+    ['malformed contract', 'sections.module.explorer', async path => editSlot(path, doc => { doc.contract.inputs = []; })],
+    ['missing contract purpose', 'sections.module.explorer', async path => editSlot(path, doc => { delete doc.contract.purpose; })],
+    ['invalid input kind', 'sections.module.explorer', async path => editSlot(path, doc => { doc.contract.inputs[0].kind = 'invalid'; })],
+    ['missing frame contract', 'frames.studio-shell', async path => editSlot(path, doc => { doc.contract = {}; })],
+  ]) {
+    const options = await fixture(t);
+    await edit(await designerSlot(options, id));
+    await assert.rejects(run(options, { payloads: false }), undefined, label);
+  }
+});
+
+test('missing or malformed Designer IA refuses assembly', async t => {
+  for (const edit of [path => rm(path), path => writeFile(path, '{}')]) {
+    const options = await fixture(t);
+    await edit(join(options.clossysRoot, 'agents/designer/ia.json'));
+    await assert.rejects(run(options, { payloads: false }), /Designer IA is missing|Invalid designer IA/);
+  }
+});
+
+async function editSlot(path, edit) {
+  const doc = JSON.parse(await readFile(path, 'utf8'));
+  edit(doc);
+  await writeFile(path, JSON.stringify(doc));
+}
 
 async function writerCallerFixture(t) {
   const options = await fixture(t);
