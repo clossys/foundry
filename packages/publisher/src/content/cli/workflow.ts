@@ -1,3 +1,4 @@
+import { readLibrary, readSurfacePackageEvidence } from "@clossys/designer/catalog/node";
 import { createCopyResolver } from "@clossys/writer";
 import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
@@ -219,7 +220,12 @@ export async function executePublisherCommand(request: PublisherCommandInput): P
       await writeContentStore(request.root, next);
       return success({ candidate: active, report, stages: computeStageReport(active, evidence) });
     }
-    const releaseInput = { registry, selections: [{ candidateId: candidate.id, review: report }], approvedBy: input.approvedBy as string, at: request.at };
+    const publicationLibrary = Object.hasOwn(candidate.typeSettings, "publication") ? {
+      catalog: request.catalog, library: await readLibrary(request.designerRoot, request.catalog),
+      surfaceOptions: { packages: await readSurfacePackageEvidence(request.catalog.surfaces?.fills ?? []), measurements: [] },
+    } : undefined;
+    const releaseInput = { registry, selections: [{ candidateId: candidate.id, review: report }], approvedBy: input.approvedBy as string, at: request.at,
+      ...(writer === undefined ? {} : { writer }), ...(publicationLibrary === undefined ? {} : { publicationLibrary }) };
     const prepared = prepareContentRelease(releaseInput);
     // A successful preflight permits the write; it is not evidence of a completed release.
     evidence = { ...evidence, release: prepared.ok ? { status: "Waiting", findings: [] } : stageResult(prepared.findings) };
