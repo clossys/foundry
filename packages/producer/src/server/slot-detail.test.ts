@@ -7,6 +7,7 @@ import { slotDetail } from './slot-detail.js';
 import { detailStrings, loadSlotDetail, slotDetailInputs } from '../../studio/lib/slot-detail';
 import { parsePublicationResponse } from '../../studio/lib/publisher-preview';
 import { serializeFrontmatter, slotPositions, type IaDoc } from '../records/slot-model/index.js';
+import { parseWriterCell, serializeWriterCell } from '../../../writer/src/cells/parse.js';
 
 const roots: string[] = [];
 const id = 'passages.example';
@@ -94,6 +95,40 @@ describe('slot details', () => {
     expect(detailStrings('## en\n### title\n<!-- {"id":"a"} -->\nHello\n## fr\n### title\n<!-- {"id":"b"} -->\nBonjour')).toEqual([
       { key: 'en/title', text: 'Hello' }, { key: 'fr/title', text: 'Bonjour' },
     ]);
+  });
+
+  it('shows canonical Writer strings verbatim after serialization, including escaped content lines', () => {
+    const original = [
+      '', '# Literal heading', '## Literal locale', '### Literal key',
+      '<!-- literal comment -->', '\\leading backslash', '```json', '{"literal":true}', '```',
+      'A multiline string.', '', 'Last line.  ', '',
+    ].join('\n');
+    const source = serializeWriterCell({
+      id: 'strings.example', version: 1, status: 'draft', updated: '2026-01-01', links: [], locales: ['en', 'fr'],
+      records: [
+        { locale: 'en', record: { id: 'synthetic-heading-en', context: 'heading', text: original }, bindings: [] },
+        { locale: 'fr', record: { id: 'synthetic-heading-fr', context: 'heading', text: 'Bonjour\nEncore' }, bindings: [] },
+      ],
+    });
+    expect(parseWriterCell(source).records.map(item => item.record.text)).toEqual([original, 'Bonjour\nEncore']);
+    const body = source.slice(source.indexOf('\n---\n') + '\n---\n'.length);
+    expect(detailStrings(body)).toEqual([
+      { key: 'en/heading', text: original }, { key: 'fr/heading', text: 'Bonjour\nEncore' },
+    ]);
+    const { root, dir } = fixture();
+    const bytes = serializeFrontmatter({ slot: id, locales: ['en', 'fr'], source: { kind: 'original', ref: [] } }, body);
+    writeFileSync(join(dir, 'candidates/copy-v1.md'), bytes);
+    writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: 'copy-v1.md', sha256: createHash('sha256').update(bytes).digest('hex'),
+      pinnedBy: 'owner:synthetic-test-only:writer-verbatim-detail', at: '2026-01-01T00:00:00Z' }));
+    const detail = slotDetail(root, 'writer', id)!;
+    expect(detail.candidates[0]!.issues).toEqual([]);
+    const inputs = slotDetailInputs(detail, links, 'light');
+    expect(inputs.specimen).toMatchObject({ kind: 'viewports', specimens: [375, 768, 1280].map(viewport => ({ viewport,
+      light: expect.stringContaining(`width=${viewport}`), dark: expect.stringContaining(`width=${viewport}`),
+    })) });
+    expect(inputs.options).toMatchObject({ rows: [{ preview: { rows: [
+      { key: 'en/heading', text: original }, { key: 'fr/heading', text: 'Bonjour\nEncore' },
+    ] } }] });
   });
 
   it('falls back only for an explicit legacy response, never a missing or malformed detail', async () => {
