@@ -90,7 +90,17 @@ export function listSlots(consumer: string, agent: SlotAgent): SlotEntry[] {
 }
 
 export function readSlot(consumer: string, agent: SlotAgent, id: string): SlotDoc {
-  return readJson(slotFile(locate(consumer, agent, id).dir)) as SlotDoc;
+  const { position, dir } = locate(consumer, agent, id);
+  const path = slotFile(dir);
+  const value: unknown = readJson(path);
+  if (validateSlotDoc(value, path).length) throw new Error(`Invalid ${agent} slot ${id}`);
+  const doc = value as SlotDoc;
+  if (doc.id !== id || doc.agent !== agent
+    || doc.ia.l0 !== position.l0 || doc.ia.l1 !== position.l1
+    || doc.ia.l2 !== position.l2 || doc.ia.order !== position.order) {
+    throw new Error(`Slot ${agent}/${id} does not match its IA position`);
+  }
+  return doc;
 }
 
 export function readCandidate(consumer: string, agent: SlotAgent, id: string, name: string): Candidate {
@@ -138,7 +148,7 @@ export function usedBy(consumer: string, slot: string): { agent: SlotAgent; id: 
   for (const agent of SLOT_AGENTS) for (const entry of listSlots(consumer, agent)) {
     const path = slotFile(entry.dir);
     if (!existsSync(path)) continue;
-    if ((readJson(path) as SlotDoc).uses.includes(slot)) out.push({ agent, id: entry.id });
+    if (readSlot(consumer, agent, entry.id).uses.includes(slot)) out.push({ agent, id: entry.id });
   }
   return out;
 }

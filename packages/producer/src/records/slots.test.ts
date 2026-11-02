@@ -3,8 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { sha256Hex } from "./hash.js";
-import { jsonBytes, serializeFrontmatter, slotPositions, type IaDoc, type SlotAgent } from "./slot-model/index.js";
-import { listSlots, readCandidate, readIa, readiness, slotIndex, usedBy } from "./slots.js";
+import { jsonBytes, serializeFrontmatter, slotPositions, type IaDoc, type SlotAgent, type SlotDoc } from "./slot-model/index.js";
+import { listSlots, readCandidate, readIa, readSlot, readiness, slotIndex, usedBy } from "./slots.js";
 
 let root: string;
 let dirs: Record<string, string>;
@@ -41,6 +41,107 @@ beforeEach(() => {
   }
 });
 afterEach(() => rmSync(root, { recursive: true, force: true }));
+
+const agents = Object.keys(ids) as SlotAgent[];
+const malformedSlots: [string, (doc: SlotDoc) => unknown][] = [
+  ["null document", () => null],
+  ["wrong schema", doc => ({ ...doc, schema: "clossys.slot/2" })],
+  ["missing inputs", doc => ({ ...doc, inputs: undefined })],
+  ["non-array uses", doc => ({ ...doc, uses: ids.designer })],
+  ["invalid use id", doc => ({ ...doc, uses: ["../foreign"] })],
+  ["stored usedBy", doc => ({ ...doc, usedBy: [] })],
+  ["missing IA", doc => ({ ...doc, ia: undefined })],
+  ["invalid contract", doc => ({ ...doc, contract: [] })],
+];
+const foreignSlots: [string, (doc: SlotDoc) => SlotDoc][] = [
+  ["id", doc => ({ ...doc, id: "slot.foreign" })],
+  // Keep the foreign agent/kind pair schema-valid to exercise identity checks.
+  ["agent", doc => ({ ...doc, agent: doc.agent === "director" ? "writer" : "director", kind: doc.agent === "director" ? "strings" : "brief" })],
+  ["l0", doc => ({ ...doc, ia: { ...doc.ia, l0: "foreign" } })],
+  ["l1", doc => ({ ...doc, ia: { ...doc.ia, l1: "foreign" } })],
+  ["l2", doc => ({ ...doc, ia: { ...doc.ia, l2: "foreign" } })],
+  ["order", doc => ({ ...doc, ia: { ...doc.ia, order: doc.ia.order + 1 } })],
+];
+
+describe.each(agents)("canonical %s slot readback", agent => {
+  it("returns the complete document at its actual IA position", () => {
+    const expected = load(join(dirs[agent]!, "slot.json"));
+    expect(readSlot(root, agent, ids[agent])).toEqual(expected);
+    expect(expected.ia).toEqual({
+      ...(agent === "designer" || agent === "writer" ? { l0: "examples" } : {}),
+      l1: "examples", l2: "group", order: 0,
+    });
+  });
+
+  it.each(malformedSlots)("rejects %s before returning or checking readiness", (_name, mutate) => {
+    const path = join(dirs[agent]!, "slot.json");
+    save(path, mutate(load(path)));
+    const error = `Invalid ${agent} slot ${ids[agent]}`;
+    expect(() => readSlot(root, agent, ids[agent])).toThrow(error);
+    expect(() => readiness(root, agent, ids[agent])).toThrow(error);
+  });
+
+  it.each(foreignSlots)("rejects a schema-valid foreign %s", (_name, mutate) => {
+    const path = join(dirs[agent]!, "slot.json");
+    save(path, mutate(load(path)));
+    expect(() => readSlot(root, agent, ids[agent])).toThrow(`Slot ${agent}/${ids[agent]} does not match its IA position`);
+  });
+
+  it.each([...malformedSlots, ...foreignSlots])("rejects present %s documents while computing used-by", (_name, mutate) => {
+    const path = join(dirs[agent]!, "slot.json");
+    save(path, mutate(load(path)));
+    // The target need not appear in uses: every present document is validated.
+    expect(() => usedBy(root, "slot.unused")).toThrow();
+  });
+
+  it("refuses malformed JSON", () => {
+    writeFileSync(join(dirs[agent]!, "slot.json"), "{");
+    expect(() => readSlot(root, agent, ids[agent])).toThrow(SyntaxError);
+    expect(() => usedBy(root, ids.designer)).toThrow(SyntaxError);
+  });
+
+  it("refuses missing direct reads but skips absent documents in used-by", () => {
+    rmSync(join(dirs[agent]!, "slot.json"));
+    expect(() => readSlot(root, agent, ids[agent])).toThrow(/ENOENT/);
+    expect(usedBy(root, ids.designer)).toEqual(agent === "publisher" ? [] : [{ agent: "publisher", id: ids.publisher }]);
+  });
+
+  it("refuses slot file aliases", () => {
+    const path = join(dirs[agent]!, "slot.json");
+    const outside = join(root, "outside.json");
+    writeFileSync(outside, readFileSync(path));
+    rmSync(path); symlinkSync(outside, path);
+    expect(() => readSlot(root, agent, ids[agent])).toThrow(/Symbolic links/);
+    expect(() => usedBy(root, ids.designer)).toThrow(/Symbolic links/);
+  });
+
+  it("refuses slot folder aliases", () => {
+    const dir = dirs[agent]!;
+    const doc = readFileSync(join(dir, "slot.json"));
+    const outside = join(root, "outside");
+    mkdirSync(outside);
+    writeFileSync(join(outside, "slot.json"), doc);
+    rmSync(dir, { recursive: true }); symlinkSync(outside, dir);
+    expect(() => readSlot(root, agent, ids[agent])).toThrow(/Symbolic links/);
+    expect(() => usedBy(root, ids.designer)).toThrow(/Symbolic links/);
+  });
+
+  it("requires a regular slot file", () => {
+    const path = join(dirs[agent]!, "slot.json");
+    rmSync(path); mkdirSync(path);
+    expect(() => readSlot(root, agent, ids[agent])).toThrow(/Expected a regular slot-model file/);
+    expect(() => usedBy(root, ids.designer)).toThrow(/Expected a regular slot-model file/);
+  });
+});
+
+it.each(["designer", "writer"] as const)("rejects missing l0 for layered %s slots", agent => {
+  const path = join(dirs[agent]!, "slot.json");
+  const doc = load(path);
+  delete doc.ia.l0;
+  save(path, doc);
+  expect(() => readSlot(root, agent, ids[agent])).toThrow(`Slot ${agent}/${ids[agent]} does not match its IA position`);
+  expect(() => usedBy(root, ids.designer)).toThrow();
+});
 
 describe("shared slot reader input integrity", () => {
   it("lists IA slots and clears intact upstream pins", () => {
