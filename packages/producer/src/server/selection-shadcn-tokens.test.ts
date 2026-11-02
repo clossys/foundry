@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { compile } from "tailwindcss";
 import { loadCatalog } from "../../../designer/src/catalog-core/index.js";
 import { resolve } from "../../../designer/src/catalog-core/resolve.js";
+import type { DtcgToken } from "../../../designer/src/catalog-core/types.js";
 import { sourceRoster, tokenContract } from "../../../designer/src/catalog-core/token-contract.js";
 import { completedTokenLibrary } from "../../../designer/src/importers/__fixtures__/completed-token-library.js";
 import { selectionShadcnTokens } from "./selection-shadcn-tokens.js";
@@ -31,19 +32,23 @@ describe("selected consumer shadcn token mapping", () => {
     expect(Object.keys(explicitDark).sort()).toEqual(expected);
     expect(systemDark).toEqual(explicitDark);
     expect(output.css).toContain("@media (prefers-color-scheme: dark)");
-    for (const [target, source] of Object.entries({ "--card-foreground": "--foreground", "--popover-foreground": "--foreground", "--secondary-foreground": "--foreground", "--sidebar-foreground": "--foreground", "--sidebar-accent": "--accent", "--sidebar-accent-foreground": "--foreground", "--sidebar-border": "--border", "--sidebar-ring": "--ring", "--sidebar-primary": "--primary", "--sidebar-primary-foreground": "--primary-foreground", "--radius": "--radius-lg" })) {
-      expect(light[target], target).toBe(light[source]);
-      expect(explicitDark[target], target).toBe(explicitDark[source]);
+    for (const [target, id] of Object.entries({ "--card-foreground": "themes.card-foreground.default", "--popover-foreground": "themes.popover-foreground.default", "--secondary-foreground": "themes.secondary-foreground.default", "--sidebar-foreground": "themes.sidebar-foreground.default", "--sidebar-accent": "themes.sidebar-accent.default", "--sidebar-accent-foreground": "themes.sidebar-accent-foreground.default", "--sidebar-border": "themes.sidebar-border.default", "--sidebar-ring": "themes.sidebar-ring.default", "--sidebar-primary": "themes.sidebar-primary.default", "--sidebar-primary-foreground": "themes.sidebar-primary-foreground.default", "--radius": "themes.radius.default" })) {
+      const member = profile.members[id]!;
+      expect(light[target], target).toBe(member.css.light);
+      expect(explicitDark[target], target).toBe(member.css.dark ?? member.css.light);
     }
   });
 
   it("uses actual authored consumer values instead of copying a preset palette", () => {
     const input = consumer();
     const fill = input.library.fills.find(fill => fill.$extensions["com.clossys.fill"].slot === "themes.primary")!;
-    const action = (fill.tokens as Record<string, any>)["action-color"].default;
+    const action = (fill.themes!.primary as Record<string, DtcgToken>).default!;
+    expect(action.$type).toBe("color");
     action.$value = { colorSpace: "oklch", components: [0.31, 0.08, 240] };
-    action.$extensions["com.clossys.css"].raw = "oklch(0.31 0.08 240)";
-    action.$extensions["com.clossys.modes"].dark = { colorSpace: "oklch", components: [0.81, 0.07, 240] };
+    action.$extensions = { ...action.$extensions,
+      "com.clossys.css": { ...action.$extensions?.["com.clossys.css"], raw: "oklch(0.31 0.08 240)" },
+      "com.clossys.modes": { ...action.$extensions?.["com.clossys.modes"], dark: { colorSpace: "oklch", components: [0.81, 0.07, 240] } },
+    };
     const profile = resolve(input);
     const output = selectionShadcnTokens(profile, tokenContract);
     const light = values(block(output.css, ":root {"));
@@ -51,17 +56,17 @@ describe("selected consumer shadcn token mapping", () => {
     expect(light["--primary"]).toBe(profile.members["themes.primary.default"]!.css.light);
     expect(dark["--primary"]).toBe(profile.members["themes.primary.default"]!.css.dark);
     expect(light["--primary"]).not.toBe(dark["--primary"]);
-    for (const preset of sourceRoster.tokens.presets) {
+    for (const preset of sourceRoster.themes.presets) {
       expect(light["--primary"]).not.toBe(preset.theme.vars.light["--primary"]);
       expect(dark["--primary"]).not.toBe(preset.theme.vars.dark["--primary"]);
     }
-    expect(light["--sidebar-primary"]).toBe(light["--primary"]);
-    expect(dark["--sidebar-primary"]).toBe(dark["--primary"]);
+    expect(light["--sidebar-primary"]).toBe(profile.members["themes.sidebar-primary.default"]!.css.light);
+    expect(dark["--sidebar-primary"]).toBe(profile.members["themes.sidebar-primary.default"]!.css.dark);
   });
 
-  it("reduces shared shadcn keys to explicit native roles independently of contract order", () => {
+  it("keeps distinct native shadcn owners independently of contract order", () => {
     const profile = selected();
-    const canonical = { "--accent": "themes.background.default", "--accent-foreground": "themes.foreground.default", "--border": "themes.border.default", "--muted": "themes.background.default", "--muted-foreground": "themes.foreground.default", "--primary": "themes.primary.default", "--radius-lg": "themes.radius.default", "--text-xs": "tokens.body-size.s" };
+    const canonical = { "--accent": "themes.accent.default", "--accent-foreground": "themes.accent-foreground.default", "--border": "themes.border.default", "--muted": "themes.muted.default", "--muted-foreground": "themes.muted-foreground.default", "--primary": "themes.primary.default", "--radius": "themes.radius.default", "--sidebar-primary": "themes.sidebar-primary.default" };
     // Distinct signals expose a wrong owner even when a preset gives both
     // competing native roles the same value.
     for (const [target, id] of Object.entries(canonical)) {
@@ -72,9 +77,22 @@ describe("selected consumer shadcn token mapping", () => {
     const output = selectionShadcnTokens(profile, tokenContract);
     expect(selectionShadcnTokens(profile, reordered)).toEqual(output);
     const light = values(block(output.css, ":root {"));
+    const dark = values(block(output.css, ':root[data-theme="dark"] {'));
     for (const [target, id] of Object.entries(canonical)) {
       expect(light[target], target).toBe(profile.members[id]!.css.light);
+      expect(dark[target], target).toBe(profile.members[id]!.css.dark);
     }
+  });
+
+  it("maps explicit contract aliases in both modes and refuses conflicting or ambiguous owners", () => {
+    const profile = selected();
+    const aliases = { ...tokenContract.aliases, "--fixture-primary": "themes.primary.default" };
+    const output = selectionShadcnTokens(profile, { ...tokenContract, aliases });
+    expect(values(block(output.css, ":root {"))["--fixture-primary"]).toBe(profile.members["themes.primary.default"]!.css.light);
+    expect(values(block(output.css, ':root[data-theme="dark"] {'))["--fixture-primary"]).toBe(profile.members["themes.primary.default"]!.css.dark);
+    expect(() => selectionShadcnTokens(profile, { ...tokenContract, aliases: { ...aliases, "--primary": "themes.foreground.default" } })).toThrow(/conflicts with its native owner/);
+    const duplicate = { ...tokenContract, leaves: { ...tokenContract.leaves, "themes.fixture": { members: { default: { kind: "theme", target: "--primary", status: "live" } } } } };
+    expect(() => selectionShadcnTokens(profile, duplicate)).toThrow(/no unambiguous native owner/);
   });
 
   it("follows consumer aliases in each mode and permits invariant structural tokens", () => {
@@ -101,15 +119,19 @@ describe("selected consumer shadcn token mapping", () => {
     expect(() => selectionShadcnTokens(broken, tokenContract)).toThrow(/cyclic light alias/);
   });
 
-  it("feeds native live references to the real Tailwind compiler", async () => {
-    const output = selectionShadcnTokens(selected(), tokenContract);
+  it("feeds native live colors to Tailwind and keeps structural radius in consumer CSS", async () => {
+    const profile = selected();
+    const output = selectionShadcnTokens(profile, tokenContract);
     const compiler = await compile(`${output.theme}\n@tailwind utilities;`);
     const css = compiler.build(["bg-primary", "bg-background", "text-foreground", "border-border", "ring-ring", "rounded-lg"]);
     for (const [declaration, value] of Object.entries({ "background-color": "var(--primary)", color: "var(--foreground)", "border-color": "var(--border)", "--tw-ring-color": "var(--ring)" })) {
       expect(css).toContain(`${declaration}: ${value}`);
     }
     expect(css).toContain("background-color: var(--background)");
-    expect(css).toContain(`border-radius: var(${selected().members["themes.radius.default"]!.emit})`);
+    // The current contract owns --radius, not a Tailwind --radius-lg namespace.
+    expect(css).not.toContain("border-radius:");
+    expect(values(block(output.css, ":root {"))["--radius"]).toBe(profile.members["themes.radius.default"]!.css.light);
+    expect(values(block(output.css, ':root[data-theme="dark"] {'))["--radius"]).toBe(profile.members["themes.radius.default"]!.css.dark ?? profile.members["themes.radius.default"]!.css.light);
     expect(css).not.toContain("background-color: oklch(");
   });
 });
