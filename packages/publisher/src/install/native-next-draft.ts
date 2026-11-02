@@ -1,7 +1,8 @@
 import { posix } from "node:path";
+import ts from "typescript";
 import type { SpecimenRecord, SpecimenRecordSource } from "../specimen/types.js";
 import { bindPage, isBlocking, resolvePage } from "./index.js";
-import type { BindOptions, BoundPage, InstallFinding, InstallOptions, InstallPin, InstallPins } from "./index.js";
+import type { BindOptions, BoundPage, InstallFinding, InstallOptions, InstallPin, InstallPins, ResolvedSlot } from "./index.js";
 
 /** A current record admitted by the consumer, independently of production pins. */
 export interface NativeNextDraftCandidate extends InstallPin { readonly contentHash: string }
@@ -19,7 +20,7 @@ export interface NativeNextDraftResult {
   readonly approved: false;
   readonly findings: readonly InstallFinding[];
   readonly page?: BoundPage;
-  /** A Client Component for app/page.tsx; selected registry modules must be client-compatible. */
+  /** A Server Component for app/page.tsx; installed modules retain their native client boundaries. */
   readonly module?: string;
   /** Pass to installAndBind with the consumer's substrate and real shadcn runner. */
   readonly install?: DraftInstall;
@@ -64,6 +65,9 @@ export async function resolveNativeNextDraft(options: NativeNextDraftOptions): P
   if (resolved.findings.some(isBlocking)) return failure(resolved.findings);
   const bound = bindPage({ page, slots: resolved.slots, copy, ...(assets ? { assets } : {}) });
   if (!bound.page || bound.findings.some(isBlocking)) return failure(bound.findings);
+  let module: string;
+  try { module = nextModule(bound.page, resolved.slots); }
+  catch (error) { return failure([...bound.findings, { code: "render-failed", detail: String(error) }]); }
   const source: SpecimenRecordSource = {
     theme: async () => undefined,
     async read(id, version) {
@@ -75,25 +79,105 @@ export async function resolveNativeNextDraft(options: NativeNextDraftOptions): P
   };
   return {
     status: "DRAFT", approved: false, findings: bound.findings, page: bound.page,
-    module: nextModule(bound.page), install: { page, pins, source, copy, ...(assets ? { assets } : {}) },
+    module, install: { page, pins, source, copy, ...(assets ? { assets } : {}) },
   };
 }
 
-/** Same native entry, $element and copyKeys composition used by install-and-bind renderers. */
-function nextModule(page: BoundPage): string {
+/** Read finite copy data without executing a module or reflecting on a Next client reference. */
+function literal(node: ts.Expression): unknown {
+  if (ts.isParenthesizedExpression(node) || ts.isAsExpression(node) || ts.isSatisfiesExpression(node)) return literal(node.expression);
+  if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return node.text;
+  if (ts.isArrayLiteralExpression(node)) return node.elements.map(item => literal(item));
+  if (ts.isObjectLiteralExpression(node)) {
+    const result: Record<string, unknown> = Object.create(null);
+    for (const property of node.properties) {
+      if (!ts.isPropertyAssignment(property) || !(ts.isIdentifier(property.name) || ts.isStringLiteral(property.name))) throw new Error("copyKeys requires literal properties");
+      const key = property.name.text;
+      if (["__proto__", "constructor", "prototype"].includes(key) || Object.hasOwn(result, key)) throw new Error("copyKeys has an unsafe or duplicate property");
+      result[key] = literal(property.initializer);
+    }
+    return result;
+  }
+  throw new Error("copyKeys requires nested string, array and object literals");
+}
+
+function bindCopy(map: unknown, text: Readonly<Record<string, string>>): unknown {
+  if (typeof map === "string") {
+    if (!Object.hasOwn(text, map)) throw new Error(`copyKeys names undeclared copy slot ${map}`);
+    return text[map];
+  }
+  if (Array.isArray(map)) return map.map(item => bindCopy(item, text));
+  return Object.fromEntries(Object.entries(map as Record<string, unknown>).map(([key, value]) => [key, bindCopy(value, text)]));
+}
+
+function nativeBinding(slot: ResolvedSlot): { name: string; copy?: unknown } {
+  // resolvePage has already inlined these exact verified bytes in installed-file order.
+  const content = JSON.parse(slot.item).files[slot.files.indexOf(slot.entry!.file)].content as string;
+  const ast = ts.createSourceFile(slot.entry!.file, content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  if ((ast as ts.SourceFile & { parseDiagnostics: readonly ts.Diagnostic[] }).parseDiagnostics.length) throw new Error(`${slot.record.id}: invalid entry syntax`);
+  const exported = (node: ts.Node) => ts.canHaveModifiers(node) && ts.getModifiers(node)?.some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword);
+  const candidates: string[] = [], constants = new Map<string, ts.Expression>();
+  const names = new Set<string>();
+  let hasDefault = false;
+  const defaultExport = () => { if (hasDefault) throw new Error(`${slot.record.id}: duplicate default export`); hasDefault = true; };
+  for (const statement of ast.statements) {
+    if (ts.isExportAssignment(statement) && !statement.isExportEquals) defaultExport();
+    if (!exported(statement)) continue;
+    if (ts.canHaveModifiers(statement) && ts.getModifiers(statement)?.some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword)) { defaultExport(); continue; }
+    const add = (name: string) => { if (names.has(name)) throw new Error(`${slot.record.id}: duplicate export ${name}`); names.add(name); };
+    if ((ts.isFunctionDeclaration(statement) || ts.isClassDeclaration(statement)) && statement.name) { add(statement.name.text); candidates.push(statement.name.text); }
+    if (ts.isVariableStatement(statement)) for (const declaration of statement.declarationList.declarations) {
+      if (!ts.isIdentifier(declaration.name)) continue;
+      const name = declaration.name.text; add(name);
+      if (!declaration.initializer) continue;
+      if (statement.declarationList.flags & ts.NodeFlags.Const) {
+        constants.set(name, declaration.initializer);
+        if (ts.isArrowFunction(declaration.initializer) || ts.isFunctionExpression(declaration.initializer)) candidates.push(name);
+      }
+    }
+  }
+  const name = slot.entry!.export ?? (hasDefault ? "default" : candidates.length === 1 ? candidates[0] : undefined);
+  if (!name || !/^[A-Za-z_$][\w$]*$/.test(name)) throw new Error(`${slot.record.id}: declare preview.export for the native component`);
+  // Source adapters normalize descriptor metadata onto preview; retain that contract
+  // even when an older install resolver has not copied it onto ResolvedSlot yet.
+  const preview = slot.record.preview;
+  const normalized = "copyKeys" in preview && typeof preview.copyKeys === "string" ? preview.copyKeys : undefined;
+  if (slot.copyKeys && normalized && slot.copyKeys !== normalized) throw new Error(`${slot.record.id}: conflicting copyKeys metadata`);
+  const copyKeys = slot.copyKeys ?? normalized;
+  if (!copyKeys) return { name };
+  const [root, ...path] = copyKeys.split(".");
+  const initializer = constants.get(root!);
+  if (!initializer) throw new Error(`${slot.record.id}: copyKeys must name a direct exported const literal`);
+  const unchanged = (node: ts.Node): void => {
+    if (node === initializer.parent) return;
+    if (ts.isIdentifier(node) && node.text === root) throw new Error(`${slot.record.id}: copyKeys has a reference outside its literal declaration`);
+    ts.forEachChild(node, unchanged);
+  };
+  unchanged(ast);
+  let map = literal(initializer);
+  for (const key of path) {
+    if (!map || typeof map !== "object" || !Object.hasOwn(map, key)) throw new Error(`${slot.record.id}: missing copyKeys ${copyKeys}`);
+    map = (map as Record<string, unknown>)[key];
+  }
+  if (!map || typeof map !== "object") throw new Error(`${slot.record.id}: copyKeys must select an object or array`);
+  return { name, copy: map };
+}
+
+/** Compose on the server; createElement passes native client references through unchanged. */
+function nextModule(page: BoundPage, resolved: readonly ResolvedSlot[]): string {
   const slots = [page.frame, ...page.sections, ...page.parts];
+  const bindings = slots.map(slot => nativeBinding(resolved.find(item => item.slot === slot.slot)!));
   const specifier = (file: string) => {
     const path = posix.relative("app", file).replace(/\.[cm]?[jt]sx?$/, "");
     return path.startsWith(".") ? path : `./${path}`;
   };
-  const table = Object.fromEntries(slots.map(slot => [slot.slot, { id: slot.id, export: slot.entry.export, copyKeys: slot.copyKeys, props: slot.props, text: slot.text }]));
+  const table = Object.fromEntries(slots.map((slot, index) => [slot.slot, { props: slot.props, ...(bindings[index]!.copy !== undefined ? { copy: bindCopy(bindings[index]!.copy, slot.text) } : {}) }]));
   return [
-    '"use client";',
     "// DRAFT — unapproved. Generated from admitted native records; install the verified items before use.",
-    'import { createElement, type ReactNode } from "react";',
-    ...slots.map((slot, index) => `import * as m${index} from ${JSON.stringify(specifier(slot.entry.file))};`),
-    `const modules: Record<string, Record<string, any>> = { ${slots.map((slot, index) => `${JSON.stringify(slot.slot)}: m${index}`).join(", ")} };`,
-    `const slots: Record<string, { id: string; export?: string; copyKeys?: string; props: Record<string, unknown>; text: Record<string, string> }> = ${JSON.stringify(table, null, 2)};`,
+    'import { createElement, type ElementType, type ReactNode } from "react";',
+    ...slots.map((slot, index) => `import { ${bindings[index]!.name} as c${index} } from ${JSON.stringify(specifier(slot.entry.file))};`),
+    `const components: Record<string, ElementType> = { ${slots.map((slot, index) => `${JSON.stringify(slot.slot)}: c${index}`).join(", ")} };`,
+    `const slots: Record<string, { copy?: unknown; props: Record<string, unknown> }> = ${JSON.stringify(table, null, 2)};`,
     "function resolve(value: unknown, keyed = false): unknown {",
     "  if (Array.isArray(value)) return value.map(item => resolve(item, true));",
     '  if (!value || typeof value !== "object") return value;',
@@ -101,23 +185,11 @@ function nextModule(page: BoundPage): string {
     '  if (typeof node.$element === "string") return mount(node.$element, keyed);',
     "  return Object.fromEntries(Object.entries(node).map(([key, item]) => [key, resolve(item)]));",
     "}",
-    "function copyOf(map: unknown, text: Record<string, string>): unknown {",
-    '  if (typeof map === "string") return Object.hasOwn(text, map) ? text[map] : "";',
-    "  if (Array.isArray(map)) return map.map(item => copyOf(item, text));",
-    '  if (map && typeof map === "object") return Object.fromEntries(Object.entries(map).map(([key, item]) => [key, copyOf(item, text)]));',
-    "  return map;",
-    "}",
     "function mount(name: string, keyed = false): ReactNode {",
-    "  const slot = slots[name], mod = modules[name];",
-    "  if (!slot || !mod) throw new Error(`native draft: no bound slot ${name}`);",
-    '  const component = slot.export ? mod[slot.export] : mod.default ?? Object.values(mod).find(value => typeof value === "function");',
-    '  if (!component || (typeof component !== "function" && typeof component !== "object")) throw new Error(`native draft: ${slot.id} exports no component`);',
+    "  const slot = slots[name], component = components[name];",
+    "  if (!slot || !component) throw new Error(`native draft: no bound slot ${name}`);",
     "  const props = resolve(slot.props) as Record<string, unknown>;",
-    "  if (slot.copyKeys) {",
-    '    const map = slot.copyKeys.split(".").reduce<any>((value, key) => value == null ? undefined : value[key], mod);',
-    '    if (!map || typeof map !== "object") throw new Error(`native draft: ${slot.id} has no export ${slot.copyKeys}`);',
-    "    props.copy = copyOf(map, slot.text);",
-    "  }",
+    "  if (slot.copy !== undefined) props.copy = slot.copy;",
     "  return createElement(component, keyed ? { ...props, key: name } : props);",
     "}",
     `export default function Page(): ReactNode { return mount(${JSON.stringify(page.frame.slot)}); }`,
