@@ -119,6 +119,31 @@ describe('authoritative slot census', () => {
     }
   });
 
+  it('distinguishes strict slot validation failures from filesystem errors', () => {
+    const ids = ['schema', 'id', 'agent', 'position', 'filesystem', 'neighbor'].map(name => `writer.${name}`);
+    fixture('writer', ids);
+    const path = (name: string) => join(root, 'agents/writer/examples/group', `writer.${name}`, 'slot.json');
+    const change = (name: string, edit: (doc: SlotDoc) => void) => {
+      const doc = JSON.parse(readFileSync(path(name), 'utf8')) as SlotDoc;
+      edit(doc);
+      save(path(name), doc);
+    };
+    change('schema', doc => { (doc as { schema: string }).schema = 'wrong'; });
+    change('id', doc => { doc.id = 'writer.foreign'; });
+    change('agent', doc => { doc.agent = 'director'; });
+    change('position', doc => { doc.ia = { ...doc.ia, order: doc.ia.order + 1 }; });
+    rmSync(path('filesystem'));
+    mkdirSync(path('filesystem'));
+    const census = agentSlotCensus(root, 'writer');
+    expect(census.state).toBe('ready');
+    if (census.state !== 'ready') throw new Error('expected census');
+    expect(census.rows.map(row => [row.id, row.slot])).toEqual([
+      [ids[0], 'invalid'], [ids[1], 'invalid'], [ids[2], 'invalid'],
+      [ids[3], 'invalid'], [ids[4], 'error'], [ids[5], 'valid'],
+    ]);
+    expect(JSON.stringify(census)).not.toContain(root);
+  });
+
   it('isolates an agent census error without leaking paths or replacing it with zero', () => {
     writeFileSync(join(root, 'agents/designer/ia.json'), '{');
     const census = slotCensus(root);

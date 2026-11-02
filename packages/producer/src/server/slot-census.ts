@@ -40,7 +40,13 @@ function censusRow(consumer: string, agent: SlotAgent, id: string, position: Slo
           value.ia.l2 !== position.l2 || value.ia.order !== position.order) row.slot = 'invalid';
       else { row.slot = 'valid'; doc = value; }
     } catch (error) {
-      row.slot = error instanceof SyntaxError ? 'invalid' :
+      // readSlot currently exposes validation failures as these two untyped errors.
+      // Unknown errors stay errors if the reader's wording changes. Never return the message.
+      const validationError = error instanceof Error && (
+        error.message === `Invalid ${agent} slot ${id}` ||
+        error.message === `Slot ${agent}/${id} does not match its IA position`
+      );
+      row.slot = error instanceof SyntaxError || validationError ? 'invalid' :
         (error as NodeJS.ErrnoException).code === 'ENOENT' ? 'missing' : 'error';
     }
   } else if (slotPresence === 'error') row.slot = 'error';
