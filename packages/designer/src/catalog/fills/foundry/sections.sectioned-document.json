@@ -1,0 +1,58 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.sectioned-document",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "package": "@clossys/publisher",
+        "version": "0.13.0",
+        "export": "./web#SectionedView"
+      },
+      "relation": "same-contract",
+      "slot": "sections.sectioned-document",
+      "source": "foundry",
+      "sourceAddress": "./web#SectionedView",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "sectioned-document": {
+      "slot": "sections.sectioned-document",
+      "source": "foundry",
+      "slotMap": {
+        "document": "./web#SectionedView.document,landmark"
+      },
+      "propMap": {
+        "landmark.none": "./web#SectionedView.landmark=none"
+      },
+      "configs": {},
+      "parts": [],
+      "impl": {
+        "kind": "package",
+        "module": "@clossys/publisher/web",
+        "export": "SectionedView"
+      },
+      "license": "MIT",
+      "pin": {
+        "package": "@clossys/publisher",
+        "version": "0.13.0",
+        "export": "./web#SectionedView"
+      },
+      "notes": [
+        "The required resolved document placement maps two native props: document and landmark. This is a placement mapping, not JSON type equivalence.",
+        "The host resolves the whole document before materialization; document.resolutions retains Writer provenance. This section owns no additional copy.",
+        "landmark must be none inside the parent SiteFrame main landmark. SectionedView preserves the authored section order and intro heading.",
+        "Asset-bearing documents additionally require the host runtime resolveAssetId callback, which this JSON-only candidate cannot serialize or supply."
+      ]
+    }
+  }
+}
