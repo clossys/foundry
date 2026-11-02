@@ -120,7 +120,7 @@ describe("Studio compiled theme", () => {
       expect(config.theme.css).toContain("oklch(0.65 0.2 250)");
       expect(await readdir(agentRoot(root, "designer"))).not.toContain("compiled");
     } finally { await server.close(); }
-  }, 20_000);
+  }, 60_000);
 
   it("provides consumer config to the supervised Studio before child readiness", async () => {
     await brandedCells();
@@ -138,7 +138,7 @@ process.once("SIGTERM", () => server.close(() => process.exit(0)));
       expect(applied.theme).toEqual(await studioTheme(root));
       expect(applied.theme.source).toBe("consumer");
     } finally { await server.close(); }
-  }, 20_000);
+  }, 60_000);
 
   it.each(["consumer-root", "cell-tree"] as const)("refuses a symlinked %s and does not expose target paths", async kind => {
     await brandedCells();

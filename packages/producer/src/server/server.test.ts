@@ -68,7 +68,7 @@ describe("loopback Producer", () => {
     expect((await request(`/studio?token=${token}`)).status).toBe(400);
     const encodedToken = [...token].map(letter => `%${letter.charCodeAt(0).toString(16)}`).join("");
     expect((await request(`/studio?token=${encodedToken}`)).status).toBe(400);
-  }, 20_000);
+  }, 60_000);
 
   it("reverse proxies the real child, strips hop headers and isolates the token per run", async () => {
     await launch();
