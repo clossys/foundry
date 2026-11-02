@@ -276,7 +276,7 @@ it.skipIf(!process.env.FOUNDRY_NATIVE_NEXT_ROOT)("builds a genuine Next16 consum
   const nativeRequire = createRequire(join(consumer, "package.json"));
   expect(JSON.parse(await readFile(nativeRequire.resolve("next/package.json"), "utf8")).version).toMatch(/^16\./);
   const dir = await mkdtemp(join(consumer, ".native-next-draft-")); temps.push(dir);
-  const { loadCatalog, loadComponentRegistry, importFoundryComponents, applyLibraryChange, libraryHash, resolve } = await import("@clossys/designer/catalog");
+  const { loadCatalog, loadComponentRegistry, importFoundryComponents, applyLibraryChange, libraryHash, resolve, sha256, stableStringify } = await import("@clossys/designer/catalog");
   const components = await import("@clossys/designer/components");
   const catalog: CompositeCatalogData = { values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: importFoundryComponents().fills } };
   const empty: CompositeLibraryData = { source: { id: "native-next-draft", kind: "consumer", author: "consumer", license: "MIT" }, adoptedAt: new Date().toISOString().slice(0, 10), values: { fills: [] }, components: { fills: [], files: [] } };
@@ -288,13 +288,23 @@ it.skipIf(!process.env.FOUNDRY_NATIVE_NEXT_ROOT)("builds a genuine Next16 consum
   const componentOptions = { packageExports: { "@clossys/designer/components": Object.keys(components) } };
   const library = applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes: [...valueChanges, { portion: "components", change: { op: "adopt", slot: "components.link", source: "foundry" } }] }, { componentOptions });
   const profile = resolve({ catalog, library, componentOptions });
+  expect(Object.keys(profile.components.components)).toEqual(["components.link"]);
   const chosen = profile.components.components["components.link"]!;
   expect(chosen.origin.kind).toBe("adopted");
   if (chosen.origin.kind !== "adopted") throw new Error("native fixture requires adopted components.link");
   expect(chosen.origin.pin).toEqual(expect.objectContaining({ package: "@clossys/designer", export: "./components#Link" }));
   expect(profile.components.check.findings).toContainEqual(expect.objectContaining({ subject: "components.link", severity: "notice", message: "Source and runtime observations are unavailable" }));
+  const adopted = library.components.fills.find(fill => fill.$extensions["com.clossys.fill"].slot === "components.link")?.components["link"];
+  expect(adopted).toBeDefined();
+  if (!adopted) throw new Error("native fixture requires the actual adopted components.link member");
+  const { origin, ...descriptor } = adopted;
+  expect(origin).toEqual(chosen.origin);
+  expect(origin.kind).toBe("adopted");
+  if (origin.kind !== "adopted") throw new Error("native fixture requires adopted descriptor provenance");
+  expect(chosen.descriptor).toEqual(adopted);
+  expect(sha256(stableStringify(descriptor))).toBe(origin.sha256);
   // Real adopted descriptors and source modules are runtime-pending, not qualified fills.
-  const selection = { profile: { components: profile.components }, selectionHash: profile.components.selectionHash, descriptors: { "components.link": chosen.origin.sha256 } };
+  const selection = { profile: { components: { ...profile.components, components: { ...profile.components.components, "components.link": { ...chosen, descriptor } } } }, selectionHash: profile.components.selectionHash, descriptors: { "components.link": chosen.origin.sha256 } };
   const template = join(import.meta.dirname, "../../templates/site");
   await writeFile(join(dir, "package.json"), await readFile(join(template, "package.json")));
   await writeFile(join(dir, "tsconfig.json"), JSON.stringify({ compilerOptions: { paths: { "@/*": ["./*"] }, jsx: "react-jsx" } }));
