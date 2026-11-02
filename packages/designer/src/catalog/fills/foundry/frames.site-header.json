@@ -36,35 +36,12 @@
           "components": [
             "components.icon"
           ],
-          "themes": [
-            "themes.border",
-            "themes.input",
-            "themes.sidebar-border",
-            "themes.spacing",
-            "themes.background",
-            "themes.card",
-            "themes.popover",
-            "themes.secondary",
-            "themes.accent",
-            "themes.muted",
-            "themes.sidebar",
-            "themes.sidebar-accent",
-            "themes.foreground",
-            "themes.card-foreground",
-            "themes.popover-foreground",
-            "themes.primary-foreground",
-            "themes.secondary-foreground",
-            "themes.accent-foreground",
-            "themes.muted-foreground",
-            "themes.sidebar-foreground",
-            "themes.sidebar-primary-foreground",
-            "themes.sidebar-accent-foreground"
-          ]
+          "themes": []
         },
         "sourceFiles": [
           {
             "path": "packages/designer/src/catalog-core/frame-header-options.ts",
-            "sha256": "22434fadf5f294cc28bba10e8d92891d5d43a20b8ec323b039aa21adaa96d474"
+            "sha256": "f71b58c6ee2f652a2058b3f58cb938735c16aaf1cbe39a139e158e15e132fb0a"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -76,7 +53,7 @@
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+            "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
           },
           {
             "path": "packages/designer/src/shell/internal/shell-ground.ts",
@@ -108,7 +85,7 @@
             "code": "DF2",
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/runtime/component-leaf.tsx",
-            "line": 2
+            "line": 3
           }
         ]
       },
@@ -141,30 +118,7 @@
       },
       "reads": {
         "assets": [],
-        "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.spacing",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "slot": "frames.site-header",
       "slots": {

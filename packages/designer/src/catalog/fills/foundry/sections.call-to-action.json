@@ -34,35 +34,7 @@
         "scannedReads": {
           "assets": [],
           "components": [],
-          "themes": [
-            "themes.border",
-            "themes.input",
-            "themes.sidebar-border",
-            "themes.tracking-tight",
-            "themes.spacing",
-            "themes.destructive",
-            "themes.background",
-            "themes.card",
-            "themes.popover",
-            "themes.secondary",
-            "themes.accent",
-            "themes.muted",
-            "themes.sidebar",
-            "themes.sidebar-accent",
-            "themes.foreground",
-            "themes.card-foreground",
-            "themes.popover-foreground",
-            "themes.primary-foreground",
-            "themes.secondary-foreground",
-            "themes.accent-foreground",
-            "themes.muted-foreground",
-            "themes.sidebar-foreground",
-            "themes.sidebar-primary-foreground",
-            "themes.sidebar-accent-foreground",
-            "themes.font-sans",
-            "themes.font-heading",
-            "themes.font-mono"
-          ]
+          "themes": []
         },
         "sourceFiles": [
           {
@@ -83,7 +55,7 @@
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
+            "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
           }
         ],
         "unresolved": [
@@ -103,7 +75,7 @@
             "code": "DF2",
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/runtime/component-leaf.tsx",
-            "line": 2
+            "line": 3
           }
         ]
       },
@@ -126,35 +98,7 @@
       "propMap": {},
       "reads": {
         "assets": [],
-        "themes": [
-          "themes.border",
-          "themes.input",
-          "themes.sidebar-border",
-          "themes.tracking-tight",
-          "themes.spacing",
-          "themes.destructive",
-          "themes.background",
-          "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
-          "themes.muted",
-          "themes.sidebar",
-          "themes.sidebar-accent",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground",
-          "themes.font-sans",
-          "themes.font-heading",
-          "themes.font-mono"
-        ]
+        "themes": []
       },
       "slot": "sections.call-to-action",
       "slotMap": {

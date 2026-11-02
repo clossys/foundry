@@ -60,21 +60,7 @@
             "components.logo",
             "components.semantic-content"
           ],
-          "themes": [
-            "themes.primary",
-            "themes.input",
-            "themes.spacing",
-            "themes.foreground",
-            "themes.card-foreground",
-            "themes.popover-foreground",
-            "themes.primary-foreground",
-            "themes.secondary-foreground",
-            "themes.accent-foreground",
-            "themes.muted-foreground",
-            "themes.sidebar-foreground",
-            "themes.sidebar-primary-foreground",
-            "themes.sidebar-accent-foreground"
-          ]
+          "themes": []
         },
         "scanStatus": "lower-bound",
         "scannedComposes": [
@@ -91,21 +77,7 @@
             "components.logo",
             "components.semantic-content"
           ],
-          "themes": [
-            "themes.primary",
-            "themes.input",
-            "themes.spacing",
-            "themes.foreground",
-            "themes.card-foreground",
-            "themes.popover-foreground",
-            "themes.primary-foreground",
-            "themes.secondary-foreground",
-            "themes.accent-foreground",
-            "themes.muted-foreground",
-            "themes.sidebar-foreground",
-            "themes.sidebar-primary-foreground",
-            "themes.sidebar-accent-foreground"
-          ]
+          "themes": []
         },
         "sourceFiles": [
           {
@@ -171,21 +143,7 @@
       },
       "reads": {
         "assets": [],
-        "themes": [
-          "themes.primary",
-          "themes.input",
-          "themes.spacing",
-          "themes.foreground",
-          "themes.card-foreground",
-          "themes.popover-foreground",
-          "themes.primary-foreground",
-          "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
-          "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
-        ]
+        "themes": []
       },
       "slot": "frames.site-shell",
       "slots": {

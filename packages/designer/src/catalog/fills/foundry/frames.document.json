@@ -30,9 +30,7 @@
         "scannedReads": {
           "assets": [],
           "components": [],
-          "themes": [
-            "themes.primary"
-          ]
+          "themes": []
         },
         "sourceFiles": [
           {
@@ -65,9 +63,7 @@
       },
       "reads": {
         "assets": [],
-        "themes": [
-          "themes.primary"
-        ]
+        "themes": []
       },
       "slot": "frames.document",
       "slots": {
