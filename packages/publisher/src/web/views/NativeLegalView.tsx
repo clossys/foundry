@@ -1,4 +1,4 @@
-import { createCopyResolver } from "@clossys/writer";
+import { createCopyResolver } from "@clossys/writer/resolve";
 import type { CopyRef, CopyRegistry, CopyResolveTarget } from "@clossys/writer";
 import { gateLegalDocument } from "../../document/legal.js";
 import type { LegalDocument } from "../../document/legal.js";
