@@ -10,7 +10,7 @@ import { agentGallery } from './agent-library.js';
 import { designerGallery } from './designer-library.js';
 import { recordSpecimens } from './record-specimens.js';
 import { recordSpecimenInput, slotGallery } from './slot-gallery.js';
-import { serializeFrontmatter, slotPositions, type IaDoc, type SlotDoc } from '../records/slot-model/index.js';
+import { serializeFrontmatter, slotPositions, validateCandidate, type IaDoc, type SlotDoc, type SlotAgent, type SlotKind } from '../records/slot-model/index.js';
 import { sha256Hex } from '../records/hash.js';
 import { agentGalleryLayers } from '../../studio/lib/agent-library';
 import { designerGalleryLayers } from '../../studio/lib/designer-library';
@@ -39,6 +39,84 @@ function writerRecordFixture(body: string, locales: readonly string[] = ['en']) 
 }
 
 describe('IA-first gallery data', () => {
+  it.each([
+    ['director', 'brief'], ['writer', 'strings'], ['designer', 'element'], ['publisher', 'page'], ['publisher', 'publication'],
+  ] as const)('keeps invalid %s %s rows unresolved through native galleries and client adapters', async (agent: SlotAgent, kind: SlotKind) => {
+    const repo = realpathSync(mkdtempSync(join(tmpdir(), 'gallery-native-validation-')));
+    const root = join(repo, 'clossys');
+    try {
+      const wanted = ['example.bad', 'example.healthy'];
+      const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic-test-only#gallery-native-validation', extensions: [],
+        nodes: [{ id: 'one', label: 'One', children: [{ id: 'two', label: 'Two', slots: wanted }] }] };
+      mkdirSync(join(root, 'agents', agent), { recursive: true });
+      writeFileSync(join(root, 'agents', agent, 'ia.json'), JSON.stringify(ia));
+      const source = { kind: 'original', ref: [] };
+      const candidate = kind === 'brief' || kind === 'strings' ? 'record-v1.md' : 'record-v1.json';
+      const content = (id: string, provenance: unknown = source, malformed = false) => {
+        if (kind === 'brief' || kind === 'strings') return serializeFrontmatter({ slot: id, ...(provenance === undefined ? {} : { source: provenance }),
+          ...(kind === 'brief' ? { feeds: [], functions: [] } : { locales: ['en'] }) },
+        malformed ? 'Invalid body' : kind === 'brief' ? '## Direction\nDemand\n## Because\nEvidence\n## Watch\nSignals'
+          : '## en\n### greeting\n<!-- {"id":"greeting","bindings":[]} -->\nExact text');
+        const meta = provenance === undefined ? {} : { source: provenance };
+        return JSON.stringify(kind === 'element' ? { name: 'record', type: malformed ? 'invalid' : 'registry:component', files: [{ path: 'index.tsx', type: 'registry:component', content: 'export default function Record() { return null; }' }], meta }
+          : kind === 'page' ? { schema: malformed ? 'invalid' : 'clossys.page/1', title: 'Example', path: '/', frame: null, sections: [], copy: {}, meta }
+            : { schema: malformed ? 'invalid' : 'clossys.publication/1', format: 'website', entryOrder: [], meta });
+      };
+      const dirs = wanted.map(id => join(root, 'agents', agent, 'one/two', id));
+      const docs = wanted.map(id => ({ schema: 'clossys.slot/1', id, agent, ia: slotPositions(agent, ia).get(id)!, kind, contract: {}, inputs: [], uses: [] } satisfies SlotDoc));
+      const pin = (bytes: string) => ({ candidate, sha256: sha256Hex(bytes), pinnedBy: 'owner:synthetic-test-only:gallery-validation', at: '2026-01-01T00:00:00Z' });
+      const reset = () => wanted.forEach((id, i) => {
+        const bytes = content(id);
+        expect(validateCandidate(kind, id, candidate, bytes)).toEqual([]);
+        mkdirSync(join(dirs[i]!, 'candidates'), { recursive: true });
+        writeFileSync(join(dirs[i]!, 'slot.json'), JSON.stringify(docs[i]));
+        writeFileSync(join(dirs[i]!, 'candidates', candidate), bytes);
+        writeFileSync(join(dirs[i]!, 'candidates', candidate.replace('-v1.', '-v2.')), bytes);
+        writeFileSync(join(dirs[i]!, 'pin.json'), JSON.stringify(pin(bytes)));
+      });
+      const bad = dirs[0]!, id = wanted[0]!;
+      const replaceCandidate = (bytes: string) => {
+        writeFileSync(join(bad, 'candidates', candidate), bytes);
+        writeFileSync(join(bad, 'pin.json'), JSON.stringify(pin(bytes)));
+      };
+      const mutations = [
+        () => writeFileSync(join(bad, 'pin.json'), '{}'),
+        () => writeFileSync(join(bad, 'pin.json'), '{broken'),
+        () => writeFileSync(join(bad, 'pin.json'), JSON.stringify({ ...pin(content(id)), sha256: '0'.repeat(64) })),
+        () => writeFileSync(join(bad, 'pin.json'), JSON.stringify({ ...pin(content(id)), candidate: 'absent-v1.md' })),
+        ...[{ schema: 'invalid' }, { id: 'foreign.slot' }, { agent: agent === 'writer' ? 'director' : 'writer' }, { kind: 'invalid' },
+          ...[{ l0: 'foreign' }, { l1: 'foreign' }, { l2: 'foreign' }, { order: docs[0]!.ia.order + 1 }].map(position => ({ ia: { ...docs[0]!.ia, ...position } }))
+        ].map(fields => () => writeFileSync(join(bad, 'slot.json'), JSON.stringify({ ...docs[0], ...fields }))),
+        () => replaceCandidate(content(id, source, true)),
+        () => replaceCandidate(content(id, { kind: 'derived', ref: [] })),
+        () => replaceCandidate(kind === 'brief' || kind === 'strings' ? serializeFrontmatter({ slot: id, ...(kind === 'brief' ? { feeds: [], functions: [] } : { locales: ['en'] }) },
+          kind === 'brief' ? '## Direction\nDemand\n## Because\nEvidence\n## Watch\nSignals' : '## en\n### greeting\n<!-- {"id":"greeting","bindings":[]} -->\nText')
+          : JSON.stringify({ ...JSON.parse(content(id)), meta: {} })),
+        () => replaceCandidate(kind === 'brief' || kind === 'strings' ? content(id).replace('source:', 'lineage:')
+          : JSON.stringify({ ...JSON.parse(content(id)), meta: { source, lineage: {} } })),
+        ...(kind === 'element' ? [
+          () => replaceCandidate(JSON.stringify({ ...JSON.parse(content(id)), name: 'foreign' })),
+          ...[{ id: 'foreign' }, { slot: 'foreign.slot' }].map(element => () => replaceCandidate(JSON.stringify({ ...JSON.parse(content(id)), meta: { source, element } }))),
+        ] : []),
+      ];
+      reset();
+      expect(slotGallery(root, agent).sections.flatMap(section => section.cards).map(card => card.status)).toEqual(['active', 'active']);
+      for (const mutate of mutations) {
+        reset(); mutate();
+        const gallery = slotGallery(root, agent), cards = gallery.sections.flatMap(section => section.cards);
+        expect(gallery.count).toBe(2); expect(ids(gallery.sections)).toEqual(wanted);
+        expect(cards[0]).toMatchObject({ status: 'failing', records: 0 });
+        for (const field of ['element', 'specimen', 'specimenUrl', 'emptyState'] as const) expect(cards[0]![field]).toBeUndefined();
+        expect(cards[1]).toMatchObject({ status: 'active', records: 1 });
+        const layers = agent === 'designer'
+          ? designerGalleryLayers({ state: 'ready', ...designerGallery(root) }, 'light', noRoutes)
+          : agentGalleryLayers({ state: 'ready', ...(await agentGallery(repo, agent))! }, noRoutes);
+        const projected = layers.flatMap(layer => layer.groups.flatMap(group => group.cards));
+        expect(projected.map(card => card.key)).toEqual(wanted);
+        expect(projected[0]!.specimen).toBeUndefined();
+      }
+    } finally { rmSync(repo, { recursive: true, force: true }); }
+  });
 
   it('preserves native Writer empty text, escaped structural lines, locale order and full textless payloads', async () => {
     const context = '  exact.context  ';
@@ -73,6 +151,37 @@ describe('IA-first gallery data', () => {
     } finally { rmSync(f.root, { recursive: true, force: true }); }
   });
 
+  it('returns 404 without rendering explicit Writer drafts with invalid native source or slot identity', async () => {
+    const body = '## en\r\n### greeting\r\n<!-- {"id":"greeting","bindings":[]} -->\r\nExact text\r\n';
+    const f = writerRecordFixture(body);
+    try {
+      let renders = 0;
+      const mount = recordSpecimens({ consumer: f.root, render: () => { renders++; return 'rendered'; } });
+      const docPath = join(f.dir, 'slot.json'), doc = readFileSync(docPath, 'utf8');
+      const request = async () => {
+        let code = 0;
+        const response = { writeHead(status: number) { code = status; }, end() {} } as ServerResponse;
+        await mount.handle({ method: 'GET', url: `/__specimen?agent=writer&slot=${f.id}&candidate=${f.candidate}` } as IncomingMessage, response, '/__specimen');
+        return code;
+      };
+      expect(await request()).toBe(200);
+      expect(renders).toBe(1);
+      const fields = { slot: f.id, locales: ['en'], source: { kind: 'original', ref: [] } };
+      for (const mutate of [
+        () => writeFileSync(join(f.dir, 'candidates', f.candidate), serializeFrontmatter({ ...fields, source: { kind: 'derived', ref: [] } }, body)),
+        () => writeFileSync(join(f.dir, 'candidates', f.candidate), serializeFrontmatter({ ...fields, slot: 'foreign.slot' }, body)),
+        () => writeFileSync(docPath, doc.replace(f.id, 'foreign.slot')),
+        () => writeFileSync(join(f.dir, 'pin.json'), '{}'),
+      ]) {
+        writeFileSync(docPath, doc);
+        writeFileSync(join(f.dir, 'candidates', f.candidate), f.source);
+        mutate();
+        expect(await request()).toBe(404);
+        expect(renders).toBe(1);
+      }
+    } finally { rmSync(f.root, { recursive: true, force: true }); }
+  });
+
   it.each([
     ['invalid metadata', '## en\n### first\n<!-- {"id":42,"bindings":[]} -->\ntext\n'],
     ['duplicate id', '## en\n### first\n<!-- {"id":"same","bindings":[]} -->\nfirst\n\n### second\n<!-- {"id":"same","bindings":[]} -->\nsecond\n'],
@@ -80,7 +189,9 @@ describe('IA-first gallery data', () => {
     const f = writerRecordFixture(body);
     try {
       let projected: ReturnType<typeof recordSpecimenInput>;
-      expect(() => { projected = recordSpecimenInput(f.root, 'writer', f.id, f.candidate); }).toThrow(/Writer slot body/);
+      if (_problem === 'invalid metadata') expect(recordSpecimenInput(f.root, 'writer', f.id, f.candidate)).toBeUndefined();
+      else expect(() => { projected = recordSpecimenInput(f.root, 'writer', f.id, f.candidate); }).toThrow(/Writer slot body/);
+      expect(slotGallery(f.root, 'writer').sections.flatMap(section => section.cards)[0]).toMatchObject({ status: 'failing', records: 0 });
       expect(projected).toBeUndefined();
     } finally { rmSync(f.root, { recursive: true, force: true }); }
   });
@@ -100,7 +211,7 @@ describe('IA-first gallery data', () => {
           kind: 'element', contract: {}, inputs: [], uses: [],
         } satisfies SlotDoc));
         if (id === 'components.empty') continue;
-        const content = id === 'components.bad' ? bytes : JSON.stringify({ name: 'healthy' });
+        const content = id === 'components.bad' ? bytes : JSON.stringify({ name: 'element', type: 'registry:component', files: [{ path: 'index.tsx', type: 'registry:component', content: 'export default function Healthy() { return null; }' }], meta: { source: { kind: 'original', ref: [] } } });
         writeFileSync(join(dir, 'candidates/element-v1.json'), content);
         writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: 'element-v1.json', sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:gallery-malformed', at: '2026-01-01T00:00:00Z' }));
         if (id === 'components.bad') writeFileSync(join(dir, 'candidates/element-v2.json'), JSON.stringify({ name: 'newer' }));
@@ -114,8 +225,8 @@ describe('IA-first gallery data', () => {
       expect(cards[1]!.element).toBeUndefined();
       expect(cards[1]!.specimen).toBeUndefined();
       expect(cards[1]!.specimenUrl).toBeUndefined();
-      expect(cards[2]).toMatchObject({ id: wanted[2], status: 'active', element: 'healthy', specimen: 'components.healthy/healthy', records: 1 });
-      expect(cards[3]).toMatchObject({ id: wanted[3], status: 'failing', emptyState: 'No candidate', records: 0 });
+      expect(cards[2]).toMatchObject({ id: wanted[2], status: 'active', element: 'element', specimen: 'components.healthy/element', records: 1 });
+      expect(cards[3]).toMatchObject({ id: wanted[3], status: 'failing', records: 0 });
       const designer = designerGallery(root);
       expect(designer.count).toBe(wanted.length);
       expect(ids(designer.sections)).toEqual(wanted);
@@ -138,7 +249,7 @@ describe('IA-first gallery data', () => {
       const dir = join(root, 'agents/designer/components/controls/components.example');
       const content = JSON.stringify({ name: 'example', type: 'registry:component', files: [{ path: 'index.tsx', type: 'registry:component', content: 'export default function Example() { return null; }' }], meta: { source: { kind: 'original', ref: [] } } });
       writeFileSync(join(dir, 'candidates/example-v1.json'), content);
-      writeFileSync(join(dir, 'candidates/example-v2.json'), content.replace('"example"', '"newer"'));
+      writeFileSync(join(dir, 'candidates/example-v2.json'), content.replace('return null;', 'return <div />;'));
       const pin = { candidate: 'example-v1.json', sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:designer-pin', at: '2026-01-01T00:00:00Z' };
       const layers = () => designerGalleryLayers({ state: 'ready', ...designerGallery(root) }, 'light', noRoutes);
       const assertNoPreview = (noPin: boolean) => {
@@ -165,7 +276,8 @@ describe('IA-first gallery data', () => {
       assertNoPreview(true);
       for (const invalid of [{}, { ...pin, sha256: '0'.repeat(64) }, { ...pin, candidate: 'absent-v1.json' }]) {
         writeFileSync(join(dir, 'pin.json'), JSON.stringify(invalid));
-        assertNoPreview(!('candidate' in invalid));
+        assertNoPreview(false);
+        expect(slotGallery(root, 'designer').sections.flatMap(section => section.cards)[1]).toMatchObject({ status: 'failing', records: 0 });
       }
     } finally { rmSync(root, { recursive: true, force: true }); }
   });
@@ -230,8 +342,10 @@ describe('IA-first gallery data', () => {
         writeFileSync(join(dir, 'pin.json'), JSON.stringify(invalid));
         noFrame();
       }
-      // Explicit unpinned record rendering remains available to its existing consumers.
+      // A present malformed pin never grants an explicit draft fallback.
       writeFileSync(join(dir, 'pin.json'), '{}');
+      expect(recordSpecimenInput(root, 'writer', 'strings.label', 'label-v2.md')).toBeUndefined();
+      unlinkSync(join(dir, 'pin.json'));
       expect(recordSpecimenInput(root, 'writer', 'strings.label', 'label-v2.md')?.rows[0]?.text).toBe('Newer draft');
       writeFileSync(join(dir, 'pin.json'), JSON.stringify(pin));
       writeFileSync(join(dir, 'candidates/label-v1.md'), `${content}changed`);
