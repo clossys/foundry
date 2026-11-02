@@ -1,7 +1,32 @@
-import { isSurfacePackageEntry, surfaceEntryOf, surfaceFault, surfaceOutputs, surfacePrimary } from "./surface-library.js";
+import { isSurfacePackageEntry, resolveSurfacePackageDescriptor, surfaceEntryOf, surfaceFault, surfaceOutputs, surfacePackageDescriptorHash, surfacePrimary } from "./surface-library.js";
 import { stableStringify } from "./stable.js";
-import type { CompositeEmitFile } from "./types.js";
-import type { SurfaceResolved } from "./surface-types.js";
+import type { CompositeCatalogData, CompositeEmitFile } from "./types.js";
+import type { SurfacePackageEvidence, SurfaceResolved, SurfaceSlot } from "./surface-types.js";
+
+/** Emit an authentic registered package candidate without adopting it into a consumer library. */
+export function emitSurfacePackageCandidate(input: { catalog: CompositeCatalogData; slot: SurfaceSlot; source: string; packages: readonly SurfacePackageEvidence[] }) {
+    const candidates = input.catalog.surfaces?.fills.filter(doc => { const meta = doc.$extensions["com.clossys.fill"]; return meta.slot === input.slot && meta.source === input.source && meta.mode === "implementation"; }) ?? [];
+    if (candidates.length !== 1) surfaceFault("S2 unique registered package candidate required");
+    const document = candidates[0]!, fill = surfaceEntryOf(document), meta = document.$extensions["com.clossys.fill"];
+    if (!isSurfacePackageEntry(fill) || fill.origin) surfaceFault("S2 unadopted package candidate required");
+    const descriptorHash = surfacePackageDescriptorHash(fill);
+    const registration = resolveSurfacePackageDescriptor(input.catalog, input.slot, { source: meta.source, fill: meta.id, pin: meta.pin as import("./surface-types.js").SurfacePackagePin, license: meta.license, descriptorHash });
+    const matches = input.packages.filter(row => row.module === fill.impl.module && row.version === meta.pin?.version && /^[a-f0-9]{64}$/.test(row.artifactSha256) && row.values.includes(fill.impl.export));
+    if (matches.length !== 1) surfaceFault("S2 exact installed package export evidence required");
+    const siteShell = input.slot === "frames.site-shell" && fill.impl.module === "@clossys/designer/frames" && fill.impl.export === "SiteFrame";
+    if (siteShell && !matches[0]!.values.includes("siteShellProps")) surfaceFault("S2 native siteShellProps export evidence required");
+    const name = surfacePrimary(fill.slot), path = `${fill.slot.replace(".", "/")}/index.${siteShell ? "tsx" : "ts"}`;
+    const contents = siteShell ? [
+        'import { Children, createElement, type ReactNode } from "react";',
+        'import { SiteFrame, siteShellProps } from "@clossys/designer/frames";',
+        'export type CatalogSurfaceProps = Omit<Parameters<typeof siteShellProps>[0], "slots"> & { slots?: Parameters<typeof siteShellProps>[0]["slots"]; children?: ReactNode };',
+        `export function ${name}({ children, slots, ...input }: CatalogSurfaceProps) {`,
+        '  if (children !== undefined && slots?.main !== undefined) throw new TypeError("Frame main supplied twice");',
+        '  return createElement(SiteFrame, siteShellProps({ ...input, slots: { ...slots, main: slots?.main ?? Children.toArray(children) } }));',
+        '}', '',
+    ].join("\n") : `export { ${fill.impl.export}${fill.impl.export === name ? "" : ` as ${name}`} } from ${JSON.stringify(fill.impl.module)};\n`;
+    return { ...registration, descriptor: structuredClone(fill), descriptorHash, package: structuredClone(matches[0]!), file: { path, contents }, export: name, rendering: registration.contract.contract.kind === "frame" ? registration.contract.contract.rendering : "server" as const, adapter: siteShell ? "siteShellProps" as const : "package" as const };
+}
 export function emitSurfaces(profile: SurfaceResolved, targets: readonly string[]): CompositeEmitFile[] {
     const files: CompositeEmitFile[] = [];
     const rows = Object.values(profile.fills).sort((a, b) => surfaceEntryOf(a.document).slot < surfaceEntryOf(b.document).slot ? -1 : 1);

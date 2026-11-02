@@ -131,7 +131,7 @@ function mountOf(record: SpecimenRecord): { file?: string; export?: string; copy
     const name = str(fixtures.export) ?? record.preview.export, copyKeys = str(fixtures.copyKeys);
     return { file: fixtures.file, ...(name ? { export: name } : {}), ...(copyKeys ? { copyKeys } : {}), props: { ...(fixtures.props as Record<string, unknown> | undefined) } };
   }
-  return { ...(record.preview.entry ? { file: record.preview.entry } : {}), ...(record.preview.export ? { export: record.preview.export } : {}), props: { ...fixtures } };
+  return { ...(record.preview.entry ? { file: record.preview.entry } : {}), ...(record.preview.export ? { export: record.preview.export } : {}), ...(record.preview.copyKeys ? { copyKeys: record.preview.copyKeys } : {}), props: { ...fixtures } };
 }
 
 /** Copy and asset slots an element reads: its preview copy keys plus every `{ "$copy" }` / `{ "$asset" }` in its props. */

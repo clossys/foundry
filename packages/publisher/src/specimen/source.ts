@@ -80,6 +80,7 @@ export function adaptPreview(value: unknown): SpecimenPreview {
   const fixtures = descriptor ? rawFixtures.props : rawFixtures ?? (isRecord(value.props) ? value.props : undefined);
   const entry = typeof value.entry === "string" ? value.entry : descriptor ? rawFixtures.file : undefined;
   const exported = typeof value.export === "string" ? value.export : descriptor ? rawFixtures.export : undefined;
+  const copyKeys = typeof value.copyKeys === "string" ? value.copyKeys : descriptor && typeof rawFixtures.copyKeys === "string" ? rawFixtures.copyKeys : undefined;
   if (exported !== undefined && !exported) throw new Error("preview export must name a component");
   const copy = adaptCopy(value.copy);
   return {
@@ -87,6 +88,7 @@ export function adaptPreview(value: unknown): SpecimenPreview {
     ...(theme ? { theme } : {}), ...(width ? { width } : {}),
     ...(entry !== undefined ? { entry } : {}),
     ...(exported !== undefined ? { export: exported } : {}),
+    ...(copyKeys !== undefined ? { copyKeys } : {}),
   };
 }
 
