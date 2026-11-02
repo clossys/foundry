@@ -107,6 +107,13 @@ describe("NativeLegalView whole document", () => {
     expect(html).toContain(">15. Januar 2026</time>");
   });
 
+  it("renders a genuine keyed React element without reading key metadata", () => {
+    const input = fixture();
+    const before = hash(input);
+    expect(renderToStaticMarkup(<NativeLegalView key="synthetic-key" document={input} landmark="none" />)).toBe(render(input));
+    expect(hash(input)).toBe(before);
+  });
+
   it("leaves the framed view's unused draft heading unresolved", () => {
     const input = fixture();
     const before = render(input);
@@ -178,6 +185,59 @@ describe("NativeLegalView authentic refusal", () => {
 });
 
 describe("NativeLegalView JSON transport", () => {
+  it("consumes descriptor data rather than a Proxy's preview target", () => {
+    const input = fixture();
+    input.document.legal.status = "draft";
+    input.document.legal.factsToConfirm = [{ id: "synthetic.unresolved-fact" }];
+    let gets = 0;
+    const transport = new Proxy(input, { get(target, key) {
+      gets++;
+      return key === "target" ? "preview" : Reflect.get(target, key);
+    } });
+    const props = new Proxy({ document: transport, landmark: "none" as const }, { get(target, key) {
+      gets++;
+      return Reflect.get(target, key);
+    } });
+    // Direct call: JSX prop spreading would itself invoke the Proxy get trap.
+    expect(() => NativeLegalView(props)).toThrow(/legal document gate/);
+    expect(gets).toBe(0);
+  });
+
+  it("passes the same descriptor snapshot to Writer's approval gate", () => {
+    const input = fixture();
+    input.registry.entries[0]!.status = "draft";
+    const approved = fixture().registry;
+    let gets = 0;
+    input.registry = new Proxy(input.registry, { get(target, key) {
+      gets++;
+      return key === "entries" ? approved.entries : Reflect.get(target, key);
+    } });
+    const before = hash(Object.getOwnPropertyDescriptor(input.registry, "entries")!.value);
+    expect(() => renderToStaticMarkup(NativeLegalView({ document: input, landmark: "none" }))).toThrow(RenderError);
+    expect(hash(Object.getOwnPropertyDescriptor(input.registry, "entries")!.value)).toBe(before);
+    expect(gets).toBe(0);
+  });
+
+  it("renders descriptor document, labels and array data without invoking Proxy get", () => {
+    const input = fixture();
+    const expected = render(input);
+    const original = hash(input);
+    let gets = 0;
+    const wrap = <T extends object,>(value: T): T => new Proxy(value, { get() {
+      gets++;
+      throw new Error("SYNTHETIC-PRIVATE-SENTINEL");
+    } });
+    const transport = wrap({
+      ...input,
+      document: wrap({ ...input.document, sections: wrap(input.document.sections) }),
+      registry: wrap({ ...input.registry, entries: wrap(input.registry.entries) }),
+      labels: wrap(input.labels),
+    });
+    expect(renderToStaticMarkup(NativeLegalView({ document: transport, landmark: "none" }))).toBe(expected);
+    expect(gets).toBe(0);
+    expect(hash(input)).toBe(original);
+  });
+
   it.each(["resolveCopyId", "options", "brand", "framed", "extra"])("refuses unknown transport field %s", (key) => {
     const input = { ...fixture(), [key]: "SYNTHETIC-PRIVATE-SENTINEL" };
     expect(() => unsafeRender({ document: input, landmark: "none" })).toThrow(/transport/);
@@ -228,8 +288,11 @@ describe("NativeLegalView JSON transport", () => {
     Object.defineProperty(accessor.registry, "synthetic", { enumerable: true, get() { calls++; return "SYNTHETIC"; } });
     const custom = fixture();
     Object.assign(custom.registry, { toJSON() { calls++; return {}; } });
+    const nestedKey = fixture();
+    Object.defineProperty(nestedKey.labels, "key", { get() { calls++; return "SYNTHETIC"; } });
     expect(() => render(accessor)).toThrow(/JSON/);
     expect(() => render(custom)).toThrow(/JSON/);
+    expect(() => render(nestedKey)).toThrow(/JSON/);
     expect(calls).toBe(0);
   });
 });
