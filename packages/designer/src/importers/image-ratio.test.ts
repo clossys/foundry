@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { loadCatalog, applyLibraryChange, libraryHash, resolve } from "../catalog-core/index.js";
 import type { LibraryData } from "../catalog-core/types.js";
-import { checkAssetProfile } from "../catalog-assets/check.js";
+import { checkAssetProfile, checkAssetProfileWithContext } from "../catalog-assets/check.js";
 import { stableStringify } from "../catalog-core/stable.js";
 import { importImageRatios } from "./image-ratio.js";
 const catalog = { ...loadCatalog(), fills: [...loadCatalog().fills.filter(fill => fill.$extensions["com.clossys.fill"].slot !== "assets.image-ratio"), ...importImageRatios()] };
@@ -32,6 +32,7 @@ describe("image crop candidate", () => {
   it.each([0, -1, Infinity, NaN])("refuses a mutated non-positive or non-finite ratio %s", width => {
     const library = adopted(), profile = resolve({ catalog, library });
     profile.members["assets.image-ratio.wide"]!.value.light = { width, height: 9 };
-    expect(checkAssetProfile(catalog, library, { resolved: profile })).toContainEqual(expect.objectContaining({ code: "A10", subject: "assets.image-ratio.wide", verdict: "violated" }));
+    // The public check re-resolves the library, so a forged resolution goes through the engine-level judge.
+    expect(checkAssetProfileWithContext(catalog, library, { resolved: profile }, () => [])).toContainEqual(expect.objectContaining({ code: "A10", subject: "assets.image-ratio.wide", verdict: "violated" }));
   });
 });
