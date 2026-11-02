@@ -57,7 +57,7 @@ describe('slot details', () => {
     writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: first.name, sha256, pinnedBy: 'owner:synthetic-test-only:B4-slot-detail-pin', at: '2026-01-01T00:00:00Z' }));
     const detail = slotDetail(root, 'writer', id)!;
     expect(detail.shown).toBe(first.name);
-    expect(detail.checks.every(check => check.ok)).toBe(true);
+    expect(detail.checks.filter(check => check.label !== 'Inputs ready' && check.detail !== 'inputs-undeclared').every(check => check.ok)).toBe(true);
     expect(detail.history).toEqual([expect.objectContaining({ candidate: first.name, commit: 'working-tree' })]);
     const inputs = slotDetailInputs(detail, links, 'dark');
     expect(inputs.specimen).toMatchObject({ kind: 'viewports', specimens: [375, 768, 1280].map(viewport => ({ viewport })) });
@@ -89,6 +89,55 @@ describe('slot details', () => {
       expect.objectContaining({ label: 'identity.missing', ok: false }),
     ]));
     expect(slotDetailInputs(detail, links, 'light')).toMatchObject({ references: { usedBy: [{ label: id, href: `/writer/${id}` }] } });
+  });
+
+  it('projects canonical input readiness independently of reference links', () => {
+    const { root, dir } = fixture();
+    const upstream = 'brief.example';
+    const agent = join(root, 'clossys/agents/director');
+    const upstreamDir = join(agent, 'examples/group', upstream);
+    mkdirSync(join(upstreamDir, 'candidates'), { recursive: true });
+    const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic#readiness', extensions: [], nodes: [
+      { id: 'examples', label: 'Examples', children: [{ id: 'group', label: 'Group', slots: [upstream] }] },
+    ] };
+    writeFileSync(join(agent, 'ia.json'), JSON.stringify(ia));
+    const upstreamDoc = { schema: 'clossys.slot/1', id: upstream, agent: 'director', ia: slotPositions('director', ia).get(upstream), kind: 'brief', contract: {}, inputs: [], uses: [] };
+    writeFileSync(join(upstreamDir, 'slot.json'), JSON.stringify(upstreamDoc));
+    const bytes = serializeFrontmatter({ slot: upstream, source: { kind: 'original', ref: [] }, feeds: [], functions: [] },
+      '## Direction\n- example: Direction\n\n## Because\n- example: Evidence\n\n## Watch\n- example: Constraint\n');
+    const candidatePath = join(upstreamDir, 'candidates/brief-v1.md');
+    const pinPath = join(upstreamDir, 'pin.json');
+    const pin = { candidate: 'brief-v1.md', sha256: createHash('sha256').update(bytes).digest('hex'), pinnedBy: 'owner:synthetic-test-only:readiness', at: '2026-01-01T00:00:00Z' };
+    writeFileSync(candidatePath, bytes); writeFileSync(pinPath, JSON.stringify(pin));
+    const docPath = join(dir, 'slot.json');
+    const doc = JSON.parse(readFileSync(docPath, 'utf8'));
+    writeFileSync(docPath, JSON.stringify({ ...doc, inputs: [upstream], uses: [id] }));
+    const verify = (reason?: string) => {
+      const detail = slotDetail(root, 'writer', id)!;
+      expect(detail.inputs).toEqual([upstream]); expect(detail.uses).toEqual([id]);
+      expect(detail.links).toEqual([{ agent: 'director', id: upstream }, { agent: 'writer', id }]);
+      expect(detail.checks).toContainEqual({ label: upstream, ok: true, detail: 'Slot reference resolves' });
+      const checks = slotDetailInputs(detail, links, 'light').checks.rows;
+      expect(checks).toContainEqual(expect.objectContaining({ label: 'Inputs ready', ok: !reason }));
+      if (reason) expect(checks).toContainEqual(expect.objectContaining({ label: upstream, ok: false, detail: reason }));
+    };
+    verify();
+    unlinkSync(pinPath); verify('unpinned');
+    writeFileSync(pinPath, JSON.stringify(pin)); writeFileSync(candidatePath, bytes + 'changed\n'); verify('hash-drift');
+    writeFileSync(candidatePath, bytes); writeFileSync(pinPath, '{}'); verify('invalid-pin');
+    writeFileSync(pinPath, JSON.stringify(pin)); unlinkSync(candidatePath); verify('missing-candidate');
+    const invalid = bytes.replace('---\n', '---\nstatus: active\n');
+    writeFileSync(candidatePath, invalid); writeFileSync(pinPath, JSON.stringify({ ...pin, sha256: createHash('sha256').update(invalid).digest('hex') })); verify('invalid-candidate');
+    writeFileSync(candidatePath, bytes); writeFileSync(pinPath, JSON.stringify(pin));
+    writeFileSync(join(upstreamDir, 'slot.json'), JSON.stringify({ ...upstreamDoc, id: 'brief.foreign' })); verify('invalid-slot');
+    writeFileSync(docPath, JSON.stringify({ ...doc, inputs: ['brief.missing'], uses: [id] }));
+    const missing = slotDetail(root, 'writer', id)!;
+    expect(missing.checks).toContainEqual({ label: 'brief.missing', ok: false, detail: 'missing' });
+    expect(missing.checks).toContainEqual({ label: 'brief.missing', ok: false, detail: 'Unknown slot reference' });
+    writeFileSync(docPath, JSON.stringify(doc));
+    expect(slotDetail(root, 'writer', id)!.checks).toContainEqual({ label: id, ok: false, detail: 'inputs-undeclared' });
+    writeFileSync(join(upstreamDir, 'slot.json'), JSON.stringify(upstreamDoc));
+    expect(slotDetail(root, 'director', upstream)!.checks).toContainEqual({ label: 'Inputs ready', ok: true, detail: 'Inputs ready' });
   });
 
   it('keeps locale identities distinct and does not emit metadata as Writer copy', () => {

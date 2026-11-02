@@ -1,7 +1,7 @@
 /** Detail-only projection. Slot metadata, candidates and pins have one reader. */
 import { join } from "node:path";
 import { recordSpecimenHref } from "./slot-gallery.js";
-import { hasSlotModel, listSlots, pinHistory, readCandidate, readIa, readSlot, slotIndex, usedBy } from "../records/slots.js";
+import { hasSlotModel, listSlots, pinHistory, readCandidate, readIa, readSlot, readiness, slotIndex, usedBy } from "../records/slots.js";
 import { CANDIDATE_NAME, parseFrontmatter, validateCandidate, validateSlotDoc, type SlotAgent } from "../records/slot-model/index.js";
 
 export interface DetailCandidate {
@@ -66,6 +66,7 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
   const node = ia.nodes.find(row => row.id === entry.position.l1);
   const group = node?.children.find(row => row.id === entry.position.l2);
   const refs = [...new Set([...doc.inputs, ...doc.uses])];
+  const inputReadiness = readiness(consumer, agent, id, index);
   return {
     agent, id, kind: doc.kind, trail: [node?.label, group?.label].filter((label): label is string => !!label),
     contract: doc.contract, inputs: doc.inputs, uses: doc.uses, usedBy: usedBy(consumer, id),
@@ -77,6 +78,8 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
       { label: "Pin names a recorded candidate", ok: !!pinCandidate, detail: entry.pin?.candidate ?? "No pin" },
       { label: "Pin matches candidate bytes", ok: !!pinCandidate && pinCandidate.sha256 === entry.pin?.sha256, detail: entry.pin ? (pinCandidate?.sha256 === entry.pin.sha256 ? entry.pin.sha256 : "Pin hash does not match candidate bytes") : "No pin" },
       ...candidates.map(candidate => ({ label: candidate.name, ok: !candidate.issues.length, detail: candidate.issues.join("; ") || "Candidate format valid" })),
+      { label: "Inputs ready", ok: inputReadiness.ready, detail: inputReadiness.ready ? "Inputs ready" : "Inputs blocked" },
+      ...inputReadiness.blockedBy.map(({ slot, reason }) => ({ label: slot, ok: false, detail: reason })),
       ...refs.map(ref => ({ label: ref, ok: index.has(ref), detail: index.has(ref) ? "Slot reference resolves" : "Unknown slot reference" })),
     ],
   };
