@@ -16,6 +16,7 @@ export interface ParsedSurfaceModule {
     types: readonly string[];
     imports: readonly {
         module: string;
+        /** Namespace imports expand to exact static members; never a wildcard. */
         name: string;
         local: string;
         kind: "value" | "type";
@@ -121,6 +122,7 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
     const scan = (end?: string): void => {
         let prior: Token | undefined;
         while (i < source.length) {
+            const start = i;
             const c = source[i++]!;
             if (/\s/.test(c))
                 continue;
@@ -140,7 +142,7 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
             if (c === end)
                 return;
             if (c === '"' || c === "'") {
-                prior = { text: quoted(c), literal: true };
+                prior = { text: quoted(c), literal: true, start, end: i };
                 tokens.push(prior);
                 continue;
             }
@@ -152,9 +154,9 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
                 continue;
             }
             if (c === "<" && /^[A-Za-z>]/.test(source.slice(i)) && (!prior || ["return", "=", "(", "?", ":", ",", ">", "=>", "&&", "||"].includes(prior.text))) {
-                tokens.push({ text: "(", jsx: true });
+                tokens.push({ text: "(", jsx: true, start, end: i });
                 jsx();
-                tokens.push({ text: ")" });
+                tokens.push({ text: ")", start: i, end: i });
                 prior = { text: ")" };
                 continue;
             }
@@ -163,7 +165,7 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
             if (/[A-Za-z_$]/.test(c)) {
                 const tail = /^[A-Za-z0-9_$]*/.exec(source.slice(i))![0];
                 i += tail.length;
-                prior = { text: c + tail };
+                prior = { text: c + tail, start, end: i };
                 tokens.push(prior);
                 continue;
             }
@@ -171,7 +173,7 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
                 return refuse();
             if (["{", "[", "("].includes(c)) {
                 const close = ({ "{": "}", "[": "]", "(": ")" } as Record<string, string>)[c]!;
-                tokens.push({ text: c });
+                tokens.push({ text: c, start, end: i });
                 scan(close);
                 prior = { text: close, start: i - 1, end: i };
                 tokens.push(prior);
@@ -185,10 +187,10 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
             }
             else if ((c === "&" || c === "|") && source[i] === c) {
                 i++;
-                prior = { text: c + c };
+                prior = { text: c + c, start, end: i };
             }
             else
-                prior = { text: c };
+                prior = { text: c, start, end: i };
             tokens.push(prior);
         }
         if (end)
@@ -198,6 +200,9 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
     let at = 0;
     const functions = new Set<string>(), exports = new Map<string, string>(), types = new Set<string>(), typeExports = new Set<string>(), locals = new Set<string>();
     const imports: ParsedSurfaceModule["imports"][number][] = [];
+    const helperValues = new Set<string>(), refValues = new Set<string>(), arrows = new Set<string>();
+    const namespaces = new Map<string, { module: string; kind: "value" | "type"; start: number; end: number }>();
+    const erased = new Set<number>();
     const peek = () => tokens[at];
     const is = (text: string) => !!peek() && !peek()!.literal && peek()!.text === text;
     const take = (text: string) => { const token = tokens[at++]; if (!token || token.literal || token.text !== text)
@@ -206,12 +211,151 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
         return refuse(); return token.text; };
     const balanced = (open: string): void => { take(open); const close = ({ "(": ")", "[": "]", "{": "}", "<": ">" } as Record<string, string>)[open]!; while (peek() && !(!peek()!.literal && peek()!.text === close)) {
         const token = peek()!;
-        if (!token.literal && ["(", "[", "{"].includes(token.text)) {
+        if (!token.literal && (["(", "[", "{"].includes(token.text) || open === "<" && token.text === "<")) {
             balanced(token.text);
             continue;
         }
         at++;
     } take(close); };
+    const newline = (left: Token | undefined, right: Token | undefined) => left?.end !== undefined && right?.start !== undefined && /[\r\n\u2028\u2029]/.test(source.slice(left.end, right.start));
+    const finish = () => { if (is(";")) at++; else if (peek() && !newline(tokens[at - 1], peek())) refuse(); };
+    const imported = (local: string, module: string, name: string) => imports.some(row => row.local === local && row.module === module && row.name === name && row.kind === "value");
+    const markErased = (start: number, end: number) => { for (let k = start; k < end; k++) erased.add(k); };
+    // Type arguments must be type references, never balanced runtime expressions.
+    // Return the first token after '>' without changing the statement cursor.
+    const typeArguments = (start: number): number | undefined => {
+        const text = (index: number, value: string) => !tokens[index]?.literal && tokens[index]?.text === value;
+        const typeName = (index: number) => {
+            const token = tokens[index];
+            return !!token && !token.literal && /^[A-Za-z_$][\w$]*$/.test(token.text) && !reservedDefaultBindings.has(token.text) && !["keyof", "infer", "readonly", "unique", "asserts", "is", "as", "satisfies"].includes(token.text);
+        };
+        if (!text(start, "<")) return undefined;
+        let cursor = start + 1;
+        while (true) {
+            if (!typeName(cursor)) return undefined;
+            cursor++;
+            if (text(cursor, ".")) {
+                if (!typeName(cursor + 1)) return undefined;
+                cursor += 2;
+            }
+            if (text(cursor, "<")) {
+                const end = typeArguments(cursor);
+                if (end === undefined) return undefined;
+                cursor = end;
+            }
+            while (text(cursor, "[") && text(cursor + 1, "]")) cursor += 2;
+            if (text(cursor, ">")) return cursor + 1;
+            if (!text(cursor, ",")) return undefined;
+            cursor++;
+            if (text(cursor, ">")) return cursor + 1;
+        }
+    };
+    const staticValue = (): void => {
+        if (peek()?.literal || ["null", "true", "false"].includes(peek()?.text ?? "")) { at++; return; }
+        if (is("{") || is("[")) {
+            const object = is("{");
+            at++;
+            const close = object ? "}" : "]";
+            while (!is(close)) {
+                if (object) {
+                    if (peek()?.literal) at++;
+                    else id();
+                    take(":");
+                }
+                staticValue();
+                if (!is(",")) break;
+                at++;
+            }
+            take(close);
+            return;
+        }
+        const start = peek()?.start;
+        const number = start === undefined ? undefined : /^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?/.exec(source.slice(start))?.[0];
+        if (!number || start === undefined) return refuse();
+        const end = start + number.length;
+        while (peek()?.end !== undefined && peek()!.end! <= end) at++;
+        if (tokens[at - 1]?.end !== end) return refuse();
+    };
+    const staticCva = (): void => {
+        take("(");
+        if (!peek()?.literal) return refuse();
+        at++;
+        if (is(",")) {
+            at++;
+            if (!is(")")) {
+                if (!is("{")) return refuse();
+                staticValue();
+                if (is(",")) at++;
+            }
+        }
+        take(")");
+    };
+    const inlineRef = (): void => {
+        take("(");
+        balanced("(");
+        if (newline(tokens[at - 1], peek())) return refuse();
+        take("=>");
+        if (is("{")) balanced("{");
+        else {
+            const body = at;
+            // Calls in an inline arrow body run when the callback runs, not at construction.
+            while (peek() && !is(")")) {
+                if (is(",")) return refuse();
+                if (["(", "[", "{"].includes(peek()!.text)) balanced(peek()!.text);
+                else at++;
+            }
+            if (at === body) return refuse();
+        }
+        take(")");
+    };
+    // Only finite atoms/arrays/objects, concrete arrows and the two evidenced helper factories.
+    const initializer = (bindingName: string): "plain" | "function" | "ref" | "helper" => {
+        const begin = at;
+        let shape: "plain" | "function" | "ref" | "helper" = "plain";
+        if (is("(")) {
+            balanced("(");
+            if (!is("=>") || newline(tokens[at - 1], peek())) return refuse();
+            at++;
+            shape = "function";
+            if (is("{") || is("(")) {
+                const open = peek()!.text;
+                const body = at;
+                balanced(open);
+                if (open === "(" && (at === body + 2 || !tokens.slice(body + 1, at - 1).some(row => row.jsx))) return refuse();
+            }
+            else if (peek()?.literal || ["null", "true", "false"].includes(peek()?.text ?? "")) at++;
+            else return refuse();
+        }
+        else if (is("[") || is("{")) staticValue();
+        else if (peek()?.literal || /^(?:[0-9]|null$|true$|false$)/.test(peek()?.text ?? "")) {
+            const numeric = !peek()?.literal && /^[0-9]$/.test(peek()?.text ?? "");
+            at++;
+            if (numeric) while (/^[0-9]$/.test(peek()?.text ?? "") && tokens[at - 1]?.end === peek()?.start) at++;
+        }
+        else {
+            const local = id();
+            if (is(".")) {
+                at++;
+                if (id() !== "forwardRef" || !(imported(local, "react", "default") || namespaces.get(local)?.module === "react" && namespaces.get(local)?.kind === "value")) return refuse();
+                shape = "ref";
+                if (is("<")) {
+                    const start = at, end = typeArguments(start);
+                    if (end === undefined || tokens[end]?.literal || tokens[end]?.text !== "(") return refuse();
+                    at = end;
+                    markErased(start, end);
+                }
+            }
+            else if (imported(local, "class-variance-authority", "cva")) shape = "helper";
+            else return refuse();
+            if (shape === "ref") inlineRef();
+            else staticCva();
+        }
+        if (at === begin) return refuse();
+        // A line terminator is not a boundary before a call, index, member or operator.
+        if (peek() && !is(";") && (!newline(tokens[at - 1], peek()) || !["export", "import", "function", "const", "let", "type", "interface"].includes(peek()!.text) && !refValues.has(peek()!.text) && !(shape === "ref" && peek()!.text === bindingName))) return refuse();
+        finish();
+        return shape;
+    };
     const add = (set: Set<string>, key: string) => { if (locals.has(key))
         return refuse(); locals.add(key); set.add(key); };
     for (let k = 0; k < tokens.length; k++) {
@@ -249,6 +393,7 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
         if (!token || token.literal || defaultExport && token.text !== "function")
             return refuse();
         if (token.text === "import" && !exported) {
+            const importAt = at;
             at++;
             let allType = false;
             if (is("type")) {
@@ -266,6 +411,20 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
                 locals.add(local);
                 rows.push({ name, local, kind });
             };
+            if (is("*")) {
+                if (!richer) return refuse();
+                at++;
+                take("as");
+                const local = id();
+                if (reservedDefaultBindings.has(local) || locals.has(local)) return refuse();
+                locals.add(local);
+                take("from");
+                const module = tokens[at++];
+                if (!module?.literal || module.text.includes("\\")) return refuse();
+                namespaces.set(local, { module: module.text, kind: allType ? "type" : "value", start: importAt, end: at });
+                finish();
+                continue;
+            }
             if (peek()?.text !== "{") {
                 const local = id();
                 if (reservedDefaultBindings.has(local))
@@ -373,6 +532,7 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
             continue;
         }
         if (richer && ["type", "interface"].includes(token.text)) {
+            const typeAt = at;
             at++;
             const local = id();
             add(types, local);
@@ -389,6 +549,7 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
                 take("=");
                 let count = 0;
                 while (peek() && peek()!.text !== ";") {
+                    if (!peek()!.literal && ["export", "import", "function", "const", "let", "var", "type", "interface", "class"].includes(peek()!.text)) return refuse();
                     if (["(", "[", "{"].includes(peek()!.text))
                         balanced(peek()!.text);
                     else
@@ -399,54 +560,65 @@ export function parseSurfaceModule(source: string, richer = true): ParsedSurface
                     return refuse();
                 take(";");
             }
+            markErased(typeAt, at);
             if (exported)
                 typeExports.add(local);
             continue;
         }
-        if (richer && !exported && ["const", "let"].includes(token.text)) {
+        if (richer && ["const", "let"].includes(token.text)) {
             at++;
             const local = id();
-            if (locals.has(local))
-                return refuse();
+            if (locals.has(local) || reservedDefaultBindings.has(local)) return refuse();
             locals.add(local);
-            const initializerAt = at;
-            // The untouched Tailark helper ends at EOF with this bounded form:
-            // const Local = (parameters) => (<JSX />). Other declarations need ';'.
-            if (is("=") && tokens[at + 1]?.text === "(") {
-                take("=");
-                balanced("(");
-                const parametersEnd = tokens[at - 1]?.end, arrowStart = peek()?.start;
-                if (is("=>") && parametersEnd !== undefined && arrowStart !== undefined && !/[\r\n\u2028\u2029]/.test(source.slice(parametersEnd, arrowStart)) && tokens[at + 1]?.text === "(" && tokens[at + 2]?.jsx) {
-                    take("=>");
-                    take("(");
-                    balanced("(");
-                    if (peek()?.text === ")") {
-                        at++;
-                        if (!peek())
-                            continue;
-                    }
-                }
-                at = initializerAt;
+            take("=");
+            const shape = initializer(local);
+            if (shape === "function") arrows.add(local);
+            else if (shape === "ref" || shape === "helper") helperValues.add(local);
+            if (shape === "ref") refValues.add(local);
+            if (exported) {
+                if (shape === "plain" || token.text !== "const" || exports.has(local)) return refuse();
+                exports.set(local, local);
             }
-            let equal = false;
-            while (peek() && peek()!.text !== ";") {
-                if (peek()!.text === "=")
-                    equal = true;
-                if (["(", "[", "{"].includes(peek()!.text))
-                    balanced(peek()!.text);
-                else
-                    at++;
-            }
-            if (!equal)
-                return refuse();
-            take(";");
+            continue;
+        }
+        if (richer && !exported && refValues.has(token.text)) {
+            at++;
+            take(".");
+            take("displayName");
+            take("=");
+            if (!peek()?.literal) return refuse();
+            at++;
+            finish();
             continue;
         }
         return refuse();
     }
-    if ([...exports.values()].some(local => !functions.has(local)) || [...typeExports].some(local => !types.has(local)))
+    const directNamespaceCall = (start: number): boolean => {
+        if (!tokens[start]?.literal && tokens[start]?.text === "(") return true;
+        const end = typeArguments(start);
+        return end !== undefined && !tokens[end]?.literal && tokens[end]?.text === "(";
+    };
+    for (const [local, namespace] of namespaces) {
+        const uses: ParsedSurfaceModule["imports"][number][] = [];
+        for (let k = 0; k < tokens.length; k++) {
+            const token = tokens[k]!;
+            if (token.literal || token.text !== local || k >= namespace.start && k < namespace.end) continue;
+            const member = tokens[k + 2], next = tokens[k + 3];
+            const kind: "value" | "type" = erased.has(k) ? "type" : "value";
+            // Type queries require value semantics beyond this finite member grammar.
+            if (kind === "type" && tokens[k - 1]?.text === "typeof") return refuse();
+            if (tokens[k - 1]?.text === "." || tokens[k + 1]?.text !== "." || member?.literal || !/^[A-Za-z_$][\w$]*$/.test(member?.text ?? "") || reservedDefaultBindings.has(member!.text) || next?.text === "." || next?.text === "[" || kind === "value" && (namespace.kind === "type" || !directNamespaceCall(k + 3))) return refuse();
+            const row = { module: namespace.module, name: member!.text, local, kind };
+            if (!uses.some(use => use.name === row.name && use.kind === row.kind)) uses.push(row);
+            k += 2;
+        }
+        if (!uses.length) return refuse();
+        imports.push(...uses);
+    }
+    for (const local of exports.values()) if (arrows.has(local)) functions.add(local);
+    if ([...exports.values()].some(local => !functions.has(local) && !helperValues.has(local)) || [...typeExports].some(local => !types.has(local)))
         return refuse();
-    return { functions: [...functions], values: [...exports.keys()], functionExports: [...exports].map(([name, local]) => ({ export: name, local })), types: [...typeExports], imports, client };
+    return { functions: [...functions], values: [...exports.keys()], functionExports: [...exports].filter(([, local]) => functions.has(local)).map(([name, local]) => ({ export: name, local })), types: [...typeExports], imports, client };
 }
 export interface SurfaceSourceProof {
     values: readonly {

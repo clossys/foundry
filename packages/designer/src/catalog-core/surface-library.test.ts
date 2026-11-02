@@ -2,11 +2,18 @@
 import { expect, it } from "vitest";
 import { syntheticSurface, adoptedSurface, syntheticDerivation } from "./__fixtures__/surface-engine/synthetic.js";
 import { applyLibraryChange, libraryHash, resolve, emit } from "./api.js";
-import { isSurfacePackageEntry, surfaceEntryOf, surfaceOf, surfacePortionHash, surfaceSelection, surfaceManifest } from "./surface-library.js";
+import { assertSurfaceCandidate, isSurfacePackageEntry, surfaceEntryOf, surfaceOf, surfacePortionHash, surfaceSelection, surfaceManifest } from "./surface-library.js";
 import { importFoundrySections } from "../importers/foundry-sections.js";
 import { readSurfacePackageEvidence } from "../library-cli/surface-package-evidence.js";
 import type { SurfaceCandidateDocument } from "./surface-types.js";
 const adopt={portion:"surfaces" as const,change:{op:"adopt" as const,slot:"sections.synthetic" as const,source:"synthetic"}};
+
+it("S4 exact dependency permits safe Node subpaths while retaining traversal and version guards", () => {
+ const {candidate}=syntheticSurface();
+ for(const module of ["react","next/link.js","next/image.js","@scope/package/nested/entry.mjs"]) expect(()=>assertSurfaceCandidate({...candidate,dependencies:[{module,version:"1.2.3",license:"MIT"}]})).not.toThrow();
+ for(const module of ["next/../link.js","next/./link.js","next//link.js","next/%2e%2e/link.js","next/link.js?x","next/link.js#x","next/dir\\link.js","/next/link.js"]) expect(()=>assertSurfaceCandidate({...candidate,dependencies:[{module,version:"1.2.3",license:"MIT"}]})).toThrow(/S4 exact dependency/);
+ for(const version of ["^1.2.3","latest","1.2","1.2.3 || 2.0.0"]) expect(()=>assertSurfaceCandidate({...candidate,dependencies:[{module:"next/link.js",version,license:"MIT"}]})).toThrow(/S4 exact dependency/);
+});
 
 it("SYNTHETIC absent legacy bytes/hash, explicit empty identity, source bytes and whole CAS",()=>{
  const {input,bundle}=syntheticSurface(),before=structuredClone(input.library),old=libraryHash(before);const absent=emit(resolve(input),["notices"]);const empty={...before,surfaces:{version:1 as const,fills:[],files:[]}};
