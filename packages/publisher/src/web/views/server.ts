@@ -39,6 +39,8 @@ export type { SectionedViewLandmark, SectionedViewProps } from "./SectionedView.
 
 export { LegalView } from "./LegalView.js";
 export type { LegalViewFramedLabels, LegalViewLabels, LegalViewProps } from "./LegalView.js";
+export { NativeLegalView } from "./NativeLegalView.js";
+export type { NativeLegalViewDocument, NativeLegalViewProps } from "./NativeLegalView.js";
 export { HeroView } from "./HeroView.js";
 export type { HeroViewFooter, HeroViewGround, HeroViewProps } from "./HeroView.js";
 export { LANDING_VIEW_CALL_TO_ACTION_GROUND, LANDING_VIEW_CLOSING_GROUND, planLandingViewGrounds } from "./landingViewGrounds.js";
