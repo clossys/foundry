@@ -31,4 +31,13 @@ describe("Badge", () => {
     expect(badge.className).toContain("bg-status-danger-tint");
     expect(badge.className).not.toContain("bg-surface-sunken");
   });
+
+  it("renders genuine info usage without retuning it to neutral or danger", () => {
+    render(<Badge variant="info" data-testid="info">Information</Badge>);
+    const badge = screen.getByTestId("info");
+    expect(badge.className).toContain("bg-status-info-tint");
+    expect(badge.className).toContain("text-status-info-text");
+    expect(badge.className).not.toContain("bg-surface-sunken");
+    expect(badge.className).not.toContain("bg-status-danger-tint");
+  });
 });

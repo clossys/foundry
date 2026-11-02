@@ -1,6 +1,6 @@
 import { resolveTokenValue } from "../tokens/internal/resolve-token-value.js";
 import type { TokenDefinition } from "../tokens/tokens.js";
-import { contrastRatio } from "../tokens/color.js";
+import { contrastRatio, colorAlpha } from "../tokens/color.js";
 import { parseFill } from "./cell.js";
 import { idFinding, isValidId, LAYERS } from "./ids.js";
 import { aliasOf, assetReferences, compare, flatten, leafOf, malformed, metaOf, modeValue, references, relativeOf, unsafeText } from "./model.js";
@@ -25,6 +25,7 @@ const THEME_CONTRAST_PAIRS: readonly { foreground: string; background: string; m
 ].map(([foreground, background]) => ({ foreground: foreground!, background: background!, minimumRatio: 4.5 }));
 const LICENSES = new Set(["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "OFL-1.1", "CC0-1.0"]);
 export function check(input: EngineInput & { resolved?: Resolved; fileExists?: (path: string) => boolean; strategy?: SelectionStrategyReader }): CheckResult {
+  if (input.valueOptions?.assetScope !== undefined && !["catalog", "adopted"].includes(input.valueOptions.assetScope)) throw new Error("Unknown asset check scope");
   const { resolved: fresh, chosen, fills, flattened } = resolveForCheck(input);
   const tokensOf = (fill: FillDoc): Record<string, DtcgToken> => {
     let tokens = flattened.get(fill);
@@ -69,18 +70,19 @@ export function check(input: EngineInput & { resolved?: Resolved; fileExists?: (
     if (slot.contract.kind === "asset" && slot.contract.optional?.some(name => slot.contract.members.mode !== "closed" || !slot.contract.members.names.includes(name))) add("C1", "contract", slot.id, { message: `contract: ${slot.id} optional members must be declared closed members`, copy: { id: "st.9z67w1pg64", values: { item: (slot.id ?? "") } } });
     for (const clause of slot.requires) if (!clauses.has(clause)) add("C3", "standards", slot.id, { message: `standards: unknown clause ${clause} in ${slot.id}`, copy: { id: "st.3chprq1k2v", values: { item: (slot.id ?? ""), clause: (clause ?? "") } } });
     const hasFill = filledSlots.has(slot.id);
+    const complete = input.library.complete && !(slot.contract.kind === "asset" && input.valueOptions?.assetScope === "adopted");
     if (slot.contract.kind === "token") for (const [relative, css] of Object.entries(slot.contract.emit ?? {})) {
       const id = `${slot.id}.${relative}`; bound.set(css, [...(bound.get(css) ?? []), id]);
       if (!shipped.has(css)) add("C4", "binding", css, { message: `binding: ${css} is not a shipped token`, copy: { id: "st.y89003hb02", values: { property: (css ?? "") } } });
-      if (!fresh.members[id] && (input.library.complete || hasFill)) add("C4", "coverage", id, { message: `coverage: ${id} (emits ${css}) has no value in profile ${input.library.source.id}`, copy: { id: "st.rhhgjm5eg2", values: { item: (id ?? ""), source: (input.library.source.id ?? "") } } });
+      if (!fresh.members[id] && (complete || hasFill)) add("C4", "coverage", id, { message: `coverage: ${id} (emits ${css}) has no value in profile ${input.library.source.id}`, copy: { id: "st.rhhgjm5eg2", values: { item: (id ?? ""), source: (input.library.source.id ?? "") } } });
     }
-    if (!hasFill) add("C4", "coverage", slot.id, { message: `coverage: slot ${slot.id} has no consumer fill`, copy: { id: "st.q4xjgfd4fz", values: { item: (slot.id ?? "") } } }, input.library.complete ? "error" : "notice");
+    if (!hasFill) add("C4", "coverage", slot.id, { message: `coverage: slot ${slot.id} has no consumer fill`, copy: { id: "st.q4xjgfd4fz", values: { item: (slot.id ?? "") } } }, complete ? "error" : "notice");
     const requiredMembers = slot.contract.members.mode === "closed" ? slot.contract.members.names : slot.contract.members.required ?? [];
     for (const relative of requiredMembers) {
       if (slot.contract.kind === "asset" && slot.contract.optional?.includes(relative)) continue;
       if (slot.contract.kind === "token" && slot.contract.emit?.[relative]) continue;
       const member = `${slot.id}.${relative}`;
-      if (!fresh.members[member] && (input.library.complete || hasFill)) add("C4", "coverage", member, { message: `coverage: ${member} has no value in profile ${input.library.source.id}`, copy: { id: "st.fnhr7mxb8y", values: { option: (member ?? ""), source: (input.library.source.id ?? "") } } });
+      if (!fresh.members[member] && (complete || hasFill)) add("C4", "coverage", member, { message: `coverage: ${member} has no value in profile ${input.library.source.id}`, copy: { id: "st.fnhr7mxb8y", values: { option: (member ?? ""), source: (input.library.source.id ?? "") } } });
     }
   }
   for (const [css, members] of bound) if (members.length > 1) {
@@ -253,15 +255,38 @@ export function check(input: EngineInput & { resolved?: Resolved; fileExists?: (
   if (input.resolved) for (const id of new Set([...Object.keys(fresh.members), ...Object.keys(input.resolved.members)])) if (stableStringify(fresh.members[id] ?? null) !== stableStringify(input.resolved.members[id] ?? null)) add("C5", "uniqueness", id, { message: `uniqueness: resolved member ${id} does not match a single implementation`, copy: { id: "st.qvyksbygzr", values: { option: (id ?? "") } } });
   const byCss = new Map<string, import("./types.js").ResolvedMember>(Object.values(fresh.members).filter(m => m.emit).map(m => [m.emit!, m]));
   for (const [id, member] of Object.entries(fresh.members)) if (member.emit && shipped.get(member.emit)?.brandable === false && input.library.baseline?.[member.emit] && input.library.baseline[member.emit]!.light !== member.css.light) add("C3", "standards", id, { message: `standards: ${id} overrides fixed Foundry scale ${member.emit}; emitted to scales.css`, copy: { id: "st.vp83q9wnjs", values: { item: (id ?? ""), property: (member.emit ?? "") } } }, "notice");
+  for (const [background, ground] of Object.entries(input.valueOptions?.contrastGrounds ?? {})) {
+    if (!THEME_CONTRAST_PAIRS.some(pair => pair.background === background) || !byCss.has(ground))
+      add("C9", "contrast", background, { message: "contrast: unknown background or ground property", copy: { id: "st.73wzm8xe3s", values: { foreground: "", background, mode: "light/dark" } } });
+  }
   const contrastRegistries = new Map<string, Record<string, TokenDefinition>>();
   for (const pair of THEME_CONTRAST_PAIRS) for (const mode of ["light", "dark"] as const) {
     const fg = byCss.get(pair.foreground); const bg = byCss.get(pair.background);
     if (!fg || !bg) continue;
     let registry = contrastRegistries.get(mode);
     if (!registry) { registry = Object.fromEntries([...byCss].map(([css, member]) => [css, { property: css, family: "surface", brandable: shipped.get(css)?.brandable ?? false, themeDependent: shipped.get(css)?.themeDependent ?? false, value: member.css[mode] ?? member.css.light } as TokenDefinition])); contrastRegistries.set(mode, registry); }
-    const text = (css: string): string | undefined => resolveTokenValue(css, registry).value;
+    const text = (css: string, seen: readonly string[] = []): string | undefined => {
+      if (seen.includes(css) || seen.length > 16) throw new Error("Cyclic color recipe");
+      const result = resolveTokenValue(css, registry);
+      if (!result.value) return undefined;
+      let value = result.value;
+      // Resolve recipe inputs from this consumer, never from var() fallback literals.
+      for (let start = value.indexOf("var("), count = 0; start !== -1; start = value.indexOf("var(")) {
+        if (++count > 64 || value.length > 4096) throw new Error("Color recipe exceeds limits");
+        let end = start + 4, depth = 1;
+        for (; end < value.length && depth; end++) { if (value[end] === "(") depth++; if (value[end] === ")") depth--; }
+        if (depth) throw new Error("Malformed color reference");
+        const target = /^\s*(--[a-zA-Z0-9-]+)\s*(?:,[\s\S]*)?$/.exec(value.slice(start + 4, end - 1))?.[1];
+        const replacement = target ? text(target, [...seen, ...result.chain]) : undefined;
+        if (!replacement) throw new Error("Unresolved color recipe input");
+        value = value.slice(0, start) + replacement + value.slice(end);
+      }
+      return value;
+    };
     try {
-      const composite = pair.compositeOver ? pair.compositeOver.startsWith("--") ? text(pair.compositeOver) : pair.compositeOver : undefined;
+      const ground = input.valueOptions?.contrastGrounds?.[pair.background] ?? pair.compositeOver;
+      const composite = ground ? /^--[a-zA-Z0-9-]+$/.test(ground) ? text(ground) : undefined : undefined;
+      if (ground !== undefined && (!composite || colorAlpha(composite) !== 1)) throw new Error("Unresolved or translucent ground");
       const foreground = text(pair.foreground); const background = text(pair.background);
       if (!foreground || !background) throw new Error("unresolved color");
       const ratio = contrastRatio(foreground, background, composite);
@@ -271,7 +296,7 @@ export function check(input: EngineInput & { resolved?: Resolved; fileExists?: (
     }
   }
   if (input.catalog.slots.some(slot => slot.layer === "assets" && slot.contract.kind === "asset") && (input.library.complete || fills.some(fill => !!fill.assets))) {
-    for (const finding of checkAssetProfileWithContext(input.catalog, input.library, { resolved: fresh }, () => checkIdentityDerivationsWithContext(input.library, () => fresh, hashInputs, tokensOf))) {
+    for (const finding of checkAssetProfileWithContext(input.catalog, input.library, { resolved: fresh, scope: input.valueOptions?.assetScope }, () => checkIdentityDerivationsWithContext(input.library, () => fresh, hashInputs, tokensOf))) {
       if (finding.verdict === "satisfied") continue;
       if (finding.verdict === "exempt") {
         findings.push({ code: finding.code, rule: "asset", subject: finding.subject, severity: finding.code === "A5" ? "notice" : "error", message: finding.code === "A5" ? finding.message : "Invalid asset exemption: only A5 contrast can be exempt" });

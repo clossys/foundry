@@ -30,10 +30,19 @@ describe("component consumer checks K1-K12", () => {
     profile.operations = [{ op: "adopt", slot: "components.button", members: [] }]; profile.fills.push(structuredClone(profile.fills[0]!));
     code(profile, "K1"); expect(checkComponentProfile(profile).findings.filter(item => item.code === "K1")).toHaveLength(5);
   });
-  it("K1 admits a subset only when required consumer members are covered", () => {
+  it("K1 never lets requested usage erase mandatory capabilities", () => {
     const profile = fixture(); profile.fills[0]!.members = ["variant.primary"]; profile.fills[0]!.propMap = { "variant.primary": "variant=primary" };
-    profile.requiredMembers = { "components.button": ["variant.primary"] }; expect(checkComponentProfile(profile).ok).toBe(true);
+    profile.requiredMembers = { "components.button": ["variant.primary"] };
+    expect(checkComponentProfile(profile).findings.some(finding => finding.code === "K1" && finding.message.includes("size.md"))).toBe(true);
+    const contract = profile.slots.find(slot => slot.id === "components.button")!.contract;
+    if (contract.members.mode !== "closed") throw new Error("closed fixture expected");
+    contract.optional = contract.members.names.filter(member => member !== "variant.primary");
+    expect(checkComponentProfile(profile).ok).toBe(true);
     profile.requiredMembers["components.button"]!.push("size.md"); code(profile, "K1");
+    profile.requiredMembers["components.button"] = ["variant.primary"];
+    profile.requiredProps = { "components.button": ["invented"] }; code(profile, "K1");
+    profile.requiredProps = { "components.missing": ["children"] }; code(profile, "K1");
+    contract.optional = [...(contract.optional ?? []), "invented"]; code(profile, "K1");
   });
   it("K2 rejects radix and other engines even beside a correct RAC import", () => {
     for (const module of ["@radix-ui/react-dialog", "@base-ui/react", "sonner", "react-resizable-panels", "embla-carousel-react", "input-otp", "recharts", "@tanstack/react-table"]) {

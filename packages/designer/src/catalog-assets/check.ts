@@ -5,6 +5,7 @@ import { contrastRatio, colorAlpha } from '../tokens/color.js';
 import { checkClearSpace, checkMinimumSize, checkSingleColourLegibility } from '../tokens/identity-checks.js';
 import { inspectSvg, inspectGlyph, type SvgElement } from './svg.js';
 import { checkIdentityDerivations } from './identity.js';
+import { stableStringify } from '../catalog-core/stable.js';
 import { flatten } from '../catalog-core/model.js';
 import { isPatternRecipe } from '../tokens/pattern.js';
 import { isImageResource, isVideoResource, type ImageResource, type VideoResource } from './media.js';
@@ -18,12 +19,18 @@ function colors(elements:readonly SvgElement[]):string[]{
  for(const e of elements){while(maskDepths.length&&e.depth<=maskDepths.at(-1)!)maskDepths.pop();if(e.tag==='mask')maskDepths.push(e.depth);if(maskDepths.length)continue;for(const name of ['fill','stroke']){let paint=e.attrs[name];if(paint==='currentColor')paint=e.attrs.color??rootColor;if(paint&&!['none','transparent','currentColor'].includes(paint))paints.add(paint);}}
  if(!paints.size&&rootColor)paints.add(rootColor);return [...paints];
 }
-export function checkAssetProfile(catalog:CatalogData,library:LibraryData,input:{resolved?:Resolved;images?:readonly ImageRecord[];glyphBounds?:Readonly<Record<string,{x:number;y:number;width:number;height:number}>>}={}):readonly AssetFinding[]{
- return checkAssetProfileWithContext(catalog,library,input,()=>checkIdentityDerivations(catalog,library));
+export function checkAssetProfile(catalog:CatalogData,library:LibraryData,input:{resolved?:Resolved;scope?:"catalog"|"adopted";images?:readonly ImageRecord[];glyphBounds?:Readonly<Record<string,{x:number;y:number;width:number;height:number}>>}={}):readonly AssetFinding[]{
+ const resolved=resolve({catalog,library});
+ const findings=checkAssetProfileWithContext(catalog,library,{...input,resolved},()=>checkIdentityDerivations(catalog,library));
+ if(input.resolved&&stableStringify(input.resolved)!==stableStringify(resolved))return [...findings,{code:'A12',subject:'assets.resolution',verdict:'violated',message:'Supplied resolution differs from the actual consumer library'}];
+ return findings;
 }
 /** Internal: only the engine check supplies identity findings from its independent fresh resolution. */
 export function checkAssetProfileWithContext(catalog:CatalogData,library:LibraryData,input:NonNullable<Parameters<typeof checkAssetProfile>[2]>,identityErrors:()=>readonly string[]):readonly AssetFinding[]{
+ if(input.scope!==undefined&&!['catalog','adopted'].includes(input.scope))throw Error('Unknown asset check scope');
  const profile=input.resolved??resolve({catalog,library});const findings:AssetFinding[]=[];
+ const selected=new Set(library.fills.filter(fill=>fill.$extensions['com.clossys.fill'].mode!=='reference').map(fill=>fill.$extensions['com.clossys.fill'].slot));
+ const active=(slot:string)=>input.scope!=='adopted'||selected.has(slot);
  const add=(code:AssetCheckCode,subject:string,verdict:AssetFinding['verdict'],message:string):void=>{findings.push({code,subject,verdict,message});};
  const exemptions=new Map<string,unknown>();
  for(const fill of library.fills.filter(fill=>!!fill.assets))for(const [id,token] of Object.entries(flatten(fill))){
@@ -46,6 +53,7 @@ export function checkAssetProfileWithContext(catalog:CatalogData,library:Library
  const iconSources=new Set(Object.entries(profile.members).filter(([id])=>id.startsWith('assets.icon-')).map(([,m])=>m.origin?.kind==='adopted'?m.origin.source:library.source.id));
  if(iconSources.size>1)add('A4','assets.icons','indeterminate',`Mixed icon sources: ${[...iconSources].sort().join(', ')}`);
  for(const leaf of ['lockup','mark'])for(const ground of ['positive','reversed']){
+  if(!active(`assets.${leaf}`))continue;
   const id=`assets.${leaf}.${ground}`,elements=parsed.get(id),paints=elements&&colors(elements);
   if(exemptions.has(id)){
    const value=exemptions.get(id);
@@ -56,11 +64,14 @@ export function checkAssetProfileWithContext(catalog:CatalogData,library:Library
   const backgrounds=ground==='positive'?[profile.members['themes.background.default']?.css.light]:[profile.members['themes.foreground.default']?.css.light,profile.members['themes.background.default']?.css.dark];
   try{if(!paints?.length||backgrounds.some(bg=>!bg))throw Error('unmeasured paint or ground');const ratios=paints.flatMap(paint=>backgrounds.map(bg=>contrastRatio(paint,bg!)));add('A5',id,ratios.every(r=>r>=3)?'satisfied':'violated',`Minimum contrast ${Math.min(...ratios).toFixed(2)}:1`);}catch{add('A5',id,'indeterminate','Cannot measure paint against every light, inverse and dark ground');}
  }
+ if(active('assets.favicon')){
  const favicon=profile.members['assets.favicon.vector']?.value.light;
  add('A6','assets.favicon',typeof favicon==='string'&&parsed.has('assets.favicon.vector')&&/<svg\b[^>]*\bcolor="(?!currentColor)[^"]+"/.test(favicon)&&/<style>@media \(prefers-color-scheme: dark\)\{svg\{color:/.test(favicon)?'satisfied':'violated','Favicon needs explicit light ink and an isolated dark-scheme ink rule');
  add('A6','assets.favicon','indeterminate','16px optical legibility requires browser inspection; no automated browser result is implied');
+ }
  const mono=profile.members['assets.mark.mono']?.value.light;
  if(typeof mono==='string'){const verdict=checkSingleColourLegibility(mono);add('A7','assets.mark.mono',verdict.ok?'satisfied':'violated',verdict.reason??'Single-colour mark');}
+ if(active('assets.app-icon')){
  const mask=parsed.get('assets.app-icon.maskable'),standard=parsed.get('assets.app-icon.standard');
  const backdrop=mask?.find(e=>e.tag==='rect'&&e.depth===1);const inset=mask?.find(e=>e.tag==='svg'&&e.depth===1);
  const paint=backdrop?.attrs.fill;const hexAlpha=paint&&/^#(?:[a-fA-F0-9]{4}|[a-fA-F0-9]{8})$/.test(paint)?(paint.length===5?parseInt(paint.slice(-1).repeat(2),16):parseInt(paint.slice(-2),16))/255:undefined;const alpha=paint?(hexAlpha??colorAlpha(paint)):undefined;const full=(e:SvgElement|undefined)=>!!e&&Number(e.attrs.opacity??1)===1&&Number(e.attrs['fill-opacity']??1)===1&&!e.attrs.transform;
@@ -69,7 +80,8 @@ export function checkAssetProfileWithContext(catalog:CatalogData,library:Library
  const safe=inset&&!inset.attrs.transform&&bounds&&bounds.every(Number.isFinite)&&[0,1].every(x=>[0,1].every(y=>Math.hypot(bounds[0]!+x*bounds[2]!-256,bounds[1]!+y*bounds[3]!-256)<=204.8));
  const standardDirect=standard?.filter(e=>e.depth===1);const transparent=standardDirect?.length===2&&standardDirect.every(e=>e.tag==='rect'||e.tag==='svg')&&standard?.find(e=>e.tag==='rect'&&e.depth===1&&Number(e.attrs.x)>0&&Number(e.attrs.y)>0&&Number(e.attrs.width)<512&&Number(e.attrs.height)<512&&Number(e.attrs.rx)>0);
  add('A8','assets.app-icon',opaque&&safe&&transparent?'satisfied':!mask||!standard?'indeterminate':'violated','Maskable art stays in the 80% circle on an opaque full-bleed ground; standard corners stay transparent');
- for(const mode of ['light','dark'] as const){const fg=profile.members['themes.foreground.default']?.css[mode],bg=profile.members['themes.background.default']?.css[mode];try{if(!fg||!bg)throw Error();const ratio=contrastRatio(fg,bg);add('A9',`assets.icons.${mode}`,ratio>=3?'satisfied':'violated',`Inherited text ink contrast ${ratio.toFixed(2)}:1`);}catch{add('A9',`assets.icons.${mode}`,'indeterminate','Inherited icon ink and ground require parseable token values');}}
+ }
+ if(input.scope!=='adopted'||[...selected].some(slot=>slot.startsWith('assets.icon-')))for(const mode of ['light','dark'] as const){const fg=profile.members['themes.foreground.default']?.css[mode],bg=profile.members['themes.background.default']?.css[mode];try{if(!fg||!bg)throw Error();const ratio=contrastRatio(fg,bg);add('A9',`assets.icons.${mode}`,ratio>=3?'satisfied':'violated',`Inherited text ink contrast ${ratio.toFixed(2)}:1`);}catch{add('A9',`assets.icons.${mode}`,'indeterminate','Inherited icon ink and ground require parseable token values');}}
  const status={success:'success',warning:'warning',danger:'danger',info:'info'};
  for(const [icon,color] of Object.entries(status)){
   if(!profile.members[`assets.icon-${icon}.default`])continue;
@@ -81,7 +93,7 @@ export function checkAssetProfileWithContext(catalog:CatalogData,library:Library
  const ratios=Object.entries(profile.members).filter(([id])=>id.startsWith('assets.image-ratio.')).map(([,m])=>m.value.light).filter((v):v is {width:number;height:number}=>!!v&&typeof v==='object'&&!Array.isArray(v)&&typeof (v as Record<string,unknown>).width==='number'&&typeof (v as Record<string,unknown>).height==='number');
  for(const image of input.images??[]){const crop=image.width/image.height;const match=Number.isFinite(crop)&&image.width>0&&image.height>0&&ratios.some(r=>Math.abs(crop/(r.width/r.height)-1)<=.01);add('A10',image.id,match&&(image.decorative||!!image.alt?.trim())&&!image.bakedCorners?'satisfied':'violated','Crop within 1%; meaningful alt unless decorative; no baked corners');if(!['avif','webp','png','jpeg','svg'].includes(image.format)||image.maxBytes===undefined||image.bytes>image.maxBytes)add('A10',image.id,'indeterminate','Review image format and weight budget');}
  for(const leaf of ['lockup','mark'])for(const member of ['positive','reversed']){const id=`assets.${leaf}.${member}`,value=profile.members[id]?.value.light;if(typeof value!=='string')continue;const clear=checkClearSpace(value),size=checkMinimumSize(value);add('A11',id,clear.indeterminate?'indeterminate':clear.ok?'satisfied':'violated',clear.reason??'Clear-space declaration is sufficient');add('A11',id,size.indeterminate?'indeterminate':size.ok?'satisfied':'violated',size.reason??'Minimum size is sufficient');}
- for(const slot of catalog.slots.filter(s=>s.layer==='assets')){
+ for(const slot of catalog.slots.filter(s=>s.layer==='assets'&&active(s.id))){
   const members=Object.entries(profile.members).filter(([,m])=>m.slot===slot.id);const missing=slot.contract.kind==='asset'&&slot.contract.members.mode==='closed'?slot.contract.members.names.filter(name=>!(slot.contract.kind==='asset'&&slot.contract.optional?.includes(name))&&!profile.members[`${slot.id}.${name}`]):[];add('A12',slot.id,members.length&&!missing.length?'satisfied':'violated',missing.length?`Missing required members: ${missing.join(', ')}`:members.length?'Leaf has materialized consumer members':'Leaf has no consumer members');
   if(['assets.lockup','assets.mark'].includes(slot.id)) { const origins=new Set(members.map(([,m])=>m.origin?.kind==='adopted'?m.origin.source:library.source.id));add('A12',slot.id,origins.size<=1?'satisfied':'violated','Logo leaf members must come from one artwork source'); }
  }

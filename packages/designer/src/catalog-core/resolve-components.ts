@@ -57,6 +57,7 @@ export interface ComponentResolutionInput {
   catalog: ComponentCatalog; library: ComponentLibrary;
   values: Pick<ComponentCheckInput, "tokens" | "assets">;
   requiredMembers?: ComponentCheckInput["requiredMembers"];
+  requiredProps?: ComponentCheckInput["requiredProps"];
   evidence?: Pick<ComponentCheckInput, "observations" | "installedRac" | "classBindings" | "coherenceGroups">;
   packageExports?: ResolvedComponents["packageExports"];
 }
@@ -154,7 +155,7 @@ export function resolveComponents(input: ComponentResolutionInput): ResolvedComp
     componentSecondaryExports(fill, input.library.files);
     fills.set(fill.slot, fill);
   }
-  for (const slot of Object.keys(input.requiredMembers ?? {})) if (!fills.has(slot)) throw new CatalogError(`components: missing component ${slot}`);
+  for (const slot of [...new Set([...Object.keys(input.requiredMembers ?? {}), ...Object.keys(input.requiredProps ?? {})])]) if (!fills.has(slot)) throw new CatalogError(`components: missing component ${slot}`);
   const receiptedPaths = new Set([...fills.values()].flatMap(fill => fill.impl.kind === "source" ? fill.outputSha256?.map(receipt => receipt.path) ?? [] : []));
   for (const file of input.library.files) if (!receiptedPaths.has(file.path)) throw new CatalogError(`components: unreceipted consumer file ${file.path}`);
   for (const [slot, fill] of fills) {
@@ -180,6 +181,6 @@ export function resolveComponents(input: ComponentResolutionInput): ResolvedComp
     const origin = (fill as ComponentCandidate & { origin: ComponentOrigin }).origin;
     return { ...fill, source: origin.kind === "adopted" ? origin.source : fill.source };
   });
-  const check = checkComponentProfile({ compositions: { rules: input.catalog.rules ?? [], library: input.library }, slots: input.catalog.slots, fills: checkedFills, tokens: input.values.tokens, assets: input.values.assets, requiredMembers: input.requiredMembers, observations: input.evidence?.observations ?? {}, installedRac: input.evidence?.installedRac ?? { version: "", instance: "" }, classBindings: input.evidence?.classBindings, coherenceGroups: input.evidence?.coherenceGroups, descriptorHashes: Object.fromEntries([...fills].map(([slot, fill]) => [slot, componentDescriptorHash(fill)])) });
+  const check = checkComponentProfile({ compositions: { rules: input.catalog.rules ?? [], library: input.library }, slots: input.catalog.slots, fills: checkedFills, tokens: input.values.tokens, assets: input.values.assets, requiredMembers: input.requiredMembers, requiredProps: input.requiredProps, observations: input.evidence?.observations ?? {}, installedRac: input.evidence?.installedRac ?? { version: "", instance: "" }, classBindings: input.evidence?.classBindings, coherenceGroups: input.evidence?.coherenceGroups, descriptorHashes: Object.fromEntries([...fills].map(([slot, fill]) => [slot, componentDescriptorHash(fill)])) });
   return { consumer: input.library.source.id, selectionHash: componentLibraryHash(input.library), components, files: structuredClone(input.library.files), check, packageExports: structuredClone(input.packageExports ?? {}) };
 }

@@ -77,6 +77,8 @@ export interface ComponentCheckInput {
   assets: readonly string[];
   installedRac: { version: string; instance: string };
   requiredMembers?: Readonly<Record<string, readonly string[]>>;
+  /** Props required by actual consumer usage, in addition to the canonical contract. */
+  requiredProps?: Readonly<Record<string, readonly string[]>>;
   operations?: readonly { op: string; slot: string; members?: readonly string[] }[];
   /** Classes whose compiled declaration has been independently mapped to this token member. */
   classBindings?: Readonly<Record<string, string>>;
@@ -381,7 +383,7 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
   const slots = new Map(input.slots.map(slot => [slot.id, slot]));
   const fills = new Map<string, ComponentCheckFill>();
   for (const fill of input.fills) { if (fills.has(fill.slot)) add("K1", fill.slot, "A component slot must have one whole implementation"); else fills.set(fill.slot, fill); }
-  for (const slot of Object.keys(input.requiredMembers ?? {})) if (!fills.has(slot)) add("K1", slot, "Required consumer component has no implementation");
+  for (const slot of [...new Set([...Object.keys(input.requiredMembers ?? {}), ...Object.keys(input.requiredProps ?? {})])]) if (!fills.has(slot)) add("K1", slot, "Required consumer component has no implementation");
   for (const operation of input.operations ?? []) if (operation.slot.startsWith("components.") && operation.members !== undefined) add("K1", operation.slot, "Component operations are slot-scope only; members are forbidden");
   const tokenHash = componentTokensHash(input.tokens);
   for (const fill of input.fills) {
@@ -389,11 +391,13 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
     const contract = canonicalContract;
     if (!contract) { add("K1", fill.slot, "Unknown component contract"); continue; }
     const known = contract.members.mode === "closed" ? contract.members.names : undefined;
-    const required = input.requiredMembers?.[fill.slot] ?? (contract.members.mode === "closed" ? contract.members.names : contract.members.required ?? []);
+    const mandatory = (contract.members.mode === "closed" ? contract.members.names : contract.members.required ?? []).filter(member => !contract.optional?.includes(member));
+    const required = new Set([...mandatory, ...(input.requiredMembers?.[fill.slot] ?? [])]);
+    for (const member of contract.optional ?? []) if (!known?.includes(member)) add("K1", fill.slot, `Optional member ${member} is not a closed capability`);
     if (fill.root !== contract.root) add("K1", fill.slot, `Root must equal ${contract.root}`);
     for (const member of fill.members) if (known ? !known.includes(member) : !new RegExp(contract.members.mode === "open" ? contract.members.pattern : "^$").test(member)) add("K1", fill.slot, `Unknown member ${member}`);
     for (const member of required) if (!fill.members.includes(member) || !(member in fill.propMap)) add("K1", fill.slot, `Required member ${member} is not mapped`);
-    for (const prop of contract.props) if (!fill.props.includes(prop)) add("K1", fill.slot, `Required prop ${prop} is missing`);
+    for (const prop of new Set([...contract.props, ...(input.requiredProps?.[fill.slot] ?? [])])) if (!fill.props.includes(prop)) add("K1", fill.slot, `Required prop ${prop} is missing`);
     for (const member of Object.keys(fill.propMap)) if (!fill.members.includes(member)) add("K1", fill.slot, `Mapping names unsupported member ${member}`);
     for (const [layer, reads] of Object.entries(fill.reads)) for (const read of reads) {
       if (layer === "themes" && !tokenReadResolves(input.tokens, read)) add("K3", fill.slot, `Token read ${read} does not resolve`);

@@ -16,6 +16,25 @@ const PREFERENCE = DEFAULT_COMPONENT_PREFERENCE;
 const PICKS = DEFAULT_COMPONENT_PICKS;
 const FALLBACK = DEFAULT_COMPONENT_FALLBACK;
 
+describe("canonical Badge usage eligibility", () => {
+  it("keeps normal shadcn preference for basic usage and chooses the first eligible info supplier", () => {
+    const { input } = setup({ slots: ["components.badge"], picks: {}, fallback: undefined });
+    expect(planComponentDefaults(input).rows[0]).toMatchObject({ source: "shadcn@aria", basis: "preference" });
+    input.requiredMembers = { "components.badge": ["tone.neutral", "tone.danger"] };
+    input.requiredProps = { "components.badge": ["variant", "children"] };
+    expect(planComponentDefaults(input).rows[0]).toMatchObject({ source: "shadcn@aria" });
+    input.requiredMembers = { "components.badge": ["tone.info"] };
+    expect(planComponentDefaults(input).rows[0]).toMatchObject({ source: "foundry", basis: "preference" });
+    expect(planComponentDefaults({ ...input, choices: { "components.badge": "shadcn@aria" } }).rows[0]!.status).toBe("not-chosen");
+    expect(planComponentDefaults({ ...input, picks: { "components.badge": "shadcn@aria" } }).rows[0]!.status).toBe("not-chosen");
+    input.requiredMembers = { "components.badge": ["tone.unknown"] };
+    expect(planComponentDefaults(input).rows[0]!.status).toBe("not-chosen");
+    input.requiredMembers = { "components.badge": ["tone.neutral"] };
+    input.requiredProps = { "components.badge": ["unsupported"] };
+    expect(planComponentDefaults(input).rows[0]!.status).toBe("not-chosen");
+  });
+});
+
 /** Value-source order for the test consumer: Foundry first, then the generic open-contract fills. */
 const VALUE_ORDER = ["foundry", "tailwind-default"];
 /** A real consumer: every token leaf and icon glyph adopts its first offer in `order`, else its first offer. */

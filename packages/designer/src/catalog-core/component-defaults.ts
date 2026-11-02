@@ -28,6 +28,8 @@ export interface ComponentDefaultsInput {
   slots: readonly string[];
   tokens: ComponentCheckInput["tokens"];
   assets: readonly string[];
+  requiredMembers?: ComponentCheckInput["requiredMembers"];
+  requiredProps?: ComponentCheckInput["requiredProps"];
   installedRac: ComponentCheckInput["installedRac"];
   /** Verified source bundles; a source candidate without one is not executable. */
   bundles: readonly SourceBundle[];
@@ -70,7 +72,7 @@ const describe = (findings: readonly ComponentFinding[]): string => unique(findi
 export function planComponentDefaults(input: ComponentDefaultsInput): ComponentDefaultsPlan {
   const slotIds = new Set(input.catalog.slots.map(slot => slot.id));
   const check = (fills: readonly ComponentCandidate[]): ComponentFinding[] => checkComponentProfile({
-    slots: input.catalog.slots, fills, observations: {}, tokens: input.tokens, assets: input.assets, installedRac: input.installedRac,
+    slots: input.catalog.slots, fills, requiredMembers: input.requiredMembers, requiredProps: input.requiredProps, observations: {}, tokens: input.tokens, assets: input.assets, installedRac: input.installedRac,
   }).findings.filter(finding => finding.message !== OBSERVATIONS_UNAVAILABLE && !finding.message.endsWith(`: ${OBSERVATIONS_UNAVAILABLE}`));
   /** A declared dependency on another leaf is closure, settled below; everything else is the candidate's own. */
   const dependency = (fill: ComponentCandidate, finding: ComponentFinding): boolean => {

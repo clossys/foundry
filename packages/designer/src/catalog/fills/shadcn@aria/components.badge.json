@@ -13,13 +13,15 @@
         "sha256": "7771524b64abcdf8dd0d1a0dad02ae5dd78b6865ec69be6d19ff204e73302c64",
         "url": "https://github.com/shadcn-ui/ui"
       },
-      "relation": "same-contract",
+      "relation": "subset",
       "slot": "components.badge",
       "source": "shadcn@aria",
       "sourceAddress": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/bases/aria/ui/badge.tsx",
       "status": "draft",
       "trust": "pinned-upstream",
-      "unmapped": []
+      "unmapped": [
+        "tone.info"
+      ]
     }
   },
   "components": {
@@ -101,7 +103,11 @@
         "tone.danger": "Badge.variant=destructive",
         "tone.neutral": "Badge.variant=secondary"
       },
-      "props": [],
+      "props": [
+        "children",
+        "className",
+        "variant"
+      ],
       "rac": {
         "instance": "react-aria-components",
         "peer": false,

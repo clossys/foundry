@@ -46,6 +46,8 @@ export interface ComponentContract {
   /** Exact RAC roots for independently observed members sharing one source. */
   memberRoots?: Readonly<Record<string, ComponentContract["root"]>>;
   members: TokenContract["members"];
+  /** Declared optional capabilities; all remaining canonical members stay mandatory. */
+  optional?: readonly string[];
   props: readonly string[];
   allowedReads: LeafReads;
   composes?: readonly string[];
@@ -209,14 +211,23 @@ export interface CompositeLibraryData {
 }
 export type CompositeFinding = Finding | import("./check-components.js").ComponentFinding | import("./surface-types.js").SurfaceFinding;
 export interface CompositeCheckResult { ok: boolean; findings: readonly CompositeFinding[] }
+/** Strict checks over the whole asset catalog (default) or every actually materialized leaf. */
+export interface ValueCheckOptions {
+  assetScope?: "catalog" | "adopted";
+  /** Background CSS property -> actual opaque ground property in this consumer's fresh resolution. */
+  contrastGrounds?: Readonly<Record<string, string>>;
+}
 export interface CompositeEngineInput {
   catalog: CompositeCatalogData;
   library: CompositeLibraryData;
+  valueOptions?: ValueCheckOptions;
   componentOptions?: Omit<import("./resolve-components.js").ComponentResolutionInput, "catalog" | "library" | "values">;
   surfaceOptions?: import("./surface-types.js").SurfaceResolutionOptions;
   fileExists?: (path: string) => boolean;
   strategy?: import("./selection-strategy.js").SelectionStrategyReader;
 }
+/** Explicit checking context retained through staged and committed surface changes. */
+export type CompositeApplyOptions = import("./surface-types.js").SurfaceApplyOptions & Pick<CompositeEngineInput, "valueOptions">;
 export interface CompositeResolved {
   consumer: string;
   selectionHash: string;

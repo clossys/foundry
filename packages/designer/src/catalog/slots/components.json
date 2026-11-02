@@ -65,9 +65,11 @@
         "mode": "closed",
         "names": [
           "tone.neutral",
-          "tone.danger"
+          "tone.danger",
+          "tone.info"
         ]
       },
+      "optional": ["tone.info"],
       "props": [],
       "allowedReads": {
         "themes": [

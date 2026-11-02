@@ -18,7 +18,7 @@ import type { CompositeCatalogData, CompositeChangeSet, CompositeCheckResult, Co
 import { surfacePortionHash, applySurfaceOperation, surfaceOf, surfaceEntryOf, surfaceOutputs } from "./surface-library.js";
 import { resolveSurfaces } from "./surface-check.js";
 import { emitSurfaces } from "./surface-emit.js";
-import type { SurfaceApplyOptions } from "./surface-types.js";
+import type { CompositeApplyOptions } from "./types.js";
 function portions(library: CompositeLibraryData): { values: LibraryData; components: ComponentLibrary } {
   if (library.source.kind !== "consumer" || library.source.author !== "consumer") throw new CatalogError("composite: one consumer source required");
   return {
@@ -54,7 +54,7 @@ function componentProfile(input: CompositeEngineInput, values: Resolved) {
 export function checkComposite(input: CompositeEngineInput): CompositeCheckResult {
   const owned = portions(input.library);
   const values = resolveValues({catalog:input.catalog.values,library:owned.values});
-  const findings:CompositeCheckResult["findings"][number][]=[...checkValues({catalog:input.catalog.values,library:owned.values,fileExists:input.fileExists,strategy:input.strategy}).findings];
+  const findings:CompositeCheckResult["findings"][number][]=[...checkValues({catalog:input.catalog.values,library:owned.values,valueOptions:input.valueOptions,fileExists:input.fileExists,strategy:input.strategy}).findings];
   let components:ReturnType<typeof componentProfile>|undefined;
   try {components=componentProfile(input,values);findings.push(...components.check.findings);}
   catch(error){if(!(error instanceof CatalogError))throw error;findings.push({code:"R",rule:"components",severity:"error",subject:input.library.source.id,message:error.message});}
@@ -71,7 +71,7 @@ function computePortions(input: CompositeEngineInput): PortionResolution {
   const owned = portions(input.library);
   const values = resolveValues({ catalog: input.catalog.values, library: owned.values });
   const components = componentProfile(input, values);
-  return { values, components, findings: [...checkValues({ catalog: input.catalog.values, library: owned.values, fileExists: input.fileExists, strategy: input.strategy }).findings, ...components.check.findings] };
+  return { values, components, findings: [...checkValues({ catalog: input.catalog.values, library: owned.values, valueOptions: input.valueOptions, fileExists: input.fileExists, strategy: input.strategy }).findings, ...components.check.findings] };
 }
 /**
  * Everything the probe-independent part of a portion resolution reads besides the library: the value and component
@@ -81,7 +81,7 @@ function computePortions(input: CompositeEngineInput): PortionResolution {
  */
 function portionReads(input: CompositeEngineInput): readonly unknown[] {
   const { values, components } = input.catalog, options = input.componentOptions;
-  return [values, ...Object.values(values), components, ...Object.values(components), options, ...(options ? Object.values(options) : [])];
+  return [values, ...Object.values(values), components, ...Object.values(components), stableStringify(input.valueOptions ?? null), stableStringify([options?.requiredMembers, options?.requiredProps]), options, ...(options ? Object.values(options) : [])];
 }
 interface PortionEntry {
   readonly digest: string; readonly reads: readonly unknown[];
@@ -109,9 +109,9 @@ function resolvePortions(input: CompositeEngineInput, digest = compositeLibraryH
     entry = { digest, reads, values, components: componentProfile(input, values) };
     portionCache.set(input.library, [entry, ...entries].slice(0, PORTION_ENTRIES));
   }
-  const valueCheck = { catalog: input.catalog.values, library: portions(input.library).values };
+  const valueCheck = { catalog: input.catalog.values, library: portions(input.library).values, valueOptions: input.valueOptions };
   // Strategy readers are snapshots reopened after activation; their findings are never cached.
-  const valueFindings = input.fileExists || input.strategy ? checkValues({ ...valueCheck, fileExists: input.fileExists, strategy: input.strategy }).findings : (entry.unprobed ??= checkValues(valueCheck).findings);
+  const valueFindings = input.fileExists || input.strategy || input.valueOptions ? checkValues({ ...valueCheck, fileExists: input.fileExists, strategy: input.strategy }).findings : (entry.unprobed ??= checkValues(valueCheck).findings);
   return { values: entry.values, components: entry.components, findings: [...valueFindings, ...entry.components.check.findings] };
 }
 function resolveCompositeFrom(input: CompositeEngineInput, { values, components, findings }: PortionResolution, selectionHash = compositeLibraryHash(input.library)): CompositeResolved {
@@ -133,7 +133,7 @@ export function resolveComposite(input: CompositeEngineInput): CompositeResolved
  * resolve the result with its own engine input instead, so its later evaluation shares that one resolution. Only
  * when that throws does the apply's own check run, so an error is always the apply's.
  */
-export function committedCompositeLibrary(catalog: CompositeCatalogData, library: CompositeLibraryData, options?: SurfaceApplyOptions, resolveResult?: (result: CompositeLibraryData) => unknown): CompositeLibraryData {
+export function committedCompositeLibrary(catalog: CompositeCatalogData, library: CompositeLibraryData, options?: CompositeApplyOptions, resolveResult?: (result: CompositeLibraryData) => unknown): CompositeLibraryData {
   const { values, components } = portions(library);
   const { source: _valueSource, adoptedAt: _valueDate, ...valuePortion } = values;
   const { source: _componentSource, adoptedAt: _componentDate, ...componentPortion } = components;
@@ -142,12 +142,12 @@ export function committedCompositeLibrary(catalog: CompositeCatalogData, library
     if (!options) throw new CatalogError("surfaces: S8 explicit resolution options required");
     let resolved = false;
     if (resolveResult) try { resolveResult(result); resolved = true; } catch { /* The apply's own check below decides. */ }
-    if (!resolved) { const final = { catalog, library: result, componentOptions: options.componentOptions, surfaceOptions: options.surfaceOptions }; resolveComposite(final); }
+    if (!resolved) { const final = { catalog, library: result, valueOptions: options.valueOptions, componentOptions: options.componentOptions, surfaceOptions: options.surfaceOptions }; resolveComposite(final); }
   }
   return result;
 }
 /** One CAS, ordered dispatch, and no observable partial result on failure. */
-export function applyCompositeLibraryChange(catalog: CompositeCatalogData, library: CompositeLibraryData, cs: CompositeChangeSet, options?: SurfaceApplyOptions): CompositeLibraryData {
+export function applyCompositeLibraryChange(catalog: CompositeCatalogData, library: CompositeLibraryData, cs: CompositeChangeSet, options?: CompositeApplyOptions): CompositeLibraryData {
   if (cs.baseHash !== compositeLibraryHash(library)) throw new CatalogError("composite: changeset baseHash differs");
   let staged = structuredClone(library);
   let { values, components } = portions(staged);
@@ -173,7 +173,7 @@ export function applyCompositeLibraryChange(catalog: CompositeCatalogData, libra
       const retained = staged.surfaces?.fills.filter(doc => surfaceEntryOf(doc).slot !== operation.change.slot);
       const retainedPaths = new Set(retained?.flatMap(doc => surfaceOutputs(surfaceEntryOf(doc)).map(row => row.path)));
       const validationLibrary = retained ? { ...staged, surfaces: { ...staged.surfaces!, fills: retained, files: staged.surfaces!.files.filter(file => retainedPaths.has(file.path)) } } : staged;
-      const pending={catalog,library:validationLibrary,componentOptions:options?.componentOptions,surfaceOptions:options?.surfaceOptions};
+      const pending={catalog,library:validationLibrary,valueOptions:options?.valueOptions,componentOptions:options?.componentOptions,surfaceOptions:options?.surfaceOptions};
       const unsurfaced={...pending,library:withoutSurfaces};
       const profile=resolveCompositeFrom(unsurfaced,current(unsurfaced));
       profile.surfaces=resolveSurfaces(pending,profile,false);
@@ -183,7 +183,7 @@ export function applyCompositeLibraryChange(catalog: CompositeCatalogData, libra
   const { source: _valueSource, adoptedAt: _valueDate, ...valuePortion } = values;
   const { source: _componentSource, adoptedAt: _componentDate, ...componentPortion } = components;
   const result={...staged,values:valuePortion,components:componentPortion};
-  if(result.surfaces?.fills.length){if(!options)throw new CatalogError("surfaces: S8 explicit resolution options required");const final={catalog,library:result,componentOptions:options.componentOptions,surfaceOptions:options.surfaceOptions};resolveCompositeFrom(final,current(final));}
+  if(result.surfaces?.fills.length){if(!options)throw new CatalogError("surfaces: S8 explicit resolution options required");const final={catalog,library:result,valueOptions:options.valueOptions,componentOptions:options.componentOptions,surfaceOptions:options.surfaceOptions};resolveCompositeFrom(final,current(final));}
   return result;
 }
 const valueTargets = new Set<string>(["css-brand", "css-scales", "css-fonts", "tailwind-theme", "notices"]);

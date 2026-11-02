@@ -49,6 +49,7 @@
       "license": "MIT",
       "members": [
         "tone.danger",
+        "tone.info",
         "tone.neutral"
       ],
       "pin": {
@@ -58,6 +59,7 @@
       },
       "propMap": {
         "tone.danger": "./components#Badge.variant=danger",
+        "tone.info": "./components#Badge.variant=info",
         "tone.neutral": "./components#Badge.variant=neutral"
       },
       "props": [

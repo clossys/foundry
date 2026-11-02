@@ -10,6 +10,8 @@ import { loadComponentCompositionRules } from "../catalog-core/component-composi
 import { FOUNDRY_COMPONENT_MAP } from "./foundry-components.map.js";
 import type { FoundryComponentMapping, FoundryComponentSubpath } from "./foundry-components.map.js";
 import { generatedFoundryComponentFiles, importFoundryComponents } from "./foundry-components.js";
+import { generatedShadcnComponentFiles, type ShadcnComponentInput } from "./shadcn-aria-components.js";
+import bundleData from "../catalog-bundles.data.json" with { type: "json" };
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fillsDirectory = resolve(here, "../catalog/fills/foundry");
@@ -28,6 +30,19 @@ const storedMappings = Object.fromEntries(Object.entries(FOUNDRY_COMPONENT_MAP).
 const changedMap = (leaf: string, change: Partial<FoundryComponentMapping>) => ({ ...FOUNDRY_COMPONENT_MAP, [leaf]: { ...FOUNDRY_COMPONENT_MAP[leaf]!, ...change } });
 
 describe("Foundry component package descriptors", () => {
+  it("keeps both Badge descriptors equal to their real importers without inventing stock info", () => {
+    const foundry = generatedFoundryComponentFiles({ exports, mappings: { badge: FOUNDRY_COMPONENT_MAP.badge! }, slots: slots.filter(slot => slot.id === "components.badge") });
+    expect(readFileSync(resolve(fillsDirectory, "components.badge.json"), "utf8")).toBe(foundry["components.badge.json"]);
+    const shadcn = generatedShadcnComponentFiles(structuredClone(bundleData.shadcn) as unknown as ShadcnComponentInput);
+    expect(readFileSync(resolve(fillsDirectory, "../shadcn@aria/components.badge.json"), "utf8")).toBe(shadcn["components.badge.json"]);
+    const native = JSON.parse(foundry["components.badge.json"]!).components.badge;
+    const stock = JSON.parse(shadcn["components.badge.json"]!);
+    expect(native.propMap["tone.info"]).toBe("./components#Badge.variant=info");
+    expect(stock.components.badge.members).not.toContain("tone.info");
+    expect(stock.$extensions["com.clossys.fill"].unmapped).toContain("tone.info");
+    expect(stock.components.badge.props).toEqual(["children", "className", "variant"]);
+  });
+
   it("regenerates 55 stored package descriptors and keeps no dynamic blocked candidates", () => {
     const files = generatedFoundryComponentFiles({ exports, mappings: storedMappings, slots: signedSlots });
     // Explicit local regeneration writes only this generator's enumerated component artifacts.
