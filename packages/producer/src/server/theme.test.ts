@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,7 +9,7 @@ import { defaultStudioTheme, studioTheme, themeHash } from "./theme.js";
 import { startProducerServer } from "./index.js";
 
 let root: string;
-beforeEach(async () => { root = await mkdtemp(join(tmpdir(), "producer-theme-")); });
+beforeEach(async () => { root = await realpath(await mkdtemp(join(tmpdir(), "producer-theme-"))); });
 afterEach(async () => { await rm(root, { recursive: true, force: true }); });
 
 function adoptedDefaults(): LibraryData {
@@ -140,15 +140,25 @@ process.once("SIGTERM", () => server.close(() => process.exit(0)));
     } finally { await server.close(); }
   }, 20_000);
 
-  it("refuses a symlinked consumer root and does not expose target paths", async () => {
+  it.each(["consumer-root", "cell-tree"] as const)("refuses a symlinked %s and does not expose target paths", async kind => {
     await brandedCells();
     const cells = agentRoot(root, "designer");
     const outside = join(root, "outside");
-    const { rename } = await import("node:fs/promises");
-    await rename(cells, outside); await symlink(outside, cells);
-    const theme = await studioTheme(root);
+    const before = await readFile(join(cells, "tree.json"));
+    let input = root;
+    if (kind === "consumer-root") {
+      input = outside;
+      await symlink(root, input, "dir");
+    } else {
+      const { rename } = await import("node:fs/promises");
+      await rename(cells, outside); await symlink(outside, cells, "dir");
+    }
+    // Attacker-controlled paths are deliberately NOT canonicalized.
+    const theme = await studioTheme(input);
     expect(theme.source).toBe("foundry");
     expect(theme.message).toBe("Consumer theme could not be compiled; using the Foundry theme");
     expect(JSON.stringify(theme)).not.toContain(outside);
+    expect(JSON.stringify(theme)).not.toContain(root);
+    expect(await readFile(join(kind === "cell-tree" ? outside : cells, "tree.json"))).toEqual(before);
   });
 });

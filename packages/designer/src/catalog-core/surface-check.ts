@@ -6,6 +6,7 @@ import { runtimeHash, runtimeSourceFindings, runtimeSnapshot } from "./runtime-p
 import { buildSurfaceConsumption } from "./surface-consumption.js";
 import { emit as emitValues } from "./emit.js";
 import { stableStringify } from "./stable.js";
+import { migrateReads } from "./themes-migration.js";
 import type { CompositeEngineInput, CompositeResolved } from "./types.js";
 import { contractFindings, surfaceConsumptionFindings, type SurfaceDefaultDescriptor } from "./surface-defaults.js";
 import type { SurfaceFinding, SurfaceResolved, SurfaceResolvedFill, SurfaceRuntimeIdentity, SurfaceCandidate, SurfaceResolutionOptions } from "./surface-types.js";
@@ -37,10 +38,13 @@ function selectedSurfaceFindings(fill: Pick<SurfaceDefaultDescriptor, "slot" | "
         for (const id of fill.composes)
             if (id.startsWith("components.") && !profile.components.components[id])
                 findings.push({ code: "S4", rule: "surfaces", severity: "error", subject: fill.slot, message: `selected component missing ${id}` });
-    if (fill.reads)
-        for (const id of [...fill.reads.themes, ...fill.reads.assets])
+    if (fill.reads) {
+        // Historical descriptor bytes are pinned; normalize only this read-time view.
+        const reads = migrateReads(fill.reads);
+        for (const id of [...reads.themes, ...reads.assets])
             if (!Object.keys(profile.values.members).some(member => member === id || member.startsWith(id + ".")))
                 findings.push({ code: "S5", rule: "surfaces", severity: "error", subject: fill.slot, message: `consumer read missing ${id}` });
+    }
     return findings;
 }
 export function resolveSurfaces(input: CompositeEngineInput, profile: CompositeResolved, validateDerivations = true): SurfaceResolved | undefined {
