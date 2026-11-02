@@ -21,6 +21,7 @@ export type ResolvedSiteIconLink = ResolvedSiteLink & (
 
 export interface ResolvedSiteShell {
   readonly brand: {
+    readonly variant?: never;
     readonly markSrc: string;
     readonly label: string;
     readonly size: "sm" | "md" | "lg";
@@ -28,6 +29,12 @@ export interface ResolvedSiteShell {
     readonly tone?: "auto" | "inverse";
     readonly markInk?: "image" | "accent";
     readonly wordmark?: string;
+  } | {
+    readonly variant: "text";
+    readonly label: string;
+    readonly href: string;
+    readonly size: "sm" | "md" | "lg";
+    readonly tone?: "auto" | "inverse";
   };
   readonly skipLink: string;
   readonly nav?: { readonly label: string; readonly triggerLabel: string; readonly closeLabel?: string; readonly links: readonly ResolvedSiteLink[] };
@@ -40,7 +47,7 @@ export interface ResolvedSiteShell {
   readonly footer?: {
     /** The brand's own mark, as resolved for `shell.brand`, linking home in the last icon slot. */
     readonly brandBand?: boolean;
-    readonly home: { readonly label: string; readonly href: string; readonly markSrc: string };
+    readonly home: { readonly label: string; readonly href: string } & ({ readonly markSrc: string; readonly variant?: never } | { readonly variant: "text"; readonly markSrc?: never });
     readonly rule?: "none" | "top";
     readonly placement: "flow" | "overlay";
     readonly ground: SiteChromeGround;
@@ -66,6 +73,7 @@ const SHELL_KEYS = new Set([
 ]);
 const HEADER_KEYS = new Set(["surface", "tone", "position"]);
 const BRAND_KEYS = new Set(["assetId", "label", "size", "plate", "variant", "wordmark", "tone", "markInk"]);
+const TEXT_BRAND_KEYS = new Set(["variant", "label", "href", "size", "tone"]);
 const NAV_KEYS = new Set(["label", "triggerLabel", "closeLabel", "links"]);
 const LINK_KEYS = new Set(["href", "label"]);
 const NAV_LINK_KEYS = new Set(["href", "label", "isCurrent"]);
@@ -308,23 +316,32 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
   };
   const iconLinks = (value: unknown, path: string) => list(value, path).map((entry, index) => iconLink(entry, `${path}[${index}]`));
 
-  const brandFields = record(shell.brand, "shell.brand", BRAND_KEYS);
-  const variant = oneOf(brandFields.variant, "shell.brand.variant", ["mark", "lockup"] as const);
+  const brandFields = record(shell.brand, "shell.brand", new Set([...BRAND_KEYS, "href"]));
+  const variant = oneOf(brandFields.variant, "shell.brand.variant", ["mark", "lockup", "text"] as const);
+  record(brandFields, "shell.brand", variant === "text" ? TEXT_BRAND_KEYS : BRAND_KEYS);
   const size = oneOf(brandFields.size, "shell.brand.size", ["sm", "md", "lg"] as const);
-  const plate = brandFields.plate === undefined ? undefined : oneOf(brandFields.plate, "shell.brand.plate", ["self", "shared"] as const);
-  if (typeof brandFields.assetId !== "string" || brandFields.assetId.trim() === "") fail("shell.brand.assetId must be a non-empty string.");
-  const asset = resolveAsset(brandFields.assetId);
-  if (!isRenderImageAsset(asset)) fail("shell.brand.assetId did not resolve to an image asset.");
-  if (variant === "mark" && brandFields.wordmark !== undefined) fail("shell.brand.wordmark is only for the lockup variant.");
-  const brand = {
-    markSrc: asset.src,
-    label: copy(brandFields.label, "shell.brand.label", resolveCopy),
-    size,
-    ...(plate === undefined ? {} : { plate }),
-    ...(brandFields.tone === undefined ? {} : { tone: oneOf(brandFields.tone, "shell.brand.tone", ["auto", "inverse"] as const) }),
-    ...(brandFields.markInk === undefined ? {} : { markInk: oneOf(brandFields.markInk, "shell.brand.markInk", ["image", "accent"] as const) }),
-    ...(variant === "lockup" ? { wordmark: copy(brandFields.wordmark, "shell.brand.wordmark", resolveCopy) } : {}),
-  };
+  let brand: ResolvedSiteShell["brand"];
+  if (variant === "text") {
+    brand = {
+      variant, size, label: copy(brandFields.label, "shell.brand.label", resolveCopy), href: href(brandFields.href, "shell.brand.href", base),
+      ...(brandFields.tone === undefined ? {} : { tone: oneOf(brandFields.tone, "shell.brand.tone", ["auto", "inverse"] as const) }),
+    };
+  } else {
+    const plate = brandFields.plate === undefined ? undefined : oneOf(brandFields.plate, "shell.brand.plate", ["self", "shared"] as const);
+    if (typeof brandFields.assetId !== "string" || brandFields.assetId.trim() === "") fail("shell.brand.assetId must be a non-empty string.");
+    const asset = resolveAsset(brandFields.assetId);
+    if (!isRenderImageAsset(asset)) fail("shell.brand.assetId did not resolve to an image asset.");
+    if (variant === "mark" && brandFields.wordmark !== undefined) fail("shell.brand.wordmark is only for the lockup variant.");
+    brand = {
+      markSrc: asset.src,
+      label: copy(brandFields.label, "shell.brand.label", resolveCopy),
+      size,
+      ...(plate === undefined ? {} : { plate }),
+      ...(brandFields.tone === undefined ? {} : { tone: oneOf(brandFields.tone, "shell.brand.tone", ["auto", "inverse"] as const) }),
+      ...(brandFields.markInk === undefined ? {} : { markInk: oneOf(brandFields.markInk, "shell.brand.markInk", ["image", "accent"] as const) }),
+      ...(variant === "lockup" ? { wordmark: copy(brandFields.wordmark, "shell.brand.wordmark", resolveCopy) } : {}),
+    };
+  }
 
   let nav: ResolvedSiteShell["nav"];
   if (shell.nav !== undefined) {
@@ -383,7 +400,8 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     }
     if (footerFields.brandBand === true && social?.links.length && social.label === undefined) fail("shell.footer.social.label is required for a brand-band social group.");
     // One brand declaration yields the header mark and the footer mark: no footer-specific art or label.
-    const home = { label: brand.label, href: href("/", "shell.brand", base), markSrc: brand.markSrc };
+    const home = brand.variant === "text" ? { variant: "text" as const, label: brand.label, href: brand.href }
+      : { label: brand.label, href: href("/", "shell.brand", base), markSrc: brand.markSrc };
     footer = {
       home,
       ...(footerFields.brandBand === undefined ? {} : { brandBand: footerFields.brandBand as boolean }),

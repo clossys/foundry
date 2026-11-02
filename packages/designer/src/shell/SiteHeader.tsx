@@ -94,7 +94,7 @@ function SiteHeaderRoot({ brand, nav, actions, navPlacement = "centered", surfac
     ? cloneElement(headerBrand, {
         ...(headerBrand.props.tone === undefined ? { tone: tone === "inverse" ? "inverse" : "auto" } : {}),
         ...(headerBrand.props.tone === undefined && headerBrand.props.className === undefined ? { className: "text-inherit" } : {}),
-        ...(headerBrand.props.markInk === undefined ? { markInk: "accent" } : {}),
+        ...(headerBrand.props.variant !== "text" && headerBrand.props.markInk === undefined ? { markInk: "accent" } : {}),
       } satisfies Partial<BrandmarkProps>)
     : brand;
   return (

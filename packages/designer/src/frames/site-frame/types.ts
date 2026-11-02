@@ -50,7 +50,7 @@ export interface SiteImageLinkInput {
  * and (for a lockup) the live-text wordmark. Rendered by Designer's
  * `Brandmark`; there is no node slot for a mark.
  */
-export type SiteBrandInput = {
+type SiteImageBrandInput = {
   readonly assetId: string;
   readonly label: CopyRef;
   readonly size: "sm" | "md" | "lg";
@@ -65,6 +65,19 @@ export type SiteBrandInput = {
    */
   readonly markInk?: "image" | "accent";
 } & ({ readonly variant: "mark"; readonly wordmark?: never } | { readonly variant: "lockup"; readonly wordmark: CopyRef });
+
+/** Explicit live-text identity; the approved label supplies both visible and accessible names. */
+export type SiteBrandInput = SiteImageBrandInput | {
+  readonly variant: "text";
+  readonly label: CopyRef;
+  readonly href: string;
+  readonly size: "sm" | "md" | "lg";
+  readonly tone?: "auto" | "inverse";
+  readonly assetId?: never;
+  readonly wordmark?: never;
+  readonly plate?: never;
+  readonly markInk?: never;
+};
 
 /**
  * An environment link in the banner (an app, an admin, a demo), rendered as

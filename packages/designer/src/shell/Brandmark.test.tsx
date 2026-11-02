@@ -37,14 +37,16 @@ const HEIGHT_PX: Record<BrandmarkSize, number> = { sm: 24, md: 36, lg: 48 };
 const GAP_RATIO = 8 / 48;
 const GAP_PX: Record<BrandmarkSize, number> = { sm: 4, md: 6, lg: 8 };
 
-function props(variant: BrandmarkVariant, size: BrandmarkSize): BrandmarkProps {
+type ImageVariant = Exclude<BrandmarkVariant, "text">;
+const IMAGE_VARIANTS = BRANDMARK_VARIANTS.filter((variant): variant is ImageVariant => variant !== "text");
+function props(variant: ImageVariant, size: BrandmarkSize): Extract<BrandmarkProps, { variant: ImageVariant }> {
   return variant === "lockup"
     ? { variant, size, label: LABEL, markSrc: MARK_SRC, wordmark: WORDMARK }
     : { variant, size, label: LABEL, markSrc: MARK_SRC };
 }
 
-const COMBOS: Array<[BrandmarkVariant, BrandmarkSize]> = BRANDMARK_VARIANTS.flatMap((variant) =>
-  BRANDMARK_SIZES.map((size): [BrandmarkVariant, BrandmarkSize] => [variant, size]),
+const COMBOS: Array<[ImageVariant, BrandmarkSize]> = IMAGE_VARIANTS.flatMap((variant) =>
+  BRANDMARK_SIZES.map((size): [ImageVariant, BrandmarkSize] => [variant, size]),
 );
 
 // Generic synthetic identity fixtures: the rectangle is the complete painted
@@ -105,7 +107,7 @@ describe("Brandmark: REV4 presentation contract regressions", () => {
     expect(container.querySelector(".desktop\\:hidden")).not.toBeNull();
   });
 
-  it.each(BRANDMARK_VARIANTS.flatMap(variant =>
+  it.each(IMAGE_VARIANTS.flatMap(variant =>
     (["mobile", "responsive"] as const).flatMap(presentation =>
       (["shared", "self"] as const).map(plate => [plate, variant, presentation] as const))),
   )("preserves %s plates for %s / %s explicit mobile artwork", (plate, variant, presentation) => {
@@ -141,8 +143,8 @@ describe("Brandmark: REV4 presentation contract regressions", () => {
 });
 
 describe("Brandmark: the closed sets", () => {
-  it("are exactly the specified variants and sizes (6 combinations)", () => {
-    expect([...BRANDMARK_VARIANTS]).toEqual(["mark", "lockup"]);
+  it("are exactly the specified variants and sizes (6 image combinations)", () => {
+    expect([...BRANDMARK_VARIANTS]).toEqual(["mark", "lockup", "text"]);
     expect([...BRANDMARK_SIZES]).toEqual(["sm", "md", "lg"]);
     expect(COMBOS).toHaveLength(6);
   });
@@ -341,7 +343,7 @@ function refusal(node: ReactElement): string {
 
 describe("Brandmark: the label must name the link", () => {
   it.each(["", " ", "   ", "\t\n "])("refuses an empty or whitespace-only label (%j) for both variants, naming the prop", (label) => {
-    for (const variant of BRANDMARK_VARIANTS) {
+    for (const variant of IMAGE_VARIANTS) {
       const base = props(variant, "md");
       const message = refusal(<Brandmark {...base} label={label} />);
       expect(message).toContain("label");
@@ -511,7 +513,7 @@ const NO_PLATE_GOLDEN: Readonly<Record<string, string>> = {
 };
 
 describe("Brandmark: plate", () => {
-  function sharedProps(variant: BrandmarkVariant, size: BrandmarkSize): BrandmarkProps {
+  function sharedProps(variant: ImageVariant, size: BrandmarkSize): Extract<BrandmarkProps, { variant: ImageVariant }> {
     return { ...props(variant, size), plate: "shared" };
   }
 

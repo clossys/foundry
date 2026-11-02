@@ -9,7 +9,7 @@ import ts from "typescript";
 import { computeCopyFingerprint, createCopyResolver, type CopyRegistry } from "@clossys/writer";
 import { importFoundryFrames, loadBuildCatalog, planSurfaceDefaults } from "../catalog-core/index.js";
 import { planSurfacePreviews } from "./planned-surface-previews.js";
-import { createHeaderNavSpecimen, headerNavSpecimenCopy } from "./a270-header-nav.js";
+import { createHeaderNavSpecimen, headerNavSpecimenCopy, headerNavSpecimenShell } from "./a270-header-nav.js";
 import { ConsumerComponentProvider } from "../runtime/component-leaf.client.js";
 import { fixtureConsumerComponents } from "../catalog-core/__fixtures__/surface-consumer-components.js";
 import { componentDescriptorHash, type ComponentCandidate } from "../catalog-core/resolve-components.js";
@@ -58,6 +58,12 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe("registered header navigation specimen", () => {
+  it("truthfully refuses text identity in the image-only header specimen", () => {
+    expect(() => createHeaderNavSpecimen(resolveCopy, { ...headerNavSpecimenShell,
+      brand: { variant: "text", label: { id: "example.header.brand" }, href: "/", size: "md" },
+    })).toThrow("requires an image brand");
+  });
+
   it("retains the existing native Frame plan and its Studio preview", () => {
     const fills = importFoundryFrames().fills;
     const slots = loadBuildCatalog().slots.filter(row => row.id === "frames.site-header");

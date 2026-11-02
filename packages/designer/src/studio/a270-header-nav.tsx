@@ -43,6 +43,7 @@ const mark = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewB
  */
 export function createHeaderNavSpecimen(resolveCopy: CopyResolver, shell: SiteShellInput = headerNavSpecimenShell) {
   const resolved = resolveShell(shell, resolveCopy, () => ({ type: "image", src: mark, width: 32, height: 32, alt: "" }));
+  if (resolved.brand.variant === "text") throw new Error("Header navigation image specimen requires an image brand.");
   const fill = importFoundryFrames().fills.find(row => row.$extensions["com.clossys.fill"].slot === "frames.site-header");
   if (!fill) throw new Error("NEED registered frames.site-header fill");
   const renderer = surfaceRuntimeRenderers["frames.site-header"];
