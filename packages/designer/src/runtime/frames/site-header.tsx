@@ -10,10 +10,14 @@ import { NavDisclosure } from "../../shell/NavDisclosure.js";
 import { SiteHeader, type SiteHeaderActionLinkVariant, type SiteHeaderProps } from "../../shell/SiteHeader.js";
 import { runtimeMember, runtimeValue, type SurfaceRendererEntry } from "../contract.js";
 import { frameContent, type FrameInput, type FrameJson } from "./frame-content.js";
+import { inspectGlyph } from "../../catalog-assets/svg.js";
+import type { IconNode } from "../../icons/types.js";
 
 const read = frameContent("frames.site-header");
 const SIZES: readonly BrandmarkSize[] = ["sm", "md", "lg"];
 const VARIANTS: readonly SiteHeaderActionLinkVariant[] = ["primary", "secondary", "ghost"];
+
+function assertActionIcon(value: unknown): asserts value is IconNode { inspectGlyph(value); }
 
 export function siteHeaderProps(input: Pick<FrameInput, "content" | "selection">): SiteHeaderProps {
   read.only(input, ["brand", "nav", "actions"]);
@@ -34,8 +38,15 @@ export function siteHeaderProps(input: Pick<FrameInput, "content" | "selection">
     ...(nav ? { nav: <NavDisclosure {...(read.text(nav.label) ? { "aria-label": read.text(nav.label) } : {})} {...(read.text(nav.triggerLabel) ? { triggerLabel: read.text(nav.triggerLabel) } : {})}>
       {links.map((link, index) => <SiteHeader.ActionLink key={read.text(link.id) ?? index} variant="ghost" href={read.required(link.href, `nav.links[${index}].href`)} label={read.required(link.label, `nav.links[${index}].label`)} isCurrent={link.isCurrent === true} />)}
     </NavDisclosure> } : {}),
-    ...(actions.length ? { actions: <>{actions.map((action, index) => <SiteHeader.ActionLink key={read.text(action.id) ?? index} href={read.required(action.href, `actions[${index}].href`)} label={read.required(action.label, `actions[${index}].label`)}
-      variant={VARIANTS.find(value => value === action.variant) ?? "secondary"} isCurrent={action.isCurrent === true} />)}</> } : {}),
+    ...(actions.length ? { actions: <>{actions.map((action, index) => {
+      const href = read.required(action.href, `actions[${index}].href`);
+      const label = read.required(action.label, `actions[${index}].label`);
+      const rawIcon: unknown = action.icon;
+      let icon: IconNode | undefined;
+      if (rawIcon !== undefined) { assertActionIcon(rawIcon); icon = rawIcon; }
+      return <SiteHeader.ActionLink key={read.text(action.id) ?? index} href={href} label={label}
+        variant={VARIANTS.find(value => value === action.variant) ?? "secondary"} isCurrent={action.isCurrent === true} {...(icon === undefined ? {} : { icon })} />;
+    })}</> } : {}),
     surface,
     tone: runtimeMember(input, "tone", "base"),
     navPlacement: runtimeMember(input, "nav-placement", "centered"),

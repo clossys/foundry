@@ -9,11 +9,12 @@ import ts from "typescript";
 import { computeCopyFingerprint, createCopyResolver, type CopyRegistry } from "@clossys/writer";
 import { importFoundryFrames, loadBuildCatalog, planSurfaceDefaults } from "../catalog-core/index.js";
 import { planSurfacePreviews } from "./planned-surface-previews.js";
-import { createHeaderNavSpecimen, headerNavSpecimenCopy } from "./a270-header-nav.js";
+import { createHeaderNavSpecimen, headerNavSpecimenCopy, headerNavSpecimenShell } from "./a270-header-nav.js";
 import { ConsumerComponentProvider } from "../runtime/component-leaf.client.js";
 import { fixtureConsumerComponents } from "../catalog-core/__fixtures__/surface-consumer-components.js";
 import { componentDescriptorHash, type ComponentCandidate } from "../catalog-core/resolve-components.js";
 import { importShadcnAriaComponents, materializeShadcnComponent } from "../importers/shadcn-aria-components.js";
+import { ArrowRight } from "../icons/ArrowRight.js";
 
 const registry: CopyRegistry = {
   id: "example-header", locale: "en", revision: "1", source: { kind: "consumer", reference: "example-header" },
@@ -58,6 +59,12 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe("registered header navigation specimen", () => {
+  it("truthfully refuses text identity in the image-only header specimen", () => {
+    expect(() => createHeaderNavSpecimen(resolveCopy, { ...headerNavSpecimenShell,
+      brand: { variant: "text", label: { id: "example.header.brand" }, href: "/", size: "md" },
+    })).toThrow("requires an image brand");
+  });
+
   it("retains the existing native Frame plan and its Studio preview", () => {
     const fills = importFoundryFrames().fills;
     const slots = loadBuildCatalog().slots.filter(row => row.id === "frames.site-header");
@@ -79,6 +86,12 @@ describe("registered header navigation specimen", () => {
     expect(cta).toHaveAttribute("href", "#start");
     expect(cta).toHaveAttribute("data-slot", "button");
     expect(cta).toHaveAttribute("data-variant", "default");
+    expect(cta.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect([...cta.querySelectorAll("svg path")].map(path => path.getAttribute("d"))).toEqual(ArrowRight.map(([, attributes]) => attributes.d));
+    expect(specimen.input.content.actions!.value).toEqual([{
+      id: "example-action-0", href: "#start", label: "Get started", variant: "primary",
+      icon: ArrowRight.map(([tag, attributes]) => [tag, Object.fromEntries(Object.entries(attributes).filter(([name]) => name !== "key"))]),
+    }]);
     expect(specimen.input.content.brand!.hash).toMatch(/^sha256:[a-f0-9]{64}$/);
   });
 

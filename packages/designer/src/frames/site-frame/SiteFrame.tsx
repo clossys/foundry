@@ -52,7 +52,7 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
   const main = footer?.placement === "overlay" ? overlayHero(children, resolved.header.surface) : children;
 
   const brandmark =
-    brand.wordmark === undefined ? (
+    brand.variant === "text" ? <Brandmark variant="text" size={brand.size} label={brand.label} href={brand.href} tone={brand.tone} /> : brand.wordmark === undefined ? (
       <Brandmark variant="mark" size={brand.size} label={brand.label} markSrc={brand.markSrc} plate={brand.plate} markInk={brand.markInk} tone={brand.tone} origin={shell.origin} />
     ) : (
       <Brandmark variant="lockup" size={brand.size} label={brand.label} wordmark={brand.wordmark} markSrc={brand.markSrc} plate={brand.plate} markInk={brand.markInk} tone={brand.tone} origin={shell.origin} />

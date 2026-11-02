@@ -17,6 +17,11 @@ import { Brandmark } from "../Brandmark.js";
 
 export const acceptsMark = <Brandmark variant="mark" size="sm" label="x" markSrc="/m.svg" />;
 export const acceptsLockup = <Brandmark variant="lockup" size="lg" label="x" markSrc="/m.svg" wordmark="x" />;
+export const acceptsText = <Brandmark variant="text" size="md" label="x" href="/" />;
+// @ts-expect-error A text identity has no mark source.
+export const textRejectsMark = <Brandmark variant="text" size="md" label="x" href="/" markSrc="/m.svg" />;
+// @ts-expect-error Text requires an explicit destination.
+export const textRequiresHref = <Brandmark variant="text" size="md" label="x" />;
 
 export const acceptsOrigin = <Brandmark variant="mark" size="sm" label="x" markSrc="/m.svg" origin="https://example.com" />;
 // @ts-expect-error — `origin` is a string; its URL semantics are checked at runtime.

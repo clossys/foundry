@@ -180,7 +180,9 @@ export interface SiteFooterLegalProps {
    * the link's whole accessible name and the art is decorative, as in
    * `Brandmark`. Omitted, no mark renders.
    */
-  home?: { readonly label: string; readonly href: string; readonly markSrc: string };
+  home?: { readonly label: string; readonly href: string } & (
+    { readonly markSrc: string; readonly variant?: never } | { readonly variant: "text"; readonly markSrc?: never }
+  );
 }
 
 /**
@@ -309,9 +311,9 @@ function SiteFooterLegal({ entity, links, linksLabel, icons = [], home, iconsLab
         <FooterLink variant="link" href={link.href} aria-label={link.label} rel={externalRel(link.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>{link.icon}</FooterLink>
       </SemanticContent>)}
       {home ? <SemanticContent as="li"><FooterLink variant="link" href={home.href} aria-label={home.label} rel={externalRel(home.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>
-        <SemanticContent as="span" data-footer-home-plate="" aria-hidden="true" className="inline-flex items-center justify-center bg-surface-base" style={HOME_PLATE_STYLE}>
+        {home.variant === "text" ? home.label : <SemanticContent as="span" data-footer-home-plate="" aria-hidden="true" className="inline-flex items-center justify-center bg-surface-base" style={HOME_PLATE_STYLE}>
           <Logomark src={home.markSrc} size="sm" />
-        </SemanticContent>
+        </SemanticContent>}
       </FooterLink></SemanticContent> : null}
     </SemanticContent>
   );

@@ -4,7 +4,7 @@
  *
  * Content is closed JSON keyed by the fill's slots (`skip-link`, `header`, `footer`); `main` comes
  * from the route's Stage slot and `toasts` from the frame host port. Every string becomes a copy
- * reference resolved by this renderer, and the brand mark an image asset, so `SiteFrame` keeps all
+ * reference resolved by this renderer, and image brands an image asset, so `SiteFrame` keeps all
  * its own checks (links, footer rules, overlay scene). Anything unmapped is refused, never dropped.
  */
 import type { ReactNode } from "react";
@@ -74,21 +74,26 @@ export function siteShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conte
   const iconOf = (row: Json, at: string) => list(row.icon, `${at}.icon`) as unknown as SiteIconLinkInput["icon"];
 
   const header = keys(record(value("header"), "header"), "header", ["brand", "nav", "actions", "environments", "navPlacement", "surface", "tone", "origin"]);
-  const brandRow = keys(record(header.brand, "header.brand"), "header.brand", ["label", "mark", "wordmark", "size", "plate", "tone", "markInk"]);
-  const mark = keys(record(brandRow.mark, "header.brand.mark"), "header.brand.mark", ["src", "width", "height"]);
+  const brandRow = record(header.brand, "header.brand");
+  const variant = choice(brandRow.variant, "header.brand.variant", ["text"] as const);
+  keys(brandRow, "header.brand", variant === "text" ? ["variant", "label", "href", "size", "tone"] : ["label", "mark", "wordmark", "size", "plate", "tone", "markInk"]);
+  const mark = variant === "text" ? undefined : keys(record(brandRow.mark, "header.brand.mark"), "header.brand.mark", ["src", "width", "height"]);
   const brandLabel = required(brandRow.label, "header.brand.label");
   const assetId = "runtime-content.brand-mark";
   const socialAssets = new Map<string, unknown>();
-  const resolveAsset: AssetResolver = id => id === assetId ? { type: "image", src: mark.src, width: mark.width, height: mark.height, alt: brandLabel } : socialAssets.get(id);
+  const resolveAsset: AssetResolver = id => mark && id === assetId ? { type: "image", src: mark.src, width: mark.width, height: mark.height, alt: brandLabel } : socialAssets.get(id);
   const wordmark = text(brandRow.wordmark);
   const plate = choice(brandRow.plate, "header.brand.plate", ["self", "shared"] as const);
   const brandTone = choice(brandRow.tone, "header.brand.tone", ["auto", "inverse"] as const);
   const markInk = choice(brandRow.markInk, "header.brand.markInk", ["image", "accent"] as const);
-  const brand = {
+  const brand: SiteBrandInput = variant === "text" ? {
+    variant, label: ref(brandLabel), href: required(brandRow.href, "header.brand.href"),
+    size: choice(brandRow.size, "header.brand.size", ["sm", "md", "lg"] as const) ?? "md", ...(brandTone ? { tone: brandTone } : {}),
+  } : {
     assetId, label: ref(brandLabel), size: choice(brandRow.size, "header.brand.size", ["sm", "md", "lg"] as const) ?? "md",
     ...(plate ? { plate } : {}), ...(brandTone ? { tone: brandTone } : {}), ...(markInk ? { markInk } : {}),
     ...(wordmark === undefined ? { variant: "mark" as const } : { variant: "lockup" as const, wordmark: ref(wordmark) }),
-  } satisfies SiteBrandInput;
+  };
 
   let nav: SiteShellInput["nav"];
   if (header.nav !== undefined) {

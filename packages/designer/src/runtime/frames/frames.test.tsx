@@ -14,6 +14,9 @@ import { frameRenderers } from "./index.js";
 import { ShellCopyProvider } from "../../components/Banner.copy-context.js";
 import { shellCopyFixtureResolver } from "../../frames/__fixtures__/shell-copy.js";
 import { appHeaderProps } from "./app-header.js";
+import { siteHeaderProps } from "./site-header.js";
+import { ArrowRight } from "../../icons/ArrowRight.js";
+import { AssetValidationError } from "../../catalog-assets/svg.js";
 
 beforeEach(() => {
   vi.stubGlobal("matchMedia", (media: string) => ({ media, matches: media.includes("min-width"), addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} }));
@@ -90,6 +93,32 @@ describe("designer Frame runtime renderers", () => {
       // Other frames remain bound to at least two strings from their own record.
       else expect(sample.filter(value => own.has(value)).length, leaf).toBeGreaterThanOrEqual(2);
     }
+  });
+
+  it("retains a decorative primary action glyph through the registered site-header renderer and keeps absent icons optional", () => {
+    const sample = surfaceRuntimeRenderers["frames.site-header"]!.sample(specimenDataset);
+    const primary = F.siteHeader.actions[1];
+    draw("frames.site-header", { content: { ...sample, actions: [{ ...primary, variant: "primary", icon: ArrowRight }] } });
+    const cta = screen.getByRole("link", { name: primary.label });
+    expect(cta).toHaveAttribute("href", primary.href);
+    expect(cta).toHaveAttribute("data-slot", "button");
+    expect(cta).toHaveAttribute("data-variant", "default");
+    expect(cta.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect([...cta.querySelectorAll("svg path")].map(path => path.getAttribute("d"))).toEqual(ArrowRight.map(([, attributes]) => attributes.d));
+    cleanup();
+    draw("frames.site-header", { content: { ...sample, actions: [{ ...primary, variant: "primary" }] } });
+    expect(screen.getByRole("link", { name: primary.label }).querySelector("svg")).toBeNull();
+  });
+
+  it.each<{ icon: RuntimeJson }>([
+    { icon: [["script", { d: "M5 12h14" }]] },
+    { icon: [["path", { d: "M5 12h14", onload: "alert(1)" }]] },
+  ])("rejects unsafe action glyph data before rendering", ({ icon }) => {
+    const sample = surfaceRuntimeRenderers["frames.site-header"]!.sample(specimenDataset);
+    const primary = F.siteHeader.actions[1];
+    expect(() => siteHeaderProps(input("frames.site-header", { content: { ...sample, actions: [{ ...primary, icon }] } }))).toThrow(AssetValidationError);
+    expect(() => siteHeaderProps(input("frames.site-header", { content: { ...sample, actions: [{ ...primary, href: "", icon }] } }))).toThrow(/actions\[0\]\.href/);
+    expect(() => siteHeaderProps(input("frames.site-header", { content: { ...sample, actions: [{ ...primary, label: "", icon }] } }))).toThrow(/actions\[0\]\.label/);
   });
 
   it("binds the authentication sample to the supplied dataset's only authored string slot", () => {
