@@ -1,8 +1,8 @@
 /** Detail-only projection. Slot metadata, candidates and pins have one reader. */
 import { join } from "node:path";
 import { recordSpecimenHref } from "./slot-gallery.js";
-import { hasSlotModel, listSlots, pinHistory, readCandidate, readIa, readSlot, readiness, slotIndex, usedBy } from "../records/slots.js";
-import { CANDIDATE_NAME, parseFrontmatter, validateCandidate, validateSlotDoc, type SlotAgent } from "../records/slot-model/index.js";
+import { hasSlotModel, inspectSlot, listSlots, pinHistory, readCandidate, readIa, readiness, slotIndex, usedByPlaced } from "../records/slots.js";
+import { CANDIDATE_NAME, parseFrontmatter, validateCandidate, type SlotAgent } from "../records/slot-model/index.js";
 
 export interface DetailCandidate {
   name: string; version: number; sha256: string; pinned: boolean;
@@ -27,7 +27,9 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
   if (!hasSlotModel(consumer)) return undefined;
   const entry = listSlots(consumer, agent).find(slot => slot.id === id);
   if (!entry) return undefined;
-  const doc = readSlot(consumer, agent, id);
+  // A schema-valid document that is not the one its IA position names keeps an honest detail:
+  // no preview, no readiness clearance, and a failing placement check.
+  const { doc, placed } = inspectSlot(consumer, agent, id);
   const index = slotIndex(consumer);
   const candidates = entry.candidates.map(name => {
     const candidate = readCandidate(consumer, agent, id, name);
@@ -49,9 +51,7 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
     let specimen: string | undefined;
     // The specimen source reads these same native bytes. Only the exact valid pin
     // grants a preview; legacy selections and installed artifacts are irrelevant.
-    const validPin = !issues.length && entry.pin?.candidate === name && entry.pin.sha256 === candidate.sha256
-      && !validateSlotDoc(doc).length && doc.id === id && doc.agent === agent
-      && doc.ia.l0 === entry.position.l0 && doc.ia.l1 === entry.position.l1 && doc.ia.l2 === entry.position.l2 && doc.ia.order === entry.position.order;
+    const validPin = placed && !issues.length && entry.pin?.candidate === name && entry.pin.sha256 === candidate.sha256;
     if (validPin && agent === "designer" && doc.kind === "element" && name.endsWith(".json")) {
       specimen = `${id}/${element}`;
     }
@@ -66,10 +66,10 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
   const node = ia.nodes.find(row => row.id === entry.position.l1);
   const group = node?.children.find(row => row.id === entry.position.l2);
   const refs = [...new Set([...doc.inputs, ...doc.uses])];
-  const inputReadiness = readiness(consumer, agent, id, index);
+  const inputReadiness = placed ? readiness(consumer, agent, id, index) : { ready: false, blockedBy: [{ slot: id, reason: "invalid-slot" as const }] };
   return {
     agent, id, kind: doc.kind, trail: [node?.label, group?.label].filter((label): label is string => !!label),
-    contract: doc.contract, inputs: doc.inputs, uses: doc.uses, usedBy: usedBy(consumer, id),
+    contract: doc.contract, inputs: doc.inputs, uses: doc.uses, usedBy: usedByPlaced(consumer, id),
     links: refs.flatMap(ref => { const target = index.get(ref); return target ? [{ agent: target.agent, id: ref }] : []; }),
     candidates, shown: (pinCandidate ?? candidates.at(-1))?.name, pin: entry.pin,
     history: pinHistory(consumer, agent, id),
@@ -78,6 +78,7 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
       { label: "Pin names a recorded candidate", ok: !!pinCandidate, detail: entry.pin?.candidate ?? "No pin" },
       { label: "Pin matches candidate bytes", ok: !!pinCandidate && pinCandidate.sha256 === entry.pin?.sha256, detail: entry.pin ? (pinCandidate?.sha256 === entry.pin.sha256 ? entry.pin.sha256 : "Pin hash does not match candidate bytes") : "No pin" },
       ...candidates.map(candidate => ({ label: candidate.name, ok: !candidate.issues.length, detail: candidate.issues.join("; ") || "Candidate format valid" })),
+      { label: "Slot record matches its IA position", ok: placed, detail: placed ? "Slot record matches its IA position" : "Slot record does not match its IA position" },
       { label: "Inputs ready", ok: inputReadiness.ready, detail: inputReadiness.ready ? "Inputs ready" : "Inputs blocked" },
       ...inputReadiness.blockedBy.map(({ slot, reason }) => ({ label: slot, ok: false, detail: reason })),
       ...refs.map(ref => ({ label: ref, ok: index.has(ref), detail: index.has(ref) ? "Slot reference resolves" : "Unknown slot reference" })),
