@@ -8,15 +8,15 @@
       "compiled": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/shell": {
-            "artifact": "sha256:d5975629893d5f3764cd2652ba9341432f451778e90f66e1073e994d56c6998a",
+            "artifact": "sha256:e3a47a37974043ed7b3fd23e5a53e2566298878e9f797e2466b7756da808a6e2",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -53,15 +53,15 @@
       "source": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/shell": {
-            "artifact": "sha256:d5975629893d5f3764cd2652ba9341432f451778e90f66e1073e994d56c6998a",
+            "artifact": "sha256:e3a47a37974043ed7b3fd23e5a53e2566298878e9f797e2466b7756da808a6e2",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -103,11 +103,11 @@
       "compiled": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -143,11 +143,11 @@
       "source": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -188,11 +188,11 @@
       "compiled": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "class-variance-authority": {
@@ -238,11 +238,11 @@
       "source": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "class-variance-authority": {
@@ -293,11 +293,11 @@
       "compiled": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -335,11 +335,11 @@
       "source": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -382,11 +382,11 @@
       "compiled": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -422,11 +422,11 @@
       "source": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -467,11 +467,11 @@
       "compiled": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "class-variance-authority": {
@@ -513,11 +513,11 @@
       "source": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "class-variance-authority": {
@@ -564,11 +564,11 @@
       "compiled": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -606,11 +606,11 @@
       "source": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -653,11 +653,11 @@
       "compiled": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -693,11 +693,11 @@
       "source": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -738,11 +738,11 @@
       "compiled": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -779,11 +779,11 @@
       "source": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -825,11 +825,11 @@
       "compiled": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -867,11 +867,11 @@
       "source": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -914,11 +914,11 @@
       "compiled": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -954,11 +954,11 @@
       "source": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -999,11 +999,11 @@
       "compiled": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -1039,11 +1039,11 @@
       "source": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -1084,11 +1084,11 @@
       "compiled": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -1124,11 +1124,11 @@
       "source": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "clsx": {
@@ -1169,11 +1169,11 @@
       "compiled": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "class-variance-authority": {
@@ -1217,11 +1217,11 @@
       "source": {
         "dependencies": {
           "@clossys/designer/components": {
-            "artifact": "sha256:17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+            "artifact": "sha256:a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
             "version": "0.12.0"
           },
           "@clossys/designer/studio": {
-            "artifact": "sha256:600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+            "artifact": "sha256:9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
             "version": "0.12.0"
           },
           "class-variance-authority": {
@@ -1336,7 +1336,7 @@
   ],
   "packages": [
     {
-      "artifactSha256": "17d08cd0507e2f6917f07ab3343544768001884d269a65f94de59050be675383",
+      "artifactSha256": "a7bd5e9e1ab1a77206c9637f0466dd545a47b55712aa3efd9d7955251801ed18",
       "module": "@clossys/designer/components",
       "types": [
         "AvatarProps",
@@ -1610,7 +1610,7 @@
       "version": "0.12.0"
     },
     {
-      "artifactSha256": "d5975629893d5f3764cd2652ba9341432f451778e90f66e1073e994d56c6998a",
+      "artifactSha256": "e3a47a37974043ed7b3fd23e5a53e2566298878e9f797e2466b7756da808a6e2",
       "module": "@clossys/designer/shell",
       "types": [
         "BrandmarkPlate",
@@ -1674,7 +1674,7 @@
       "version": "0.12.0"
     },
     {
-      "artifactSha256": "600d8a83bceaf015f8901f46f4b8f354c71264cae648633f9b7d180d0b80ce35",
+      "artifactSha256": "9dcbea628138878f999b3d12560da0861a4e90106c3d90e6c0adeb71c393d2a1",
       "module": "@clossys/designer/studio",
       "types": [
         "AppFrameSpecimenProps",
