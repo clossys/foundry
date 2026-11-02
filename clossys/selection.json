@@ -3,9 +3,9 @@
   "pins": {
     "frames.studio-shell": {
       "element": "studio-shell",
-      "version": 6,
-      "hash": "sha256:29fc10325034a41c24e8591cd46f1895d1ec30dd322b8366c139b2ecc7afd2fc",
-      "event": "e27"
+      "version": 7,
+      "hash": "sha256:324f1c4646837998ff545ef9cc72ce5f1b76ed264dea745752a609053a83c036",
+      "event": "e36"
     },
     "sections.studio.home": {
       "element": "studio-home",
@@ -499,6 +499,18 @@
       "hash": "sha256:08bc50fefa89c2d134e2569c898b773d3e87632f0113c69fa00a9ab3bc580c17",
       "from": "option",
       "reason": "Bind existing Options labels to Writer preview copy; no editorial approval."
+    },
+    {
+      "id": "e36",
+      "at": "2026-11-02T19:30:00Z",
+      "by": "owner/base-release2",
+      "action": "pin",
+      "slot": "frames.studio-shell",
+      "element": "studio-shell",
+      "version": 7,
+      "hash": "sha256:324f1c4646837998ff545ef9cc72ce5f1b76ed264dea745752a609053a83c036",
+      "from": "option",
+      "reason": "Owner-approved pin of studio-shell v7, matching the Studio folder files."
     }
   ]
 }
