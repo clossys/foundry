@@ -82,6 +82,45 @@ it("materializes real package providers through canonical records and page resol
   expect(existsSync(pinFile(entry.dir))).toBe(false);
 });
 
+it("retains Hero optional authored copy through native candidate readback and page binding while heading remains required", async () => {
+  const { root, input } = await fixture();
+  const frame = await materializeCatalogCandidate(input);
+  const heading = { $copy: "hero.heading" };
+  const heroInput = { ...input, slot: "sections.hero" as const, element: "native-hero" };
+  const headingOnly = await materializeCatalogCandidate({ ...heroInput, preview: { props: { heading } } });
+  expect(headingOnly.record.preview).toMatchObject({ fixtures: { props: { heading } } });
+  const props = { heading, eyebrow: { $copy: "hero.eyebrow" }, description: { $copy: "hero.description" } };
+  const optional = await materializeCatalogCandidate({ ...heroInput, preview: { props } });
+  expect(optional).toMatchObject({ status: "DRAFT", approved: false, version: 2 });
+  const read = readCandidate(root, "designer", heroInput.slot, optional.candidate);
+  const item = JSON.parse(read.bytes);
+  expect(item.meta.preview.fixtures.props).toEqual(props);
+  expect(optional.contentHash).toBe(read.sha256);
+  expect(optional.record).toEqual(await libraryRecordStore([root]).load(optional.id, optional.version));
+  const entry = listSlots(root, "designer").find(row => row.id === heroInput.slot)!;
+  expect(existsSync(pinFile(entry.dir))).toBe(false);
+  const source = recordStoreSource(libraryRecordStore([root]));
+  const page = { id: "neutral-hero", frame: input.slot, sections: [heroInput.slot], copy: {
+    "hero.heading": "page.heading", "hero.eyebrow": "page.eyebrow", "hero.description": "page.description",
+  } };
+  const copy = { "page.heading": "A neutral heading", "page.eyebrow": "  Authored eyebrow  ", "page.description": "A neutral authored description." };
+  const resolve = async (version: number) => {
+    const resolved = await resolvePage(page, { [input.slot]: { element: input.element, version: frame.version },
+      [heroInput.slot]: { element: heroInput.element, version } }, source);
+    expect(resolved.findings).toEqual([]);
+    const bound = bindPage({ page, slots: resolved.slots, copy });
+    expect(bound.findings).toEqual([]);
+    return bound.page!.sections[0]!.props;
+  };
+  expect(await resolve(headingOnly.version)).toEqual({ heading: copy["page.heading"] });
+  expect(await resolve(optional.version)).toEqual({ heading: copy["page.heading"], eyebrow: copy["page.eyebrow"], description: copy["page.description"] });
+  const before = [...entry.candidates];
+  await expect(materializeCatalogCandidate({ ...heroInput, preview: { props: { eyebrow: props.eyebrow, description: props.description } } })).rejects.toThrow(/required native port header is missing/);
+  await expect(materializeCatalogCandidate({ ...heroInput, preview: { props: { ...props, invented: "Unmapped" } } })).rejects.toThrow(/no native package binding/);
+  expect(listSlots(root, "designer").find(row => row.id === heroInput.slot)!.candidates).toEqual(before);
+  expect(existsSync(pinFile(entry.dir))).toBe(false);
+});
+
 it("refuses native identity, evidence, port and canonical path mismatches before publishing a candidate", async () => {
   const { root, input } = await fixture();
   const entry = listSlots(root, "designer").find(row => row.id === input.slot)!;
