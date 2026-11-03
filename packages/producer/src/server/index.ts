@@ -25,6 +25,7 @@ import { slotDetail } from "./slot-detail.js";
 import { hasSlotModel } from "../records/slots.js";
 import { SLOT_AGENTS, type SlotAgent } from "../records/slot-model/index.js";
 import { slotCensus } from "./slot-census.js";
+import { DEFAULT_AVATAR_PATH, defaultAvatarSvg } from "./default-avatar.js";
 import { specimenMount } from "../publish/site-server.js";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -264,6 +265,17 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
     if (!recordSpecimen && specimen && (pathname === "/__specimen" || pathname.startsWith("/__specimen/"))) {
       if (request.method !== "GET" && request.method !== "HEAD") { json(response, 405, { error: "Specimens are read-only" }); return; }
       if (await specimen(request, response)) return;
+    }
+    if (DEFAULT_AVATAR_PATH.test(pathname)) {
+      if (request.method !== "GET" && request.method !== "HEAD") { json(response, 405, { error: "Avatars are read-only" }); return; }
+      // Stock blocks' sample avatars (e.g. /avatars/shadcn.jpg) are not shipped: every one is the pinned placeholder image.
+      const svg = await defaultAvatarSvg(options.root, library);
+      if (!svg) { response.writeHead(302, { Location: "/studio-mark.svg", "Cache-Control": BRAND_MARK_CACHE }); response.end(); return; }
+      const etag = `"${createHash("sha256").update(svg).digest("base64url")}"`;
+      const headers = { "Cache-Control": BRAND_MARK_CACHE, ETag: etag, "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'" };
+      if ((request.headers["if-none-match"] ?? "").split(",").map(value => value.trim().replace(/^W\//, "")).includes(etag)) { response.writeHead(304, headers); response.end(); return; }
+      response.writeHead(200, { ...headers, "Content-Type": "image/svg+xml; charset=utf-8" });
+      response.end(request.method === "HEAD" ? undefined : svg); return;
     }
     if (pathname === "/preview" || pathname.startsWith("/preview/")) { await servePreview(options.root, pathname, request.method ?? "", response, options.installOut, new URL(raw, origin).searchParams, served); return; }
     if (!child) { json(response, 503, { error: "Studio child is not ready" }); return; }

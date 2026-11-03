@@ -1,0 +1,56 @@
+{
+  "name": "favicon",
+  "type": "registry:item",
+  "files": [
+    {
+      "path": "favicon/vector.svg",
+      "type": "registry:file",
+      "content": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" width=\"100\" height=\"100\" role=\"img\" aria-label=\"Clossys\" data-clear-space=\"0.2\">\n  <rect width=\"100\" height=\"100\" rx=\"21.875\" fill=\"#0A0A0A\"/>\n  <g transform=\"translate(50 50)\" fill=\"#FAFAFA\"><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(0.0)\"/><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(72.0)\"/><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(144.0)\"/><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(216.0)\"/><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(288.0)\"/></g>\n</svg>\n"
+    },
+    {
+      "path": "clossys/assets.favicon.json",
+      "type": "registry:file",
+      "content": "{\n  \"assets\": {\n    \"favicon\": {\n      \"vector\": {\n        \"$type\": \"svg\",\n        \"$value\": \"{{assets.mark.positive}}\"\n      }\n    }\n  }\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "assets.favicon",
+    "source": {
+      "kind": "original",
+      "ref": [
+        "packages/producer/studio/public/studio-mark.svg"
+      ],
+      "license": "MIT"
+    },
+    "element": {
+      "id": "favicon",
+      "package": "designer",
+      "layer": "assets",
+      "slot": "assets.favicon",
+      "kind": "registry:item",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "PLACEHOLDER-IMG"
+      },
+      "reason": "The favicon vector is the Clossys asterisk mark; the optional small raster member is not present.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "exempt",
+          "note": "non-code asset payload"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": []
+      }
+    }
+  }
+}

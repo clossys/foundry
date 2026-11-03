@@ -1,6 +1,6 @@
 {
-  "candidate": "image-v1.json",
-  "sha256": "1e0bdee884c4fd2834811e8dba129b10d74fcc03a3c3e8edb4472bce79a09c99",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
-  "at": "2026-11-03T08:58:02Z"
+  "candidate": "image-v2.json",
+  "sha256": "789c6582030b4a3998436ec5ec9b9a7dc3b7d0ffbc454d88d6d8a58687871a85",
+  "pinnedBy": "owner:2026-11-03 one-brand clossys asterisk",
+  "at": "2026-11-03T16:31:15.144Z"
 }
