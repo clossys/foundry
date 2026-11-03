@@ -1,11 +1,25 @@
 import { studioCopy } from './studio-copy';
 import { LEAF_STATUS_LABEL, LEAF_STATUS_TONE } from './leaf-status';
 import type { GalleryCardData, GalleryCardState, GalleryGroupData, GalleryLayerData, GallerySelection } from '../sections/studio-agent-gallery/types';
+import type { SpecimenInput } from '../sections/studio-specimen';
 
 /**
  * The shared gallery layout data every agent page renders: Producer's flat L0/L1/L2 sections
  * become tabs (L0), list entries with slot counts (L1) and headings over cards (L2).
  */
+/** Whether a specimen has anything to render: a framed viewport, or a record table, row or status. */
+export function hasPreviewData(specimen: SpecimenInput): boolean {
+  if (specimen.kind === 'viewports') return specimen.specimens.some(row => row.light.length > 0);
+  return Boolean(specimen.tables?.some(table => table.rows.length) || specimen.rows?.length || specimen.status);
+}
+
+/** A card without preview data has no body, the same as an empty slot: its state badge reads once. */
+function withPreview(card: GalleryCardData): GalleryCardData {
+  if (!card.specimen || hasPreviewData(card.specimen)) return card;
+  const { specimen: _none, ...rest } = card;
+  return rest;
+}
+
 export interface FlatSection<C> { id: string; label: string; level: 0 | 1 | 2; cards: readonly C[] }
 
 export function galleryLayers<C>(sections: readonly FlatSection<C>[], card: (card: C) => GalleryCardData): GalleryLayerData[] {
@@ -18,7 +32,7 @@ export function galleryLayers<C>(sections: readonly FlatSection<C>[], card: (car
     const group = current.groups.at(-1) ?? (current.groups.push({ id: section.id, label: section.label, count: 0, sections: [] }), current.groups.at(-1)!);
     // An L1 that holds cards itself (record-kind grouping) shows them under its own heading.
     if (section.cards.length) {
-      group.sections.push({ id: section.id, label: section.label, cards: section.cards.map(card) });
+      group.sections.push({ id: section.id, label: section.label, cards: section.cards.map(row => withPreview(card(row))) });
       group.count += section.cards.length;
     }
   }

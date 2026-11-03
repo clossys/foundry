@@ -10,6 +10,7 @@ import { agentGalleryLayers, type AgentCard, type AgentLeafRecords, type Gallery
 import { loadGalleryLeaves, galleryLeafInputs } from '../../studio/lib/gallery-specimens';
 import { slotDetailInputs } from '../../studio/lib/slot-detail';
 import { SpecimenContent } from '../../studio/sections/studio-specimen';
+import { LeafCard } from '../../studio/sections/studio-agent-gallery/LeafCard';
 import { parsePublicationResponse } from '../../studio/lib/publisher-preview';
 import { contractCopy } from '../../studio/lib/contract-copy';
 
@@ -82,6 +83,19 @@ describe('slot-first gallery specimen collection', () => {
     expect([...rows.keys()]).toEqual([detail.id]);
     expect(galleryLeafInputs(rows.get(detail.id)!, links, 'light').specimen).toEqual(slotDetailInputs(detail, links, 'light').specimen);
     expect(agentGalleryLayers({ state: 'ready', agent: 'publisher', count: cards.length, sections: [{ id: 'group', label: 'Group', level: 1, cards }] }, links)[0]!.groups[0]!.sections[0]!.cards.map(row => row.statusLabel)).toEqual(['Options 1', 'No candidate', 'Failing', 'Pinned']);
+  });
+
+  it('drops a preview with no data so the card renders without a specimen body, like an empty slot', () => {
+    const none = { kind: 'record', name: 'Example', title: 'Example', description: '', empty: 'No pin', rows: [] } as const;
+    const some = { ...none, rows: [{ key: '0', label: 'Page', text: 'Content' }] };
+    const blank = { kind: 'viewports', name: 'Example', title: 'Example', description: '', empty: 'None', specimens: [] } as const;
+    const cards = [card, { ...card, id: 'filled' }, { ...card, id: 'blank' }];
+    const previews: GalleryPreviews = new Map([[card.id, none], ['filled', some], ['blank', blank]]);
+    const shown = agentGalleryLayers({ state: 'ready', agent: 'publisher', count: cards.length, sections: [{ id: 'group', label: 'Group', level: 1, cards }] }, links, previews)[0]!.groups[0]!.sections[0]!.cards;
+    expect(shown.map(row => [row.key, 'specimen' in row, row.specimenStatus])).toEqual([[card.id, false, undefined], ['filled', true, undefined], ['blank', false, undefined]]);
+    const html = renderToStaticMarkup(createElement(LeafCard, { card: shown[0]!, level: 3 }));
+    expect(html).not.toContain('data-slot="card-content"');
+    expect(renderToStaticMarkup(createElement(LeafCard, { card: shown[1]!, level: 3 }))).toContain('data-slot="card-content"');
   });
 
   it('preserves canonical contracts and does not use a raw URL as native preview evidence', () => {
