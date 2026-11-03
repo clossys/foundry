@@ -1,6 +1,6 @@
 {
-  "candidate": "form-v1.json",
-  "sha256": "3823e9a9abd52713d1901b7063c01c15e0bd8cf8ece15a7a31e753fb323e38af",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
-  "at": "2026-11-03T08:58:02Z"
+  "candidate": "form-v2.json",
+  "sha256": "72483de49f0159797af9ee9a1efd1b41866f2a51b1db95b207ec638c5833ea9f",
+  "pinnedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
+  "at": "2026-11-03T12:00:00Z"
 }

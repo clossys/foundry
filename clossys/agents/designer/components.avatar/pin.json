@@ -1,6 +1,6 @@
 {
-  "candidate": "avatar-v1.json",
-  "sha256": "52007a6d58e5fccdfb961b298649a3b05e4166cda391d7f3d30e739f327cc685",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
-  "at": "2026-11-03T08:58:02Z"
+  "candidate": "avatar-v2.json",
+  "sha256": "4ce33df11cbf813362f441eef94237586866f65d163da434139030c184a636ac",
+  "pinnedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
+  "at": "2026-11-03T12:00:00Z"
 }

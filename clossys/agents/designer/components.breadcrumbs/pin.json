@@ -1,6 +1,6 @@
 {
-  "candidate": "breadcrumbs-v1.json",
-  "sha256": "32cebc35dbacc34b110982ab0b44bfcafb0769e858b7d56fe0802e9506d28b93",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
-  "at": "2026-11-03T08:58:02Z"
+  "candidate": "breadcrumbs-v2.json",
+  "sha256": "e43c8970151ee105ba399faf33fb9bb9fcf5e3d967a190edf7d3acbed3569409",
+  "pinnedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
+  "at": "2026-11-03T12:00:00Z"
 }

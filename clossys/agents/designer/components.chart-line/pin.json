@@ -1,6 +1,6 @@
 {
-  "candidate": "chart-line-v1.json",
-  "sha256": "ea76e1211e73120035f70566890de0fdf9fd3534837791d31f0c84b1ba83125e",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
-  "at": "2026-11-03T08:58:02Z"
+  "candidate": "chart-line-v2.json",
+  "sha256": "eba7c738faa1a8540258116daf63c2f4adcee3bd25ee7d684a8c5df9f4a11383",
+  "pinnedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
+  "at": "2026-11-03T12:00:00Z"
 }

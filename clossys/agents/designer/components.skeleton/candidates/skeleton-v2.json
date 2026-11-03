@@ -1,0 +1,118 @@
+{
+  "name": "skeleton",
+  "type": "registry:ui",
+  "registryDependencies": [],
+  "dependencies": [
+    "cn"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "skeleton.tsx",
+      "type": "registry:ui",
+      "content": "import { cn } from \"cn\"\n\nfunction Skeleton({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"skeleton\"\n      className={cn(\"animate-pulse rounded-md bg-muted\", className)}\n      {...props}\n    />\n  )\n}\n\nexport { Skeleton }\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.skeleton",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "shadcn-aria/skeleton@4.23.0"
+      ],
+      "hash": "sha256:e9257c4af37d0c5d6bfe4f92097bae52ef99221059752aa56059a7dc4d37545b",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "skeleton.tsx": "registry/aria-nova/ui/skeleton.tsx"
+      }
+    },
+    "element": {
+      "id": "skeleton",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.skeleton",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "COMPONENT-FIXTURES"
+      },
+      "reason": "COMPONENT-FIXTURES: skeleton-v1 code unchanged (sha256:805963a50ee5f38834913ad0a8613988b0a291a9b678936e7a88f782841dfa8c); adds a preview fixture whose element tree composes the component's own exports with plain sample text, so the Studio card shows a realistic specimen.",
+      "createdAt": "2026-11-03T12:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--radius",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "skeleton.tsx",
+        "export": "Skeleton",
+        "props": {
+          "className": "flex w-72 items-center gap-4 bg-transparent animate-none",
+          "children": [
+            {
+              "$component": "Skeleton",
+              "props": {
+                "className": "size-12 shrink-0 rounded-full"
+              }
+            },
+            {
+              "$component": "Skeleton",
+              "props": {
+                "className": "flex flex-1 flex-col gap-2 bg-transparent animate-none"
+              },
+              "children": [
+                {
+                  "$component": "Skeleton",
+                  "props": {
+                    "className": "h-4 w-full"
+                  }
+                },
+                {
+                  "$component": "Skeleton",
+                  "props": {
+                    "className": "h-4 w-3/4"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
+    }
+  }
+}

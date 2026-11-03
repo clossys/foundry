@@ -1,6 +1,6 @@
 {
-  "candidate": "sidebar-v1.json",
-  "sha256": "c16f1fd143a634337576accd35de8aed71899c492ccf898c1c922ba8e12f19e0",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
-  "at": "2026-11-03T08:58:02Z"
+  "candidate": "sidebar-v2.json",
+  "sha256": "83ad2d6e01eeea45d2fcf9a4cec848d8f064115166e37b901b822c65824dd5a4",
+  "pinnedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
+  "at": "2026-11-03T12:00:00Z"
 }

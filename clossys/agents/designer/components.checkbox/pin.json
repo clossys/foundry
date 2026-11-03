@@ -1,6 +1,6 @@
 {
-  "candidate": "checkbox-v1.json",
-  "sha256": "cc59a43d7a19d0b58630c0693765fcfc9bd715ab1785eb591a3b3b58b5bb3099",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
-  "at": "2026-11-03T08:58:02Z"
+  "candidate": "checkbox-v2.json",
+  "sha256": "83a688340ecfe97af57b6f052306b3aec6d1514d03d5060204b2116e4caba7dd",
+  "pinnedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
+  "at": "2026-11-03T12:00:00Z"
 }

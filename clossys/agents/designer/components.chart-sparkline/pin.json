@@ -1,6 +1,6 @@
 {
-  "candidate": "chart-sparkline-v1.json",
-  "sha256": "18fcbd959bd8354f9c498cddd80336c243b6e78dbea9036cfca4444d6156a55f",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
-  "at": "2026-11-03T08:58:02Z"
+  "candidate": "chart-sparkline-v2.json",
+  "sha256": "2c17e82890be2df13c746d23f3f219e3a6720a923f6a8129cf9ba2c151048599",
+  "pinnedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
+  "at": "2026-11-03T12:00:00Z"
 }

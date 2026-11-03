@@ -149,6 +149,12 @@ function BoundBlockViewerIframe({ src, title, viewport, iframeKey, iframeHeight 
 
 /** How long a loaded frame may stay silent before it is shown at its ceiling anyway. */
 const CARD_REVEAL_MS = 4000
+/**
+ * How long an "empty" report must stand before the card drops its body. A specimen whose first
+ * render is a hidden collection pass (React Aria tables, breadcrumbs) reports empty once, then paints;
+ * the frame re-measures within this window, so only a frame that stays empty loses its body.
+ */
+const CARD_EMPTY_SETTLE_MS = 3000
 
 export interface BlockViewerCardIframeProps extends Omit<BlockViewerIframeProps, "onSize" | "interactive"> {
   /** Accessible name of the placeholder while the frame loads. */
@@ -185,7 +191,11 @@ export function BlockViewerCardIframe({ loadingLabel, failedLabel, wrap = frame 
       {!size && <Skeleton className="absolute inset-0" aria-label={loadingLabel} role="status" />}
       <BlockViewerIframe {...props} iframeHeight={iframeHeight} interactive={false}
         className={cn(!size && "absolute inset-x-0 top-0 opacity-0", props.className)}
-        onSize={next => { clearTimeout(timer.current); setState({ key, size: next }) }} />
+        onSize={next => {
+          clearTimeout(timer.current)
+          if (!next.empty || next.failed) { setState({ key, size: next }); return }
+          timer.current = setTimeout(() => setState(current => current.key === key ? { key, size: next } : current), CARD_EMPTY_SETTLE_MS)
+        }} />
     </div>
   )
 }
