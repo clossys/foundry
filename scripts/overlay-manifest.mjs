@@ -7,7 +7,7 @@
 //   node scripts/overlay-manifest.mjs verify --manifest <file> --dir <dir>
 //                                            [--scanned <json>]
 //   node scripts/overlay-manifest.mjs digests --dir <dir>
-//   node scripts/overlay-manifest.mjs assert-public [--packages-root <dir>]
+//   node scripts/overlay-manifest.mjs assert-public [--cohort] [--packages-root <dir>]
 //   node scripts/overlay-manifest.mjs decide --manifest <file> --main-tip <sha>
 //                                            [--published <file>] [--comparison <status>]
 //
@@ -84,7 +84,18 @@ export const MANIFEST_SCHEMA_VERSION = 1;
 export const TREE_DIGEST_ALGORITHM = "sha256-lines-v1";
 export const MANIFEST_FILE = "overlay-manifest.json";
 /** Every file the rolling release carries, sorted by byte order. */
-export const OVERLAY_FILES = Object.freeze([...OVERLAY_PACKAGES.map((dir) => `${dir}.tgz`), MANIFEST_FILE].sort());
+export const OVERLAY_FILES = Object.freeze(overlayFilesFor(OVERLAY_PACKAGES));
+/**
+ * The consumer cohort scripts/pack-cohort.mjs packs: the same manifest
+ * schema, over all six packages a consumer vendors (see
+ * docs/releasing/overlay.md, "Consumer cohort pack").
+ */
+export const COHORT_PACKAGES = Object.freeze(["producer", "strategist", "designer", "writer", "publisher", "controller"]);
+
+/** Every file a pack of `packages` carries: <dir>.tgz for each, plus the manifest, byte-sorted. */
+export function overlayFilesFor(packages) {
+  return [...packages.map((dir) => `${dir}.tgz`), MANIFEST_FILE].sort();
+}
 // GitHub's compare API status for <published>...<run>.
 const COMPARISON_STATUSES = Object.freeze(["ahead", "behind", "diverged", "identical"]);
 
@@ -198,11 +209,11 @@ function describeTarball(dir, tarballPath) {
  * `expected` (optional) maps each dir to the { name, version } its tarball
  * must carry; the CLI fills it from packages/<dir>/package.json.
  */
-export function buildOverlayManifest({ packedDir, changesetsDir, commit, committedAt, expected }) {
+export function buildOverlayManifest({ packedDir, changesetsDir, commit, committedAt, expected, packages: set = OVERLAY_PACKAGES }) {
   if (!COMMIT.test(commit ?? "")) throw new Error(`commit must be a full 40-character lowercase sha (got ${JSON.stringify(commit)})`);
   if (!isCommittedAt(committedAt)) throw new Error(`committedAt must be ISO 8601 UTC like 2026-01-31T12:00:00Z (got ${JSON.stringify(committedAt)})`);
   const packages = {};
-  for (const dir of OVERLAY_PACKAGES) {
+  for (const dir of set) {
     const entry = describeTarball(dir, join(packedDir, `${dir}.tgz`));
     if (expected) {
       const want = expected[dir];
@@ -221,12 +232,12 @@ export function buildOverlayManifest({ packedDir, changesetsDir, commit, committ
     pendingChangesets: pendingChangesetNames(changesetsDir),
     packages,
   };
-  validateOverlayManifest(manifest);
+  validateOverlayManifest(manifest, set);
   return manifest;
 }
 
-/** Throw unless `manifest` is a complete overlay manifest for exactly the overlay set. */
-export function validateOverlayManifest(manifest) {
+/** Throw unless `manifest` is a complete overlay manifest for exactly `set` (default: the overlay set). */
+export function validateOverlayManifest(manifest, set = OVERLAY_PACKAGES) {
   if (!manifest || typeof manifest !== "object" || Array.isArray(manifest)) throw new Error("manifest is not an object");
   if (manifest.schemaVersion !== MANIFEST_SCHEMA_VERSION) throw new Error(`manifest schemaVersion must be ${MANIFEST_SCHEMA_VERSION}`);
   if (manifest.kind !== MANIFEST_KIND) throw new Error(`manifest kind must be ${MANIFEST_KIND}`);
@@ -240,13 +251,13 @@ export function validateOverlayManifest(manifest) {
   if (changesets.some((name, index) => index > 0 && changesets[index - 1] >= name)) throw new Error("manifest pendingChangesets must be sorted and unique");
   const packages = manifest.packages;
   if (!packages || typeof packages !== "object" || Array.isArray(packages)) throw new Error("manifest packages is not an object");
-  for (const dir of OVERLAY_PACKAGES) {
+  for (const dir of set) {
     if (!Object.hasOwn(packages, dir)) throw new Error(`manifest is missing package ${dir}`);
   }
   for (const key of Object.keys(packages)) {
-    if (!OVERLAY_PACKAGES.includes(key)) throw new Error(`manifest has unexpected package ${key}`);
+    if (!set.includes(key)) throw new Error(`manifest has unexpected package ${key}`);
   }
-  for (const dir of OVERLAY_PACKAGES) {
+  for (const dir of set) {
     const entry = packages[dir];
     if (!entry || typeof entry !== "object") throw new Error(`manifest package ${dir} is not an object`);
     if (typeof entry.name !== "string" || !entry.name) throw new Error(`manifest package ${dir} has no name`);
@@ -280,9 +291,9 @@ export function overlayChanged(previous, next) {
 }
 
 /** Check every tarball in <dir> against `manifest`: bytes, unpacked tree and identity. */
-export function verifyOverlayRelease({ manifest, dir }) {
-  validateOverlayManifest(manifest);
-  for (const pkg of OVERLAY_PACKAGES) {
+export function verifyOverlayRelease({ manifest, dir, packages = OVERLAY_PACKAGES }) {
+  validateOverlayManifest(manifest, packages);
+  for (const pkg of packages) {
     const want = manifest.packages[pkg];
     const got = describeTarball(pkg, join(dir, want.tarball));
     if (got.integrity !== want.integrity) throw new Error(`${pkg}: integrity mismatch (manifest ${want.integrity}, file ${got.integrity})`);
@@ -295,11 +306,12 @@ export function verifyOverlayRelease({ manifest, dir }) {
   return true;
 }
 
-// The directory must hold exactly OVERLAY_FILES, each a regular file.
-function overlayDirectoryFiles(dir) {
+// The directory must hold exactly the files for `packages`, each a regular file.
+export function overlayDirectoryFiles(dir, packages = OVERLAY_PACKAGES) {
+  const expected = overlayFilesFor(packages);
   const names = readdirSync(dir).sort();
-  if (names.length !== OVERLAY_FILES.length || names.some((name, index) => name !== OVERLAY_FILES[index])) {
-    throw new Error(`overlay directory must hold exactly ${OVERLAY_FILES.join(", ")} (found: ${names.join(", ") || "nothing"})`);
+  if (names.length !== expected.length || names.some((name, index) => name !== expected[index])) {
+    throw new Error(`overlay directory must hold exactly ${expected.join(", ")} (found: ${names.join(", ") || "nothing"})`);
   }
   for (const name of names) {
     if (!lstatSync(join(dir, name)).isFile()) throw new Error(`${name}: not a regular file`);
@@ -371,9 +383,10 @@ function readJsonFile(path, what) {
   catch { throw new Error(`${what} is missing or not valid JSON`); }
 }
 
-function expectedFromPackagesRoot(packagesRoot) {
+/** { name, version } of each package in `packages` from packages/<dir>/package.json; throws on a private one. */
+export function expectedFromPackagesRoot(packagesRoot, packages = OVERLAY_PACKAGES) {
   const expected = {};
-  for (const dir of OVERLAY_PACKAGES) {
+  for (const dir of packages) {
     const path = join(packagesRoot, dir, "package.json");
     let manifest;
     try { manifest = JSON.parse(readFileSync(path, "utf8")); }
@@ -384,9 +397,9 @@ function expectedFromPackagesRoot(packagesRoot) {
   return expected;
 }
 
-/** Throw unless every overlay package's source package.json under `packagesRoot` is publishable. */
-export function assertOverlayPackagesPublic(packagesRoot) {
-  expectedFromPackagesRoot(packagesRoot);
+/** Throw unless every package in `packages` (default: the overlay set) has a publishable source package.json. */
+export function assertOverlayPackagesPublic(packagesRoot, packages = OVERLAY_PACKAGES) {
+  expectedFromPackagesRoot(packagesRoot, packages);
   return true;
 }
 
@@ -450,9 +463,11 @@ function main(argv) {
     return 0;
   }
   if (command === "assert-public") {
-    const args = parseArgs(rest, ["--packages-root"]);
-    assertOverlayPackagesPublic(resolve(args["--packages-root"] ?? join(repoRoot, "packages")));
-    console.log(`overlay-manifest: ${OVERLAY_PACKAGES.join(", ")} are not private`);
+    const cohort = rest.includes("--cohort");
+    const args = parseArgs(rest.filter((arg) => arg !== "--cohort"), ["--packages-root"]);
+    const set = cohort ? COHORT_PACKAGES : OVERLAY_PACKAGES;
+    assertOverlayPackagesPublic(resolve(args["--packages-root"] ?? join(repoRoot, "packages")), set);
+    console.log(`overlay-manifest: ${set.join(", ")} are not private`);
     return 0;
   }
   if (command === "decide") {
