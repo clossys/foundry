@@ -17,8 +17,8 @@ export async function checkPayload(item) {
     .map(entry => entry.name).sort() : [];
   if (JSON.stringify(code) !== JSON.stringify(present)) fail(`${item.slot}: studio folder files [${present}] differ from the pinned payload [${code}]`);
   for (const file of code) {
-    // Pinned candidates carry their files inline; draft previews still name a version directory.
+    // Pinned and Draft-bound candidates carry their files inline; a version directory is the legacy shape.
     const [stored, running] = await Promise.all([item.files ? item.files.get(file) : readFile(join(item.versionDir, file)), readFile(join(item.studioDir, file))]);
-    if (!stored.equals(running)) fail(`${item.slot}: ${file} differs from ${item.element} v${item.version} ${item.files ? 'as pinned' : 'in the library'}`);
+    if (!stored.equals(running)) fail(`${item.slot}: ${file} differs from ${item.element} v${item.version} ${item.files ? (item.bound ? 'as bound' : 'as pinned') : 'in the library'}`);
   }
 }
