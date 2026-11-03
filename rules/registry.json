@@ -1,0 +1,368 @@
+{
+  "$schema": "./registry.schema.json",
+  "schema": "foundry.rule-registry/1",
+  "about": "Owner rules as code: each rule names the checks that enforce it and a violation fixture each check must fail on. check:rules (scripts/check-rules.mjs) enforces this file.",
+  "rules": [
+    {
+      "id": "R-ASSEMBLE-ONLY",
+      "audit_rule": 1,
+      "owner_words": {
+        "quote": "every page = frame + sections; Publisher never writes or designs",
+        "date": "2026-10-30"
+      },
+      "status": "enforced",
+      "checks": [
+        "packages/producer#check:assemble-only",
+        "check:studio#producer check-no-page-jsx"
+      ],
+      "related": [
+        "packages/producer#test:assemble-only",
+        "packages/producer#check:studio-routes",
+        "check:studio#producer studio/checks/check-no-page-jsx.test.cjs",
+        "check:studio#producer studio/checks/check-studio-routes.test.cjs",
+        "check:studio#producer scripts/studio-payload.test.mjs",
+        "check:studio#producer scripts/generate-studio-map.test.mjs",
+        "check:studio#producer scripts/compose-studio.test.mjs",
+        "check:studio#designer page-dogfood --check"
+      ],
+      "fixture": "rules/fixtures/R-ASSEMBLE-ONLY",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:assemble-only",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-assemble-only.mjs --root {fixture}",
+          "expect": "^app-route\\s+app/probe/page\\.tsx"
+        },
+        {
+          "check": "check:studio#producer check-no-page-jsx",
+          "cwd": "packages/producer",
+          "run": "node studio/checks/check-no-page-jsx.cjs --root {fixture}",
+          "expect": "\"rule\": \"page-jsx\""
+        }
+      ],
+      "note": "Static class checks over the Studio app and Publisher page records; the hand-built StudioPage.tsx branches the audit found are W1/W2 fix units."
+    },
+    {
+      "id": "R-DS-ONLY",
+      "audit_rule": 2,
+      "owner_words": {
+        "quote": "all views use Designer's shadcn components only",
+        "date": "2026-10-31"
+      },
+      "status": "enforced",
+      "checks": [
+        "packages/producer#test"
+      ],
+      "related": [
+        "check:studio#producer studio vitest",
+        "check:studio#producer studio/checks/check-no-handrolling.test.cjs",
+        "check:studio#producer check-no-handrolling (live)",
+        "check:studio#producer studio/frames/studio-shell/stock-frame.test.cjs",
+        "check:studio#producer studio/frames/studio-shell/app-sidebar.rail.test.cjs",
+        "check:studio#designer check:studio-page-modules",
+        "check:studio#designer test:studio-page-modules",
+        "check:studio#designer-ui stock-frame-picks.b6a.test.mjs",
+        "check:studio#designer-ui studio-frames.test.cjs",
+        "check:studio#designer-ui studio-home-stock-reference.test.mjs",
+        "check:studio#designer-ui studio-home-stock.source.test.mjs",
+        "check:studio#designer-ui vitest"
+      ],
+      "fixture": "rules/fixtures/R-DS-ONLY",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#test",
+          "cwd": "packages/producer",
+          "run": "DS_ONLY_SECTIONS_ROOT={fixture}/sections npx vitest run src/studio/designer-views.ds-only.test.ts",
+          "expect": "probe-section/index\\.tsx: imports other-ui"
+        }
+      ],
+      "note": "The ds-only vitest (producer test) covers sections, frames, renderers and component-layer frames."
+    },
+    {
+      "id": "R-SHADCN-STOCK",
+      "audit_rule": 3,
+      "owner_words": {
+        "quote": "stock shadcn unmodified, tokens to shadcn vars",
+        "date": "2026-10-30"
+      },
+      "status": "enforced",
+      "checks": [
+        "packages/designer#check:ref-verbatim"
+      ],
+      "related": [
+        "packages/designer#check:compiled-css",
+        "packages/designer#test:section-tokens",
+        "check:studio#designer check-section-tokens",
+        "check:studio#designer check-rendered-class-rules",
+        "check:studio#designer scripts/ref-verbatim/adaptations.test.mjs",
+        "check:studio#designer scripts/ref-verbatim/data-fit.test.mjs",
+        "check:studio#producer studio/checks/p0-propagate.test.mjs"
+      ],
+      "fixture": "rules/fixtures/R-SHADCN-STOCK",
+      "fixture_runs": [
+        {
+          "check": "packages/designer#check:ref-verbatim",
+          "cwd": "packages/designer",
+          "run": "node scripts/check-ref-verbatim.mjs --root {fixture}/clossys --pinned --components ui/components.json --report {out}/ref-verbatim.json",
+          "expect": "REF-HUNK-CLASS components\\.badge"
+        }
+      ],
+      "note": "Code-level gate: every pinned Designer candidate ships the vendored reference file plus only allowed hunks."
+    },
+    {
+      "id": "R-VENDORED-SOURCES",
+      "audit_rule": 4,
+      "owner_words": {
+        "quote": "DS exclusively shadcn plus trusted free registries",
+        "date": "2026-10-30"
+      },
+      "status": "enforced",
+      "checks": [
+        "packages/designer#check:provenance"
+      ],
+      "related": [
+        "packages/designer#check:references",
+        "packages/designer#test:references",
+        "packages/designer#check:default-candidates",
+        "packages/designer#check:process",
+        "packages/designer#test:process",
+        "check:studio#designer check-fill-source-imports",
+        "check:studio#designer check-surface-source-identity",
+        "check:studio#designer scripts/surface-source-identity.test.mjs",
+        "check:studio#designer scripts/surface-source-runtime.test.mjs"
+      ],
+      "fixture": "rules/fixtures/R-VENDORED-SOURCES",
+      "fixture_runs": [
+        {
+          "check": "packages/designer#check:provenance",
+          "cwd": "packages/designer",
+          "run": "node scripts/check-provenance.mjs --scan {fixture}",
+          "expect": "probe/element\\.json: original item in sections\\.probe"
+        }
+      ],
+      "note": "Record-level gate: lineage must name a trusted manifest item; scans Foundry packages, not the consumer pins (consumer pins are R-SHADCN-STOCK)."
+    },
+    {
+      "id": "R-WRITER-COPY",
+      "audit_rule": 5,
+      "owner_words": {
+        "quote": "visual to Designer, copy to Writer, assembly only to Publisher",
+        "date": "2026-10-31"
+      },
+      "status": "unenforced",
+      "related": [
+        "check:studio#producer scripts/studio-copy.test.mjs",
+        "check:studio#producer scripts/studio-checks-copy.test.mjs",
+        "check:studio#producer scripts/studio-contract-copy.test.mjs",
+        "check:studio#producer scripts/studio-options-copy.test.mjs",
+        "check:studio#producer scripts/studio-references-copy.test.mjs",
+        "check:studio#designer generate-copy-ports --check"
+      ],
+      "note": "No check fails on a literal string in a Studio frame, section or renderer; the copy tests prove resolution only (W2 all copy through Writer)."
+    },
+    {
+      "id": "R-CONTENT-MAP",
+      "audit_rule": 6,
+      "owner_words": {
+        "quote": "consumer owns nav and routing data per publication",
+        "date": "2026-10-28"
+      },
+      "status": "enforced",
+      "checks": [
+        "packages/producer#check:studio-map"
+      ],
+      "related": [
+        "check:studio#producer studio/checks/check-studio-map.test.cjs",
+        "check:studio#producer studio/checks/studio-navigation.test.cjs",
+        "check:studio#producer studio-dom-check (live)",
+        "check:studio#producer studio-modules-check (live)",
+        "check:studio#producer p0-studio-check (live)",
+        "check:studio#producer studio/checks/p0-studio-check.test.cjs",
+        "check:studio#producer p0-studio-mutations",
+        "check:studio#producer studio/checks/p0-studio-mutations.test.cjs"
+      ],
+      "fixture": "rules/fixtures/R-CONTENT-MAP",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:studio-map",
+          "cwd": "packages/producer",
+          "run": "node studio/checks/check-studio-map.cjs --root {fixture}",
+          "expect": "\"rule\": \"shell-projection-not-publisher\""
+        }
+      ],
+      "note": "Nav, commands and breadcrumbs must be Publisher projections of the pinned content map; the icon map overriding pins is a W-unit defect."
+    },
+    {
+      "id": "R-FLAT-SLOTS",
+      "audit_rule": 7,
+      "owner_words": {
+        "quote": "agents/<agent>/<slot-id>/ flat; grouping only in ia.json data",
+        "date": "2026-11-02"
+      },
+      "status": "unenforced",
+      "note": "No check fails when a legacy store (selection.json, library/, cells) is read or shipped (W3 CLI on flat slot folders)."
+    },
+    {
+      "id": "R-SLOT-PINS",
+      "audit_rule": 8,
+      "owner_words": {
+        "quote": "every L3 is a slot, candidates are files, one pinned",
+        "date": "2026-10-31"
+      },
+      "status": "unenforced",
+      "related": [
+        "packages/designer#check:slot-contracts"
+      ],
+      "note": "slot-resolve no-pin/multi-pin runs only inside clossys check, never from root check (W4 pin schema)."
+    },
+    {
+      "id": "R-ONE-BRAND",
+      "audit_rule": 9,
+      "owner_words": {
+        "quote": "Studio previews the consumer workspace in the consumer brand; never greyscale",
+        "date": "2026-10-29"
+      },
+      "status": "unenforced",
+      "related": [
+        "check:studio#producer check-theme-parity (live)",
+        "check:studio#producer studio/checks/check-theme-parity.test.cjs"
+      ],
+      "note": "No check fails when consumer brand assets point at Foundry files or a theme failure falls back to the Foundry theme."
+    },
+    {
+      "id": "R-STUDIO-CARD-DETAIL",
+      "audit_rule": 10,
+      "owner_words": {
+        "quote": "read-only Studio; the card shows active state and links to the L3 route",
+        "date": "2026-10-31"
+      },
+      "status": "enforced",
+      "checks": [
+        "packages/producer#check:studio-template"
+      ],
+      "related": [
+        "check:studio#producer studio/checks/studio-overflow.test.mjs"
+      ],
+      "fixture": "rules/fixtures/R-STUDIO-CARD-DETAIL",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:studio-template",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-studio-template.mjs --root {fixture}",
+          "expect": "^FAIL specimen"
+        }
+      ],
+      "note": "Class checks for the slot card and detail template; the read-only 405 API is covered by producer src tests."
+    },
+    {
+      "id": "R-REAL-SPECIMENS",
+      "audit_rule": 11,
+      "owner_words": {
+        "quote": "Studio previews what cells produce, not file text",
+        "date": "2026-10-29"
+      },
+      "status": "unenforced",
+      "related": [
+        "check:studio#producer publisher-preview (live)",
+        "check:studio#designer check-specimen-token-host-parts",
+        "check:studio#designer generate-specimen-surface-evidence --check",
+        "check:studio#designer generate-default-component-preview --check",
+        "check:studio#designer components-coverage --check",
+        "check:studio#designer sections-frames-coverage --check",
+        "check:studio#designer scripts/sections-frames-source.test.mjs"
+      ],
+      "note": "No check fails when a slot detail falls back to a raw candidate-file-text table."
+    },
+    {
+      "id": "R-USAGE-GRAPH",
+      "audit_rule": 12,
+      "owner_words": {
+        "quote": "all layers link uses and used-by; DOM provenance",
+        "date": "2026-10-26"
+      },
+      "status": "unenforced",
+      "related": [
+        "check:studio#designer check (usage-graph)",
+        "check:studio#designer test:usage-graph",
+        "check:studio#designer generate-surface-consumption --check"
+      ],
+      "note": "usage-graph --check is freshness only; nothing compares slot.json uses with candidate imports or checks DOM provenance ids."
+    },
+    {
+      "id": "R-CLI-DETERMINISTIC",
+      "audit_rule": 13,
+      "owner_words": {
+        "quote": "clossys verbs = brief, check, compile only",
+        "date": "2026-10-29"
+      },
+      "status": "unenforced",
+      "note": "No check runs the CLI verbs against the real consumer store, where they exit 2 (W3)."
+    },
+    {
+      "id": "R-CHECKS-WIRED",
+      "audit_rule": 14,
+      "owner_words": {
+        "quote": "rules must become code, not prose",
+        "date": "2026-11-03"
+      },
+      "status": "enforced",
+      "checks": [
+        ".#check:orphan-checks",
+        ".#check:rules"
+      ],
+      "fixture": "rules/fixtures/R-CHECKS-WIRED",
+      "fixture_runs": [
+        {
+          "check": ".#check:orphan-checks",
+          "cwd": ".",
+          "fixture": "rules/fixtures/R-CHECKS-WIRED/orphan",
+          "run": "node scripts/check-orphan-checks.mjs --root {fixture}",
+          "expect": "^orphan\\s+packages/producer/scripts/check-probe\\.mjs"
+        },
+        {
+          "check": ".#check:rules",
+          "cwd": ".",
+          "fixture": "rules/fixtures/R-CHECKS-WIRED/registry",
+          "run": "node scripts/check-rules.mjs --root {fixture}",
+          "expect": "^unenforced\\s+R-PROBE"
+        }
+      ],
+      "note": "Every check file is reachable from root check or test, and every rule has a check that fails on its fixture."
+    },
+    {
+      "id": "R-NO-HIDDEN-FALLBACKS",
+      "audit_rule": 15,
+      "owner_words": {
+        "quote": "no temp solutions; delete shims, never extend",
+        "date": "2026-10-23"
+      },
+      "status": "unenforced",
+      "related": [
+        "check:studio#producer scripts/preview-studio-config.test.mjs",
+        "check:studio#producer scripts/studio-draft-items.test.mjs",
+        "check:studio#producer scripts/pack-five.test.mjs",
+        "check:studio#producer scripts/build-studio.test.mjs"
+      ],
+      "note": "No class check fails on a silent fallback (theme catch, unknown icon, newest-draft preview); only per-feature tests exist."
+    },
+    {
+      "id": "R-SLOT-STATE",
+      "owner_words": {
+        "quote": "shadcn item, else a composition of pinned parts, else mark unneeded",
+        "date": "2026-11-03"
+      },
+      "status": "unenforced",
+      "note": "Every L3 slot is pinned or marked not-needed: check-slot-state lands with W4 and is not on this base."
+    }
+  ],
+  "exemptions": [
+    {
+      "check": "check:studio#designer check:page-overflow",
+      "reason": "Render probe for a served published-site install (needs --url); site layout quality, not a Studio owner rule."
+    },
+    {
+      "check": "check:studio#producer studio/checks/studio-upgrade.test.cjs",
+      "reason": "Producer server WebSocket upgrade transport test: infrastructure correctness, not an owner rule."
+    }
+  ]
+}

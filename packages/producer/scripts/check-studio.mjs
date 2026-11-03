@@ -6,14 +6,20 @@
  * either listed there, reached another way, or reported as an orphan.
  *
  * Every sub-check runs, in order, even after one fails, so the summary shows the honest state of
- * every rule. Nothing is skipped: a rendered check whose Studio is not serving at STUDIO_ORIGIN
- * (default http://127.0.0.1:4617) fails like any other.
+ * every rule. Nothing is skipped: a rendered check whose Studio is not serving fails like any other.
  *
- * Usage: node scripts/check-studio.mjs [--only <id substring>]... [--json FILE] [--timeout SECONDS]
+ * Live sub-checks (`kind: "live"`) need a running Studio. When STUDIO_ORIGIN is not set, this runner
+ * starts its own: it builds dist/studio from the current source (scripts/build-studio.mjs), starts
+ * `produce --root <repository> --port 4617 --no-open` from dist/cli (built by the root `build`),
+ * waits for /api/health to report the Studio ready, runs the live sub-checks against
+ * http://127.0.0.1:4617 and stops the server afterwards. A failed build or start is reported, and
+ * the live sub-checks still run (and fail). With STUDIO_ORIGIN set, that Studio is used as is.
+ *
+ * Usage: node scripts/check-studio.mjs [--only <id substring>]... [--id <exact id>]... [--json FILE] [--timeout SECONDS]
  * Exit 0 when every sub-check exits 0, otherwise 1.
  */
-import { spawn } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { spawn, spawnSync } from "node:child_process";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,6 +27,8 @@ import { fileURLToPath } from "node:url";
 const here = dirname(fileURLToPath(import.meta.url));
 const repository = resolve(here, "../../..");
 export const MANIFEST = join(here, "check-studio.json");
+export const STUDIO_PORT = 4617;
+const producer = resolve(here, "..");
 
 /** Best-effort failure count from a sub-check's output: node:test, vitest, or a JSON findings report. */
 export function failureCount(output) {
@@ -48,34 +56,85 @@ function run(check, env, timeoutMs) {
   });
 }
 
-export async function checkStudio({ only = [], timeoutMs = 600_000, log = console.log } = {}) {
+const delay = ms => new Promise(accept => setTimeout(accept, ms));
+
+/**
+ * Build dist/studio from the current source and start `produce` on STUDIO_PORT. Resolves to
+ * { origin, stop } once /api/health reports the Studio ready; rejects with the reason otherwise.
+ */
+export async function startStudio({ log = console.log, port = STUDIO_PORT, readyMs = 300_000 } = {}) {
+  const cli = join(producer, "dist/cli/index.js");
+  if (!existsSync(cli)) throw new Error("dist/cli/index.js is missing: run the root `npm run build` first");
+  log(`check:studio: building dist/studio from the current source for the live sub-checks`);
+  const build = spawnSync(process.execPath, [join(here, "build-studio.mjs")], { cwd: producer, encoding: "utf8", maxBuffer: 64 * 1024 * 1024, env: { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" } });
+  if (build.status !== 0) throw new Error(`scripts/build-studio.mjs exited ${build.status}: ${`${build.stdout}\n${build.stderr}`.trim().split("\n").slice(-10).join(" / ")}`);
+  const origin = `http://127.0.0.1:${port}`;
+  try { await fetch(`${origin}/api/health`); throw new Error(`port ${port} is already serving; stop it or set STUDIO_ORIGIN to use it`); } catch (error) { if (/already serving/.test(error.message)) throw error; }
+  const child = spawn(process.execPath, [cli, "produce", "--root", repository, "--port", String(port), "--no-open"], { cwd: producer, stdio: ["ignore", "pipe", "pipe"], detached: true, env: { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" } });
+  let output = "", exited;
+  child.stdout.on("data", chunk => { output = (output + chunk).slice(-20_000); });
+  child.stderr.on("data", chunk => { output = (output + chunk).slice(-20_000); });
+  const closed = new Promise(accept => child.on("close", code => { exited = code ?? 1; accept(); }));
+  const stop = async () => {
+    if (exited === undefined) { try { process.kill(-child.pid, "SIGTERM"); } catch {} }
+    const timer = setTimeout(() => { try { process.kill(-child.pid, "SIGKILL"); } catch {} }, 10_000);
+    await closed; clearTimeout(timer);
+  };
+  const deadline = Date.now() + readyMs;
+  while (Date.now() < deadline) {
+    if (exited !== undefined) throw new Error(`produce exited ${exited} before the Studio was ready: ${output.trim().split("\n").slice(-10).join(" / ")}`);
+    try {
+      const health = await (await fetch(`${origin}/api/health`)).json();
+      if (health?.studio === "ready") { log(`check:studio: Studio ready at ${origin}`); return { origin, stop }; }
+    } catch { /* not listening yet */ }
+    await delay(500);
+  }
+  await stop();
+  throw new Error(`the Studio was not ready at ${origin} within ${readyMs / 1000}s: ${output.trim().split("\n").slice(-10).join(" / ")}`);
+}
+
+export async function checkStudio({ only = [], ids = [], timeoutMs = 600_000, log = console.log } = {}) {
   const manifest = JSON.parse(readFileSync(MANIFEST, "utf8"));
-  const checks = manifest.checks.filter(check => !only.length || only.some(text => check.id.includes(text)));
+  const checks = manifest.checks.filter(check => (!only.length && !ids.length) || only.some(text => check.id.includes(text)) || ids.includes(check.id));
+  const unknown = ids.filter(id => !manifest.checks.some(check => check.id === id));
+  if (unknown.length) throw new Error(`no such sub-check id: ${unknown.join(", ")}`);
   const out = mkdtempSync(join(tmpdir(), "check-studio-"));
-  const env = { ...process.env, STUDIO_ORIGIN: process.env.STUDIO_ORIGIN ?? "http://127.0.0.1:4617", STUDIO_CHECK_OUT: out, FORCE_COLOR: "0", NO_COLOR: "1" };
+  const external = process.env.STUDIO_ORIGIN;
+  const env = { ...process.env, STUDIO_ORIGIN: external ?? `http://127.0.0.1:${STUDIO_PORT}`, STUDIO_CHECK_OUT: out, FORCE_COLOR: "0", NO_COLOR: "1" };
+  let studio, studioError;
+  if (!external && checks.some(check => check.kind === "live")) {
+    try { studio = await startStudio({ log }); } catch (error) { studioError = error.message; log(`check:studio: could not start the Studio; the live sub-checks run and fail: ${studioError}`); }
+  }
   const results = [];
-  for (const check of checks) {
-    const result = await run(check, env, timeoutMs);
-    results.push(result);
-    log(`${result.exitCode === 0 ? "PASS" : "FAIL"}  ${result.id}  (exit ${result.exitCode}${result.failures ? `, ${result.failures} failing` : ""}, ${result.seconds}s)`);
-    if (result.exitCode !== 0) log(result.tail.split("\n").map(line => `      ${line}`).join("\n"));
+  try {
+    for (const check of checks) {
+      const result = await run(check, env, timeoutMs);
+      if (check.kind === "live" && studioError) result.tail = `check:studio: Studio not started: ${studioError}\n${result.tail}`;
+      results.push(result);
+      log(`${result.exitCode === 0 ? "PASS" : "FAIL"}  ${result.id}  (exit ${result.exitCode}${result.failures ? `, ${result.failures} failing` : ""}, ${result.seconds}s)`);
+      if (result.exitCode !== 0) log(result.tail.split("\n").map(line => `      ${line}`).join("\n"));
+    }
+  } finally {
+    if (studio) { await studio.stop(); log(`check:studio: stopped the Studio at ${studio.origin}`); }
   }
   const red = results.filter(result => result.exitCode !== 0);
   log(`\ncheck:studio: ${results.length - red.length}/${results.length} sub-checks pass, ${red.length} red. Reports: ${out}`);
   for (const result of red) log(`  red  ${result.id}  exit ${result.exitCode}${result.failures !== undefined ? `  count ${result.failures}` : ""}`);
-  return { origin: env.STUDIO_ORIGIN, reports: out, total: results.length, red: red.length, results };
+  return { origin: env.STUDIO_ORIGIN, studio: external ? "external" : studio ? "self-started" : studioError ? `not started: ${studioError}` : "not needed", reports: out, total: results.length, red: red.length, results };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const args = process.argv.slice(2), only = [];
+  const args = process.argv.slice(2), only = [], ids = [];
   let json, timeoutMs;
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--only" && args[i + 1]) only.push(args[++i]);
+    else if (args[i] === "--id" && args[i + 1]) ids.push(args[++i]);
     else if (args[i] === "--json" && args[i + 1]) json = args[++i];
     else if (args[i] === "--timeout" && Number(args[i + 1]) > 0) timeoutMs = Number(args[++i]) * 1000;
-    else { console.error("Usage: check-studio.mjs [--only <id substring>]... [--json FILE] [--timeout SECONDS]"); process.exit(2); }
+    else { console.error("Usage: check-studio.mjs [--only <id substring>]... [--id <exact id>]... [--json FILE] [--timeout SECONDS]"); process.exit(2); }
   }
-  const report = await checkStudio({ only, timeoutMs });
+  let report;
+  try { report = await checkStudio({ only, ids, timeoutMs }); } catch (error) { console.error(`check:studio: ${error.message}`); process.exit(2); }
   if (json) writeFileSync(json, JSON.stringify(report, null, 2) + "\n");
   process.exitCode = report.red ? 1 : 0;
 }

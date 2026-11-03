@@ -14,7 +14,8 @@
  *   tabs-projected   a record page has no group-tab page routes projected from the agent's ia.json
  *   page-header      a pinned page record does not declare the page-header section first
  *
- * Usage: node scripts/check-assemble-only.mjs [--json]. Exit 1 on any finding.
+ * Usage: node scripts/check-assemble-only.mjs [--root <repository>] [--json]. `--root` checks another
+ * repository tree (its packages/producer) instead of this one. Exit 1 on any finding.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -246,7 +247,9 @@ export function formatFindings(findings) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const findings = checkAssembleOnly();
+  const at = process.argv.indexOf('--root');
+  const repositoryRoot = at > 0 ? path.resolve(process.argv[at + 1] ?? '') : undefined;
+  const findings = checkAssembleOnly(repositoryRoot ? { repositoryRoot, producerRoot: path.join(repositoryRoot, 'packages', 'producer') } : {});
   console.log(process.argv.includes('--json') ? JSON.stringify(findings, null, 2) : formatFindings(findings));
   process.exit(findings.length ? 1 : 0);
 }

@@ -78,7 +78,9 @@ function checkNoPageJsx({ studioRoot = STUDIO_ROOT } = {}) {
 
 module.exports = { checkNoPageJsx, inspectAppSource, APP_FILES, ALLOWED_TAGS };
 if (require.main === module) {
-  const findings = checkNoPageJsx();
+  // `--root <repository>` checks another repository tree (a rule fixture): its packages/producer/studio.
+  const at = process.argv.indexOf('--root');
+  const findings = checkNoPageJsx(at > 1 ? { studioRoot: path.resolve(process.argv[at + 1] ?? '', 'packages/producer/studio') } : {});
   if (findings.length) {
     console.error(JSON.stringify({ check: 'Studio no-page-jsx', findings }, null, 2));
     process.exitCode = 1;

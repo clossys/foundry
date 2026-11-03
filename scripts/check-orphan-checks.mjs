@@ -167,6 +167,11 @@ function resolveModule(root, fromRel, specifier) {
 
 function readJson(path) { return JSON.parse(readFileSync(path, "utf8")); }
 
+/** Every repository file (POSIX, repository-relative) outside dependency, build and fixture folders. */
+export function repositoryFiles(root) {
+  return walk(root, "", []).filter(path => !path.split("/").some(part => SKIP_DIRS.has(part)));
+}
+
 /** Workspaces of the root manifest: directory (POSIX, repository-relative) -> manifest. */
 export function workspaces(root) {
   const manifest = readJson(join(root, "package.json"));
@@ -180,11 +185,15 @@ export function workspaces(root) {
   return out;
 }
 
-/** Trace everything reachable from the root entry scripts. Returns the reached file set and the scripts followed. */
-export async function reachable(root) {
+/**
+ * Trace everything reachable from the entries (default: the root `check` and `test` scripts).
+ * An entry is an npm script `{ dir, script }` or a shell command `{ cwd, run }`.
+ * Returns the reached file set and the scripts followed (keyed `<dir>#<script>`, root dir ".").
+ * `files` may pass a previous `repositoryFiles(root)` listing to skip the walk on repeated traces.
+ */
+export async function reachable(root, { entries = ENTRY_SCRIPTS.map(script => ({ dir: ".", script })), files = repositoryFiles(root) } = {}) {
   const packages = workspaces(root);
   const byName = new Map([...packages].map(([dir, manifest]) => [manifest.name, dir]));
-  const files = walk(root, "", []).filter(path => !path.split("/").some(part => SKIP_DIRS.has(part)));
   const reached = new Set(), scripts = new Set(), queue = [];
   const reach = rel => { if (rel && !reached.has(rel) && existsSync(join(root, rel))) { reached.add(rel); queue.push(rel); } };
   const packageOf = cwd => { for (let dir = cwd; ; dir = posix.dirname(dir)) { if (packages.has(dir)) return dir; if (dir === "." || dir === "") return "."; } };
@@ -260,7 +269,10 @@ export async function reachable(root) {
     return files.filter(file => re.test(file));
   };
 
-  for (const name of ENTRY_SCRIPTS) runScript(".", name);
+  for (const entry of entries) {
+    if (typeof entry.script === "string") runScript(entry.dir ?? ".", entry.script);
+    else if (typeof entry.run === "string") runCommand(entry.run, entry.cwd ?? ".");
+  }
   while (queue.length) {
     const rel = queue.shift();
     if (rel === "scripts/build-workspaces.mjs") for (const dir of packages.keys()) if (dir !== ".") runScript(dir, "build");

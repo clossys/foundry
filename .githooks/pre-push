@@ -1,0 +1,16 @@
+#!/bin/sh
+# Pre-push gate (installed per clone by `npm run hooks:install`, which sets core.hooksPath=.githooks).
+# Runs the rule meta-check and the fast, server-free check:studio sub-checks that enforce a registered
+# rule on the real tree. It is not the full `npm run check`; the Studio server and vitest suites stay there.
+set -e
+cd "$(git rev-parse --show-toplevel)"
+npm run --silent check:rules
+node packages/producer/scripts/check-studio.mjs \
+  --id "producer check:assemble-only" \
+  --id "producer check-no-page-jsx" \
+  --id "producer check:studio-map" \
+  --id "producer check:studio-template" \
+  --id "designer check:provenance" \
+  --id "designer check:ref-verbatim" \
+  --id "designer check:references" \
+  --id "designer check:slot-contracts"

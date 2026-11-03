@@ -15,8 +15,9 @@
  *             Producer serves as the pinned `assets.image` placeholder; initials are the fallback.
  *   inset     the frame body owns the content inset; no section root adds its own inline padding.
  *
- * Usage: node packages/producer/scripts/check-studio-template.mjs [--rev <git rev>]
- * With --rev the files are read from that commit (to prove the check fails before a fix).
+ * Usage: node packages/producer/scripts/check-studio-template.mjs [--rev <git rev>] [--root <repository>]
+ * With --rev the files are read from that commit (to prove the check fails before a fix); with
+ * --root they are read from another repository tree (a rule fixture) instead of this one.
  */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -24,7 +25,8 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+const rootAt = process.argv.indexOf('--root');
+const repo = rootAt > 0 ? resolve(process.argv[rootAt + 1] ?? '') : resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const revAt = process.argv.indexOf('--rev');
 const rev = revAt > 0 ? process.argv[revAt + 1] : undefined;
 
