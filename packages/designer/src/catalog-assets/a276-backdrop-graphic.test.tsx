@@ -8,7 +8,8 @@ import { A276BackdropGraphicSpecimen, type BackdropGraphicSpecimenLabels } from 
 
 const labels: BackdropGraphicSpecimenLabels = { title: "ExampleCo", patterns: { mesh: "Mesh", grid: "Grid", dot: "Dot", noise: "Noise" }, modes: { light: "Light", dark: "Dark" } };
 function nativeProfile(accent = "#2468ac", darkAccent = "#8ab4de") {
-  const catalog = loadCatalog();
+  // Owner dropped the leaf 2026-11-02: the draft contribution is applied locally, never by loadCatalog().
+  const catalog = withA276BackdropGraphic(loadCatalog());
   const initial: LibraryData = { source: { id: "example", kind: "consumer", author: "consumer", license: "MIT" }, fills: [], adoptedAt: "2026-10-30" };
   const color = (light: string, dark: string): DtcgToken => ({ $type: "color", $value: light, $extensions: { "com.clossys.modes": { dark } } });
   const library = applyLibraryChange(catalog, initial, { baseHash: libraryHash(initial), changes: [

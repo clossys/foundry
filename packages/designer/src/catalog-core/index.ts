@@ -1,4 +1,3 @@
-import { withA276BackdropGraphic } from "../catalog-assets/a276-backdrop-graphic.contribution.js";
 import fill0 from "../catalog/fills/foundry/themes.animate-marquee-vertical.json" with { type: "json" };
 import fill1 from "../catalog/fills/foundry/themes.animate-marquee.json" with { type: "json" };
 import fill2 from "../catalog/fills/foundry/themes.animate-shiny-text.json" with { type: "json" };
@@ -94,7 +93,8 @@ export function loadCatalog(reportLeafFreeze?: Parameters<typeof assertFrozenLea
     const right = b.$extensions["com.clossys.fill"].id;
     return left < right ? -1 : left > right ? 1 : 0;
   });
-  const catalog = withA276BackdropGraphic(withAssetCatalog({
+  // Owner 2026-11-02: assets.backdrop-graphic is dropped; its draft contribution is not loaded.
+  const catalog = withAssetCatalog({
     slots: slots as unknown as readonly Slot[],
     standards: [standard0, standard1, standard2, standard3, standard4] as unknown as readonly Standard[],
     sources: [source0, source1, source2, source3, source4, source5, lucideSource] as unknown as readonly Source[],
@@ -102,7 +102,7 @@ export function loadCatalog(reportLeafFreeze?: Parameters<typeof assertFrozenLea
     fills,
     placements: [themePlacement] as unknown as readonly Placement[],
     retired: retired as unknown as readonly Retired[],
-  }));
+  });
   assertFrozenLeafSets(catalog.placements, catalog.slots, ["themes", "assets"], reportLeafFreeze);
   assertIAPlacements(catalog.placements, catalog.slots);
   return structuredClone(catalog);

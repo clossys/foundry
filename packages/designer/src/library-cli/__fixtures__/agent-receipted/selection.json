@@ -14,16 +14,6 @@
     },
     {
       "originKinds": [
-        "adopted"
-      ],
-      "rationale": null,
-      "slot": "assets.backdrop-graphic",
-      "sources": [
-        "foundry"
-      ]
-    },
-    {
-      "originKinds": [
         "derived"
       ],
       "rationale": null,

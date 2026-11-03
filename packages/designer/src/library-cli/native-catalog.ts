@@ -7,8 +7,7 @@ import { foundrySurfaceCatalog } from "./surface-catalog.js";
 const sourceDecisions: Readonly<Record<string, string | undefined>> = {
   "components.rich-text": "shadcn@aria",
   "components.semantic-content": "foundry",
-  // H3-A01..A12: asset policy is independent of candidate availability.
-  "assets.backdrop-graphic": "foundry",
+  // H3-A01..A12 (backdrop-graphic dropped by owner 2026-11-02): asset policy is independent of candidate availability.
   "assets.icon-check": "lucide",
   "assets.icon-chevron-down": "lucide",
   "assets.icon-chevron-left": "lucide",
