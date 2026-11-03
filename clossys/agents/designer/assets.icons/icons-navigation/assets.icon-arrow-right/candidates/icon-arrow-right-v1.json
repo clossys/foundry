@@ -24,7 +24,7 @@
       "license": "ISC"
     },
     "element": {
-      "id": "assets.icon-arrow-right/icon-arrow-right",
+      "id": "icon-arrow-right",
       "package": "designer",
       "layer": "assets",
       "slot": "assets.icon-arrow-right",

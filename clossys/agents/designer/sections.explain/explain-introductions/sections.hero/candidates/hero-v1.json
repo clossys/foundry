@@ -36,7 +36,7 @@
       }
     },
     "element": {
-      "id": "sections.hero/hero",
+      "id": "hero",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.hero",

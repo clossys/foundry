@@ -36,7 +36,7 @@
       }
     },
     "element": {
-      "id": "sections.specimen-spacing-ladder/specimen-spacing-ladder",
+      "id": "specimen-spacing-ladder",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.specimen-spacing-ladder",

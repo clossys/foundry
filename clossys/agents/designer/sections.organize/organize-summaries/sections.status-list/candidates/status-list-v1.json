@@ -36,7 +36,7 @@
       }
     },
     "element": {
-      "id": "sections.status-list/status-list",
+      "id": "status-list",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.status-list",

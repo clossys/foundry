@@ -34,7 +34,7 @@
       }
     },
     "element": {
-      "id": "components.toast/toast",
+      "id": "toast",
       "package": "designer",
       "layer": "components",
       "slot": "components.toast",

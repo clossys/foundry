@@ -39,7 +39,7 @@
       }
     },
     "element": {
-      "id": "sections.audit-log/audit-log",
+      "id": "audit-log",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.audit-log",

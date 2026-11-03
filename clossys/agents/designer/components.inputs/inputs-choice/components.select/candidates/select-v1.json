@@ -35,7 +35,7 @@
       }
     },
     "element": {
-      "id": "components.select/select",
+      "id": "select",
       "package": "designer",
       "layer": "components",
       "slot": "components.select",

@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "frames.site-footer/site-footer",
+      "id": "site-footer",
       "package": "designer",
       "layer": "frames",
       "slot": "frames.site-footer",

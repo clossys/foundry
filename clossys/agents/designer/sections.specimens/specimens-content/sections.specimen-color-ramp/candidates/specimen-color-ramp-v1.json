@@ -36,7 +36,7 @@
       }
     },
     "element": {
-      "id": "sections.specimen-color-ramp/specimen-color-ramp",
+      "id": "specimen-color-ramp",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.specimen-color-ramp",

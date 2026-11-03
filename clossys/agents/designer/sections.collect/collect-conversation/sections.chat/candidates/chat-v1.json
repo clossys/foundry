@@ -37,7 +37,7 @@
       }
     },
     "element": {
-      "id": "sections.chat/chat",
+      "id": "chat",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.chat",

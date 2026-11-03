@@ -38,7 +38,7 @@
       }
     },
     "element": {
-      "id": "sections.empty-state/empty-state",
+      "id": "empty-state",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.empty-state",

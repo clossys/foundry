@@ -36,7 +36,7 @@
       }
     },
     "element": {
-      "id": "components.command/command",
+      "id": "command",
       "package": "designer",
       "layer": "components",
       "slot": "components.command",

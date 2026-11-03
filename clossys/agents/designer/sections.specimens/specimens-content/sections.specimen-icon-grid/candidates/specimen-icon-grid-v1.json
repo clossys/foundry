@@ -36,7 +36,7 @@
       }
     },
     "element": {
-      "id": "sections.specimen-icon-grid/specimen-icon-grid",
+      "id": "specimen-icon-grid",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.specimen-icon-grid",

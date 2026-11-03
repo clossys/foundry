@@ -35,7 +35,7 @@
       }
     },
     "element": {
-      "id": "sections.media/media",
+      "id": "media",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.media",

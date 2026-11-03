@@ -36,7 +36,7 @@
       }
     },
     "element": {
-      "id": "components.chart-sparkline/chart-sparkline",
+      "id": "chart-sparkline",
       "package": "designer",
       "layer": "components",
       "slot": "components.chart-sparkline",

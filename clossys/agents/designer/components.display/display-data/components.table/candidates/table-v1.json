@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "components.table/table",
+      "id": "table",
       "package": "designer",
       "layer": "components",
       "slot": "components.table",

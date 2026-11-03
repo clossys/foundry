@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "components.meter/meter",
+      "id": "meter",
       "package": "designer",
       "layer": "components",
       "slot": "components.meter",

@@ -43,7 +43,7 @@
       }
     },
     "element": {
-      "id": "sections.legal-prose/legal-prose",
+      "id": "legal-prose",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.legal-prose",

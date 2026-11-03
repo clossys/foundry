@@ -24,7 +24,7 @@
       "license": "ISC"
     },
     "element": {
-      "id": "assets.icon-integration/icon-integration",
+      "id": "icon-integration",
       "package": "designer",
       "layer": "assets",
       "slot": "assets.icon-integration",

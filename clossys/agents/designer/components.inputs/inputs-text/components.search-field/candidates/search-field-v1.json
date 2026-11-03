@@ -37,7 +37,7 @@
       }
     },
     "element": {
-      "id": "components.search-field/search-field",
+      "id": "search-field",
       "package": "designer",
       "layer": "components",
       "slot": "components.search-field",

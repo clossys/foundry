@@ -37,7 +37,7 @@
       }
     },
     "element": {
-      "id": "sections.comparison/comparison",
+      "id": "comparison",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.comparison",

@@ -25,7 +25,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "themes.tracking-tight/tracking-tight",
+      "id": "tracking-tight",
       "package": "designer",
       "layer": "themes",
       "slot": "themes.tracking-tight",

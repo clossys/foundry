@@ -36,7 +36,7 @@
       }
     },
     "element": {
-      "id": "sections.resource-list/resource-list",
+      "id": "resource-list",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.resource-list",

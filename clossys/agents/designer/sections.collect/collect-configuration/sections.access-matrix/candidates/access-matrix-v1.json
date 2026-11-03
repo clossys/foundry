@@ -39,7 +39,7 @@
       }
     },
     "element": {
-      "id": "sections.access-matrix/access-matrix",
+      "id": "access-matrix",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.access-matrix",

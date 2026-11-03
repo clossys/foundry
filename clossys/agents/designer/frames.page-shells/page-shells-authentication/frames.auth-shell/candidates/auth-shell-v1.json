@@ -47,7 +47,7 @@
       }
     },
     "element": {
-      "id": "frames.auth-shell/auth-shell",
+      "id": "auth-shell",
       "package": "designer",
       "layer": "frames",
       "slot": "frames.auth-shell",

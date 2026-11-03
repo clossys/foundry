@@ -38,7 +38,7 @@
       }
     },
     "element": {
-      "id": "frames.inspector/inspector",
+      "id": "inspector",
       "package": "designer",
       "layer": "frames",
       "slot": "frames.inspector",

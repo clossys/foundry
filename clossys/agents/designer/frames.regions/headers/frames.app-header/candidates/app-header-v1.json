@@ -70,7 +70,7 @@
       }
     },
     "element": {
-      "id": "frames.app-header/app-header",
+      "id": "app-header",
       "package": "designer",
       "layer": "frames",
       "slot": "frames.app-header",

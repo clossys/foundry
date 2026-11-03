@@ -27,7 +27,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "themes.ring/ring",
+      "id": "ring",
       "package": "designer",
       "layer": "themes",
       "slot": "themes.ring",

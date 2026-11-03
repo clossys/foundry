@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "components.scroll-area/scroll-area",
+      "id": "scroll-area",
       "package": "designer",
       "layer": "components",
       "slot": "components.scroll-area",

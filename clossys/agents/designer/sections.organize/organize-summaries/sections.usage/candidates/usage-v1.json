@@ -38,7 +38,7 @@
       }
     },
     "element": {
-      "id": "sections.usage/usage",
+      "id": "usage",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.usage",

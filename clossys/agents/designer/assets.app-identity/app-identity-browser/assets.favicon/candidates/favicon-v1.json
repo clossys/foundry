@@ -24,7 +24,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "assets.favicon/favicon",
+      "id": "favicon",
       "package": "designer",
       "layer": "assets",
       "slot": "assets.favicon",

@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "components.toggle-button/toggle-button",
+      "id": "toggle-button",
       "package": "designer",
       "layer": "components",
       "slot": "components.toggle-button",

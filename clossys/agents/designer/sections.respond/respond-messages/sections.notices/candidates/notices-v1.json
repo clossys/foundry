@@ -36,7 +36,7 @@
       }
     },
     "element": {
-      "id": "sections.notices/notices",
+      "id": "notices",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.notices",

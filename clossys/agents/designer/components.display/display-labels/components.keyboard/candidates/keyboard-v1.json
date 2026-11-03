@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "components.keyboard/keyboard",
+      "id": "keyboard",
       "package": "designer",
       "layer": "components",
       "slot": "components.keyboard",

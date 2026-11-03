@@ -24,7 +24,7 @@
       "license": "ISC"
     },
     "element": {
-      "id": "assets.icon-list-view/icon-list-view",
+      "id": "icon-list-view",
       "package": "designer",
       "layer": "assets",
       "slot": "assets.icon-list-view",

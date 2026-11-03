@@ -34,7 +34,7 @@
       }
     },
     "element": {
-      "id": "sections.features/features",
+      "id": "features",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.features",

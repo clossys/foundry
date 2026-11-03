@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "components.spinner/spinner",
+      "id": "spinner",
       "package": "designer",
       "layer": "components",
       "slot": "components.spinner",

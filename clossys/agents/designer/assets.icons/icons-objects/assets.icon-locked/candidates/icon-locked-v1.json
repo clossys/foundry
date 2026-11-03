@@ -24,7 +24,7 @@
       "license": "ISC"
     },
     "element": {
-      "id": "assets.icon-locked/icon-locked",
+      "id": "icon-locked",
       "package": "designer",
       "layer": "assets",
       "slot": "assets.icon-locked",

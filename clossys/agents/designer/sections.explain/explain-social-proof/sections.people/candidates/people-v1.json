@@ -31,7 +31,7 @@
       }
     },
     "element": {
-      "id": "sections.people/people",
+      "id": "people",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.people",

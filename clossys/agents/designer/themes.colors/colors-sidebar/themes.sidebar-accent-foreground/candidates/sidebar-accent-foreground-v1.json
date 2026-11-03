@@ -27,7 +27,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "themes.sidebar-accent-foreground/sidebar-accent-foreground",
+      "id": "sidebar-accent-foreground",
       "package": "designer",
       "layer": "themes",
       "slot": "themes.sidebar-accent-foreground",

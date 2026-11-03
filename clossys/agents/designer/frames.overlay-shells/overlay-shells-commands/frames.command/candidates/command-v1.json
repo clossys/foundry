@@ -36,7 +36,7 @@
       }
     },
     "element": {
-      "id": "frames.command/command",
+      "id": "command",
       "package": "designer",
       "layer": "frames",
       "slot": "frames.command",

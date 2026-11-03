@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "components.separator/separator",
+      "id": "separator",
       "package": "designer",
       "layer": "components",
       "slot": "components.separator",

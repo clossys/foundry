@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "components.text-field/text-field",
+      "id": "text-field",
       "package": "designer",
       "layer": "components",
       "slot": "components.text-field",

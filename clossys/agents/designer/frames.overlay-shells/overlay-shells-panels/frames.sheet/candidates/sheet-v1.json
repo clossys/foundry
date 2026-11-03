@@ -38,7 +38,7 @@
       }
     },
     "element": {
-      "id": "frames.sheet/sheet",
+      "id": "sheet",
       "package": "designer",
       "layer": "frames",
       "slot": "frames.sheet",

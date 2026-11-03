@@ -43,7 +43,7 @@
       }
     },
     "element": {
-      "id": "sections.article/article",
+      "id": "article",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.article",

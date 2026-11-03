@@ -24,7 +24,7 @@
       "license": "ISC"
     },
     "element": {
-      "id": "assets.icon-chevron-right/icon-chevron-right",
+      "id": "icon-chevron-right",
       "package": "designer",
       "layer": "assets",
       "slot": "assets.icon-chevron-right",

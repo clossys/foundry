@@ -70,7 +70,7 @@
       }
     },
     "element": {
-      "id": "frames.app-sidebar/app-sidebar",
+      "id": "app-sidebar",
       "package": "designer",
       "layer": "frames",
       "slot": "frames.app-sidebar",

@@ -31,7 +31,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "themes.shadow/shadow",
+      "id": "shadow",
       "package": "designer",
       "layer": "themes",
       "slot": "themes.shadow",

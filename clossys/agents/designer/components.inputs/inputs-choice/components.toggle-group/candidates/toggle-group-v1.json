@@ -35,7 +35,7 @@
       }
     },
     "element": {
-      "id": "components.toggle-group/toggle-group",
+      "id": "toggle-group",
       "package": "designer",
       "layer": "components",
       "slot": "components.toggle-group",

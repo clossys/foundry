@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "components.link/link",
+      "id": "link",
       "package": "designer",
       "layer": "components",
       "slot": "components.link",

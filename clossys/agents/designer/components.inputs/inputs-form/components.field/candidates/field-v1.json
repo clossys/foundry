@@ -36,7 +36,7 @@
       }
     },
     "element": {
-      "id": "components.field/field",
+      "id": "field",
       "package": "designer",
       "layer": "components",
       "slot": "components.field",

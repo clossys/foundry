@@ -34,7 +34,7 @@
       }
     },
     "element": {
-      "id": "components.tag-group/tag-group",
+      "id": "tag-group",
       "package": "designer",
       "layer": "components",
       "slot": "components.tag-group",

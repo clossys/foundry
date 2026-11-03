@@ -36,7 +36,7 @@
       }
     },
     "element": {
-      "id": "sections.link-index/link-index",
+      "id": "link-index",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.link-index",

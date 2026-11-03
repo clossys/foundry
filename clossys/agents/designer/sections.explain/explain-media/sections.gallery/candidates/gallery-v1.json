@@ -36,7 +36,7 @@
       }
     },
     "element": {
-      "id": "sections.gallery/gallery",
+      "id": "gallery",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.gallery",

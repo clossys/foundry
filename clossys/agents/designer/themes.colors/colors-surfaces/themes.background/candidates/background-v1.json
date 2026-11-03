@@ -27,7 +27,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "themes.background/background",
+      "id": "background",
       "package": "designer",
       "layer": "themes",
       "slot": "themes.background",

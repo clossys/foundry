@@ -24,7 +24,7 @@
       "license": "ISC"
     },
     "element": {
-      "id": "assets.icon-theme-system/icon-theme-system",
+      "id": "icon-theme-system",
       "package": "designer",
       "layer": "assets",
       "slot": "assets.icon-theme-system",
