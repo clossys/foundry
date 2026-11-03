@@ -83,10 +83,12 @@ describe("rendering", () => {
     expect(page.html).not.toContain("data-over");
   });
 
-  it("renders stubs for data and a reported page for a missing record", async () => {
+  it("reports a data record it cannot draw and a missing record", async () => {
     const builder = createSpecimenBuilder();
     const table = await renderSpecimen({ source, builder, query: { element: "sample-table" }, nonce: "n" });
-    expect(table.html).toContain('data-specimen-stub="data"');
+    expect(table.html).toContain('data-specimen-unavailable="data"');
+    expect(table.html).not.toContain("no renderer yet");
+    expect(table.html).toContain("no data renderer for this payload");
     const missing = await renderSpecimen({ source, builder, query: { element: "nope" }, nonce: "n" });
     expect(missing.status).toBe(404);
     expect(missing.html).toContain("element nope not found");

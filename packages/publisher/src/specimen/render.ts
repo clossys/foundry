@@ -3,12 +3,15 @@
  *
  * - visual: the element's production bundle mounts it client-side with its fixture props;
  * - text: copy set at its slot's real limits with the theme's typography;
- * - data, media, flow: a stub naming the record until their renderers exist.
+ * - data: token values drawn as swatches, ramps, ladders and type samples (render-tokens.ts);
+ * - media: the asset itself, from the item's DTCG members and SVG files (render-tokens.ts);
+ * - flow: no renderer yet, reported as a problem so the host shows the page as unavailable.
  *
  * The health reporter runs first in `<head>`, so it sees every error the page raises.
  */
 import { specimenReporterScript } from "./health-reporter.js";
 import { themeCss, type SpecimenMode } from "./theme.js";
+import { renderDataSpecimen, renderMediaSpecimen } from "./render-tokens.js";
 import type { SpecimenBuild } from "./build.js";
 import type { SpecimenCopy, SpecimenQuery, SpecimenRecord, SpecimenTheme } from "./types.js";
 
@@ -67,10 +70,6 @@ function renderText(record: SpecimenRecord): string {
 /** Counts rendered lines against each copy's line limit (layout is only known in the browser). */
 const TEXT_FIT_SCRIPT = `(()=>{const fit=()=>{for(const row of document.querySelectorAll(".specimen-copy[data-max-lines]")){const text=row.querySelector(".specimen-copy-text");const style=getComputedStyle(text);const line=parseFloat(style.lineHeight)||parseFloat(style.fontSize)*1.2;const clamp=text.style.webkitLineClamp;text.style.webkitLineClamp="unset";text.style.display="block";const lines=Math.max(1,Math.round(text.scrollHeight/line));text.style.removeProperty("display");text.style.webkitLineClamp=clamp;const max=Number(row.dataset.maxLines);row.dataset.lines=String(lines);const out=row.querySelector("[data-specimen-lines]");if(out)out.textContent=String(lines);if(lines>max)row.dataset.over=row.dataset.over?row.dataset.over+" lines":"lines";}};document.fonts&&document.fonts.ready?document.fonts.ready.then(fit):fit();})();`;
 
-function renderStub(record: SpecimenRecord): string {
-  return `<div class="specimen-stub" data-specimen-stub="${record.kind}"><strong>${escapeHtml(record.id)}@v${record.version}</strong><br>${escapeHtml(record.kind)} specimen: this record kind has no renderer yet.<br>Payload: ${escapeHtml(record.payload.path)}</div>`;
-}
-
 function wrap(container: string, body: string): string {
   if (container === "canvas") return `<div class="specimen-canvas">${body}</div>`;
   if (container === "section-in-frame") return `<div class="specimen-frame"><main>${body}</main></div>`;
@@ -119,11 +118,7 @@ export function renderSpecimenPage(input: SpecimenPageInput): string {
   const { record, query, build } = input;
   const width = query.width ?? record?.preview.width ?? null;
   const themeLabel = `${input.theme?.id ?? "none"}:${input.mode}`;
-  const problems = [...(input.problems ?? []), ...(build?.errors ?? []).map(message => ({ source: "build", message }))];
-  const reporter = specimenReporterScript({
-    element: query.element, elementVersion: record?.version ?? query.version ?? null, kind: record?.kind ?? "unknown",
-    theme: themeLabel, width, preErrors: problems,
-  });
+  const problems: SpecimenProblem[] = [...(input.problems ?? []), ...(build?.errors ?? []).map(message => ({ source: "build", message }))];
   let body: string, scripts = "";
   if (!record) {
     body = `<div class="specimen-missing" data-specimen-missing><strong>${escapeHtml(query.element)}${query.version ? `@v${query.version}` : ""}</strong><br>No such element record.</div>`;
@@ -135,8 +130,17 @@ export function renderSpecimenPage(input: SpecimenPageInput): string {
     body = renderText(record);
     scripts = `<script nonce="${escapeHtml(input.nonce)}">${TEXT_FIT_SCRIPT}</script>`;
   } else {
-    body = renderStub(record);
+    // A kind with no renderer reports a problem (never a raw note), so its host shows it as unavailable.
+    const drawn = record.kind === "data" ? renderDataSpecimen(record, input.mode)
+      : record.kind === "media" ? renderMediaSpecimen(record)
+      : { html: `<div class="specimen-unavailable" data-specimen-unavailable="${record.kind}"></div>`, problems: [{ source: "render", message: `${record.id}: ${record.kind} specimens have no renderer` }] };
+    body = drawn.html;
+    problems.push(...drawn.problems);
   }
+  const reporter = specimenReporterScript({
+    element: query.element, elementVersion: record?.version ?? query.version ?? null, kind: record?.kind ?? "unknown",
+    theme: themeLabel, width, preErrors: problems,
+  });
   scripts += `<script nonce="${escapeHtml(input.nonce)}">${SPECIMEN_SIZE_SCRIPT}</script>`;
   const container = record?.preview.container ?? (record?.kind === "visual" ? "canvas" : "page");
   const head = [
