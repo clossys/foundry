@@ -6,6 +6,7 @@
  * no Studio route string is built anywhere else.
  */
 import { projectBreadcrumbs, projectCommands, projectNavigation, type ContentMap, type ContentMapBreadcrumb, type ContentMapCommandGroup, type ContentMapEntry, type ContentMapNavigation, type ContentMapNode } from '@clossys/publisher/content-map';
+import { studioCopy } from './studio-copy';
 import { studioHomeId, studioLeaves, studioMap, studioPages, type StudioAssemblySpec, type StudioLeaf, type StudioPageRecord } from '../generated/studio-map';
 
 const pageById = new Map(studioPages.map(page => [page.id, page]));
@@ -18,8 +19,8 @@ function runtimeMap(): ContentMap {
   const extra: ContentMapEntry[] = studioLeaves.flatMap((leaf, index) => {
     const tab = pageById.get(leaf.page);
     const parent = entryById.get(leaf.page)?.parentId;
-    if (!tab?.leaf || parent === undefined) return [];
-    return [{ id: leafId(leaf), parentId: parent, order: 1000 + index, title: leaf.title ?? leaf.slug, kind: 'page', path: leaf.path, source: { frameId: tab.frameId, sectionIds: [...tab.leaf.sectionIds] } } as ContentMapEntry];
+    if (!tab?.leaf || parent === undefined || !leaf.title) return [];
+    return [{ id: leafId(leaf), parentId: parent, order: 1000 + index, title: leaf.title, kind: 'page', path: leaf.path, source: { frameId: tab.frameId, sectionIds: [...tab.leaf.sectionIds] } } as ContentMapEntry];
   });
   return { ...studioMap, entries: [...studioMap.entries, ...extra] };
 }
@@ -64,7 +65,8 @@ export function studioShellProjection(map: ContentMap, entryId: string): StudioS
   return {
     homeHref: home && 'path' in home && home.path ? home.path : '/',
     navigation: projectNavigation(map, navigationActive(map, entryId)),
-    commands: projectCommands(map),
+    // Root pages group under the publication id; Studio shows the publication by its Writer name.
+    commands: projectCommands(map).map(group => group.label === map.publicationId ? { ...group, label: studioCopy('studio.studio') } : group),
     breadcrumbs: studioBreadcrumbs(map, entryId),
   };
 }

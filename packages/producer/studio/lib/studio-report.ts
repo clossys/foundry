@@ -1,4 +1,5 @@
 import { studioCopy } from './studio-copy';
+import { studioGroups, studioLeafTitle } from './studio-route-map';
 /**
  * Studio reports: Producer facts that used to replace the page now render as
  * a non-blocking list. The session token in /api/config is never read here.
@@ -20,9 +21,13 @@ export function reportText(message: string): string {
     .trim();
 }
 
+/** A Designer slot named in a message, by its projected label; a slot the map does not hold keeps its id. */
 function layerLabel(layer: string, name: string): string {
-  return `${name.charAt(0).toUpperCase()}${name.slice(1).replace(/-/g, ' ')} ${layer.replace(/s$/, '')}`;
+  return studioLeafTitle('designer', `${layer}.${name}`) ?? `${layer}.${name}`;
 }
+
+/** An agent by its content-map group title; an agent the map does not hold keeps its id. */
+const agentTitle = (agent: string) => studioGroups().find(group => group.id === agent)?.title ?? agent;
 
 function slotLabel(message: string): string | undefined {
   const slot = /slot ([a-z][a-z0-9-]*)\.([a-z][a-z0-9-]*)/.exec(message);
@@ -38,13 +43,13 @@ export function studioReports(config: unknown): StudioReport[] {
     const message = typeof selection.message === 'string' ? selection.message : studioCopy("studio.the-designer-selection-is-not-compiled");
     const slot = slotLabel(message);
     const reason = reportText(message).split(': ').at(-1)!.replace(/\s+for slot .*$/, '').replace(/\.$/, '');
-    reports.push({ id: 'selection', area: 'selection', severity: 'warning', title: slot ? studioCopy("studio.designer-selection-detail", { value0: String(slot) }) : studioCopy("studio.designer-selection-not-qualified"), detail: studioCopy("studio.selection-fallback-detail", { reason: reason.charAt(0).toUpperCase() + reason.slice(1) }) });
+    reports.push({ id: 'selection', area: 'selection', severity: 'warning', title: slot ? studioCopy("studio.designer-selection-detail", { value0: String(slot) }) : studioCopy("studio.designer-selection-not-qualified"), detail: studioCopy("studio.selection-fallback-detail", { reason }) });
   }
   const theme = object(config.theme) ? config.theme : undefined;
   if (theme?.source === 'foundry') reports.push({ id: 'theme', area: 'theme', severity: 'info', title: studioCopy("studio.consumer-theme-not-compiled"), detail: typeof theme.message === 'string' ? reportText(theme.message) : studioCopy("studio.producer-is-using-the-foundry-theme") });
   if (Array.isArray(config.compilation)) for (const row of config.compilation) {
     if (!object(row) || typeof row.agent !== 'string' || row.state !== 'error') continue;
-    reports.push({ id: `compile:${row.agent}`, area: 'compile', severity: 'error', agent: row.agent, title: studioCopy("studio.agent-compile-failed", { agent: row.agent.charAt(0).toUpperCase() + row.agent.slice(1) }), detail: typeof row.message === 'string' ? reportText(row.message) : studioCopy("studio.producer-could-not-compile-these-cells") });
+    reports.push({ id: `compile:${row.agent}`, area: 'compile', severity: 'error', agent: row.agent, title: studioCopy("studio.agent-compile-failed", { agent: agentTitle(row.agent) }), detail: typeof row.message === 'string' ? reportText(row.message) : studioCopy("studio.producer-could-not-compile-these-cells") });
   }
   return reports;
 }

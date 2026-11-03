@@ -1,5 +1,7 @@
 /** Detail-only projection. Slot metadata, candidates and pins have one reader. */
 import { join } from "node:path";
+import { copyRef, type CopyText } from "./copy-ref.js";
+import { slotLabel } from "../records/slot-labels.js";
 import { recordSpecimenInput, type RecordSpecimenInput } from "./slot-gallery.js";
 import { hasSlotModel, inspectSlot, listSlots, pinHistory, readCandidate, readIa, readiness, slotIndex, usedByPlaced } from "../records/slots.js";
 import { CANDIDATE_NAME, parseFrontmatter, validateCandidate, type SlotAgent } from "../records/slot-model/index.js";
@@ -13,13 +15,16 @@ export interface DetailCandidate {
 }
 export interface SlotDetail {
   agent: SlotAgent; id: string; kind: string; trail: string[];
+  /** The slot's display label, from the one label resolver (src/records/slot-labels.ts). */
+  name: string;
   contract: Readonly<Record<string, unknown>>; inputs: readonly string[]; uses: readonly string[];
   usedBy: { agent: SlotAgent; id: string }[];
   links: { agent: SlotAgent; id: string }[];
   candidates: DetailCandidate[]; shown?: string;
   pin: ReturnType<typeof listSlots>[number]["pin"];
   history: ReturnType<typeof pinHistory>;
-  checks: { label: string; ok: boolean; detail: string }[];
+  /** Each check names its words by Writer copy key; ids, candidate names and issues stay data. */
+  checks: { label: CopyText; ok: boolean; detail: CopyText }[];
 }
 
 /** Undefined means no such IA slot; an empty IA slot still returns a full detail. */
@@ -69,20 +74,20 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
   const refs = [...new Set([...doc.inputs, ...doc.uses])];
   const inputReadiness = placed ? readiness(consumer, agent, id, index) : { ready: false, blockedBy: [{ slot: id, reason: "invalid-slot" as const }] };
   return {
-    agent, id, kind: doc.kind, trail: [node?.label, group?.label].filter((label): label is string => !!label),
+    agent, id, name: slotLabel(consumer, agent, id), kind: doc.kind, trail: [node?.label, group?.label].filter((label): label is string => !!label),
     contract: doc.contract, inputs: doc.inputs, uses: doc.uses, usedBy: usedByPlaced(consumer, id),
     links: refs.flatMap(ref => { const target = index.get(ref); return target ? [{ agent: target.agent, id: ref }] : []; }),
     candidates, shown: (pinCandidate ?? candidates.at(-1))?.name, pin: entry.pin,
     history: pinHistory(consumer, agent, id),
     checks: [
-      { label: "Candidate recorded", ok: candidates.length > 0, detail: `${candidates.length} candidates` },
-      { label: "Pin names a recorded candidate", ok: !!pinCandidate, detail: entry.pin?.candidate ?? "No pin" },
-      { label: "Pin matches candidate bytes", ok: !!pinCandidate && pinCandidate.sha256 === entry.pin?.sha256, detail: entry.pin ? (pinCandidate?.sha256 === entry.pin.sha256 ? entry.pin.sha256 : "Pin hash does not match candidate bytes") : "No pin" },
-      ...candidates.map(candidate => ({ label: candidate.name, ok: !candidate.issues.length, detail: candidate.issues.join("; ") || "Candidate format valid" })),
-      { label: "Slot record matches its IA position", ok: placed, detail: placed ? "Slot record matches its IA position" : "Slot record does not match its IA position" },
-      { label: "Inputs ready", ok: inputReadiness.ready, detail: inputReadiness.ready ? "Inputs ready" : "Inputs blocked" },
+      { label: copyRef("studio.check-candidate-recorded"), ok: candidates.length > 0, detail: copyRef("studio.check-candidate-count", { count: candidates.length }) },
+      { label: copyRef("studio.check-pin-names-candidate"), ok: !!pinCandidate, detail: entry.pin?.candidate ?? copyRef("studio.no-pin") },
+      { label: copyRef("studio.check-pin-matches"), ok: !!pinCandidate && pinCandidate.sha256 === entry.pin?.sha256, detail: entry.pin ? (pinCandidate?.sha256 === entry.pin.sha256 ? entry.pin.sha256 : copyRef("studio.check-pin-hash-mismatch")) : copyRef("studio.no-pin") },
+      ...candidates.map(candidate => ({ label: candidate.name, ok: !candidate.issues.length, detail: candidate.issues.length ? candidate.issues.join("; ") : copyRef("studio.check-candidate-format-valid") })),
+      { label: copyRef("studio.check-slot-placed"), ok: placed, detail: placed ? copyRef("studio.check-slot-placed") : copyRef("studio.check-slot-misplaced") },
+      { label: copyRef("studio.check-inputs-ready"), ok: inputReadiness.ready, detail: inputReadiness.ready ? copyRef("studio.check-inputs-ready") : copyRef("studio.check-inputs-blocked") },
       ...inputReadiness.blockedBy.map(({ slot, reason }) => ({ label: slot, ok: false, detail: reason })),
-      ...refs.map(ref => ({ label: ref, ok: index.has(ref), detail: index.has(ref) ? "Slot reference resolves" : "Unknown slot reference" })),
+      ...refs.map(ref => ({ label: ref, ok: index.has(ref), detail: index.has(ref) ? copyRef("studio.check-reference-resolves") : copyRef("studio.check-reference-unknown") })),
     ],
   };
 }

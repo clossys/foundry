@@ -30,7 +30,7 @@
         "actions": [
           {
             "id": "needs",
-            "label": "Needs",
+            "label": "studio.needs",
             "icon": "assets.icon-needs",
             "defaultOpen": false,
             "module": {
@@ -4255,7 +4255,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -4264,7 +4264,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -4332,7 +4332,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -4341,7 +4341,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -4409,7 +4409,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -4418,7 +4418,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -4486,7 +4486,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -4495,7 +4495,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -4563,7 +4563,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -4572,7 +4572,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -4640,7 +4640,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -4649,7 +4649,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -4717,7 +4717,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -4726,7 +4726,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -4794,7 +4794,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -4803,7 +4803,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -4871,7 +4871,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -4880,7 +4880,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -4948,7 +4948,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -4957,7 +4957,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -5025,7 +5025,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -5034,7 +5034,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -5102,7 +5102,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -5111,7 +5111,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -5179,7 +5179,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -5188,7 +5188,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -5256,7 +5256,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -5265,7 +5265,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -5333,7 +5333,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -5342,7 +5342,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -5410,7 +5410,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -5419,7 +5419,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -5487,7 +5487,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -5496,7 +5496,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -5564,7 +5564,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -5573,7 +5573,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -5641,7 +5641,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -5650,7 +5650,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -5721,7 +5721,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -5730,7 +5730,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -5800,7 +5800,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -5809,7 +5809,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -5818,7 +5818,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -5829,10 +5829,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -5917,7 +5917,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -5926,7 +5926,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -5996,7 +5996,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -6005,7 +6005,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -6014,7 +6014,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -6025,10 +6025,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -6113,7 +6113,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -6122,7 +6122,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -6192,7 +6192,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -6201,7 +6201,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -6210,7 +6210,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -6221,10 +6221,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -6309,7 +6309,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -6318,7 +6318,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -6388,7 +6388,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -6397,7 +6397,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -6406,7 +6406,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -6417,10 +6417,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -6505,7 +6505,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -6514,7 +6514,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -6584,7 +6584,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -6593,7 +6593,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -6602,7 +6602,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -6613,10 +6613,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -6701,7 +6701,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -6710,7 +6710,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -6780,7 +6780,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -6789,7 +6789,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -6798,7 +6798,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -6809,10 +6809,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -6897,7 +6897,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -6906,7 +6906,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -6976,7 +6976,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -6985,7 +6985,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -6994,7 +6994,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -7005,10 +7005,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -7093,7 +7093,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -7102,7 +7102,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -7172,7 +7172,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -7181,7 +7181,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -7190,7 +7190,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -7201,10 +7201,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -7289,7 +7289,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -7298,7 +7298,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -7368,7 +7368,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -7377,7 +7377,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -7386,7 +7386,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -7397,10 +7397,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -7485,7 +7485,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -7494,7 +7494,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -7564,7 +7564,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -7573,7 +7573,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -7582,7 +7582,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -7593,10 +7593,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -7681,7 +7681,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -7690,7 +7690,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -7760,7 +7760,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -7769,7 +7769,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -7778,7 +7778,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -7789,10 +7789,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -7877,7 +7877,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -7886,7 +7886,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -7956,7 +7956,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -7965,7 +7965,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -7974,7 +7974,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -7985,10 +7985,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -8073,7 +8073,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -8082,7 +8082,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -8152,7 +8152,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -8161,7 +8161,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -8170,7 +8170,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -8181,10 +8181,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -8269,7 +8269,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -8278,7 +8278,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -8348,7 +8348,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -8357,7 +8357,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -8366,7 +8366,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -8377,10 +8377,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -8465,7 +8465,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -8474,7 +8474,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -8544,7 +8544,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -8553,7 +8553,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -8562,7 +8562,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -8573,10 +8573,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -8661,7 +8661,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -8670,7 +8670,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -8740,7 +8740,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -8749,7 +8749,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -8758,7 +8758,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -8769,10 +8769,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -8857,7 +8857,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -8866,7 +8866,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -8936,7 +8936,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -8945,7 +8945,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -8954,7 +8954,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -8965,10 +8965,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -9053,7 +9053,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -9062,7 +9062,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -9132,7 +9132,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -9141,7 +9141,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -9150,7 +9150,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -9161,10 +9161,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -9249,7 +9249,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -9258,7 +9258,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -9328,7 +9328,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -9337,7 +9337,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -9346,7 +9346,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -9357,10 +9357,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -9445,7 +9445,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -9454,7 +9454,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -9524,7 +9524,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -9533,7 +9533,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -9542,7 +9542,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -9553,10 +9553,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -9641,7 +9641,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -9650,7 +9650,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -9720,7 +9720,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -9729,7 +9729,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -9738,7 +9738,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -9749,10 +9749,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -9837,7 +9837,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -9846,7 +9846,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -9916,7 +9916,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -9925,7 +9925,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -9934,7 +9934,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -9945,10 +9945,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -10033,7 +10033,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -10042,7 +10042,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -10112,7 +10112,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -10121,7 +10121,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -10130,7 +10130,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -10141,10 +10141,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -10229,7 +10229,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -10238,7 +10238,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -10308,7 +10308,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -10317,7 +10317,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -10326,7 +10326,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -10337,10 +10337,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -10425,7 +10425,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -10434,7 +10434,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -10504,7 +10504,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -10513,7 +10513,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -10522,7 +10522,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -10533,10 +10533,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -10621,7 +10621,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -10630,7 +10630,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -10700,7 +10700,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -10709,7 +10709,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -10718,7 +10718,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -10729,10 +10729,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -10817,7 +10817,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -10826,7 +10826,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -10896,7 +10896,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -10905,7 +10905,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -10914,7 +10914,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -10925,10 +10925,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -11013,7 +11013,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -11022,7 +11022,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -11092,7 +11092,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -11101,7 +11101,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -11110,7 +11110,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -11121,10 +11121,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -11213,7 +11213,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -11222,7 +11222,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -11292,7 +11292,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -11301,7 +11301,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -11310,7 +11310,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -11321,10 +11321,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -11409,7 +11409,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -11418,7 +11418,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -11488,7 +11488,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -11497,7 +11497,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -11506,7 +11506,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -11517,10 +11517,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -11606,7 +11606,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -11615,7 +11615,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -11685,7 +11685,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -11694,7 +11694,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -11703,7 +11703,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -11714,10 +11714,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -11802,7 +11802,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -11811,7 +11811,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -11881,7 +11881,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -11890,7 +11890,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -11899,7 +11899,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -11910,10 +11910,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -11998,7 +11998,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -12007,7 +12007,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -12077,7 +12077,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -12086,7 +12086,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -12095,7 +12095,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -12106,10 +12106,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -12194,7 +12194,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -12203,7 +12203,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -12273,7 +12273,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -12282,7 +12282,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -12291,7 +12291,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -12302,10 +12302,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -12390,7 +12390,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -12399,7 +12399,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -12469,7 +12469,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -12478,7 +12478,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -12487,7 +12487,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -12498,10 +12498,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -12587,7 +12587,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -12596,7 +12596,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -12666,7 +12666,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -12675,7 +12675,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -12684,7 +12684,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -12695,10 +12695,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -12786,7 +12786,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -12795,7 +12795,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -12865,7 +12865,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -12874,7 +12874,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -12883,7 +12883,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -12894,10 +12894,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -12984,7 +12984,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -12993,7 +12993,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -13063,7 +13063,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -13072,7 +13072,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -13081,7 +13081,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -13092,10 +13092,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -13182,7 +13182,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -13191,7 +13191,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -13261,7 +13261,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -13270,7 +13270,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -13279,7 +13279,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -13290,10 +13290,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -13385,7 +13385,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -13394,7 +13394,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -13464,7 +13464,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -13473,7 +13473,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -13482,7 +13482,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -13493,10 +13493,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -13588,7 +13588,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -13597,7 +13597,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -13667,7 +13667,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -13676,7 +13676,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -13685,7 +13685,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -13696,10 +13696,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -13786,7 +13786,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -13795,7 +13795,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -13865,7 +13865,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -13874,7 +13874,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -13883,7 +13883,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -13894,10 +13894,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -13984,7 +13984,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -13993,7 +13993,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -14063,7 +14063,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -14072,7 +14072,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -14081,7 +14081,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -14092,10 +14092,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -14181,7 +14181,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -14190,7 +14190,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -14260,7 +14260,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -14269,7 +14269,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -14278,7 +14278,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -14289,10 +14289,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -14377,7 +14377,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -14386,7 +14386,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -14456,7 +14456,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -14465,7 +14465,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -14474,7 +14474,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -14485,10 +14485,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -14574,7 +14574,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -14583,7 +14583,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -14653,7 +14653,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -14662,7 +14662,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -14671,7 +14671,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -14682,10 +14682,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -14775,7 +14775,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -14784,7 +14784,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -14854,7 +14854,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -14863,7 +14863,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -14872,7 +14872,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -14883,10 +14883,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -14975,7 +14975,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -14984,7 +14984,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -15054,7 +15054,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -15063,7 +15063,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -15072,7 +15072,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -15083,10 +15083,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -15176,7 +15176,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -15185,7 +15185,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -15255,7 +15255,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -15264,7 +15264,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -15273,7 +15273,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -15284,10 +15284,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -15373,7 +15373,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -15382,7 +15382,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -15452,7 +15452,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -15461,7 +15461,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -15470,7 +15470,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -15481,10 +15481,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -15570,7 +15570,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -15579,7 +15579,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -15649,7 +15649,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -15658,7 +15658,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -15667,7 +15667,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -15678,10 +15678,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -15766,7 +15766,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -15775,7 +15775,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -15845,7 +15845,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -15854,7 +15854,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -15863,7 +15863,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -15874,10 +15874,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -15964,7 +15964,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -15973,7 +15973,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -16043,7 +16043,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -16052,7 +16052,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -16061,7 +16061,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -16072,10 +16072,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -16163,7 +16163,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -16172,7 +16172,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -16242,7 +16242,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -16251,7 +16251,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -16260,7 +16260,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -16271,10 +16271,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -16360,7 +16360,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -16369,7 +16369,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -16439,7 +16439,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -16448,7 +16448,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -16457,7 +16457,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -16468,10 +16468,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -16556,7 +16556,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -16565,7 +16565,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -16635,7 +16635,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -16644,7 +16644,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -16653,7 +16653,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -16664,10 +16664,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -16754,7 +16754,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -16763,7 +16763,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -16833,7 +16833,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -16842,7 +16842,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -16851,7 +16851,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -16862,10 +16862,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -16954,7 +16954,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -16963,7 +16963,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -17033,7 +17033,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -17042,7 +17042,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -17051,7 +17051,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -17062,10 +17062,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -17153,7 +17153,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -17162,7 +17162,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -17232,7 +17232,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -17241,7 +17241,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -17250,7 +17250,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -17261,10 +17261,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -17353,7 +17353,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -17362,7 +17362,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -17432,7 +17432,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -17441,7 +17441,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -17450,7 +17450,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -17461,10 +17461,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -17553,7 +17553,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -17562,7 +17562,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -17632,7 +17632,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -17641,7 +17641,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -17650,7 +17650,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -17661,10 +17661,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -17753,7 +17753,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -17762,7 +17762,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -17832,7 +17832,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -17841,7 +17841,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -17850,7 +17850,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -17861,10 +17861,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -17951,7 +17951,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -17960,7 +17960,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -18030,7 +18030,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -18039,7 +18039,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -18048,7 +18048,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -18059,10 +18059,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -18149,7 +18149,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -18158,7 +18158,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -18228,7 +18228,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -18237,7 +18237,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -18246,7 +18246,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -18257,10 +18257,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -18348,7 +18348,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -18357,7 +18357,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -18427,7 +18427,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -18436,7 +18436,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -18445,7 +18445,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -18456,10 +18456,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -18545,7 +18545,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -18554,7 +18554,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -18624,7 +18624,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -18633,7 +18633,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -18642,7 +18642,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -18653,10 +18653,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -18742,7 +18742,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -18751,7 +18751,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -18821,7 +18821,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -18830,7 +18830,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -18839,7 +18839,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -18850,10 +18850,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -18941,7 +18941,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -18950,7 +18950,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -19020,7 +19020,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -19029,7 +19029,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -19038,7 +19038,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -19049,10 +19049,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -19138,7 +19138,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -19147,7 +19147,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -19217,7 +19217,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -19226,7 +19226,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -19235,7 +19235,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -19246,10 +19246,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -19335,7 +19335,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -19344,7 +19344,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -19414,7 +19414,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -19423,7 +19423,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -19432,7 +19432,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -19443,10 +19443,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -19532,7 +19532,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -19541,7 +19541,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -19611,7 +19611,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -19620,7 +19620,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -19629,7 +19629,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -19640,10 +19640,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -19728,7 +19728,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -19737,7 +19737,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -19807,7 +19807,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -19816,7 +19816,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -19825,7 +19825,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -19836,10 +19836,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -19925,7 +19925,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -19934,7 +19934,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -20004,7 +20004,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -20013,7 +20013,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -20022,7 +20022,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -20033,10 +20033,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -20126,7 +20126,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -20135,7 +20135,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -20205,7 +20205,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -20214,7 +20214,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -20223,7 +20223,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -20234,10 +20234,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -20326,7 +20326,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -20335,7 +20335,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -20405,7 +20405,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -20414,7 +20414,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -20423,7 +20423,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -20434,10 +20434,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -20527,7 +20527,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -20536,7 +20536,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -20606,7 +20606,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -20615,7 +20615,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -20624,7 +20624,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -20635,10 +20635,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -20724,7 +20724,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -20733,7 +20733,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -20803,7 +20803,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -20812,7 +20812,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -20821,7 +20821,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -20832,10 +20832,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -20921,7 +20921,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -20930,7 +20930,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -21000,7 +21000,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -21009,7 +21009,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -21018,7 +21018,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -21029,10 +21029,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -21119,7 +21119,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -21128,7 +21128,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -21198,7 +21198,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -21207,7 +21207,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -21216,7 +21216,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -21227,10 +21227,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -21316,7 +21316,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -21325,7 +21325,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -21395,7 +21395,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -21404,7 +21404,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -21413,7 +21413,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -21424,10 +21424,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -21513,7 +21513,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -21522,7 +21522,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -21592,7 +21592,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -21601,7 +21601,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -21610,7 +21610,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -21621,10 +21621,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -21709,7 +21709,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -21718,7 +21718,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -21788,7 +21788,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -21797,7 +21797,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -21806,7 +21806,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -21817,10 +21817,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -21905,7 +21905,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -21914,7 +21914,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -21984,7 +21984,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -21993,7 +21993,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -22002,7 +22002,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -22013,10 +22013,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -22101,7 +22101,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -22110,7 +22110,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -22180,7 +22180,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -22189,7 +22189,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -22198,7 +22198,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -22209,10 +22209,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -22297,7 +22297,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -22306,7 +22306,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -22376,7 +22376,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -22385,7 +22385,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -22394,7 +22394,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -22405,10 +22405,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -22493,7 +22493,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -22502,7 +22502,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -22572,7 +22572,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -22581,7 +22581,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -22590,7 +22590,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -22601,10 +22601,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -22689,7 +22689,7 @@
           {
             "id": "outline",
             "icon": "assets.icon-outline",
-            "label": "Outline",
+            "label": "studio.outline-label",
             "section": "sections.module.outline",
             "source": "page.outline",
             "shortcut": "o",
@@ -22698,7 +22698,7 @@
           {
             "id": "checks",
             "icon": "assets.icon-checks",
-            "label": "Checks",
+            "label": "studio.checks",
             "section": "sections.module.checks",
             "source": "page.checks",
             "shortcut": "c",
@@ -22768,7 +22768,7 @@
             {
               "id": "outline",
               "icon": "assets.icon-outline",
-              "label": "Outline",
+              "label": "studio.outline-label",
               "section": "sections.module.outline",
               "source": "page.outline",
               "shortcut": "o",
@@ -22777,7 +22777,7 @@
             {
               "id": "checks",
               "icon": "assets.icon-checks",
-              "label": "Checks",
+              "label": "studio.checks",
               "section": "sections.module.checks",
               "source": "page.checks",
               "shortcut": "c",
@@ -22786,7 +22786,7 @@
             {
               "id": "versions",
               "icon": "assets.icon-versions",
-              "label": "Versions",
+              "label": "studio.versions-label",
               "section": "sections.module.outline",
               "source": "page.versions",
               "shortcut": "v",
@@ -22797,10 +22797,10 @@
             {
               "id": "request-change",
               "icon": "assets.icon-request",
-              "label": "Request change",
+              "label": "studio.request-change",
               "handler": {
                 "kind": "copy-prompt",
-                "prompt": "Ask {agent} to change {title} ({url}).\n\nWhat should change:"
+                "prompt": "studio.request-change-prompt"
               },
               "shortcut": "r"
             }
@@ -28031,7 +28031,7 @@
     {
       "slot": "frames.studio-shell",
       "element": "studio-shell",
-      "version": 10
+      "version": 11
     },
     {
       "slot": "sections.studio.page-header",
@@ -28041,7 +28041,7 @@
     {
       "slot": "sections.studio.home",
       "element": "studio-home",
-      "version": 5
+      "version": 6
     },
     {
       "slot": "sections.module.outline",
@@ -28061,17 +28061,17 @@
     {
       "slot": "sections.studio.slot-groups",
       "element": "studio-slot-groups",
-      "version": 2
+      "version": 3
     },
     {
       "slot": "sections.studio.leaf-header",
       "element": "studio-leaf-header",
-      "version": 2
+      "version": 3
     },
     {
       "slot": "sections.studio.specimen",
       "element": "studio-specimen",
-      "version": 7
+      "version": 8
     },
     {
       "slot": "sections.studio.options",
@@ -28091,7 +28091,7 @@
     {
       "slot": "sections.studio.history",
       "element": "studio-history",
-      "version": 1
+      "version": 2
     },
     {
       "slot": "sections.studio.references",
@@ -28103,7 +28103,7 @@
     "home": [
       {
         "id": "needs",
-        "label": "Needs",
+        "label": "studio.needs",
         "icon": "assets.icon-needs",
         "defaultOpen": false,
         "module": {

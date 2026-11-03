@@ -1,33 +1,35 @@
 /**
  * Writer specimen kinds: what a Writer brand cell produces, as display tables. Page-copy cells
  * produce strings (labelled rows); lexicon cells produce voice rules, claims or names, which carry
- * no `text` and so need their own kind. Each kind reads only the cell's parsed records.
+ * no `text` and so need their own kind. Each kind reads only the cell's parsed records. Its words
+ * (table labels, columns, summaries, empty cells) are Writer copy references; record values stay data.
  */
+import { keyLabel } from "../records/slot-labels.js";
+import { copyRef, type CopyText } from "./copy-ref.js";
+
 export type WriterSpecimenKind = "strings" | "voice" | "claims" | "naming";
 export interface SpecimenRef { readonly label: string; readonly agent?: string; readonly slug?: string }
 /** One table cell: text, an optional link, or a leaf status the client maps to the shared vocabulary. */
-export interface SpecimenTableCell { readonly text: string; readonly ref?: SpecimenRef; readonly status?: string }
+export interface SpecimenTableCell { readonly text: CopyText; readonly ref?: SpecimenRef; readonly status?: string }
 export interface SpecimenTable {
   readonly id: string;
-  readonly label: string;
-  readonly columns: readonly string[];
+  readonly label: CopyText;
+  readonly columns: readonly CopyText[];
   /** The column holding prose, kept readable when other columns carry long ids. */
   readonly prose?: number;
   readonly rows: readonly { readonly key: string; readonly cells: readonly SpecimenTableCell[] }[];
 }
 export interface WriterKindSpecimen {
   readonly kind: WriterSpecimenKind;
-  readonly summary: string;
+  readonly summary: CopyText;
   readonly tables: readonly SpecimenTable[];
   /** One or two short lines for the gallery card. */
-  readonly excerpt: readonly string[];
+  readonly excerpt: readonly CopyText[];
 }
 
 type Fields = Record<string, unknown>;
 const text = (value: unknown) => typeof value === "string" ? value.trim() : "";
 const strings = (value: unknown): string[] => Array.isArray(value) ? value.map(text).filter(Boolean) : [];
-const humanize = (value: string) => value.replace(/[-_.]+/g, " ").trim().replace(/^\w/, letter => letter.toUpperCase());
-const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 const AVOID = new Set(["avoid", "forbidden", "banned"]);
 const PREFER = new Set(["preferred", "prefer", "use"]);
 
@@ -54,21 +56,21 @@ function voice(cellId: string, records: readonly Fields[]): WriterKindSpecimen {
   const prefer = terms.filter(record => PREFER.has(text(record.termStatus)));
   const termRow = (record: Fields, index: number) => ({
     key: rowKey(record, index),
-    cells: [{ text: text(record.term) }, { text: strings(record.forms).join(", ") || "None" }, { text: text(record.reason) || "No reason recorded" }],
+    cells: [{ text: text(record.term) }, { text: strings(record.forms).join(", ") || copyRef("studio.contract-none") }, { text: text(record.reason) || copyRef("studio.no-reason-recorded") }],
   });
   const tables: SpecimenTable[] = [];
   if (rules.length) tables.push({
-    id: "principles", label: "Principles", columns: ["Rule", "Do"], prose: 1,
-    rows: rules.map((record, index) => ({ key: rowKey(record, index), cells: [{ text: humanize(text(record.rule) || contextKey(record, cellId)) }, { text: text(record.value) }] })),
+    id: "principles", label: copyRef("studio.principles"), columns: [copyRef("studio.rule"), copyRef("studio.do")], prose: 1,
+    rows: rules.map((record, index) => ({ key: rowKey(record, index), cells: [{ text: keyLabel(text(record.rule) || contextKey(record, cellId)) }, { text: text(record.value) }] })),
   });
-  if (prefer.length) tables.push({ id: "do", label: "Do: preferred words", columns: ["Word", "Forms", "Why"], rows: prefer.map(termRow) });
-  if (avoid.length) tables.push({ id: "dont", label: "Don't: avoided words", columns: ["Word", "Also avoid", "Why"], rows: avoid.map(termRow) });
+  if (prefer.length) tables.push({ id: "do", label: copyRef("studio.do-preferred-words"), columns: [copyRef("studio.word"), copyRef("studio.forms"), copyRef("studio.why")], rows: prefer.map(termRow) });
+  if (avoid.length) tables.push({ id: "dont", label: copyRef("studio.dont-avoided-words"), columns: [copyRef("studio.word"), copyRef("studio.also-avoid"), copyRef("studio.why")], rows: avoid.map(termRow) });
   return {
     kind: "voice", tables,
-    summary: `${plural(rules.length, "principle", "principles")}, ${plural(prefer.length, "preferred word", "preferred words")} and ${plural(avoid.length, "avoided word", "avoided words")}.`,
+    summary: copyRef("studio.voice-summary", { principles: rules.length, preferred: prefer.length, avoided: avoid.length }),
     excerpt: [
       ...rules.slice(0, 1).map(record => text(record.value)),
-      ...(avoid.length ? [`Avoid: ${avoid.map(record => text(record.term)).join(", ")}`] : []),
+      ...(avoid.length ? [copyRef("studio.avoid-terms", { terms: avoid.map(record => text(record.term)).join(", ") })] : []),
     ],
   };
 }
@@ -82,12 +84,12 @@ function claims(cellId: string, records: readonly Fields[]): WriterKindSpecimen 
     const unsupported = !source && record.requiresCitation === true;
     const evidence: SpecimenTableCell = source
       ? { text: `${source}${version === undefined ? "" : ` v${version}`}`, ref: { label: source, agent: "director", slug: source } }
-      : { text: unsupported ? "Citation required, no source recorded" : "No citation required", ...(unsupported ? { status: "missing" } : {}) };
+      : { text: copyRef(unsupported ? "studio.citation-required-no-source" : "studio.no-citation-required"), ...(unsupported ? { status: "missing" } : {}) };
     return {
       key: rowKey(record, index),
       cells: [
-        { text: humanize(contextKey(record, cellId)), status: text(record.status) || "draft" },
-        { text: strings(record.phrasings).join("\n") || "No phrasing recorded" },
+        { text: keyLabel(contextKey(record, cellId)), status: text(record.status) || "draft" },
+        { text: strings(record.phrasings).join("\n") || copyRef("studio.no-phrasing-recorded") },
         evidence,
       ],
     };
@@ -96,11 +98,16 @@ function claims(cellId: string, records: readonly Fields[]): WriterKindSpecimen 
   const cited = records.filter(record => record.requiresCitation === true).length;
   return {
     kind: "claims",
-    tables: rows.length ? [{ id: "claims", label: "Claims", columns: ["Claim", "Phrasing", "Evidence"], prose: 1, rows }] : [],
-    summary: `${plural(records.length, "claim", "claims")}: ${cited} require a citation, ${sourced} have a recorded Director source.`,
+    tables: rows.length ? [{ id: "claims", label: copyRef("studio.claims"), columns: [copyRef("studio.claim"), copyRef("studio.phrasing"), copyRef("studio.evidence")], prose: 1, rows }] : [],
+    summary: copyRef("studio.claims-summary", { claims: records.length, cited, sourced }),
     excerpt: records.slice(0, 2).map(record => strings(record.phrasings)[0] ?? "").filter(Boolean),
   };
 }
+
+/** A name's usage rule: its recorded rule, then its casing, or the explicit empty state. */
+const usage = (rule: string, casing: string): CopyText => casing
+  ? copyRef(rule ? "studio.usage-rule-casing" : "studio.casing", rule ? { rule, casing } : { casing })
+  : rule || copyRef("studio.no-usage-rule-recorded");
 
 function naming(cellId: string, records: readonly Fields[]): WriterKindSpecimen {
   const rows = records.map((record, index) => {
@@ -109,18 +116,18 @@ function naming(cellId: string, records: readonly Fields[]): WriterKindSpecimen 
     return {
       key: rowKey(record, index),
       cells: [
-        { text: humanize(contextKey(record, cellId)) },
+        { text: keyLabel(contextKey(record, cellId)) },
         { text: text(record.term) },
-        { text: strings(record.forms).join(", ") || "None" },
-        { text: [rule && rule !== text(record.term) ? rule : "", casing ? `Casing: ${casing}` : ""].filter(Boolean).join(" ") || "No usage rule recorded" },
+        { text: strings(record.forms).join(", ") || copyRef("studio.contract-none") },
+        { text: usage(rule && rule !== text(record.term) ? rule : "", casing) },
       ],
     };
   });
   const names = [...new Set(records.map(record => text(record.term)).filter(Boolean))];
   return {
     kind: "naming",
-    tables: rows.length ? [{ id: "names", label: "Names", columns: ["Use", "Name", "Forms", "Usage rule"], prose: 3, rows }] : [],
-    summary: `${plural(names.length, "name", "names")} across ${plural(records.length, "usage rule", "usage rules")}.`,
+    tables: rows.length ? [{ id: "names", label: copyRef("studio.names"), columns: [copyRef("studio.use"), copyRef("studio.name"), copyRef("studio.forms"), copyRef("studio.usage-rule")], prose: 3, rows }] : [],
+    summary: copyRef("studio.naming-summary", { names: names.length, rules: records.length }),
     excerpt: names.length ? [names.join(" · ")] : [],
   };
 }

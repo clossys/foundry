@@ -24,6 +24,15 @@ function BrandMark({ ground }: { ground: "light" | "dark" }) {
   return <img data-brand-mark={ground} src={`/api/brand/mark.svg?ground=${ground}`} alt="" width={16} height={16} />
 }
 
+/** The sidebar's words (Writer copy): the workspace team, its plan line, and the local user. */
+export interface SidebarCopy {
+  team: string;
+  /** The plan line when the consumer brand names the workspace, and when it does not. */
+  plan: string;
+  localPlan: string;
+  user: { name: string; email: string; initials: string };
+}
+
 /**
  * The left sidebar: shadcn sidebar-15's `SidebarLeft` (off-canvas, full height, toggled from the
  * header) holding the N1 navigation, shadcn sidebar-07 `AppSidebar` content. Its sample data is
@@ -34,25 +43,26 @@ function BrandMark({ ground }: { ground: "light" | "dark" }) {
 export function AppSidebar({
   navigation,
   navigationLabel,
+  copy,
   ...props
-}: React.ComponentProps<typeof Sidebar> & { navigation: ContentMapNavigation; navigationLabel?: string }) {
+}: React.ComponentProps<typeof Sidebar> & { navigation: ContentMapNavigation; navigationLabel?: string; copy: SidebarCopy }) {
   const { brand } = useStudioData()
   const { resolved } = useThemeMode()
   const name = brand.state === "ready" ? brand.value.name : undefined
   const data = {
     user: {
-      name: "Local workspace",
-      email: "Producer on this machine",
+      name: copy.user.name,
+      email: copy.user.email,
       avatar: placeholderAvatar.src,
-      initials: "LW",
+      initials: copy.user.initials,
     },
     teams: [
       {
-        name: "Clossys Studio",
+        name: copy.team,
         // The logo sits on `--sidebar-primary`, the menu item's logo on the menu ground.
         logo: <BrandMark ground={resolved === "dark" ? "light" : "dark"} />,
         itemLogo: <BrandMark ground={resolved === "dark" ? "dark" : "light"} />,
-        plan: name ? "Studio" : "Local workspace",
+        plan: name ? copy.plan : copy.localPlan,
       },
     ],
     navMain: navigation.tree.flatMap((node) => {

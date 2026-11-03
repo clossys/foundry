@@ -29,7 +29,8 @@ const navigation = { tree: [{ id: 'home', label: 'Home', href: '/', icon: 'home'
 
 for (const mode of ['none', 'default', 'offcanvas']) {
   test(`native AppSidebar ${mode} preserves content and exposes only an applicable rail`, () => {
-    const props = mode === 'default' ? { navigation } : { navigation, collapsible: mode };
+    const copy = { team: 'Clossys Studio', plan: 'Studio', localPlan: 'Local workspace', user: { name: 'Local workspace', email: 'Producer on this machine', initials: 'LW' } };
+    const props = mode === 'default' ? { navigation, copy } : { navigation, copy, collapsible: mode };
     const html = renderToStaticMarkup(React.createElement(TestSidebarProvider, null,
       React.createElement(AppSidebar, props)));
     const dom = new JSDOM(html);

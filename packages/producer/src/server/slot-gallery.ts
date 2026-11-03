@@ -4,10 +4,14 @@ import { join } from 'node:path';
 import { listSlots, readCandidate, readIa, readSlot, type SlotEntry } from '../records/slots.js';
 import { iaPath, pinFile, type IaDoc, parseFrontmatter, validateCandidate, validateSlotDoc, type SlotAgent, type SlotKind } from '../records/slot-model/index.js';
 import { parseWriterSlotBody } from '@clossys/writer/slot-body';
+import { slotIdLabel, slotLabel, slotLabels } from '../records/slot-labels.js';
+import { copyRef, type CopyText } from './copy-ref.js';
 
-export type SlotEmptyState = 'No candidate' | 'No pin';
+/** Why a slot card has nothing to show: an id Studio maps to Writer copy. */
+export type SlotEmptyState = 'no-candidate' | 'no-pin';
 export interface RecordSpecimenInput {
-  kind: 'record'; name: string; title: string; description: string; empty: string;
+  /** `title` and `empty` are Writer copy references; Studio resolves them where it loads the detail. */
+  kind: 'record'; name: string; title: CopyText; description: string; empty: CopyText;
   rows: { key: string; label: string; text: string }[];
 }
 export interface SlotGalleryCard {
@@ -20,7 +24,6 @@ export interface SlotGalleryCard {
 export interface SlotGallerySection { id: string; label: string; level: 0 | 1 | 2; cards: SlotGalleryCard[] }
 export const candidateVersion = (name: string) => Number(/-v(\d+)\.(?:md|json)$/.exec(name)?.[1] ?? 0);
 export const hasAgentSlots = (consumer: string, agent: SlotAgent) => existsSync(iaPath(consumer, agent));
-const label = (id: string) => id.replace(/[.-]/g, ' ').replace(/^\w/, c => c.toUpperCase());
 
 function hasPinFile(entry: SlotEntry): boolean {
   try { lstatSync(pinFile(entry.dir)); return true; }
@@ -50,8 +53,8 @@ export function recordSpecimenInput(consumer: string, agent: 'director' | 'write
   if (agent === 'director' && (!name || (candidate !== undefined && candidate !== name))) return undefined;
   let doc: ReturnType<typeof checkedSlot>;
   try { doc = checkedSlot(consumer, agent, entry); } catch { return undefined; }
-  const empty = entry.candidates.length ? 'No pin' : 'No candidate';
-  const out: RecordSpecimenInput = { kind: 'record', name: id, title: agent === 'director' ? 'Direction' : 'Strings', description: '', empty, rows: [] };
+  const empty = copyRef(entry.candidates.length ? 'studio.no-pin' : 'studio.no-candidate');
+  const out: RecordSpecimenInput = { kind: 'record', name: slotLabel(consumer, agent, id), title: copyRef(agent === 'director' ? 'studio.direction' : 'studio.strings'), description: '', empty, rows: [] };
   if (!name) return out;
   if (!entry.candidates.includes(name)) return undefined;
   let source;
@@ -131,6 +134,7 @@ export function slotGallery(consumer: string, agent: SlotAgent): { sections: Slo
   const ia = readIa(consumer, agent);
   if (!ia) return { sections: [], count: 0 };
   const entries = new Map(listSlots(consumer, agent).map(entry => [entry.id, entry]));
+  const label = slotLabels(consumer);
   const sections: SlotGallerySection[] = [];
   const section = (id: string, text: string, level: 0 | 1 | 2) => {
     let row = sections.find(row => row.id === id && row.level === level);
@@ -139,7 +143,7 @@ export function slotGallery(consumer: string, agent: SlotAgent): { sections: Slo
   };
   for (const { layer, l1, group } of displayOrder(ia, agent)) for (const id of group.slots) {
     const entry = entries.get(id)!;
-    const l0 = layer ?? { id: entry.position.l0 ?? agent, label: label(entry.position.l0 ?? agent) };
+    const l0 = layer ?? { id: entry.position.l0 ?? agent, label: slotIdLabel(entry.position.l0 ?? agent) };
     section(l0.id, l0.label, 0);
     section(l1.id, l1.label, 1);
     const target = section(`${l1.id}/${group.id}`, group.label, 2);
@@ -175,9 +179,9 @@ export function slotGallery(consumer: string, agent: SlotAgent): { sections: Slo
     if (!failing && (agent === 'director' || (agent === 'writer' && candidate && entry.pin?.candidate === candidate))) {
       try { record = recordSpecimenInput(consumer, agent, id, candidate); } catch { record = undefined; }
     }
-    target.cards.push({ id, slug: id, name: label(id), kind, version: candidate ? candidateVersion(candidate) : 0,
+    target.cards.push({ id, slug: id, name: label(agent, id), kind, version: candidate ? candidateVersion(candidate) : 0,
       status: failing ? 'failing' : missing ? 'missing' : entry.pin ? 'active' : 'draft', records: candidate && !failing ? 1 : 0,
-      excerpt: recordLead(record), options: entry.candidates.length, ...(candidate ? { candidate } : {}), ...(element ? { element, specimen: `${id}/${element}` } : {}), ...(!failing && (missing || !entry.pin) ? { emptyState: missing ? 'No candidate' as const : 'No pin' as const } : {}),
+      excerpt: recordLead(record), options: entry.candidates.length, ...(candidate ? { candidate } : {}), ...(element ? { element, specimen: `${id}/${element}` } : {}), ...(!failing && (missing || !entry.pin) ? { emptyState: missing ? 'no-candidate' as const : 'no-pin' as const } : {}),
     });
   }
   return { sections, count: sections.reduce((n, row) => n + row.cards.length, 0) };

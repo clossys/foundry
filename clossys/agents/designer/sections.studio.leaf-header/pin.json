@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-leaf-header-v2.json",
-  "sha256": "c0a5ed11d7dfc48e0ef783246cf92ce784bcb239523c244c976c1ed306fd5931",
-  "pinnedBy": "owner:base-release2 e39",
-  "at": "2026-11-02T22:45:00Z"
+  "candidate": "studio-leaf-header-v3.json",
+  "sha256": "8800af9d13b78651055526b619f77589d7ca08752523767ae1b052d112385435",
+  "pinnedBy": "owner:2026-11-03 W2-COPY-THROUGH-WRITER go",
+  "at": "2026-11-03T13:45:00Z"
 }

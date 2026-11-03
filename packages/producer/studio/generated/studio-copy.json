@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "ca029cf00748e7709f32c7e6b66e6fdc69acbe3a546b88e6cd080c563929f9d1",
+  "revision": "0314c38912a3c535482c0836e0a4dd4b96b0646d7f673d157b86940678de061e",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -1337,6 +1337,546 @@
       "id": "studio.specimen.card-footer",
       "text": "Updated today",
       "context": "agents/designer/components.card",
+      "status": "draft"
+    },
+    {
+      "id": "studio.copied",
+      "text": "Copied",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.copy-prompt",
+      "text": "Copy prompt",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.find-a-page",
+      "text": "Find a page",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.search-studio-pages-and-commands",
+      "text": "Search Studio pages and this page's commands",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.search-pages-and-commands",
+      "text": "Search pages and commands",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pages",
+      "text": "Pages",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-matching-pages",
+      "text": "No matching pages",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.this-page",
+      "text": "This page",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.resize-chat",
+      "text": "Resize chat",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.toggle-sidebar",
+      "text": "Toggle Sidebar",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.toggle-theme",
+      "text": "Toggle theme",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.toggle-chat",
+      "text": "Toggle chat",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.chat",
+      "text": "Chat",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-conversation-yet",
+      "text": "No conversation yet",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.chat-empty-description",
+      "text": "Chat with {agents} will open here. Agents work through the CLI for now.",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.agent-list",
+      "text": "{head} and {last}",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.sidebar",
+      "text": "Sidebar",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.sidebar-sheet-description",
+      "text": "Displays the mobile sidebar.",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.chat-sheet-description",
+      "text": "Ask an agent about the open page.",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.loading-page",
+      "text": "Loading page",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.local-workspace",
+      "text": "Local workspace",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-on-this-machine",
+      "text": "Producer on this machine",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.local-workspace-initials",
+      "text": "LW",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.workspace-name",
+      "text": "Clossys Studio",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.history-count",
+      "text": "{count, plural, one {# recorded version} other {# recorded versions}}, newest first.",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.date",
+      "text": "Date",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.note",
+      "text": "Note",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.hash",
+      "text": "Hash",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.marks",
+      "text": "Marks",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.census-loading",
+      "text": "Loading",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.slot-count",
+      "text": "{count} slots",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.slot-census-loading",
+      "text": "{agent} slot census loading",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.slot-census-unavailable",
+      "text": "{agent} slot census unavailable",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.slots-with-candidates",
+      "text": "{count} slots with candidates",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pinned-slots",
+      "text": "{count} pinned slots",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-frame-title",
+      "text": "{name} at {viewport} px",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-frame-title-light",
+      "text": "{name} at {viewport} px, light",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-frame-title-dark",
+      "text": "{name} at {viewport} px, dark",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.viewport-heading",
+      "text": "{viewport} px",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-table-label",
+      "text": "{name} specimen",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.key",
+      "text": "Key",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.content",
+      "text": "Content",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.version-label",
+      "text": "v{version}",
+      "context": "lib/slot-detail.ts, components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.severity-error",
+      "text": "Error",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.severity-warning",
+      "text": "Warning",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.severity-info",
+      "text": "Info",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.outline-label",
+      "text": "Outline",
+      "context": "agents/publisher/page.*",
+      "status": "draft"
+    },
+    {
+      "id": "studio.versions-label",
+      "text": "Versions",
+      "context": "agents/publisher/page.*",
+      "status": "draft"
+    },
+    {
+      "id": "studio.request-change",
+      "text": "Request change",
+      "context": "agents/publisher/page.*",
+      "status": "draft"
+    },
+    {
+      "id": "studio.request-change-prompt",
+      "text": "Ask {agent} to change {title} ({url}).\n\nWhat should change:",
+      "context": "agents/publisher/page.*",
+      "status": "draft"
+    },
+    {
+      "id": "studio.needs",
+      "text": "Needs",
+      "context": "agents/publisher/page.home",
+      "status": "draft"
+    },
+    {
+      "id": "studio.not-needed",
+      "text": "Not needed: {reason}",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-candidate-recorded",
+      "text": "Candidate recorded",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-candidate-count",
+      "text": "{count} candidates",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-pin-names-candidate",
+      "text": "Pin names a recorded candidate",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-pin-matches",
+      "text": "Pin matches candidate bytes",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-pin-hash-mismatch",
+      "text": "Pin hash does not match candidate bytes",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-candidate-format-valid",
+      "text": "Candidate format valid",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-slot-placed",
+      "text": "Slot record matches its IA position",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-slot-misplaced",
+      "text": "Slot record does not match its IA position",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-inputs-ready",
+      "text": "Inputs ready",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-inputs-blocked",
+      "text": "Inputs blocked",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-reference-resolves",
+      "text": "Slot reference resolves",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-reference-unknown",
+      "text": "Unknown slot reference",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.principles",
+      "text": "Principles",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.rule",
+      "text": "Rule",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.do",
+      "text": "Do",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.do-preferred-words",
+      "text": "Do: preferred words",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.dont-avoided-words",
+      "text": "Don't: avoided words",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.word",
+      "text": "Word",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.forms",
+      "text": "Forms",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.why",
+      "text": "Why",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.also-avoid",
+      "text": "Also avoid",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-reason-recorded",
+      "text": "No reason recorded",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.voice-summary",
+      "text": "{principles, plural, one {# principle} other {# principles}}, {preferred, plural, one {# preferred word} other {# preferred words}} and {avoided, plural, one {# avoided word} other {# avoided words}}.",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.avoid-terms",
+      "text": "Avoid: {terms}",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.citation-required-no-source",
+      "text": "Citation required, no source recorded",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-citation-required",
+      "text": "No citation required",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-phrasing-recorded",
+      "text": "No phrasing recorded",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.claim",
+      "text": "Claim",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.phrasing",
+      "text": "Phrasing",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.evidence",
+      "text": "Evidence",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.claims-summary",
+      "text": "{claims, plural, one {# claim} other {# claims}}: {cited} require a citation, {sourced} have a recorded Director source.",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.casing",
+      "text": "Casing: {casing}",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.usage-rule-casing",
+      "text": "{rule} Casing: {casing}",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-usage-rule-recorded",
+      "text": "No usage rule recorded",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.use",
+      "text": "Use",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.name",
+      "text": "Name",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.usage-rule",
+      "text": "Usage rule",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.naming-summary",
+      "text": "{names, plural, one {# name} other {# names}} across {rules, plural, one {# usage rule} other {# usage rules}}.",
+      "context": "../src/server/writer-specimen-kinds.ts",
       "status": "draft"
     },
     {

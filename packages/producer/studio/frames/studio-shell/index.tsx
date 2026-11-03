@@ -12,12 +12,27 @@ import {
   useSidebar,
 } from '@clossys/designer-ui';
 import { studioIcon } from '../../lib/studio-icons';
-import { AppSidebar } from './app-sidebar';
+import { AppSidebar, type SidebarCopy } from './app-sidebar';
 import { useThemeMode } from '../../components/StudioProviders';
 import { HeaderIconButton, HeaderPopover, HeaderTooltip } from './stock-header-controls';
-import { ChatContent, StockSidebarSheet, StockChatSidebar } from './stock-chat-sidebar';
+import { ChatContent, StockSidebarSheet, StockChatSidebar, type ChatCopy } from './stock-chat-sidebar';
 
 export { PageNotice, type PageNoticeData } from './PageNotice';
+export type { ChatCopy } from './stock-chat-sidebar';
+export type { SidebarCopy } from './app-sidebar';
+
+/** Every word the shell itself shows (Writer copy, resolved by the page): controls, the command menu, chat and sidebar. */
+export interface StudioShellCopy {
+  copied: string;
+  copyPrompt: string;
+  search: { title: string; description: string; placeholder: string; label: string; empty: string; page: string };
+  resizeChat: string;
+  toggleSidebar: string;
+  toggleTheme: string;
+  toggleChat: string;
+  chat: ChatCopy;
+  sidebar: SidebarCopy;
+}
 
 /** What a navigator popover's section is told: the target in view (scroll-spy) and how to bring one into view. */
 export interface PopoverContext { active?: string; select: (target: string) => void }
@@ -73,10 +88,9 @@ async function copyText(text: string): Promise<boolean> {
   try { await navigator.clipboard.writeText(text); return true; } catch { return false; }
 }
 const typing = (element: EventTarget | null) => element instanceof HTMLElement && (element.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(element.tagName));
-const sentence = (value: string) => value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
 
 /** An action popover's body: the text it copies, then the copy button. */
-function CopyBody({ spec, prompt }: { spec: PopoverSpec; prompt: string }) {
+function CopyBody({ spec, prompt, copy }: { spec: PopoverSpec; prompt: string; copy: StudioShellCopy }) {
   const [copied, setCopied] = useState(false);
   // The page link, without the popover state (it renders only once opened, in the browser).
   const [href] = useState(() => { const url = new URL(window.location.href); url.searchParams.delete(POPOVER_PARAM); return url.href; });
@@ -86,18 +100,18 @@ function CopyBody({ spec, prompt }: { spec: PopoverSpec; prompt: string }) {
   return <>
     <PopoverDescription data-popover-text={spec.id} className="max-h-48 overflow-y-auto rounded-md bg-muted px-2 py-1.5 font-mono text-xs break-all whitespace-pre-wrap">{text}</PopoverDescription>
     <Button size="sm" data-popover-copy={spec.id} onPress={() => { void copyText(text).then(ok => { if (!ok) return; setCopied(true); clearTimeout(timer.current); timer.current = setTimeout(() => setCopied(false), 1600); }); }}>
-      {copied ? 'Copied' : 'Copy prompt'}
+      {copied ? copy.copied : copy.copyPrompt}
     </Button>
   </>;
 }
 
-function CommandMenu({ commands, pageCommands, open, onOpenChange }: { commands: readonly ContentMapCommandGroup[]; pageCommands: readonly PageCommand[]; open: boolean; onOpenChange: (open: boolean) => void }) {
+function CommandMenu({ commands, pageCommands, open, onOpenChange, copy }: { commands: readonly ContentMapCommandGroup[]; pageCommands: readonly PageCommand[]; open: boolean; onOpenChange: (open: boolean) => void; copy: StudioShellCopy['search'] }) {
   const router = useRouter();
-  return <CommandDialog open={open} onOpenChange={onOpenChange} title="Find a page" description="Search Studio pages and this page's commands">
+  return <CommandDialog open={open} onOpenChange={onOpenChange} title={copy.title} description={copy.description}>
     <Command>
-      <CommandInput placeholder="Search pages and commands" />
-      <CommandList aria-label="Pages" renderEmptyState={() => <CommandEmpty>No matching pages</CommandEmpty>}>
-        {pageCommands.length > 0 && <CommandGroup id="page" heading="This page">
+      <CommandInput placeholder={copy.placeholder} />
+      <CommandList aria-label={copy.label} renderEmptyState={() => <CommandEmpty>{copy.empty}</CommandEmpty>}>
+        {pageCommands.length > 0 && <CommandGroup id="page" heading={copy.page}>
           {pageCommands.map(command => {
             const Icon = studioIcon(command.icon);
             return <CommandItem key={command.id} id={`page:${command.id}`} textValue={command.label} data-page-command={command.id} onAction={() => { onOpenChange(false); command.run(); }}>
@@ -105,7 +119,7 @@ function CommandMenu({ commands, pageCommands, open, onOpenChange }: { commands:
             </CommandItem>;
           })}
         </CommandGroup>}
-        {commands.map(group => <CommandGroup key={group.id} id={group.id} heading={sentence(group.label)}>
+        {commands.map(group => <CommandGroup key={group.id} id={group.id} heading={group.label}>
           {group.items.flatMap(item => {
             if (!item.href) return [];
             const Icon = studioIcon(item.icon);
@@ -121,7 +135,7 @@ function CommandMenu({ commands, pageCommands, open, onOpenChange }: { commands:
 }
 
 /** Desktop navigation and mobile dismissal follow the native Sidebar boundary. */
-function StudioNavigation({ navigation, navigationLabel }: { navigation: ContentMapNavigation; navigationLabel?: string }) {
+function StudioNavigation({ navigation, navigationLabel, copy }: { navigation: ContentMapNavigation; navigationLabel?: string; copy: SidebarCopy }) {
   const pathname = usePathname();
   const { isMobile, setOpenMobile } = useSidebar();
   useEffect(() => {
@@ -129,7 +143,7 @@ function StudioNavigation({ navigation, navigationLabel }: { navigation: Content
     // The content column is the scroller, so a new page starts at its top.
     document.getElementById('studio-main')?.scrollTo({ top: 0 });
   }, [pathname, setOpenMobile]);
-  return !isMobile ? <AppSidebar navigation={navigation} navigationLabel={navigationLabel} /> : null;
+  return !isMobile ? <AppSidebar navigation={navigation} navigationLabel={navigationLabel} copy={copy} /> : null;
 }
 
 /** The scroll-spy over the open popover's targets: the part at the top of the page column is active. */
@@ -185,6 +199,8 @@ export interface StudioShellProps {
   navigationLabel?: string;
   commands: readonly ContentMapCommandGroup[];
   breadcrumbs: readonly { id: string; label: string; href?: string }[];
+  /** The shell's own words, resolved from the Writer by the page. */
+  copy: StudioShellCopy;
   popovers?: readonly PopoverSpec[];
   body?: 'plain' | 'detail';
   head?: ReactNode;
@@ -202,12 +218,12 @@ export interface StudioShellProps {
 export default function StudioShellFrame(props: StudioShellProps) {
   const [leftOpen, setLeftOpen] = useState(true);
   useEffect(() => { setLeftOpen(readCookie(LEFT_COOKIE) ?? true); }, []);
-  return <StudioAppFrame open={leftOpen} onOpenChange={setLeftOpen} navigation={<StudioNavigation navigation={props.navigation} navigationLabel={props.navigationLabel} />}>
+  return <StudioAppFrame open={leftOpen} onOpenChange={setLeftOpen} navigation={<StudioNavigation navigation={props.navigation} navigationLabel={props.navigationLabel} copy={props.copy.sidebar} />}>
     <StudioShellContent {...props} />
   </StudioAppFrame>;
 }
 
-function StudioShellContent({ navigation, navigationLabel, commands, breadcrumbs, popovers = [], body = 'plain', head, children }: StudioShellProps) {
+function StudioShellContent({ navigation, navigationLabel, commands, breadcrumbs, copy, popovers = [], body = 'plain', head, children }: StudioShellProps) {
   const pathname = usePathname();
   const { resolved, setMode } = useThemeMode();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -268,12 +284,12 @@ function StudioShellContent({ navigation, navigationLabel, commands, breadcrumbs
 
   const context: PopoverContext = { ...(spy.active ? { active: spy.active } : {}), select: spy.select };
   return <>
-    <StudioPageFrame body={body} head={head} chatOpen={!isMobile && chatOpen} chatResizeLabel="Resize chat"
-      chat={<StockChatSidebar />}
+    <StudioPageFrame body={body} head={head} chatOpen={!isMobile && chatOpen} chatResizeLabel={copy.resizeChat}
+      chat={<StockChatSidebar copy={copy.chat} />}
       header={<>
         <div className="flex flex-1 items-center gap-2 px-3">
           <HeaderEdgeToggle>
-            <HeaderTooltip label="Toggle Sidebar"><SidebarTrigger data-panel-toggle="left" onPress={() => {
+            <HeaderTooltip label={copy.toggleSidebar}><SidebarTrigger data-panel-toggle="left" onPress={() => {
               setMobilePanel('left');
               if (isMobile && mobilePanel === 'chat') setOpenMobile(false);
             }} /></HeaderTooltip>
@@ -297,23 +313,23 @@ function StudioShellContent({ navigation, navigationLabel, commands, breadcrumbs
                   <PopoverTitle>{spec.label}</PopoverTitle>
                   {spec.description && <PopoverDescription>{spec.description}</PopoverDescription>}
                 </PopoverHeader>
-                {spec.copy?.kind === 'prompt' ? <CopyBody spec={spec} prompt={spec.copy.prompt} /> : <ScrollArea data-popover-body={spec.id} className="max-h-[60svh]">{spec.render?.(context)}</ScrollArea>}
+                {spec.copy?.kind === 'prompt' ? <CopyBody spec={spec} prompt={spec.copy.prompt} copy={copy} /> : <ScrollArea data-popover-body={spec.id} className="max-h-[60svh]">{spec.render?.(context)}</ScrollArea>}
               </>}><Icon /></HeaderPopover>;
           })}
-          <HeaderIconButton label="Toggle theme" aria-pressed={resolved === 'dark'} data-theme-toggle
+          <HeaderIconButton label={copy.toggleTheme} aria-pressed={resolved === 'dark'} data-theme-toggle
             onClick={() => setMode(resolved === 'dark' ? 'light' : 'dark')}>
             {resolved === 'dark' ? <SunIcon /> : <MoonIcon />}
           </HeaderIconButton>
           <HeaderEdgeToggle separatorFirst>
-            <HeaderIconButton label="Toggle chat" aria-pressed={isMobile ? openMobile && mobilePanel === 'chat' : chatOpen} data-panel-toggle="chat" onClick={toggleChat}><PanelRightIcon /></HeaderIconButton>
+            <HeaderIconButton label={copy.toggleChat} aria-pressed={isMobile ? openMobile && mobilePanel === 'chat' : chatOpen} data-panel-toggle="chat" onClick={toggleChat}><PanelRightIcon /></HeaderIconButton>
           </HeaderEdgeToggle>
         </div>
       </>}>
       {children}
     </StudioPageFrame>
-    <CommandMenu commands={commands} pageCommands={pageCommands} open={searchOpen} onOpenChange={setSearchOpen} />
-    {isMobile && <StockSidebarSheet panel={mobilePanel} isOpen={openMobile} onOpenChange={setOpenMobile}>
-      {mobilePanel === 'chat' ? <ChatContent /> : <AppSidebar navigation={navigation} navigationLabel={navigationLabel} collapsible="none" style={{ '--sidebar-width': '100%' } as CSSProperties} />}
+    <CommandMenu commands={commands} pageCommands={pageCommands} open={searchOpen} onOpenChange={setSearchOpen} copy={copy.search} />
+    {isMobile && <StockSidebarSheet panel={mobilePanel} copy={copy.chat} isOpen={openMobile} onOpenChange={setOpenMobile}>
+      {mobilePanel === 'chat' ? <ChatContent copy={copy.chat} /> : <AppSidebar navigation={navigation} navigationLabel={navigationLabel} copy={copy.sidebar} collapsible="none" style={{ '--sidebar-width': '100%' } as CSSProperties} />}
     </StockSidebarSheet>}
   </>;
 }

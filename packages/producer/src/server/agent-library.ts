@@ -9,6 +9,8 @@
  */
 import { hasAgentSlots, slotGallery, type SlotEmptyState } from "./slot-gallery.js";
 import { join } from "node:path";
+import { keyLabel } from "../records/slot-labels.js";
+import type { CopyText } from "./copy-ref.js";
 import type { AgentKind } from "../agents.js";
 import { agentModule, agentRoot, hasCellTree, readStudioCells } from "./cells.js";
 import { designerGallery } from "./designer-library.js";
@@ -26,8 +28,8 @@ export interface AgentCard {
   readonly name: string;
   readonly version: number;
   readonly status: AgentLeafStatus;
-  /** One or two short lines of the specimen for the gallery card. */
-  readonly excerpt: readonly string[];
+  /** One or two short lines of the specimen for the gallery card (data, or a Writer copy reference). */
+  readonly excerpt: readonly CopyText[];
   readonly emptyState?: SlotEmptyState;
   readonly specimenUrl?: string;
   /** Records the shown version holds, when the agent counts them; 0 means there is nothing to preview. */
@@ -51,7 +53,7 @@ export interface AgentLeaf {
   readonly card: AgentCard;
   readonly trail: readonly string[];
   readonly statusDetail: readonly string[];
-  readonly specimen: { readonly summary: string; readonly rows: readonly AgentSpecimenRow[]; readonly kind?: WriterSpecimenKind; readonly tables?: readonly SpecimenTable[] };
+  readonly specimen: { readonly summary: CopyText; readonly rows: readonly AgentSpecimenRow[]; readonly kind?: WriterSpecimenKind; readonly tables?: readonly SpecimenTable[] };
   readonly checks: readonly AgentCheck[];
   readonly contract: { readonly facts: readonly { readonly label: string; readonly value: string }[]; readonly lists: readonly { readonly label: string; readonly items: readonly string[] }[] };
   readonly history: readonly AgentHistoryRow[];
@@ -80,11 +82,10 @@ interface Adapter {
 }
 interface Context { root: string; tree: AgentTree; store: Store; designerSlugs: Map<string, string> }
 
-const humanize = (value: string) => value.replace(/[-_.]+/g, " ").trim().replace(/^\w/, letter => letter.toUpperCase());
 const tail = (id: string) => id.slice(id.lastIndexOf(".") + 1);
 const text = (value: unknown) => typeof value === "string" ? value : "";
 const strings = (value: unknown): string[] => Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
-const label = (node: TreeNode) => node.name && node.name !== node.id ? node.name : humanize(node.id.slice(node.id.lastIndexOf(".") + 1) || node.id);
+const label = (node: TreeNode) => node.name && node.name !== node.id ? node.name : keyLabel(node.id.slice(node.id.lastIndexOf(".") + 1) || node.id);
 const noReport = () => {};
 
 /** The generic tree.json IA: a top node is the layer, its children the groups; deeper nodes fold into L2. */
@@ -147,7 +148,7 @@ const writer: Adapter = {
       ? { summary: lexicon.summary, rows: [], kind: lexicon.kind, tables: lexicon.tables }
       : { summary: `${textRows.length} ${textRows.length === 1 ? "string" : "strings"}${structural ? ` and ${structural} structural ${structural === 1 ? "record" : "records"}` : ""} in ${locale}.`, rows, kind: "strings" as const };
     return {
-      cards: { id: cell.id, slug: cell.id, name: humanize(tail(cell.id)), version: cell.version, status: cell.status, excerpt: lexicon?.excerpt ?? rows.slice(0, 2).map(row => row.text), records: local.length },
+      cards: { id: cell.id, slug: cell.id, name: keyLabel(tail(cell.id)), version: cell.version, status: cell.status, excerpt: lexicon?.excerpt ?? rows.slice(0, 2).map(row => row.text), records: local.length },
       leaf: {
         specimen,
         checks,
@@ -201,7 +202,7 @@ const director: Adapter = {
       return match ? refTo(match[1] as AgentKind, match[2]!, feed, context.designerSlugs) : { label: feed };
     });
     return {
-      cards: { id: cell.id, slug: cell.id, name: entry?.names.l3 ?? humanize(tail(cell.id)), version: cell.version, status: cell.status, excerpt: value?.direction.slice(0, 1).map(bullet) ?? [] },
+      cards: { id: cell.id, slug: cell.id, name: entry?.names.l3 ?? keyLabel(tail(cell.id)), version: cell.version, status: cell.status, excerpt: value?.direction.slice(0, 1).map(bullet) ?? [] },
       leaf: {
         specimen: { summary: entry?.question ?? "Direction, the reasons behind it and what to watch.", rows },
         checks,
@@ -255,7 +256,7 @@ const publisher: Adapter = {
     const path = text(fields.path) || (text(fields.slug) ? `/${text(fields.slug)}` : "");
     return {
       cards: {
-        id: cell.id, slug: cell.id, name: humanize(tail(cell.id)), version: cell.version, status: cell.status,
+        id: cell.id, slug: cell.id, name: keyLabel(tail(cell.id)), version: cell.version, status: cell.status,
         excerpt: [`${path || "No path"} · ${sections.length} ${sections.length === 1 ? "section" : "sections"}`, `${keys} bound copy ${keys === 1 ? "key" : "keys"}`],
       },
       leaf: {
@@ -305,7 +306,7 @@ async function load(root: string, agent: LibraryAgent): Promise<Loaded | undefin
 
 const kindPlacement = (id: string): Placement => {
   const kind = id.slice(0, id.indexOf("."));
-  return { layer: { id: kind, label: humanize(kind) }, groups: [] };
+  return { layer: { id: kind, label: keyLabel(kind) }, groups: [] };
 };
 
 /** The gallery: L0 layers and L1-L2 groups in IA order, leaves the IA does not place last. */

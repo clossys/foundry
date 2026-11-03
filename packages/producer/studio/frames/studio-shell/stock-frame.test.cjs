@@ -48,6 +48,13 @@ const { act } = React;
 const { createRoot } = require('react-dom/client');
 const { renderToStaticMarkup } = require('react-dom/server');
 const e = React.createElement;
+// The shell's words, as Studio resolves them from Writer keys (lib/shell-copy.ts).
+const sidebarCopy = { team: 'Clossys Studio', plan: 'Studio', localPlan: 'Local workspace', user: { name: 'Local workspace', email: 'Producer on this machine', initials: 'LW' } };
+const chatCopy = { title: 'Chat', emptyTitle: 'No conversation yet', emptyDescription: 'Chat with Director, Designer, Writer and Publisher will open here. Agents work through the CLI for now.',
+  sheets: { left: { title: 'Sidebar', description: 'Displays the mobile sidebar.' }, chat: { title: 'Chat', description: 'Ask an agent about the open page.' } } };
+const shellCopy = { copied: 'Copied', copyPrompt: 'Copy prompt', resizeChat: 'Resize chat', toggleSidebar: 'Toggle Sidebar', toggleTheme: 'Toggle theme', toggleChat: 'Toggle chat',
+  search: { title: 'Find a page', description: "Search Studio pages and this page's commands", placeholder: 'Search pages and commands', label: 'Pages', empty: 'No matching pages', page: 'This page' },
+  chat: chatCopy, sidebar: sidebarCopy };
 async function mounted(element, width = 1440) {
   Object.defineProperty(window, 'innerWidth', { configurable: true, value: width });
   const container = document.createElement('div'); document.body.append(container); const root = createRoot(container);
@@ -89,7 +96,7 @@ test('actual sidebar keeps static workspace and profile rows with Clossys Studio
       for (const brand of [{ state: 'ready', value: { name: 'Consumer' } }, { state: 'unavailable' }]) {
         globalThis.__staticNavData = { brand };
         globalThis.__staticNavTheme = { resolved };
-        const html = renderToStaticMarkup(e(TestSidebarProvider, null, e(AppSidebar, { navigation: { tree: [], activeId: 'home' } })));
+        const html = renderToStaticMarkup(e(TestSidebarProvider, null, e(AppSidebar, { navigation: { tree: [], activeId: 'home' }, copy: sidebarCopy })));
         const container = document.createElement('div'); container.innerHTML = html;
         const header = container.querySelector('[data-sidebar="header"]');
         const footer = container.querySelector('[data-sidebar="footer"]');
@@ -122,7 +129,7 @@ test('workspace and profile keep stock row presentation with no switch menu or i
 
 test('native context guard remains enforced for trigger and chat sidebar', () => {
   assert.throws(() => renderToStaticMarkup(e(api.SidebarTrigger)), /within a SidebarProvider/);
-  assert.throws(() => renderToStaticMarkup(e(api.StockChatSidebar)), /within a SidebarProvider/);
+  assert.throws(() => renderToStaticMarkup(e(api.StockChatSidebar, { copy: chatCopy })), /within a SidebarProvider/);
   assert.throws(() => renderToStaticMarkup(e(api.TeamSwitcher, { teams: [{ name: 'Workspace', logo: null, itemLogo: null, plan: 'Studio' }] })), /within a SidebarProvider/);
 });
 
@@ -155,7 +162,7 @@ test('shared mobile sheet preserves native Sidebar styling, geometry, close CTA 
   for (const panel of ['left', 'chat']) {
     function Harness() {
       const [open, setOpen] = React.useState(true);
-      return e(api.StockSidebarSheet, { panel, isOpen: open, onOpenChange: setOpen }, panel === 'left' ? 'Navigation' : 'Chat');
+      return e(api.StockSidebarSheet, { panel, isOpen: open, onOpenChange: setOpen, copy: chatCopy }, panel === 'left' ? 'Navigation' : 'Chat');
     }
     const view = await mounted(e(Harness), 375);
     try {
@@ -173,7 +180,7 @@ test('375px shell component unit with stubbed navigation shares one native sheet
   const Frame = shellComponent();
   globalThis.__stockFrameTheme = { resolved: 'light', setMode() {} };
   const navigation = { tree: [{ id: 'home', label: 'Home', href: '/', icon: 'home' }], activeId: 'home' };
-  const view = await mounted(e(Frame, { homeHref: '/', navigation, commands: [], breadcrumbs: [] }, 'Body'), 375);
+  const view = await mounted(e(Frame, { copy: shellCopy, homeHref: '/', navigation, commands: [], breadcrumbs: [] }, 'Body'), 375);
   const sheets = () => [...document.querySelectorAll('[data-mobile="true"]')];
   async function escape() {
     await act(async () => document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
@@ -249,7 +256,7 @@ for (const width of [768, 1280]) test(`shell component unit with stubbed navigat
   globalThis.__stockFrameTheme = { resolved: 'light', setMode: value => themeCalls.push(value) };
   document.cookie = 'chat_state=true';
   const navigation = { tree: [{ id: 'home', label: 'Home', href: '/', icon: 'home' }], activeId: 'home' };
-  const view = await mounted(e(Frame, { homeHref: '/', navigation, commands: [], breadcrumbs: [{ id: 'home', label: 'Home' }] }, e('section', { id: 'body' }, 'Body')), width);
+  const view = await mounted(e(Frame, { copy: shellCopy, homeHref: '/', navigation, commands: [], breadcrumbs: [{ id: 'home', label: 'Home' }] }, e('section', { id: 'body' }, 'Body')), width);
   try {
     assert.equal(document.querySelector('[data-mobile="true"]'), null, 'both sidebars use desktop behavior at the native md boundary');
     const header = view.container.querySelector('header'); assert.ok(header);
@@ -289,7 +296,7 @@ test('prompt action forwards text, substitutes every URL, handles clipboard fail
   const timers = new Set(), cleared = new Set();
   globalThis.setTimeout = (fn, delay, ...args) => { const handle = nativeSet(fn, delay, ...args); if (delay === 1600) timers.add(handle); return handle; };
   globalThis.clearTimeout = handle => { if (timers.has(handle)) cleared.add(handle); return nativeClear(handle); };
-  const view = await mounted(e(Frame, { homeHref: '/', navigation: { tree: [], activeId: 'home' }, commands: [], breadcrumbs: [],
+  const view = await mounted(e(Frame, { copy: shellCopy, homeHref: '/', navigation: { tree: [], activeId: 'home' }, commands: [], breadcrumbs: [],
     popovers: [{ id: 'request-change', label: 'Request change', icon: 'pencil', copy: { kind: 'prompt', prompt: 'Review {url} and {url}' } }] }, 'Body'));
   try {
     const content = document.querySelector('[data-popover="request-change"]'); assert.ok(content);
@@ -312,7 +319,7 @@ test('legacy link actions cannot activate the shell clipboard fallback and curre
   window.history.replaceState(null, '', '/?p=legacy');
   let writes = 0;
   Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { async writeText() { writes++; } } });
-  const view = await mounted(e(Frame, { homeHref: '/', navigation: { tree: [], activeId: 'home' }, commands: [], breadcrumbs: [],
+  const view = await mounted(e(Frame, { copy: shellCopy, homeHref: '/', navigation: { tree: [], activeId: 'home' }, commands: [], breadcrumbs: [],
     popovers: [{ id: 'legacy', label: 'Legacy', icon: 'link', copy: { kind: 'link' } }] }, 'Body'));
   try {
     const content = document.querySelector('[data-popover="legacy"]'); assert.ok(content);

@@ -4,7 +4,7 @@ import { slotDetailInputs } from './slot-detail';
 
 const links = { leaf: (agent: string, id: string) => `/${agent}/${id}`, label: () => 'Example', back: { href: '/tab', label: 'Tab' } };
 const detail: SlotDetail = {
-  agent: 'designer', id: 'sections.example', kind: 'element', trail: ['Sections', 'Examples'],
+  agent: 'designer', id: 'sections.example', name: 'Example', kind: 'element', trail: ['Sections', 'Examples'],
   contract: {}, inputs: [], uses: [], usedBy: [], links: [], pin: null, history: [], checks: [],
   candidates: [{ name: 'example-v2.json', version: 2, sha256: 'a'.repeat(64), pinned: false, content: '{}', source: undefined, issues: [], specimen: 'sections.example/example' }], shown: 'example-v2.json',
 };

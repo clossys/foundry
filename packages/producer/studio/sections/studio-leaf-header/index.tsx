@@ -7,6 +7,8 @@ export interface LeafHeaderInput {
   name: string;
   id: string;
   version?: number;
+  /** The shown version as displayed (Writer copy), when there is one. */
+  versionLabel?: string;
   statusLabel: string;
   statusTone: LeafTone;
   statusDetail: readonly string[];
@@ -21,7 +23,7 @@ export default function LeafHeaderSection({ header }: { header: LeafHeaderInput 
     <CardDescription><LinkButton href={header.galleryHref} variant="link" size="sm" className="h-auto px-0">{header.galleryLabel}</LinkButton></CardDescription>
     <CardTitle role="heading" aria-level={1} className="flex flex-wrap items-center gap-2 text-xl">
       {header.name}
-      {header.version !== undefined && <Badge variant="ghost">v{header.version}</Badge>}
+      {header.versionLabel && <Badge variant="ghost">{header.versionLabel}</Badge>}
       <Badge variant={header.statusTone}>{header.statusLabel}</Badge>
     </CardTitle>
     <CardDescription>{[header.id, ...header.trail].join(' · ')}</CardDescription>
