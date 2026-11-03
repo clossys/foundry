@@ -38,7 +38,9 @@ export function specimenContentHeight(data: unknown, viewport: Viewport, width: 
   if (!data || typeof data !== "object") return undefined
   const size = data as Record<string, unknown>
   const reflow = size.layout === "reflow"
-  if (size.type !== "clossys:specimen-size" || (!reflow && size.width !== viewport) || typeof size.height !== "number" || !Number.isFinite(size.height) || size.height <= 0) return undefined
+  // A failed page specimen with no canvas host measures 0: it still reports, so its card can say so.
+  const floor = size.failed === true ? 0 : Number.MIN_VALUE
+  if (size.type !== "clossys:specimen-size" || (!reflow && size.width !== viewport) || typeof size.height !== "number" || !Number.isFinite(size.height) || size.height < floor) return undefined
   if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(ceiling) || ceiling <= 0) return undefined
   return Math.max(1, Math.min(ceiling, Math.ceil(size.height * (reflow ? 1 : Math.min(1, width / viewport)))))
 }
@@ -169,7 +171,7 @@ export interface BlockViewerCardIframeProps extends Omit<BlockViewerIframeProps,
  * A gallery card's view-only frame (Foundry extension, not upstream BlockViewer code): the stock
  * skeleton at a 16:9 card aspect while the frame loads, then the frame at the height it reports.
  * A frame that reports nothing painted renders nothing, so its card has no body, like an empty slot;
- * one that painted nothing because it failed shows `failedLabel` instead, so a failure is never silent.
+ * one that reports a failure shows `failedLabel` instead, even if it painted, so a failure is never silent.
  */
 export function BlockViewerCardIframe({ loadingLabel, failedLabel, wrap = frame => frame, iframeHeight = 480, ...props }: BlockViewerCardIframeProps) {
   const key = JSON.stringify([props.iframeKey, props.src, props.viewport, iframeHeight])
@@ -181,7 +183,10 @@ export function BlockViewerCardIframe({ loadingLabel, failedLabel, wrap = frame 
     const fallback = setTimeout(() => setState(current => current.key === key && current.size ? current : { key, size: { height: iframeHeight, empty: false } }), CARD_REVEAL_MS * 3)
     return () => { clearTimeout(fallback); clearTimeout(timer.current) }
   }, [key, iframeHeight])
-  if (size?.empty) return size.failed && failedLabel ? wrap(<Badge variant="outline" data-preview-status="unavailable">{failedLabel}</Badge>) : null
+  // A failed specimen is unavailable whether or not anything painted: its host chrome (canvas padding,
+  // an error boundary) can paint a short box that would otherwise read as a ready, blank preview.
+  if (size?.failed && failedLabel) return wrap(<Badge variant="outline" data-preview-status="unavailable">{failedLabel}</Badge>)
+  if (size?.empty) return null
   const loaded = () => {
     clearTimeout(timer.current)
     timer.current = setTimeout(() => setState(current => current.key === key && current.size ? current : { key, size: { height: iframeHeight, empty: false } }), CARD_REVEAL_MS)
