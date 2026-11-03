@@ -132,13 +132,11 @@ export async function inventory(root: string, agent: AgentKind, report?: StudioR
 }
 
 export interface CompileResult { agent: "designer" | "writer"; state: "compiled" | "missing" | "error"; output?: string; message?: string }
-/** Projections belong under the consumer's agent root, away from legacy libraries. */
-export async function compileCells(root: string, check = false): Promise<CompileResult[]> {
-  const results: CompileResult[] = [];
-  for (const agent of ["designer", "writer"] as const) {
-    try {
+/** Projections belong under the consumer's agent root, away from legacy libraries. One agent: the `designer.compile` / `writer.compile` pipeline module. */
+export async function compileAgentCells(root: string, agent: "designer" | "writer", check = false): Promise<CompileResult> {
+  try {
     const source = agentRoot(root, agent);
-    if (!await hasCellTree(source)) { results.push({ agent, state: "missing" }); continue; }
+    if (!await hasCellTree(source)) return { agent, state: "missing" };
     const output = join(source, "compiled");
     // Validate the source boundary before compilation, including symlink ancestors.
     await readCells(root, agent, true);
@@ -150,10 +148,14 @@ export async function compileCells(root: string, check = false): Promise<Compile
       const api = await agentModule(agent, "cells/compile.js");
       await api.compileWriterCells(source, output, { check });
     }
-    results.push({ agent, state: "compiled", output: `clossys/agents/${agent}/compiled` });
-    } catch {
-      results.push({ agent, state: "error", message: "Cell compilation failed; check the agent's cells and compile inputs" });
-    }
+    return { agent, state: "compiled", output: `clossys/agents/${agent}/compiled` };
+  } catch {
+    return { agent, state: "error", message: "Cell compilation failed; check the agent's cells and compile inputs" };
   }
+}
+
+export async function compileCells(root: string, check = false): Promise<CompileResult[]> {
+  const results: CompileResult[] = [];
+  for (const agent of ["designer", "writer"] as const) results.push(await compileAgentCells(root, agent, check));
   return results;
 }

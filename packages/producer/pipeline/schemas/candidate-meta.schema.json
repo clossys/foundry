@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/candidate-meta.schema.json",
+  "title": "JSON candidate meta",
+  "description": "Derived from src/records/slot-model/validate.ts validateJsonCandidate (meta.source; no pin state or legacy provenance keys).",
+  "type": "object",
+  "required": [
+    "source"
+  ],
+  "properties": {
+    "source": {
+      "$ref": "source.schema.json"
+    },
+    "slot": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*){1,3}$"
+    }
+  },
+  "not": {
+    "anyOf": [
+      {
+        "required": [
+          "status"
+        ]
+      },
+      {
+        "required": [
+          "active"
+        ]
+      },
+      {
+        "required": [
+          "confirmed"
+        ]
+      },
+      {
+        "required": [
+          "pinned"
+        ]
+      },
+      {
+        "required": [
+          "lineage"
+        ]
+      },
+      {
+        "required": [
+          "cites"
+        ]
+      },
+      {
+        "required": [
+          "links"
+        ]
+      },
+      {
+        "required": [
+          "sources"
+        ]
+      },
+      {
+        "required": [
+          "originKinds"
+        ]
+      },
+      {
+        "required": [
+          "origin"
+        ]
+      },
+      {
+        "required": [
+          "original"
+        ]
+      }
+    ]
+  }
+}

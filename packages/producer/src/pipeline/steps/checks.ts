@@ -1,0 +1,27 @@
+import { defineCheck } from "../define.js";
+
+/** Every check script and npm check the producer runs; check:pipeline fails on one not declared here. */
+export const CHECKS = [
+  defineCheck({ id: "pipeline", files: ["scripts/check-pipeline.mjs"], npm: ["check:pipeline", "test:pipeline"], rootNpm: ["check:pipeline"] }),
+  defineCheck({ id: "workspace", cli: "check" }),
+  defineCheck({ id: "assemble-only", files: ["scripts/check-assemble-only.mjs"], npm: ["check:assemble-only", "test:assemble-only"] }),
+  defineCheck({ id: "copy-source", files: ["scripts/check-copy-source.mjs"] }),
+  defineCheck({ id: "generated-derived", files: ["scripts/check-generated-derived.mjs"], npm: ["check:generated-derived"], rootNpm: ["check:generated-derived"] }),
+  defineCheck({ id: "studio-template", files: ["scripts/check-studio-template.mjs"], npm: ["check:studio-template"] }),
+  defineCheck({ id: "studio-map", files: ["studio/checks/check-studio-map.cjs"], npm: ["check:studio-map"] }),
+  defineCheck({ id: "studio-routes", files: ["studio/checks/check-studio-routes.cjs"], npm: ["check:studio-routes"] }),
+  defineCheck({ id: "no-handrolling", files: ["studio/checks/check-no-handrolling.cjs"] }),
+  defineCheck({ id: "no-page-jsx", files: ["studio/checks/check-no-page-jsx.cjs"] }),
+  defineCheck({ id: "theme-parity", files: ["studio/checks/check-theme-parity.cjs"] }),
+  defineCheck({ id: "studio-p0", files: ["studio/checks/p0-studio-check.cjs"], npm: ["studio:check"], rootNpm: ["studio:check"] }),
+  defineCheck({ id: "studio-propagate", files: ["studio/checks/p0-propagate.mjs"], npm: ["studio:propagate"], rootNpm: ["studio:propagate"] }),
+  defineCheck({ id: "studio-mutations", files: ["studio/checks/p0-studio-mutations.cjs"], npm: ["studio:mutation-proof"], rootNpm: ["studio:mutation-proof"] }),
+  defineCheck({ id: "publisher-preview", files: ["studio/checks/publisher-preview.cjs"] }),
+  defineCheck({ id: "studio-dom", files: ["studio/checks/studio-dom-check.mjs", "studio/checks/studio-overflow.mjs"] }),
+  defineCheck({ id: "studio-modules", files: ["studio/checks/studio-modules-check.mjs"] }),
+  defineCheck({ id: "studio-compose", files: ["scripts/compose-studio.mjs"], npm: ["studio:compose"], rootNpm: ["studio:compose"] }),
+  defineCheck({ id: "decisions", npm: ["check:decisions"], pending: { branch: "claude/pin-cli" } }),
+  defineCheck({ id: "compile-pure", files: ["scripts/check-compile-pure.mjs"], npm: ["check:compile-pure"], pending: { branch: "claude/compile-pure" } }),
+  defineCheck({ id: "studio-capture", files: ["scripts/capture-studio.mjs"], npm: ["check:studio-capture", "test:studio-capture"], pending: { branch: "claude/visual-harness" } }),
+  defineCheck({ id: "rules", rootNpm: ["check:rules"], pending: { branch: "claude/w0-rule-registry" } }),
+];

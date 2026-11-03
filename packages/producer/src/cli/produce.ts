@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 import { compileCells } from "../server/cells.js";
+import type { CompileResult } from "../server/cells.js";
 import { startProducerServer } from "../server/index.js";
 import type { CliArgs } from "./args.js";
 import type { CliResult } from "./main.js";
@@ -12,8 +13,9 @@ function openBrowser(url: string): void {
   const browser = spawn(command as string, args as string[], { stdio: "ignore", detached: true });
   browser.on("error", () => { /* The printed local address remains usable. */ }); browser.unref();
 }
-export async function runProduce(args: CliArgs, root: string): Promise<CliResult> {
-  const compiled = await compileCells(root, args.check);
+/** `precompiled` is the pipeline runner's composition of designer.compile and writer.compile. */
+export async function runProduce(args: CliArgs, root: string, precompiled?: readonly CompileResult[]): Promise<CliResult> {
+  const compiled = precompiled ? [...precompiled] : await compileCells(root, args.check);
   const status = compiled.map(result => `${result.agent}: ${result.state}`).join(", ");
   if (args.once || args.check) return { exitCode: compiled.every(result => result.state === "compiled") ? 0 : 2, verb: "produce", root, check: args.check, message: status };
   const server = await startProducerServer({ root, port: args.port, compilation: compiled, ...(args.out ? { installOut: resolve(args.out) } : {}) });

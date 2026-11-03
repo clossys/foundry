@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/candidate-publisher.schema.json",
+  "title": "Publisher candidate: a page or publication record with candidate meta",
+  "description": "Derived from src/records/slot-model/validate.ts validateJsonCandidate kinds page and publication.",
+  "type": "object",
+  "required": [
+    "meta"
+  ],
+  "properties": {
+    "meta": {
+      "$ref": "candidate-meta.schema.json"
+    }
+  },
+  "not": {
+    "anyOf": [
+      {
+        "required": [
+          "status"
+        ]
+      },
+      {
+        "required": [
+          "active"
+        ]
+      },
+      {
+        "required": [
+          "confirmed"
+        ]
+      },
+      {
+        "required": [
+          "pinned"
+        ]
+      },
+      {
+        "required": [
+          "lineage"
+        ]
+      },
+      {
+        "required": [
+          "cites"
+        ]
+      },
+      {
+        "required": [
+          "links"
+        ]
+      },
+      {
+        "required": [
+          "sources"
+        ]
+      },
+      {
+        "required": [
+          "originKinds"
+        ]
+      },
+      {
+        "required": [
+          "origin"
+        ]
+      },
+      {
+        "required": [
+          "original"
+        ]
+      }
+    ]
+  },
+  "anyOf": [
+    {
+      "$ref": "page.schema.json"
+    },
+    {
+      "$ref": "publication.schema.json"
+    }
+  ]
+}
