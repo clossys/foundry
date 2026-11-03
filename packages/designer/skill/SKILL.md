@@ -149,14 +149,17 @@ owner's yes.
 The slot contracts carry these as `limits` (`compose.band`, `compose.header`,
 `compose.measure`, `rule.*`); they hold for every consumer, not one page.
 
-- **A verbatim stock pick is exempt.** A pick (`meta.source.kind: registry`)
-  whose every code file is mapped in `meta.refVerbatim.files` keeps the
-  reference's own markup, classes and layout. The rules below govern code an
-  adopt or create writes; they never ask you to edit a pick, because any edit
-  beyond the allowed hunks fails `designer-ref-verbatim`. To bring a pick onto
-  the band and its tokens, adopt it (`derived`) and swap utilities with
-  H-TOKEN hunks. `designer-section-check` skips the mapped files of a pick and
-  does not require it to compose the band.
+- **Only byte-identical stock is exempt.** A pick keeps the reference's own
+  markup, classes and layout. The rules below govern code an adopt or create
+  writes; they never ask you to edit a pick, because any edit beyond the allowed
+  hunks fails `designer-ref-verbatim`. `designer-section-check` skips a file only
+  when the strict `designer-ref-verbatim` check passes for the version, its
+  element.json payload covers every code file, and the file's bytes hash to the
+  vendored reference file `lineage.source.files` maps it to (as `shadcn add`
+  writes it). It skips the band rule only when every code file is such stock.
+  `meta` claims are never read, and an adapted file is linted. To bring a pick
+  onto the band and its tokens, adopt it (`derived`) and swap utilities with
+  H-TOKEN hunks.
 
 - **One shell.** A section whose contract names `compose.band` lists the pinned
   `sections.band` item, and the pinned `sections.section-header` item when it

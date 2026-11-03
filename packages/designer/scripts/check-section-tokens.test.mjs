@@ -1,15 +1,28 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import { classTokens, loadCatalog, sectionShellFindings, tokenFindings } from "./check-section-tokens.mjs";
+import { checkElement } from "./check-ref-verbatim.mjs";
+import { configFromComponents, normalizeReference } from "./ref-verbatim/normalize.mjs";
 import { pageFindings } from "./check-page-overflow.mjs";
 
 const catalog = loadCatalog();
 const bandTokens = String(catalog.contracts.get("sections.band").limits["emits.theme"]).split(",");
 
-function consumer({ heroClass = "py-section", heroDeps = ["@acme/section-shell", "@acme/section-header"], emits = bandTokens, heroMeta } = {}) {
+const pkg = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const components = readFileSync(join(pkg, "ui/components.json"), "utf8");
+// Real stock: the vendored shadcn-aria `example` component as `shadcn add` writes it.
+const STOCK = JSON.parse(readFileSync(join(pkg, "references/manifest.json"), "utf8")).items.find(row => row.registry === "shadcn-aria" && row.name === "example" && row.version === "4.23.0");
+const STOCK_PATH = "registry/aria-nova/components/example.tsx";
+const STOCK_CODE = normalizeReference(readFileSync(join(pkg, "references", STOCK.dir, STOCK_PATH), "utf8"), STOCK_PATH, configFromComponents(JSON.parse(components)));
+const lineage = files => ({ mode: "verbatim", source: { registry: STOCK.registry, item: STOCK.name, version: STOCK.version, hash: STOCK.hash, files } });
+// The self-declared claim the lint must never trust.
+const CLAIM = { source: { kind: "registry", ref: ["shadcn-aria/example@4.23.0"] }, refVerbatim: { files: { "hero.tsx": STOCK_PATH, "extra.tsx": STOCK_PATH } } };
+
+function consumer({ heroClass = "py-section", heroDeps = ["@acme/section-shell", "@acme/section-header"], emits = bandTokens, heroMeta, heroFiles, heroRecord } = {}) {
   const root = mkdtempSync(join(tmpdir(), "section-tokens-"));
   const pins = {};
   const add = (slot, element, item, files = {}) => {
@@ -21,7 +34,12 @@ function consumer({ heroClass = "py-section", heroDeps = ["@acme/section-shell",
   };
   add("sections.band", "section-shell", { cssVars: { theme: Object.fromEntries(emits.map(name => [name.slice(2), "1rem"])) } }, { "section-shell.tsx": `export const S = () => <section className="py-section mx-auto max-w-measure px-gutter" />` });
   add("sections.section-header", "section-header", { registryDependencies: ["@acme/section-shell"] }, { "section-header.tsx": `export const H = () => <h2 className="text-heading" />` });
-  add("sections.hero", "hero", { registryDependencies: heroDeps, ...(heroMeta ? { meta: heroMeta } : {}) }, { "hero.tsx": `export const Hero = () => <div className="${heroClass}" />` });
+  add("sections.hero", "hero", { registryDependencies: heroDeps, ...(heroMeta ? { meta: heroMeta } : {}) }, heroFiles ?? { "hero.tsx": `export const Hero = () => <div className="${heroClass}" />` });
+  if (heroRecord) {
+    const dir = join(root, "library", "sections.hero", "hero", "v1");
+    writeFileSync(join(dir, "element.json"), JSON.stringify({ schema: "clossys.element/1", id: "hero", slot: "sections.hero", version: 1, hash: pins["sections.hero"].hash, reads: { copyKeys: [], themeVars: [] }, ...heroRecord }));
+    writeFileSync(join(root, "components.json"), components);
+  }
   writeFileSync(join(root, "selection.json"), JSON.stringify({ pins }));
   return root;
 }
@@ -49,16 +67,49 @@ test("a section that skips the shell, or a band that does not emit its tokens, f
   assert.deepEqual(sectionShellFindings(consumer({ emits: bandTokens.filter(name => name !== "--text-display") }), catalog), ["shell: section-shell does not emit --text-display in cssVars.theme"]);
 });
 
-test("a verbatim stock pick keeps its reference classes and need not compose the band", () => {
-  const stock = "py-24 max-w-5xl text-5xl";
-  const pick = { source: { kind: "registry", ref: ["shadcn-aria/separator-example@4.23.0"] }, refVerbatim: { files: { "hero.tsx": "registry/aria-nova/examples/separator-example.tsx" } } };
-  assert.deepEqual(sectionShellFindings(consumer({ heroClass: stock, heroDeps: ["separator"], heroMeta: pick }), catalog), []);
-  // Mutation: the same code as an adopt (derived), or with the file unmapped, is linted again.
-  const derived = sectionShellFindings(consumer({ heroClass: stock, heroDeps: ["separator"], heroMeta: { ...pick, source: { ...pick.source, kind: "derived" } } }), catalog);
-  assert.equal(derived.filter(row => row.startsWith("shell:")).length, 2);
-  assert.equal(derived.filter(row => /^(spacing|type):/.test(row)).length, 3);
-  const unmapped = sectionShellFindings(consumer({ heroClass: stock, heroDeps: ["separator"], heroMeta: { ...pick, refVerbatim: { files: {} } } }), catalog);
-  assert.equal(unmapped.length, 5);
+test("byte-identical stock passes the strict ref-verbatim check and is exempt from the shell and token lint", () => {
+  // The stock bytes fail the token lint on their own: the exemption is what lets them through.
+  assert.ok(tokenFindings("hero", [["hero.tsx", STOCK_CODE]]).length > 0);
+  const stock = consumer({ heroDeps: ["example"], heroFiles: { "hero.tsx": STOCK_CODE }, heroRecord: { lineage: lineage({ "hero.tsx": STOCK_PATH }), payload: ["hero.tsx"] } });
+  assert.deepEqual(sectionShellFindings(stock, catalog), []);
+});
+
+const NOT_STOCK = "py-40 max-w-7xl text-9xl w-[200vw] -mx-24";
+const notStock = `export const Extra = () => <div className="${NOT_STOCK}" />\n`;
+const SHELL = ["shell: hero (sections.hero) does not depend on the band section-shell", "shell: hero (sections.hero) does not depend on the section header section-header"];
+const refused = (name, options) => {
+  const findings = sectionShellFindings(consumer({ heroDeps: ["example"], heroMeta: CLAIM, ...options }), catalog);
+  for (const row of SHELL) assert.ok(findings.includes(row), `${name}: ${row}`);
+  for (const token of NOT_STOCK.split(" ")) assert.ok(findings.some(row => row.includes(`: ${token} is`)), `${name}: ${token} is linted`);
+  return findings;
+};
+
+test("a self-claimed or unproven stock pick is linted in full", () => {
+  // Self-declared meta alone, with no element.json record.
+  refused("claim only", { heroFiles: { "hero.tsx": notStock } });
+  // Valid lineage but an empty payload: the strict check has nothing to cover.
+  refused("payload []", { heroFiles: { "hero.tsx": notStock }, heroRecord: { lineage: lineage({ "hero.tsx": STOCK_PATH }), payload: [] } });
+  // A mapping to a file that is not in the vendored reference.
+  refused("nonexistent target", { heroFiles: { "hero.tsx": notStock }, heroRecord: { lineage: lineage({ "hero.tsx": "does/not/exist.tsx" }), payload: ["hero.tsx"] } });
+  // Correct mapping, modified contents.
+  refused("modified", { heroFiles: { "hero.tsx": STOCK_CODE + notStock }, heroRecord: { lineage: lineage({ "hero.tsx": STOCK_PATH }), payload: ["hero.tsx"] } });
+  // Partial mapping: stock hero.tsx is mapped, extra.tsx is not.
+  refused("partial", { heroFiles: { "hero.tsx": STOCK_CODE, "extra.tsx": notStock }, heroRecord: { lineage: lineage({ "hero.tsx": STOCK_PATH }), payload: ["hero.tsx", "extra.tsx"] } });
+  // An unlisted non-stock file: registry-item.json ships extra.tsx, the payload omits it.
+  refused("unlisted", { heroFiles: { "hero.tsx": STOCK_CODE, "extra.tsx": notStock }, heroRecord: { lineage: lineage({ "hero.tsx": STOCK_PATH }), payload: ["hero.tsx"] } });
+});
+
+test("a recorded adaptation passes ref-verbatim but is not stock bytes, so it is linted", () => {
+  const adapted = STOCK_CODE.replace('from "cn"', 'from "@/lib/utils"');
+  const options = adaptations => ({ heroDeps: ["example"], heroMeta: CLAIM, heroFiles: { "hero.tsx": adapted }, heroRecord: { lineage: { ...lineage({ "hero.tsx": STOCK_PATH }), adaptations }, payload: ["hero.tsx"] } });
+  const target = { slot: "sections.hero", element: "hero", version: 1 };
+  const hashes = checkElement(consumer(options([])), target, { strict: true }).findings.map(row => /unrecorded adaptation (sha256:[a-f0-9]{64})/.exec(row.detail)?.[1]).filter(Boolean);
+  assert.ok(hashes.length > 0);
+  const root = consumer(options(hashes.map(hash => ({ kind: "import-paths", file: "hero.tsx", hash, reason: "consumer utils alias" }))));
+  assert.equal(checkElement(root, target, { strict: true }).status, "pass");
+  const findings = sectionShellFindings(root, catalog);
+  for (const row of SHELL) assert.ok(findings.includes(row), row);
+  assert.deepEqual(findings.filter(row => !row.startsWith("shell:")), tokenFindings("hero", [["hero.tsx", adapted]]));
 });
 
 test("class tokens drop variants, important marks and opacity modifiers", () => {
