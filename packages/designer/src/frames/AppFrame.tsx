@@ -22,14 +22,13 @@ import { SHELL_COPY_REFS } from "../components/Banner.copy.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 
 import { componentLeaf } from "../runtime/component-leaf.js";
+import { MenuGroup, MenuItem, MenuLabel, ShellMenu } from "../blocks/shell-menu.js";
 
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 const Button = componentLeaf<typeof import("../components/index.js").Button>("components.button");
 const Icon = componentLeaf<typeof import("../components/index.js").Icon>("components.icon");
 const Logomark = componentLeaf<typeof import("../components/index.js").Logomark>("components.logo");
-const Menu = componentLeaf<typeof import("../components/index.js").Menu>("components.menu");
-const Tooltip = componentLeaf<typeof import("../components/index.js").Tooltip>("components.tooltip");
-const ToggleButton = componentLeaf<typeof import("../components/index.js").ToggleButton>("components.toggle-button");
+const ToggleButton = componentLeaf<typeof import("../components/preview-runtime/components/toggle-button/toggle.js").Toggle>("components.toggle-button");
 
 /** DOM provenance (WIRE-3 D1): this frame root stamps its leaf and fill. */
 const FRAME_STAMP = dsAttrs("frames", "frames.app-shell", "foundry/frames.app-shell");
@@ -54,7 +53,7 @@ function SignedOutMenu({ sections, signedOutLabel, onRoute, markSrc, theme, cont
   if (!populated.length && theme === undefined && controls == null) return <SemanticContent as="div" className="flex min-w-0 items-center frame-account-row"><Logomark src={markSrc} size="sm" /><SemanticContent as="span" className="min-w-0 truncate">{signedOutLabel}</SemanticContent></SemanticContent>;
   const itemKey = (section: string, entry: string) => JSON.stringify([section, entry]);
   const trigger = <Button variant="ghost" className={CONTROL + " w-full justify-start whitespace-normal text-start"}><Logomark src={markSrc} size="sm" /><SemanticContent as="span" className="min-w-0 break-words">{signedOutLabel}</SemanticContent></Button>;
-  const content = (close?: () => void) => <>{theme !== undefined && <AppFrameThemeSection {...theme} />}{populated.map(section => <Menu.Section key={section.id} heading={section.label} aria-label={section.label ?? signedOutLabel}
+  const content = <>{theme !== undefined && <AppFrameThemeSection {...theme} />}{populated.map(section => <MenuGroup key={section.id} aria-label={section.label ?? signedOutLabel}
       selectionMode={section.kind === "preferences" ? "multiple" : "none"}
       selectedKeys={section.kind === "preferences" ? section.entries.filter(entry => entry.checked).map(entry => itemKey(section.id, entry.id)) : undefined}
       shouldCloseOnSelect={section.kind === "preferences" ? false : undefined}
@@ -64,11 +63,12 @@ function SignedOutMenu({ sections, signedOutLabel, onRoute, markSrc, theme, cont
           if (checked !== entry.checked) entry.onCheckedChange(checked);
         }
       } : undefined}>
-      {section.entries.map(entry => <Menu.Item key={entry.id} id={itemKey(section.id, entry.id)} textValue={entry.label} isDisabled={entry.isDisabled}
-        isDestructive={entry.kind === "destructive"} href={entry.kind === "link" ? entry.href : undefined}
-        onAction={entry.kind === "preference" ? undefined : () => { if (entry.kind === "link") onRoute?.(entry); else entry.onAction(); close?.(); }}>{entry.label}</Menu.Item>)}
-    </Menu.Section>)}</>;
-  return <Menu trigger={trigger} popoverClassName="mb-lg" controls={controls} controlsLabel={signedOutLabel}>{content()}</Menu>;
+      {section.label && <MenuLabel>{section.label}</MenuLabel>}
+      {section.entries.map(entry => <MenuItem key={entry.id} id={itemKey(section.id, entry.id)} textValue={entry.label} isDisabled={entry.isDisabled}
+        variant={entry.kind === "destructive" ? "destructive" : "default"} href={entry.kind === "link" ? entry.href : undefined}
+        onAction={entry.kind === "preference" ? undefined : () => { if (entry.kind === "link") onRoute?.(entry); else entry.onAction(); }}>{entry.label}</MenuItem>)}
+    </MenuGroup>)}</>;
+  return <ShellMenu trigger={trigger} label={signedOutLabel} controls={controls}>{content}</ShellMenu>;
 }
 
 function FrameContent({ brand, navigation, account: { avatar = "initials", ...account }, showAccount = true, commands, children, main: suppliedMain, pageModule, pageModuleLabel, headerTrail, headerActions, inspectorContext, state, stateViews, progress, toasts, rightPanel: suppliedRightPanel, theme, themeControl, footerLayout = "inline", fill = "host", dir: suppliedDir, onNavigate, layout: shellLayout = "standard", stage: stageInset = "contained", notices, dock, headerPosition, headerSurface, context, root, page, workspaces, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, pageActionsLabel,
@@ -265,7 +265,7 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
     <Logomark src={markSrc} size="sm" />{brand.navigationMark && <SemanticContent as="span" className="min-w-0 truncate text-body text-ink-primary">{brand.navigationMark.label}</SemanticContent>}
   </SemanticContent>;
   const commandTrigger = <SemanticContent as="div">{navigationBrand}<Button variant="ghost" className={CONTROL + " w-full justify-start"} onPress={openCommands}><Icon glyph={Search} decorative /><SemanticContent as="span" className="min-w-0 truncate">{triggerLabel}</SemanticContent></Button></SemanticContent>;
-  const moduleToggle = pageModule != null && pageModuleLabel ? <ToggleButton aria-label={pageModuleLabel} shape="icon-only" isSelected={moduleOpen} onChange={setModuleOpen}><Icon glyph={List} decorative /></ToggleButton> : null;
+  const moduleToggle = pageModule != null && pageModuleLabel ? <ToggleButton aria-label={pageModuleLabel} isSelected={moduleOpen} onChange={setModuleOpen}><Icon glyph={List} decorative /></ToggleButton> : null;
   const hasRegions = headerTrail !== undefined || headerActions !== undefined;
   const regionPage = hasRegions ? { ...(page ?? { title: resolvedHeader?.title ?? "" }), breadcrumb: headerTrail ?? page?.breadcrumb, actions: headerActions ?? page?.actions } : page;
   const leasedActions = hasRegions && headerActions === undefined ? resolvedHeader?.actions?.render({ compact: !wide }) : null;
@@ -274,8 +274,8 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
   if (mainState !== "ready" && displayedMain === undefined) throw new TypeError("AppFrame: a resolved view is required for its main state");
   const pageBar = <PageBar position={headerPosition} surface={headerSurface ?? (shellLayout === "immersive" ? "glass" : "solid")} header={hasRegions ? undefined : resolvedHeader} onNavigate={onNavigate} context={context} root={root} page={regionPage} workspaces={workspaces} narrow={!wide}
     embedded dir={dir}
-    start={<SemanticContent as="span" ref={setNavigationControlHost} className="contents">{!navigationControlHost && <Tooltip trigger={navigationTrigger}>{navOpen ? navigationCloseLabel : navigationOpenLabel}</Tooltip>}</SemanticContent>}
-    end={<>{leasedActions}{moduleToggle}{rightPanel ? <Tooltip trigger={panelTrigger}>{panelOpen || panelDocked ? closeLabel : openLabel}</Tooltip> : <SemanticContent as="span" aria-hidden="true" className="icon-control-md shrink-0" />}</>}
+    start={<SemanticContent as="span" ref={setNavigationControlHost} className="contents">{!navigationControlHost && navigationTrigger}</SemanticContent>}
+    end={<>{leasedActions}{moduleToggle}{rightPanel ? panelTrigger : <SemanticContent as="span" aria-hidden="true" className="icon-control-md shrink-0" />}</>}
     labels={{ breadcrumb: breadcrumbLabel ?? copy(SHELL_COPY_REFS.frame.breadcrumb), collapsedBreadcrumb: collapsedBreadcrumbLabel ?? copy(SHELL_COPY_REFS.frame.collapsedBreadcrumb), pageInfo: pageInfoLabel ?? copy(SHELL_COPY_REFS.frame.pageInfo),
       pageActions: pageActionsLabel ?? copy(SHELL_COPY_REFS.frame.pageActions) }} />;
   return <ModalContext.Provider value={{ style: { direction: dir } }}><PopoverContext.Provider value={{ style: { direction: dir } }}>
@@ -286,7 +286,7 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
       <SemanticContent as="div" className="flex min-h-0 min-w-0 flex-1">
         <SemanticContent as="div" id={generated + "-navigation"} data-application-frame-region="navigation" data-open={navigationDocked} aria-hidden={!navigationDocked} inert={!navigationDocked && !layout.navigationOverlay} className={"frame-docked-navigation min-h-0 shrink-0 overflow-hidden " + APP_FRAME_NAVIGATION_SIZE[navigationDocked ? "docked" : "closed"]}>
           <FrameSlotOutlet slot="left-sidebar"><AppNavigation {...navigation} fullViewport retainMounted onNavigate={onNavigate} dismissAt={layout.navigationOverlay ? APP_FRAME_ALWAYS_NARROW : APP_FRAME_ALWAYS_WIDE}
-            header={commandTrigger} footer={footer} triggerContainer={navigationControlHost} trigger={navigationControlHost ? <Tooltip trigger={navigationTrigger}>{navOpen ? navigationCloseLabel : navigationOpenLabel}</Tooltip> : <></>}
+            header={commandTrigger} footer={footer} triggerContainer={navigationControlHost} trigger={navigationControlHost ? navigationTrigger : <></>}
             drawerOpen={navigation.drawerOpen ?? navDrawerOpen} onDrawerOpenChange={next => { setNavDrawerOpen(next); if (next) setPanelOpen(false); navigation.onDrawerOpenChange?.(next); }}
             collapsed={navCollapsed} onCollapsedChange={next => { setNavigationCollapsed(next); navigation.onCollapsedChange?.(next); }} /></FrameSlotOutlet>
         </SemanticContent>

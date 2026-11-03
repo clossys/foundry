@@ -1,6 +1,6 @@
 {
   "consumer": "defaults-consumer",
-  "selectionHash": "sha256:a1955b85076bb0d9a3cfda16955b480a11e9894bdb338bc8c8b7c1c8746c4510",
+  "selectionHash": "sha256:268b8777c316ae0532f41313f437478460a7b281dbecd5ff6cbac0253de105cc",
   "components": {
     "components.avatar": {
       "slot": "components.avatar",
@@ -28,7 +28,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "15296c29f1b0ba09a6948fc09adb425c13f16b8f5856063abdb627c23e220661",
+        "sha256": "895a097ccb9fe86c3051edce270c8fa6952b04d3a45bf4d422ea92530655670b",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -169,6 +169,16 @@
           }
         ],
         "blockers": [],
+        "secondaryExports": [
+          {
+            "name": "AvatarImage",
+            "export": "AvatarImage"
+          },
+          {
+            "name": "AvatarFallback",
+            "export": "AvatarFallback"
+          }
+        ],
         "rac": {
           "range": "^1.19.0",
           "peer": false,
@@ -197,7 +207,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "15296c29f1b0ba09a6948fc09adb425c13f16b8f5856063abdb627c23e220661",
+          "sha256": "895a097ccb9fe86c3051edce270c8fa6952b04d3a45bf4d422ea92530655670b",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
