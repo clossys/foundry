@@ -4379,6 +4379,7 @@
         "@shadcn/dialog",
         "@shadcn/input-group",
         "@shadcn/login-03",
+        "@shadcn/navigation-menu-example",
         "@shadcn/pagination",
         "@shadcn/sheet",
         "@shadcn/sidebar"
@@ -4698,7 +4699,8 @@
         }
       ],
       "requiredBy": [
-        "@shadcn/command"
+        "@shadcn/command",
+        "@shadcn/navigation-menu-example"
       ]
     },
     {
@@ -4767,6 +4769,38 @@
           "bytes": 2390,
           "origin": "empty.json#files[0].content"
         }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "example",
+      "version": "4.23.0",
+      "dir": "shadcn/example@4.23.0",
+      "type": "registry:component",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/example.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:4d8381bd317c75bae7c377b20b79919896b153eee4a607296881191eca10e3bd",
+      "files": [
+        {
+          "path": "example.json",
+          "sha256": "647ff9649112e22cee868b09d2d701fa2f13e4af34ce2b12f2cc89b869fdcc8b",
+          "bytes": 1792,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/example.json"
+        },
+        {
+          "path": "registry/radix-nova/components/example.tsx",
+          "sha256": "f68769304c8698f44e8dfc5b5a883b953ce6b31b04b3e0fb466ca4d759bf4a18",
+          "bytes": 1394,
+          "origin": "example.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn/navigation-menu-example"
       ]
     },
     {
@@ -5109,6 +5143,40 @@
     },
     {
       "registry": "shadcn",
+      "name": "navigation-menu-example",
+      "version": "4.23.0",
+      "dir": "shadcn/navigation-menu-example@4.23.0",
+      "type": "registry:example",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/navigation-menu-example.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "frames.site-shell"
+      ],
+      "registryDependencies": [
+        "button",
+        "dialog",
+        "navigation-menu",
+        "example"
+      ],
+      "hash": "sha256:d38b9d6f324ee8083e7e15b1f1361a01472294f2889d1833c576e9e139a03fd3",
+      "files": [
+        {
+          "path": "navigation-menu-example.json",
+          "sha256": "2a86ae7874a58f45ac77d153fa1bcadd1c0ee94326518f59eb9e84e231aa011b",
+          "bytes": 10673,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/navigation-menu-example.json"
+        },
+        {
+          "path": "registry/radix-nova/examples/navigation-menu-example.tsx",
+          "sha256": "d0bf129fd682787c792d8d2cb688676f9ad38445718d0181b65a44a59b966030",
+          "bytes": 9830,
+          "origin": "navigation-menu-example.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
       "name": "navigation-menu",
       "version": "4.23.0",
       "dir": "shadcn/navigation-menu@4.23.0",
@@ -5136,6 +5204,9 @@
           "bytes": 6739,
           "origin": "navigation-menu.json#files[0].content"
         }
+      ],
+      "requiredBy": [
+        "@shadcn/navigation-menu-example"
       ]
     },
     {
