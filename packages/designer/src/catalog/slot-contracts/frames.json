@@ -291,5 +291,633 @@
     ],
     "checkSuite": "designer.slot-contracts.frames",
     "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "frames.document",
+    "package": "designer",
+    "layer": "frames",
+    "purpose": "HTML document frame: head and critical CSS, and a body that hosts the site, app or auth shell, as a page or status document.",
+    "inputs": [
+      {
+        "name": "head",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "critical-css",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "body",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {},
+    "references": [],
+    "checkSuite": "designer.slot-contracts.frames",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "frames.app-shell",
+    "package": "designer",
+    "layer": "frames",
+    "purpose": "Application shell: skip link, sidebar, header, main region, inspector, command palette, page module, state and toast regions, in a standard or immersive layout.",
+    "inputs": [
+      {
+        "name": "skip-link",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "progress",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "sidebar",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "header",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "main",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "inspector",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "command",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "page-module",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "state",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "toasts",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-layers",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-list-view",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-search",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "sidebar-07",
+        "version": "4.23.0",
+        "hash": "sha256:cb3b5a933d64347eb59403336ca1be71d991fcd50921142e7ed4fe974afe7d60"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.frames",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "frames.auth-shell",
+    "package": "designer",
+    "layer": "frames",
+    "purpose": "Authentication shell: skip link and one main region for sign-in and other account flows.",
+    "inputs": [
+      {
+        "name": "skip-link",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "main",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "login-03",
+        "version": "4.23.0",
+        "hash": "sha256:5ec4f2e1397fc999153a27f5d3a4fa3808acbe20e6a0805385545d0508126708"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.frames",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "frames.app-header",
+    "package": "designer",
+    "layer": "frames",
+    "purpose": "Application header: context, breadcrumb trail, actions and info, sticky or static.",
+    "inputs": [
+      {
+        "name": "context",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "trail",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "actions",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "info",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-chevron-down",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-external-link",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "sidebar-07",
+        "version": "4.23.0",
+        "hash": "sha256:cb3b5a933d64347eb59403336ca1be71d991fcd50921142e7ed4fe974afe7d60"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.frames",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "frames.app-sidebar",
+    "package": "designer",
+    "layer": "frames",
+    "purpose": "Application sidebar: header, navigation tree, account and theme controls, docked, collapsed or as an overlay.",
+    "inputs": [
+      {
+        "name": "header",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "tree",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "account",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "theme",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-chevron-down",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-chevron-left",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-check",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-chevron-up",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-theme-light",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-theme-dark",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-theme-system",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "sidebar-07",
+        "version": "4.23.0",
+        "hash": "sha256:cb3b5a933d64347eb59403336ca1be71d991fcd50921142e7ed4fe974afe7d60"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.frames",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "frames.inspector",
+    "package": "designer",
+    "layer": "frames",
+    "purpose": "Inspector panel beside the main region for detail content, docked, collapsed or as an overlay.",
+    "inputs": [
+      {
+        "name": "content",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-layers",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "sheet",
+        "version": "4.23.0",
+        "hash": "sha256:faf68ebfa080e72f9f8c2f0a946c0a243f6fedf8d3a35cc71ba125a4436fe711"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.frames",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "frames.sheet",
+    "package": "designer",
+    "layer": "frames",
+    "purpose": "Sheet dialog that slides in from the start, end or bottom, with a heading, body and footer.",
+    "inputs": [
+      {
+        "name": "heading",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "body",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "footer",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.shadow",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-close",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "sheet",
+        "version": "4.23.0",
+        "hash": "sha256:faf68ebfa080e72f9f8c2f0a946c0a243f6fedf8d3a35cc71ba125a4436fe711"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.frames",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "frames.command",
+    "package": "designer",
+    "layer": "frames",
+    "purpose": "Command palette dialog: search field, grouped commands and an empty state, with an optional keyboard shortcut.",
+    "inputs": [
+      {
+        "name": "search",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "groups",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "empty",
+        "kind": "cell",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-search",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-close",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "command",
+        "version": "4.23.0",
+        "hash": "sha256:549cd010f34024eea234a587e123b487112262775590c6e9baa82e3a6212545c"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.frames",
+    "specimenKind": "visual"
   }
 ]
