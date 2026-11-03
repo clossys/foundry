@@ -1,0 +1,43 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "themes.shadow",
+  "agent": "designer",
+  "ia": {
+    "l0": "themes",
+    "l1": "themes.depth",
+    "l2": "depth-effects",
+    "order": 38
+  },
+  "kind": "element",
+  "contract": {
+    "$type": "shadow",
+    "emit": {
+      "2xs": "--shadow-2xs",
+      "xs": "--shadow-xs",
+      "sm": "--shadow-sm",
+      "md": "--shadow-md",
+      "lg": "--shadow-lg",
+      "xl": "--shadow-xl",
+      "2xl": "--shadow-2xl"
+    },
+    "kind": "token",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "2xs",
+        "xs",
+        "sm",
+        "md",
+        "lg",
+        "xl",
+        "2xl"
+      ]
+    },
+    "modes": [
+      "light"
+    ],
+    "tier": "scale"
+  },
+  "inputs": [],
+  "uses": []
+}

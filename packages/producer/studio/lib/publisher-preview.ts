@@ -1,6 +1,5 @@
 import { producerUrl } from './producer-url';
 import { studioCopy } from './studio-copy';
-import type { AgentCells } from './cells-client';
 import type { PublicationPage, PublicationResponse, PreviewEntry } from '../../src/server/publication';
 
 export type { PublicationPage, PublicationResponse } from '../../src/server/publication';
@@ -43,18 +42,6 @@ export async function loadPublication(signal: AbortSignal, publication?: string)
   const response = await fetch(producerUrl(`/api/publication${publication ? `?publication=${encodeURIComponent(publication)}` : ''}`), { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
   if (!response.ok) throw new Error(studioCopy("studio.producer-could-not-load-the-publication", { value0: String(response.status) }));
   return parsePublicationResponse(await response.json());
-}
-export function selectedPublicationId(index: AgentCells, selectedId?: string): string | undefined {
-  const meta = index.tree?.meta;
-  const publications = object(meta) && Array.isArray(meta.publications) ? meta.publications : [];
-  const selected = publications.find((entry: any) => entry.id === selectedId || object(entry.entryIds) && Object.hasOwn(entry.entryIds, selectedId ?? ''));
-  return typeof selected?.id === 'string' ? selected.id : publications.length === 1 && typeof publications[0]?.id === 'string' ? publications[0].id : undefined;
-}
-/** Join actual Publisher cell identities or paths; never guess a page from raw prose. */
-export function selectedPublishedPage(index: AgentCells, selectedId: string | undefined, pages: PublicationPage[]): PublicationPage | undefined {
-  if (!selectedId) return undefined;
-  const selected = index.cells.find(cell => cell.id === selectedId);
-  return pages.find(page => page.cellId === selectedId || page.id === selectedId || typeof selected?.fields?.path === 'string' && page.route === selected.fields.path);
 }
 export interface PublicationTreeNode { id: string; title: string; page?: PublicationPage; children: PublicationTreeNode[] }
 export function publicationNavigation(entries: PreviewEntry[], pages: PublicationPage[]): PublicationTreeNode[] {

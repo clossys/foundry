@@ -10,7 +10,6 @@ import { libraryHash, stableStringify } from "@clossys/designer/catalog";
 import { parseConsumerDogfoodContract } from "@clossys/designer/catalog/dogfood/node";
 import { compileSelection } from "../dist/server/selection.js";
 import { studioProjectionFiles } from "../dist/server/selection-projection.js";
-import { readStudioDesignerLibrary } from "../dist/server/theme.js";
 import { prepareStudioSelection } from "../dist/server/selection-defaults.js";
 import { readPageCheckSource } from "../dist/check/page-manifest.js";
 import { discoverRoot } from "../dist/cli/root.js";
@@ -155,8 +154,7 @@ export async function emitStudioCheckInputs({ root, output, sourceHead }) {
   if (inside(join(producerRoot, "studio"), output)) throw new Error("Studio check output cannot replace its source tree");
   await generateStudioMap({ check: true });
   const packet = await studioSourcePacket();
-  const stored = await readStudioDesignerLibrary(consumer);
-  const prepared = await prepareStudioSelection(stored);
+  const prepared = await prepareStudioSelection(undefined);
   let library;
   await compileSelection(consumer, prepared.input, prepared.leaves, libraryHash(prepared.input.library), async projection => { library = studioProjectionFiles(projection); });
   if (!library) throw new Error("Studio did not emit a checked selection");

@@ -105,14 +105,17 @@ describe("native Writer source", () => {
     await expect(readWriter(root)).rejects.toThrow(/Writer native IA is missing/);
   });
 
-  it("keeps no-IA compiled locale behavior unchanged", async () => {
+  it("refuses a Writer without IA and never reads compiled legacy", async () => {
     rmSync(join(writer, "ia.json"));
     rmSync(join(writer, "declarations.json"));
-    expect(await readWriter(root)).toEqual({ locale: "en", aliases: { "example.title": "legacy" }, sections: [], records: [{ id: "legacy", context: "example.title", text: "Contradictory legacy" }] });
+    await expect(readWriter(root)).rejects.toThrow(/Writer native IA is missing/);
   });
 
-  it("preserves compiled legacy even with IA until authored native declarations are available", async () => {
+  it("reads the pinned rows, not compiled legacy, when no declarations are authored", async () => {
     rmSync(join(writer, "declarations.json"));
-    expect(await readWriter(root)).toEqual({ locale: "en", aliases: { "example.title": "legacy" }, sections: [], records: [{ id: "legacy", context: "example.title", text: "Contradictory legacy" }] });
+    const result = await readWriter(root);
+    expect(result).toMatchObject({ locale: "en", aliases: {}, sections: [] });
+    expect(result.records.map(record => record.id)).toEqual(["title-1"]);
+    expect(JSON.stringify(result)).not.toContain("Contradictory legacy");
   });
 });

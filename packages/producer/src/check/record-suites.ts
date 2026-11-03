@@ -1,6 +1,6 @@
 /**
  * Record suites for `clossys check`: Publisher's page conformance over the consumer's
- * page records, the Writer and Director slot suites over their active cells, the
+ * page records, the Writer and Director slot suites over their pinned slots, the
  * agents' slot contracts against the slot engine's `clossys.slot-contract/1` schema,
  * and Designer's ref-verbatim check over every pinned library version.
  *
@@ -9,7 +9,8 @@
  * remain report-only unless `strict` is set.
  */
 import { join } from "node:path";
-import { agentModule, readCells } from "../server/cells.js";
+import { agentModule } from "../server/cells.js";
+import { readPinnedDirector } from "../records/director-pinned.js";
 import { readPublisher, readWriter } from "../publish/site-source.js";
 import { writerText } from "../publish/site-plan.js";
 import { validateSlotContract } from "../records/validate.js";
@@ -79,7 +80,7 @@ export async function consumerPageRecords(root: string): Promise<{ records: unkn
     routePack: { routes: publisher.routes }, sectionBindings: writer.sections, pageCopy, pages,
   });
   const routes = (publisher.routes as readonly unknown[]).filter(isRecord).map(row => row.path).filter((path): path is string => typeof path === "string");
-  const directorCells = (await readCells(root, "director", true)).map(cell => cell.id);
+  const directorCells = (await readPinnedDirector(join(root, "clossys"))).cells.map(cell => cell.id);
   return { records, routes, directorCells };
 }
 
@@ -94,29 +95,31 @@ async function archetypeSuite(root: string, strict: boolean): Promise<SuiteRepor
   return { ...report("archetypes", set.records.length, findings), exitCode: result.exitCode };
 }
 
-const files = async (root: string, kind: "writer" | "director") =>
-  (await readCells(root, kind, true)).map(cell => ({ path: cell.path, text: cell.source }));
-
-async function writerSuite(root: string): Promise<SuiteReport> {
-  const checks = await agentModule("writer", "slot-contracts/checks.js");
-  const cells = await files(root, "writer");
-  const director = await files(root, "director").catch(() => []);
-  const voice = director.length ? checks.directorVoiceFromFiles(director).voice : undefined;
-  const result = checks.runWriterSuite({ cells, ...(voice ? { director: voice } : {}) });
-  return report("writer-slots", cells.length, result.findings.map((finding: any) => ({
-    severity: finding.severity === "error" ? "error" : "warning", code: finding.check, message: finding.message,
-    where: `${finding.slot}${finding.path ? ` ${finding.path}` : ""}`,
-  })));
+/**
+ * Writer's slot suite parses legacy cell documents; pinned Writer candidates are a different
+ * format, so the suite reports that it cannot run rather than passing over nothing.
+ * Locale coverage, won't-claim and Director links run in `clossys write --check`.
+ */
+async function writerSuite(): Promise<SuiteReport> {
+  return failed("writer-slots", new Error("Writer's slot suite reads cell documents, not pinned slot candidates; run clossys write --check"));
 }
 
+/** The Director's own contract checks over each pinned Director candidate. */
 async function directorSuite(root: string): Promise<SuiteReport> {
   const checks = await agentModule("director", "slot-contracts/checks.js");
-  const cells = await files(root, "director");
-  const result = checks.runDirectorSuite({ cells });
-  // Director findings carry no severity: each one is a contract miss.
-  return report("director-slots", cells.length, result.findings.map((finding: any) => ({
-    severity: "error", code: finding.check, message: finding.message, where: `${finding.slot}${finding.path ? ` ${finding.path}` : ""}`,
-  })));
+  const format = await agentModule("director", "slot-contracts/format.js");
+  const director = await readPinnedDirector(join(root, "clossys"));
+  const byId = new Map((format.loadDirectorContracts().slots as { id: string }[]).map(contract => [contract.id, contract]));
+  const findings: SuiteFinding[] = director.unreadable.map(row => ({ severity: "error", code: "INPUT", message: row.message, where: `${row.slot} ${row.path}` }));
+  for (const cell of director.cells) {
+    const contract = byId.get(cell.id);
+    if (!contract) { findings.push({ severity: "error", code: "INPUT", message: `No Director slot contract for ${cell.id}`, where: `${cell.id} ${cell.path}` }); continue; }
+    // Director findings carry no severity: each one is a contract miss.
+    for (const finding of checks.checkDirectorCell(cell, contract) as { check: string; slot: string; path?: string; message: string }[]) {
+      findings.push({ severity: "error", code: finding.check, message: finding.message, where: `${finding.slot}${finding.path ? ` ${finding.path}` : ""}` });
+    }
+  }
+  return report("director-slots", director.cells.length + director.unreadable.length, findings);
 }
 
 /** Writer and Director contracts, projected by their own packages, against the shared schema. */
@@ -155,7 +158,7 @@ export async function runRecordSuites(rootIn: string, options: { strict?: boolea
   const run = (suite: SuiteReport["suite"], body: () => Promise<SuiteReport>) => body().catch(error => failed(suite, error));
   const suites = [
     await run("archetypes", () => archetypeSuite(rootIn, strict)),
-    await run("writer-slots", () => writerSuite(rootIn)),
+    await run("writer-slots", () => writerSuite()),
     await run("director-slots", () => directorSuite(rootIn)),
     await run("slot-contracts", () => slotContractSuite()),
     await run("ref-verbatim", () => refVerbatimSuite(rootIn)),

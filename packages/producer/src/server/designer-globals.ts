@@ -5,7 +5,9 @@ import { createRequire } from "node:module";
 import { dirname, extname, isAbsolute, join, relative, sep } from "node:path";
 import { compile } from "tailwindcss";
 import { listSlots, readCandidate } from "../records/slots.js";
-import { agentRoot, readCells } from "./cells.js";
+import { agentRoot } from "./cells.js";
+import { readPinned } from "../records/pinned.js";
+import { readIa } from "../records/slots.js";
 import { specimenSubstrate } from "./specimen-substrate.js";
 
 /**
@@ -160,15 +162,19 @@ export interface ConsumerBrand { name?: string; mark?: { light: string; dark: st
 
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
 
-/** The consumer's active Designer mark: the positive variant on light grounds, reversed on dark. */
+/** The consumer's pinned Designer mark (`assets.mark`): the positive variant on light grounds, reversed on dark. */
 export async function consumerBrand(root: string): Promise<ConsumerBrand> {
-  let cells;
-  try { cells = await readCells(root, "designer", true); } catch { return {}; }
-  const cell = cells.find(entry => entry.id === "assets.mark");
-  if (!cell) return {};
-  const json = /(?:^|\n)## Fill\s*\n[\s\S]*?```json\s*\n([\s\S]*?)\n```/.exec(cell.source)?.[1];
+  const consumer = join(root, "clossys");
   let fill: unknown;
-  try { fill = json ? JSON.parse(json) : undefined; } catch { return {}; }
+  try {
+    if (!readIa(consumer, "designer")) return {};
+    const pinned = readPinned(consumer, "designer").pinned.find(candidate => candidate.id === "assets.mark");
+    if (!pinned) return {};
+    // The registry item carries its value file, `clossys/assets.mark.json`, beside the SVG members.
+    const files = (JSON.parse(pinned.bytes) as { files?: { path?: unknown; content?: unknown }[] }).files ?? [];
+    const value = files.find(file => file.path === "clossys/assets.mark.json")?.content;
+    fill = typeof value === "string" ? JSON.parse(value) : undefined;
+  } catch { return {}; }
   const variants = object(fill) && object(fill.assets) && object(fill.assets.mark) ? fill.assets.mark : undefined;
   const svg = (variant: string) => {
     const entry = variants?.[variant];

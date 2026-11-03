@@ -8,10 +8,9 @@ import { buildCheckOutputEnvelope, envelopeToExitCode } from "../generated/check
 import { sha256Hex } from "../records/hash.js";
 import { loadReferencesManifest } from "../records/validate.js";
 import { listSlots, readCandidate, readIa, readSlot } from "../records/slots.js";
-import { checkSlotModel, formatCoverage, slotCoverage, type AgentCoverage } from "../migrate/slot-check.js";
-import { writerRecords } from "../migrate/sources.js";
+import { checkSlotModel, formatCoverage, slotCoverage, writerRecords, type AgentCoverage } from "../records/slot-check.js";
 import {
-  LEGACY_ENTRIES, SLOT_AGENTS, parseFrontmatter, validateIa, validateSource,
+  SLOT_AGENTS, parseFrontmatter, validateIa, validateSource,
   type SlotModelCode, type SourceDoc,
 } from "../records/slot-model/index.js";
 
@@ -98,7 +97,7 @@ function secureModel(root: string): void {
   for (const agent of SLOT_AGENTS) {
     const base = safe(join(root, "agents", agent));
     if (!existsSync(base)) continue;
-    for (const name of readdirSync(base)) if (!LEGACY_ENTRIES[agent].includes(name)) safeTree(join(base, name));
+    for (const name of readdirSync(base)) safeTree(join(base, name));
   }
 }
 

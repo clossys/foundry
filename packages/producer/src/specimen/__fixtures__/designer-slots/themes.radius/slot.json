@@ -1,0 +1,31 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "themes.radius",
+  "agent": "designer",
+  "ia": {
+    "l0": "themes",
+    "l1": "themes.shape",
+    "l2": "shape-corners",
+    "order": 31
+  },
+  "kind": "element",
+  "contract": {
+    "$type": "dimension",
+    "emit": {
+      "default": "--radius"
+    },
+    "kind": "token",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "default"
+      ]
+    },
+    "modes": [
+      "light"
+    ],
+    "tier": "scale"
+  },
+  "inputs": [],
+  "uses": []
+}

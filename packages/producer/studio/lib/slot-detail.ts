@@ -101,13 +101,12 @@ export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 
   };
 }
 
-/** Null is an unknown slot; undefined means this workspace still uses legacy stores. */
-export async function loadSlotDetail(agent: string, slug: string, signal: AbortSignal): Promise<SlotDetail | null | undefined> {
+/** Null is an unknown slot. */
+export async function loadSlotDetail(agent: string, slug: string, signal: AbortSignal): Promise<SlotDetail | null> {
   const response = await fetch(producerUrl(`/api/slots/${encodeURIComponent(agent)}/${encodeURIComponent(slug)}`), { signal, cache: 'no-store' });
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(studioCopy("studio.slot-detail-could-not-load", { value0: String(response.status) }));
   const value = await response.json();
-  if (value?.state === 'legacy') return undefined;
   if (value?.state !== 'ready' || !value.detail || !Array.isArray(value.detail.candidates) || typeof value.detail.id !== 'string') {
     throw new Error(studioCopy("studio.slot-detail-response-is-invalid"));
   }

@@ -6,7 +6,6 @@ import { libraryHash, resolve } from "@clossys/designer/catalog";
 import type { CompositeEngineInput, CompositeResolved } from "@clossys/designer/catalog";
 import { resolveAgent } from "../agents.js";
 import { agentModule } from "./cells.js";
-import { readStudioDesignerLibrary } from "./theme.js";
 import { themeHash } from "./theme-default.js";
 import { prepareStudioSelection } from "./selection-defaults.js";
 import { selectionCss } from "./selection-css.js";
@@ -273,20 +272,21 @@ export function selectionProfile(hash: string): CompositeResolved | undefined { 
 
 /** The API reads a real compiler projection; missing selected leaves retain explicit NEEDs. */
 export async function studioSelection(root: string): Promise<StudioSelection> {
-  // A library workspace pins shadcn items; its selection is read directly, not through the legacy fills schema.
-  const workspace = libraryWorkspace(root);
-  if (workspace) return librarySelection(workspace);
   let leaves: StudioSelectionLeaf[] = [];
   let hash = themeHash("Designer selection unavailable");
   const gateReports: StudioGateReport[] = [];
   const report: StudioReportSink = finding => gateReports.push(finding);
   try {
-    const stored = await readStudioDesignerLibrary(root, report);
-    const key = `${root}\n${stored ? studioRenderHash(stored.library) + "\n" + JSON.stringify(stored.activeIds) : "missing"}`;
+    // A slot-model workspace pins shadcn items; its selection is read from the pins directly.
+    // A malformed slot model is a selection failure with its own message, never a crash.
+    const workspace = libraryWorkspace(root);
+    if (workspace) return librarySelection(workspace);
+    // Without a Designer slot model the selection is the Foundry default fill.
+    const key = `${root}\nmissing`;
     const existing = preparedSelections.get(key);
     if (existing) return await existing;
     const generation = (async (): Promise<StudioSelection> => {
-    const prepared = await prepareStudioSelection(stored, undefined, report);
+    const prepared = await prepareStudioSelection(undefined, undefined, report);
     leaves = prepared.leaves;
     hash = studioRenderHash(prepared.input.library);
     let compiled = pending.get(hash);

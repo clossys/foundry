@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "themes.background",
+  "agent": "designer",
+  "ia": {
+    "l0": "themes",
+    "l1": "themes.colors",
+    "l2": "colors-surfaces",
+    "order": 0
+  },
+  "kind": "element",
+  "contract": {
+    "$type": "color",
+    "emit": {
+      "default": "--background"
+    },
+    "kind": "token",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "default"
+      ]
+    },
+    "modes": [
+      "light",
+      "dark"
+    ],
+    "tier": "role"
+  },
+  "inputs": [],
+  "uses": []
+}

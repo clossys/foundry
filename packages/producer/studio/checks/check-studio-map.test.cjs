@@ -83,7 +83,7 @@ test('data requests, asset URLs, URL shape checks and cell/Source query state ar
   const source = `import value from '/module';
     const image = <Brand markSrc="/fixture.svg" />;
     fetch('/api/fixture'); new EventSource('/api/events');
-    const api = \`/api/cells/\${agent}/\${id}\`;
+    const api = \`/api/slots/\${agent}/\${id}\`;
     const dataPath = value.startsWith('/') && !value.startsWith('//');
     const origin = new URL(value); const rootOrigin = origin.pathname === '/';
     Object.assign(globalThis, { modules: { 'react/runtime': value } });

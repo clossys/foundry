@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { applyLibraryChange, emit, libraryHash, loadCatalog, resolve, type LibraryData } from "@clossys/designer/catalog";
 
 export interface StudioTheme {
-  source: "consumer" | "foundry";
+  source: "consumer" | "foundry" | "error";
   css: string;
   hash: string;
   /** A failed consumer theme remains distinguishable from an uninitialized one. */

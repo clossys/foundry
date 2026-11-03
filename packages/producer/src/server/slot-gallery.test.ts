@@ -5,8 +5,6 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { agentGallery } from './agent-library.js';
-import { designerGallery } from './designer-library.js';
 import { recordLead, recordSpecimenInput, slotGallery } from './slot-gallery.js';
 import { slotDetail } from './slot-detail.js';
 import { serializeFrontmatter, slotPositions, validateCandidate, type IaDoc, type SlotDoc, type SlotAgent, type SlotKind } from '../records/slot-model/index.js';
@@ -112,8 +110,6 @@ describe('IA-first gallery data', () => {
         expect(cards[0]).toMatchObject({ status: 'failing', records: 0 });
         for (const field of ['element', 'specimen', 'emptyState'] as const) expect(cards[0]![field]).toBeUndefined();
         expect(cards[1]).toMatchObject({ status: 'active', records: 1 });
-        const server = agent === 'designer' ? designerGallery(root) : (await agentGallery(repo, agent))!;
-        expect(ids(server.sections)).toEqual(wanted);
       }
     } finally { rmSync(repo, { recursive: true, force: true }); }
   });
@@ -211,10 +207,6 @@ describe('IA-first gallery data', () => {
       expect(cards[1]!.specimen).toBeUndefined();
       expect(cards[2]).toMatchObject({ id: wanted[2], status: 'active', element: 'element', specimen: 'components.healthy/element', records: 1 });
       expect(cards[3]).toMatchObject({ id: wanted[3], status: 'failing', records: 0 });
-      const designer = designerGallery(root);
-      expect(designer.count).toBe(wanted.length);
-      expect(ids(designer.sections)).toEqual(wanted);
-      expect(designer.sections.flatMap(section => section.cards)[1]).toMatchObject({ status: 'failing', pinned: false, options: [], candidate: 'element-v1.json', version: 1 });
     } finally { rmSync(root, { recursive: true, force: true }); }
   });
 
@@ -259,16 +251,14 @@ describe('IA-first gallery data', () => {
     } finally { rmSync(root, { recursive: true, force: true }); }
   });
 
-  it('projects all source IA entries, in exact order, through the real server galleries', async () => {
+  it('projects all source IA entries, in exact order, through the slot gallery', async () => {
     let total = 0;
     for (const agent of ['director', 'designer', 'writer', 'publisher'] as const) {
       const wanted = expected(consumer, agent);
-      const gallery = agent === 'designer' ? designerGallery(consumer) : await agentGallery(repo, agent);
-      expect(gallery).toBeDefined();
-      expect(ids(gallery!.sections)).toEqual(wanted);
-      expect(gallery!.count).toBe(wanted.length);
-      expect(ids(slotGallery(consumer, agent).sections)).toEqual(wanted);
-      total += gallery!.count;
+      const gallery = slotGallery(consumer, agent);
+      expect(ids(gallery.sections)).toEqual(wanted);
+      expect(gallery.count).toBe(wanted.length);
+      total += gallery.count;
     }
     expect(total).toBe(['director', 'designer', 'writer', 'publisher'].reduce((sum, agent) => sum + expected(consumer, agent).length, 0));
   });

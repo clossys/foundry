@@ -1,0 +1,15 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "themes.preset",
+  "agent": "designer",
+  "ia": {
+    "l0": "themes",
+    "l1": "themes.extensions",
+    "l2": "extensions",
+    "order": 236
+  },
+  "kind": "element",
+  "contract": {},
+  "inputs": [],
+  "uses": []
+}

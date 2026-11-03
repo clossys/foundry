@@ -1,0 +1,15 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "frames.plain",
+  "agent": "designer",
+  "ia": {
+    "l0": "frames",
+    "l1": "frames.extensions",
+    "l2": "extensions",
+    "order": 236
+  },
+  "kind": "element",
+  "contract": {},
+  "inputs": [],
+  "uses": []
+}

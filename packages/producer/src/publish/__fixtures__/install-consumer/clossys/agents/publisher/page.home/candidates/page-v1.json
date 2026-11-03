@@ -1,0 +1,45 @@
+{
+  "schema": "clossys.page/1",
+  "path": "/",
+  "title": "site.studio.name",
+  "frame": "frames.plain",
+  "sections": [
+    "sections.hero"
+  ],
+  "copy": {
+    "frame.title": "site.studio#name",
+    "hero.heading": "home.hero#heading",
+    "hero.body": "home.hero#body"
+  },
+  "nav": {
+    "nav": true
+  },
+  "meta": {
+    "source": {
+      "kind": "original",
+      "ref": []
+    },
+    "entry": {
+      "fields": {
+        "kind": "page"
+      },
+      "blocks": {
+        "Route": {
+          "slots": [
+            {
+              "section": "sections.hero",
+              "state": "active"
+            }
+          ]
+        }
+      },
+      "publication": "example-site",
+      "entryId": "home",
+      "entryMeta": {
+        "pin": {
+          "nav": true
+        }
+      }
+    }
+  }
+}

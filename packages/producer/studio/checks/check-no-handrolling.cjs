@@ -189,36 +189,6 @@ async function proveDetector(page) {
   assertCovered(await page.evaluate(inspectStudioBody), 'after negative-proof cleanup');
 }
 
-async function proveSourceDisclosure(page, id) {
-  const trigger = page.getByRole('button', { name: 'Source', exact: true });
-  const source = page.getByLabel('Cell source', { exact: true });
-  const marker = `source-only: ${id}`;
-  await trigger.waitFor();
-  assert.equal(await trigger.getAttribute('aria-expanded'), 'false', `${id}: Source starts closed`);
-  await source.waitFor({ state: 'hidden' });
-  assert.ok(!await page.locator('body').innerText().then(text => text.includes(marker)), `${id}: frontmatter is not initially visible`);
-  assert.ok(!await page.locator('body').innerText().then(text => text.includes(`Studio selected cell evidence: ${id}.`)), `${id}: raw cell body is not initially visible`);
-  await trigger.click();
-  assert.equal(await trigger.getAttribute('aria-expanded'), 'true', `${id}: Source opens`);
-  await source.waitFor({ state: 'visible' });
-  assert.ok((await source.textContent()).includes(`---\nid: ${id}\n${marker}\n---`), `${id}: Source retains original frontmatter bytes`);
-  assert.ok((await source.textContent()).includes(`Studio selected cell evidence: ${id}.`), `${id}: original body is available inside Source`);
-  const owned = await source.evaluate(element => Boolean(element.closest('[data-ds-leaf="components.disclosure"]')));
-  assert.ok(owned, `${id}: raw source belongs to the actual selected Disclosure leaf`);
-  const misplaced = await page.evaluate(marker => {
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-    let node;
-    while ((node = walker.nextNode())) if (node.textContent.includes(marker) && !node.parentElement.closest('[aria-label="Cell source"][data-ds-leaf="components.disclosure"], [data-ds-leaf="components.disclosure"] [aria-label="Cell source"]')) return true;
-    return false;
-  }, marker);
-  assert.equal(misplaced, false, `${id}: raw frontmatter exists only inside Source`);
-  await trigger.click();
-  assert.equal(await trigger.getAttribute('aria-expanded'), 'false', `${id}: Source closes`);
-  await source.waitFor({ state: 'hidden' });
-  assert.ok(!await page.locator('body').innerText().then(text => text.includes(marker)), `${id}: closing Source hides frontmatter`);
-  return { id, startsClosed: true, frontmatterHiddenUntilOpened: true, selectedDisclosureOwnsSource: true, closes: true };
-}
-
 async function main() {
   const { chromium } = require('playwright');
   const origin = new URL(process.argv[2] ?? 'http://127.0.0.1:4301').origin;
@@ -236,63 +206,33 @@ async function main() {
     assert.equal(selection.cssHash, `sha256:${createHash('sha256').update(selection.css, 'utf8').digest('hex')}`, 'independent selected CSS hash');
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    const agents = ['director', 'designer', 'writer', 'publisher'];
-    let mode = 'ready';
     await page.route(`${origin}/api/events`, route => route.fulfill({ contentType: 'text/event-stream', body: ': connected\n\n' }));
-    await page.route(`${origin}/api/cells**`, route => {
-      if (mode === 'error') return route.fulfill({ status: 503, contentType: 'application/json', body: '{"error":"Unavailable"}' });
-      const url = new URL(route.request().url());
-      const summary = { id: 'context.current', version: 1, status: 'draft', path: 'cells/context.current/v1.md', fields: { title: 'Current context' } };
-      const market = { ...summary, id: 'context.market', path: 'cells/context.market/v1.md', fields: { title: 'Market context' } };
-      const selected = url.pathname.endsWith('/context.market') ? market : summary;
-      const body = url.pathname === '/api/cells'
-        ? { agents: agents.map(agent => ({ agent, state: 'ready', cells: mode === 'empty' ? [] : [summary, market], tree: { tree: mode === 'empty' ? [] : [{ id: 'context', name: 'Context group', cells: [summary.id, market.id] }] } })) }
-        : { agent: url.pathname.split('/')[3], state: 'ready', cell: { ...selected, source: `---\nid: ${selected.id}\nsource-only: ${selected.id}\n---\n# ${selected.fields.title}\n\nStudio selected cell evidence: ${selected.id}.` } };
-      return route.fulfill({ contentType: 'application/json', body: JSON.stringify(body) });
-    });
+    // Studio's own pages over the live slot model: home plus one tab page per agent.
     const checks = [];
-    const routes = ['/', ...agents.map(agent => `/agents/${agent}`)];
+    const routes = ['/', '/director/identity', '/designer/components', '/writer/strings', '/publisher/studio'];
     for (const route of routes) {
+      const requireNeeds = route.startsWith('/designer');
       const response = await page.goto(origin + route);
       assert.equal(response.status(), 200, route);
       await page.getByRole('heading', { level: 1 }).waitFor();
-      await page.getByRole('link', { name: /^Current context/ }).first().waitFor();
-      const sourceEvidence = await proveSourceDisclosure(page, 'context.current');
       const result = await page.evaluate(inspectStudioBody);
       assertCovered(result, route);
-      const selectionEvidence = await page.evaluate(({ selection, requireNeeds }) => inspectStudioSelection(selection, requireNeeds), { selection, requireNeeds: route === '/agents/designer' });
+      const selectionEvidence = await page.evaluate(({ selection, requireNeeds }) => inspectStudioSelection(selection, requireNeeds), { selection, requireNeeds });
       assertSelection(selectionEvidence, route);
       await proveDetector(page);
       await proveSelectionDetector(page, selection);
-      checks.push({ route, state: 'ready', ...result, selection: selectionEvidence, ...(sourceEvidence ? { source: sourceEvidence } : {}) });
+      checks.push({ route, state: 'ready', ...result, selection: selectionEvidence });
       await page.getByRole('button', { name: 'Find a page', exact: true }).click();
       await page.waitForFunction(() => document.querySelector('[role="dialog"]') || document.documentElement.dataset.studioState === 'selection-unavailable');
       assert.equal(await page.locator('html').getAttribute('data-studio-state'), 'ready', `${route}: opening the selected command menu must preserve a usable selection`);
       await page.getByRole('dialog').waitFor();
       const commandBody = await page.evaluate(inspectStudioBody);
       assertCovered(commandBody, `${route} command menu`);
-      const commandSelection = await page.evaluate(({ selection, requireNeeds }) => inspectStudioSelection(selection, requireNeeds), { selection, requireNeeds: route === '/agents/designer' });
+      const commandSelection = await page.evaluate(({ selection, requireNeeds }) => inspectStudioSelection(selection, requireNeeds), { selection, requireNeeds });
       assertSelection(commandSelection, `${route} command menu`);
       checks.push({ route, state: 'command-menu', ...commandBody, selection: commandSelection });
       await page.keyboard.press('Escape');
       await page.getByRole('dialog').waitFor({ state: 'hidden' });
-      await page.getByRole('link', { name: /^Market context/ }).first().click();
-      const selectedSourceEvidence = await proveSourceDisclosure(page, 'context.market');
-      const selected = await page.evaluate(inspectStudioBody);
-      assertCovered(selected, `${route} selected cell`);
-      const selectedEvidence = await page.evaluate(({ selection, requireNeeds }) => inspectStudioSelection(selection, requireNeeds), { selection, requireNeeds: route === '/agents/designer' });
-      assertSelection(selectedEvidence, `${route} selected cell`);
-      checks.push({ route, state: 'selected', ...selected, source: selectedSourceEvidence, selection: selectedEvidence });
-    }
-    for (const state of ['empty', 'error']) {
-      mode = state;
-      await page.goto(origin + '/agents/director');
-      await page.getByText(state === 'empty' ? 'No cells yet' : 'Cells could not be loaded', { exact: true }).waitFor();
-      const result = await page.evaluate(inspectStudioBody);
-      assertCovered(result, state);
-      const selectionEvidence = await page.evaluate(selection => inspectStudioSelection(selection, false), selection);
-      assertSelection(selectionEvidence, state);
-      checks.push({ route: '/agents/director', state, ...result, selection: selectionEvidence });
     }
     assert.deepEqual(errors, [], 'browser page errors');
     console.log(JSON.stringify({ check: 'Studio no handrolling', routes: routes.length, checks, positiveProof: 'unstamped descendants inside an existing leaf and bare text accepted', negativeProof: 'visible and hidden unstamped body siblings, stale selected fills, altered selected CSS, and unowned RAC descendants rejected on every route', sourceProof: 'the generic renderer has no host-authored nav/ul/li' }, null, 2));

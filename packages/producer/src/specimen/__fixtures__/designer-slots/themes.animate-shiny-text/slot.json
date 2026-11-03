@@ -1,0 +1,31 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "themes.animate-shiny-text",
+  "agent": "designer",
+  "ia": {
+    "l0": "themes",
+    "l1": "themes.motion",
+    "l2": "motion-animations",
+    "order": 41
+  },
+  "kind": "element",
+  "contract": {
+    "$type": "duration",
+    "emit": {
+      "default": "--animate-shiny-text"
+    },
+    "kind": "token",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "default"
+      ]
+    },
+    "modes": [
+      "light"
+    ],
+    "tier": "scale"
+  },
+  "inputs": [],
+  "uses": []
+}

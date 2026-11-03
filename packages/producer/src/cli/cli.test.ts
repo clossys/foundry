@@ -48,10 +48,12 @@ describe("clossys bin", () => {
     expect(result.stderr).toBe("");
   });
 
-  it.each(verbs.filter(verb => !["produce", "direct", "design", "write"].includes(verb)))("recognizes %s with a stub refusal", (verb) => {
-    const result = run([verb]);
+  it("runs bare publish as a dry run and reports a consumer without a Publisher slot model", () => {
+    const result = run(["publish"]);
     expect(result.status).toBe(2);
-    expect(result.stderr).toContain(`${verb}: not implemented in this build`);
+    expect(result.stderr).toContain("publish: could not run");
+    expect(result.stderr).toContain("Publisher native IA is missing");
+    expect(result.stderr).not.toContain("not implemented in this build");
   });
 
   it("discovers a root from nested cwd", () => {
@@ -80,17 +82,18 @@ describe("clossys bin", () => {
 
   it.each([
     ["publish", "--out", "site"],
-  ])("parses supported flags without implementing behavior: %j", (...args) => {
+  ])("parses supported flags and runs the dry run: %j", (...args) => {
     const result = run(args);
     expect(result.status).toBe(2);
-    expect(result.stderr).toContain("not implemented in this build");
+    expect(result.stderr).toContain("publish: could not run");
+    expect(result.stderr).not.toContain("Usage:");
   });
 
   it.each([
     ["direct", "--root"], ["direct", "--bogus"], ["design", "--once"],
     ["produce", "--port", "bad"], ["produce", "--port", "65536"],
     ["publish", "--target", "preview"], ["publish", "--install", "--page", "home", "--port", "4330"],
-    ["write", "--out", "site"], ["write", "--port", "4330"],
+    ["check", "--out", "site"], ["write", "--port", "4330"],
   ])("rejects invalid arguments: %j", (...args) => {
     const result = run(args);
     expect(result.status).toBe(2);
@@ -121,7 +124,7 @@ describe("clossys bin", () => {
       const result = run([verb, "--check"]);
       expect(result.status).toBe(2);
       if (["direct", "design", "write"].includes(verb)) expect(result.stderr).not.toContain("not implemented in this build");
-      else expect(result.stderr).toContain(verb === "produce" ? "missing" : "not implemented in this build");
+      else expect(result.stderr).toContain(verb === "produce" ? "missing" : "publish: could not run");
     }
     expect(snapshot(fixture)).toEqual(before);
   });

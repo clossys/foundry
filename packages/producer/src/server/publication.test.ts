@@ -160,10 +160,9 @@ it("reads installs written with --out from the folder produce --out names, under
 });
 
 // Copy actual native records; edits and rehashed pins exist only in this test's scratch root.
-async function nativePublisherFixture(keepLegacy = false) {
+async function nativePublisherFixture() {
   const publisher = agentRoot(root, "publisher");
   await cp(fileURLToPath(new URL("../../../../clossys/agents/publisher/", import.meta.url)), publisher, { recursive: true });
-  if (!keepLegacy) for (const name of ["tree.json", "cells", "compile.json", "content-map", "route-pack"]) await rm(join(publisher, name), { recursive: true, force: true });
   return publisher;
 }
 async function nativeRecord(publisher: string, id: string) {
@@ -214,7 +213,7 @@ it.each([
   ["unknown entry identity", (value: any) => { value.meta.entry.entryId = "unknown-page"; }, "error"],
   ["missing publication identity", (value: any) => { delete value.meta.entry.publication; }, "missing"],
 ] as const)("leaves native preview unavailable for %s instead of guessing its gallery slot", async (_name, edit, state) => {
-  const publisher = await nativePublisherFixture(true), outs = join(root, "outs");
+  const publisher = await nativePublisherFixture(), outs = join(root, "outs");
   await editNative(publisher, "page.home", edit);
   await installFixture(join(outs, "home"), "home");
   await launch(outs);
@@ -222,7 +221,7 @@ it.each([
 });
 
 it.each(["page.home", "publication.studio"])("does not borrow legacy metadata when native %s has no pin", async id => {
-  const publisher = await nativePublisherFixture(true), outs = join(root, "outs");
+  const publisher = await nativePublisherFixture(), outs = join(root, "outs");
   await installFixture(join(outs, "home"), "home");
   await rm((await nativeRecord(publisher, id)).pinPath);
   await launch(outs);

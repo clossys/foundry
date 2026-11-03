@@ -48,15 +48,26 @@ const declarations = (vars: unknown) => Object.entries(vars && typeof vars === "
   .filter(([name, value]) => CSS_NAME.test(name) && typeof value === "string" && CSS_VALUE.test(value))
   .map(([name, value]) => `  --${name}: ${value};`);
 
-/** The pinned theme (and heading font) as Studio's brand stylesheet: shadcn variables for light and dark. */
+/**
+ * The pinned `themes.*` slots composed into Studio's brand stylesheet: each `registry:theme`
+ * item's shadcn variables (theme and light on `:root`, dark on `.dark`) and each
+ * `registry:font` item's variable. Undefined when the consumer pins no theme slot.
+ */
 export function libraryTheme(library: string): StudioTheme | undefined {
-  const pins = pinnedItems(library);
-  const item = (slot: string) => pins.get(slot)?.item;
-  const theme = item("themes.theme");
-  if (!theme?.cssVars) return undefined;
-  const font = item("themes.font-heading")?.font;
-  const root = [...declarations(theme.cssVars.theme), ...declarations(theme.cssVars.light)];
-  if (font && CSS_NAME.test(String(font.variable).replace(/^--/, "")) && typeof font.family === "string" && CSS_VALUE.test(font.family)) root.push(`  ${font.variable}: ${font.family};`);
-  const css = [`:root {\n${root.join("\n")}\n}`, `.dark {\n${declarations(theme.cssVars.dark).join("\n")}\n}`, ""].join("\n");
+  const themes = [...pinnedItems(library)].filter(([slot]) => slot.startsWith("themes.")).sort(([a], [b]) => a.localeCompare(b));
+  if (!themes.length) return undefined;
+  const root: string[] = [], dark: string[] = [];
+  for (const [, { item }] of themes) {
+    if (item.type === "registry:font") {
+      const font = item.font;
+      const name = String(font?.variable ?? "").replace(/^--/, "");
+      if (CSS_NAME.test(name) && typeof font?.family === "string" && CSS_VALUE.test(font.family)) root.push(`  --${name}: ${font.family};`);
+      continue;
+    }
+    root.push(...declarations(item.cssVars?.theme), ...declarations(item.cssVars?.light));
+    dark.push(...declarations(item.cssVars?.dark));
+  }
+  if (!root.length && !dark.length) return undefined;
+  const css = [`:root {\n${root.join("\n")}\n}`, `.dark {\n${dark.join("\n")}\n}`, ""].join("\n");
   return { source: "consumer", css, hash: themeHash(css) };
 }

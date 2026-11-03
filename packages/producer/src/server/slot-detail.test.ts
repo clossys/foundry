@@ -181,11 +181,11 @@ describe('slot details', () => {
     ] } }] });
   });
 
-  it('falls back only for an explicit legacy response, never a missing or malformed detail', async () => {
+  it('treats a non-ready response as invalid and a 404 as an unknown slot', async () => {
     const fetch = vi.fn(); vi.stubGlobal('fetch', fetch);
     const signal = new AbortController().signal;
     fetch.mockResolvedValueOnce(new Response(JSON.stringify({ state: 'legacy' })));
-    expect(await loadSlotDetail('writer', id, signal)).toBeUndefined();
+    await expect(loadSlotDetail('writer', id, signal)).rejects.toThrow('Slot detail response is invalid');
     fetch.mockResolvedValueOnce(new Response('', { status: 404 }));
     expect(await loadSlotDetail('writer', id, signal)).toBeNull();
     fetch.mockResolvedValueOnce(new Response(JSON.stringify({ state: 'ready' })));

@@ -1,12 +1,14 @@
 import { once } from "node:events";
 import { spawn, spawnSync } from "node:child_process";
-import { cp, mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, readdir, realpath, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { request as httpRequest } from "node:http";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { agentModule, agentRoot, compileCells, inventory } from "./cells.js";
+import { repoConsumer } from "../cli/__fixtures__/flat-consumer.js";
+import { readIa } from "../records/slots.js";
+import { agentRoot } from "./cells.js";
 import { startProducerServer, type ProducerServer } from "./index.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -14,7 +16,7 @@ const repo = resolve(here, "../../../..");
 const childEntry = join(here, "__fixtures__/studio-child.mjs");
 let root: string;
 let server: ProducerServer | undefined;
-beforeEach(async () => { root = await mkdtemp(join(tmpdir(), "producer-server-")); await mkdir(join(root, "clossys")); });
+beforeEach(async () => { root = await realpath(await mkdtemp(join(tmpdir(), "producer-server-"))); await mkdir(join(root, "clossys")); });
 afterEach(async () => { await server?.close(); server = undefined; await rm(root, { recursive: true, force: true }); });
 async function launch() { server = await startProducerServer({ root, port: 0, studioEntry: childEntry, handleSignals: false }); return server; }
 async function request(path: string, options: { method?: string; headers?: Record<string, string | string[]> } = {}) {
@@ -25,24 +27,27 @@ async function request(path: string, options: { method?: string; headers?: Recor
     }); req.on("error", reject); req.end();
   });
 }
-async function directorDraft(id = "identity.purpose.promise", version = 1) {
-  const cellRoot = agentRoot(root, "director");
-  await mkdir(join(cellRoot, "cells", id), { recursive: true });
-  await writeFile(join(cellRoot, "tree.json"), JSON.stringify({ schemaVersion: 1, active: {}, tree: [{ id: "identity", name: "Identity", children: [{ id: "purpose", name: "Purpose", cells: [id] }] }], meta: { archetype: "service" } }));
-  await writeFile(join(cellRoot, "cells", id, `v${version}.md`), `---\nid: ${id}\nversion: ${version}\nstatus: draft\nupdated: 2026-10-29\ncites: []\nfeeds: []\nfunctions: []\n---\n\n## Direction\n- A useful direction.\n\n## Because\n- A stated reason.\n\n## Watch\n- A measurable signal.\n`);
+/** The repository's flat Director IA plus one pinned slot (`agents/director/<slot-id>/...`). */
+async function director(): Promise<string> {
+  const source = join(repoConsumer, "agents", "director"), target = agentRoot(root, "director");
+  await mkdir(target, { recursive: true }); await cp(join(source, "ia.json"), join(target, "ia.json"));
+  for (const id of (await readdir(source)).sort()) {
+    if (!await stat(join(source, id, "pin.json")).then(() => true, () => false)) continue;
+    await cp(join(source, id), join(target, id), { recursive: true }); return id;
+  }
+  throw new Error("No pinned Director slot");
 }
 
 describe("loopback Producer", () => {
-  it("serves health, structured missing agents and latest real Director drafts with tree metadata", async () => {
-    await directorDraft(); await directorDraft("identity.purpose.promise", 2); await launch();
+  it("serves health and the flat Director slot model over /api/slots", async () => {
+    const id = await director(); await launch();
     expect((await request("/api/health")).body).toEqual({ ok: true, studio: "ready" });
-    const result = await request("/api/cells");
-    expect(result.status).toBe(200);
-    expect(result.body.agents[0]).toMatchObject({ agent: "director", state: "ready", packageName: "@clossys/strategist", tree: { meta: { archetype: "service" } }, cells: [{ id: "identity.purpose.promise", version: 2, status: "draft" }] });
-    expect(result.body.agents.slice(1).every((agent: any) => agent.state === "missing" && agent.cells.length === 0)).toBe(true);
-    expect((await request("/api/cells/director/identity.purpose.promise")).body.cell.source).toContain("version: 2");
-    expect((await request("/api/cells/director/identity.purpose.promise?version=1")).body.cell.version).toBe(1);
-    expect((await request("/api/cells/writer/example.page")).status).toBe(404);
+    const gallery = await request("/api/slots/director");
+    expect(gallery.status).toBe(200); expect(gallery.body.state).toBe("ready");
+    const detail = await request(`/api/slots/director/${id}`);
+    expect(detail.status).toBe(200); expect(detail.body).toMatchObject({ state: "ready" });
+    expect((await request("/api/slots/unknown/example.page")).status).toBe(404);
+    expect((await request("/api/cells")).status).toBe(404);
   });
 
   it("guards every local route, mutations, ambiguous headers and traversal before proxying", async () => {
@@ -64,7 +69,7 @@ describe("loopback Producer", () => {
     expect((await request("/studio", { method: "POST", headers: { Origin: origin, "X-Clossys-Token": [token, token] } })).status).toBe(403);
     const accepted = await request("/studio", { method: "POST", headers: { Origin: origin, "X-Clossys-Token": token } });
     expect(accepted.status).toBe(200); expect(accepted.body.method).toBe("POST"); expect(accepted.body.headers["x-clossys-token"]).toBeUndefined();
-    for (const path of ["/api/cells/writer/%2e%2e", "/api/cells/unknown/example.page", "/api/cells/writer/%2fetc", "/%5cexample.test", "/api/cells/writer/example.page?version=0"]) expect((await request(path)).status).toBeOneOf([400, 404]);
+    for (const path of ["/api/slots/writer/%2e%2e", "/api/slots/unknown/example.page", "/api/slots/writer/%2fetc", "/%5cexample.test", "/api/slots/writer/..%2fdirector"]) expect((await request(path)).status).toBeOneOf([400, 404]);
     expect((await request(`/studio?token=${token}`)).status).toBe(400);
     const encodedToken = [...token].map(letter => `%${letter.charCodeAt(0).toString(16)}`).join("");
     expect((await request(`/studio?token=${encodedToken}`)).status).toBe(400);
@@ -87,19 +92,19 @@ describe("loopback Producer", () => {
     const ready = new Promise<void>(resolve => response.on("data", (part: string) => { received += part; if (received.includes("event: ready")) resolve(); }));
     await ready;
     const change = new Promise<void>(resolve => response.on("data", () => { if (received.includes('"id":"identity.purpose.promise"')) resolve(); }));
-    await directorDraft();
+    const slot = join(agentRoot(root, "director"), "identity.purpose.promise");
+    await mkdir(slot, { recursive: true }); await writeFile(join(slot, "slot.json"), "{}\n");
     // Creation can race a recursive watcher's new-directory subscription; writing
-    // an existing file exercises the permanent watched cell boundary too.
-    const cell = join(agentRoot(root, "director"), "cells/identity.purpose.promise/v1.md");
-    await writeFile(cell, await readFile(cell, "utf8"));
+    // an existing file exercises the permanent watched slot boundary too.
+    await writeFile(join(slot, "slot.json"), await readFile(join(slot, "slot.json"), "utf8"));
     await change; expect(received).toContain("event: change"); expect(received).toContain('"agent":"director"');
     const ended = once(response, "end"); await server!.close(); await ended; await server!.closed; req.destroy();
   });
 
   it("refuses aliases without reading outside the consumer root", async () => {
-    await directorDraft();
+    await director();
     await symlink(agentRoot(root, "director"), agentRoot(root, "writer"));
-    expect(await inventory(root, "writer")).toMatchObject({ state: "error", cells: [] });
+    expect(() => readIa(join(root, "clossys"), "writer")).toThrow();
   });
 
   it("reports a missing standalone build and a failed child without a fake UI", async () => {
@@ -139,11 +144,11 @@ describe("loopback Producer", () => {
         cli.once("error", reject); cli.once("exit", code => reject(new Error(`CLI exited before readiness: ${code}; ${stderr}`)));
       });
       const config = await (await fetch(`${url}/api/config`)).json() as any;
-      expect(config.compilation).toEqual([{ agent: "designer", state: "missing" }, { agent: "writer", state: "missing" }]);
-      expect((await (await fetch(`${url}/api/cells`)).json() as any).agents.every((agent: any) => agent.state === "missing")).toBe(true);
+      expect(config).toMatchObject({ readOnly: true }); expect(config.compilation).toBeUndefined();
+      expect((await fetch(`${url}/api/cells`)).status).toBe(404);
       const exited = once(cli, "exit"); cli.kill("SIGTERM");
       expect((await exited)[0]).toBe(0); expect(stderr).toBe("");
-      expect(stdout).toContain("Producer stopped; designer: missing, writer: missing");
+      expect(stdout).toContain("Producer stopped; director: missing, designer: missing, writer: missing, publisher: missing");
       expect(stdout).not.toContain(config.token); expect(stdout).not.toContain("token=");
       await expect(stat(opened)).rejects.toMatchObject({ code: "ENOENT" });
       await expect(fetch(`${url}/api/health`)).rejects.toThrow();
@@ -154,24 +159,18 @@ describe("loopback Producer", () => {
   }, 20_000);
 });
 
-describe("real agent projections", () => {
-  it("compiles Designer and Writer cells into agent-local outputs through their shipped APIs", async () => {
-    await cp(join(repo, "packages/designer/src/library-cli/__fixtures__/agent-receipted-cells/clossys/agents/designer"), agentRoot(root, "designer"), { recursive: true });
-    const writer = await agentModule("writer", "cells/migrate.js");
-    await writer.migrateWriterCells(join(repo, "packages/writer/src/cells/__fixtures__/generic-admin"), agentRoot(root, "writer"), { date: "2026-10-29" });
-    expect(await compileCells(root)).toMatchObject([{ agent: "designer", state: "compiled" }, { agent: "writer", state: "compiled" }]);
-    expect(await inventory(root, "designer")).toMatchObject({ state: "ready" });
-    expect(await inventory(root, "writer")).toMatchObject({ state: "ready" });
-    expect(await compileCells(root, true)).toMatchObject([{ state: "compiled" }, { state: "compiled" }]);
-    expect(JSON.parse(await readFile(join(agentRoot(root, "writer"), "compiled/example-common.r1.en.json"), "utf8")).records[0].text).toBe("Cancel");
+describe("produce --once over the slot model", () => {
+  it("reports each agent's flat slot model and exits 0 when one exists", async () => {
+    for (const agent of ["designer", "writer"] as const) { await mkdir(agentRoot(root, agent), { recursive: true }); await cp(join(repoConsumer, "agents", agent, "ia.json"), join(agentRoot(root, agent), "ia.json")); }
     await writeFile(join(root, "clossys/clossys.config.ts"), "export default {};\n");
     const cli = spawnSync(process.execPath, [join(repo, "packages/producer/dist/cli/index.js"), "produce", "--once", "--no-open", "--json"], { cwd: root, encoding: "utf8" });
-    expect(cli.status).toBe(0); expect(JSON.parse(cli.stdout)).toMatchObject({ exitCode: 0, verb: "produce", message: "designer: compiled, writer: compiled" });
+    expect(cli.status).toBe(0); expect(JSON.parse(cli.stdout)).toMatchObject({ exitCode: 0, verb: "produce", message: "director: missing, designer: slot model, writer: slot model, publisher: missing" });
     expect(cli.stderr).toBe("");
   });
-  it("reports required missing compile inputs as exit 2 without creating records", async () => {
+  it("exits 2 when no agent has a slot model, without creating records", async () => {
     await writeFile(join(root, "clossys/clossys.config.ts"), "export default {};\n");
     const cli = spawnSync(process.execPath, [join(repo, "packages/producer/dist/cli/index.js"), "produce", "--once", "--json"], { cwd: root, encoding: "utf8" });
-    expect(cli.status).toBe(2); expect(JSON.parse(cli.stdout)).toMatchObject({ exitCode: 2, message: "designer: missing, writer: missing" });
+    expect(cli.status).toBe(2); expect(JSON.parse(cli.stdout)).toMatchObject({ exitCode: 2, message: "director: missing, designer: missing, writer: missing, publisher: missing" });
+    expect(await readdir(join(root, "clossys"))).toEqual(["clossys.config.ts"]);
   });
 });

@@ -1,9 +1,12 @@
-import { constants } from "node:fs";
-import { open } from "node:fs/promises";
 import { join } from "node:path";
 import type { Cell, Bullet } from "@clossys/strategist";
-import { agentModule, agentRoot, hasCellTree, readCells } from "../server/cells.js";
+import { agentModule } from "../server/cells.js";
+import { libraryTheme } from "../server/library-selection.js";
+import { directorRef, readPinnedDirector } from "../records/director-pinned.js";
+import { readPinned, type PinnedSet } from "../records/pinned.js";
+import { hasSlotModel, readIa } from "../records/slots.js";
 import type { CliArgs } from "./args.js";
+import { emitProjection } from "./projection.js";
 
 const INPUTS = [
   ["essence", "identity.brand.essence", true],
@@ -31,29 +34,29 @@ export interface DesignBrief {
 }
 interface DesignResult {
   exitCode: 0 | 1 | 2; verb: "design"; root: string; check: boolean; message: string;
-  result?: unknown;
+  brief?: unknown; checks?: unknown; compilation?: unknown;
 }
-const directorRef = (cell: Cell) => `director:${cell.id}@${cell.version}`;
 const ownerPlaceholder = new RegExp("\\bTODO-OWNER\\b", "i");
 const prohibitionLabel = new RegExp("^never(?:-claim)?$", "i");
 const unresolved = (bullet: Bullet) => ownerPlaceholder.test(`${bullet.key ?? ""}: ${bullet.text}`);
 
-async function activeDirector(root: string): Promise<Cell[]> {
-  if (!await hasCellTree(agentRoot(root, "director"))) throw new Error("design: Director cells are missing at clossys/agents/director; initialise the native Director root first");
-  const cells = await readCells(root, "director", true);
-  const api = await agentModule("director", "index.js");
-  return cells.map(cell => api.parseCell(cell.source, cell.path).value as Cell);
+/** The consumer's `clossys/` folder, once both the Director and Designer IA exist. */
+function workspace(root: string): string {
+  const consumer = join(root, "clossys");
+  if (!hasSlotModel(consumer) || !readIa(consumer, "director")) throw new Error("clossys/agents/director/ia.json is missing");
+  if (!readIa(consumer, "designer")) throw new Error("clossys/agents/designer/ia.json is missing");
+  return consumer;
 }
 
-/** Preserve active source text and uncertainty. This assembles inputs; it chooses no design values. */
-export async function designBrief(root: string, active?: Cell[]): Promise<DesignBrief> {
-  const cells = active ?? await activeDirector(root);
+/** Preserve pinned Director text and uncertainty. This assembles inputs; it chooses no design values. */
+export async function designBrief(root: string, pinned?: readonly Cell[]): Promise<DesignBrief> {
+  const cells = pinned ?? (await readPinnedDirector(join(root, "clossys"))).cells;
   const catalog = await agentModule("designer", "catalog-core/index.js");
   const limits: Finding[] = [];
   const inputs = INPUTS.map(([role, id, required]) => {
     const cell = cells.find(cell => cell.id === id);
-    if (!cell) limits.push({ code: required ? "missing-director-input" : "optional-director-input", subject: id, message: `No active ${role} input` });
-    else if (required && !cell.direction.length) limits.push({ code: "missing-director-input", subject: id, message: `Active ${role} input has no Direction bullets` });
+    if (!cell) limits.push({ code: required ? "missing-director-input" : "optional-director-input", subject: id, message: `No pinned ${role} input` });
+    else if (required && !cell.direction.length) limits.push({ code: "missing-director-input", subject: id, message: `Pinned ${role} input has no Direction bullets` });
     return { role, id, required, version: cell?.version ?? null, ref: cell ? directorRef(cell) : null,
       direction: cell?.direction ?? [], watch: cell?.watch ?? [], cites: cell?.cites ?? [] };
   });
@@ -78,85 +81,78 @@ export async function designBrief(root: string, active?: Cell[]): Promise<Design
     componentSourcePreference: { source: "shadcn@aria", basis: "planner-default" }, limits };
 }
 
-async function designerTree(root: string): Promise<any> {
-  const source = agentRoot(root, "designer");
-  if (!await hasCellTree(source)) throw new Error("design: Designer cells are missing at clossys/agents/designer; initialise them through designer-library cells migrate --from <native-library> before compiling or checking");
-  const handle = await open(join(source, "tree.json"), constants.O_RDONLY | constants.O_NOFOLLOW);
-  try { return JSON.parse(await handle.readFile("utf8")); } finally { await handle.close(); }
+/** The pinned Designer set as one deterministic projection: slot, pinned item and its bytes' hash. */
+function designerProjection(designer: PinnedSet) {
+  return {
+    schemaVersion: 1 as const, agent: "designer" as const,
+    slots: designer.pinned.map(candidate => {
+      let item: { name?: unknown; type?: unknown } = {};
+      try { item = JSON.parse(candidate.bytes); } catch { /* validated by readPinned; kept total */ }
+      return { id: candidate.id, kind: candidate.doc.kind, candidate: candidate.name, version: candidate.version, sha256: candidate.sha256,
+        ...(typeof item.name === "string" ? { name: item.name } : {}), ...(typeof item.type === "string" ? { type: item.type } : {}) };
+    }),
+    unpinned: [...designer.unpinned],
+  };
 }
 
-/** Rationale declares coverage; matching a marker never certifies visual quality. */
-async function checkDesign(root: string, director: Cell[], brief: DesignBrief) {
-  const tree = await designerTree(root);
-  const cells = await readCells(root, "designer", true);
-  const store = await agentModule("director", "cell-format/index.js");
-  const profile = await agentModule("designer", "library-cli/cells.js");
+/** Pin integrity, Director inputs and the pinned theme. Matching never certifies visual quality. */
+function checkDesign(consumer: string, director: Awaited<ReturnType<typeof readPinnedDirector>>, designer: PinnedSet, brief: DesignBrief) {
   const findings: Finding[] = brief.limits.filter(limit => limit.code === "missing-director-input");
-  const coverage = new Map<string, string[]>();
-  for (const cell of cells) {
-    const parsed = profile.parseLibraryCell(cell.source, cell.path);
-    const links = (cell.document.fields.links as string[]).map(link => store.parseLinkRef(link)).filter((ref: any) => ref.agent === "director");
-    if (!links.length) findings.push({ code: "missing-director-link", subject: `${cell.id}@${cell.version}`, message: "Active Designer cell has no Director link" });
-    const current = links.filter((ref: any) => director.some(cell => cell.id === ref.cell && cell.version === ref.version));
-    for (const ref of links) if (!current.includes(ref)) findings.push({ code: "stale-director-version", subject: `${cell.id}@${cell.version}`, message: `Director link director:${ref.cell}@${ref.version} is not the active version` });
-    const rationale = parsed.rationale ?? "";
-    for (const trait of brief.traits) {
-      if (current.some((ref: any) => `director:${ref.cell}@${ref.version}` === trait.ref)
-        && rationale.split("\n").some((line: string) => line.startsWith(`Realises ${trait.id}: `) && line.slice(`Realises ${trait.id}: `.length).trim())) {
-        coverage.set(trait.id, [...coverage.get(trait.id) ?? [], `${cell.id}@${cell.version}`]);
-      }
+  for (const issue of designer.issues) findings.push({ code: issue.reason, subject: `designer:${issue.slot}`, message: issue.message });
+  if (!designer.pinned.length) findings.push({ code: "missing-designer-pins", subject: "designer", message: "The consumer has no pinned Designer slot" });
+  // A declared input is an upstream Director slot; it must be pinned for this slot to derive from it.
+  const directorPinned = new Map(director.cells.map(cell => [cell.id, cell]));
+  for (const candidate of designer.pinned) {
+    for (const input of candidate.doc.inputs) {
+      if (!directorPinned.has(input)) findings.push({ code: "unpinned-director-input", subject: `designer:${candidate.id}`, message: `Declared input director:${input} has no pinned candidate` });
     }
   }
-  if (!cells.length) findings.push({ code: "missing-designer-cells", subject: "designer", message: "There are no active Designer cells" });
-  for (const trait of brief.traits) if (!coverage.has(trait.id)) findings.push({ code: "unrealised-director-trait", subject: trait.id, message: `No active Designer rationale declares a realisation of ${trait.key ?? trait.kind}: ${trait.text}` });
-  const catalogApi = await agentModule("designer", "catalog-core/index.js");
-  const engine = await agentModule("designer", "catalog-core/api.js");
-  const reader = await agentModule("designer", "library-cli/fs-library.js");
-  const values = catalogApi.loadCatalog();
-  let catalog: any = values;
-  if (tree.meta?.metadata?.format === "composite-v1") {
-    const bundles = await agentModule("designer", "catalog-bundles.js");
-    const surfaces = await agentModule("designer", "library-cli/surface-catalog.js");
-    catalog = { values, components: { slots: catalogApi.loadComponentRegistry().slots, fills: bundles.loadCatalogBundles().componentFills, rules: catalogApi.loadComponentCompositionRules() }, surfaces: surfaces.foundrySurfaceCatalog() };
-  }
-  // Designer owns the isolated, temporary projection. No consumer file is written.
-  const library = await reader.readLibraryFromCells(agentRoot(root, "designer"), catalog);
-  const tokens = "values" in library ? { ...library.values, source: library.source, adoptedAt: library.adoptedAt } : library;
-  const native = engine.check({ catalog: values, library: tokens });
-  for (const finding of native.findings.filter((finding: any) => finding.severity === "error")) findings.push({ code: `native-${finding.code}`, subject: finding.subject, message: finding.message });
-  const resolved = engine.resolve({ catalog: values, library: tokens });
-  const emitted = new Set(Object.values(resolved.members).map((member: any) => member.emit).filter(Boolean));
-  const { CONTRAST_PAIRS } = await agentModule("designer", "tokens/contrast-pairs.js");
-  const missingPairs = CONTRAST_PAIRS.filter((pair: any) => !emitted.has(pair.foreground) || !emitted.has(pair.background));
-  if (missingPairs.length) findings.push({ code: "contrast-coverage-missing", subject: "designer", message: `${missingPairs.length} of ${CONTRAST_PAIRS.length} native WCAG contrast pairs lack active token bindings` });
-  return { findings, coverage: brief.traits.map(trait => ({ trait: trait.id, cells: coverage.get(trait.id) ?? [] })),
-    contrast: { totalPairs: CONTRAST_PAIRS.length, boundPairs: CONTRAST_PAIRS.length - missingPairs.length, modes: ["light", "dark"] },
-    limits: [...brief.limits.filter(limit => limit.code !== "missing-director-input"),
-      { code: "visual-review-required", subject: "designer", message: "Declared traceability and token contrast do not establish design quality or runtime WCAG conformance; review the consumer specimens" },
-      { code: "copy-checks-owned-by-writer", subject: "writer", message: "Run clossys write --check for prohibited copy and locale coverage" }] };
+  const theme = libraryTheme(consumer);
+  if (!theme) findings.push({ code: "theme-not-compiled", subject: "designer:themes.*", message: "No pinned themes.* item declares CSS variables; Studio and the site have no consumer theme" });
+  const undeclared = designer.pinned.filter(candidate => !candidate.doc.inputs.length).length;
+  const limits: Finding[] = [
+    ...brief.limits.filter(limit => limit.code !== "missing-director-input"),
+    ...(designer.unpinned.length ? [{ code: "unpinned-designer-slots", subject: "designer", message: `${designer.unpinned.length} Designer slot(s) have no pin yet (an owner decision; clossys check reports each one)` }] : []),
+    ...(undeclared ? [{ code: "director-trace-undeclared", subject: "designer", message: `${undeclared} pinned Designer slot(s) declare no Director inputs, so trait realisation is not traceable from the slot model` }] : []),
+    { code: "provenance-owned-by-check", subject: "designer", message: "Reference provenance and ref-verbatim are checked by clossys check" },
+    { code: "visual-review-required", subject: "designer", message: "Declared traceability and a compiled theme do not establish design quality or runtime WCAG conformance; review the consumer specimens" },
+    { code: "copy-checks-owned-by-writer", subject: "writer", message: "Run clossys write --check for prohibited copy and locale coverage" },
+  ];
+  return { findings, pinned: designer.pinned.length, unpinned: designer.unpinned.length, theme: theme ? { hash: theme.hash } : null, limits };
 }
 
+/**
+ * Deterministic Designer verb over the slot model: `--brief` assembles the pinned Director
+ * inputs, `--check` verifies the pinned Designer set against them, and the default compile
+ * prints the pinned set (written only to `--out`). It generates, pins and activates nothing.
+ */
 export async function runDesign(args: CliArgs, root: string): Promise<DesignResult> {
   const base = { verb: "design" as const, root, check: args.check };
   try {
+    const consumer = workspace(root);
+    const director = await readPinnedDirector(consumer);
     if (args.brief || args.check) {
-      const director = await activeDirector(root), brief = await designBrief(root, director);
+      const brief = await designBrief(root, director.cells);
       if (args.brief) {
         const missing = brief.limits.filter(limit => limit.code === "missing-director-input");
-        return { ...base, exitCode: missing.length ? 1 : 0, result: brief, message: JSON.stringify(brief, null, 2) };
+        const emitted = await emitProjection(args, root, "designer brief", brief);
+        return { ...base, exitCode: missing.length ? 1 : 0, brief, message: emitted ? `design: brief written to ${emitted}` : JSON.stringify(brief, null, 2) };
       }
-      const result = await checkDesign(root, director, brief);
-      return { ...base, exitCode: result.findings.length ? 1 : 0, result, message: [
-        `design: ${result.findings.length} findings; ${result.coverage.filter(row => row.cells.length).length}/${result.coverage.length} declared traits covered; ${result.contrast.boundPairs}/${result.contrast.totalPairs} contrast pairs bound`,
+      const result = checkDesign(consumer, director, readPinned(consumer, "designer"), brief);
+      return { ...base, exitCode: result.findings.length ? 1 : 0, checks: result, message: [
+        `design: ${result.findings.length} finding(s); ${result.pinned} pinned, ${result.unpinned} unpinned Designer slot(s); theme ${result.theme ? "compiled" : "missing"}`,
         ...result.findings.map(finding => `${finding.code}: ${finding.subject}: ${finding.message}`),
         ...result.limits.map(limit => `Limit ${limit.code}: ${limit.subject}: ${limit.message}`),
       ].join("\n") };
     }
-    await designerTree(root);
-    await readCells(root, "designer", true);
-    const api = await agentModule("designer", "library-cli/cells.js");
-    const compiled = await api.compileLibraryCells(agentRoot(root, "designer"), join(agentRoot(root, "designer"), "compiled"));
-    return { ...base, exitCode: compiled.ok ? 0 : 1, result: compiled, message: "design: compiled active cells to clossys/agents/designer/compiled; no drafts generated or activated" };
+    const designer = readPinned(consumer, "designer");
+    const projection = designerProjection(designer);
+    const emitted = await emitProjection(args, root, "designer", projection);
+    return { ...base, exitCode: designer.issues.length ? 1 : 0, compilation: projection, message: [
+      `design: compiled ${designer.pinned.length} pinned Designer slot(s)${emitted ? ` to ${emitted}` : ""}; ${designer.unpinned.length} unpinned; nothing generated or pinned`,
+      ...designer.issues.map(issue => `${issue.reason}: ${issue.message}`),
+      ...(emitted ? [] : [JSON.stringify(projection, null, 2)]),
+    ].join("\n") };
   } catch (error) {
     return { ...base, exitCode: 2, message: `design: could not run: ${error instanceof Error ? error.message : String(error)}` };
   }

@@ -5,8 +5,7 @@ import { once } from "node:events";
 import { createServer, request as httpRequest, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AgentKind } from "../agents.js";
 import { resolveAgent } from "../agents.js";
-import { AGENT_KINDS, CELL_ID, agentRoot, hasCellTree, inventory, readStudioCells, summary, type CompileResult } from "./cells.js";
-import type { StudioGateReport } from './studio-render-policy.js';
+import { AGENT_KINDS } from "./cells.js";
 import { TOKEN_HEADER } from "./contract.js";
 import { renderStudioRoute, startStudio, STUDIO_APP, studioEntry, type StudioChild } from "./studio.js";
 import { watchCells } from "./watch.js";
@@ -16,11 +15,8 @@ import { selectionProfile, selectionRuntime, studioSelection } from "./selection
 import { consumerApps } from "./publications.js";
 import { DESIGNER_FONT_PREFIX, consumerBrand, consumerFontFile, consumerGlobals } from "./designer-globals.js";
 import { installedSpecimens } from "./installed-specimens.js";
-import { designerGallery, designerLeaf } from "./designer-library.js";
-import { agentGallery, agentLeaf, isLibraryAgent } from "./agent-library.js";
 import { slotGallery } from "./slot-gallery.js";
 import { slotDetail } from "./slot-detail.js";
-import { hasSlotModel } from "../records/slots.js";
 import { SLOT_AGENTS, type SlotAgent } from "../records/slot-model/index.js";
 import { slotCensus } from "./slot-census.js";
 import { DEFAULT_AVATAR_PATH, defaultAvatarSvg } from "./default-avatar.js";
@@ -31,13 +27,12 @@ import { fileURLToPath } from "node:url";
 
 const BRAND_MARK_CACHE = "private, max-age=60, stale-while-revalidate=300";
 
-export type { AgentCells, CellSummary, CellsResponse, ChangeEvent } from "./contract.js";
+export type { ChangeEvent } from "./contract.js";
 export { TOKEN_HEADER } from "./contract.js";
 export interface ProducerServerOptions {
   root: string; port?: number; studioEntry?: string; startupTimeoutMs?: number;
   /** Tests and embedding applications can own process signals themselves. */
   handleSignals?: boolean;
-  compilation?: CompileResult[];
   /** Consumer `clossys/` root whose Designer slot model (`agents/designer`) feeds the gallery; defaults to `<root>/clossys`. */
   library?: string;
   /** Folder of `clossys publish --install` out dirs read by `/api/publication`; defaults to the install pipeline's own default. */
@@ -136,13 +131,12 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
       const slotMatch = /^\/api\/slots\/([a-z]+)\/([a-z0-9][a-z0-9.-]*)$/.exec(pathname);
       if (slotMatch) {
         if (!(SLOT_AGENTS as readonly string[]).includes(slotMatch[1]!)) { json(response, 404, { state: "missing" }); return; }
-        if (!hasSlotModel(join(options.root, "clossys"))) { json(response, 200, { state: "legacy" }); return; }
         const detail = slotDetail(options.root, slotMatch[1] as SlotAgent, slotMatch[2]!);
         json(response, detail ? 200 : 404, detail ? { state: "ready", detail } : { state: "missing" }); return;
       }
       if (pathname === "/api/config") {
         const [theme, selection] = await Promise.all([studioTheme(options.root), studioSelection(options.root)]);
-        json(response, 200, { token, tokenHeader: TOKEN_HEADER, readOnly: true, theme, selection, compilation: options.compilation ?? [], agents: AGENT_KINDS.map(agent => ({ agent, packageName: resolveAgent(agent).packageName })) }); return;
+        json(response, 200, { token, tokenHeader: TOKEN_HEADER, readOnly: true, theme, selection, agents: AGENT_KINDS.map(agent => ({ agent, packageName: resolveAgent(agent).packageName })) }); return;
       }
       if (pathname === "/api/designer/globals.css") {
         const globals = await consumerGlobals(options.root).catch(() => undefined);
@@ -154,29 +148,6 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
         if (!font) { json(response, 404, { error: "Font is not part of the consumer's Designer globals" }); return; }
         response.writeHead(200, { "Content-Type": font.type, "Cache-Control": "public, max-age=3600", "X-Content-Type-Options": "nosniff" });
         response.end(font.body); return;
-      }
-      // REPLACE (PROOF-2 route table): the Publisher content-map projection supersedes these two routes.
-      if (pathname === "/api/designer/library") {
-        json(response, 200, hasLibrary ? { state: "ready", ...designerGallery(library) } : { state: "missing", sections: [], count: 0 }); return;
-      }
-      const leafMatch = /^\/api\/designer\/library\/([a-z0-9][a-z0-9.-]*)$/.exec(pathname);
-      if (leafMatch) {
-        const leaf = hasLibrary ? designerLeaf(library, leafMatch[1]!) : undefined;
-        if (!leaf) { json(response, 404, { state: "missing", error: "No Designer leaf with that name" }); return; }
-        json(response, 200, { state: "ready", leaf }); return;
-      }
-      // REPLACE with the Publisher content-map projection, as for the Designer library routes.
-      const agentMatch = /^\/api\/agents\/([a-z]+)\/library(?:\/([a-z0-9][a-z0-9.-]*))?$/.exec(pathname);
-      if (agentMatch) {
-        const agent = agentMatch[1]!;
-        if (!isLibraryAgent(agent)) { json(response, 404, { state: "missing", error: "No agent library with that name" }); return; }
-        if (agentMatch[2] === undefined) {
-          const gallery = await agentGallery(options.root, agent);
-          json(response, 200, gallery ? { state: "ready", ...gallery } : { state: "missing", agent, sections: [], count: 0 }); return;
-        }
-        const leaf = await agentLeaf(options.root, agent, agentMatch[2]);
-        if (!leaf) { json(response, 404, { state: "missing", error: "No leaf with that name" }); return; }
-        json(response, 200, { state: "ready", leaf }); return;
       }
       if (pathname === "/api/brand") {
         const brand = await consumerBrand(options.root);
@@ -208,10 +179,6 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
         if (!profile) { json(response, 404, { error: "Selected profile is unavailable; reload the Producer config" }); return; }
         json(response, 200, profile); return;
       }
-      if (pathname === "/api/cells") {
-        const gateReports: StudioGateReport[] = [];
-        json(response, 200, { agents: await Promise.all(AGENT_KINDS.map(agent => inventory(options.root, agent, finding => gateReports.push(finding)))), gateReports }); return;
-      }
       if (pathname === "/api/publication") { json(response, 200, await publication(options.root, new URL(raw, origin).searchParams.get("publication") ?? undefined, options.installOut, served)); return; }
       if (pathname === "/api/apps") { json(response, 200, await consumerApps(options.root)); return; }
       if (pathname === "/api/checks") {
@@ -224,20 +191,6 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
         streams.add(response); response.write(`event: ready\ndata: ${JSON.stringify({ reload: true })}\n\n`);
         const heartbeat = setInterval(() => response.write(": heartbeat\n\n"), 15_000); heartbeat.unref();
         response.once("close", () => { clearInterval(heartbeat); streams.delete(response); }); return;
-      }
-      const match = /^\/api\/cells\/([^/]+)\/([^/]+)$/.exec(pathname);
-      if (match) {
-        const agent = match[1] as AgentKind, id = match[2]!;
-        if (!AGENT_KINDS.includes(agent) || !CELL_ID.test(id)) { json(response, 400, { error: "Invalid agent or cell id" }); return; }
-        if (!await hasCellTree(agentRoot(options.root, agent))) { json(response, 404, { agent, state: "missing", message: "Agent cells are not initialized" }); return; }
-        const query = new URL(raw, origin).searchParams;
-        const versionText = query.get("version");
-        if (versionText !== null && (!/^[1-9]\d*$/.test(versionText) || !Number.isSafeInteger(Number(versionText)))) { json(response, 400, { error: "Invalid cell version" }); return; }
-        const gateReports: StudioGateReport[] = [];
-        const candidates = (await readStudioCells(options.root, agent, finding => gateReports.push(finding))).filter(cell => cell.id === id && (versionText === null || cell.version === Number(versionText))).sort((a, b) => b.version - a.version);
-        const cell = candidates[0];
-        if (!cell) { json(response, 404, { agent, state: "missing", message: "Cell version is missing" }); return; }
-        json(response, 200, { agent, state: "ready", cell: { ...summary(cell), source: cell.source }, gateReports }); return;
       }
       json(response, 404, { error: "Unknown API route" }); return;
     }

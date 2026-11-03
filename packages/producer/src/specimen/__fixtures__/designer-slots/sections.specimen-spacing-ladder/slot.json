@@ -1,0 +1,81 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.specimen-spacing-ladder",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.specimens",
+    "l2": "specimens-content",
+    "order": 162
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": null,
+      "header": null
+    },
+    "slots": [
+      {
+        "name": "items",
+        "type": "records",
+        "required": true
+      },
+      {
+        "name": "axes",
+        "type": "records",
+        "required": false
+      },
+      {
+        "name": "context",
+        "type": "region",
+        "required": true
+      },
+      {
+        "name": "labels",
+        "type": "copy",
+        "required": true
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "allowedComposes": [
+      "components.semantic-content",
+      "components.grid-list",
+      "components.disclosure"
+    ],
+    "parts": [],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "app",
+    "passageSchema": "passages.specimen-spacing-ladder",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "labels.showAllVariants",
+          "kind": "icu",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [
+    "components.disclosure",
+    "components.grid-list",
+    "components.semantic-content"
+  ]
+}

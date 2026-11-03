@@ -1,0 +1,36 @@
+{
+  "schema": "clossys.page/1",
+  "path": "/about",
+  "title": "site.studio.heading",
+  "frame": "frames.plain",
+  "sections": [
+    "sections.hero"
+  ],
+  "copy": {
+    "frame.title": "site.studio#name",
+    "hero.heading": "site.studio#heading"
+  },
+  "meta": {
+    "source": {
+      "kind": "original",
+      "ref": []
+    },
+    "entry": {
+      "fields": {
+        "kind": "page"
+      },
+      "blocks": {
+        "Route": {
+          "slots": [
+            {
+              "section": "sections.hero",
+              "state": "active"
+            }
+          ]
+        }
+      },
+      "publication": "example-site",
+      "entryId": "about"
+    }
+  }
+}

@@ -1,9 +1,0 @@
-{
-  "version": 1,
-  "publicationId": "example-site",
-  "format": "web.page.responsive",
-  "entries": [
-    { "id": "home", "order": 0, "title": "site.studio.name", "kind": "page", "path": "/", "source": { "frameId": "frames.plain", "sectionIds": ["sections.hero"] }, "pin": { "nav": true } },
-    { "id": "about", "order": 1, "title": "site.studio.heading", "kind": "page", "path": "/about", "source": { "frameId": "frames.plain", "sectionIds": ["sections.hero"] } }
-  ]
-}
