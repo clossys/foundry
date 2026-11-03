@@ -1,7 +1,7 @@
 ---
 slot: "strings.counters"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.verbal.voice@1"]}
+source: {"kind":"derived","ref":["director:identity.verbal.voice@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -16,7 +16,7 @@ source: {"kind":"derived","ref":["director:identity.verbal.voice@1"]}
 
 ### studio.count.needs
 <!-- {"id":"studio.count.needs","bindings":[]} -->
-{count, plural, one {# NEED} other {# NEEDs}}
+{count, plural, one {# need} other {# needs}}
 
 ### studio.count.findings
 <!-- {"id":"studio.count.findings","bindings":[]} -->
