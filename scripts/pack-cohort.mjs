@@ -58,7 +58,6 @@ const COMMIT = /^[a-f0-9]{40}$/;
 /** The file whose presence in producer.tgz proves Studio shipped (build-studio.mjs writes it). */
 export const STUDIO_MANIFEST_ENTRY = "package/dist/studio/manifest.json";
 const committedStudioMap = join(repoRoot, "packages/producer/studio/generated/studio-map.json");
-const studioLibrary = join(repoRoot, "clossys/library");
 
 class UsageError extends Error {}
 
@@ -80,15 +79,17 @@ function tarEntries(tarball) {
 
 /**
  * The native bindings the committed Studio map was generated from: one
- * { slot, element, version, hash } row per item, the hash read from the
- * library record. Throws unless their digest is the map's own bindingDigest.
+ * { slot, element, version, hash } row per item, the hash being the bound
+ * candidate record's sha256 the map itself records. Throws unless their
+ * digest is the map's own bindingDigest.
  */
-export function committedDraftBindings(mapPath = committedStudioMap, library = studioLibrary) {
+export function committedDraftBindings(mapPath = committedStudioMap) {
   const map = JSON.parse(readFileSync(mapPath, "utf8"));
   if (map.assembly?.status !== "DRAFT" || !Array.isArray(map.items) || map.items.length === 0) throw new Error("the committed Studio map is not a DRAFT preview with items; pass --preview-bindings <file>");
-  const rows = map.items.map(({ slot, element, version }) => {
-    const record = JSON.parse(readFileSync(join(library, slot, element, `v${version}`, "element.json"), "utf8"));
-    return { slot, element, version, hash: record.hash };
+  const rows = map.items.map(({ slot, element, version, previewEvidence }) => {
+    const sha = previewEvidence?.record?.sha256;
+    if (!/^[a-f0-9]{64}$/.test(sha ?? "")) throw new Error(`committed Studio map item ${slot} records no candidate sha256`);
+    return { slot, element, version, hash: `sha256:${sha}` };
   }).sort((a, b) => (a.slot < b.slot ? -1 : a.slot > b.slot ? 1 : 0));
   const digest = createHash("sha256").update(JSON.stringify(rows)).digest("hex");
   if (digest !== map.assembly.bindingDigest) throw new Error(`bindings derived from the committed Studio map digest to ${digest}, not its bindingDigest ${map.assembly.bindingDigest}`);
