@@ -15,6 +15,17 @@ import themesMigration from "../catalog/ia/themes.id-migration.json" with { type
 import { sha256 } from "./digest.js";
 import { checkFrozenLeafSets, assertFrozenLeafSets, type FrozenLeafLayer } from "./leaf-freeze.js";
 import { loadBuildCatalog, loadCatalog, loadComponentRegistry, type Placement } from "./index.js";
+import { withA276BackdropGraphic } from "../catalog-assets/a276-backdrop-graphic.contribution.js";
+
+// Owner re-sign 2026-11-02: the signed tree is the loaded catalog (237 leaves).
+// It places the draft assets.backdrop-graphic leaf at load time, so asset
+// membership checks run against that loaded view, not the raw JSON alone.
+const OWNER_RESIGN = { signoff: "owner re-sign 2026-11-02", leaves: 237 } as const;
+const loadedAssets = () => {
+  const catalog = withA276BackdropGraphic({ slots: structuredClone(assetSlots), fills: [], placements: [structuredClone(assetIA)] } as never);
+  return { ia: catalog.placements[0] as Placement, slots: catalog.slots as unknown as typeof assetSlots };
+};
+const view = (layer: string, ia: unknown, slots: unknown) => layer === "assets" ? loadedAssets() : { ia: structuredClone(ia) as Placement, slots: structuredClone(slots) as typeof assetSlots };
 
 const fixtures = [
   { layer: "themes", ia: tokenIA, slots: tokenSlots, freeze: tokenFreeze, count: 42, digest: "cdea2088f1a37a10eb1754051174dde81bbe6ecea73235035ad30148ca6d86f1" },
@@ -26,14 +37,14 @@ describe("owner-signed leaf membership", () => {
   for (const fixture of fixtures) {
     const { layer } = fixture;
     const placement = fixture.ia as Placement;
-    const input = () => ({ ia: structuredClone(placement), slots: structuredClone(fixture.slots) });
+    const input = () => view(layer, placement, fixture.slots) as { ia: Placement; slots: typeof fixture.slots };
     it(`${layer}: records the independently measured signed IDs and signoff`, () => {
       expect(fixture.freeze).toMatchObject({ schemaVersion: 1, layer, scope: "leaf-membership-only" });
       if (layer === "themes") expect(tokenFreeze.approval).toMatch(/tokens-to-themes migration/);
       else expect(fixture.freeze).toMatchObject({ signedHead: "581e4fd70589fe072d9ce38fa159306d473c1754", placementProofHead: "2dfa7722ff726aef0f10ff2391054c9554e4bc86", ownerSignoffComment: "6380345814" });
       expect(fixture.freeze.leafIds).toHaveLength(fixture.count);
       expect(sha256([...fixture.freeze.leafIds].sort().join("\n"))).toBe(fixture.digest);
-      expect(checkFrozenLeafSets([placement], fixture.slots, [layer])).toEqual([]);
+      expect(checkFrozenLeafSets([input().ia], input().slots, [layer])).toEqual([]);
     });
     for (const source of ["slots", "ia"] as const) for (const mutation of ["add", "remove", "rename"] as const) {
       it(`${layer}: rejects ${source} ${mutation}, including same-count renames`, () => {
@@ -95,7 +106,7 @@ describe("owner-signed leaf membership", () => {
       }
       expect(fixture.slots).toEqual(beforeSlots);
       expect(fixture.ia).toEqual(beforeIA);
-      expect(loadBuildCatalog().slots).toHaveLength(233);
+      expect(loadBuildCatalog().slots).toHaveLength(OWNER_RESIGN.leaves);
     });
   }
 
@@ -129,14 +140,14 @@ describe("owner-signed Media leaf amendment", () => {
     expect(sha256(ids.join("\n"))).toBe("413698a4fe2af41b64f02e23353ba29760397c06ed54c94f790a3ce93cf9fdda");
     expect(assetFreeze.leafIds.filter(id => !ids.includes(id))).toEqual([]);
     expect(ids.filter(id => !assetFreeze.leafIds.includes(id))).toEqual(added);
-    expect(checkFrozenLeafSets([assetIA as Placement], assetSlots, ["assets"])).toEqual([]);
+    expect(checkFrozenLeafSets([loadedAssets().ia], loadedAssets().slots, ["assets"])).toEqual([]);
   });
   it("refuses a fourth unsigned Media leaf and a missing signed addition", () => {
-    const slots = structuredClone(assetSlots);
+    const { ia: loadedIA, slots } = loadedAssets();
     slots.push({ ...slots[0]!, id: "assets.audio" });
-    expect(checkFrozenLeafSets([assetIA as Placement], slots, ["assets"])).toEqual([expect.objectContaining({ source: "slots", unexpected: ["assets.audio"], missing: [] })]);
-    const without = structuredClone(assetSlots).filter(slot => slot.id !== "assets.pattern");
-    expect(checkFrozenLeafSets([assetIA as Placement], without, ["assets"])).toEqual([expect.objectContaining({ source: "slots", missing: ["assets.pattern"], unexpected: [] })]);
+    expect(checkFrozenLeafSets([loadedIA], slots, ["assets"])).toEqual([expect.objectContaining({ source: "slots", unexpected: ["assets.audio"], missing: [] })]);
+    const without = loadedAssets().slots.filter(slot => slot.id !== "assets.pattern");
+    expect(checkFrozenLeafSets([loadedAssets().ia], without, ["assets"])).toEqual([expect.objectContaining({ source: "slots", missing: ["assets.pattern"], unexpected: [] })]);
   });
 });
 
@@ -166,7 +177,8 @@ describe("themes leaf set", () => {
 describe("explicit local component amendment", () => {
   const amendedId = "components.semantic-content";
   it("records an explicit versioned proposal against the unchanged signed baseline", () => {
-    expect(componentAmendments).toEqual({ schemaVersion: 1, layer: "components", baseSignedHead: componentFreeze.signedHead, status: "pending-owner-ratification", addedLeafIds: ["components.native-action", amendedId, "components.sidebar", "components.command", "components.sheet", "components.empty", "components.item", "components.scroll-area", "components.dropdown-menu"] });
+    expect(componentAmendments).toEqual({ schemaVersion: 1, layer: "components", baseSignedHead: componentFreeze.signedHead, status: "pending-owner-ratification", addedLeafIds: ["components.native-action", amendedId, "components.sidebar", "components.command", "components.sheet", "components.empty", "components.item", "components.scroll-area", "components.dropdown-menu", "components.rich-text", "components.media-player"] });
+    expect(OWNER_RESIGN.signoff).toBe("owner re-sign 2026-11-02");
   });
   const inputs = () => ({ ia: structuredClone(componentIA) as Placement, slots: structuredClone(componentSlots) });
   it("accepts only the exact amended leaf alongside the unchanged signed IDs", () => {

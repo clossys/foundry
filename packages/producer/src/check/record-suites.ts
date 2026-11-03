@@ -136,7 +136,7 @@ export async function slotContractSuite(): Promise<SuiteReport> {
 }
 
 /**
- * Designer's ref-verbatim check over every pin in `clossys/selection.json`: each pinned
+ * Designer's ref-verbatim check over every pin, of the Designer slot model and the legacy library store: each pinned
  * code file must be its recorded reference file plus allowed hunks. The shrink-only baseline is inventory; every failure remains an error.
  */
 export async function refVerbatimSuite(root: string): Promise<SuiteReport> {

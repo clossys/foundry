@@ -1,71 +1,83 @@
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, readFile, readdir, realpath, rm, symlink, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { cp, mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
-import { writeElementVersion } from '../dist/records/library.js';
-import { assertPreviewContext, draftStudioItems, previewArguments, previewDescriptor, previewOptions, PREVIEW_BINDINGS_ENV } from './studio-draft-items.mjs';
+import { assertPreviewContext, draftStudioItems, pinnedBindings, previewArguments, previewDescriptor, previewOptions, PREVIEW_BINDINGS_ENV } from './studio-draft-items.mjs';
 
-const slot = 'sections.studio.example', element = 'example', at = '2026-10-31T12:00:00Z';
+const clossys = fileURLToPath(new URL('../../../clossys/', import.meta.url));
+const slot = 'sections.studio.options', element = 'example', at = '2026-10-31T12:00:00Z';
+const slotPath = `agents/designer/sections.extensions/extensions/${slot}`;
+const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 async function fixture(t) {
   const root = await realpath(await mkdtemp(join(tmpdir(), 'studio-native-draft-')));
   t.after(() => rm(root, { recursive: true, force: true }));
+  // One real Designer slot, with no candidates or pin of its own.
+  const slotDir = join(root, slotPath), candidates = join(slotDir, 'candidates');
+  await mkdir(candidates, { recursive: true });
+  await cp(join(clossys, 'agents/designer/ia.json'), join(root, 'agents/designer/ia.json'));
+  await cp(join(clossys, slotPath, 'slot.json'), join(slotDir, 'slot.json'));
   const studio = join(root, 'studio'), dir = join(studio, 'sections', element);
   await mkdir(dir, { recursive: true });
-  const source = `// �
+  const source = `// \ufffd
 export default function Example() { return null; }
 `;
   const provenance = JSON.stringify({ qualification: { state: 'unqualified-draft' }, remainingNeeds: ['Native source composition remains unqualified.'] });
   await writeFile(join(dir, 'index.tsx'), source);
   await writeFile(join(dir, 'stock.provenance.json'), provenance);
-  const input = {
-    element: { schema: 'clossys.element/1', id: element, package: 'producer', layer: 'sections', slot, kind: 'registry:block',
-      lineage: { mode: 'customized', source: { registry: 'fixture', item: 'card', version: '1' } }, license: { spdx: 'MIT' },
-      creator: { agent: 'designer', model: 'fixture' }, reason: 'Unqualified preview fixture.', createdAt: at,
-      checks: [{ id: 'ref-verbatim', suite: 'strict-reference', type: 'fixed', status: 'fail', detail: 'REF-FILE-UNMAPPED fixture evidence', at }],
-      deps: { npm: {}, elements: [] }, reads: { copyKeys: [], themeVars: [] } },
-    preview: { schema: 'clossys.preview/1', fixtures: {}, copy: {}, container: 'section-in-frame', theme: 'light', width: 1280 },
-    files: { 'index.tsx': source, 'stock.provenance.json': provenance, 'LICENCE.md': 'MIT\n' },
+  const source_ = { kind: 'derived', ref: ['{"registry":"fixture","item":"card","version":"1"}'], license: 'MIT' };
+  const meta = { slot, source: source_, element: { id: element, license: { spdx: 'MIT' }, creator: { agent: 'designer', model: 'fixture' },
+    checks: [{ id: 'ref-verbatim', suite: 'strict-reference', type: 'fixed', status: 'fail', detail: 'REF-FILE-UNMAPPED fixture evidence', at }] },
+    preview: { schema: 'clossys.preview/1', fixtures: {}, copy: {}, container: 'section-in-frame', theme: 'light', width: 1280 } };
+  const input = { name: element, type: 'registry:block', meta, files: [
+    { path: 'index.tsx', type: 'registry:component', content: source },
+    { path: 'stock.provenance.json', type: 'registry:file', content: provenance },
+    { path: 'LICENCE.md', type: 'registry:file', content: 'MIT\n' },
+  ] };
+  const write = async (version, item = input) => {
+    const bytes = `${JSON.stringify(item, null, 2)}\n`, path = join(candidates, `${element}-v${version}.json`);
+    await writeFile(path, bytes);
+    return { path, binding: { slot, element, version, hash: `sha256:${sha(bytes)}` } };
   };
-  const version = writeElementVersion(join(root, 'library'), input);
-  const binding = { slot, element, version: version.element.version, hash: version.element.hash };
+  const { path, binding } = await write(1);
   const bindingsFile = join(root, 'bindings.json');
   await writeFile(bindingsFile, JSON.stringify([binding]));
   const run = (rows = [binding], required = [slot]) => draftStudioItems(root, studio, rows, required);
-  return { root, studio, dir, input, version, binding, bindingsFile, run };
+  return { root, studio, dir, slotDir, input, path, binding, bindingsFile, write, run };
 }
 
 test('exact native Draft projection retains hashes, raw ancestry and NEEDs without creating pins or approval', async t => {
-  const f = await fixture(t), before = await readFile(join(f.version.dir, 'element.json'));
+  const f = await fixture(t), before = await readFile(f.path);
   const [item] = await f.run();
-  assert.deepEqual(item.previewEvidence.lineage, f.version.element.lineage);
-  assert.deepEqual(item.previewEvidence.license, f.version.element.license);
-  assert.deepEqual(item.previewEvidence.recordedChecks, f.version.element.checks);
+  assert.deepEqual(item.previewEvidence.lineage, f.input.meta.source);
+  assert.deepEqual(item.previewEvidence.license, f.input.meta.element.license);
+  assert.deepEqual(item.previewEvidence.recordedChecks, f.input.meta.element.checks);
   assert.equal(item.previewEvidence.status, 'DRAFT');
   assert.equal(item.previewEvidence.approved, false);
   assert.equal(item.previewEvidence.referenceQualified, false);
   assert.equal(item.previewEvidence.releaseQualified, false);
-  assert.equal(item.previewEvidence.selectionGranted, false);
-  assert.equal(item.previewEvidence.selectionClaim, null);
-  assert.equal(item.previewEvidence.matchesBinding, false);
+  assert.equal(item.previewEvidence.pinGranted, false);
+  assert.equal(item.previewEvidence.pinClaim, null);
+  assert.equal(item.previewEvidence.matchesPin, false);
   assert.deepEqual(item.previewEvidence.remainingNeeds, [
     'Strict reference qualification was not executed or granted by this Draft projection.',
     'Native source composition remains unqualified.',
   ]);
-  assert.equal(item.previewEvidence.record.ref, `library/${slot}/${element}/v1/element.json`);
+  assert.equal(item.previewEvidence.record.ref, `${slotPath}/candidates/${element}-v1.json`);
+  assert.equal(item.previewEvidence.record.sha256, f.binding.hash.slice('sha256:'.length));
   assert.equal(item.previewEvidence.payload.length, 3);
-  assert.match(item.previewEvidence.record.sha256, /^[a-f0-9]{64}$/);
   assert.equal(JSON.stringify(item.previewEvidence).includes(f.root), false);
-  assert.deepEqual(await readFile(join(f.version.dir, 'element.json')), before);
-  assert.deepEqual((await readdir(f.root)).sort(), ['bindings.json', 'library', 'studio']);
+  assert.deepEqual(await readFile(f.path), before);
+  assert.deepEqual((await readdir(f.slotDir)).sort(), ['candidates', 'slot.json']);
 });
 
 test('Draft projection retains an explicit qualification NEED even without a provenance file', async t => {
-  const f = await fixture(t), files = { ...f.input.files };
-  delete files['stock.provenance.json'];
-  const next = writeElementVersion(join(f.root, 'library'), { ...f.input, files });
+  const f = await fixture(t);
+  const next = await f.write(2, { ...f.input, files: f.input.files.filter(file => file.path !== 'stock.provenance.json') });
   await rm(join(f.dir, 'stock.provenance.json'));
-  const [item] = await f.run([{ ...f.binding, version: next.element.version, hash: next.element.hash }]);
+  const [item] = await f.run([next.binding]);
   assert.equal(item.previewEvidence.referenceQualified, false);
   assert.deepEqual(item.previewEvidence.provenance, []);
   assert.deepEqual(item.previewEvidence.remainingNeeds, ['Strict reference qualification was not executed or granted by this Draft projection.']);
@@ -73,51 +85,45 @@ test('Draft projection retains an explicit qualification NEED even without a pro
 
 test('newest is never inferred: the explicit older version wins and an explicit mismatching newer version refuses', async t => {
   const f = await fixture(t);
-  const next = writeElementVersion(join(f.root, 'library'), { ...f.input, files: { ...f.input.files, 'index.tsx': 'export default function Newer() { return null; }\n' } });
+  const next = await f.write(2, { ...f.input, files: f.input.files.map(file => file.path === 'index.tsx' ? { ...file, content: 'export default function Newer() { return null; }\n' } : file) });
   assert.equal((await f.run())[0].version, 1);
-  await assert.rejects(f.run([{ ...f.binding, version: next.element.version, hash: next.element.hash }]), /differs from example/);
+  await assert.rejects(f.run([next.binding]), /differs from example/);
 });
 
-test('existing selection remains a validated factual claim and never becomes preview approval', async t => {
+test('an existing pin remains a validated factual claim and never becomes preview approval', async t => {
   const f = await fixture(t);
-  const claim = { element, version: 1, hash: f.binding.hash, event: 'e1' };
-  await writeFile(join(f.root, 'selection.json'), JSON.stringify({ schema: 'clossys.selection/1', pins: { [slot]: claim },
-    history: [{ id: 'e1', at, by: 'fixture-owner', action: 'pin', slot, element, version: 1, hash: f.binding.hash }] }));
+  const pin = { candidate: `${element}-v1.json`, sha256: f.binding.hash.slice('sha256:'.length), pinnedBy: 'owner:fixture-owner', at };
+  await writeFile(join(f.slotDir, 'pin.json'), JSON.stringify(pin));
   const [item] = await f.run();
-  assert.deepEqual(item.previewEvidence.selectionClaim, claim);
-  assert.equal(item.previewEvidence.matchesBinding, true);
+  assert.deepEqual(item.previewEvidence.pinClaim, { candidate: pin.candidate, hash: f.binding.hash, at });
+  assert.equal(item.previewEvidence.matchesPin, true);
   assert.equal(item.previewEvidence.approved, false);
   assert.equal(JSON.stringify(item.previewEvidence).includes('fixture-owner'), false);
+  assert.deepEqual(await pinnedBindings(f.root, [slot]), [f.binding]);
 });
 
 test('missing, duplicate, partial, raw-candidate-hash and wrong-tree-hash bindings refuse', async t => {
   const f = await fixture(t);
-  for (const rows of [undefined, [], [f.binding, f.binding], [{ ...f.binding, hash: '0'.repeat(64) }], [{ ...f.binding, hash: `sha256:${'0'.repeat(64)}` }]]) {
+  for (const rows of [undefined, [], [f.binding, f.binding], [{ ...f.binding, hash: '0'.repeat(64) }], [{ ...f.binding, hash: `sha256:${'0'.repeat(64)}` }], [{ ...f.binding, version: 9 }]]) {
     await assert.rejects(f.run(rows === undefined ? null : rows));
   }
   await assert.rejects(f.run([f.binding], [slot, 'frames.missing']), /cover every required/);
+  await assert.rejects(f.run([{ ...f.binding, slot: 'sections.studio.unknown' }], ['sections.studio.unknown']), /not a Designer slot/);
+  await assert.rejects(pinnedBindings(f.root, [slot]), /no pinned element candidate/);
 });
 
 test('escaping bindings and native payload paths refuse', async t => {
   const f = await fixture(t);
   await assert.rejects(f.run([{ ...f.binding, element: '../escape' }]), /invalid/);
-  const path = join(f.version.dir, 'element.json'), record = JSON.parse(await readFile(path, 'utf8'));
-  record.payload = ['../escape.tsx']; await writeFile(path, JSON.stringify(record));
-  await assert.rejects(f.run(), /unsafe/);
-});
-
-test('native payload aliases and undeclared files refuse before projection', async t => {
-  const f = await fixture(t), code = join(f.version.dir, 'index.tsx');
-  await rm(code); await symlink(join(f.dir, 'index.tsx'), code);
-  await assert.rejects(f.run(), /symbolic link/);
-  await rm(code); await writeFile(code, f.input.files['index.tsx']);
-  await writeFile(join(f.version.dir, 'extra.tsx'), 'extra');
-  await assert.rejects(f.run(), /unrecorded files/);
+  const escaping = await f.write(2, { ...f.input, files: [...f.input.files, { path: '../escape.tsx', type: 'registry:file', content: 'x' }] });
+  await assert.rejects(f.run([escaping.binding]), /unsafe/);
+  const renamed = await f.write(3, { ...f.input, name: 'other' });
+  await assert.rejects(f.run([renamed.binding]), /name or slot differs/);
 });
 
 test('raw current-UI code mismatch refuses even when UTF-8 decoding would look identical', async t => {
   const f = await fixture(t), path = join(f.dir, 'index.tsx'), original = await readFile(path);
-  const offset = original.indexOf(Buffer.from('�'));
+  const offset = original.indexOf(Buffer.from('\ufffd'));
   const changed = Buffer.concat([original.subarray(0, offset), Buffer.from([0xff]), original.subarray(offset + 3)]);
   assert.equal(original.toString('utf8'), changed.toString('utf8'));
   await writeFile(path, changed);

@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-specimen-v3.json",
-  "sha256": "e03d289242398ef64c1810c4d8db56a96fe1bcd0952eb9d4bf1368ea462c7ab3",
-  "pinnedBy": "migration:SLOT-MODEL",
-  "at": "2026-10-31T22:00:00Z"
+  "candidate": "studio-specimen-v5.json",
+  "sha256": "e3272565450d22c289c98f8e86ca2a751c148dda9098edd242fbc72fe926e914",
+  "pinnedBy": "owner:S1 scope add 2026-11-02, planner relay",
+  "at": "2026-11-03T00:21:26Z"
 }

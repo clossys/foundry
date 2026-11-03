@@ -314,6 +314,13 @@ describe('slot details', () => {
         writeFileSync(join(dir, 'pin.json'), JSON.stringify({ ...pin, sha256: createHash('sha256').update(bytes).digest('hex') }));
       }),
     ]) { restore(); mutation(); noPreview(); }
+    restore();
+    expect(slotDetail(root, 'director', id)!.checks).toContainEqual(expect.objectContaining({ label: 'Slot record matches its IA position', ok: true }));
+    writeFileSync(join(dir, 'slot.json'), JSON.stringify({ ...doc, id: 'context.foreign' }));
+    const misplaced = slotDetail(root, 'director', id)!;
+    expect(misplaced.checks).toContainEqual(expect.objectContaining({ label: 'Slot record matches its IA position', ok: false }));
+    expect(misplaced.checks).toContainEqual(expect.objectContaining({ label: 'Inputs ready', ok: false }));
+    expect(misplaced.checks).toContainEqual({ label: id, ok: false, detail: 'invalid-slot' });
     expect(slotDetail(root, 'director', 'context.unknown')).toBeUndefined();
   });
 

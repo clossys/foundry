@@ -1,10 +1,7 @@
-/** Runtime specimen inputs: canonical Designer slots when any IA exists, else legacy stores. */
+/** Runtime specimen inputs: canonical Designer slots; a consumer without the slot model has none. */
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync } from "node:fs";
 import type { InstallPins } from "@clossys/publisher/install";
-import { listVersions } from "../records/library.js";
-import { loadSelection } from "../records/validate.js";
 import { hasSlotModel, listSlots, readCandidate, readSlot } from "../records/slots.js";
 import { CANDIDATE_NAME, pinFile, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
 
@@ -19,7 +16,7 @@ type MutablePins = Record<string, { element: string; version: number }>;
 const fingerprint = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 
 export function slotInstallInputs(consumer: string): SlotInstallInputs | undefined {
-  if (!hasSlotModel(consumer)) return legacyInputs(consumer);
+  if (!hasSlotModel(consumer)) return undefined;
   const pins: MutablePins = {}, unpinned: MutablePins = {};
   const options = new Map<string, number[]>();
   const evidence: unknown[] = [];
@@ -65,18 +62,4 @@ export function slotInstallInputs(consumer: string): SlotInstallInputs | undefin
     }
   }
   return { pins, options, unpinned, fingerprint: fingerprint(evidence) };
-}
-
-function legacyInputs(consumer: string): SlotInstallInputs | undefined {
-  const selectionPath = join(consumer, "selection.json"), libraryRoot = join(consumer, "library");
-  if (!existsSync(selectionPath) || !existsSync(libraryRoot)) return undefined;
-  const selection = loadSelection(selectionPath);
-  const pins: MutablePins = Object.fromEntries(Object.entries(selection.pins).map(([slot, pin]) => [slot, { element: pin.element, version: pin.version }]));
-  const options = new Map(Object.entries(pins).map(([slot, pin]) => [slot, listVersions(libraryRoot, slot, pin.element).filter(version => version > pin.version)]));
-  const unpinned: MutablePins = {};
-  for (const slot of readdirSync(libraryRoot).filter(name => !pins[name] && /^[a-z0-9][a-z0-9.-]*$/.test(name)).sort()) {
-    const elements = readdirSync(join(libraryRoot, slot)).filter(element => listVersions(libraryRoot, slot, element).length).sort();
-    if (elements.length === 1) unpinned[slot] = { element: elements[0]!, version: listVersions(libraryRoot, slot, elements[0]!).at(-1)! };
-  }
-  return { pins, options, unpinned, fingerprint: fingerprint([readFileSync(selectionPath, "utf8"), [...options], unpinned]) };
 }

@@ -4186,8 +4186,12 @@
           "sha256": "05563ac6324f7b29b7572ed2a8244099917db6ea939882f427a3839518b02619"
         },
         {
+          "path": "packages/publisher/src/web/views/landingViewGrounds.ts",
+          "sha256": "47a8c7c89733995dde15f1abf2c8113be9908214eccdf53abfeca312e69e6cb7"
+        },
+        {
           "path": "packages/publisher/src/web/views/SectionedView.tsx",
-          "sha256": "e761b2e80c192f78f1599fd7385e63c2e1fb8cf6ba021224eeaec5c54b4e9f14"
+          "sha256": "123838b28855b25223f38e1d267991cc705b54389ce23ae16ae4d75f2dec50b3"
         },
         {
           "path": "packages/publisher/src/web/views/SectionedViewActions.tsx",
@@ -4203,7 +4207,7 @@
         },
         {
           "path": "packages/publisher/src/web/views/SectionedViewContent.tsx",
-          "sha256": "fc040d165b0b5fc6f00d850e554c736152434b94cbfd04649b21b30b615a7dab"
+          "sha256": "6ef68cfbc785b17b6d82357d32ee7025425aaf5a9310c4659473677ac6022109"
         },
         {
           "path": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
@@ -4263,7 +4267,7 @@
           "code": "DF2",
           "evidence": "unresolved source export ../../internal/errors.js#RenderError",
           "file": "packages/publisher/src/web/views/SectionedViewContent.tsx",
-          "line": 14
+          "line": 15
         },
         {
           "code": "DF5",

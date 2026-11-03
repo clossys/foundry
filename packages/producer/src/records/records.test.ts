@@ -47,6 +47,7 @@ import {
   type PreviewRecord,
   type ReferenceRef,
 } from "./index.js";
+import { candidatesDir, iaPath, jsonBytes, pinFile, slotDir, slotFile, slotPositions, type IaDoc } from "./slot-model/index.js";
 
 // Synthetic record fixtures still carry explicit owner decisions; approval enforcement stays real.
 function approvePin(input: { root: string; element: { slot: string; id: string; version: number; hash: string } }) {
@@ -372,26 +373,25 @@ describe("slot status derivation", () => {
     expect(derive().flags).toContain("stale");
   });
 
-  it("reads a whole workspace from disk, including a tampered payload", () => {
-    const library = join(root, "library");
-    writeFileSync(join(root, "approvals.json"), JSON.stringify({ schema: "clossys.owner-approvals/1", records: [{ id: "status-fixture-create", actor: "owner", owner: "fixture-owner", reference: "explicit fixture create decision", at: "2026-10-29T00:00:00Z", action: "create", slot: "sections.hero", element: "hero" }] }));
-    const v1 = writeElementVersion(library, {
-      element: elementBase({ lineage: { mode: "original" } }),
-      designerFlow: { path: "create", ownerRequest: "status-fixture-create" },
-      preview,
-      files: { "hero.tsx": "export const x = 1\n" },
-    });
-    const s = pin(emptySelection(), { root, element: v1.element, at: AT(1), by: "o" });
-    writeSelection(root, s);
-    writeRelease(root, createRelease(s, { number: 1, at: AT(2), by: "o" }));
-    const read = () => workspaceSlotStatus(root, { slots: ["sections.hero", "sections.faq"], referenceHash });
+  it("reads a whole Designer slot model from disk, including a tampered candidate", () => {
+    const ia: IaDoc = { schema: "clossys.ia/1", source: "consumer#fixture", extensions: [], nodes: [{ id: "sections.content", label: "Content", children: [{ id: "heroes", label: "Heroes", slots: ["sections.hero", "sections.faq"] }] }] };
+    const dirOf = (slot: string) => slotDir(root, "designer", slotPositions("designer", ia).get(slot)!, slot);
+    const put = (path: string, bytes: string) => { mkdirSync(join(path, ".."), { recursive: true }); writeFileSync(path, bytes); };
+    put(iaPath(root, "designer"), jsonBytes(ia));
+    for (const [id, position] of slotPositions("designer", ia)) put(slotFile(dirOf(id)), jsonBytes({ schema: "clossys.slot/1", id, agent: "designer", kind: "element", ia: position, contract: {}, inputs: [], uses: [] }));
+    const ref = JSON.stringify(source);
+    const bytes = jsonBytes({ name: "hero", type: "registry:block", files: [{ path: "hero.tsx", type: "registry:file", content: "export const x = 1\n" }],
+      meta: { slot: "sections.hero", source: { kind: "registry", ref: [ref] }, element: { id: "hero", slot: "sections.hero", checks: [], deps: { npm: {}, elements: [] } } } });
+    put(join(candidatesDir(dirOf("sections.hero")), "hero-v1.json"), bytes);
+    put(pinFile(dirOf("sections.hero")), jsonBytes({ candidate: "hero-v1.json", sha256: sha256Hex(bytes), pinnedBy: "owner:fixture", at: AT(1) }));
+    const read = (hashes = referenceHash) => workspaceSlotStatus(root, { referenceHash: hashes });
     expect(read().map((row) => [row.slot, row.status])).toEqual([
-      ["sections.faq", "missing"],
       ["sections.hero", "pinned"],
+      ["sections.faq", "missing"],
     ]);
-    writeFileSync(join(v1.dir, "hero.tsx"), "export const x = 2\n");
+    expect(read(() => H("b")).find((row) => row.slot === "sections.hero")!.status).toBe("stale");
+    writeFileSync(join(candidatesDir(dirOf("sections.hero")), "hero-v1.json"), bytes.replace("x = 1", "x = 2"));
     expect(read().find((row) => row.slot === "sections.hero")!.status).toBe("failing");
-    expect(existsSync(join(root, "releases", "1.json"))).toBe(true);
   });
 });
 

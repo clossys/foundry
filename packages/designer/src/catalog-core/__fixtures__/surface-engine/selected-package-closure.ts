@@ -1,5 +1,7 @@
 /** Test-only consumer closure: real producer candidates and explicit public adoption. */
 import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { importFoundryComponents } from "../../../importers/foundry-components.js";
 import { packageBarrelExports } from "../../../library-cli/surface-package-evidence.js";
 import { applyLibraryChange, libraryHash } from "../../api.js";
@@ -9,11 +11,13 @@ import { completedCatalogLibrary } from "../completed-catalog-library.js";
 import type { CompositeCatalogData, CompositeLibraryData } from "../../types.js";
 
 export function selectedPackageComponentOptions() {
-  const exportsOf = (path: string) => packageBarrelExports(readFileSync(new URL(path, import.meta.url), "utf8")).values;
+  // Read the barrels from package src/ both from src/ and from the compiled dist/ copy that other packages import.
+  const src = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..", "src");
+  const exportsOf = (path: string) => packageBarrelExports(readFileSync(join(src, path), "utf8")).values;
   return { packageExports: {
-    "@clossys/designer/components": exportsOf("../../../components/index.ts"),
-    "@clossys/designer/charts": exportsOf("../../../charts/index.ts"),
-    "@clossys/designer/shell": exportsOf("../../../shell/index.ts"),
+    "@clossys/designer/components": exportsOf("components/index.ts"),
+    "@clossys/designer/charts": exportsOf("charts/index.ts"),
+    "@clossys/designer/shell": exportsOf("shell/index.ts"),
   } };
 }
 
