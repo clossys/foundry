@@ -20,19 +20,6 @@
   },
   "missing": [
     {
-      "slot": "assets.backdrop-graphic",
-      "source": "",
-      "surfaces": [
-        "sections.hero"
-      ],
-      "reads": [
-        "assets.backdrop-graphic"
-      ],
-      "reasons": [
-        "no implementation candidate in the default source"
-      ]
-    },
-    {
       "slot": "assets.icon-check",
       "source": "",
       "surfaces": [
@@ -209,7 +196,6 @@
     }
   ],
   "invalid": [
-    "MISSING_POLICY assets.backdrop-graphic: default source definition is missing",
     "MISSING_POLICY assets.icon-check: default source definition is missing",
     "MISSING_POLICY assets.icon-chevron-down: default source definition is missing",
     "MISSING_POLICY assets.icon-chevron-left: default source definition is missing",

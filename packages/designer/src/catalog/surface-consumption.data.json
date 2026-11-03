@@ -23,7 +23,7 @@
         },
         {
           "path": "packages/designer/src/blocks/PageBar.tsx",
-          "sha256": "1e8c53bf7bfd59e9d40c61d60e7807471cb840b956cf5155bbcf20609f7097d5"
+          "sha256": "3509338db32d1fe369e025cf74a05838fdc801d52392a7db8909b67366b409f1"
         },
         {
           "path": "packages/designer/src/catalog-core/frame-header-options.ts",
@@ -336,7 +336,7 @@
         },
         {
           "path": "packages/designer/src/blocks/AppNavigation.tsx",
-          "sha256": "13e4aa53205e1b02f468eb6c96685823c32b3292caec81df7a6f92bd710bcd55"
+          "sha256": "ccd50822fa369c2679d5b0a28101a1b3b5e23365dcf880b6bb55a50378cfc474"
         },
         {
           "path": "packages/designer/src/blocks/frame-navigation.ts",
@@ -1007,7 +1007,7 @@
         },
         {
           "path": "packages/designer/src/blocks/AccessMatrix.tsx",
-          "sha256": "12cb9bd0366357681943bfac0b79bae0b6c764c6a2b6c8e12471716f57facb45"
+          "sha256": "ab9214574b5cd103232a322398fa59a21ad4ff09efaca90ec1a733fc0973b5fc"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -1575,7 +1575,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/chat/Chat.tsx",
-          "sha256": "d1cc7290af8fe33be8762554a70ab686af9793aba7c2180c5ad781e23819d9de"
+          "sha256": "66a8ebe2794e60325fb648af574294da742b7aab93647c13aec1f42c5ccc65cf"
         },
         {
           "path": "packages/designer/src/blocks/chat/content.tsx",
@@ -1759,7 +1759,7 @@
         },
         {
           "path": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
-          "sha256": "4694fe4e01b8f5d29f02fa9397332ef3d40a429e502a4801c8f9ccc04e505c97"
+          "sha256": "38f242e651591a9dfeb638fbac237781b931a60f4f4c94caeb4f1e3e09a324d3"
         },
         {
           "path": "packages/designer/src/blocks/Matrix.tsx",
@@ -2775,7 +2775,7 @@
       "scannedComposes": [],
       "scannedReads": {
         "assets": [
-          "assets.backdrop-graphic"
+          "assets.pattern"
         ],
         "components": [],
         "themes": []
@@ -2795,7 +2795,7 @@
         },
         {
           "path": "packages/designer/src/blocks/hero/hero-backdrop.ts",
-          "sha256": "4228f105a3c8254801ec04cf59e98205ac2fc8a4c9cfd753b9ebeaf851e087cf"
+          "sha256": "7a3c2031e7a084536d96f49bcaef4110e834e7337b631c6e8c4b6e18db0780dd"
         },
         {
           "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
@@ -2814,16 +2814,12 @@
           "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
         },
         {
-          "path": "packages/designer/src/catalog-assets/a276-backdrop-graphic.contribution.ts",
-          "sha256": "2dc92ffd4758acbebfc30f7e2e87209ecb4ccad3dca49fc7fba7bf542ae20a45"
-        },
-        {
-          "path": "packages/designer/src/catalog-assets/backdrop-graphic.ts",
-          "sha256": "f6b8c5a66ab9808dce684bc8a6a25363a0e32adabc28481c7a57ead30b55b5e2"
-        },
-        {
           "path": "packages/designer/src/catalog-assets/media.ts",
           "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
+        },
+        {
+          "path": "packages/designer/src/catalog-assets/pattern-backdrop.ts",
+          "sha256": "57796833cdf801f240f9d27e21eb74ddbd6068413e1c38c0d7058c5aaee6a95f"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -2848,6 +2844,10 @@
         {
           "path": "packages/designer/src/tokens/internal/resolve-token-value.ts",
           "sha256": "dfb52251355c0efcbb3c9211f2277b9d430654528479ee1dc457c1b4d2df71b1"
+        },
+        {
+          "path": "packages/designer/src/tokens/pattern.ts",
+          "sha256": "134c14989995caef7187c918155225381180acda4d6fe663cdbf0c927027b015"
         }
       ],
       "unresolved": [

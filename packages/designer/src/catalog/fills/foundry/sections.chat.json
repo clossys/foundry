@@ -46,7 +46,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/chat/Chat.tsx",
-            "sha256": "d1cc7290af8fe33be8762554a70ab686af9793aba7c2180c5ad781e23819d9de"
+            "sha256": "66a8ebe2794e60325fb648af574294da742b7aab93647c13aec1f42c5ccc65cf"
           },
           {
             "path": "packages/designer/src/blocks/chat/content.tsx",

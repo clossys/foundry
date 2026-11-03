@@ -15,16 +15,12 @@ import themesMigration from "../catalog/ia/themes.id-migration.json" with { type
 import { sha256 } from "./digest.js";
 import { checkFrozenLeafSets, assertFrozenLeafSets, type FrozenLeafLayer } from "./leaf-freeze.js";
 import { loadBuildCatalog, loadCatalog, loadComponentRegistry, type Placement } from "./index.js";
-import { withA276BackdropGraphic } from "../catalog-assets/a276-backdrop-graphic.contribution.js";
 
-// Owner re-sign 2026-11-02: the signed tree is the loaded catalog (237 leaves).
-// It places the draft assets.backdrop-graphic leaf at load time, so asset
-// membership checks run against that loaded view, not the raw JSON alone.
-const OWNER_RESIGN = { signoff: "owner re-sign 2026-11-02", leaves: 237 } as const;
-const loadedAssets = () => {
-  const catalog = withA276BackdropGraphic({ slots: structuredClone(assetSlots), fills: [], placements: [structuredClone(assetIA)] } as never);
-  return { ia: catalog.placements[0] as Placement, slots: catalog.slots as unknown as typeof assetSlots };
-};
+// Owner re-sign 2026-11-02: the signed tree is the loaded catalog, 236 canonical
+// Designer leaves. The owner dropped the draft assets.backdrop-graphic leaf the
+// same day, so the loaded asset view is the committed IA and slots alone.
+const OWNER_RESIGN = { signoff: "owner re-sign 2026-11-02", leaves: 236 } as const;
+const loadedAssets = () => ({ ia: structuredClone(assetIA) as Placement, slots: structuredClone(assetSlots) });
 const view = (layer: string, ia: unknown, slots: unknown) => layer === "assets" ? loadedAssets() : { ia: structuredClone(ia) as Placement, slots: structuredClone(slots) as typeof assetSlots };
 
 const fixtures = [
@@ -239,4 +235,15 @@ it("Studio may report a freeze mismatch while strict callers still reject the sa
   expect(findings.length).toBeGreaterThan(0);
   expect(findings[0]).toMatchObject({ code: "LEAF_FREEZE", severity: "error" });
   expect(() => assertFrozenLeafSets([], [], ["components"])).toThrow("LEAF_FREEZE");
+});
+
+describe("owner drop of assets.backdrop-graphic (2026-11-02)", () => {
+  it("records the rejection and keeps the leaf out of the loaded catalog", () => {
+    expect(draftAssetAmendments.addedLeafIds).not.toContain("assets.backdrop-graphic");
+    expect(draftAssetAmendments.rejectedLeafIds).toEqual([{ id: "assets.backdrop-graphic", status: "rejected-by-owner", decidedAt: "2026-11-02" }]);
+    const build = loadBuildCatalog();
+    expect(build.slots.map(slot => slot.id)).not.toContain("assets.backdrop-graphic");
+    expect(JSON.stringify(build.placements)).not.toContain("assets.backdrop-graphic");
+    expect(build.slots).toHaveLength(OWNER_RESIGN.leaves);
+  });
 });

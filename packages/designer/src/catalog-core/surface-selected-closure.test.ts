@@ -117,7 +117,11 @@ it("reads frozen authentic legacy descriptors without TypeError or changing thei
   const profile = resolve(historical);
   // Later contract/evidence findings remain visible; selected closure itself is complete.
   expect(profile.surfaces!.check.findings.filter(row => row.code === "S4" && row.message.startsWith("selected component missing"))).toEqual([]);
-  expect(profile.surfaces!.check.findings.filter(row => row.code === "S5" && row.message.startsWith("consumer read missing"))).toEqual([]);
+  // The frozen Hero descriptor still reads the owner-dropped assets.backdrop-graphic
+  // leaf (2026-11-02); no consumer can hold it, so that one read stays a visible S5.
+  expect(profile.surfaces!.check.findings.filter(row => row.code === "S5" && row.message.startsWith("consumer read missing"))).toEqual([
+    { code: "S5", rule: "surfaces", severity: "error", subject: "sections.hero", message: "consumer read missing assets.backdrop-graphic" },
+  ]);
   for (const [slot, hash] of historicalHolds) {
     const entry = surfaceEntryOf(profile.surfaces!.fills[slot]!.document) as SurfacePackageEntry;
     expect(entry.reads).toHaveProperty("tokens");
@@ -130,9 +134,17 @@ it("reads frozen authentic legacy descriptors without TypeError or changing thei
   expect(libraryHash(historical.library)).toBe(beforeLibrary);
 });
 
+it("reads the owner-signed assets.pattern slot from the current Hero descriptor, not the dropped backdrop-graphic leaf", () => {
+  const hero = importFoundrySections().fills.find(doc => doc.$extensions["com.clossys.fill"].slot === "sections.hero")!;
+  const entry = surfaceEntryOf(hero);
+  expect(entry.reads?.assets).toEqual(["assets.pattern"]);
+  expect(entry.consumption?.scannedReads.assets).toEqual(["assets.pattern"]);
+  expect(loadCatalog().slots.some(slot => slot.id === "assets.pattern")).toBe(true);
+  expect(loadCatalog().slots.some(slot => slot.id === "assets.backdrop-graphic")).toBe(false);
+});
+
 it.each([
   ["themes.spacing", "sections.hero"],
-  ["assets.backdrop-graphic", "sections.hero"],
 ] as const)("requires the selected legacy read %s after read-only normalization", (id, subject) => {
   // Authentic historical Hero composes no components. Select it alone so removing
   // a shared theme reaches S5 rather than a component's earlier dependency check.
@@ -161,11 +173,11 @@ it("retains S4 composition checks while reading legacy dependencies", () => {
 });
 
 it("keeps modern reads unchanged and normalizes frozen legacy reads without mutation", () => {
-  const modern = runtimeSnapshot({ themes: ["themes.spacing"], assets: ["assets.backdrop-graphic"] });
-  const legacy = runtimeSnapshot({ tokens: ["tokens.spacing"], assets: ["assets.backdrop-graphic"] });
+  const modern = runtimeSnapshot({ themes: ["themes.spacing"], assets: ["assets.pattern"] });
+  const legacy = runtimeSnapshot({ tokens: ["tokens.spacing"], assets: ["assets.pattern"] });
   const before = runtimeHash(legacy);
   expect(migrateReads(modern)).toBe(modern);
   expect(migrateReads(legacy)).toEqual(modern);
-  expect(legacy).toEqual({ tokens: ["tokens.spacing"], assets: ["assets.backdrop-graphic"] });
+  expect(legacy).toEqual({ tokens: ["tokens.spacing"], assets: ["assets.pattern"] });
   expect(runtimeHash(legacy)).toBe(before);
 });

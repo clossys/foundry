@@ -79,7 +79,7 @@
           },
           {
             "path": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
-            "sha256": "4694fe4e01b8f5d29f02fa9397332ef3d40a429e502a4801c8f9ccc04e505c97"
+            "sha256": "38f242e651591a9dfeb638fbac237781b931a60f4f4c94caeb4f1e3e09a324d3"
           },
           {
             "path": "packages/designer/src/blocks/Matrix.tsx",

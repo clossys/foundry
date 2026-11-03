@@ -99,7 +99,6 @@ describe("native default candidate input integration", () => {
 });
 
 const assetPolicies = {
-  "assets.backdrop-graphic": "foundry",
   "assets.icon-check": "lucide",
   "assets.icon-chevron-down": "lucide",
   "assets.icon-chevron-left": "lucide",
@@ -113,7 +112,7 @@ const assetPolicies = {
   "assets.video": "foundry",
 } as const;
 
-it("applies all twelve H3 asset policies without adopting missing candidates or identity seeds", () => {
+it("applies all eleven H3 asset policies (backdrop-graphic dropped by owner 2026-11-02) without adopting missing candidates or identity seeds", () => {
   const input = nativeInput(), before = JSON.stringify(input.catalog.values.fills);
   expect(input.defaultSources).toMatchObject(assetPolicies);
   const result = checkDefaultCandidates(input);

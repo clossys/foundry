@@ -2,7 +2,6 @@
   "files": {
     "brand.css": "sha256:16d769eee68d2d61f6c5fc2959f98f30bdbbaccad775a7dbcf668161905cca3a",
     "fills/assets.app-icon.json": "sha256:eb6e05007ef813578f43db9148475e441d73d2657953d098bfdcbef6fef6d181",
-    "fills/assets.backdrop-graphic.json": "sha256:e98592ceb5171f3a01bf776a19e82ed0c94fa6b5a05544b5935b42763de128fc",
     "fills/assets.favicon.json": "sha256:4b5427b5fab1f563288cc913c2b5b2e8facd79db839c0850cd3b71f0bcc839f3",
     "fills/assets.icon-arrow-right.json": "sha256:ecd65d1333667b64621e6b871dd5c7e94899ccb13be9b9674d04dd0e98f36d92",
     "fills/assets.icon-business.json": "sha256:127423b5f0f59a36772a3e1e7f518d31d751508307cc3ad042cd8609ce9164cb",

@@ -31,7 +31,7 @@ describe("Hero backdrop kind specimen", () => {
       expect(screen.getByRole("status")).toHaveTextContent(HERO_BACKDROP_SPECIMENS[2].backdrop.missingVideoMessage);
     } else {
       expect(section.querySelector("[data-hero-live-backdrop]")).not.toBeNull();
-      expect(section.querySelector("[data-hero-live-backdrop]")!.getAttribute("style")).toContain("radial-gradient");
+      expect(section.querySelector("[data-hero-live-backdrop]")!.getAttribute("style")).toContain("linear-gradient(var(--color-line-strong)");
       expect(screen.queryByRole("status")).toBeNull();
     }
   });

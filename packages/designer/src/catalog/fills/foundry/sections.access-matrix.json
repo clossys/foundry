@@ -47,7 +47,7 @@
           },
           {
             "path": "packages/designer/src/blocks/AccessMatrix.tsx",
-            "sha256": "12cb9bd0366357681943bfac0b79bae0b6c764c6a2b6c8e12471716f57facb45"
+            "sha256": "ab9214574b5cd103232a322398fa59a21ad4ff09efaca90ec1a733fc0973b5fc"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
