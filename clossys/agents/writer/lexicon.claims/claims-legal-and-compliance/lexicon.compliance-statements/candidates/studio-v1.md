@@ -1,7 +1,7 @@
 ---
 slot: "lexicon.compliance-statements"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.proof@1","director:focus.reach.geography@1"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.proof@1","director:focus.reach.geography@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -15,7 +15,7 @@ source: {"kind":"derived","ref":["director:advantage.proposition.proof@1","direc
   "kind": "claim",
   "strategy": "director:advantage.proposition.proof@1",
   "phrasings": [
-    "NEED"
+    "Clossys Foundry is released under the MIT license."
   ],
   "requiresCitation": true
 }

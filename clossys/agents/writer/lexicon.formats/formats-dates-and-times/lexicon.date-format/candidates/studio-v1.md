@@ -1,7 +1,7 @@
 ---
 slot: "lexicon.date-format"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.reach.geography@1"]}
+source: {"kind":"derived","ref":["director:focus.reach.geography@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -15,9 +15,9 @@ source: {"kind":"derived","ref":["director:focus.reach.geography@1"]}
   "kind": "format",
   "format": "date",
   "value": {
-    "locale": "en",
-    "records": "YYYY-MM-DD",
-    "display": "NEED"
+    "locale": "en-US",
+    "records": "YYYY-MM-DD, as in 2026-11-03",
+    "display": "MMM D, YYYY, as in Nov 3, 2026"
   }
 }
 ```

@@ -1,7 +1,7 @@
 ---
 slot: "lexicon.reading-level"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.segment.core@1","director:identity.verbal.voice@1"]}
+source: {"kind":"derived","ref":["director:focus.segment.core@1","director:identity.verbal.voice@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -14,6 +14,6 @@ source: {"kind":"derived","ref":["director:focus.segment.core@1","director:ident
   "context": "studio.voice.reading-level",
   "kind": "voice-rule",
   "rule": "reading-level",
-  "value": "NEED"
+  "value": "plain: grade 8, short sentences, sentence case"
 }
 ```

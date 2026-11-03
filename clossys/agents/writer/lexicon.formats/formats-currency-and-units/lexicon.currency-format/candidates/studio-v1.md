@@ -1,7 +1,7 @@
 ---
 slot: "lexicon.currency-format"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.model.pricing@1","director:focus.reach.geography@1"]}
+source: {"kind":"derived","ref":["director:advantage.model.pricing@1","director:focus.reach.geography@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -15,8 +15,8 @@ source: {"kind":"derived","ref":["director:advantage.model.pricing@1","director:
   "kind": "format",
   "format": "currency",
   "value": {
-    "currency": "NEED",
-    "note": "The engine has no price; the Director pricing draft records none."
+    "currency": "USD",
+    "note": "No prices are shown; the engine is free. Planner default, open to owner change."
   }
 }
 ```

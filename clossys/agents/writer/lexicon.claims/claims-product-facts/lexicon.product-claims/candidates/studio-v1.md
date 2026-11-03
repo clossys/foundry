@@ -1,7 +1,7 @@
 ---
 slot: "lexicon.product-claims"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.promise@1","director:advantage.proposition.proof@1"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.promise@1","director:advantage.proposition.proof@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -15,7 +15,7 @@ source: {"kind":"derived","ref":["director:advantage.proposition.promise@1","dir
   "kind": "claim",
   "strategy": "director:advantage.proposition.proof@1",
   "phrasings": [
-    "Foundry packages are MIT licensed and public on npm."
+    "Clossys Foundry is free and open under the MIT license, and its packages are public on npm."
   ],
   "requiresCitation": true
 }

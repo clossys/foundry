@@ -1,7 +1,7 @@
 ---
 slot: "lexicon.pronunciation"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.naming.name@1"]}
+source: {"kind":"derived","ref":["director:identity.naming.name@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -18,7 +18,7 @@ source: {"kind":"derived","ref":["director:identity.naming.name@1"]}
     "Clossys"
   ],
   "termStatus": "brand",
-  "reason": "Pronunciation of the workspace name.",
-  "pronunciation": "NEED"
+  "reason": "Pronunciation of the master brand. Planner default, open to owner change.",
+  "pronunciation": "KLOSS-iss"
 }
 ```

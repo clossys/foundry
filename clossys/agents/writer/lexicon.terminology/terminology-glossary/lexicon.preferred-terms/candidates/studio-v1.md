@@ -1,7 +1,7 @@
 ---
 slot: "lexicon.preferred-terms"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.category.definition@1","director:identity.verbal.voice@1"]}
+source: {"kind":"derived","ref":["director:focus.category.definition@1","director:identity.verbal.voice@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -66,12 +66,13 @@ source: {"kind":"derived","ref":["director:focus.category.definition@1","directo
   "id": "studio.term.need",
   "context": "studio.term.need",
   "kind": "term",
-  "term": "NEED",
+  "term": "need",
   "forms": [
-    "NEED"
+    "need",
+    "needs"
   ],
   "termStatus": "preferred",
-  "reason": "Marks a fact with no evidence yet; never replaced by a guess."
+  "reason": "UI noun for a fact with no evidence yet, matching the Publisher Needs action; never replaced by a guess."
 }
 ```
 

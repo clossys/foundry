@@ -1,7 +1,7 @@
 ---
 slot: "lexicon.spelling-variant"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.reach.geography@1"]}
+source: {"kind":"derived","ref":["director:focus.reach.geography@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -13,11 +13,11 @@ source: {"kind":"derived","ref":["director:focus.reach.geography@1"]}
   "id": "studio.term.locale",
   "context": "studio.term.locale",
   "kind": "term",
-  "term": "en",
+  "term": "en-US",
   "forms": [
-    "en"
+    "en-US"
   ],
   "termStatus": "preferred",
-  "reason": "English first, per the Director geography draft; NEED: no regional variant (US or UK) is recorded."
+  "reason": "US spelling, per the owner locale answer: color, license, organize."
 }
 ```

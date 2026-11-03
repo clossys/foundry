@@ -1,7 +1,7 @@
 ---
 slot: "lexicon.direction"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.reach.geography@1"]}
+source: {"kind":"derived","ref":["director:focus.reach.geography@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -15,8 +15,8 @@ source: {"kind":"derived","ref":["director:focus.reach.geography@1"]}
   "kind": "format",
   "format": "direction",
   "value": {
-    "en": "ltr",
-    "rtl": "NEED"
+    "en-US": "ltr",
+    "note": "Left to right only, per the owner locale answer."
   }
 }
 ```

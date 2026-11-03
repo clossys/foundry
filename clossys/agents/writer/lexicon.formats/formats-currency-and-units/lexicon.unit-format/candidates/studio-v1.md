@@ -1,7 +1,7 @@
 ---
 slot: "lexicon.unit-format"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.reach.geography@1"]}
+source: {"kind":"derived","ref":["director:focus.reach.geography@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -15,9 +15,9 @@ source: {"kind":"derived","ref":["director:focus.reach.geography@1"]}
   "kind": "format",
   "format": "unit",
   "value": {
+    "system": "metric",
     "widths": "px",
-    "example": "375 px",
-    "system": "NEED"
+    "example": "375 px"
   }
 }
 ```

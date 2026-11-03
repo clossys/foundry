@@ -1,7 +1,7 @@
 ---
 slot: "lexicon.expansion-budget"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.reach.geography@1"]}
+source: {"kind":"derived","ref":["director:focus.reach.geography@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -16,7 +16,7 @@ source: {"kind":"derived","ref":["director:focus.reach.geography@1"]}
   "format": "expansion",
   "value": {
     "translationHeadroom": 0.3,
-    "note": "Writer contract headroom; NEED: no target locale is recorded."
+    "note": "30% headroom on every limit. Planner default, open to owner change."
   }
 }
 ```
