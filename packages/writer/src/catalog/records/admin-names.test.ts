@@ -114,7 +114,8 @@ describe("admin display-name drafts", () => {
     expect(pageNames.map(row => row.text)).toEqual(["Designer", "Writer", "Publisher"]);
     expect(new Set(pageNames.map(row => row.recordId)).size).toBe(3);
     const revisions = batches.flatMap(batch => batch.revisions);
-    for (const [before, after] of [["Controls", ["Control colors", "Control sizes"]], ["Panels", ["Page panels", "Overlay panels"]]] as const)
+    // The "Controls" token groups retired with the tokens-to-themes rename (736153e72).
+    for (const [before, after] of [["Panels", ["Page panels", "Overlay panels"]]] as const)
       expect(revisions.filter(row => row.before === before).map(row => row.after).sort()).toEqual([...after].sort());
     expect(binding("publisher.setupQuestion", "deliveries.pptx.fidelity").recordId)
       .toBe(binding("publisher.setupQuestion", "deliveries.google-slides.fidelity").recordId);
@@ -155,7 +156,7 @@ describe("admin display-name drafts", () => {
 
   it("passes actual Writer lint, ICU, length and pseudo expansion for every authored or revised record", () => {
     expect(changed.length).toBeGreaterThan(340);
-    expect(changedIds.size).toBe(364);
+    expect(changedIds.size).toBe(362);
     expect(new Set(changed.map(record => record.id))).toEqual(canonicalChangedIds);
     for (const id of changedIds) {
       const record = changed.find(record => record.id === canonicalId(id))!;

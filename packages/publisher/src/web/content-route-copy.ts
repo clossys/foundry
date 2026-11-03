@@ -5,6 +5,7 @@ import { Icon } from "@clossys/designer/components/server";
 import type { AppFrameProps } from "@clossys/designer/frames";
 import { SHELL_COPY_REFS } from "@clossys/designer/frames";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
+import { writerShellCopyResolver } from "./publisher-host.js";
 
 /** These are identifiers, destinations and Designer configuration, never audience copy. */
 const structural = new Set(["id", "href", "src", "markSrc", "activeId", "icon", "kind", "action", "variant", "size", "layout", "stage", "fill", "dir", "locale", "avatar", "headerPosition", "headerSurface", "footerLayout", "storageKey", "preference", "defaultPreference", "mainId"]);
@@ -60,8 +61,5 @@ export function bindContentAppFrame(value: Readonly<Record<string, unknown>>, lo
     || !props.theme.preferenceLabels.light || !props.theme.preferenceLabels.dark)) {
     throw new ContentCopyBindingError("appFrame.theme", "theme-copy-required");
   }
-  return { ...props, locale, copyResolver: resolver && (reference => {
-    const resolved = resolver({ ...reference, locale });
-    return resolved && (resolved.servedLocale ?? resolved.locale) === locale ? { ref: reference, text: resolved.text } : undefined;
-  }) };
+  return { ...props, locale, copyResolver: resolver && writerShellCopyResolver(resolver, locale) };
 }

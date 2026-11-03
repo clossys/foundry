@@ -2,6 +2,7 @@ import type { ContentPreviewProvenance } from "./preview/provenance.js";
 import type { CopyResolver } from "@clossys/writer";
 import type { ContentSectionBinding } from "./content-route-runtime.js";
 import type { ReactElement } from "react";
+import type { ConsumerComponentSelection } from "@clossys/designer/frames";
 import type { Composition, CopyField, CopyFinding, ContentWriterContext } from "../content/composition.js";
 import type { ContentCandidate, ContentRegistry, ContentSlot } from "../content/model.js";
 import type { ConsumerLibrarySnapshot } from "../content/library.js";
@@ -41,6 +42,8 @@ export interface ContentRouteInput {
   /** Server-owned image port; SiteFrame may resolve only assets in the selected library. */
   readonly resolveAsset?: (assetId: string) => unknown;
   readonly sectionBindings?: Readonly<Record<string, ContentSectionBinding>>;
+  /** The consumer's compiled component selection (live module index) supplied by the route loader; never JSON content. */
+  readonly components?: ConsumerComponentSelection;
   readonly raisedAt: string;
   readonly publishing?: ContentRoutePublishing;
 }

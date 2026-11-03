@@ -245,7 +245,7 @@ describe("pack check: every registered composition template persists", () => {
   const rules = loadComponentCompositionRules();
   const doc = (rule: (typeof rules)[number]) => ({ $extensions: { "com.clossys.fill": { id: `${rule.template.source}/${rule.slot}`, source: rule.template.source, slot: rule.slot } }, components: { [rule.slot.slice(11)]: rule.template } }) as unknown as ComponentCandidateDocument;
   it("covers every registered composition", () => {
-    expect(rules.map(rule => rule.slot)).toEqual(["components.date-picker", "components.file-trigger"]);
+    expect(rules.map(rule => rule.slot)).toEqual(["components.date-picker", "components.file-trigger", "components.icon"]);
   });
   it.each(rules.map(rule => [rule.slot, rule] as const))("%s: every composed propMap value is a pointer the persist emitter accepts", (_slot, rule) => {
     const component = { slot: rule.slot, impl: rule.template.impl, descriptor: rule.template } as unknown as ResolvedComponent;

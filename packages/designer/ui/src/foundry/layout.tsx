@@ -60,4 +60,14 @@ function SpecimenFigure({ caption, className, children, ...props }: ComponentPro
   )
 }
 
-export { CardGrid, SpecimenFigure, SpecimenFrame }
+/** The stock vertical card flow of shadcn dashboard-01 (page.tsx): one full-width card per row. */
+function CardStack({ className, ...props }: ComponentProps<"div">) {
+  return <div className={cn("flex flex-col gap-4 py-4 md:gap-6 md:py-6", className)} {...props} />
+}
+
+/** The stock underlined text link of the shadcn card example (apps/v4 card-example.tsx), for a link inside a heading or prose. */
+function TextLink({ className, ...props }: ComponentProps<"a">) {
+  return <a className={cn("underline underline-offset-4", className)} {...props} />
+}
+
+export { CardGrid, CardStack, SpecimenFigure, SpecimenFrame, TextLink }

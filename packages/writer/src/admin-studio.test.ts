@@ -30,7 +30,8 @@ it("packs complete admin copy and resolves every Designer route-label reference 
   }
   findRefs(source);
   expect(refs).toHaveLength(149);
-  expect(new Set(refs).size).toBe(149);
+  // Route labels that share one canonical common label now share its id.
+  expect(new Set(refs).size).toBe(131);
   try {
     const packed = JSON.parse(execFileSync("npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", root], { cwd: packageRoot, encoding: "utf8" }));
     const installed = join(root, "node_modules/@clossys/writer");

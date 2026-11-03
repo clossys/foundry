@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, render as renderBare, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as blocks from "./index.js";
@@ -7,6 +7,8 @@ import type { PageBarProps, PageBarPage } from "./PageBar.js";
 import { AppFrame } from "../frames/AppFrame.js";
 import { APP_FRAME_WIDE_QUERY } from "../frames/app-frame-layout.js";
 import type { AppFrameProps } from "../frames/app-frame-types.js";
+import { hostedRender } from "../frames/__fixtures__/shell-copy.js";
+const render = hostedRender(renderBare);
 
 const PageBar = (blocks as typeof blocks & { PageBar: (props: PageBarProps) => React.ReactNode }).PageBar;
 const labels = { breadcrumb: "Report trail", collapsedBreadcrumb: "Earlier report levels", pageInfo: "Report information", pageActions: "Other report actions" };

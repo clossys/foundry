@@ -4,6 +4,7 @@ import { sha256 } from "./digest.js";
 import { stableStringify } from "./stable.js";
 import { checkComponentProfile, componentDescriptorDigest } from "./check-components.js";
 import { assertComponentSecondaryExports, componentSecondaryExports } from "./component-secondary-exports.js";
+import { componentImportClosureFindings } from "./component-import-closure.js";
 import type { ComponentCheckFill, ComponentCheckInput, ComponentCheckResult } from "./check-components.js";
 import type { ComponentSlot, FillMeta, Source } from "./types.js";
 
@@ -180,6 +181,12 @@ export function resolveComponents(input: ComponentResolutionInput): ResolvedComp
     const origin = (fill as ComponentCandidate & { origin: ComponentOrigin }).origin;
     return { ...fill, source: origin.kind === "adopted" ? origin.source : fill.source };
   });
-  const check = checkComponentProfile({ compositions: { rules: input.catalog.rules ?? [], library: input.library }, slots: input.catalog.slots, fills: checkedFills, tokens: input.values.tokens, assets: input.values.assets, requiredMembers: input.requiredMembers, observations: input.evidence?.observations ?? {}, installedRac: input.evidence?.installedRac ?? { version: "", instance: "" }, classBindings: input.evidence?.classBindings, coherenceGroups: input.evidence?.coherenceGroups, descriptorHashes: Object.fromEntries([...fills].map(([slot, fill]) => [slot, componentDescriptorHash(fill)])) });
+  const measured = checkComponentProfile({ compositions: { rules: input.catalog.rules ?? [], library: input.library }, slots: input.catalog.slots, fills: checkedFills, tokens: input.values.tokens, assets: input.values.assets, requiredMembers: input.requiredMembers, observations: input.evidence?.observations ?? {}, installedRac: input.evidence?.installedRac ?? { version: "", instance: "" }, classBindings: input.evidence?.classBindings, coherenceGroups: input.evidence?.coherenceGroups, descriptorHashes: Object.fromEntries([...fills].map(([slot, fill]) => [slot, componentDescriptorHash(fill)])) });
+  // Dependency closure: a selection whose sources import an unselected leaf or file can never build.
+  const closure = componentImportClosureFindings({ catalog: input.catalog, files: input.library.files, fills: new Map([...fills].map(([slot, fill]) => {
+    const origin = (fill as ComponentCandidate & { origin: ComponentOrigin }).origin;
+    return [slot, { ...fill, ...(origin.kind === "adopted" ? { family: origin.source } : {}) }];
+  })) });
+  const check: ComponentCheckResult = closure.length ? { ok: false, findings: [...measured.findings, ...closure] } : measured;
   return { consumer: input.library.source.id, selectionHash: componentLibraryHash(input.library), components, files: structuredClone(input.library.files), check, packageExports: structuredClone(input.packageExports ?? {}) };
 }

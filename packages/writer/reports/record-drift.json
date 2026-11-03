@@ -11,19 +11,19 @@
     },
     {
       "path": "admin-meta.r1.en.json",
-      "sha256": "caaf3bb3d52e61e04d8e48b59ac2f7f6219b3f3944ced6d452a56044d14ad4e4"
+      "sha256": "4f1d5e01a4116edf1376f604629a32419aab6fba4b0df5839a77f4a8730d1a4a"
     },
     {
       "path": "admin-pages.r1.en.json",
-      "sha256": "c89c52f5ba48e2c6cb8fbb7c7b7f1f2bdc0bf8bdf2da7279e0f8cbee9e234fd2"
+      "sha256": "7c4608b66c937a05cd2c424d1eabf610621409733e485e345ffbd346151448e4"
     },
     {
       "path": "admin-studio.r1.en.json",
-      "sha256": "86dd332f49b4d487f367c6e9fca9213a9fbc1b024cabdca0bb7a4ba0a094210f"
+      "sha256": "a958c6661b684957c64c6fd28a20bba5460cacc58b6051cdf33314564986f3d9"
     },
     {
       "path": "admin-voice.r1.en.json",
-      "sha256": "127a08a26f720dc10c08bf396253d3844350f41ef115add722ff52fd17868236"
+      "sha256": "493eb75ddec5d75a5430bbacea2212c346837c554dea8ad3ded9bead404e6e06"
     },
     {
       "path": "admin-writer-paging.r1.en.json",
@@ -85,7 +85,7 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 374
+      "records": 393
     },
     {
       "path": "admin-voice.r1.en.json",
@@ -153,7 +153,7 @@
       "records": 52
     }
   ],
-  "records": 1452,
+  "records": 1471,
   "locales": [
     "ar",
     "en"

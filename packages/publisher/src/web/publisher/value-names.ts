@@ -15,13 +15,13 @@ export const PUBLISHER_VALUE_NAME_REFS: Readonly<Record<string, Readonly<Record<
     "frames.document": Object.freeze({ id: "st.w3ddpdtqay" }),
     "frames.site-shell": Object.freeze({ id: "st.njmrezf88j" }),
     "frames.app-shell": Object.freeze({ id: "st.rtxryd7cfz" }),
-    "frames.auth-shell": Object.freeze({ id: "st.v3ycrdrpmn" }),
+    "frames.auth-shell": Object.freeze({ id: "st.0szhqxn9xp" }),
     "frames.site-header": Object.freeze({ id: "st.4wj43903kc" }),
     "frames.app-header": Object.freeze({ id: "st.8hvjvvw83e" }),
     "frames.app-sidebar": Object.freeze({ id: "st.z76k5drqae" }),
     "frames.inspector": Object.freeze({ id: "st.pqyk75vw6x" }),
     "frames.site-footer": Object.freeze({ id: "st.b0empz5tp2" }),
-    "frames.sheet": Object.freeze({ id: "st.xe1vmezaw2" }),
+    "frames.sheet": Object.freeze({ id: "st.njcj3qqb0e" }),
     "frames.command": Object.freeze({ id: "st.b0jrfbc3my" }),
   }),
   "designer.boardName": Object.freeze({
@@ -315,9 +315,9 @@ export const PUBLISHER_VALUE_NAME_REFS: Readonly<Record<string, Readonly<Record<
     "proof.video": Object.freeze({ id: "st.gdp5mx15km" }),
   }),
   "publisher.planPage": Object.freeze({
-    "/agents/designer": Object.freeze({ id: "st.pb0ynfnh58" }),
+    "/agents/designer": Object.freeze({ id: "st.2zj7yrtkfr" }),
     "/agents/writer": Object.freeze({ id: "st.m22sa9p9y4" }),
-    "/agents/publisher": Object.freeze({ id: "st.eyyshzcr6r" }),
+    "/agents/publisher": Object.freeze({ id: "st.cy7122qr1d" }),
   }),
   "publisher.planHeader": Object.freeze({
     "planLabel": Object.freeze({ id: "st.3nqw88vr1y" }),

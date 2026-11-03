@@ -82,12 +82,13 @@ it("reports unpublished, invalid and missing source states without inventing a p
 it("renders a real Publisher-emitted async route with its actual Designer page body", async () => {
   const fixtures = await agentModule("publisher", "web/__fixtures__/content-route.js");
   const source = await agentModule("publisher", "web/content-route-source.js");
+  const loaders = await agentModule("publisher", "web/__fixtures__/content-route-components.js");
   const content = fixtures.contentRouteFixture();
   const input = fixtures.withApprovedRouteCopy({ ...content, registry: { ...content.registry, workspace: { ...content.registry.workspace, deployTargets: content.registry.workspace.deployTargets.map((target: any) => ({ ...target, origin: "https://example.test" })) } }, publishing: { brand: "Example", manifest: { defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {} }, bodyServedLocales: { en: ["en"] }, existingUrls: ["https://example.test/sign-in"] } });
   const route = source.createContentRouteManifest({ registry: input.registry, locale: input.locale, loader: { file: "src/content-loader.ts", export: "loadContentRoute" } }).routes[0];
   const { base } = await publicationFixture(route.source.file);
   await put(join(base, route.source.file), generated(source.emitContentRoutePage(route)));
-  await put(join(base, "src/content-loader.ts"), generated(`export async function loadContentRoute() { return ${JSON.stringify(input)}; }\n`));
+  await put(join(base, "src/content-loader.ts"), generated(loaders.contentRouteLoaderSource(input)));
   await put(join(base, "theme.css"), generated(":root { --preview-rendered: 1; }"));
   const rendered = (await renderNativePreview({ root: base, entry: route.source.file })).toString("utf8");
   expect(rendered).toContain('data-ds-leaf="frames.auth-shell"'); expect(rendered).toContain('data-ds-leaf="sections.empty-state"');

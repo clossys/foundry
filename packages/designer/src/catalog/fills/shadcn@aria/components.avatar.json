@@ -122,6 +122,16 @@
         ]
       },
       "root": "presentational",
+      "secondaryExports": [
+        {
+          "export": "AvatarImage",
+          "name": "AvatarImage"
+        },
+        {
+          "export": "AvatarFallback",
+          "name": "AvatarFallback"
+        }
+      ],
       "slot": "components.avatar",
       "source": "shadcn@aria",
       "transform": "shadcn-aria-rewrite@1"
