@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-options-v3.json",
-  "sha256": "11b9cfb439c13193e290d6e750211e74e84ff470ffd2d8dc739de6e0125af2a6",
-  "pinnedBy": "owner:S1 scope add 2026-11-02, planner relay",
-  "at": "2026-11-03T00:21:26Z"
+  "candidate": "studio-options-v4.json",
+  "sha256": "ae8e9710ae424c6e2431eded93e03293513bf00aac33b6bec3128ee4127e0fc9",
+  "pinnedBy": "owner:2026-11-03 fix-all",
+  "at": "2026-11-03T08:47:06Z"
 }

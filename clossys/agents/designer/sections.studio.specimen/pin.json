@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-specimen-v5.json",
-  "sha256": "e3272565450d22c289c98f8e86ca2a751c148dda9098edd242fbc72fe926e914",
-  "pinnedBy": "owner:S1 scope add 2026-11-02, planner relay",
-  "at": "2026-11-03T00:21:26Z"
+  "candidate": "studio-specimen-v6.json",
+  "sha256": "d632349ad97c066d6039f6427a871a8be74454a8e3942d2ff5709727bd034b2f",
+  "pinnedBy": "owner:2026-11-03 fix-all",
+  "at": "2026-11-03T08:47:06Z"
 }
