@@ -64,8 +64,8 @@ function record(content: SectionContent, slot: string, keys: readonly string[], 
 function copyOf(input: RuntimeRenderInput<ReactNode>): SignInCopy {
   const content = readSectionContent(input, LEAF, signInFormInputs);
   const header = record(content, "header", ["heading", "description"]);
-  const credentials = record(content, "credentials", ["identifierLabel", "identifierPlaceholder", "passwordLabel", "passwordPlaceholder"]);
-  const verification = record(content, "verification", ["codeLabel", "description", "placeholder"]);
+  const credentials = record(content, "credentials", ["identifier-label", "identifier-placeholder", "password-label", "password-placeholder"]);
+  const verification = record(content, "verification", ["code-label", "description", "placeholder"]);
   const actions = record(content, "actions", ["submit", "verify", "pending", "back", "resend", "divider"]);
   const error = record(content, "error", ["message", "identifier", "password", "code"], true);
   const providers = content.values.providers ?? [];
@@ -81,9 +81,9 @@ function copyOf(input: RuntimeRenderInput<ReactNode>): SignInCopy {
   });
   return {
     heading: text(content, header.heading, "header.heading"), description: optionalText(content, header.description, "header.description"), providers: providerRows,
-    identifierLabel: text(content, credentials.identifierLabel, "credentials.identifierLabel"), identifierPlaceholder: optionalText(content, credentials.identifierPlaceholder, "credentials.identifierPlaceholder"),
-    passwordLabel: text(content, credentials.passwordLabel, "credentials.passwordLabel"), passwordPlaceholder: optionalText(content, credentials.passwordPlaceholder, "credentials.passwordPlaceholder"),
-    codeLabel: text(content, verification.codeLabel, "verification.codeLabel"), codeDescription: optionalText(content, verification.description, "verification.description"), codePlaceholder: optionalText(content, verification.placeholder, "verification.placeholder"),
+    identifierLabel: text(content, credentials["identifier-label"], "credentials.identifier-label"), identifierPlaceholder: optionalText(content, credentials["identifier-placeholder"], "credentials.identifier-placeholder"),
+    passwordLabel: text(content, credentials["password-label"], "credentials.password-label"), passwordPlaceholder: optionalText(content, credentials["password-placeholder"], "credentials.password-placeholder"),
+    codeLabel: text(content, verification["code-label"], "verification.code-label"), codeDescription: optionalText(content, verification.description, "verification.description"), codePlaceholder: optionalText(content, verification.placeholder, "verification.placeholder"),
     submit: text(content, actions.submit, "actions.submit"), verify: text(content, actions.verify, "actions.verify"), pending: text(content, actions.pending, "actions.pending"),
     back: text(content, actions.back, "actions.back"), resend: text(content, actions.resend, "actions.resend"), divider: text(content, actions.divider, "actions.divider"),
     error: optionalText(content, error.message, "error.message"), identifierError: optionalText(content, error.identifier, "error.identifier"), passwordError: optionalText(content, error.password, "error.password"), codeError: optionalText(content, error.code, "error.code"),
@@ -151,8 +151,8 @@ export const signInFormRenderer: SurfaceRendererEntry = {
   sample: () => ({
     header: { heading: "Sign in", description: "Continue to your workspace." },
     providers: [{ id: "work-sso", label: "Continue with work SSO" }],
-    credentials: { identifierLabel: "Email or username", passwordLabel: "Password", identifierPlaceholder: "Your email or username" },
-    verification: { codeLabel: "Verification code", description: "Enter the code from your sign-in method.", placeholder: "Your verification code" },
+    credentials: { "identifier-label": "Email or username", "password-label": "Password", "identifier-placeholder": "Your email or username" },
+    verification: { "code-label": "Verification code", description: "Enter the code from your sign-in method.", placeholder: "Your verification code" },
     actions: { submit: "Sign in", verify: "Verify code", pending: "Please wait", back: "Back", resend: "Resend code", divider: "Or use your credentials" },
   }),
   render(input) {

@@ -11,7 +11,7 @@ import { accountSummaryInputs, accountSummaryRenderer } from "./account-summary.
 afterEach(cleanup);
 const values = {
   heading: "Your account",
-  identity: { name: "Sample Member", nameLabel: "Name", email: "member@example.com", emailLabel: "Email" },
+  identity: { name: "Sample Member", "name-label": "Name", email: "member@example.com", "email-label": "Email" },
   rows: [{ label: "Workspace", value: "Sample workspace" }],
   actions: [{ label: "Manage preferences", href: "/account/preferences" }],
 };

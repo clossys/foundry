@@ -236,7 +236,7 @@
           "dir": "auto"
         },
         {
-          "key": "records[].editorial.readingTime.value",
+          "key": "records[].editorial.reading-time.value",
           "kind": "plain",
           "required": false,
           "maxLength": {
@@ -245,7 +245,7 @@
           "dir": "auto"
         },
         {
-          "key": "records[].editorial.readingTime.label",
+          "key": "records[].editorial.reading-time.label",
           "kind": "plain",
           "required": false,
           "maxLength": {
@@ -272,7 +272,7 @@
           "dir": "auto"
         },
         {
-          "key": "records[].editorial.outcomeStats[].label",
+          "key": "records[].editorial.outcome-stats[].label",
           "kind": "plain",
           "required": false,
           "maxLength": {
@@ -281,7 +281,7 @@
           "dir": "auto"
         },
         {
-          "key": "records[].editorial.outcomeStats[].value",
+          "key": "records[].editorial.outcome-stats[].value",
           "kind": "plain",
           "required": false,
           "maxLength": {

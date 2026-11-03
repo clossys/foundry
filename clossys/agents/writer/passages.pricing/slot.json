@@ -108,7 +108,7 @@
           "dir": "auto"
         },
         {
-          "key": "plans[].priceByInterval[].amount",
+          "key": "plans[].price-by-interval[].amount",
           "kind": "plain",
           "required": true,
           "maxLength": {
@@ -117,7 +117,7 @@
           "dir": "auto"
         },
         {
-          "key": "plans[].priceByInterval[].priceText",
+          "key": "plans[].price-by-interval[].price-text",
           "kind": "plain",
           "required": true,
           "maxLength": {

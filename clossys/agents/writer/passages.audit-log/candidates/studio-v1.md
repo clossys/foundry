@@ -22,8 +22,8 @@ Pinned
 <!-- {"id":"studio.pins.entries.0.target","bindings":[]} -->
 {candidate}
 
-### studio.pins.entries.0.timeText
-<!-- {"id":"studio.pins.entries.0.timeText","bindings":[]} -->
+### studio.pins.entries.0.time-text
+<!-- {"id":"studio.pins.entries.0.time-text","bindings":[]} -->
 {date}
 
 ### studio.pins.labels.time

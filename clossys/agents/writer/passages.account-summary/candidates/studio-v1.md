@@ -14,16 +14,16 @@ Workspace
 <!-- {"id":"studio.workspace.identity.name","bindings":[]} -->
 {owner}
 
-### studio.workspace.identity.nameLabel
-<!-- {"id":"studio.workspace.identity.nameLabel","bindings":[]} -->
+### studio.workspace.identity.name-label
+<!-- {"id":"studio.workspace.identity.name-label","bindings":[]} -->
 Owner
 
 ### studio.workspace.identity.email
 <!-- {"id":"studio.workspace.identity.email","bindings":[]} -->
 {ownerEmail}
 
-### studio.workspace.identity.emailLabel
-<!-- {"id":"studio.workspace.identity.emailLabel","bindings":[]} -->
+### studio.workspace.identity.email-label
+<!-- {"id":"studio.workspace.identity.email-label","bindings":[]} -->
 Email
 
 ### studio.workspace.rows.0.label

@@ -46,7 +46,7 @@ describe("sections.media specimen runtime", () => {
     expect(FOUNDRY_SECTION_MAP.media!.propMap).toEqual(Object.fromEntries(members.map(name => [name, `./blocks#MediaFigure.chrome=${name.slice(7)}`])));
     expect(descriptor).toEqual(JSON.parse(generatedFoundrySectionFiles()["sections.media.json"]!).sections.media);
     expect(passages.find(row => row.id === "passages.media")!.contract.copy).toEqual(contract.copy);
-    expect(contract.copy.fields.map(row => row.key)).toEqual(expect.arrayContaining(["figure.chromeLabel", "callouts.label", "callouts.items[].body"]));
+    expect(contract.copy.fields.map(row => row.key)).toEqual(expect.arrayContaining(["figure.chrome-label", "callouts.label", "callouts.items[].body"]));
   });
 
   it("renders chrome and annotation copy resolved from Writer CopyRefs at the content boundary", () => {
@@ -62,7 +62,7 @@ describe("sections.media specimen runtime", () => {
     const chromeLabel = copy({ id: "specimen.browser", locale: "en" })!;
     const label = copy({ id: "specimen.highlights", locale: "en" })!;
     const body = copy({ id: "specimen.review", locale: "en" })!;
-    render(<>{renderMediaSection(input({ figure: { ...figure, chromeLabel }, callouts: { label, items: [{ id: "review", body }] } }, ["chrome.browser"]))}</>);
+    render(<>{renderMediaSection(input({ figure: { ...figure, "chrome-label": chromeLabel }, callouts: { label, items: [{ id: "review", body }] } }, ["chrome.browser"]))}</>);
     expect(screen.getByText(chromeLabel)).toBeVisible();
     expect(within(screen.getByRole("list", { name: label })).getByRole("listitem")).toHaveTextContent(body);
     expect(copy({ id: "specimen.draft", locale: "en" })).toBeUndefined();
@@ -87,7 +87,7 @@ describe("sections.media specimen runtime", () => {
     [{ figure, callouts: { ...callouts, items: [{ id: "one", body: "A" }, { id: "one", body: "B" }] } }, [], /duplicate/],
     [{ figure, callouts: { ...callouts, extra: "ignored" } }, [], /extra/],
     [{ figure: { ...figure, extra: "ignored" } }, [], /extra/],
-    [{ figure: { ...figure, chromeLabel: "Writer title" } }, ["chrome.device"], /chrome.browser/],
+    [{ figure: { ...figure, "chrome-label": "Writer title" } }, ["chrome.device"], /chrome.browser/],
     [{ figure: { ...figure, ratio: "invented" } }, [], /canonical image ratio/],
     [{ figure: { media: { kind: "image", resource: { ...image, width: 0 } } } }, [], /image resource/],
     [{ figure }, ["chrome.browser", "chrome.device"], /more than one chrome/],

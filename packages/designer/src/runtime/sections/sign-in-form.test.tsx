@@ -98,7 +98,7 @@ describe("private sign-in Section", () => {
 
   it("refuses unmapped content, unsupported fields, duplicate providers and partial host ports", () => {
     expect(() => entry.render(input({ ...sample(), signup: "Create account" }))).toThrow(/signup/);
-    expect(() => entry.render(input({ ...sample(), credentials: { identifierLabel: "Email", passwordLabel: "Password", extra: "Ignored?" } }))).toThrow(/extra/);
+    expect(() => entry.render(input({ ...sample(), credentials: { "identifier-label": "Email", "password-label": "Password", extra: "Ignored?" } }))).toThrow(/extra/);
     expect(() => entry.render(input({ ...sample(), actions: { submit: "Sign in" } }))).toThrow(/verify/);
     expect(() => entry.render(input({ ...sample(), providers: [{ id: "same", label: "First" }, { id: "same", label: "Second" }] }))).toThrow(/unique/);
     expect(() => entry.render(input(sample(), { phase: "credentials" }))).toThrow(/sectionHost/);

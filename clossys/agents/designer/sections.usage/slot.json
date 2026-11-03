@@ -118,7 +118,7 @@
           "dir": "auto"
         },
         {
-          "key": "meters[].usedText",
+          "key": "meters[].used-text",
           "kind": "plain",
           "required": false,
           "maxLength": {
@@ -127,7 +127,7 @@
           "dir": "auto"
         },
         {
-          "key": "meters[].limitText",
+          "key": "meters[].limit-text",
           "kind": "plain",
           "required": false,
           "maxLength": {
@@ -136,7 +136,7 @@
           "dir": "auto"
         },
         {
-          "key": "meters[].periodText",
+          "key": "meters[].period-text",
           "kind": "plain",
           "required": false,
           "maxLength": {
@@ -208,7 +208,7 @@
           "dir": "auto"
         },
         {
-          "key": "meters[].projectedText",
+          "key": "meters[].projected-text",
           "kind": "plain",
           "required": false,
           "maxLength": {

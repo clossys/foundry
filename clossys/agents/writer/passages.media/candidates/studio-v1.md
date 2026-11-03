@@ -18,6 +18,6 @@ The active candidate, rendered from the workspace.
 <!-- {"id":"studio.preview.figure.media.title","bindings":[]} -->
 Active candidate
 
-### studio.preview.figure.chromeLabel
-<!-- {"id":"studio.preview.figure.chromeLabel","bindings":[]} -->
+### studio.preview.figure.chrome-label
+<!-- {"id":"studio.preview.figure.chrome-label","bindings":[]} -->
 Preview

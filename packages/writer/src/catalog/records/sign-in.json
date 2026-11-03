@@ -146,7 +146,7 @@
           "status": "draft",
           "origin": "foundry-default",
           "schema": "passages.sign-in-form",
-          "schemaDigest": "78c42d48736aeff4f94737dbc6323fff5f4da491ed5a42683fb7c43df5b92ede",
+          "schemaDigest": "d54e58921d2bfb202367532e42c006d5711769fbda2f09a6f018acd8e8fd4302",
           "fields": {
             "header.heading": {
               "ref": "string",
@@ -160,23 +160,23 @@
               "ref": "string",
               "id": "st.hwhxwcp8va"
             },
-            "credentials.identifierLabel": {
+            "credentials.identifier-label": {
               "ref": "string",
               "id": "st.xdab0zvrxe"
             },
-            "credentials.identifierPlaceholder": {
+            "credentials.identifier-placeholder": {
               "ref": "string",
               "id": "st.jkwc3bf7a1"
             },
-            "credentials.passwordLabel": {
+            "credentials.password-label": {
               "ref": "string",
               "id": "st.5mwk6kw75a"
             },
-            "credentials.passwordPlaceholder": {
+            "credentials.password-placeholder": {
               "ref": "string",
               "id": "st.r2zee73zbp"
             },
-            "verification.codeLabel": {
+            "verification.code-label": {
               "ref": "string",
               "id": "st.5rdfk8ec0a"
             },
@@ -253,7 +253,7 @@
           "status": "draft",
           "origin": "foundry-default",
           "schema": "passages.sign-in-form",
-          "schemaDigest": "78c42d48736aeff4f94737dbc6323fff5f4da491ed5a42683fb7c43df5b92ede",
+          "schemaDigest": "d54e58921d2bfb202367532e42c006d5711769fbda2f09a6f018acd8e8fd4302",
           "fields": {
             "header.heading": {
               "ref": "string",
@@ -267,23 +267,23 @@
               "ref": "string",
               "id": "st.hwhxwcp8va"
             },
-            "credentials.identifierLabel": {
+            "credentials.identifier-label": {
               "ref": "string",
               "id": "st.xdab0zvrxe"
             },
-            "credentials.identifierPlaceholder": {
+            "credentials.identifier-placeholder": {
               "ref": "string",
               "id": "st.jkwc3bf7a1"
             },
-            "credentials.passwordLabel": {
+            "credentials.password-label": {
               "ref": "string",
               "id": "st.5mwk6kw75a"
             },
-            "credentials.passwordPlaceholder": {
+            "credentials.password-placeholder": {
               "ref": "string",
               "id": "st.r2zee73zbp"
             },
-            "verification.codeLabel": {
+            "verification.code-label": {
               "ref": "string",
               "id": "st.5rdfk8ec0a"
             },
@@ -360,7 +360,7 @@
           "status": "draft",
           "origin": "foundry-default",
           "schema": "passages.sign-in-form",
-          "schemaDigest": "78c42d48736aeff4f94737dbc6323fff5f4da491ed5a42683fb7c43df5b92ede",
+          "schemaDigest": "d54e58921d2bfb202367532e42c006d5711769fbda2f09a6f018acd8e8fd4302",
           "fields": {
             "header.heading": {
               "ref": "string",
@@ -374,23 +374,23 @@
               "ref": "string",
               "id": "st.hwhxwcp8va"
             },
-            "credentials.identifierLabel": {
+            "credentials.identifier-label": {
               "ref": "string",
               "id": "st.xdab0zvrxe"
             },
-            "credentials.identifierPlaceholder": {
+            "credentials.identifier-placeholder": {
               "ref": "string",
               "id": "st.jkwc3bf7a1"
             },
-            "credentials.passwordLabel": {
+            "credentials.password-label": {
               "ref": "string",
               "id": "st.5mwk6kw75a"
             },
-            "credentials.passwordPlaceholder": {
+            "credentials.password-placeholder": {
               "ref": "string",
               "id": "st.r2zee73zbp"
             },
-            "verification.codeLabel": {
+            "verification.code-label": {
               "ref": "string",
               "id": "st.5rdfk8ec0a"
             },
@@ -573,19 +573,19 @@
             "providers[].label": {
               "id": "st.hwhxwcp8va"
             },
-            "credentials.identifierLabel": {
+            "credentials.identifier-label": {
               "id": "st.xdab0zvrxe"
             },
-            "credentials.identifierPlaceholder": {
+            "credentials.identifier-placeholder": {
               "id": "st.jkwc3bf7a1"
             },
-            "credentials.passwordLabel": {
+            "credentials.password-label": {
               "id": "st.5mwk6kw75a"
             },
-            "credentials.passwordPlaceholder": {
+            "credentials.password-placeholder": {
               "id": "st.r2zee73zbp"
             },
-            "verification.codeLabel": {
+            "verification.code-label": {
               "id": "st.5rdfk8ec0a"
             },
             "verification.description": {
@@ -638,19 +638,19 @@
             "providers[].label": {
               "id": "st.hwhxwcp8va"
             },
-            "credentials.identifierLabel": {
+            "credentials.identifier-label": {
               "id": "st.xdab0zvrxe"
             },
-            "credentials.identifierPlaceholder": {
+            "credentials.identifier-placeholder": {
               "id": "st.jkwc3bf7a1"
             },
-            "credentials.passwordLabel": {
+            "credentials.password-label": {
               "id": "st.5mwk6kw75a"
             },
-            "credentials.passwordPlaceholder": {
+            "credentials.password-placeholder": {
               "id": "st.r2zee73zbp"
             },
-            "verification.codeLabel": {
+            "verification.code-label": {
               "id": "st.5rdfk8ec0a"
             },
             "verification.description": {
@@ -703,19 +703,19 @@
             "providers[].label": {
               "id": "st.hwhxwcp8va"
             },
-            "credentials.identifierLabel": {
+            "credentials.identifier-label": {
               "id": "st.xdab0zvrxe"
             },
-            "credentials.identifierPlaceholder": {
+            "credentials.identifier-placeholder": {
               "id": "st.jkwc3bf7a1"
             },
-            "credentials.passwordLabel": {
+            "credentials.password-label": {
               "id": "st.5mwk6kw75a"
             },
-            "credentials.passwordPlaceholder": {
+            "credentials.password-placeholder": {
               "id": "st.r2zee73zbp"
             },
-            "verification.codeLabel": {
+            "verification.code-label": {
               "id": "st.5rdfk8ec0a"
             },
             "verification.description": {
@@ -958,7 +958,7 @@
           "status": "draft",
           "origin": "foundry-default",
           "schema": "passages.sign-in-form",
-          "schemaDigest": "78c42d48736aeff4f94737dbc6323fff5f4da491ed5a42683fb7c43df5b92ede",
+          "schemaDigest": "d54e58921d2bfb202367532e42c006d5711769fbda2f09a6f018acd8e8fd4302",
           "fields": {
             "header.heading": {
               "ref": "string",
@@ -972,23 +972,23 @@
               "ref": "string",
               "id": "st.hwhxwcp8va"
             },
-            "credentials.identifierLabel": {
+            "credentials.identifier-label": {
               "ref": "string",
               "id": "st.xdab0zvrxe"
             },
-            "credentials.identifierPlaceholder": {
+            "credentials.identifier-placeholder": {
               "ref": "string",
               "id": "st.jkwc3bf7a1"
             },
-            "credentials.passwordLabel": {
+            "credentials.password-label": {
               "ref": "string",
               "id": "st.5mwk6kw75a"
             },
-            "credentials.passwordPlaceholder": {
+            "credentials.password-placeholder": {
               "ref": "string",
               "id": "st.r2zee73zbp"
             },
-            "verification.codeLabel": {
+            "verification.code-label": {
               "ref": "string",
               "id": "st.5rdfk8ec0a"
             },
@@ -1065,7 +1065,7 @@
           "status": "draft",
           "origin": "foundry-default",
           "schema": "passages.sign-in-form",
-          "schemaDigest": "78c42d48736aeff4f94737dbc6323fff5f4da491ed5a42683fb7c43df5b92ede",
+          "schemaDigest": "d54e58921d2bfb202367532e42c006d5711769fbda2f09a6f018acd8e8fd4302",
           "fields": {
             "header.heading": {
               "ref": "string",
@@ -1079,23 +1079,23 @@
               "ref": "string",
               "id": "st.hwhxwcp8va"
             },
-            "credentials.identifierLabel": {
+            "credentials.identifier-label": {
               "ref": "string",
               "id": "st.xdab0zvrxe"
             },
-            "credentials.identifierPlaceholder": {
+            "credentials.identifier-placeholder": {
               "ref": "string",
               "id": "st.jkwc3bf7a1"
             },
-            "credentials.passwordLabel": {
+            "credentials.password-label": {
               "ref": "string",
               "id": "st.5mwk6kw75a"
             },
-            "credentials.passwordPlaceholder": {
+            "credentials.password-placeholder": {
               "ref": "string",
               "id": "st.r2zee73zbp"
             },
-            "verification.codeLabel": {
+            "verification.code-label": {
               "ref": "string",
               "id": "st.5rdfk8ec0a"
             },
@@ -1172,7 +1172,7 @@
           "status": "draft",
           "origin": "foundry-default",
           "schema": "passages.sign-in-form",
-          "schemaDigest": "78c42d48736aeff4f94737dbc6323fff5f4da491ed5a42683fb7c43df5b92ede",
+          "schemaDigest": "d54e58921d2bfb202367532e42c006d5711769fbda2f09a6f018acd8e8fd4302",
           "fields": {
             "header.heading": {
               "ref": "string",
@@ -1186,23 +1186,23 @@
               "ref": "string",
               "id": "st.hwhxwcp8va"
             },
-            "credentials.identifierLabel": {
+            "credentials.identifier-label": {
               "ref": "string",
               "id": "st.xdab0zvrxe"
             },
-            "credentials.identifierPlaceholder": {
+            "credentials.identifier-placeholder": {
               "ref": "string",
               "id": "st.jkwc3bf7a1"
             },
-            "credentials.passwordLabel": {
+            "credentials.password-label": {
               "ref": "string",
               "id": "st.5mwk6kw75a"
             },
-            "credentials.passwordPlaceholder": {
+            "credentials.password-placeholder": {
               "ref": "string",
               "id": "st.r2zee73zbp"
             },
-            "verification.codeLabel": {
+            "verification.code-label": {
               "ref": "string",
               "id": "st.5rdfk8ec0a"
             },
@@ -1366,19 +1366,19 @@
             "providers[].label": {
               "id": "st.hwhxwcp8va"
             },
-            "credentials.identifierLabel": {
+            "credentials.identifier-label": {
               "id": "st.xdab0zvrxe"
             },
-            "credentials.identifierPlaceholder": {
+            "credentials.identifier-placeholder": {
               "id": "st.jkwc3bf7a1"
             },
-            "credentials.passwordLabel": {
+            "credentials.password-label": {
               "id": "st.5mwk6kw75a"
             },
-            "credentials.passwordPlaceholder": {
+            "credentials.password-placeholder": {
               "id": "st.r2zee73zbp"
             },
-            "verification.codeLabel": {
+            "verification.code-label": {
               "id": "st.5rdfk8ec0a"
             },
             "verification.description": {
@@ -1431,19 +1431,19 @@
             "providers[].label": {
               "id": "st.hwhxwcp8va"
             },
-            "credentials.identifierLabel": {
+            "credentials.identifier-label": {
               "id": "st.xdab0zvrxe"
             },
-            "credentials.identifierPlaceholder": {
+            "credentials.identifier-placeholder": {
               "id": "st.jkwc3bf7a1"
             },
-            "credentials.passwordLabel": {
+            "credentials.password-label": {
               "id": "st.5mwk6kw75a"
             },
-            "credentials.passwordPlaceholder": {
+            "credentials.password-placeholder": {
               "id": "st.r2zee73zbp"
             },
-            "verification.codeLabel": {
+            "verification.code-label": {
               "id": "st.5rdfk8ec0a"
             },
             "verification.description": {
@@ -1496,19 +1496,19 @@
             "providers[].label": {
               "id": "st.hwhxwcp8va"
             },
-            "credentials.identifierLabel": {
+            "credentials.identifier-label": {
               "id": "st.xdab0zvrxe"
             },
-            "credentials.identifierPlaceholder": {
+            "credentials.identifier-placeholder": {
               "id": "st.jkwc3bf7a1"
             },
-            "credentials.passwordLabel": {
+            "credentials.password-label": {
               "id": "st.5mwk6kw75a"
             },
-            "credentials.passwordPlaceholder": {
+            "credentials.password-placeholder": {
               "id": "st.r2zee73zbp"
             },
-            "verification.codeLabel": {
+            "verification.code-label": {
               "id": "st.5rdfk8ec0a"
             },
             "verification.description": {
@@ -1630,19 +1630,19 @@
             "providers[].label": {
               "id": "st.hwhxwcp8va"
             },
-            "credentials.identifierLabel": {
+            "credentials.identifier-label": {
               "id": "st.xdab0zvrxe"
             },
-            "credentials.identifierPlaceholder": {
+            "credentials.identifier-placeholder": {
               "id": "st.jkwc3bf7a1"
             },
-            "credentials.passwordLabel": {
+            "credentials.password-label": {
               "id": "st.5mwk6kw75a"
             },
-            "credentials.passwordPlaceholder": {
+            "credentials.password-placeholder": {
               "id": "st.r2zee73zbp"
             },
-            "verification.codeLabel": {
+            "verification.code-label": {
               "id": "st.5rdfk8ec0a"
             },
             "verification.description": {
@@ -1695,19 +1695,19 @@
             "providers[].label": {
               "id": "st.hwhxwcp8va"
             },
-            "credentials.identifierLabel": {
+            "credentials.identifier-label": {
               "id": "st.xdab0zvrxe"
             },
-            "credentials.identifierPlaceholder": {
+            "credentials.identifier-placeholder": {
               "id": "st.jkwc3bf7a1"
             },
-            "credentials.passwordLabel": {
+            "credentials.password-label": {
               "id": "st.5mwk6kw75a"
             },
-            "credentials.passwordPlaceholder": {
+            "credentials.password-placeholder": {
               "id": "st.r2zee73zbp"
             },
-            "verification.codeLabel": {
+            "verification.code-label": {
               "id": "st.5rdfk8ec0a"
             },
             "verification.description": {
@@ -1760,19 +1760,19 @@
             "providers[].label": {
               "id": "st.hwhxwcp8va"
             },
-            "credentials.identifierLabel": {
+            "credentials.identifier-label": {
               "id": "st.xdab0zvrxe"
             },
-            "credentials.identifierPlaceholder": {
+            "credentials.identifier-placeholder": {
               "id": "st.jkwc3bf7a1"
             },
-            "credentials.passwordLabel": {
+            "credentials.password-label": {
               "id": "st.5mwk6kw75a"
             },
-            "credentials.passwordPlaceholder": {
+            "credentials.password-placeholder": {
               "id": "st.r2zee73zbp"
             },
-            "verification.codeLabel": {
+            "verification.code-label": {
               "id": "st.5rdfk8ec0a"
             },
             "verification.description": {

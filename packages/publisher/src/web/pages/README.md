@@ -243,7 +243,7 @@ come from the current Writer-bound item. Empty-table copy and the complete
 pagination summary come from Writer records.
 
 `paginationSummary` is serializable data, not a callback:
-`{ key: "pagination.totalText", writerId, locale, message, values }`.
+`{ key: "pagination.total-text", writerId, locale, message, values }`.
 Its raw ICU message and canonical id come from the genuine bound Writer record.
 The section supplies its live `start`, `end`, `total`, `page`, `pageCount` and
 `pages`, preserving other authored arguments. `formatCopyMessage` verifies the

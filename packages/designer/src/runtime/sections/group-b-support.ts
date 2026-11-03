@@ -38,6 +38,17 @@ export function recordsOf<T>(input: SectionRenderInput, slot: string): readonly 
   return value as unknown as readonly T[];
 }
 
+/**
+ * A records slot whose kebab-case copy ids map onto camelCase block props: `props` names each renamed field
+ * (`{ "used-text": "usedText" }`); every other field passes through by its own name.
+ */
+export function recordsAs<T>(input: SectionRenderInput, slot: string, props: Readonly<Record<string, string>>): readonly T[] {
+  return recordsOf<unknown>(input, slot).map(row => {
+    if (row === null || typeof row !== "object" || Array.isArray(row)) return row as T;
+    return Object.fromEntries(Object.entries(row).map(([key, value]) => [props[key] ?? key, value])) as T;
+  });
+}
+
 /** A copy, action or region slot as one object or string; absent when the slot is not filled. */
 export function entryOf<T>(input: SectionRenderInput, slot: string): T | undefined {
   const value = valueOf(input, slot);

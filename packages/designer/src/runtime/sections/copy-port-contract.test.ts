@@ -10,7 +10,7 @@ describe("Writer-derived section copy ports", () => {
     expect(current()).toContain(emitCopyPortTypes(passages));
     const output = emitCopyPortTypes(passages);
     expect(output).toContain('readonly "states.empty.label": string');
-    expect(output).toContain('readonly "pagination.totalText"?: WriterIcuMessage<"pagination.totalText">');
+    expect(output).toContain('readonly "pagination.total-text"?: WriterIcuMessage<"pagination.total-text">');
   });
   it("makes Writer contract drift visible rather than accepting invented Designer keys", () => {
     const changed = structuredClone(passages);

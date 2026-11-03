@@ -33,11 +33,11 @@ export function renderPricingSection(input: SectionRenderInput): ReactNode {
       badge: optionalText(content, plan.badge, `${at}.badge`),
     };
     if (plan.price !== undefined && plan.price !== null) return { ...base, price: text(content, plan.price, `${at}.price`) };
-    if (plan.priceByInterval === undefined) return { ...base, price: null };
-    const prices = object(content, plan.priceByInterval, `${at}.priceByInterval`);
+    if (plan["price-by-interval"] === undefined) return { ...base, price: null };
+    const prices = object(content, plan["price-by-interval"], `${at}.price-by-interval`);
     return { ...base, priceByInterval: Object.fromEntries(Object.entries(prices).map(([interval, value]) => {
-      const price = object(content, value, `${at}.priceByInterval.${interval}`);
-      return [interval, { amount: text(content, price.amount, `${at}.priceByInterval.${interval}.amount`), priceText: text(content, price.priceText, `${at}.priceByInterval.${interval}.priceText`) }];
+      const price = object(content, value, `${at}.price-by-interval.${interval}`);
+      return [interval, { amount: text(content, price.amount, `${at}.price-by-interval.${interval}.amount`), priceText: text(content, price["price-text"], `${at}.price-by-interval.${interval}.price-text`) }];
     })) };
   });
   for (const id of highlighted) if (!tiers.some(tier => tier.id === id)) throw new SectionContentError(content.leaf, `highlight names unknown plan ${id}`);

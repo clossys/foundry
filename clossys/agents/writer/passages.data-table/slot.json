@@ -99,7 +99,7 @@
           "dir": "auto"
         },
         {
-          "key": "pagination.pageText",
+          "key": "pagination.page-text",
           "kind": "icu",
           "required": false,
           "maxLength": {
@@ -108,7 +108,7 @@
           "dir": "auto"
         },
         {
-          "key": "pagination.totalText",
+          "key": "pagination.total-text",
           "kind": "icu",
           "required": false,
           "maxLength": {

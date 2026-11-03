@@ -26,14 +26,14 @@ Send me the Clossys Foundry release notes, about once a month. Unsubscribe any t
 <!-- {"id":"studio.updates.submit.label","bindings":[]} -->
 Subscribe
 
-### studio.updates.submit.pendingLabel
-<!-- {"id":"studio.updates.submit.pendingLabel","bindings":[]} -->
+### studio.updates.submit.pending-label
+<!-- {"id":"studio.updates.submit.pending-label","bindings":[]} -->
 Subscribing
 
-### studio.updates.submit.sentMessage
-<!-- {"id":"studio.updates.submit.sentMessage","bindings":[]} -->
+### studio.updates.submit.sent-message
+<!-- {"id":"studio.updates.submit.sent-message","bindings":[]} -->
 Subscribed. Release notes arrive about once a month.
 
-### studio.updates.submit.failedMessage
-<!-- {"id":"studio.updates.submit.failedMessage","bindings":[]} -->
+### studio.updates.submit.failed-message
+<!-- {"id":"studio.updates.submit.failed-message","bindings":[]} -->
 We could not subscribe you. Check the address and try again.

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AccessMatrix, type AccessCellValue, type AccessGroup, type AccessMatrixValue, type AccessPermission, type AccessRole } from "../../blocks/AccessMatrix.js";
-import { recordsOf, type GroupBSection, type SectionRenderInput } from "./group-b-support.js";
+import { recordsAs, recordsOf, type GroupBSection, type SectionRenderInput } from "./group-b-support.js";
 import { specimenDataset } from "../../studio/specimen-dataset.js";
 
 /** One permission record: the block's permission plus the role cells it already holds. */
@@ -30,7 +30,7 @@ function AccessMatrixFill({ roles, groups }: { readonly roles: readonly AccessRo
 
 /** sections.access-matrix: roles are columns, permission groups are rows, cells are Checkbox toggles. */
 export function renderAccessMatrix(input: SectionRenderInput) {
-  return <AccessMatrixFill roles={recordsOf<AccessRole>(input, "roles")} groups={recordsOf<AccessGroupRecord>(input, "permissions")} />;
+  return <AccessMatrixFill roles={recordsAs<AccessRole>(input, "roles", { "locked-reason": "lockedReason" })} groups={recordsOf<AccessGroupRecord>(input, "permissions")} />;
 }
 
 export const accessMatrixSection: GroupBSection = { leaf: "sections.access-matrix", slots: ["permissions", "roles"], render: renderAccessMatrix };

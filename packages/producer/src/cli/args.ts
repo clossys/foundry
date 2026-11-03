@@ -52,6 +52,7 @@ export class CliUsageError extends Error {
 export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check> [--check] [--root <dir>] [--json]\n"
   + "Options: --help; produce --once --port <0-65535> --no-open [--out <install out folder>]; publish --install --page <id> | --site <pack id> [--origin <url>] [--build] [--out <dir>]\n"
   + "Agents (pinned slot model, read-only): direct|design|write [--brief | --check] [--out <projection.json>]; publish (dry run: every pinned page compiled and checked, nothing installed)\n"
+  + "Migrate: clossys migrate copy-keys [--check] [--root <dir>] (camelCase copy ids to the catalog's kebab-case ids; record text unchanged)\n"
   + "Page check: clossys check --pages <generated-manifest.json> --report <report.json> [--json]\n"
   + "Slots: clossys check [--slots] [--readiness] [--root <dir>] (enforced by default)\n"
   + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root)\n"

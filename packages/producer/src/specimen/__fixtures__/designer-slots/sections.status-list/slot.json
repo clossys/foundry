@@ -175,7 +175,7 @@
           "dir": "auto"
         },
         {
-          "key": "labels.notOffered",
+          "key": "labels.not-offered",
           "kind": "plain",
           "required": false,
           "maxLength": {

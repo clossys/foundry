@@ -90,7 +90,7 @@
           "dir": "auto"
         },
         {
-          "key": "roles[].lockedReason",
+          "key": "roles[].locked-reason",
           "kind": "plain",
           "required": false,
           "maxLength": {
@@ -99,7 +99,7 @@
           "dir": "auto"
         },
         {
-          "key": "labels.permissionHeader",
+          "key": "labels.permission-header",
           "kind": "plain",
           "required": false,
           "maxLength": {
@@ -117,7 +117,7 @@
           "dir": "auto"
         },
         {
-          "key": "labels.groupAll",
+          "key": "labels.group-all",
           "kind": "icu",
           "required": false,
           "maxLength": {
@@ -144,7 +144,7 @@
           "dir": "auto"
         },
         {
-          "key": "labels.changeSummary",
+          "key": "labels.change-summary",
           "kind": "icu",
           "required": false,
           "maxLength": {

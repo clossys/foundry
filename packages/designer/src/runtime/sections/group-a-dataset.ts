@@ -62,14 +62,14 @@ export const GROUP_A_CONTENT: Readonly<Record<GroupALeaf, Readonly<Record<string
   newsletter: {
     email: { label: S.newsletter.emailLabel },
     consent: S.newsletter.privacyNote,
-    submit: { label: S.newsletter.submitLabel, pendingLabel: S.newsletter.pendingLabel, sentMessage: S.newsletter.sentMessage, failedMessage: S.newsletter.failedMessage, action: S.newsletter.action },
+    submit: { label: S.newsletter.submitLabel, "pending-label": S.newsletter.pendingLabel, "sent-message": S.newsletter.sentMessage, "failed-message": S.newsletter.failedMessage, action: S.newsletter.action },
   },
   people: { people: plainJson(S.peopleGrid.people) },
   pricing: {
     plans: S.pricing.tiers.map(tier => plainJson({ id: tier.id, name: tier.name, price: tier.price, features: tier.features, cta: { label: tier.cta, href: `#${tier.id}` }, badge: tier.badge })),
     highlight: S.pricing.tiers.filter(tier => tier.featured).map(tier => tier.id),
   },
-  testimonials: { quotes: plainJson(S.testimonials.items) },
+  testimonials: { quotes: plainJson(S.testimonials.items.map(({ attributorName, attributorRole, ...quote }) => ({ ...quote, "attributor-name": attributorName, ...(attributorRole === undefined ? {} : { "attributor-role": attributorRole }) }))) },
 };
 
 /** Members the preview selects per leaf; every one is in the leaf's fill propMap. */

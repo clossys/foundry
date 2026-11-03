@@ -118,17 +118,17 @@
             "maxChars": 120,
             "maxLines": 1
           },
-          "page.previousLabel": {
+          "page.previous-label": {
             "required": false,
             "maxChars": 120,
             "maxLines": 1
           },
-          "page.nextLabel": {
+          "page.next-label": {
             "required": false,
             "maxChars": 120,
             "maxLines": 1
           },
-          "page.pageText": {
+          "page.page-text": {
             "required": false,
             "maxChars": 120
           },
@@ -137,17 +137,17 @@
             "maxChars": 120,
             "maxLines": 1
           },
-          "page.noResultsLabel": {
+          "page.no-results-label": {
             "required": false,
             "maxChars": 120,
             "maxLines": 1
           },
-          "page.pageSizeLabel": {
+          "page.page-size-label": {
             "required": false,
             "maxChars": 120,
             "maxLines": 1
           },
-          "total.rangeText": {
+          "total.range-text": {
             "required": false,
             "maxChars": 120
           }
@@ -163,19 +163,19 @@
             {
               "fields": {
                 "page.label": "Pagination",
-                "page.previousLabel": "Previous",
-                "page.nextLabel": "Next",
-                "page.pageText": "Page {page} of {total}",
-                "total.rangeText": "{start} to {end} of {total}"
+                "page.previous-label": "Previous",
+                "page.next-label": "Next",
+                "page.page-text": "Page {page} of {total}",
+                "total.range-text": "{start} to {end} of {total}"
               }
             },
             {
               "fields": {
                 "page.label": "Pages",
-                "page.previousLabel": "Newer",
-                "page.nextLabel": "Older",
-                "page.noResultsLabel": "No results",
-                "page.pageSizeLabel": "Rows per page"
+                "page.previous-label": "Newer",
+                "page.next-label": "Older",
+                "page.no-results-label": "No results",
+                "page.page-size-label": "Rows per page"
               }
             }
           ]
@@ -893,11 +893,11 @@
             "required": true,
             "maxChars": 2400
           },
-          "quotes[].attributorName": {
+          "quotes[].attributor-name": {
             "required": true,
             "maxChars": 120
           },
-          "quotes[].attributorRole": {
+          "quotes[].attributor-role": {
             "required": false,
             "maxChars": 120
           }
@@ -916,10 +916,10 @@
                 "quotes[].quote": [
                   "I approve swaps on the bus now instead of phoning round on my day off."
                 ],
-                "quotes[].attributorName": [
+                "quotes[].attributor-name": [
                   "Sam Okafor"
                 ],
-                "quotes[].attributorRole": [
+                "quotes[].attributor-role": [
                   "Kitchen manager"
                 ]
               }
@@ -930,10 +930,10 @@
                 "quotes[].quote": [
                   "Claims go out the same afternoon because the notes are already attached."
                 ],
-                "quotes[].attributorName": [
+                "quotes[].attributor-name": [
                   "Rita Alves"
                 ],
-                "quotes[].attributorRole": [
+                "quotes[].attributor-role": [
                   "Clinic owner"
                 ]
               }
@@ -1138,7 +1138,7 @@
             "maxChars": 160,
             "maxLines": 1
           },
-          "figure.chromeLabel": {
+          "figure.chrome-label": {
             "required": false,
             "maxChars": 160,
             "maxLines": 1
@@ -1461,7 +1461,7 @@
             "maxChars": 160,
             "maxLines": 2
           },
-          "events[].dateText": {
+          "events[].date-text": {
             "required": true,
             "maxChars": 120
           },
@@ -1485,7 +1485,7 @@
                   "First pilot site",
                   "Shift swaps launch"
                 ],
-                "events[].dateText": [
+                "events[].date-text": [
                   "March 2025",
                   "January 2026"
                 ],
@@ -1500,7 +1500,7 @@
                 "events[].heading": [
                   "Payroll export"
                 ],
-                "events[].dateText": [
+                "events[].date-text": [
                   "Planned for 2027"
                 ]
               }
@@ -1601,11 +1601,11 @@
             "required": false,
             "maxChars": 160
           },
-          "records[].editorial.readingTime.value": {
+          "records[].editorial.reading-time.value": {
             "required": false,
             "maxChars": 160
           },
-          "records[].editorial.readingTime.label": {
+          "records[].editorial.reading-time.label": {
             "required": false,
             "maxChars": 160
           },
@@ -1617,11 +1617,11 @@
             "required": false,
             "maxChars": 480
           },
-          "records[].editorial.outcomeStats[].label": {
+          "records[].editorial.outcome-stats[].label": {
             "required": false,
             "maxChars": 160
           },
-          "records[].editorial.outcomeStats[].value": {
+          "records[].editorial.outcome-stats[].value": {
             "required": false,
             "maxChars": 160
           }
@@ -1727,11 +1727,11 @@
             "maxChars": 120,
             "maxLines": 1
           },
-          "pagination.pageText": {
+          "pagination.page-text": {
             "required": false,
             "maxChars": 120
           },
-          "pagination.totalText": {
+          "pagination.total-text": {
             "required": false,
             "maxChars": 120
           },
@@ -2139,11 +2139,11 @@
             "required": false,
             "maxChars": 120
           },
-          "plans[].priceByInterval[].amount": {
+          "plans[].price-by-interval[].amount": {
             "required": true,
             "maxChars": 160
           },
-          "plans[].priceByInterval[].priceText": {
+          "plans[].price-by-interval[].price-text": {
             "required": true,
             "maxChars": 160
           }
@@ -2371,7 +2371,7 @@
             "required": false,
             "maxChars": 120
           },
-          "labels.notOffered": {
+          "labels.not-offered": {
             "required": false,
             "maxChars": 120
           },
@@ -2434,7 +2434,7 @@
                 "labels.available": "Available",
                 "labels.partial": "Partly available",
                 "labels.planned": "Planned",
-                "labels.notOffered": "Not offered",
+                "labels.not-offered": "Not offered",
                 "states.loading.label": "Loading status",
                 "states.empty.label": "Nothing to show",
                 "states.error.label": "Status did not load"
@@ -2494,15 +2494,15 @@
             "maxChars": 120,
             "maxLines": 1
           },
-          "meters[].usedText": {
+          "meters[].used-text": {
             "required": false,
             "maxChars": 120
           },
-          "meters[].limitText": {
+          "meters[].limit-text": {
             "required": false,
             "maxChars": 120
           },
-          "meters[].periodText": {
+          "meters[].period-text": {
             "required": false,
             "maxChars": 120
           },
@@ -2538,7 +2538,7 @@
             "required": false,
             "maxChars": 480
           },
-          "meters[].projectedText": {
+          "meters[].projected-text": {
             "required": false,
             "maxChars": 160
           },
@@ -2562,10 +2562,10 @@
                   "Staff",
                   "Locations"
                 ],
-                "meters[].usedText": [
+                "meters[].used-text": [
                   "{used} used"
                 ],
-                "meters[].limitText": [
+                "meters[].limit-text": [
                   "of {limit}"
                 ],
                 "meters[].thresholds[].message": [
@@ -2582,7 +2582,7 @@
                 "meters[].label": [
                   "Reminders sent"
                 ],
-                "meters[].periodText": [
+                "meters[].period-text": [
                   "Resets on the 1st"
                 ],
                 "states.loading.label": "Loading",
@@ -2619,7 +2619,7 @@
             "maxChars": 160,
             "maxLines": 1
           },
-          "identity.nameLabel": {
+          "identity.name-label": {
             "required": true,
             "maxChars": 120,
             "maxLines": 1
@@ -2628,7 +2628,7 @@
             "required": true,
             "maxChars": 320
           },
-          "identity.emailLabel": {
+          "identity.email-label": {
             "required": true,
             "maxChars": 120,
             "maxLines": 1
@@ -2660,8 +2660,8 @@
             {
               "fields": {
                 "heading": "Your account",
-                "identity.nameLabel": "Name",
-                "identity.emailLabel": "Email",
+                "identity.name-label": "Name",
+                "identity.email-label": "Email",
                 "rows[].label": [
                   "Plan",
                   "Locations"
@@ -2675,8 +2675,8 @@
             {
               "fields": {
                 "heading": "Account details",
-                "identity.nameLabel": "Full name",
-                "identity.emailLabel": "Work email",
+                "identity.name-label": "Full name",
+                "identity.email-label": "Work email",
                 "rows[].label": [
                   "Workspace",
                   "Role"
@@ -2748,11 +2748,11 @@
             "maxChars": 120,
             "maxLines": 1
           },
-          "pagination.pageText": {
+          "pagination.page-text": {
             "required": false,
             "maxChars": 120
           },
-          "pagination.totalText": {
+          "pagination.total-text": {
             "required": false,
             "maxChars": 120
           },
@@ -2815,7 +2815,7 @@
                 ],
                 "toolbar.search.label": "Search staff",
                 "toolbar.search.placeholder": "Name or role",
-                "pagination.pageText": "Page {page} of {total}",
+                "pagination.page-text": "Page {page} of {total}",
                 "states.loading.label": "Loading staff",
                 "states.empty.label": "No staff match",
                 "states.empty.description": "Try a different name or clear the filter.",
@@ -3172,7 +3172,7 @@
             "required": true,
             "maxChars": 480
           },
-          "events[].timeText": {
+          "events[].time-text": {
             "required": true,
             "maxChars": 160
           },
@@ -3196,11 +3196,11 @@
             "required": false,
             "maxChars": 160
           },
-          "labels.changedFrom": {
+          "labels.changed-from": {
             "required": false,
             "maxChars": 160
           },
-          "labels.changedTo": {
+          "labels.changed-to": {
             "required": false,
             "maxChars": 160
           },
@@ -3243,8 +3243,8 @@
                 "states.empty.label": "Nothing has changed",
                 "states.error.label": "We could not load changes",
                 "states.error.description": "Refresh the page to try again.",
-                "labels.changedFrom": "was",
-                "labels.changedTo": "now"
+                "labels.changed-from": "was",
+                "labels.changed-to": "now"
               }
             }
           ]
@@ -3355,7 +3355,7 @@
             "required": false,
             "maxChars": 480
           },
-          "entries[].timeText": {
+          "entries[].time-text": {
             "required": true,
             "maxChars": 160
           }
@@ -3564,16 +3564,16 @@
             "maxChars": 120,
             "maxLines": 1
           },
-          "submit.pendingLabel": {
+          "submit.pending-label": {
             "required": true,
             "maxChars": 120,
             "maxLines": 1
           },
-          "submit.sentMessage": {
+          "submit.sent-message": {
             "required": true,
             "maxChars": 120
           },
-          "submit.failedMessage": {
+          "submit.failed-message": {
             "required": true,
             "maxChars": 120
           }
@@ -3593,9 +3593,9 @@
                 "email.placeholder": "name@example.com",
                 "consent": "Monthly email. Unsubscribe at any time.",
                 "submit.label": "Subscribe",
-                "submit.pendingLabel": "Subscribing",
-                "submit.sentMessage": "Check your inbox to confirm.",
-                "submit.failedMessage": "That did not work. Try again."
+                "submit.pending-label": "Subscribing",
+                "submit.sent-message": "Check your inbox to confirm.",
+                "submit.failed-message": "That did not work. Try again."
               }
             },
             {
@@ -3604,9 +3604,9 @@
                 "email.label": "Work email",
                 "consent": "We email when something changes. No other mail.",
                 "submit.label": "Get updates",
-                "submit.pendingLabel": "Sending",
-                "submit.sentMessage": "You are on the list.",
-                "submit.failedMessage": "Could not subscribe. Check the address."
+                "submit.pending-label": "Sending",
+                "submit.sent-message": "You are on the list.",
+                "submit.failed-message": "Could not subscribe. Check the address."
               }
             }
           ]
@@ -3976,11 +3976,11 @@
             "maxChars": 120,
             "maxLines": 1
           },
-          "roles[].lockedReason": {
+          "roles[].locked-reason": {
             "required": false,
             "maxChars": 160
           },
-          "labels.permissionHeader": {
+          "labels.permission-header": {
             "required": false,
             "maxChars": 160
           },
@@ -3988,7 +3988,7 @@
             "required": false,
             "maxChars": 160
           },
-          "labels.groupAll": {
+          "labels.group-all": {
             "required": false,
             "maxChars": 160
           },
@@ -4000,7 +4000,7 @@
             "required": false,
             "maxChars": 160
           },
-          "labels.changeSummary": {
+          "labels.change-summary": {
             "required": false,
             "maxChars": 160
           }
@@ -4028,7 +4028,7 @@
                   "Publish a rota",
                   "Approve a swap"
                 ],
-                "roles[].lockedReason": "Only the owner can change owner permissions."
+                "roles[].locked-reason": "Only the owner can change owner permissions."
               }
             },
             {
@@ -4163,27 +4163,27 @@
             "maxChars": 120,
             "maxLines": 1
           },
-          "credentials.identifierLabel": {
+          "credentials.identifier-label": {
             "required": true,
             "maxChars": 120,
             "maxLines": 1
           },
-          "credentials.identifierPlaceholder": {
+          "credentials.identifier-placeholder": {
             "required": false,
             "maxChars": 120,
             "maxLines": 1
           },
-          "credentials.passwordLabel": {
+          "credentials.password-label": {
             "required": true,
             "maxChars": 120,
             "maxLines": 1
           },
-          "credentials.passwordPlaceholder": {
+          "credentials.password-placeholder": {
             "required": false,
             "maxChars": 120,
             "maxLines": 1
           },
-          "verification.codeLabel": {
+          "verification.code-label": {
             "required": true,
             "maxChars": 120,
             "maxLines": 1
@@ -4253,9 +4253,9 @@
                 "providers[].label": [
                   "Continue with email"
                 ],
-                "credentials.identifierLabel": "Email",
-                "credentials.passwordLabel": "Password",
-                "verification.codeLabel": "Verification code",
+                "credentials.identifier-label": "Email",
+                "credentials.password-label": "Password",
+                "verification.code-label": "Verification code",
                 "actions.submit": "Sign in",
                 "actions.verify": "Verify",
                 "actions.pending": "Signing in",
@@ -4269,9 +4269,9 @@
               "fields": {
                 "header.heading": "Welcome back",
                 "header.description": "Sign in with the email you were invited with.",
-                "credentials.identifierLabel": "Work email",
-                "credentials.passwordLabel": "Password",
-                "verification.codeLabel": "Code from your email",
+                "credentials.identifier-label": "Work email",
+                "credentials.password-label": "Password",
+                "verification.code-label": "Code from your email",
                 "actions.submit": "Continue",
                 "actions.verify": "Confirm code",
                 "actions.pending": "Checking",
@@ -4583,11 +4583,11 @@
             "maxChars": 120,
             "maxLines": 1
           },
-          "labels.addRule": {
+          "labels.add-rule": {
             "required": false,
             "maxChars": 120
           },
-          "labels.addGroup": {
+          "labels.add-group": {
             "required": false,
             "maxChars": 120
           },
@@ -4595,11 +4595,11 @@
             "required": false,
             "maxChars": 120
           },
-          "labels.matchAll": {
+          "labels.match-all": {
             "required": false,
             "maxChars": 120
           },
-          "labels.matchAny": {
+          "labels.match-any": {
             "required": false,
             "maxChars": 120
           },
@@ -4628,11 +4628,11 @@
                   "is",
                   "is not"
                 ],
-                "labels.addRule": "Add a condition",
-                "labels.addGroup": "Add a group",
+                "labels.add-rule": "Add a condition",
+                "labels.add-group": "Add a group",
                 "labels.remove": "Remove condition",
-                "labels.matchAll": "Match all",
-                "labels.matchAny": "Match any"
+                "labels.match-all": "Match all",
+                "labels.match-any": "Match any"
               }
             },
             {
@@ -4645,7 +4645,7 @@
                   "is more than",
                   "is less than"
                 ],
-                "labels.addRule": "Add rule",
+                "labels.add-rule": "Add rule",
                 "labels.value": "Value"
               }
             }
@@ -4915,7 +4915,7 @@
             "maxChars": 120,
             "maxLines": 1
           },
-          "notices[].dismissLabel": {
+          "notices[].dismiss-label": {
             "required": false,
             "maxChars": 120,
             "maxLines": 1
@@ -4940,7 +4940,7 @@
                 "notices[].action.label": [
                   "Add payment method"
                 ],
-                "notices[].dismissLabel": [
+                "notices[].dismiss-label": [
                   "Remind me later"
                 ]
               }
@@ -4953,7 +4953,7 @@
                 "notices[].body": [
                   "The app will be read-only from 02:00 to 03:00 UTC."
                 ],
-                "notices[].dismissLabel": [
+                "notices[].dismiss-label": [
                   "Dismiss"
                 ]
               }

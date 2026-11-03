@@ -1,6 +1,6 @@
 import { AuditLog, type AuditLogEntry } from "../../blocks/AuditLog.js";
 import { ActionPart, FieldRegion, type ActionContent, type FieldRegionContent } from "./group-b-parts.js";
-import { entryOf, recordsOf, stateOf, type GroupBSection, type SectionRenderInput } from "./group-b-support.js";
+import { entryOf, recordsAs, stateOf, type GroupBSection, type SectionRenderInput } from "./group-b-support.js";
 import { specimenDataset } from "../../studio/specimen-dataset.js";
 
 const { auditLog } = specimenDataset.sections;
@@ -11,7 +11,7 @@ export function renderAuditLog(input: SectionRenderInput) {
   const exportAction = entryOf<ActionContent>(input, "export");
   return <AuditLog
     aria-label={auditLog["aria-label"]}
-    entries={recordsOf<AuditLogEntry>(input, "entries")}
+    entries={recordsAs<AuditLogEntry>(input, "entries", { "time-text": "timeText" })}
     labels={auditLog.labels}
     filter={filter ? <FieldRegion content={filter} field="search" /> : undefined}
     exportAction={exportAction ? <ActionPart content={exportAction} /> : undefined}

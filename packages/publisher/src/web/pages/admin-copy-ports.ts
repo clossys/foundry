@@ -39,7 +39,7 @@ export function adminPageSectionHosts(input: { readonly copy: AdminPageCopy; rea
   const tableCopy = { label: copy(bindings.table.label), emptyTitle: copy(bindings.table.emptyTitle), emptyDescription: copy(bindings.table.emptyDescription), paginationLabel: copy(bindings.table.paginationLabel) };
   const { chatCopy } = adminPageChatHost(copy, bindings);
   const { format, ...messageData } = copy.message(bindings.table.summary, { start: 0, end: 0, total: 0, page: 1, pageCount: 1, pages: 1 });
-  const paginationSummary = { key: "pagination.totalText" as const, ...messageData };
+  const paginationSummary = { key: "pagination.total-text" as const, ...messageData };
   const formatCopyMessage = (message: typeof paginationSummary) => {
     if (message.key !== paginationSummary.key || message.writerId !== paginationSummary.writerId || message.locale !== paginationSummary.locale || message.message !== paginationSummary.message) throw new TypeError("Writer pagination message identity differs from its bound source");
     return format(message.values);

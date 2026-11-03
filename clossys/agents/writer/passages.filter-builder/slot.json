@@ -81,7 +81,7 @@
           "dir": "auto"
         },
         {
-          "key": "labels.addRule",
+          "key": "labels.add-rule",
           "kind": "plain",
           "required": false,
           "maxLength": {
@@ -90,7 +90,7 @@
           "dir": "auto"
         },
         {
-          "key": "labels.addGroup",
+          "key": "labels.add-group",
           "kind": "plain",
           "required": false,
           "maxLength": {
@@ -108,7 +108,7 @@
           "dir": "auto"
         },
         {
-          "key": "labels.matchAll",
+          "key": "labels.match-all",
           "kind": "plain",
           "required": false,
           "maxLength": {
@@ -117,7 +117,7 @@
           "dir": "auto"
         },
         {
-          "key": "labels.matchAny",
+          "key": "labels.match-any",
           "kind": "plain",
           "required": false,
           "maxLength": {

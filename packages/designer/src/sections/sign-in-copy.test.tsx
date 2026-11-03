@@ -86,8 +86,8 @@ describe.each(configs)("Writer sign-in copy binding: %s", config => {
     const { container } = render(<>{signInFormRenderer.render(renderInput(config, values))}</>);
     expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
     expect(screen.getByRole("form", { name: heading })).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: fieldValue(values, "credentials.identifierLabel") as string })).toBeDisabled();
-    expect(screen.getByLabelText(fieldValue(values, "credentials.passwordLabel") as string)).toBeDisabled();
+    expect(screen.getByRole("textbox", { name: fieldValue(values, "credentials.identifier-label") as string })).toBeDisabled();
+    expect(screen.getByLabelText(fieldValue(values, "credentials.password-label") as string)).toBeDisabled();
     expect(screen.getByRole("button", { name: fieldValue(values, "providers[].label") as string })).toBeDisabled();
     expect(screen.getByRole("button", { name: fieldValue(values, "actions.submit") as string })).toBeDisabled();
     expect(screen.getByRole("alert")).toHaveTextContent(fieldValue(values, "error.message") as string);

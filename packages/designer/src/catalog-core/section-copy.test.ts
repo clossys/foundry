@@ -40,7 +40,7 @@ describe("registered section copy", () => {
       expect(slot.contract.copy.fields.map(field => field.key)).toContain(`states.${state}.label`);
       expect(slot.contract.copy.fields.map(field => field.key)).toContain(`states.${state}.description`);
     }
-    for (const [id, key] of [["features", "items[].heading"], ["people", "people[].name"], ["pricing", "plans[].features[]"], ["data-table", "columns[].label"], ["settings", "groups[].controls[].label"], ["activity-feed", "events[].actor.name"], ["cards", "records[].badge.label"], ["pricing", "plans[].priceByInterval[].priceText"]]) {
+    for (const [id, key] of [["features", "items[].heading"], ["people", "people[].name"], ["pricing", "plans[].features[]"], ["data-table", "columns[].label"], ["settings", "groups[].controls[].label"], ["activity-feed", "events[].actor.name"], ["cards", "records[].badge.label"], ["pricing", "plans[].price-by-interval[].price-text"]]) {
       expect(registry.slots.find(slot => slot.id === `sections.${id}`)!.contract.copy.fields.map(field => field.key)).toContain(key);
     }
     const toc = registry.slots.find(slot => slot.id === "sections.table-of-contents")!;

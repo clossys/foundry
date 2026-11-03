@@ -14,10 +14,10 @@ Built with Foundry
 <!-- {"id":"studio.testimonials.quotes.0.quote","bindings":[],"evidence":"finding:writer-owner-answers-2026-11-03"} -->
 The Clossys site is published from Foundry.
 
-### studio.testimonials.quotes.0.attributorName
-<!-- {"id":"studio.testimonials.quotes.0.attributorName","bindings":[]} -->
+### studio.testimonials.quotes.0.attributor-name
+<!-- {"id":"studio.testimonials.quotes.0.attributor-name","bindings":[]} -->
 Clossys
 
-### studio.testimonials.quotes.0.attributorRole
-<!-- {"id":"studio.testimonials.quotes.0.attributorRole","bindings":[]} -->
+### studio.testimonials.quotes.0.attributor-role
+<!-- {"id":"studio.testimonials.quotes.0.attributor-role","bindings":[]} -->
 Dogfood workspace

@@ -62,7 +62,7 @@
         "sourceLocale": "en",
         "fields": [
           {
-            "key": "labels.showAllVariants",
+            "key": "labels.show-all-variants",
             "kind": "icu",
             "required": true,
             "maxLength": {
@@ -139,7 +139,7 @@
         "sourceLocale": "en",
         "fields": [
           {
-            "key": "labels.showAllVariants",
+            "key": "labels.show-all-variants",
             "kind": "icu",
             "required": true,
             "maxLength": {
@@ -208,7 +208,7 @@
         "sourceLocale": "en",
         "fields": [
           {
-            "key": "labels.showAllVariants",
+            "key": "labels.show-all-variants",
             "kind": "icu",
             "required": true,
             "maxLength": {
@@ -277,7 +277,7 @@
         "sourceLocale": "en",
         "fields": [
           {
-            "key": "labels.showAllVariants",
+            "key": "labels.show-all-variants",
             "kind": "icu",
             "required": true,
             "maxLength": {
@@ -346,7 +346,7 @@
         "sourceLocale": "en",
         "fields": [
           {
-            "key": "labels.showAllVariants",
+            "key": "labels.show-all-variants",
             "kind": "icu",
             "required": true,
             "maxLength": {
@@ -416,7 +416,7 @@
         "sourceLocale": "en",
         "fields": [
           {
-            "key": "labels.showAllVariants",
+            "key": "labels.show-all-variants",
             "kind": "icu",
             "required": true,
             "maxLength": {
@@ -486,7 +486,7 @@
         "sourceLocale": "en",
         "fields": [
           {
-            "key": "labels.showAllVariants",
+            "key": "labels.show-all-variants",
             "kind": "icu",
             "required": true,
             "maxLength": {
@@ -556,7 +556,7 @@
         "sourceLocale": "en",
         "fields": [
           {
-            "key": "labels.showAllVariants",
+            "key": "labels.show-all-variants",
             "kind": "icu",
             "required": true,
             "maxLength": {
@@ -634,7 +634,7 @@
         "sourceLocale": "en",
         "fields": [
           {
-            "key": "labels.showAllVariants",
+            "key": "labels.show-all-variants",
             "kind": "icu",
             "required": true,
             "maxLength": {
@@ -712,7 +712,7 @@
         "sourceLocale": "en",
         "fields": [
           {
-            "key": "labels.showAllVariants",
+            "key": "labels.show-all-variants",
             "kind": "icu",
             "required": true,
             "maxLength": {
@@ -790,7 +790,7 @@
         "sourceLocale": "en",
         "fields": [
           {
-            "key": "labels.showAllVariants",
+            "key": "labels.show-all-variants",
             "kind": "icu",
             "required": true,
             "maxLength": {
@@ -860,7 +860,7 @@
         "sourceLocale": "en",
         "fields": [
           {
-            "key": "labels.showAllVariants",
+            "key": "labels.show-all-variants",
             "kind": "icu",
             "required": true,
             "maxLength": {
@@ -940,7 +940,7 @@
         "sourceLocale": "en",
         "fields": [
           {
-            "key": "labels.showAllVariants",
+            "key": "labels.show-all-variants",
             "kind": "icu",
             "required": true,
             "maxLength": {
@@ -1017,7 +1017,7 @@
         "sourceLocale": "en",
         "fields": [
           {
-            "key": "labels.showAllVariants",
+            "key": "labels.show-all-variants",
             "kind": "icu",
             "required": true,
             "maxLength": {
@@ -1178,7 +1178,7 @@
             "dir": "auto"
           },
           {
-            "key": "roles[].lockedReason",
+            "key": "roles[].locked-reason",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -1187,7 +1187,7 @@
             "dir": "auto"
           },
           {
-            "key": "labels.permissionHeader",
+            "key": "labels.permission-header",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -1205,7 +1205,7 @@
             "dir": "auto"
           },
           {
-            "key": "labels.groupAll",
+            "key": "labels.group-all",
             "kind": "icu",
             "required": false,
             "maxLength": {
@@ -1232,7 +1232,7 @@
             "dir": "auto"
           },
           {
-            "key": "labels.changeSummary",
+            "key": "labels.change-summary",
             "kind": "icu",
             "required": false,
             "maxLength": {
@@ -1343,7 +1343,7 @@
             "dir": "auto"
           },
           {
-            "key": "identity.nameLabel",
+            "key": "identity.name-label",
             "kind": "plain",
             "required": true,
             "maxLength": {
@@ -1361,7 +1361,7 @@
             "dir": "auto"
           },
           {
-            "key": "identity.emailLabel",
+            "key": "identity.email-label",
             "kind": "plain",
             "required": true,
             "maxLength": {
@@ -1619,7 +1619,7 @@
             "dir": "auto"
           },
           {
-            "key": "events[].timeText",
+            "key": "events[].time-text",
             "kind": "plain",
             "required": true,
             "maxLength": {
@@ -1673,7 +1673,7 @@
             "dir": "auto"
           },
           {
-            "key": "labels.changedFrom",
+            "key": "labels.changed-from",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -1682,7 +1682,7 @@
             "dir": "auto"
           },
           {
-            "key": "labels.changedTo",
+            "key": "labels.changed-to",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -2101,7 +2101,7 @@
             "dir": "auto"
           },
           {
-            "key": "entries[].timeText",
+            "key": "entries[].time-text",
             "kind": "plain",
             "required": true,
             "maxLength": {
@@ -2688,7 +2688,7 @@
             "dir": "auto"
           },
           {
-            "key": "records[].editorial.readingTime.value",
+            "key": "records[].editorial.reading-time.value",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -2697,7 +2697,7 @@
             "dir": "auto"
           },
           {
-            "key": "records[].editorial.readingTime.label",
+            "key": "records[].editorial.reading-time.label",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -2724,7 +2724,7 @@
             "dir": "auto"
           },
           {
-            "key": "records[].editorial.outcomeStats[].label",
+            "key": "records[].editorial.outcome-stats[].label",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -2733,7 +2733,7 @@
             "dir": "auto"
           },
           {
-            "key": "records[].editorial.outcomeStats[].value",
+            "key": "records[].editorial.outcome-stats[].value",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -4116,7 +4116,7 @@
             "dir": "auto"
           },
           {
-            "key": "pagination.pageText",
+            "key": "pagination.page-text",
             "kind": "icu",
             "required": false,
             "maxLength": {
@@ -4125,7 +4125,7 @@
             "dir": "auto"
           },
           {
-            "key": "pagination.totalText",
+            "key": "pagination.total-text",
             "kind": "icu",
             "required": false,
             "maxLength": {
@@ -5073,7 +5073,7 @@
             "dir": "auto"
           },
           {
-            "key": "labels.addRule",
+            "key": "labels.add-rule",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -5082,7 +5082,7 @@
             "dir": "auto"
           },
           {
-            "key": "labels.addGroup",
+            "key": "labels.add-group",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -5100,7 +5100,7 @@
             "dir": "auto"
           },
           {
-            "key": "labels.matchAll",
+            "key": "labels.match-all",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -5109,7 +5109,7 @@
             "dir": "auto"
           },
           {
-            "key": "labels.matchAny",
+            "key": "labels.match-any",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -6376,7 +6376,7 @@
             "dir": "auto"
           },
           {
-            "key": "figure.chromeLabel",
+            "key": "figure.chrome-label",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -6550,7 +6550,7 @@
             "dir": "auto"
           },
           {
-            "key": "submit.pendingLabel",
+            "key": "submit.pending-label",
             "kind": "plain",
             "required": true,
             "maxLength": {
@@ -6559,7 +6559,7 @@
             "dir": "auto"
           },
           {
-            "key": "submit.sentMessage",
+            "key": "submit.sent-message",
             "kind": "plain",
             "required": true,
             "maxLength": {
@@ -6568,7 +6568,7 @@
             "dir": "auto"
           },
           {
-            "key": "submit.failedMessage",
+            "key": "submit.failed-message",
             "kind": "plain",
             "required": true,
             "maxLength": {
@@ -6702,7 +6702,7 @@
             "dir": "auto"
           },
           {
-            "key": "notices[].dismissLabel",
+            "key": "notices[].dismiss-label",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -6989,7 +6989,7 @@
             "dir": "auto"
           },
           {
-            "key": "page.previousLabel",
+            "key": "page.previous-label",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -6998,7 +6998,7 @@
             "dir": "auto"
           },
           {
-            "key": "page.nextLabel",
+            "key": "page.next-label",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -7007,7 +7007,7 @@
             "dir": "auto"
           },
           {
-            "key": "page.pageText",
+            "key": "page.page-text",
             "kind": "icu",
             "required": false,
             "maxLength": {
@@ -7025,7 +7025,7 @@
             "dir": "auto"
           },
           {
-            "key": "page.noResultsLabel",
+            "key": "page.no-results-label",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -7034,7 +7034,7 @@
             "dir": "auto"
           },
           {
-            "key": "page.pageSizeLabel",
+            "key": "page.page-size-label",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -7043,7 +7043,7 @@
             "dir": "auto"
           },
           {
-            "key": "total.rangeText",
+            "key": "total.range-text",
             "kind": "icu",
             "required": false,
             "maxLength": {
@@ -7370,7 +7370,7 @@
             "dir": "auto"
           },
           {
-            "key": "plans[].priceByInterval[].amount",
+            "key": "plans[].price-by-interval[].amount",
             "kind": "plain",
             "required": true,
             "maxLength": {
@@ -7379,7 +7379,7 @@
             "dir": "auto"
           },
           {
-            "key": "plans[].priceByInterval[].priceText",
+            "key": "plans[].price-by-interval[].price-text",
             "kind": "plain",
             "required": true,
             "maxLength": {
@@ -7804,7 +7804,7 @@
             "dir": "auto"
           },
           {
-            "key": "pagination.pageText",
+            "key": "pagination.page-text",
             "kind": "icu",
             "required": false,
             "maxLength": {
@@ -7813,7 +7813,7 @@
             "dir": "auto"
           },
           {
-            "key": "pagination.totalText",
+            "key": "pagination.total-text",
             "kind": "icu",
             "required": false,
             "maxLength": {
@@ -8315,7 +8315,7 @@
             "dir": "auto"
           },
           {
-            "key": "credentials.identifierLabel",
+            "key": "credentials.identifier-label",
             "kind": "plain",
             "required": true,
             "maxLength": {
@@ -8324,7 +8324,7 @@
             "dir": "auto"
           },
           {
-            "key": "credentials.identifierPlaceholder",
+            "key": "credentials.identifier-placeholder",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -8333,7 +8333,7 @@
             "dir": "auto"
           },
           {
-            "key": "credentials.passwordLabel",
+            "key": "credentials.password-label",
             "kind": "plain",
             "required": true,
             "maxLength": {
@@ -8342,7 +8342,7 @@
             "dir": "auto"
           },
           {
-            "key": "credentials.passwordPlaceholder",
+            "key": "credentials.password-placeholder",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -8351,7 +8351,7 @@
             "dir": "auto"
           },
           {
-            "key": "verification.codeLabel",
+            "key": "verification.code-label",
             "kind": "plain",
             "required": true,
             "maxLength": {
@@ -8928,7 +8928,7 @@
             "dir": "auto"
           },
           {
-            "key": "labels.notOffered",
+            "key": "labels.not-offered",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -9627,7 +9627,7 @@
             "dir": "auto"
           },
           {
-            "key": "quotes[].attributorName",
+            "key": "quotes[].attributor-name",
             "kind": "plain",
             "required": true,
             "maxLength": {
@@ -9636,7 +9636,7 @@
             "dir": "auto"
           },
           {
-            "key": "quotes[].attributorRole",
+            "key": "quotes[].attributor-role",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -9756,7 +9756,7 @@
             "dir": "auto"
           },
           {
-            "key": "events[].dateText",
+            "key": "events[].date-text",
             "kind": "plain",
             "required": true,
             "maxLength": {
@@ -9891,7 +9891,7 @@
             "dir": "auto"
           },
           {
-            "key": "meters[].usedText",
+            "key": "meters[].used-text",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -9900,7 +9900,7 @@
             "dir": "auto"
           },
           {
-            "key": "meters[].limitText",
+            "key": "meters[].limit-text",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -9909,7 +9909,7 @@
             "dir": "auto"
           },
           {
-            "key": "meters[].periodText",
+            "key": "meters[].period-text",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -9981,7 +9981,7 @@
             "dir": "auto"
           },
           {
-            "key": "meters[].projectedText",
+            "key": "meters[].projected-text",
             "kind": "plain",
             "required": false,
             "maxLength": {

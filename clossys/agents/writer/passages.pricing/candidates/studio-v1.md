@@ -22,10 +22,10 @@ Clossys Foundry
 <!-- {"id":"studio.pricing.plans.0.cta.label","bindings":[]} -->
 Read the license
 
-### studio.pricing.plans.0.priceByInterval.0.amount
-<!-- {"id":"studio.pricing.plans.0.priceByInterval.0.amount","bindings":[]} -->
+### studio.pricing.plans.0.price-by-interval.0.amount
+<!-- {"id":"studio.pricing.plans.0.price-by-interval.0.amount","bindings":[]} -->
 Free
 
-### studio.pricing.plans.0.priceByInterval.0.priceText
-<!-- {"id":"studio.pricing.plans.0.priceByInterval.0.priceText","bindings":[],"evidence":"finding:writer-owner-answers-2026-11-03"} -->
+### studio.pricing.plans.0.price-by-interval.0.price-text
+<!-- {"id":"studio.pricing.plans.0.price-by-interval.0.price-text","bindings":[],"evidence":"finding:writer-owner-answers-2026-11-03"} -->
 Free. MIT licensed.

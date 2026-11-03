@@ -255,7 +255,7 @@
           "dir": "auto"
         },
         {
-          "key": "entries[].timeText",
+          "key": "entries[].time-text",
           "kind": "plain",
           "required": true,
           "maxLength": {

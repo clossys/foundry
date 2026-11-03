@@ -14,12 +14,12 @@ Fill progress
 <!-- {"id":"studio.fill-progress.meters.0.label","bindings":[]} -->
 Slots with a candidate
 
-### studio.fill-progress.meters.0.usedText
-<!-- {"id":"studio.fill-progress.meters.0.usedText","bindings":[]} -->
+### studio.fill-progress.meters.0.used-text
+<!-- {"id":"studio.fill-progress.meters.0.used-text","bindings":[]} -->
 {filled} filled
 
-### studio.fill-progress.meters.0.limitText
-<!-- {"id":"studio.fill-progress.meters.0.limitText","bindings":[]} -->
+### studio.fill-progress.meters.0.limit-text
+<!-- {"id":"studio.fill-progress.meters.0.limit-text","bindings":[]} -->
 of {total}
 
 ### studio.fill-progress.states.loading.label
