@@ -333,7 +333,7 @@ export function isRetentionExpired(reviewBy, now = new Date()) {
  * Parses docs/contracts/package-retention.json into a Map from package name
  * to its `{ reason, reviewBy }` declaration. Pure, no network. Used only by
  * both halves of this gate — PR/offline via checkInTreeDeprecatedRetention,
- * live/scheduled via findUndeclaredPackages (issue #449).
+ * live/on-demand via findUndeclaredPackages (issue #449).
  */
 export function selectRetentionDeclarations(retention) {
   const byName = new Map();
@@ -623,7 +623,7 @@ async function main() {
           `PACKAGE VISIBILITY DECLARATIONS OK — active release target "${target.id}" (${target.scope} at ${target.registry}) resolved cleanly, ` +
             `and ${deprecatedChecked} "deprecated" package(s) under that scope declare valid retention.`,
         );
-        console.log("Live registry visibility is NOT checked here; that half runs anonymously (no credential) on schedule.");
+        console.log("Live registry visibility is NOT checked here; that half runs anonymously (no credential) on demand: npm run probe:package-visibility.");
       } else {
         console.log("");
         console.log("PACKAGE VISIBILITY DECLARATIONS FAIL — see FIND lines above. This is the offline half of the gate.");
