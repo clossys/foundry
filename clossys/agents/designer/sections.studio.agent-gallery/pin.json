@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-agent-gallery-v9.json",
-  "sha256": "b4fed075b18a2142fb693c51fcc2f8d1b72d6359eb394194d46d5e68ef74d759",
+  "candidate": "studio-agent-gallery-v10.json",
+  "sha256": "b365655d0861d08c051c3f033a25e7556d88f8602188b71b9721e1799ad0d588",
   "pinnedBy": "owner:2026-11-03 fix-all",
-  "at": "2026-11-03T10:10:51Z"
+  "at": "2026-11-03T11:30:00Z"
 }

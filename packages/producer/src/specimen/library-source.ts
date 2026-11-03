@@ -3,8 +3,9 @@
  * hold agents/designer/ia.json; no legacy library or selection store is read.
  * Publisher renders the validated inline registry item and its recorded preview.
  */
-import { resolve } from "node:path";
-import { recordStoreSource, type SpecimenElementVersion, type SpecimenRecordSource, type SpecimenRecordStore } from "@clossys/publisher/specimen";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { join, posix, resolve } from "node:path";
+import { installedPath, recordStoreSource, type SpecimenAliasContext, type SpecimenElementVersion, type SpecimenRecordSource, type SpecimenRecordStore } from "@clossys/publisher/specimen";
 import { listSlots, readCandidate, readSlot, readSlotEntry, type SlotEntry } from "../records/slots.js";
 import { CANDIDATE_NAME, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
 import { RecordError } from "../records/validate.js";
@@ -15,6 +16,13 @@ export interface LibrarySourceOptions {
   /** Canonical consumer roots, searched in order. */
   readonly roots: readonly string[];
   readonly defaultTheme?: string;
+  /**
+   * The stock shadcn registry base an install falls back to (a directory laid out as installed:
+   * `components/ui/*.tsx`, `hooks/*.ts`, `lib/*.ts`). It answers an `@/` import only when no pinned
+   * candidate installs it and the importing closure declares that name in `registryDependencies`,
+   * exactly as `shadcn add` fetches an unnamespaced dependency from the shadcn registry.
+   */
+  readonly registryBase?: string;
 }
 
 function versions(entry: SlotEntry, element: string): { name: string; version: number }[] {
@@ -60,10 +68,91 @@ export function pinnedLibraryVersion(root: string, slot: string, element: string
   return pinnedVersionOf(readSlotEntry(root, "designer", slot), element);
 }
 
+const CODE_EXT = [".tsx", ".ts", ".jsx", ".js"];
+const stripExt = (path: string) => path.replace(/\.(?:[cm]?[jt]sx?)$/, "");
+interface Provider { readonly id: string; readonly content: string }
+type InstallIndex = ReadonlyMap<string, readonly Provider[]>;
+
+/** `@/<path>` (no extension) -> the pinned Designer elements whose registry files install it. */
+function installIndex(roots: readonly string[]): InstallIndex {
+  const index = new Map<string, Provider[]>();
+  for (const root of roots) {
+    const own = new Map<string, Provider[]>();
+    for (const entry of listSlots(root, "designer")) {
+      const match = entry.pin && CANDIDATE_NAME.exec(entry.pin.candidate);
+      if (!match || match[3] !== "json") continue;
+      let item: { files?: { path?: unknown; type?: unknown; target?: unknown; content?: unknown }[] };
+      try { item = JSON.parse(readCandidate(root, "designer", entry.id, entry.pin!.candidate).bytes); } catch { continue; }
+      const id = `${entry.id}/${match[1]}`;
+      for (const file of item.files ?? []) {
+        if (typeof file.path !== "string" || typeof file.content !== "string") continue;
+        const installed = installedPath({ path: file.path, ...(typeof file.type === "string" ? { type: file.type } : {}), ...(typeof file.target === "string" ? { target: file.target } : {}) });
+        if (!installed || !CODE_EXT.some(ext => installed.endsWith(ext))) continue;
+        const key = stripExt(installed);
+        own.set(key, [...(own.get(key) ?? []), { id, content: file.content }]);
+      }
+    }
+    // The first consumer root that installs a path owns it, as in element lookup.
+    for (const [key, providers] of own) if (!index.has(key)) index.set(key, providers);
+  }
+  return index;
+}
+
+/**
+ * The one provider of an installed path: alone, else the slot named after the file
+ * (`components/ui/button` -> `components.button`), else identical bytes; otherwise ambiguous.
+ */
+export function aliasProvider(index: InstallIndex, alias: string): string | undefined {
+  const providers = index.get(stripExt(alias)) ?? index.get(`${stripExt(alias)}/index`);
+  if (!providers?.length) return undefined;
+  if (providers.length === 1) return providers[0]!.id;
+  const base = posix.basename(stripExt(alias));
+  const named = providers.filter(row => row.id.split("/")[0]!.split(".").at(-1) === base);
+  if (named.length === 1) return named[0]!.id;
+  if (providers.every(row => row.content === providers[0]!.content)) return [...providers].sort((a, b) => a.id.localeCompare(b.id))[0]!.id;
+  throw new Error(`@/${alias} is installed by ${providers.length} pinned candidates (${providers.map(row => row.id).join(", ")})`);
+}
+
+/** The stock registry file for `@/<alias>`, only when the closure declares it a registry dependency. */
+function registryBaseItem(base: string, alias: string, context: SpecimenAliasContext): SpecimenElementVersion | undefined {
+  const name = posix.basename(stripExt(alias));
+  if (!context.registryDependencies.includes(name) || alias.split("/").some(part => part === ".." || part === "." || !part)) return undefined;
+  for (const ext of CODE_EXT) {
+    const file = join(base, `${stripExt(alias)}${ext}`);
+    if (!existsSync(file)) continue;
+    const content = readFileSync(file, "utf8");
+    const target = `${stripExt(alias)}${ext}`;
+    const raw = JSON.stringify({ name, type: "registry:ui", files: [{ path: target, type: "registry:ui", target, content }] });
+    return { id: `registry/${name}`, version: 1, kind: "visual", layer: "components", files: [{ path: `${name}.json`, content: raw }], preview: {}, contentHash: "" };
+  }
+  return undefined;
+}
+
+/** A fingerprint of every Designer pin (path + mtime + size), so an edited pin rebuilds the index. */
+function pinFingerprint(roots: readonly string[]): string {
+  return roots.flatMap(root => listSlots(root, "designer").map(entry => {
+    try { const stat = statSync(join(entry.dir, "pin.json")); return `${entry.id}:${stat.mtimeMs}:${stat.size}`; } catch { return `${entry.id}:-`; }
+  })).join("|");
+}
+
 /** Every byte and the pin come from the common model reader. No store fallback. */
-export function libraryRecordStore(rootsIn: readonly string[]): SpecimenRecordStore {
+export function libraryRecordStore(rootsIn: readonly string[], options: { readonly registryBase?: string } = {}): SpecimenRecordStore {
   const roots = rootsIn.map(root => resolve(root));
-  return {
+  let cached: { at: number; fingerprint: string; index: InstallIndex } | undefined;
+  const index = (): InstallIndex => {
+    // One fingerprint pass per second at most: alias lookups come in bursts per build.
+    const now = Date.now();
+    if (cached && now - cached.at < 1000) return cached.index;
+    const fingerprint = pinFingerprint(roots);
+    cached = { at: now, fingerprint, index: cached?.fingerprint === fingerprint ? cached.index : installIndex(roots) };
+    return cached.index;
+  };
+  const store: SpecimenRecordStore = {
+    async alias(alias, context) {
+      const id = aliasProvider(index(), alias);
+      if (id) return store.load(id);
+      return options.registryBase ? registryBaseItem(options.registryBase, alias, context) : undefined;
+    },
     async load(id, version) {
       const where = findLibraryElement(roots, id);
       if (!where) return undefined;
@@ -90,6 +179,7 @@ export function libraryRecordStore(rootsIn: readonly string[]): SpecimenRecordSt
       return row;
     },
   };
+  return store;
 }
 
 /**
@@ -123,7 +213,7 @@ function previewWithTree(root: string, where: string, item: { files?: { path?: u
 }
 
 export function libraryRecordSource(options: LibrarySourceOptions): SpecimenRecordSource {
-  return recordStoreSource(libraryRecordStore(options.roots), options.defaultTheme ? { defaultTheme: options.defaultTheme } : {});
+  return recordStoreSource(libraryRecordStore(options.roots, options.registryBase ? { registryBase: options.registryBase } : {}), options.defaultTheme ? { defaultTheme: options.defaultTheme } : {});
 }
 
 /** Actual candidate identities, in IA slots only; first consumer wins a repeat. */

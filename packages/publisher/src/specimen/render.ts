@@ -113,7 +113,7 @@ export function renderSpecimenPage(input: SpecimenPageInput): string {
     body = `<div class="specimen-missing" data-specimen-missing><strong>${escapeHtml(query.element)}${query.version ? `@v${query.version}` : ""}</strong><br>No such element record.</div>`;
   } else if (record.kind === "visual") {
     const props = resolveFixtures(record.preview.fixtures ?? {}, record.preview.copy);
-    body = `<div id="specimen-root"></div><script type="application/json" id="specimen-props">${scriptJson({ props, export: record.preview.export ?? null })}</script>`;
+    body = `<div id="specimen-root"></div><script type="application/json" id="specimen-props">${scriptJson({ props, export: record.preview.export ?? build?.export ?? null })}</script>`;
     if (build?.js) scripts = `<script type="module" src="${escapeHtml(input.assetBase + build.hash)}.js"></script>`;
   } else if (record.kind === "text") {
     body = renderText(record);

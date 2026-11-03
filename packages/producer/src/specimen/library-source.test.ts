@@ -8,7 +8,8 @@ import { listSlots, readCandidate } from "../records/slots.js";
 import { candidatesDir, jsonBytes, pinFile, slotFile } from "../records/slot-model/index.js";
 import { sha256Hex } from "../records/hash.js";
 import { canonicalLibrary } from "./__fixtures__/canonical-library.js";
-import { libraryRecordSource, libraryRecordStore, listLibraryElements, locateLibraryElement, pinnedLibraryVersion } from "./library-source.js";
+import { createSpecimenBuilder } from "@clossys/publisher/specimen";
+import { aliasProvider, libraryRecordSource, libraryRecordStore, listLibraryElements, locateLibraryElement, pinnedLibraryVersion } from "./library-source.js";
 
 let root: string;
 beforeEach(async () => { root = await canonicalLibrary(mkdtempSync(join(tmpdir(), "producer-slot-source-"))); });
@@ -160,5 +161,37 @@ describe("canonical specimen records through the common slot reader", () => {
     writeFileSync(join(candidatesDir(other.dir), "sample-card-v1.json"), readFileSync(candidate()));
     expect(() => locateLibraryElement([root], "sample-card")).toThrow(/2 slots/);
     expect(locateLibraryElement([root], "components.card/sample-card")).toMatchObject({ slot: "components.card" });
+  });
+
+  it("resolves `@/` to the consumer's pinned candidate by its install path, the mapping the app build uses", async () => {
+    const repo = fileURLToPath(new URL("../../../../", import.meta.url));
+    const consumer = join(repo, "clossys"), registryBase = join(repo, "packages/designer/ui/src");
+    const store = libraryRecordStore([consumer], { registryBase });
+    const button = listSlots(consumer, "designer").find(entry => entry.id === "components.button")!;
+    // registry:ui `button.tsx` installs at components/ui/button; the slot named after the file wins a shared path.
+    expect((await store.alias!("components/ui/button", { registryDependencies: [] }))!.id).toBe(`components.button/${button.pin!.candidate.replace(/-v\d+\.json$/, "")}`);
+    // The stock registry base answers only a declared registry dependency no pin installs.
+    expect(await store.alias!("hooks/use-mobile", { registryDependencies: [] })).toBeUndefined();
+    expect((await store.alias!("hooks/use-mobile", { registryDependencies: ["use-mobile"] }))!.id).toBe("registry/use-mobile");
+    expect(await libraryRecordStore([consumer]).alias!("hooks/use-mobile", { registryDependencies: ["use-mobile"] })).toBeUndefined();
+    expect(await store.alias!("components/ui/../../secret", { registryDependencies: ["secret"] })).toBeUndefined();
+    // End to end: Sidebar's `@/components/ui/*` and `@/hooks/use-mobile` imports all bundle.
+    const source = libraryRecordSource({ roots: [consumer], registryBase });
+    const sidebar = await source.read("components.sidebar/sidebar");
+    const built = await createSpecimenBuilder({ workspace: repo }).build(sidebar!, source);
+    expect(built.errors).toEqual([]);
+    expect(built.js).toContain("SidebarProvider");
+  }, 60_000);
+
+  it("names a shared install path's provider by slot name or identical bytes, else reports the ambiguity", () => {
+    const index = new Map([
+      ["components/ui/button", [{ id: "components.link/link", content: "a" }, { id: "components.button/button", content: "b" }]],
+      ["components/ui/chart", [{ id: "components.area-chart/x", content: "same" }, { id: "components.bar-chart/y", content: "same" }]],
+      ["components/ui/field", [{ id: "components.form/a", content: "1" }, { id: "components.fieldset/b", content: "2" }]],
+    ]);
+    expect(aliasProvider(index, "components/ui/button")).toBe("components.button/button");
+    expect(aliasProvider(index, "components/ui/chart.tsx")).toBe("components.area-chart/x");
+    expect(() => aliasProvider(index, "components/ui/field")).toThrow(/installed by 2 pinned candidates/);
+    expect(aliasProvider(index, "components/ui/none")).toBeUndefined();
   });
 });

@@ -994,7 +994,7 @@
     {
       "slot": "sections.studio.agent-gallery",
       "element": "studio-agent-gallery",
-      "version": 9
+      "version": 10
     },
     {
       "slot": "sections.studio.leaf-header",

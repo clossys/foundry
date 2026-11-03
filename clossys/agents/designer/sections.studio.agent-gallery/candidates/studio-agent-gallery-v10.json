@@ -1,0 +1,112 @@
+{
+  "name": "studio-agent-gallery",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "GalleryHeader.tsx",
+      "type": "registry:file",
+      "content": "import { Badge, CardAction, CardDescription, CardHeader, CardTitle } from '@clossys/designer-ui';\nimport type { GalleryHeaderData } from './types';\n\n/** The agent name, its one-line purpose and how many of its slots are pinned. */\nexport function GalleryHeader({ header }: { header: GalleryHeaderData }) {\n  return <CardHeader className=\"px-0\">\n    <CardTitle role=\"heading\" aria-level={1} className=\"text-xl\">{header.title}</CardTitle>\n    <CardDescription>{header.description}</CardDescription>\n    <CardAction><Badge variant=\"secondary\" data-gallery-pinned=\"\">{header.pinned}</Badge></CardAction>\n    {header.notice && <CardDescription><Badge variant=\"outline\">{header.notice}</Badge></CardDescription>}\n  </CardHeader>;\n}\n"
+    },
+    {
+      "path": "GroupSection.tsx",
+      "type": "registry:file",
+      "content": "import { CardContent, CardTitle } from '@clossys/designer-ui';\nimport { LeafCard } from './LeafCard';\nimport type { GallerySectionData } from './types';\n\n/** An L2 group: an anchored heading over its slot cards in a grid that fills the width (cards at least 18rem; one column on a phone). */\nexport function GroupSection({ section }: { section: GallerySectionData }) {\n  const heading = `${section.id}-heading`;\n  return <section id={section.id} aria-labelledby={heading}>\n    <CardTitle id={heading} role=\"heading\" aria-level={2}>{section.label}</CardTitle>\n    <CardContent className=\"grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] gap-4 px-0 pt-4\" data-layout=\"grid\">\n      {section.cards.map(card => <LeafCard key={card.key} card={card} level={3} />)}\n    </CardContent>\n  </section>;\n}\n"
+    },
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "LayerSection.tsx",
+      "type": "registry:file",
+      "content": "import { Badge, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsContent, TabsList, TabsTrigger } from '@clossys/designer-ui';\nimport { GroupSection } from './GroupSection';\nimport type { GalleryLayerData } from './types';\n\n/**\n * One L0 tab's body: the L1 groups as a vertical tab list with slot counts beside the selected\n * group's cards; below `lg` the list collapses to a select above the content. Only the selected\n * group's panel renders. The list uses the default variant: nested in the L0 tabs, the line\n * variant's indicator also matches the outer horizontal group and collapses to a dot.\n */\nexport function LayerSection({ layer, group, onGroup }: { layer: GalleryLayerData; group: string; onGroup: (group: string) => void }) {\n  return <Tabs orientation=\"vertical\" selectedKey={group} onSelectionChange={key => onGroup(String(key))} className=\"flex-col gap-4 lg:flex-row lg:gap-6\">\n    <Select aria-label={layer.label} selectedKey={group} onSelectionChange={key => key !== null && onGroup(String(key))} className=\"w-full lg:hidden\">\n      <SelectTrigger><SelectValue /></SelectTrigger>\n      <SelectContent>\n        {layer.groups.map(row => <SelectItem key={row.id} id={row.id} textValue={row.label}>{row.label}<Badge variant=\"secondary\" className=\"ml-auto\">{row.count}</Badge></SelectItem>)}\n      </SelectContent>\n    </Select>\n    <TabsList aria-label={layer.label} className=\"hidden w-56 shrink-0 items-stretch self-start lg:flex\">\n      {layer.groups.map(row => <TabsTrigger key={row.id} id={row.id}>{row.label}<Badge variant=\"secondary\" className=\"ml-auto\">{row.count}</Badge></TabsTrigger>)}\n    </TabsList>\n    {layer.groups.map(row => <TabsContent key={row.id} id={row.id} className=\"flex min-w-0 flex-1 flex-col gap-8\">\n      {row.sections.map(section => <GroupSection key={section.id} section={section} />)}\n    </TabsContent>)}\n  </Tabs>;\n}\n"
+    },
+    {
+      "path": "LeafCard.tsx",
+      "type": "registry:file",
+      "content": "import { Badge, Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle, LinkButton, Skeleton } from '@clossys/designer-ui';\nimport { SpecimenContent } from '../studio-specimen';\nimport type { GalleryCardData } from './types';\n\n/**\n * One L3 slot as a card: the header names it (a link to its L3 page) with its one state badge;\n * the body is the live preview of the shown state. An empty slot has no body, so its state\n * reads once. Options, history and contract stay on the slot page.\n */\nexport function LeafCard({ card, level }: { card: GalleryCardData; level: number }) {\n  return <Card size=\"sm\" data-gallery-leaf={card.key} data-state={card.state} className=\"min-w-0\">\n    <CardHeader>\n      <CardTitle role=\"heading\" aria-level={level}>\n        <LinkButton href={card.href} variant=\"link\" className=\"h-auto p-0 text-left whitespace-normal text-foreground\">{card.name}</LinkButton>\n      </CardTitle>\n      <CardAction><Badge variant={card.statusTone}>{card.statusLabel}</Badge></CardAction>\n    </CardHeader>\n    {card.specimen\n      ? <SpecimenContent specimen={card.specimen} />\n      : card.specimenStatus?.loading\n        ? <CardContent><Skeleton className=\"aspect-video w-full\" aria-label={card.specimenStatus.label} /></CardContent>\n        : card.specimenStatus && <CardContent><CardDescription data-preview-status=\"status\">{card.specimenStatus.label}</CardDescription></CardContent>}\n  </Card>;\n}\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:file",
+      "content": "import { ScrollArea, Tabs, TabsContent, TabsList, TabsTrigger } from '@clossys/designer-ui';\nimport { GalleryHeader } from './GalleryHeader';\nimport { LayerSection } from './LayerSection';\nimport type { AgentGalleryInput } from './types';\n\nexport type { AgentGalleryInput, GalleryCardData, GalleryCardState, GalleryGroupData, GalleryHeaderData, GalleryLayerData, GallerySectionData, GallerySelection, GalleryTone } from './types';\n\n/**\n * `sections.studio.agent-gallery`: the one layout every agent page shares. The header names the\n * agent, its purpose and its pinned count; L0 layers are line tabs (scrolling sideways on narrow\n * screens); each tab lists its L1 groups beside the selected group's L2 headings and slot cards.\n * The page holds the selection (in the URL); the section only lays it out.\n */\nexport default function AgentGallerySection({ gallery }: { gallery: AgentGalleryInput }) {\n  const { layers, selection, onSelect } = gallery;\n  const firstGroup = (layer: string) => layers.find(row => row.id === layer)?.groups[0]?.id ?? '';\n  return <section data-studio-section=\"agent-gallery\" aria-label={gallery.header.title}>\n    <GalleryHeader header={gallery.header} />\n    <Tabs selectedKey={selection.layer} onSelectionChange={key => onSelect?.({ layer: String(key), group: firstGroup(String(key)) })} className=\"gap-6 pt-2\">\n      <ScrollArea className=\"-mx-1 px-1 pb-2\">\n        <TabsList variant=\"line\" aria-label={gallery.header.title}>\n          {layers.map(layer => <TabsTrigger key={layer.id} id={layer.id}>{layer.label}</TabsTrigger>)}\n        </TabsList>\n      </ScrollArea>\n      {layers.map(layer => <TabsContent key={layer.id} id={layer.id}>\n        <LayerSection layer={layer} group={layer.id === selection.layer ? selection.group : firstGroup(layer.id)} onGroup={group => onSelect?.({ layer: layer.id, group })} />\n      </TabsContent>)}\n    </Tabs>\n  </section>;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"studio-agent-gallery\",\n  \"type\": \"registry:block\",\n  \"title\": \"Agent Gallery\",\n  \"description\": \"One shared agent page: a header with the pinned count, stock Tabs for L0, a left list (Select on narrow screens) for L1, a heading per L2 and a responsive card grid of L3 slots.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [],\n  \"registryDependencies\": [\n    \"badge\",\n    \"card\",\n    \"scroll-area\",\n    \"select\",\n    \"skeleton\",\n    \"tabs\",\n    \"button\"\n  ],\n  \"files\": [\n    {\n      \"path\": \"GalleryHeader.tsx\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/studio-agent-gallery/GalleryHeader.tsx\"\n    },\n    {\n      \"path\": \"GroupSection.tsx\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/studio-agent-gallery/GroupSection.tsx\"\n    },\n    {\n      \"path\": \"LayerSection.tsx\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/studio-agent-gallery/LayerSection.tsx\"\n    },\n    {\n      \"path\": \"LeafCard.tsx\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/studio-agent-gallery/LeafCard.tsx\"\n    },\n    {\n      \"path\": \"index.tsx\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/studio-agent-gallery/index.tsx\"\n    },\n    {\n      \"path\": \"types.ts\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/studio-agent-gallery/types.ts\"\n    }\n  ]\n}\n"
+    },
+    {
+      "path": "types.ts",
+      "type": "registry:file",
+      "content": "import type { SpecimenInput } from '../studio-specimen';\n\n/** View data for any agent's gallery. Every field is display-ready; the blocks only lay it out. */\nexport type GalleryTone = 'secondary' | 'outline' | 'destructive';\n\n/** The one state a slot card shows: its pin, its waiting options, nothing yet, or a failing record. */\nexport type GalleryCardState = 'pinned' | 'options' | 'empty' | 'failing';\n\nexport interface GalleryCardData {\n  key: string;\n  /** The slot label without its L0 prefix (\"Background\", not \"Themes background\"). */\n  name: string;\n  state: GalleryCardState;\n  /** The one state badge: Pinned, N options or the empty-slot label. */\n  statusLabel: string;\n  statusTone: GalleryTone;\n  /** The slot's L3 detail route. */\n  href: string;\n  /**\n   * The full live preview of the shown state, in the shape the leaf page's specimen section takes:\n   * a Designer item or a Publisher page framed at desktop width, a Writer or Director record's content.\n   */\n  specimen?: SpecimenInput;\n  /** Set while the preview loads (`loading`) or when it could not load. An empty slot has neither. */\n  specimenStatus?: { label: string; tone: GalleryTone; loading?: boolean };\n}\n\n/** An L2 group: a heading over its slot cards. */\nexport interface GallerySectionData { id: string; label: string; cards: readonly GalleryCardData[] }\n\n/** An L1 group: one entry of the left list (with its slot count) and the L2 groups it shows. */\nexport interface GalleryGroupData { id: string; label: string; count: number; sections: readonly GallerySectionData[] }\n\n/** An L0 layer: one tab. */\nexport interface GalleryLayerData { id: string; label: string; groups: readonly GalleryGroupData[] }\n\nexport interface GalleryHeaderData {\n  title: string;\n  /** The agent's one-line purpose. */\n  description: string;\n  /** \"X of Y slots pinned\". */\n  pinned: string;\n  /** Shown when the leaves are grouped by record kind because the agent has no IA data. */\n  notice?: string;\n}\n\n/** The tab (L0) and group (L1) on screen; the page keeps them in the URL. */\nexport interface GallerySelection { layer: string; group: string }\n\n/** The `gallery` input of `sections.studio.agent-gallery`: one agent's library, display-ready. */\nexport interface AgentGalleryInput {\n  header: GalleryHeaderData;\n  layers: readonly GalleryLayerData[];\n  selection: GallerySelection;\n  onSelect?: (selection: GallerySelection) => void;\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.studio.agent-gallery",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "create",
+        "studio-current-ui-draft-studio-agent-gallery-20261101",
+        "{\"registry\":\"foundry\",\"item\":\"packages/producer/studio/sections/studio-agent-gallery\",\"version\":\"902f695cc3720af807baa814508b67a769dcda4c\",\"url\":\"https://github.com/clossys/foundry/tree/902f695cc3720af807baa814508b67a769dcda4c/packages/producer/studio/sections/studio-agent-gallery\",\"hash\":\"sha256:4d1de16f494976370347b3d7dc7db12b3e3bac8b713ca4b56a81fb78126865ca\"}",
+        "{\"version\":7,\"hash\":\"sha256:ed5ccb651eecee332eae3adda642964a48b51f3ad19eac81df781ae0eedeabcf\"}"
+      ],
+      "hash": "sha256:b83a2051172c79906f68da92e1ba7c4a661f8b3c7c69fde3c4d87d97a41735f6",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "studio-agent-gallery",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.studio.agent-gallery",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "SPECIMEN-BUILDS"
+      },
+      "reason": "SPECIMEN-BUILDS: the L2 card grid auto-fills the content width (minmax 18rem, one column at phone width) instead of stopping at fixed 1/2/3 breakpoints.",
+      "createdAt": "2026-11-03T11:30:00.000Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": [
+          {
+            "slot": "sections.studio.specimen",
+            "element": "studio-specimen",
+            "version": 7,
+            "hash": "sha256:f42b7be7353b914ebed19a919838c0fb7c9c0fd9ceae09cb2fd8d01b400dfbd9"
+          }
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--card",
+          "--card-foreground",
+          "--muted-foreground",
+          "--border"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

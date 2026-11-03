@@ -15,7 +15,7 @@ import { createHash } from "node:crypto";
 import { readdir, readFile, realpath, stat } from "node:fs/promises";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { SPECIMEN_CONTAINERS, SPECIMEN_KINDS, SPECIMEN_TEXT_ROLES } from "./types.js";
-import type { SpecimenCopy, SpecimenFile, SpecimenKind, SpecimenPreview, SpecimenRecord, SpecimenRecordSource, SpecimenTheme } from "./types.js";
+import type { SpecimenAliasContext, SpecimenCopy, SpecimenFile, SpecimenKind, SpecimenPreview, SpecimenRecord, SpecimenRecordSource, SpecimenTheme } from "./types.js";
 
 /** Element ids are path-like (`slot/element`), never absolute, never dotted segments. */
 export const SPECIMEN_ID = /^[A-Za-z0-9@][A-Za-z0-9@._-]*(?:\/[A-Za-z0-9@][A-Za-z0-9@._-]*)*$/;
@@ -99,7 +99,7 @@ function payloadFiles(path: string, raw: string): SpecimenFile[] {
   try { item = JSON.parse(raw); } catch { throw new Error(`payload ${path} is not valid JSON`); }
   if (!isRecord(item) || !Array.isArray(item.files)) return [];
   return item.files.filter((file: unknown): file is Record<string, any> => isRecord(file) && typeof file.path === "string" && typeof file.content === "string")
-    .map(file => ({ path: file.path, content: file.content, ...(typeof file.type === "string" ? { type: file.type } : {}) }));
+    .map(file => ({ path: file.path, content: file.content, ...(typeof file.type === "string" ? { type: file.type } : {}), ...(typeof file.target === "string" ? { target: file.target } : {}) }));
 }
 
 function hashFiles(files: readonly { name: string; bytes: string }[]): string {
@@ -137,6 +137,8 @@ export interface SpecimenElementVersion {
 /** A record store: one version of an id (the highest when `version` is omitted), or undefined. */
 export interface SpecimenRecordStore {
   load(id: string, version?: number): Promise<SpecimenElementVersion | undefined>;
+  /** The element version whose registry files install `@/<path>` (see SpecimenRecordSource.alias). */
+  alias?(path: string, context: SpecimenAliasContext): Promise<SpecimenElementVersion | undefined>;
 }
 
 /** Map one validated element version onto the renderer's minimal record. Pure. */
@@ -170,6 +172,7 @@ export function recordStoreSource(store: SpecimenRecordStore, options: { readonl
       const record = await read(id);
       return record ? adaptTheme(record.id, record.payload.raw, record.contentHash) : undefined;
     },
+    ...(store.alias ? { async alias(path: string, context: SpecimenAliasContext) { const row = await store.alias!(path, context); return row ? specimenRecordFrom(row) : undefined; } } : {}),
   };
 }
 
