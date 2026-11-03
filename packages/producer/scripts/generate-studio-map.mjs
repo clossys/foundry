@@ -10,6 +10,7 @@ import { validateSlotContract } from '../dist/records/validate.js';
 import { publishNext } from '../dist/publish/install-next.js';
 import { expandPublication } from '../dist/publish/expand-tabs.js';
 import { checkPayload } from './studio-payload.mjs';
+import { brandJson, iconsModule, provenanceJson } from './check-generated-derived.mjs';
 import { draftStudioItems, previewArguments, previewDescriptor, previewOptionsFromEnvironment } from './studio-draft-items.mjs';
 
 const studioRoot = fileURLToPath(new URL('../studio/', import.meta.url));
@@ -158,7 +159,7 @@ function pinnedItem(clossysRoot, entries, slot) {
   const version = Number(/-v([1-9][0-9]*)\.json$/.exec(pin.candidate)?.[1] ?? 0);
   if (!version) fail(`${slot} pins a non-element candidate ${pin.candidate}`);
   const files = new Map(item.files.map(file => [file.path, Buffer.from(file.content, 'utf8')]));
-  return { slot, element: item.name, version, files, payload: [...files.keys()], studioDir: join(studioRoot, folder, item.name), module: `../${folder}/${item.name}` };
+  return { slot, element: item.name, version, candidate: pin.candidate, sha256: pin.sha256, files, payload: [...files.keys()], studioDir: join(studioRoot, folder, item.name), module: `../${folder}/${item.name}` };
 }
 
 // Studio copy slots, by slot id: folders are flat (agents/writer/<slot-id>), so a
@@ -333,8 +334,9 @@ export const studioLeaves = projection.leaves as readonly StudioLeaf[];
 /** The top-level groups of the content map: the agents, in map order. */
 export const studioAgents = studioMap.entries.filter(row => row.kind === 'group' && !row.parentId).sort((a, b) => a.order - b.order).map(row => ({ id: row.id, label: row.title }));
 `;
-  const bindings = `${assemblyBanner}import type { ComponentType } from 'react';
+  const bindings = `${assemblyBanner}import { createElement, type ComponentType } from 'react';
 import type { StudioShellProps } from '../frames/studio-shell';
+import provenance from './studio-provenance.json';
 ${frames.map((item, i) => `import Frame${i} from ${JSON.stringify(item.module)};`).join('\n')}
 ${sections.map((item, i) => `import Section${i} from ${JSON.stringify(item.module)};`).join('\n')}
 
@@ -342,16 +344,23 @@ ${sections.map((item, i) => `import Section${i} from ${JSON.stringify(item.modul
 export const studioFrames: Record<string, ComponentType<StudioShellProps>> = {
 ${frames.map((item, i) => `  ${JSON.stringify(item.slot)}: Frame${i},`).join('\n')}
 };
-/** ${target === 'preview' ? 'Draft preview' : 'Pinned'} section per section slot; each takes one prop, named by its contract input. */
+/** The generated DOM provenance markers (slot id, candidate file, content hash) one section root carries. */
+export type StudioProvenance = Readonly<Record<'data-clossys-slot' | 'data-clossys-candidate' | 'data-clossys-hash', string>>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- each section types its own input; the assembly binds it by name.
+const marked = (Section: ComponentType<any>, marks: StudioProvenance): ComponentType<any> => function Marked(props: object) { return createElement(Section, { ...props, ...marks }); };
+
+/** ${target === 'preview' ? 'Draft preview' : 'Pinned'} section per section slot; each takes one prop, named by its contract input, plus its provenance markers. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- each section types its own input; the assembly binds it by name.
 export const studioSections: Record<string, ComponentType<any>> = {
-${sections.map((item, i) => `  ${JSON.stringify(item.slot)}: Section${i},`).join('\n')}
+${sections.map((item, i) => `  ${JSON.stringify(item.slot)}: marked(Section${i}, (provenance as Record<string, StudioProvenance>)[${JSON.stringify(item.slot)}]),`).join('\n')}
 };
 `;
   const copy = target === 'preview'
     ? await studioCopyRegistry(clossysRoot, { target: 'preview', absentPin: 'newest-draft' })
     : await studioCopyRegistry(clossysRoot);
-  const files = { 'studio-copy.json': json(copy), 'studio-map.json': json(projection), 'studio-map.ts': module, 'assembly-bindings.ts': bindings };
+  // Derived products: the icon map from the pinned icon glyphs, each section's DOM provenance from its binding, the consumer brand from its pinned assets.
+  const files = { 'studio-copy.json': json(copy), 'studio-map.json': json(projection), 'studio-map.ts': module, 'assembly-bindings.ts': bindings,
+    'studio-icons.ts': iconsModule(clossysRoot), 'studio-provenance.json': provenanceJson(sections), 'studio-brand.json': brandJson(clossysRoot) };
   if (check && (await readdir(outputDir)).some(name => !Object.hasOwn(files, name))) throw new Error('Unexpected file in generated Studio projection');
   if (!check) {
     await mkdir(outputDir, { recursive: true });

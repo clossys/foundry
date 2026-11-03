@@ -64,7 +64,12 @@
   },
   "inputs": [],
   "uses": [
-    "components.icon",
-    "components.sheet"
+    "assets.icon-panel-left",
+    "components.button",
+    "components.separator",
+    "components.sheet",
+    "components.skeleton",
+    "components.tooltip",
+    "themes.input"
   ]
 }

@@ -75,9 +75,7 @@
   },
   "inputs": [],
   "uses": [
-    "components.disclosure",
-    "components.grid-list",
-    "components.icon",
-    "components.semantic-content"
+    "components.button",
+    "components.item"
   ]
 }

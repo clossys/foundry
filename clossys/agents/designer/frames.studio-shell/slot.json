@@ -82,5 +82,22 @@
     "specimenKind": "flow"
   },
   "inputs": [],
-  "uses": []
+  "uses": [
+    "assets.icon-chevron-right",
+    "assets.icon-theme-dark",
+    "assets.icon-theme-light",
+    "components.avatar",
+    "components.button",
+    "components.card",
+    "components.command",
+    "components.dropdown-menu",
+    "components.empty",
+    "components.popover",
+    "components.scroll-area",
+    "components.separator",
+    "components.sheet",
+    "components.sidebar",
+    "components.skeleton",
+    "components.tooltip"
+  ]
 }

@@ -56,6 +56,6 @@
   },
   "inputs": [],
   "uses": [
-    "components.checkbox"
+    "components.separator"
   ]
 }

@@ -5,7 +5,8 @@ import { createRequire } from "node:module";
 import { dirname, extname, isAbsolute, join, relative, sep } from "node:path";
 import { compile } from "tailwindcss";
 import { listSlots, readCandidate } from "../records/slots.js";
-import { agentRoot, readCells } from "./cells.js";
+import { agentRoot } from "./cells.js";
+import { pinnedBrand, type ConsumerBrand } from "./consumer-brand.js";
 import { specimenSubstrate } from "./specimen-substrate.js";
 
 /**
@@ -156,28 +157,9 @@ export async function consumerFontFile(root: string, path: string): Promise<{ bo
   return { body: await readFile(target), type: FONT_TYPES[extname(target)] ?? "application/octet-stream" };
 }
 
-export interface ConsumerBrand { name?: string; mark?: { light: string; dark: string } }
+export type { ConsumerBrand } from "./consumer-brand.js";
 
-const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
-
-/** The consumer's active Designer mark: the positive variant on light grounds, reversed on dark. */
-export async function consumerBrand(root: string): Promise<ConsumerBrand> {
-  let cells;
-  try { cells = await readCells(root, "designer", true); } catch { return {}; }
-  const cell = cells.find(entry => entry.id === "assets.mark");
-  if (!cell) return {};
-  const json = /(?:^|\n)## Fill\s*\n[\s\S]*?```json\s*\n([\s\S]*?)\n```/.exec(cell.source)?.[1];
-  let fill: unknown;
-  try { fill = json ? JSON.parse(json) : undefined; } catch { return {}; }
-  const variants = object(fill) && object(fill.assets) && object(fill.assets.mark) ? fill.assets.mark : undefined;
-  const svg = (variant: string) => {
-    const entry = variants?.[variant];
-    const value = object(entry) && typeof entry.$value === "string" ? entry.$value.trim() : "";
-    return value.startsWith("<svg") && value.endsWith("</svg>") && !/<script|\son[a-z]+=|javascript:|<foreignObject/i.test(value) ? value : undefined;
-  };
-  const light = svg("positive") ?? svg("mono");
-  const dark = svg("reversed") ?? light;
-  if (!light || !dark) return {};
-  const name = /\baria-label="([^"<>]{1,80})"/.exec(light)?.[1];
-  return { ...(name ? { name } : {}), mark: { light, dark } };
+/** The consumer brand: name, mark, favicon, app icon, lockup and image from the consumer's own pinned assets.* slots. */
+export async function consumerBrand(root: string, library = join(root, "clossys")): Promise<ConsumerBrand> {
+  return pinnedBrand(library);
 }

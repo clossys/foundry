@@ -13,8 +13,8 @@ export interface ModuleChecksInput { summary: string; groups: readonly ModuleChe
  * `sections.module.checks`: what needs attention on the open page, as shadcn item rows in three
  * groups: failing checks, pending options and open needs. Read-only: each row links to its leaf.
  */
-export default function ModuleChecksSection({ checks }: { checks: ModuleChecksInput }) {
-  return <FieldGroup data-studio-section="module-checks" className="gap-4">
+export default function ModuleChecksSection({ checks, ...provenance }: { checks: ModuleChecksInput } & { [marker: `data-clossys-${string}`]: string }) {
+  return <FieldGroup {...provenance} className="gap-4">
     <CardDescription>{checks.summary}</CardDescription>
     {checks.groups.map((group, index) => <FieldGroup key={group.id} data-module-checks-group={group.id} className="gap-2">
       {index > 0 && <Separator />}

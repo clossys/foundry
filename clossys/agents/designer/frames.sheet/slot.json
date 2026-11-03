@@ -82,8 +82,8 @@
   "inputs": [],
   "uses": [
     "components.button",
-    "components.card",
-    "components.dialog",
-    "components.icon"
+    "components.field",
+    "components.sheet",
+    "themes.input"
   ]
 }

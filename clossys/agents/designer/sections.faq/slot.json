@@ -126,7 +126,5 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.disclosure"
-  ]
+  "uses": []
 }

@@ -234,12 +234,9 @@
   "inputs": [],
   "uses": [
     "components.button",
-    "components.checkbox",
-    "components.dialog",
-    "components.icon",
-    "components.popover",
+    "components.dropdown-menu",
     "components.select",
     "components.table",
-    "components.text-field"
+    "themes.input"
   ]
 }

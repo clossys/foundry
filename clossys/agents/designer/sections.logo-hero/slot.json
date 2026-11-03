@@ -78,7 +78,5 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.logo"
-  ]
+  "uses": []
 }

@@ -164,9 +164,5 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.badge",
-    "components.select",
-    "components.table"
-  ]
+  "uses": []
 }

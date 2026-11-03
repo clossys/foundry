@@ -158,10 +158,10 @@
   },
   "inputs": [],
   "uses": [
+    "assets.icon-chevron-left",
+    "assets.icon-chevron-right",
     "components.button",
-    "components.icon",
-    "components.link",
-    "components.select",
-    "components.semantic-content"
+    "components.field",
+    "components.select"
   ]
 }

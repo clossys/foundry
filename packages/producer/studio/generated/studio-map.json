@@ -28036,67 +28036,67 @@
     {
       "slot": "sections.studio.page-header",
       "element": "studio-page-header",
-      "version": 1
+      "version": 2
     },
     {
       "slot": "sections.studio.home",
       "element": "studio-home",
-      "version": 6
+      "version": 7
     },
     {
       "slot": "sections.module.outline",
       "element": "module-outline",
-      "version": 2
+      "version": 3
     },
     {
       "slot": "sections.module.checks",
       "element": "module-checks",
-      "version": 1
+      "version": 2
     },
     {
       "slot": "sections.studio.page-tabs",
       "element": "studio-page-tabs",
-      "version": 2
+      "version": 3
     },
     {
       "slot": "sections.studio.slot-groups",
       "element": "studio-slot-groups",
-      "version": 3
+      "version": 4
     },
     {
       "slot": "sections.studio.leaf-header",
       "element": "studio-leaf-header",
-      "version": 3
+      "version": 4
     },
     {
       "slot": "sections.studio.specimen",
       "element": "studio-specimen",
-      "version": 8
+      "version": 9
     },
     {
       "slot": "sections.studio.options",
       "element": "studio-options",
-      "version": 4
+      "version": 5
     },
     {
       "slot": "sections.studio.checks",
       "element": "studio-checks",
-      "version": 2
+      "version": 3
     },
     {
       "slot": "sections.studio.contract",
       "element": "studio-contract",
-      "version": 2
+      "version": 3
     },
     {
       "slot": "sections.studio.history",
       "element": "studio-history",
-      "version": 2
+      "version": 3
     },
     {
       "slot": "sections.studio.references",
       "element": "studio-references",
-      "version": 2
+      "version": 3
     }
   ],
   "pageActions": {

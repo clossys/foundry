@@ -178,9 +178,5 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.button",
-    "components.icon",
-    "components.text-field"
-  ]
+  "uses": []
 }

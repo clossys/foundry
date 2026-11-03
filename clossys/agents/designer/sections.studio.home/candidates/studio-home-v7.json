@@ -1,0 +1,77 @@
+{
+  "name": "studio-home",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:file",
+      "content": "import { Badge, Card, CardContent, CardDescription, CardTitle, HomeStockGrid, HomeStockCensusCard, HomeStockNeedsHeader } from '@clossys/designer-ui';\n\nexport type HomeTone = 'secondary' | 'outline' | 'destructive';\n\n/** Counts come from the slot census, independently of gallery/renderer availability. */\nexport type HomeCensus =\n  | { state: 'ready'; total: number; withCandidate: number; pinned: number }\n  | { state: 'loading' }\n  | { state: 'error'; message: string };\n\n/** A census card's accessible count labels (Writer copy), for the census state the agent carries. */\nexport interface HomeCensusLabels { total: string; candidates: string; pinned: string }\n/** One agent on Home. Navigation belongs to the shared frame; counts use the independent native census. */\nexport interface HomeAgent { id: string; label: string; purpose: string; icon: React.ReactNode; census?: HomeCensus; censusLabels: HomeCensusLabels; count?: { label: string; tone: HomeTone }; href: string; openLabel: string; openIcon?: React.ReactNode }\nexport interface HomeNeed { id: string; severity: string; tone: HomeTone; title: string; detail: string }\n\n/** The `home` input of `sections.studio.home`. `needs` is present while the page's Needs module is open; the page head is `sections.studio.page-header`. */\nexport interface HomeInput {\n  agentsLabel: string;\n  agents: readonly HomeAgent[];\n  needs?: { title: string; description: string; empty: string; rows: readonly HomeNeed[]; closeLabel: string; closeIcon?: React.ReactNode; onClose: () => void };\n}\n\n/**\n * `sections.studio.home`: the workspace's agents, and the owner's open requests when Needs is open.\n * Home-specific Designer parts carry exact stock source proof; this section binds display-ready data.\n * Canonical candidate qualification remains separate. Navigation stays in the shared frame.\n */\nexport default function HomeSection({ home, ...provenance }: { home: HomeInput } & { [marker: `data-clossys-${string}`]: string }) {\n  return <section {...provenance} aria-label={home.agentsLabel}>\n    <CardContent>\n      <CardTitle role=\"heading\" aria-level={2}>{home.agentsLabel}</CardTitle>\n      <HomeStockGrid>\n        {home.agents.map(agent => {\n          const census = agent.census;\n          const ready = census?.state === 'ready' ? census : undefined;\n          return <HomeStockCensusCard key={agent.id} id={agent.id} state={census?.state ?? 'missing'}\n            label={agent.label} total={ready ? ready.total : '—'}\n            totalLabel={agent.censusLabels.total}\n            candidates={ready ? ready.withCandidate : '—'} candidatesLabel={agent.censusLabels.candidates}\n            pinnedLabel={agent.censusLabels.pinned} icon={agent.icon}\n            detail={census?.state === 'error' ? census.message : agent.purpose} />;\n        })}\n      </HomeStockGrid>\n      {home.needs && <Card size=\"sm\">\n        <HomeStockNeedsHeader title={home.needs.title} description={home.needs.description}\n          closeLabel={home.needs.closeLabel} closeIcon={home.needs.closeIcon} onClose={home.needs.onClose} />\n        <CardContent>\n          {home.needs.rows.length\n            ? home.needs.rows.map(row => <CardDescription key={row.id}>\n              <Badge variant={row.tone}>{row.severity}</Badge>\n              <CardTitle>{row.title}</CardTitle>\n              {row.detail}\n            </CardDescription>)\n            : <CardDescription>{home.needs.empty}</CardDescription>}\n        </CardContent>\n      </Card>}\n    </CardContent>\n  </section>;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"studio-home\",\n  \"type\": \"registry:block\",\n  \"title\": \"Studio Home\",\n  \"description\": \"The workspace's agents with their slot counts, and the owner's open requests; the page head is sections.studio.page-header.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [],\n  \"registryDependencies\": [\n    \"card\"\n  ],\n  \"files\": [\n    {\n      \"path\": \"index.tsx\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/studio-home/index.tsx\"\n    }\n  ]\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.studio.home",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "{\"registry\":\"foundry\",\"item\":\"packages/producer/studio/sections/studio-home\",\"version\":\"902f695cc3720af807baa814508b67a769dcda4c\",\"url\":\"https://github.com/clossys/foundry/tree/902f695cc3720af807baa814508b67a769dcda4c/packages/producer/studio/sections/studio-home\",\"hash\":\"sha256:bf95a0ac8f841908a945369924813b019862c441d1dca556bc729a1e80b4e71a\"}",
+        "{\"version\":6,\"hash\":\"sha256:d02729c688e71d643fd4c3e010e7f9f83cd64a567db9fe39a533c0628448db6d\"}"
+      ],
+      "hash": "sha256:3e48015009fcb43b737758c2a9dc7c44dfb61dc35692c062d010040e897e9994",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "studio-home",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.studio.home",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "GEN-DERIVED"
+      },
+      "reason": "Provenance is generated at compile: the root spreads the data-clossys-slot/candidate/hash markers the assembly derives from the page record and pins, in place of a hand-typed folder marker; owner go 2026-11-03 GEN-DERIVED.",
+      "createdAt": "2026-11-03T18:00:00Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--card",
+          "--card-foreground",
+          "--muted-foreground"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

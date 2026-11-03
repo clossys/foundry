@@ -5,7 +5,7 @@ import './globals.css';
 import { StudioProviders, THEME_INIT_SCRIPT } from '../components/StudioProviders';
 import { loadStudioSeed } from '../lib/studio-seed';
 
-export const metadata: Metadata = { title: studioCopy("studio.studio"), description: studioCopy("studio.browse-your-agent-cells"), icons: { icon: '/api/brand/mark.svg' } };
+export const metadata: Metadata = { title: studioCopy("studio.studio"), description: studioCopy("studio.browse-your-agent-cells"), icons: { icon: '/api/brand/favicon.svg', apple: '/api/brand/app-icon.svg' } };
 export const dynamic = 'force-dynamic';
 
 /**

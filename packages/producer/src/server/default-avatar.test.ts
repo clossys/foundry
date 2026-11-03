@@ -127,9 +127,9 @@ describe("/avatars/* route", () => {
     expect(avatar.text).toBe((await readFile(STUDIO_MARK, "utf8")).trim());
   });
 
-  it("redirects to Studio's own mark when the workspace has none", async () => {
+  it("answers 404, never Foundry's own mark, when the workspace pins none", async () => {
     await start();
     const avatar = await get("/avatars/shadcn.jpg");
-    expect(avatar.status).toBe(302); expect(avatar.headers.location).toBe("/studio-mark.svg");
+    expect(avatar.status).toBe(404); expect(avatar.headers.location).toBeUndefined();
   });
 });

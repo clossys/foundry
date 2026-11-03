@@ -192,10 +192,5 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.badge",
-    "components.breadcrumbs",
-    "components.button",
-    "components.tabs"
-  ]
+  "uses": []
 }

@@ -170,12 +170,5 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.breadcrumbs",
-    "components.button",
-    "components.grid-list",
-    "components.icon",
-    "components.resize-handle",
-    "components.tree"
-  ]
+  "uses": []
 }

@@ -176,8 +176,6 @@
   },
   "inputs": [],
   "uses": [
-    "components.button",
-    "components.link",
-    "components.semantic-content"
+    "components.button"
   ]
 }

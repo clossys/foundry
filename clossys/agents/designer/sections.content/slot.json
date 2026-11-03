@@ -182,7 +182,6 @@
   },
   "inputs": [],
   "uses": [
-    "components.link",
-    "components.semantic-content"
+    "components.separator"
   ]
 }

@@ -205,7 +205,6 @@
   },
   "inputs": [],
   "uses": [
-    "components.chart-sparkline",
-    "components.meter"
+    "components.card"
   ]
 }

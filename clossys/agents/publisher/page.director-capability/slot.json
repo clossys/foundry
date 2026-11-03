@@ -37,6 +37,8 @@
     "sections.studio.page-tabs",
     "sections.studio.references",
     "sections.studio.slot-groups",
-    "sections.studio.specimen"
+    "sections.studio.specimen",
+    "strings.common",
+    "strings.descriptions"
   ]
 }

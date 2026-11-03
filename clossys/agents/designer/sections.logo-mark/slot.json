@@ -76,8 +76,5 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.logo",
-    "components.semantic-content"
-  ]
+  "uses": []
 }

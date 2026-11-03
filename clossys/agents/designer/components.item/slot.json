@@ -53,5 +53,7 @@
     "composes": []
   },
   "inputs": [],
-  "uses": []
+  "uses": [
+    "components.separator"
+  ]
 }

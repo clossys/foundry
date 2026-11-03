@@ -124,6 +124,7 @@ export function dsOnlyViolations(folder: string, kind: 'section' | 'frame' = 'se
     const file = join(folder, name);
     const label = relative(STUDIO, file);
     const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true, name.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+    const markerTyped = source.text.includes('{ [marker: `data-clossys-${string}`]: string }');
     const visit = (node: ts.Node) => {
       const specifier = (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier) ? node.moduleSpecifier.text : undefined;
       if (specifier !== undefined) {
@@ -138,6 +139,8 @@ export function dsOnlyViolations(folder: string, kind: 'section' | 'frame' = 'se
         const block = kind === 'frame' && !!value && ts.isStringLiteral(value) && blockMarkup.has(`${tag} ${value.text}`);
         if (/^[a-z]/.test(tag) && !(kind === 'frame' && FRAME_LANDMARKS.has(tag))) for (const attribute of node.attributes.properties) {
           if (block && ts.isJsxAttribute(attribute) && attribute.name.getText(source) === 'className') continue;
+          // The generated provenance markers are typed `data-clossys-*` only, so their spread carries no styling.
+          if (ts.isJsxSpreadAttribute(attribute) && attribute.expression.getText(source) === 'provenance' && markerTyped) continue;
           const attr = ts.isJsxAttribute(attribute) ? attribute.name.getText(source) : '{...spread}';
           if (attr === 'className' || attr === 'style' || attr === '{...spread}') violations.push(`${label}: <${tag} ${attr}>`);
         }
@@ -228,6 +231,19 @@ describe('Studio sections are ds-only', () => {
     try {
       writeFileSync(join(probe, 'Probe.tsx'), "import { X } from 'other-ui';\nimport { Y } from '../elsewhere';\nimport { Card } from '@clossys/designer-ui';\nexport const A = () => <div className=\"p-4\"><Card className=\"gap-2\"><X /><Y /></Card></div>;\n");
       expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['imports other-ui', 'imports ../elsewhere', '<div className>']);
+    } finally { rmSync(probe, { recursive: true, force: true }); }
+  });
+
+  it('admits only the marker-typed provenance spread on raw markup', () => {
+    const probe = mkdtempSync(join(tmpdir(), 'ds-only-'));
+    try {
+      const typed = "export default function A({ x, ...provenance }: { x: string } & { [marker: `data-clossys-${string}`]: string }) { return <section {...provenance} aria-label={x} />; }\n";
+      writeFileSync(join(probe, 'Probe.tsx'), typed);
+      expect(dsOnlyViolations(probe)).toEqual([]);
+      writeFileSync(join(probe, 'Probe.tsx'), typed.replace(/provenance/g, 'rest'));
+      expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<section {...spread}>']);
+      writeFileSync(join(probe, 'Probe.tsx'), "export default function A({ x, ...provenance }: { x: string; className?: string }) { return <section {...provenance} aria-label={x} />; }\n");
+      expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<section {...spread}>']);
     } finally { rmSync(probe, { recursive: true, force: true }); }
   });
 });

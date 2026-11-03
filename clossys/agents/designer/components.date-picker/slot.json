@@ -39,8 +39,9 @@
   },
   "inputs": [],
   "uses": [
-    "components.calendar",
-    "components.date-field",
-    "components.popover"
+    "assets.icon-chevron-left",
+    "assets.icon-chevron-right",
+    "components.button",
+    "components.select"
   ]
 }

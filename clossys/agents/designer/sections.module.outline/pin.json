@@ -1,6 +1,6 @@
 {
-  "candidate": "module-outline-v2.json",
-  "sha256": "1156f4448884957f4f31956e7c30ab97a84690942bf5e3ae9a50791073054adc",
-  "pinnedBy": "migration:SLOT-MODEL",
-  "at": "2026-10-31T23:59:30Z"
+  "candidate": "module-outline-v3.json",
+  "sha256": "d38cfba4d8176a0a92f7a88c536737058b245a46596b65dd1ba5ec44ffe4c699",
+  "pinnedBy": "owner:2026-11-03 GEN-DERIVED go",
+  "at": "2026-11-03T18:00:00Z"
 }

@@ -57,7 +57,5 @@
     "apg": "table"
   },
   "inputs": [],
-  "uses": [
-    "components.checkbox"
-  ]
+  "uses": []
 }

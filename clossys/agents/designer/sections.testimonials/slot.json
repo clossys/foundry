@@ -140,9 +140,5 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.avatar",
-    "components.card",
-    "components.semantic-content"
-  ]
+  "uses": []
 }

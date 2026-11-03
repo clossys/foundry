@@ -133,10 +133,5 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.item",
-    "components.link",
-    "components.logo",
-    "components.semantic-content"
-  ]
+  "uses": []
 }

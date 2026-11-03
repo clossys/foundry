@@ -207,12 +207,5 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.button",
-    "components.combo-box",
-    "components.date-picker",
-    "components.select",
-    "components.tag-group",
-    "components.text-field"
-  ]
+  "uses": []
 }

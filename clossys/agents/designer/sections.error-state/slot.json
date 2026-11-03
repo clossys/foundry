@@ -143,8 +143,8 @@
   },
   "inputs": [],
   "uses": [
+    "assets.icon-folder",
     "components.button",
-    "components.link",
-    "components.semantic-content"
+    "components.empty"
   ]
 }

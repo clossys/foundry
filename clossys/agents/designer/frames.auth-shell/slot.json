@@ -80,6 +80,9 @@
   },
   "inputs": [],
   "uses": [
-    "components.semantic-content"
+    "components.button",
+    "components.card",
+    "components.field",
+    "themes.input"
   ]
 }

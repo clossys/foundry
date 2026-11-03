@@ -64,6 +64,8 @@
   },
   "inputs": [],
   "uses": [
+    "assets.icon-chevron-left",
+    "assets.icon-chevron-right",
     "components.button",
     "components.select"
   ]

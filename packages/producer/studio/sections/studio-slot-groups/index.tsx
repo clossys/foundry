@@ -31,8 +31,8 @@ export interface SlotGroupsInput {
 }
 
 /** `sections.studio.slot-groups`: the active tab's IA groups, stacked, each a grid of stock shadcn slot cards. */
-export default function SlotGroupsSection({ groups }: { groups: SlotGroupsInput }) {
-  return <CardContent data-studio-section="slot-groups" className="flex flex-col gap-8">
+export default function SlotGroupsSection({ groups, ...provenance }: { groups: SlotGroupsInput } & { [marker: `data-clossys-${string}`]: string }) {
+  return <CardContent {...provenance} className="flex flex-col gap-8">
     {groups.groups.length ? groups.groups.map(group => <section key={group.id} id={group.id} aria-label={group.label}>
       <CardTitle role="heading" aria-level={2} className="pb-3">{group.label}</CardTitle>
       <CardGrid className="@xl/main:grid-cols-2 @5xl/main:grid-cols-3">

@@ -151,10 +151,5 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.card",
-    "components.link",
-    "components.semantic-content",
-    "components.separator"
-  ]
+  "uses": []
 }

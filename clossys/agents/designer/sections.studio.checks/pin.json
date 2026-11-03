@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-checks-v2.json",
-  "sha256": "629f942cca7742cc1839b2be265d82aec860a8cfe70e5de1d25f589c6a901a0a",
-  "pinnedBy": "migration:SLOT-MODEL",
-  "at": "2026-11-01T16:21:44Z"
+  "candidate": "studio-checks-v3.json",
+  "sha256": "a528d001ce12d0bf8b6d15071ababd891771a9d64f54fed93517ececcd1e1937",
+  "pinnedBy": "owner:2026-11-03 GEN-DERIVED go",
+  "at": "2026-11-03T18:00:00Z"
 }

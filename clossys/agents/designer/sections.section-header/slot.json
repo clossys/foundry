@@ -147,12 +147,5 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.badge",
-    "components.button",
-    "components.link",
-    "components.menu",
-    "components.semantic-content",
-    "components.status-mark"
-  ]
+  "uses": []
 }

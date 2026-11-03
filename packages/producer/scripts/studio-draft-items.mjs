@@ -139,7 +139,7 @@ export async function draftStudioItems(clossysRoot, studioRoot, input, required)
     const element = candidate.meta?.element ?? {};
     const files = new Map(candidate.files.map(file => [file.path, Buffer.from(file.content, 'utf8')]));
     const folder = row.slot.startsWith('frames.') ? 'frames' : 'sections';
-    const item = { ...row, bound: true, files, payload: [...files.keys()], studioDir: join(studioRoot, folder, row.element), module: `../${folder}/${row.element}` };
+    const item = { ...row, candidate: name, sha256: row.hash.replace(/^sha256:/, ''), bound: true, files, payload: [...files.keys()], studioDir: join(studioRoot, folder, row.element), module: `../${folder}/${row.element}` };
     await safe(item.studioDir);
     const running = await listFiles(item.studioDir);
     for (const file of running) await bytes(join(item.studioDir, file));

@@ -221,9 +221,9 @@
   "inputs": [],
   "uses": [
     "components.button",
-    "components.checkbox",
-    "components.icon",
+    "components.dropdown-menu",
+    "components.select",
     "components.table",
-    "components.tooltip"
+    "themes.input"
   ]
 }

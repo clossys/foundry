@@ -62,6 +62,7 @@
   },
   "inputs": [],
   "uses": [
-    "components.icon"
+    "assets.icon-check",
+    "assets.icon-chevron-right"
   ]
 }

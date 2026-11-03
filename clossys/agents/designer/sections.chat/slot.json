@@ -169,12 +169,9 @@
   },
   "inputs": [],
   "uses": [
+    "assets.icon-document",
     "components.avatar",
     "components.button",
-    "components.file-trigger",
-    "components.link",
-    "components.spinner",
-    "components.text-field",
-    "components.tooltip"
+    "components.spinner"
   ]
 }

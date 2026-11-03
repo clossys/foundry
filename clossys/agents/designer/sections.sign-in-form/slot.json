@@ -287,6 +287,8 @@
   "inputs": [],
   "uses": [
     "components.button",
-    "components.text-field"
+    "components.card",
+    "components.field",
+    "themes.input"
   ]
 }

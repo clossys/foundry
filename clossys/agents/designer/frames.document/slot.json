@@ -53,9 +53,5 @@
     ]
   },
   "inputs": [],
-  "uses": [
-    "frames.app-shell",
-    "frames.auth-shell",
-    "frames.site-shell"
-  ]
+  "uses": []
 }

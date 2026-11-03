@@ -95,11 +95,16 @@
   },
   "inputs": [],
   "uses": [
+    "assets.icon-date",
+    "assets.icon-document",
+    "assets.icon-folder",
+    "assets.icon-grid-view",
+    "assets.icon-list-view",
+    "assets.icon-payment",
+    "assets.icon-settings",
+    "assets.icon-user",
     "components.button",
-    "components.dialog",
-    "components.icon",
-    "components.keyboard",
-    "components.search-field",
-    "components.tooltip"
+    "components.card",
+    "components.command"
   ]
 }

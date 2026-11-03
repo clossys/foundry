@@ -169,7 +169,5 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.semantic-content"
-  ]
+  "uses": []
 }

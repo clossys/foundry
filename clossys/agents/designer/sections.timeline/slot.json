@@ -133,7 +133,5 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.separator"
-  ]
+  "uses": []
 }

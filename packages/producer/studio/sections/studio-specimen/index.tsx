@@ -113,8 +113,8 @@ export function SpecimenContent({ specimen }: { specimen: SpecimenInput }) {
 }
 
 /** `sections.studio.specimen`: what the leaf produces, framed at every viewport or laid out as its record content. */
-export default function SpecimenSection({ specimen }: { specimen: SpecimenInput }) {
-  return <Card size="sm" data-studio-section="specimen">
+export default function SpecimenSection({ specimen, ...provenance }: { specimen: SpecimenInput } & { [marker: `data-clossys-${string}`]: string }) {
+  return <Card size="sm" {...provenance}>
     <CardHeader>
       <CardTitle role="heading" aria-level={2}>{specimen.title}</CardTitle>
       <CardDescription>{specimen.description}</CardDescription>

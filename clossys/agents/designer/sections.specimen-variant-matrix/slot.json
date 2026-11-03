@@ -83,10 +83,10 @@
   },
   "inputs": [],
   "uses": [
-    "components.badge",
-    "components.disclosure",
-    "components.grid-list",
-    "components.semantic-content",
-    "components.table"
+    "components.button",
+    "components.dropdown-menu",
+    "components.select",
+    "components.table",
+    "themes.input"
   ]
 }

@@ -264,11 +264,6 @@
   "inputs": [],
   "uses": [
     "components.button",
-    "components.checkbox",
-    "components.grid-list",
-    "components.menu",
-    "components.skeleton",
-    "components.toolbar",
-    "sections.empty-state"
+    "components.item"
   ]
 }

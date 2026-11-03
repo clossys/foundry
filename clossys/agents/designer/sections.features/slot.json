@@ -151,13 +151,6 @@
   },
   "inputs": [],
   "uses": [
-    "components.badge",
-    "components.card",
-    "components.icon",
-    "components.item",
-    "components.link",
-    "components.semantic-content",
-    "components.tabs",
-    "sections.media"
+    "components.card"
   ]
 }
