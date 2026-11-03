@@ -18,6 +18,8 @@
     "@fontsource-variable/geist": "^5.3.0",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.5.1",
+    "embla-carousel-react": "8.6.0",
+    "input-otp": "1.5.0",
     "lucide-react": "^1.65.0",
     "next-themes": "0.4.6",
     "radix-ui": "1.8.1",
