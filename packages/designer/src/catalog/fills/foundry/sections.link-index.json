@@ -91,7 +91,7 @@
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
           }
         ],
         "unresolved": [
@@ -117,7 +117,7 @@
             "code": "DF2",
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/runtime/component-leaf.tsx",
-            "line": 3
+            "line": 4
           }
         ]
       },

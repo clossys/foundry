@@ -43,7 +43,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -69,7 +69,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -196,7 +196,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         },
         {
           "path": "packages/designer/src/shell/FrameSlots.tsx",
@@ -290,7 +290,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         },
         {
           "code": "DF2",
@@ -376,7 +376,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -432,7 +432,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -466,7 +466,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         },
         {
           "path": "packages/designer/src/shell/SkipLink.tsx",
@@ -490,7 +490,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         },
         {
           "code": "DF2",
@@ -534,7 +534,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -548,7 +548,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -574,7 +574,7 @@
         },
         {
           "path": "packages/designer/src/frames/site-frame/types.ts",
-          "sha256": "a41d28d970abcc823288f449e5ec0e9a4b6bc3511eddfb65c68d3ff74240c353"
+          "sha256": "9cf9ac3d145713b6efd520fa92c2fee7729788ed11cfc45990a84feb3c61a32c"
         },
         {
           "path": "packages/designer/src/runtime/frames/document.tsx",
@@ -627,7 +627,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -653,7 +653,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -691,7 +691,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -723,7 +723,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -769,7 +769,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         },
         {
           "path": "packages/designer/src/shell/internal/shell-ground.ts",
@@ -781,7 +781,7 @@
         },
         {
           "path": "packages/designer/src/shell/SiteFooter.tsx",
-          "sha256": "41a649a9396e86e76ad036d8a376f1851e300b0f202a31ddc75e8566565c26b8"
+          "sha256": "b3f161c6c3d6d51521b0ad1574d56a070a8dba2f0c3c83f3b59d8656f9518781"
         }
       ],
       "unresolved": [
@@ -801,7 +801,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -839,7 +839,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         },
         {
           "path": "packages/designer/src/shell/internal/shell-ground.ts",
@@ -851,7 +851,7 @@
         },
         {
           "path": "packages/designer/src/shell/SiteHeader.tsx",
-          "sha256": "116aa11b0e7d8494bee8b319ab5f0a915707dafeb30e04d4e5162b9ce62cb9d4"
+          "sha256": "2812237c178b75d2b9be9d04a8a830cda4de0c7a05b1e3d675b298574254cd7e"
         }
       ],
       "unresolved": [
@@ -871,7 +871,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -890,7 +890,7 @@
           "rawAssets": [
             "assets.js"
           ],
-          "sourceSha256": "307d39f31c17415358b8a4cc599717385b08191df44059e7969dfb0d3725e7c8",
+          "sourceSha256": "7137b3a273852efc0b29dabd2f7db250e2e1550bde682018f1046ce21c905624",
           "specifier": "../landing/internal/assets.js",
           "target": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
           "targetSha256": "54cc0184672dfc74981225929705b024611926fd305a88374c1040605cffa3f8"
@@ -931,7 +931,7 @@
         },
         {
           "path": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",
-          "sha256": "307d39f31c17415358b8a4cc599717385b08191df44059e7969dfb0d3725e7c8"
+          "sha256": "7137b3a273852efc0b29dabd2f7db250e2e1550bde682018f1046ce21c905624"
         },
         {
           "path": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
@@ -947,11 +947,11 @@
         },
         {
           "path": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
-          "sha256": "486cd0391f7ee6ed32c43b1bec780967be6d89972234d7b7fa5f19d43bfaa58d"
+          "sha256": "cbd8d056c19ffcd211fa0da1c02bf94e6ae2372e75eb21c56aa6f4a2258aea7c"
         },
         {
           "path": "packages/designer/src/frames/site-frame/types.ts",
-          "sha256": "a41d28d970abcc823288f449e5ec0e9a4b6bc3511eddfb65c68d3ff74240c353"
+          "sha256": "9cf9ac3d145713b6efd520fa92c2fee7729788ed11cfc45990a84feb3c61a32c"
         },
         {
           "path": "packages/designer/src/frames/site-frame/viewChromeGround.ts",
@@ -1015,7 +1015,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -1041,7 +1041,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -1077,7 +1077,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -1103,7 +1103,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -1151,7 +1151,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -1183,7 +1183,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -1223,7 +1223,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -1243,7 +1243,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -1277,7 +1277,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -1303,7 +1303,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -1345,7 +1345,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -1365,7 +1365,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -1401,7 +1401,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -1421,7 +1421,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -1459,7 +1459,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -1479,7 +1479,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -1523,7 +1523,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -1543,7 +1543,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -1595,7 +1595,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -1627,7 +1627,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -1673,7 +1673,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -1693,7 +1693,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -1807,7 +1807,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -1845,7 +1845,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -1883,7 +1883,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -1909,7 +1909,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -1959,7 +1959,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -1979,7 +1979,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -2066,7 +2066,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -2104,7 +2104,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -2191,7 +2191,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -2229,7 +2229,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -2265,7 +2265,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -2285,7 +2285,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -2321,7 +2321,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -2341,7 +2341,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -2391,7 +2391,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -2435,7 +2435,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -2483,7 +2483,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -2503,7 +2503,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -2559,7 +2559,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -2585,7 +2585,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -2619,7 +2619,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -2639,7 +2639,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -2681,7 +2681,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -2701,7 +2701,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -2827,7 +2827,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         },
         {
           "path": "packages/designer/src/tokens/color.ts",
@@ -2877,7 +2877,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -2914,7 +2914,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -2934,7 +2934,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -3004,7 +3004,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -3030,7 +3030,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -3072,7 +3072,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -3092,7 +3092,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -3122,7 +3122,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -3136,7 +3136,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -3178,7 +3178,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -3198,7 +3198,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -3390,7 +3390,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -3410,7 +3410,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -3501,7 +3501,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -3527,7 +3527,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -3577,7 +3577,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -3603,7 +3603,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -3641,7 +3641,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -3661,7 +3661,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -3697,7 +3697,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -3723,7 +3723,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -3771,7 +3771,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -3797,7 +3797,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -3835,7 +3835,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -3855,7 +3855,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -4139,7 +4139,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         },
         {
           "path": "packages/publisher/src/content/copy-provenance.ts",
@@ -4186,8 +4186,12 @@
           "sha256": "05563ac6324f7b29b7572ed2a8244099917db6ea939882f427a3839518b02619"
         },
         {
+          "path": "packages/publisher/src/web/views/landingViewGrounds.ts",
+          "sha256": "47a8c7c89733995dde15f1abf2c8113be9908214eccdf53abfeca312e69e6cb7"
+        },
+        {
           "path": "packages/publisher/src/web/views/SectionedView.tsx",
-          "sha256": "e761b2e80c192f78f1599fd7385e63c2e1fb8cf6ba021224eeaec5c54b4e9f14"
+          "sha256": "123838b28855b25223f38e1d267991cc705b54389ce23ae16ae4d75f2dec50b3"
         },
         {
           "path": "packages/publisher/src/web/views/SectionedViewActions.tsx",
@@ -4203,7 +4207,7 @@
         },
         {
           "path": "packages/publisher/src/web/views/SectionedViewContent.tsx",
-          "sha256": "fc040d165b0b5fc6f00d850e554c736152434b94cbfd04649b21b30b615a7dab"
+          "sha256": "6ef68cfbc785b17b6d82357d32ee7025425aaf5a9310c4659473677ac6022109"
         },
         {
           "path": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
@@ -4251,7 +4255,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         },
         {
           "code": "DF5",
@@ -4263,7 +4267,7 @@
           "code": "DF2",
           "evidence": "unresolved source export ../../internal/errors.js#RenderError",
           "file": "packages/publisher/src/web/views/SectionedViewContent.tsx",
-          "line": 14
+          "line": 15
         },
         {
           "code": "DF5",
@@ -4403,7 +4407,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -4423,7 +4427,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -4465,7 +4469,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -4485,7 +4489,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -4539,7 +4543,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -4559,7 +4563,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -4599,7 +4603,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -4619,7 +4623,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -4659,7 +4663,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -4679,7 +4683,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -4737,7 +4741,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -4757,7 +4761,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -4809,7 +4813,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -4835,7 +4839,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -4869,7 +4873,7 @@
         },
         {
           "path": "packages/designer/src/blocks/TestimonialSet.tsx",
-          "sha256": "949fd4c6e6eda5a1e8210148c998be83254ff59a56292b1b3ad398d0adfcc5f9"
+          "sha256": "282164efecbd1b6424354fd7bc83eb49cc8b33c6469e041d1d1f88ac6fb73ca3"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -4878,6 +4882,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -4892,6 +4900,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
         }
       ]
     },
@@ -4925,7 +4939,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -4945,7 +4959,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -4985,7 +4999,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -5005,7 +5019,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },
@@ -5039,7 +5053,7 @@
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
-          "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
         }
       ],
       "unresolved": [
@@ -5059,7 +5073,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/component-leaf.tsx",
-          "line": 3
+          "line": 4
         }
       ]
     },

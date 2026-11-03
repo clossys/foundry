@@ -42,6 +42,22 @@ describe("consumer selected component bridge", () => {
     const injected = { ...value, modules: { ...value.modules, [module]: { ...value.modules[module], [checkbox.impl.export]: Object.assign(() => null, { Invented: () => null }) } } };
     expect(draw(injected, "components.checkbox", ["Invented"])).toThrow(/undeclared/);
   });
+  it("renders a known selection synchronously through renderToString and renderToStaticMarkup, with no preload or Suspense", () => {
+    // A child process sees the compiled facade exactly as a consumer host does:
+    // no Vitest lazy preloading and no ambient selection. Rendering right after
+    // import must not suspend ("A component suspended while responding to synchronous input").
+    const dist = (file: string) => JSON.stringify(resolve(import.meta.dirname, "../../dist", file));
+    const script = `const React=await import("react"); const server=await import("react-dom/server");
+      const {componentLeaf}=await import(${dist("runtime/component-leaf.js")});
+      const {ConsumerComponentProvider}=await import(${dist("runtime/component-leaf.client.js")});
+      const {fixtureConsumerComponents}=await import(${dist("catalog-core/__fixtures__/surface-consumer-components.js")});
+      const Content=componentLeaf("components.semantic-content"), Button=componentLeaf("components.button");
+      const tree=React.createElement(ConsumerComponentProvider,{value:fixtureConsumerComponents()},React.createElement(Content,{as:"p"},"Consumer copy"),React.createElement(Button,null,"Continue"));
+      for (const render of [server.renderToString, server.renderToStaticMarkup]) { const html=render(tree); if(!html.startsWith("<p>Consumer copy</p><button")||!html.includes("Continue")) throw Error("unexpected markup "+html.slice(0,80)); }
+      console.log("sync-render-ok")`;
+    const output = execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 20_000 });
+    expect(output.trim()).toBe("sync-render-ok");
+  });
   it("imports and creates the universal facade under the actual React server condition", () => {
     const module = resolve(import.meta.dirname, "../../dist/runtime/component-leaf.js");
     const output = execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", `const {componentLeaf}=await import(${JSON.stringify(module)}); const leaf=componentLeaf('components.button'); if(!leaf) throw Error('missing facade'); console.log('server-import-ok')`], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
