@@ -24,19 +24,19 @@ import { reachable } from "./check-orphan-checks.mjs";
 const CODE = /\.(?:mjs|cjs|js|jsx|ts|tsx|mts|cts)$/;
 const run = (command, args, options = {}) => spawnSync(command, args, { encoding: "utf8", maxBuffer: 256 * 1024 * 1024, ...options });
 
-function gitTop(cwd) {
+export function gitTop(cwd) {
   const top = run("git", ["rev-parse", "--show-toplevel"], { cwd });
   if (top.status !== 0) throw new Error(`not inside a git checkout: ${cwd}`);
   return top.stdout.trim();
 }
 
-function commit(repo, rev) {
+export function commit(repo, rev) {
   const out = run("git", ["rev-parse", "--verify", "--quiet", `${rev}^{commit}`], { cwd: repo });
   if (out.status !== 0) throw new Error(`unknown revision: ${rev}`);
   return out.stdout.trim();
 }
 
-function extract(repo, sha, into) {
+export function extract(repo, sha, into) {
   mkdirSync(into, { recursive: true });
   const out = run("sh", ["-c", 'git -C "$1" archive --format=tar "$2" | tar -x -C "$3"', "sh", repo, sha, into]);
   if (out.status !== 0) throw new Error(`git archive ${sha} failed: ${out.stderr.trim()}`);
@@ -69,27 +69,35 @@ export function resolveCheck(tree, ref) {
 }
 
 /** Link the checkout's installed node_modules into an extracted tree (never copied, never installed). */
-function linkModules(checkout, tree) {
+export function linkModules(checkout, tree) {
   for (const dir of packageDirs(checkout)) {
     const from = join(checkout, dir, "node_modules"), to = join(tree, dir, "node_modules");
     if (existsSync(from) && existsSync(join(tree, dir)) && !existsSync(to)) symlinkSync(from, to, "dir");
   }
 }
 
-/** Give the base the head's check: its script definition and every file the script reaches. */
-async function overlay(headTree, baseTree, { dir, script }) {
-  const { reached } = await reachable(headTree, { entries: [{ dir, script }] });
-  // Code only: data the check reads (fixtures, records, the tree under test) stays the base's own.
-  const files = [...reached].filter(file => CODE.test(file)).sort();
+/**
+ * Give the base the head's checks: every check code file the entries reach (the check:orphan-checks
+ * graph), any `extra` repository paths, and the head's definition of every npm script the entries run.
+ * Code only: data the checks read (fixtures, records, the tree under test) stays the base's own.
+ */
+export async function overlayChecks(headTree, baseTree, entries, { extra = [] } = {}) {
+  const { reached, scripts } = await reachable(headTree, { entries });
+  const files = [...new Set([...[...reached].filter(file => CODE.test(file)), ...extra])].sort();
   for (const file of files) {
     mkdirSync(dirname(join(baseTree, file)), { recursive: true });
     copyFileSync(join(headTree, file), join(baseTree, file));
   }
-  const manifest = join(baseTree, dir, "package.json");
-  if (!existsSync(manifest)) throw new Error(`base has no ${dir}/package.json to carry ${script}`);
-  const doc = JSON.parse(readFileSync(manifest, "utf8"));
-  doc.scripts = { ...doc.scripts, [script]: scriptsOf(headTree, dir)[script] };
-  writeFileSync(manifest, JSON.stringify(doc, null, 2) + "\n");
+  for (const key of scripts.keys ? scripts.keys() : scripts) {
+    const at = key.lastIndexOf("#"), dir = key.slice(0, at), script = key.slice(at + 1);
+    const definition = scriptsOf(headTree, dir)[script], manifest = join(baseTree, dir, "package.json");
+    if (typeof definition !== "string") continue;
+    if (!existsSync(manifest)) throw new Error(`base has no ${dir}/package.json to carry ${script}`);
+    const doc = JSON.parse(readFileSync(manifest, "utf8"));
+    if (doc.scripts?.[script] === definition) continue;
+    doc.scripts = { ...doc.scripts, [script]: definition };
+    writeFileSync(manifest, JSON.stringify(doc, null, 2) + "\n");
+  }
   return files;
 }
 
@@ -107,7 +115,7 @@ export async function acceptUnit({ base, head, check, cwd = process.cwd() }) {
   extract(repo, baseSha, baseTree);
   extract(repo, headSha, headTree);
   const target = resolveCheck(headTree, check);
-  const overlaid = typeof scriptsOf(baseTree, target.dir)[target.script] === "string" ? undefined : await overlay(headTree, baseTree, target);
+  const overlaid = typeof scriptsOf(baseTree, target.dir)[target.script] === "string" ? undefined : await overlayChecks(headTree, baseTree, [target]);
   linkModules(repo, baseTree);
   linkModules(repo, headTree);
   const baseExit = runCheck(baseTree, target, join(work, "base.log"));

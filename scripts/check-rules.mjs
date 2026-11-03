@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * check:rules: every owner rule is code, not prose. rules/registry.json lists each rule with the
+ * check:rules: every owner rule is code, not prose. scripts/rules/registry.json lists each rule with the
  * owner's words, the checks that enforce it and a minimal violation fixture each check must fail
  * on. This meta-check fails when:
  *
@@ -17,7 +17,7 @@
  *   unmapped             a check:studio sub-check or root meta-check maps to no rule (directly or
  *                        through a package script its command runs) and has no exemption;
  *   exemption-*          an exemption is malformed, names no governed check, or is also mapped;
- *   shape                a registry row breaks rules/registry.schema.json.
+ *   shape                a registry row breaks scripts/rules/registry.schema.json.
  *
  * A check reference is `<package dir>#<npm script>` (root dir ".") or `check:studio#<sub-check id>`.
  * Fixture runs execute `run` with /bin/sh in `<root>/<cwd>`; `{fixture}` becomes the absolute fixture
@@ -34,7 +34,7 @@ import { fileURLToPath } from "node:url";
 import { reachable, repositoryFiles, workspaces } from "./check-orphan-checks.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
-export const REGISTRY = "rules/registry.json";
+export const REGISTRY = "scripts/rules/registry.json";
 export const STUDIO_MANIFEST = "packages/producer/scripts/check-studio.json";
 export const STUDIO_SCRIPT = "packages/producer#check:studio";
 /** Root scripts that are themselves rule checks and must map to a rule. */
@@ -47,7 +47,7 @@ const CODE = /\.(?:mjs|cjs|js|jsx|ts|tsx|mts|cts)$/;
 const readJson = path => JSON.parse(readFileSync(path, "utf8"));
 const oneLine = text => typeof text === "string" && text.trim() !== "" && !/\n/.test(text);
 
-/** Shape findings for one registry document (the schema in rules/registry.schema.json, by hand). */
+/** Shape findings for one registry document (the schema in scripts/rules/registry.schema.json, by hand). */
 export function shapeFindings(doc) {
   const out = [];
   const bad = (id, message) => out.push({ rule: "shape", id, message });

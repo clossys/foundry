@@ -4,7 +4,6 @@
     ".changesets": { "kind": "config", "purpose": "pending release changesets, applied by the release PR (#1255)" },
     ".github": { "kind": "automation", "purpose": "GitHub workflows and repository configuration" },
     ".gitleaksignore": { "kind": "config", "purpose": "exact historical scanner fingerprints with structurally proven individual adjudications" },
-    ".githooks": { "kind": "automation", "purpose": "committed pre-push hook (check:rules plus fast Studio checks), enabled per clone by npm run hooks:install" },
     ".gitignore": { "kind": "config", "purpose": "tracked versus generated-file boundary" },
     ".npmrc.example": { "kind": "config", "purpose": "public npm registry routing example for the published scope" },
     ".root-entry-policy.json": { "kind": "policy", "purpose": "tracked repository-root allowlist" },
@@ -23,7 +22,6 @@
     "package-scope.json": { "kind": "config", "purpose": "canonical publication scope" },
     "package.json": { "kind": "config", "purpose": "workspace commands and dependencies" },
     "packages": { "kind": "source", "purpose": "public package source workspaces" },
-    "rules": { "kind": "policy", "purpose": "owner rule registry, its schema and violation fixtures, enforced by check:rules" },
     "scripts": { "kind": "tooling", "purpose": "repository validation and publication gates" }
   }
 }

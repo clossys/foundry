@@ -78,3 +78,14 @@ test('still rejects a scroll owner whose own viewport is clipped by the card', (
   const rows = overflowFindings(document);
   assert.ok(rows.some(row => row.rule === 'descendant-clipped' && row.slot === 'scroll-owner' && row.ancestor === 'card' && row.axis === 'x'));
 });
+
+test('the browser checks default to the page records at one width; --full sweeps every entry at three', async () => {
+  const { WIDTHS, pageRecords, scopeEntries } = await import('./studio-dom-check.mjs');
+  const entries = [{ id: 'home', path: '/' }, { id: 'designer-themes', path: '/designer/themes' }, { id: 'designer-themes.colors', path: '/designer/themes/colors' }, { id: 'designer-themes:accent', path: '/designer/themes/colors/accent' }];
+  assert.deepEqual(pageRecords(entries).map(entry => entry.id), ['home', 'designer-themes']);
+  assert.deepEqual(scopeEntries(entries).map(entry => entry.id), ['home', 'designer-themes']);
+  assert.equal(scopeEntries(entries, { full: true }).length, 4);
+  assert.deepEqual(scopeEntries(entries, { only: ['/designer/themes/colors'] }).map(entry => entry.id), ['designer-themes.colors']);
+  assert.deepEqual([...WIDTHS.pages], [1280]);
+  assert.deepEqual([...WIDTHS.full], [375, 768, 1280]);
+});

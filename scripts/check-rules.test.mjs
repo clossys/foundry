@@ -28,9 +28,9 @@ function repository(rules, exemptions = [{ check: ".#check:rules", reason: "the 
     "package.json": { name: "fixture", private: true, scripts: { check: "npm run check:a && npm run check:rules", "check:a": "node scripts/check-a.mjs --root .", "check:b": "node scripts/check-b.mjs --root .", "check:rules": "node -e 0" } },
     "scripts/check-a.mjs": probe,
     "scripts/check-b.mjs": probe,
-    "rules/fixtures/bad/bad.txt": "violation\n",
-    "rules/fixtures/clean/ok.txt": "fine\n",
-    "rules/registry.json": { schema: "foundry.rule-registry/1", rules, exemptions },
+    "scripts/rules/fixtures/bad/bad.txt": "violation\n",
+    "scripts/rules/fixtures/clean/ok.txt": "fine\n",
+    "scripts/rules/registry.json": { schema: "foundry.rule-registry/1", rules, exemptions },
   });
 }
 
@@ -49,12 +49,12 @@ test("shape: ids, owner words, status and the note an unenforced rule needs", ()
 
 test("an enforced rule whose check fails on its fixture holds; unenforced, passing, unwired and unrelated rules fail", async () => {
   const root = repository([
-    { id: "R-HOLDS", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs")] },
-    { id: "R-PASSES", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "rules/fixtures/clean", fixture_runs: [run(".#check:a", "check-a.mjs")] },
-    { id: "R-UNWIRED", owner_words: words, status: "enforced", checks: [".#check:b"], fixture: "rules/fixtures/bad", fixture_runs: [run(".#check:b", "check-b.mjs")] },
-    { id: "R-UNRELATED", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-b.mjs")] },
-    { id: "R-SILENT", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs", { expect: "^a different finding" })] },
-    { id: "R-OPEN", owner_words: words, status: "unenforced", note: "a check that fails on its fixture does not lift unenforced", checks: [".#check:a"], fixture: "rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs")] },
+    { id: "R-HOLDS", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs")] },
+    { id: "R-PASSES", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/clean", fixture_runs: [run(".#check:a", "check-a.mjs")] },
+    { id: "R-UNWIRED", owner_words: words, status: "enforced", checks: [".#check:b"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:b", "check-b.mjs")] },
+    { id: "R-UNRELATED", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-b.mjs")] },
+    { id: "R-SILENT", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs", { expect: "^a different finding" })] },
+    { id: "R-OPEN", owner_words: words, status: "unenforced", note: "a check that fails on its fixture does not lift unenforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs")] },
     { id: "R-UNKNOWN", owner_words: words, status: "unenforced", note: "names a missing script", related: [".#check:missing"] },
     { id: "R-PENDING", owner_words: words, status: "pending-wire", note: "built elsewhere", pending_wire: { check: "check:later", branch: "claude/later" } },
     { id: "R-LANDED", owner_words: words, status: "pending-wire", note: "landed, not wired", pending_wire: { check: "check:b", branch: "claude/b" } },
@@ -67,7 +67,7 @@ test("an enforced rule whose check fails on its fixture holds; unenforced, passi
 });
 
 test("a meta-check no rule lists is unmapped unless exempt with a reason; stale and empty exemptions fail", async () => {
-  const held = [{ id: "R-HOLDS", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs")] }];
+  const held = [{ id: "R-HOLDS", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs")] }];
   assert.deepEqual(kinds(await ruleFindings(repository(held, []))), ["unmapped .#check:rules"]);
   assert.deepEqual(kinds(await ruleFindings(repository(held))), []);
   assert.deepEqual(kinds(await ruleFindings(repository(held, [{ check: ".#check:rules", reason: "" }, { check: ".#check:gone", reason: "a reason that names nothing governed" }]))),

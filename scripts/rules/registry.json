@@ -25,7 +25,7 @@
         "check:studio#producer scripts/compose-studio.test.mjs",
         "check:studio#designer page-dogfood --check"
       ],
-      "fixture": "rules/fixtures/R-ASSEMBLE-ONLY",
+      "fixture": "scripts/rules/fixtures/R-ASSEMBLE-ONLY",
       "fixture_runs": [
         {
           "check": "packages/producer#check:assemble-only",
@@ -67,7 +67,7 @@
         "check:studio#designer-ui studio-home-stock.source.test.mjs",
         "check:studio#designer-ui vitest"
       ],
-      "fixture": "rules/fixtures/R-DS-ONLY",
+      "fixture": "scripts/rules/fixtures/R-DS-ONLY",
       "fixture_runs": [
         {
           "check": "packages/producer#test",
@@ -98,7 +98,7 @@
         "check:studio#designer scripts/ref-verbatim/data-fit.test.mjs",
         "check:studio#producer studio/checks/p0-propagate.test.mjs"
       ],
-      "fixture": "rules/fixtures/R-SHADCN-STOCK",
+      "fixture": "scripts/rules/fixtures/R-SHADCN-STOCK",
       "fixture_runs": [
         {
           "check": "packages/designer#check:ref-verbatim",
@@ -131,7 +131,7 @@
         "check:studio#designer scripts/surface-source-identity.test.mjs",
         "check:studio#designer scripts/surface-source-runtime.test.mjs"
       ],
-      "fixture": "rules/fixtures/R-VENDORED-SOURCES",
+      "fixture": "scripts/rules/fixtures/R-VENDORED-SOURCES",
       "fixture_runs": [
         {
           "check": "packages/designer#check:provenance",
@@ -181,7 +181,7 @@
         "check:studio#producer p0-studio-mutations",
         "check:studio#producer studio/checks/p0-studio-mutations.test.cjs"
       ],
-      "fixture": "rules/fixtures/R-CONTENT-MAP",
+      "fixture": "scripts/rules/fixtures/R-CONTENT-MAP",
       "fixture_runs": [
         {
           "check": "packages/producer#check:studio-map",
@@ -243,7 +243,7 @@
       "related": [
         "check:studio#producer studio/checks/studio-overflow.test.mjs"
       ],
-      "fixture": "rules/fixtures/R-STUDIO-CARD-DETAIL",
+      "fixture": "scripts/rules/fixtures/R-STUDIO-CARD-DETAIL",
       "fixture_runs": [
         {
           "check": "packages/producer#check:studio-template",
@@ -310,19 +310,19 @@
         ".#check:orphan-checks",
         ".#check:rules"
       ],
-      "fixture": "rules/fixtures/R-CHECKS-WIRED",
+      "fixture": "scripts/rules/fixtures/R-CHECKS-WIRED",
       "fixture_runs": [
         {
           "check": ".#check:orphan-checks",
           "cwd": ".",
-          "fixture": "rules/fixtures/R-CHECKS-WIRED/orphan",
+          "fixture": "scripts/rules/fixtures/R-CHECKS-WIRED/orphan",
           "run": "node scripts/check-orphan-checks.mjs --root {fixture}",
           "expect": "^orphan\\s+packages/producer/scripts/check-probe\\.mjs"
         },
         {
           "check": ".#check:rules",
           "cwd": ".",
-          "fixture": "rules/fixtures/R-CHECKS-WIRED/registry",
+          "fixture": "scripts/rules/fixtures/R-CHECKS-WIRED/registry",
           "run": "node scripts/check-rules.mjs --root {fixture}",
           "expect": "^unenforced\\s+R-PROBE"
         }
