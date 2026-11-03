@@ -17,7 +17,7 @@ import { SPECIMEN_CHROME_CSS } from "./chrome.js";
 import type { SpecimenFile, SpecimenRecord, SpecimenRecordSource } from "./types.js";
 
 /** Bumped when the renderer's output for the same record changes. */
-export const SPECIMEN_RENDERER_VERSION = "specimen-2";
+export const SPECIMEN_RENDERER_VERSION = "specimen-3";
 
 export interface SpecimenBuild {
   readonly hash: string;
@@ -66,9 +66,25 @@ class Boundary extends React.Component {
     return React.createElement("div", { "data-specimen-error": "", role: "alert", className: "specimen-error" }, "This element did not render: " + (this.state.error && this.state.error.message || String(this.state.error)));
   }
 }
+// A fixture element tree: { $component, props?, children? } names another export of this payload.
+const isComponent = value => typeof value === "function" || (!!value && typeof value === "object" && "$$typeof" in value);
+const tree = (value, key) => {
+  if (Array.isArray(value)) return value.map((item, index) => tree(item, String(index)));
+  if (!value || typeof value !== "object") return value;
+  if (typeof value.$component === "string") {
+    const name = value.$component;
+    const part = Object.prototype.hasOwnProperty.call(Element, name) ? Element[name] : undefined;
+    if (!isComponent(part)) throw new Error("payload has no component export " + name);
+    const props = tree(value.props || {});
+    const children = value.children === undefined ? [] : Array.isArray(value.children) ? value.children.map(item => tree(item)) : [tree(value.children)];
+    return React.createElement(part, key === undefined ? props : { ...props, key }, ...children);
+  }
+  return Object.fromEntries(Object.entries(value).map(([name, item]) => [name, tree(item)]));
+};
 const Component = pick();
+const Mount = () => React.createElement(Component, tree(config.props || {}));
 const root = createRoot(document.getElementById("specimen-root"), { onCaughtError() {}, onRecoverableError(error) { report(error, "recoverable"); } });
-if (Component) root.render(React.createElement(Boundary, null, React.createElement(Component, config.props || {})));
+if (Component) root.render(React.createElement(Boundary, null, React.createElement(Mount)));
 `;
 
 const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -218,12 +234,14 @@ export function createSpecimenBuilder(options: SpecimenBuilderOptions = {}) {
       const files = visual ? await closure(record, source, errors) : new Map<string, string>();
       const entry = visual ? specimenEntry(record) : undefined;
       if (visual && !entry) errors.push(`${record.id}: payload has no code file to mount`);
-      const hash = sha256(JSON.stringify([SPECIMEN_RENDERER_VERSION, record.kind, entry?.path ?? null, [...files].sort(), errors])).slice(0, 24);
+      // Fixture props (an element tree's class names included) are styled like the payload's own sources.
+      const fixtures = visual && record.preview.fixtures ? JSON.stringify(record.preview.fixtures) : "";
+      const hash = sha256(JSON.stringify([SPECIMEN_RENDERER_VERSION, record.kind, entry?.path ?? null, [...files].sort(), errors, fixtures])).slice(0, 24);
       let pending = builds.get(hash);
       if (!pending) {
         pending = (async () => {
           const sources = [...files].filter(([path]) => CODE.test(path)).map(([path, content]) => ({ content, extension: extname(path).slice(1) }));
-          const css = await compileCss([...sources, { content: BOOTSTRAP, extension: "js" }], workspace);
+          const css = await compileCss([...sources, { content: BOOTSTRAP, extension: "js" }, ...(fixtures ? [{ content: fixtures, extension: "json" }] : [])], workspace);
           if (!visual || !entry) return { hash, css, errors };
           const esbuild = options.esbuild ?? await import("esbuild" as string) as SpecimenEsbuild;
           const built = await bundle(esbuild, files, posix.normalize(entry.path), workspace);

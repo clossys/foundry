@@ -1,7 +1,7 @@
 import { JSDOM } from 'jsdom';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
-import { BlockViewerIframe, observeSpecimenSize, specimenContentHeight, specimenSource } from './BlockViewerIframe';
+import { BlockViewerCardIframe, BlockViewerIframe, observeSpecimenSize, specimenContentHeight, specimenSource } from './BlockViewerIframe';
 
 describe('BlockViewer iframe extraction and bounded data fit', () => {
   it('retains the stock iframe, class literal, lazy loading and 930 default without a ratio wrapper', () => {
@@ -124,5 +124,27 @@ describe('BlockViewer iframe extraction and bounded data fit', () => {
       expect(disconnect).toHaveBeenCalledOnce();
       expect(height).not.toHaveBeenCalled();
     } finally { vi.unstubAllGlobals(); dom.window.close(); }
+  });
+
+  it('takes a reflowed frame height unscaled from any width, still capped', () => {
+    const reflow = { type: 'clossys:specimen-size', layout: 'reflow', width: 312, height: 180 };
+    expect(specimenContentHeight(reflow, 1280, 312, 480)).toBe(180);
+    expect(specimenContentHeight({ ...reflow, height: 5000 }, 1280, 312, 480)).toBe(480);
+    expect(specimenContentHeight({ ...reflow, height: 0 }, 1280, 312, 480)).toBeUndefined();
+  });
+
+  it('holds a card frame behind the stock skeleton at the card aspect until it reports a size', () => {
+    const html = renderToStaticMarkup(<BlockViewerCardIframe src="/__specimen?element=sample&width=1280" title="Sample" viewport={1280} iframeKey="sample" loadingLabel="Loading sample"
+      wrap={frame => <section data-card-body>{frame}</section>} />);
+    const document = new JSDOM(html).window.document;
+    const box = document.querySelector('[data-specimen-state="loading"]')!;
+    expect(box.parentElement!.hasAttribute('data-card-body')).toBe(true);
+    expect(box.className).toContain('aspect-video');
+    expect(box.querySelector('[data-slot="skeleton"]')!.getAttribute('aria-label')).toBe('Loading sample');
+    const frame = box.querySelector('iframe')!;
+    expect(frame.getAttribute('loading')).toBe('lazy');
+    expect(frame.className).toContain('opacity-0');
+    expect(frame.getAttribute('height')).toBe('480');
+    expect(frame.hasAttribute('inert')).toBe(true);
   });
 });

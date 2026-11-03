@@ -125,7 +125,8 @@ export function agentGalleryLayers(records: AgentGalleryRecords, links: StudioLi
 }
 
 function previewFields(card: AgentCard, previews: GalleryPreviews): Pick<GalleryCardData, 'specimen' | 'specimenStatus'> {
-  if (card.specimenUrl && card.records !== 0) return { specimen: { kind: 'viewports', name: card.name, title: card.name, description: '', empty: card.emptyState ?? '', specimens: [{ viewport: 1280, light: card.specimenUrl, interactive: false }] } };
+  // A record card shows its lead text at card size; the L3 page frames the full record.
+  if (card.specimenUrl && card.records !== 0) return card.excerpt.length ? { specimen: { kind: 'record', name: card.name, title: card.name, description: '', lead: card.excerpt, empty: card.emptyState ?? '' } } : {};
   // An empty or unpinned slot: the card's one state badge already says so.
   if (card.status === 'missing' || card.emptyState) return {};
   // A pinned slot whose record is missing keeps the shared missing status.

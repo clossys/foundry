@@ -76,7 +76,7 @@
         "export": "Tabs",
         "props": {
           "defaultSelectedKey": "overview",
-          "className": "w-80",
+          "className": "w-full max-w-80",
           "children": [
             {
               "$component": "TabsList",

@@ -34,6 +34,14 @@ export async function loadGalleryLeaves(agent: LibraryAgent, cards: readonly Age
   return new Map(pending.map((card, index) => [card.id, rows[index] ?? null]));
 }
 
+type Viewport = Extract<SpecimenInput, { kind: 'viewports' }>['specimens'][number];
+/** A page card frames one view-only viewport, the widest, in the Studio's current theme. */
+function cardViewport(rows: readonly Viewport[], theme: 'light' | 'dark'): Viewport[] {
+  const widest = [...rows].sort((a, b) => b.viewport - a.viewport)[0];
+  if (!widest) return [];
+  return [{ viewport: widest.viewport, light: theme === 'dark' && widest.dark ? widest.dark : widest.light, interactive: false }];
+}
+
 /** Native rows share the detail's pinned six-view projection; pageUrl serves explicit legacy rows only. */
 export function galleryLeafInputs(row: GalleryLeaf, links: StudioLinks, theme: 'light' | 'dark', pageUrl?: string, publication?: PublicationResponse): { specimen: SpecimenInput; contract: ContractInput } {
   if (row.source === 'legacy') return { specimen: agentGalleryPreview(row.leaf, links, pageUrl), contract: { ...row.leaf.contract, copy: contractCopy() } };
@@ -41,7 +49,7 @@ export function galleryLeafInputs(row: GalleryLeaf, links: StudioLinks, theme: '
   const specimen = inputs.specimen as SpecimenInput;
   return {
     specimen: row.detail.agent === 'publisher' && row.detail.kind === 'page' && specimen.kind === 'viewports'
-      ? { ...specimen, specimens: specimen.specimens.map(viewport => ({ ...viewport, interactive: false })) }
+      ? { ...specimen, specimens: cardViewport(specimen.specimens, theme) }
       : specimen,
     contract: inputs.contract as ContractInput,
   };

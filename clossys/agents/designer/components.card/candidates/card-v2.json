@@ -72,7 +72,7 @@
         "file": "card.tsx",
         "export": "Card",
         "props": {
-          "className": "w-80",
+          "className": "w-full max-w-80",
           "children": [
             {
               "$component": "CardHeader",

@@ -77,6 +77,28 @@ function wrap(container: string, body: string): string {
   return body;
 }
 
+/**
+ * Reports the specimen's natural size to a same-origin host (a Studio gallery card): the page lays
+ * out at the frame's own width (`layout: "reflow"`, no scaling), and `empty` says that nothing in
+ * the stage paints (no text, media, form control, fill, border or shadow), so the host can drop
+ * the preview instead of showing a blank box; `failed` says the specimen reported an error.
+ */
+const SIZE_SCRIPT = `(()=>{if(parent===window)return;const stage=document.getElementById("specimen-stage");if(!stage)return;let last="",timer=0;`
+  + `const failed=()=>{try{return window.__clossysSpecimen.health().errors.count>0;}catch{return false;}};`
+  + `const media=/^(img|svg|canvas|video|picture|input|textarea|select|iframe|hr|meter|progress)$/i;`
+  + `const paints=(el,c)=>media.test(el.tagName)||(c.backgroundColor!=="transparent"&&!/^rgba\\(.*,\\s*0\\)$/.test(c.backgroundColor))||c.backgroundImage!=="none"||c.boxShadow!=="none"||["Top","Right","Bottom","Left"].some(side=>parseFloat(c["border"+side+"Width"])>0&&c["border"+side+"Style"]!=="none")||[...el.childNodes].some(node=>node.nodeType===3&&node.textContent.trim());`
+  + `const measure=()=>{const host=stage.parentElement,box=getComputedStyle(host),pad=host.classList.contains("specimen-canvas")?parseFloat(box.paddingTop)+parseFloat(box.paddingBottom):0;`
+  + `let height=stage.getBoundingClientRect().height+pad,shown=false;const all=stage.getElementsByTagName("*");`
+  + `for(let i=0;i<all.length&&i<4000;i++){const el=all[i],c=getComputedStyle(el),b=el.getBoundingClientRect();if(c.display==="none"||c.visibility==="hidden"||b.width<1||b.height<1)continue;`
+  + `if(c.position==="fixed")height=Math.max(height,b.bottom+48);if(!shown&&paints(el,c))shown=true;}`
+  + `const size={type:"clossys:specimen-size",layout:"reflow",width:innerWidth,height:Math.ceil(height),empty:!shown,failed:failed()},key=JSON.stringify(size);`
+  + `if(key===last)return;last=key;try{parent.postMessage(size,location.origin);}catch{}};`
+  + `const soon=()=>{clearTimeout(timer);timer=setTimeout(measure,50);};`
+  + `addEventListener("load",()=>{last="";soon();for(const delay of [300,1000,2500])setTimeout(()=>{last="";measure();},delay);});addEventListener("resize",soon);`
+  + `addEventListener("message",event=>{if(event.source===parent&&event.origin===location.origin&&event.data&&event.data.type==="clossys:specimen-size-request"){last="";measure();}});`
+  + `if(window.ResizeObserver)new ResizeObserver(soon).observe(stage);if(window.MutationObserver)new MutationObserver(soon).observe(stage,{subtree:true,childList:true,attributes:true,characterData:true});`
+  + `if(document.fonts&&document.fonts.ready)document.fonts.ready.then(soon);})();`;
+
 export function renderSpecimenPage(input: SpecimenPageInput): string {
   const { record, query, build } = input;
   const width = query.width ?? record?.preview.width ?? null;
@@ -99,6 +121,7 @@ export function renderSpecimenPage(input: SpecimenPageInput): string {
   } else {
     body = renderStub(record);
   }
+  scripts += `<script nonce="${escapeHtml(input.nonce)}">${SIZE_SCRIPT}</script>`;
   const container = record?.preview.container ?? (record?.kind === "visual" ? "canvas" : "page");
   const head = [
     '<meta charset="utf-8">',

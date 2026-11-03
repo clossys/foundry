@@ -9,7 +9,7 @@ import { slotDetail, type SlotDetail } from './slot-detail.js';
 import { agentGalleryLayers, type AgentCard, type AgentLeafRecords, type GalleryPreviews } from '../../studio/lib/agent-library';
 import { loadGalleryLeaves, galleryLeafInputs } from '../../studio/lib/gallery-specimens';
 import { slotDetailInputs } from '../../studio/lib/slot-detail';
-import { SpecimenContent } from '../../studio/sections/studio-specimen';
+import { SpecimenContent, type SpecimenInput } from '../../studio/sections/studio-specimen';
 import { LeafCard } from '../../studio/sections/studio-agent-gallery/LeafCard';
 import { parsePublicationResponse } from '../../studio/lib/publisher-preview';
 import { contractCopy } from '../../studio/lib/contract-copy';
@@ -124,13 +124,12 @@ describe('slot-first gallery specimen collection', () => {
     const rawUrl = '/preview/example/frame/emitted-example.html?theme=dark&width=1280';
     for (const theme of ['light', 'dark'] as const) {
       const inputs = galleryLeafInputs({ source: 'slot', detail }, links, theme, rawUrl, publication);
-      expect(inputs.specimen).toMatchObject({ kind: 'viewports', specimens: [375, 768, 1280].map(viewport => ({ viewport,
-        light: `/preview/example/frame/emitted-example.html?theme=light&width=${viewport}`,
-        dark: `/preview/example/frame/emitted-example.html?theme=dark&width=${viewport}`,
-        interactive: false,
-      })) });
-      if (inputs.specimen.kind !== 'viewports') throw new Error('Expected viewport specimens');
-      expect(inputs.specimen.specimens.flatMap(row => [row.light, row.dark])).toHaveLength(6);
+      // The detail route keeps all six frames; the card frames the widest one in the current theme.
+      const detailSpecimen = slotDetailInputs(detail, links, theme, publication).specimen as SpecimenInput;
+      if (detailSpecimen.kind !== 'viewports') throw new Error('Expected viewport specimens');
+      expect(detailSpecimen.specimens.flatMap(row => [row.light, row.dark])).toHaveLength(6);
+      expect(inputs.specimen).toEqual({ ...detailSpecimen, specimens: [{ viewport: 1280,
+        light: `/preview/example/frame/emitted-example.html?theme=${theme}&width=1280`, interactive: false }] });
       expect(inputs.contract).toEqual(slotDetailInputs(detail, links, theme, publication).contract);
     }
     for (const rejected of [

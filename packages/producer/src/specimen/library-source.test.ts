@@ -122,6 +122,24 @@ describe("canonical specimen records through the common slot reader", () => {
     await expect(libraryRecordStore([root]).load("sample-card")).rejects.toBeInstanceOf(RecordError);
   });
 
+  it("passes a preview element tree naming the candidate's own exports and rejects any other component", async () => {
+    const slot = card(), item = JSON.parse(readFileSync(candidate(), "utf8"));
+    const repin = (children: unknown) => {
+      const fixtures = { file: item.files[0].path, props: { children } };
+      const bytes = jsonBytes({ ...item, meta: { ...item.meta, preview: { ...item.meta.preview, fixtures } } });
+      writeFileSync(candidate(), bytes);
+      writeFileSync(pinFile(slot.dir), jsonBytes({ ...slot.pin, sha256: sha256Hex(bytes) }));
+    };
+    repin([{ $component: "SampleCard", props: { title: "Title", body: "Body", action: "Open" } }, "Plain text"]);
+    const preview = (await libraryRecordStore([root]).load("sample-card"))!.preview as Record<string, any>;
+    expect(preview.fixtures.props.children[0]).toMatchObject({ $component: "SampleCard" });
+    expect(preview.copy).toEqual(item.meta.preview.copy);
+    repin([{ $component: "SampleCard", children: [{ $component: "SampleButton" }] }]);
+    await expect(libraryRecordStore([root]).load("sample-card")).rejects.toThrow("the candidate exports no component SampleButton");
+    repin([{ $copy: "studio.missing" }]);
+    await expect(libraryRecordStore([root]).load("sample-card")).rejects.toThrow("Writer has no copy key studio.missing");
+  });
+
   it("rejects slot identity drift even when the payload remains valid", async () => {
     const slot = card(), doc = JSON.parse(readFileSync(slotFile(slot.dir), "utf8"));
     writeFileSync(slotFile(slot.dir), jsonBytes({ ...doc, id: "components.button" }));

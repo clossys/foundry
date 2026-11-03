@@ -43,6 +43,8 @@ const SCRIPT = [
   "function loaded(){last=-1;soon();[100,500,1500,3000].forEach(function(t){setTimeout(measure,t);});",
   "try{var d=f.contentDocument;d.addEventListener('load',soon,true);if(d.fonts&&d.fonts.ready)d.fonts.ready.then(soon);}catch(e){}}",
   "f.addEventListener('load',loaded);addEventListener('resize',function(){fit();last=-1;soon();});fit();",
+  // A host that bound after the first report asks again.
+  "addEventListener('message',function(e){if(e.source===parent&&e.origin===location.origin&&e.data&&e.data.type==='clossys:specimen-size-request'){last=-1;soon();}});",
   "})();",
 ].join("");
 

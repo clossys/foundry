@@ -8,6 +8,7 @@ import { recordStoreSource, type SpecimenElementVersion, type SpecimenRecordSour
 import { listSlots, readCandidate, readSlot, readSlotEntry, type SlotEntry } from "../records/slots.js";
 import { CANDIDATE_NAME, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
 import { RecordError } from "../records/validate.js";
+import { fixtureChildren, moduleExports, pinnedWriterCopy, specimenTreeIssues } from "../server/specimen-tree.js";
 
 const SEGMENT = /^[a-z0-9][a-z0-9.-]*$/;
 export interface LibrarySourceOptions {
@@ -84,11 +85,41 @@ export function libraryRecordStore(rootsIn: readonly string[]): SpecimenRecordSt
       if (item.name !== element || (item.meta?.element?.id !== undefined && item.meta.element.id !== element) || (item.meta?.element?.slot !== undefined && item.meta.element.slot !== slot)) throw new Error(`candidate ${slot}/${candidate.name}: element identity differs from the candidate name or slot`);
       const row: SpecimenElementVersion = {
         id: `${slot}/${element}`, version: chosen, kind: item.type, layer: entry.position.l0 ?? slot.split(".")[0]!,
-        files: [{ path: `${element}.json`, content: read.bytes }], preview: item.meta?.preview ?? {}, contentHash: read.sha256,
+        files: [{ path: `${element}.json`, content: read.bytes }], preview: previewWithTree(root, `${slot}/${candidate.name}`, item), contentHash: read.sha256,
       };
       return row;
     },
   };
+}
+
+/**
+ * A preview whose fixtures declare an element tree (see server/specimen-tree.ts): every
+ * `$component` must be an export of the fixture's own file and every `$copy` a pinned Writer key;
+ * the keys it names are added to the preview copy the renderer resolves them from.
+ */
+function previewWithTree(root: string, where: string, item: { files?: { path?: unknown; content?: unknown }[]; meta?: { preview?: unknown } }): Record<string, unknown> {
+  const preview = (item.meta?.preview ?? {}) as Record<string, unknown>;
+  const fixtures = preview.fixtures as Record<string, unknown> | undefined;
+  const tree = fixtureChildren(fixtures);
+  if (tree === undefined) return preview;
+  const file = typeof fixtures?.file === "string" ? fixtures.file : typeof preview.entry === "string" ? preview.entry : undefined;
+  const source = item.files?.find(row => row.path === file)?.content;
+  if (typeof source !== "string") throw new Error(`candidate ${where}: the preview tree names no file of the candidate`);
+  const writer = pinnedWriterCopy(root);
+  const issues = specimenTreeIssues(tree, moduleExports(source), writer);
+  if (issues.length) throw new Error(`candidate ${where}: ${issues.join("; ")}`);
+  const keys = new Set<string>();
+  const walk = (value: unknown): void => {
+    if (Array.isArray(value)) value.forEach(walk);
+    else if (value && typeof value === "object") {
+      const node = value as Record<string, unknown>;
+      if (typeof node.$copy === "string") keys.add(node.$copy);
+      else Object.values(node).forEach(walk);
+    }
+  };
+  walk(tree);
+  const own = preview.copy && typeof preview.copy === "object" ? preview.copy as Record<string, unknown> : {};
+  return { ...preview, copy: { ...Object.fromEntries([...keys].map(key => [key, writer[key]!])), ...own } };
 }
 
 export function libraryRecordSource(options: LibrarySourceOptions): SpecimenRecordSource {

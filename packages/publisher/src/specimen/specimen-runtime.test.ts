@@ -100,4 +100,29 @@ describe('specimen runtime source boundaries', () => {
     expect(html).toContain('"preErrors":[{"source":"build","message":"visual specimen has no executable bundle"}]');
     expect(html).not.toContain('type="module"');
   });
+
+  it('mounts a fixture element tree of the payload exports and reports a non-exported part as a render error', async () => {
+    const parts = { path: 'index.tsx', content: 'const part = tag => ({ children, ...props }) => <div data-part={tag} {...props}>{children}</div>; export const Tabs = part("tabs"); export const TabsList = part("list"); export const TabsTrigger = part("trigger");' };
+    const mount = async (children: unknown) => {
+      const input = record([parts], { fixtures: { file: 'index.tsx', export: 'Tabs', props: { children } } });
+      const built = await createSpecimenBuilder({ workspace }).build(input);
+      expect(built.errors).toEqual([]);
+      const html = renderSpecimenPage({ query: { element: input.id }, record: input, build: built, mode: 'light', assetBase: '/assets/', nonce: 'test' });
+      const dom = new JSDOM(html, { runScripts: 'outside-only', pretendToBeVisual: true });
+      dom.window.eval(dom.window.document.querySelector('head script')!.textContent!);
+      dom.window.eval(built.js!.replace(/^export\s*\{[^}]*\};?\s*$/m, ''));
+      await new Promise(resolve => setTimeout(resolve, 50));
+      return dom;
+    };
+    const ok = await mount([{ $component: 'TabsList', props: { 'aria-label': 'Sample' }, children: [{ $component: 'TabsTrigger', children: 'One' }, 'Two'] }]);
+    try {
+      expect(ok.window.document.getElementById('specimen-root')!.innerHTML).toBe('<div data-part="tabs"><div data-part="list" aria-label="Sample"><div data-part="trigger">One</div>Two</div></div>');
+      expect((ok.window as any).__clossysSpecimen.health().errors.items.filter((item: { source: string }) => item.source === 'render')).toEqual([]);
+    } finally { ok.window.close(); }
+    const bad = await mount([{ $component: 'TabsPanel', children: 'x' }]);
+    try {
+      expect(bad.window.document.querySelector('[data-specimen-error]')!.textContent).toContain('payload has no component export TabsPanel');
+      expect((bad.window as any).__clossysSpecimen.health().errors.count).toBeGreaterThanOrEqual(1);
+    } finally { bad.window.close(); }
+  }, 30_000);
 });
