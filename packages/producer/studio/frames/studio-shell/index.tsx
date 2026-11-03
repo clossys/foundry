@@ -276,7 +276,7 @@ function StudioShellContent({ navigation, commands, breadcrumbs, popovers = [], 
               if (isMobile && mobilePanel === 'chat') setOpenMobile(false);
             }} /></HeaderTooltip>
           </HeaderEdgeToggle>
-          <Breadcrumb>
+          <Breadcrumb className="mr-auto">
             <BreadcrumbList>
               {breadcrumbs.map((crumb, index) => index < breadcrumbs.length - 1
                 ? <BreadcrumbItem key={crumb.id} id={crumb.id} className="hidden md:inline-flex">
@@ -287,26 +287,24 @@ function StudioShellContent({ navigation, commands, breadcrumbs, popovers = [], 
                 </BreadcrumbItem>)}
             </BreadcrumbList>
           </Breadcrumb>
-        </div>
-        <div className="flex items-center gap-2 px-3">
-        {popovers.map(spec => {
-          const Icon = studioIcon(spec.icon, spec.id);
-          return <HeaderPopover key={spec.id} label={spec.label} open={open === spec.id} onOpenChange={value => show(value ? spec.id : undefined)}
-            data-popover-trigger={spec.id} aria-keyshortcuts={spec.shortcut} content={<>
-              <PopoverHeader>
-                <PopoverTitle>{spec.label}</PopoverTitle>
-                {spec.description && <PopoverDescription>{spec.description}</PopoverDescription>}
-              </PopoverHeader>
-              {spec.copy?.kind === 'prompt' ? <CopyBody spec={spec} prompt={spec.copy.prompt} /> : <ScrollArea data-popover-body={spec.id} className="max-h-[60svh]">{spec.render?.(context)}</ScrollArea>}
-            </>}><Icon /></HeaderPopover>;
-        })}
-        <HeaderIconButton label="Toggle theme" aria-pressed={resolved === 'dark'} data-theme-toggle
-          onClick={() => setMode(resolved === 'dark' ? 'light' : 'dark')}>
-          {resolved === 'dark' ? <SunIcon /> : <MoonIcon />}
-        </HeaderIconButton>
-        <HeaderEdgeToggle separatorFirst>
-          <HeaderIconButton label="Toggle chat" aria-pressed={isMobile ? openMobile && mobilePanel === 'chat' : chatOpen} data-panel-toggle="chat" onClick={toggleChat}><PanelRightIcon /></HeaderIconButton>
-        </HeaderEdgeToggle>
+          {popovers.map(spec => {
+            const Icon = studioIcon(spec.icon, spec.id);
+            return <HeaderPopover key={spec.id} label={spec.label} open={open === spec.id} onOpenChange={value => show(value ? spec.id : undefined)}
+              data-popover-trigger={spec.id} aria-keyshortcuts={spec.shortcut} content={<>
+                <PopoverHeader>
+                  <PopoverTitle>{spec.label}</PopoverTitle>
+                  {spec.description && <PopoverDescription>{spec.description}</PopoverDescription>}
+                </PopoverHeader>
+                {spec.copy?.kind === 'prompt' ? <CopyBody spec={spec} prompt={spec.copy.prompt} /> : <ScrollArea data-popover-body={spec.id} className="max-h-[60svh]">{spec.render?.(context)}</ScrollArea>}
+              </>}><Icon /></HeaderPopover>;
+          })}
+          <HeaderIconButton label="Toggle theme" aria-pressed={resolved === 'dark'} data-theme-toggle
+            onClick={() => setMode(resolved === 'dark' ? 'light' : 'dark')}>
+            {resolved === 'dark' ? <SunIcon /> : <MoonIcon />}
+          </HeaderIconButton>
+          <HeaderEdgeToggle separatorFirst>
+            <HeaderIconButton label="Toggle chat" aria-pressed={isMobile ? openMobile && mobilePanel === 'chat' : chatOpen} data-panel-toggle="chat" onClick={toggleChat}><PanelRightIcon /></HeaderIconButton>
+          </HeaderEdgeToggle>
         </div>
       </>}>
       {children}

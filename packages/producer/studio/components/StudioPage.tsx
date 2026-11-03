@@ -9,12 +9,12 @@ import { studioCopy } from '../lib/studio-copy';
  * each section's contract input, and the pinned frame and sections render it. No page has its
  * own component: every page is this assembly.
  */
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { notFound } from 'next/navigation';
 import { ArrowRightIcon } from 'lucide-react';
 import type { ContentMap, ContentMapEntry } from '@clossys/publisher/content-map';
 import { studioFrames, studioSections } from '../generated/assembly-bindings';
-import { studioPublicationRoot, studioRoutes, type StudioAssemblySpec, type StudioPageRecord } from '../generated/studio-map';
+import { studioPages, studioPublicationRoot, studioRoutes, type StudioAssemblySpec, type StudioInstalledRoute, type StudioPageRecord } from '../generated/studio-map';
 import { PageNotice, type PageNoticeData, type PopoverSpec } from '../frames/studio-shell';
 import type { AgentGalleryInput, GallerySelection } from '../sections/studio-agent-gallery';
 import type { ChecksInput } from '../sections/studio-checks';
@@ -43,6 +43,7 @@ import type { StudioReport } from '../lib/studio-report';
 import { resolveStudioRoute, studioHref, studioLeafHref, studioPageEntries, studioShellProjection, type StudioRoute } from '../lib/studio-route-map';
 import { resolveSelection, selectionOf } from '../lib/gallery-layout';
 import { useSlotCensus } from '../lib/slot-census';
+import { loadLeaf, type LeafRecord, type StudioPageSeed } from '../lib/studio-seed';
 import { useStudioData, useThemeMode, type Resource } from './StudioProviders';
 import { useStudioRoutes } from './StudioRouteMap';
 
@@ -140,7 +141,6 @@ const OUTLINE_LABEL: Record<string, string> = {
 };
 const shortName = (slot: string) => slot.replace(/^sections\.studio\./, '');
 
-const VIEWPORTS = [375, 768, 1280] as const;
 const message = (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback;
 
 /** Map-backed links for the adapters. */
@@ -150,10 +150,13 @@ function mapLinks(map: ContentMap): StudioLinks {
 
 /* Loaders: Producer data -> section inputs, one per page record loader. */
 
+/** What the server render already loaded for this route; each loader starts from it instead of loading. */
+const PageSeedContext = createContext<StudioPageSeed>({});
+
 function useHomeInputs(): Loaded {
-  const { reports, revision } = useStudioData();
+  const { reports, revision, census: initialCensus } = useStudioData();
   const { map } = useStudioRoutes();
-  const census = useSlotCensus(revision);
+  const census = useSlotCensus(revision, initialCensus);
   return useMemo(() => {
     const list: readonly StudioReport[] = reports.state === 'ready' ? reports.value : [];
     const agents = AGENTS.flatMap(agent => {
@@ -173,30 +176,27 @@ function useHomeInputs(): Loaded {
   }, [reports, map, census]);
 }
 
-/** Every route the Studio publication serves: the compiled pages and the leaves the record stores add. */
-/** Whether Publisher installed the App Router file that serves a Studio map entry: its page, or for a leaf its gallery's `[slug]` route. */
+/**
+ * The routes the Studio publication serves: each compiled page and, per gallery, the one leaf
+ * route Publisher installs for every leaf its record store holds. The leaves themselves are the
+ * galleries' cards, so the table names the route that serves them instead of repeating each one.
+ */
 const INSTALLED_ROOT = 'studio/app/';
-function installedByPublisher(entryId: string): boolean {
-  const [pageId, leaf] = entryId.split(':');
-  const route = studioRoutes.find(row => row.instanceId === pageId);
-  const file = leaf === undefined ? route?.entry.file : route?.leaf?.entry.file;
-  return typeof file === 'string' && file.startsWith(INSTALLED_ROOT);
-}
+const installed = (file: unknown) => typeof file === 'string' && file.startsWith(INSTALLED_ROOT);
 
 function studioPublication(map: ContentMap, origin: string): Publication {
-  const entries = studioPageEntries(map);
+  const entries = new Map(studioPageEntries(map).map(entry => [entry.id, entry]));
+  const status = (file: unknown) => installed(file) ? { label: studioCopy("studio.installed-by-publisher"), tone: 'secondary' as const } : { label: studioCopy("studio.compiled"), tone: 'secondary' as const };
   return {
     id: map.publicationId, title: studioCopy("studio.studio"), root: origin || 'localhost', rootNote: studioPublicationRoot.note,
-    routes: entries.map(entry => {
-      const compiled = !entry.id.includes(':');
-      // Installed by Publisher (a route file under app/) is distinct from compiled-only (in the map, no installed route).
-      const status = installedByPublisher(entry.id) ? { label: studioCopy("studio.installed-by-publisher"), tone: 'secondary' as const }
-        : compiled ? { label: studioCopy("studio.compiled"), tone: 'secondary' as const } : { label: studioCopy("studio.from-records"), tone: 'outline' as const };
-      return {
-        key: entry.id, path: entry.path, pageId: entry.id, frame: entry.source?.frameId ?? '—', sections: entry.source?.sectionIds ?? [],
-        status,
-        leaf: { label: entry.title, href: entry.path },
-      };
+    routes: [...studioRoutes, ...[...entries.values()].filter(entry => !entry.id.includes(':') && !studioRoutes.some(route => route.instanceId === entry.id)).map(entry => ({ instanceId: entry.id, path: entry.path, label: entry.title, entry: { file: '', export: '' } }))].flatMap((route: StudioInstalledRoute) => {
+      const entry = entries.get(route.instanceId);
+      if (!entry) return [];
+      const page = { key: entry.id, path: entry.path, pageId: entry.id, frame: entry.source?.frameId ?? '—', sections: entry.source?.sectionIds ?? [], status: status(route.entry.file), leaf: { label: entry.title, href: entry.path } };
+      const record = studioPages.find(row => row.id === route.instanceId)?.leaf;
+      if (!route.leaf || !record) return [page];
+      const frame = studioPages.find(row => row.id === route.instanceId)?.frameId ?? '—';
+      return [page, { key: `${entry.id}:${record.param}`, path: route.leaf.path, pageId: `${entry.id}:[${record.param}]`, frame, sections: record.sectionIds, status: status(route.leaf.entry.file), leaf: { label: entry.title, href: entry.path } }];
     }),
   };
 }
@@ -225,13 +225,16 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
   const { resolved } = useThemeMode();
   const gallery = galleries[page.id];
   const withPublications = page.sectionIds.includes('sections.studio.publications');
-  const [publication, setPublication] = useState<Resource<PublicationResponse> | undefined>(undefined);
+  const seed = useContext(PageSeedContext);
+  const [publication, setPublication] = useState<Resource<PublicationResponse> | undefined>(() => seed.publication);
   const [leaves, setLeaves] = useState<ReadonlyMap<string, GalleryLeaf | null> | undefined>(undefined);
+  // The server-rendered publication stands for this page.
+  const seededPublication = useRef(seed.publication !== undefined);
   const [origin, setOrigin] = useState('');
   const [wanted, select] = useGallerySelection();
   useEffect(() => setOrigin(window.location.origin), []);
   useEffect(() => {
-    if (!withPublications) return;
+    if (!withPublications || seededPublication.current) return;
     const controller = new AbortController();
     loadPublication(controller.signal).then(value => setPublication({ state: 'ready', value }), error => { if (!controller.signal.aborted) setPublication({ state: 'error', message: message(error, studioCopy("studio.the-publication-could-not-load")) }); });
     return () => controller.abort();
@@ -295,7 +298,9 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
         title: studioCopy("studio.publications"),
         description: studioCopy("studio.every-publication-with-the-root-its-config"),
         copy: publicationsCopy(),
-        publications: [studioPublication(map, origin), ...(withSite ? [withSite] : [])].map(publication => ({ ...publication, copy: publicationCopy(publication) })),
+        // Studio's own install answers /api/publication too: that is the Studio publication again, whose
+        // pages the gallery already shows, so only a different (consumer site) publication gets a table.
+        publications: [studioPublication(map, origin), ...(withSite && withSite.id !== map.publicationId ? [withSite] : [])].map(publication => ({ ...publication, copy: publicationCopy(publication) })),
       };
       inputs.publications = publications;
       explorer.push({ id: 'publications', label: studioCopy("studio.publications"), items: publications.publications.map(row => ({ id: `publication:${row.id}`, label: row.title, depth: 0, target: byId(`publication-${row.id}`) })) });
@@ -305,46 +310,18 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
 }
 
 
-type LeafRecord = { agent: 'slot'; detail: SlotDetail; publication?: PublicationResponse } | { agent: 'designer'; leaf: DesignerLeaf } | { agent: LibraryAgent; leaf: AgentLeafRecords; previews: ReadonlyMap<number, OptionRow['preview']>; specimens?: readonly ViewportSpecimen[] };
-
-async function loadLeaf(agent: string, slug: string, signal: AbortSignal): Promise<LeafRecord | undefined> {
-  const detail = await loadSlotDetail(agent, slug, signal);
-  if (detail !== undefined) {
-    if (!detail) return undefined;
-    const publication = detail.agent === 'publisher' && detail.kind === 'page' ? await loadPublication(signal).catch(() => undefined) : undefined;
-    return { agent: 'slot', detail, publication };
-  }
-  if (agent === 'designer') { const leaf = await loadDesignerLeaf(slug, signal); return leaf && { agent, leaf }; }
-  if (!isLibraryAgent(agent)) return undefined;
-  const leaf = await loadAgentLeaf(agent, slug, signal);
-  if (!leaf) return undefined;
-  // Each option shows the strings it changes against the active version.
-  const previews = new Map<number, OptionRow['preview']>();
-  const options = agentOptionVersions(leaf);
-  if (options.length && agent !== 'publisher') {
-    const active = leaf.history.find(row => row.active);
-    const read = (version: number) => loadCell(agent as Agent, leaf.card.id, signal, version).then(cell => cell.content, () => undefined);
-    const base = active ? await read(active.version) : undefined;
-    for (const option of options) {
-      const content = await read(option.version);
-      if (content !== undefined) previews.set(option.version, stringChanges(content, base));
-    }
-  }
-  if (agent !== 'publisher') return { agent, leaf, previews };
-  // A Publisher page's specimen is the page itself, as its last install emitted it.
-  const publication = await loadPublication(signal).catch(() => undefined);
-  const page = publication?.state === 'ready' ? publication.pages.find(row => row.cellId === leaf.card.id) : undefined;
-  const specimens = page && page.emitted && safePreviewUrl(page.previewUrl) ? VIEWPORTS.map(viewport => ({ viewport, light: publisherFrameUrl(page, viewport, 'light'), dark: publisherFrameUrl(page, viewport, 'dark') })) : [];
-  return { agent, leaf, previews, specimens };
-}
-
 function useLeafInputs(page: StudioPageRecord, slug: string): Loaded {
   const { map } = useStudioRoutes();
   const { revision, reports } = useStudioData();
   const { resolved } = useThemeMode();
   const agent = page.leaf?.data.agent ?? page.id;
-  const [record, setRecord] = useState<Resource<LeafRecord | undefined>>({ state: 'loading' });
+  const seed = useContext(PageSeedContext).leaf;
+  const [record, setRecord] = useState<Resource<LeafRecord | undefined>>(() => seed && seed.agent === agent && seed.slug === slug ? seed.record : { state: 'loading' });
+  // The server-rendered record is current for this leaf until Producer reports a change.
+  const seeded = useRef(seed && seed.agent === agent && seed.slug === slug ? revision : undefined);
   useEffect(() => {
+    if (seeded.current === revision) return;
+    seeded.current = undefined;
     const controller = new AbortController();
     setRecord({ state: 'loading' });
     loadLeaf(agent, slug, controller.signal).then(value => setRecord({ state: 'ready', value }), error => { if (!controller.signal.aborted) setRecord({ state: 'error', message: message(error, studioCopy("studio.this-leaf-could-not-load")) }); });
@@ -469,7 +446,11 @@ function LeafPage(props: { entry: ContentMapEntry; page: StudioPageRecord; spec:
 const LOADERS = { home: HomePage, gallery: GalleryPage } as const;
 
 /** Renders whatever page record the Studio map resolves `segments` to. */
-export function StudioPage({ segments }: { segments: readonly string[] }) {
+export function StudioPage({ segments, seed }: { segments: readonly string[]; seed?: StudioPageSeed }) {
+  return <PageSeedContext.Provider value={seed ?? {}}><StudioRoute segments={segments} /></PageSeedContext.Provider>;
+}
+
+function StudioRoute({ segments }: { segments: readonly string[] }) {
   const { map, leaves } = useStudioRoutes();
   const route: StudioRoute = resolveStudioRoute(map, leaves, segments);
   if (route.state === 'missing') notFound();

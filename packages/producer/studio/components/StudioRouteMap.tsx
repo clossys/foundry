@@ -2,15 +2,13 @@
 import { studioCopy } from '../lib/studio-copy';
 
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { ContentMap } from '@clossys/publisher/content-map';
-import { isLibraryAgent, loadAgentGallery, type AgentGalleryRecords } from '../lib/agent-library';
-import { loadDesignerGallery, type DesignerGallery } from '../lib/designer-library';
+import { loadGallery, type StudioGallery } from '../lib/studio-seed';
 import { studioLeafPages, studioRuntimeMap, type StudioLeafIndex, type StudioLeafRow } from '../lib/studio-route-map';
 import type { Resource } from './StudioProviders';
 
-/** One gallery page's record store, as its agent's library endpoint returns it. */
-export type StudioGallery = { agent: 'designer'; records: DesignerGallery } | { agent: 'director' | 'writer' | 'publisher'; records: AgentGalleryRecords };
+export type { StudioGallery } from '../lib/studio-seed';
 
 interface StudioRoutes { map: ContentMap; leaves: StudioLeafIndex; galleries: Readonly<Record<string, Resource<StudioGallery> | undefined>> }
 const RoutesContext = createContext<StudioRoutes>({ map: studioRuntimeMap({}), leaves: {}, galleries: {} });
@@ -23,16 +21,14 @@ function leafRows(gallery: StudioGallery): StudioLeafRow[] {
   return sections.flatMap(section => section.cards.map(card => ({ slug: card.slug, title: card.name })));
 }
 
-async function loadGallery(agent: string, signal: AbortSignal): Promise<StudioGallery> {
-  if (agent === 'designer') return { agent, records: await loadDesignerGallery(signal) };
-  if (isLibraryAgent(agent)) return { agent, records: await loadAgentGallery(agent, signal) };
-  throw new Error(studioCopy("studio.studio-has-no-library-for", { value0: String(agent) }));
-}
-
 /** Loads each gallery page's records once per Producer revision and extends the map with their leaves. */
-export function StudioRouteMapProvider({ revision, children }: { revision: number; children: ReactNode }) {
-  const [galleries, setGalleries] = useState<Record<string, Resource<StudioGallery> | undefined>>({});
+export function StudioRouteMapProvider({ revision, initial, children }: { revision: number; initial?: Readonly<Record<string, Resource<StudioGallery>>>; children: ReactNode }) {
+  const [galleries, setGalleries] = useState<Record<string, Resource<StudioGallery> | undefined>>(() => ({ ...initial }));
+  // Server-rendered galleries are current for the first revision.
+  const seeded = useRef(initial ? revision : undefined);
   useEffect(() => {
+    if (seeded.current === revision) return;
+    seeded.current = undefined;
     const controller = new AbortController();
     for (const page of studioLeafPages) {
       const agent = page.leaf!.data.agent ?? page.id;

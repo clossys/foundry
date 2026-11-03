@@ -1,3 +1,4 @@
+import { producerUrl } from './producer-url';
 import { optionCopy, optionsCopy } from './options-copy';
 import { checksCopy } from './checks-copy';
 import { referencesCopy } from './references-copy';
@@ -104,7 +105,7 @@ export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 
 
 /** Null is an unknown slot; undefined means this workspace still uses legacy stores. */
 export async function loadSlotDetail(agent: string, slug: string, signal: AbortSignal): Promise<SlotDetail | null | undefined> {
-  const response = await fetch(`/api/slots/${encodeURIComponent(agent)}/${encodeURIComponent(slug)}`, { signal, cache: 'no-store' });
+  const response = await fetch(producerUrl(`/api/slots/${encodeURIComponent(agent)}/${encodeURIComponent(slug)}`), { signal, cache: 'no-store' });
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(studioCopy("studio.slot-detail-could-not-load", { value0: String(response.status) }));
   const value = await response.json();

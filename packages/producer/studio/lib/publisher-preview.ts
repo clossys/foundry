@@ -1,3 +1,4 @@
+import { producerUrl } from './producer-url';
 import { studioCopy } from './studio-copy';
 import type { AgentCells } from './cells-client';
 import type { PublicationPage, PublicationResponse, PreviewEntry } from '../../src/server/publication';
@@ -39,7 +40,7 @@ export function parsePublicationResponse(value: unknown): PublicationResponse {
   return value as PublicationResponse;
 }
 export async function loadPublication(signal: AbortSignal, publication?: string): Promise<PublicationResponse> {
-  const response = await fetch(`/api/publication${publication ? `?publication=${encodeURIComponent(publication)}` : ''}`, { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
+  const response = await fetch(producerUrl(`/api/publication${publication ? `?publication=${encodeURIComponent(publication)}` : ''}`), { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
   if (!response.ok) throw new Error(studioCopy("studio.producer-could-not-load-the-publication", { value0: String(response.status) }));
   return parsePublicationResponse(await response.json());
 }

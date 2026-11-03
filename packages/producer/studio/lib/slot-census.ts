@@ -1,39 +1,18 @@
-import { studioCopy } from './studio-copy';
-import { useEffect, useState } from 'react';
-import { AGENTS, type Agent } from './agents';
+import { useEffect, useRef, useState } from 'react';
+import { censusStates, loadSlotCensus, type HomeSlotCensus, type SlotCensusByAgent } from './slot-census-load';
 
-/** Matches Home's census input; this resource has no gallery or route-map dependency. */
-export type HomeSlotCensus =
-  | { state: 'ready'; total: number; withCandidate: number; pinned: number }
-  | { state: 'loading' }
-  | { state: 'error'; message: string };
-export type SlotCensusByAgent = Record<Agent, HomeSlotCensus>;
-const unavailable = (): HomeSlotCensus => ({ state: 'error', message: studioCopy("studio.the-slot-census-could-not-load") });
-const states = (value: () => HomeSlotCensus): SlotCensusByAgent => Object.fromEntries(AGENTS.map(agent => [agent, value()])) as SlotCensusByAgent;
-const object = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
-const count = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
-
-function agentCensus(value: unknown): HomeSlotCensus {
-  if (!object(value) || value.state !== 'ready' || !count(value.total) || !count(value.withCandidate) || !count(value.pinned)
-    || value.withCandidate > value.total || value.pinned > value.total) return unavailable();
-  return { state: 'ready', total: value.total, withCandidate: value.withCandidate, pinned: value.pinned };
-}
-
-export async function loadSlotCensus(signal: AbortSignal): Promise<SlotCensusByAgent> {
-  try {
-    const response = await fetch('/api/slots/census', { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
-    if (!response.ok) return states(unavailable);
-    const value: unknown = await response.json();
-    return Object.fromEntries(AGENTS.map(agent => [agent, agentCensus(object(value) ? value[agent] : undefined)])) as SlotCensusByAgent;
-  } catch { return states(unavailable); }
-}
+export { loadSlotCensus, type HomeSlotCensus, type SlotCensusByAgent } from './slot-census-load';
 
 /** Refresh on the native Producer revision channel, without waiting for a gallery request. */
-export function useSlotCensus(revision: number): SlotCensusByAgent {
-  const [census, setCensus] = useState<SlotCensusByAgent>(() => states(() => ({ state: 'loading' })));
+export function useSlotCensus(revision: number, initial?: SlotCensusByAgent): SlotCensusByAgent {
+  const [census, setCensus] = useState<SlotCensusByAgent>(() => initial ?? censusStates(() => ({ state: 'loading' })));
+  // A server-rendered census is already current for the first revision.
+  const seeded = useRef(initial === undefined ? undefined : revision);
   useEffect(() => {
+    if (seeded.current === revision) return;
+    seeded.current = undefined;
     const controller = new AbortController();
-    setCensus(states(() => ({ state: 'loading' })));
+    setCensus(censusStates(() => ({ state: 'loading' })));
     loadSlotCensus(controller.signal).then(value => { if (!controller.signal.aborted) setCensus(value); });
     return () => controller.abort();
   }, [revision]);

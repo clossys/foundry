@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
 import { StudioProviders, THEME_INIT_SCRIPT } from '../components/StudioProviders';
+import { loadStudioSeed } from '../lib/studio-seed';
 
 export const metadata: Metadata = { title: studioCopy("studio.studio"), description: studioCopy("studio.browse-your-agent-cells"), icons: { icon: '/api/brand/mark.svg' } };
 export const dynamic = 'force-dynamic';
@@ -23,11 +24,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body className="bg-background font-sans text-foreground antialiased" style={{ width, maxWidth: '100%' }}>{children}</body>
     </html>;
   }
+  // Every route's shared Producer data, so the first paint is the page rather than a loading state.
+  const seed = await loadStudioSeed();
   return <html lang="en" suppressHydrationWarning>
     <head>
       <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       <link rel="stylesheet" href="/api/designer/globals.css" precedence="consumer" />
     </head>
-    <body className="min-h-svh bg-background font-sans text-foreground antialiased"><StudioProviders>{children}</StudioProviders></body>
+    <body className="min-h-svh bg-background font-sans text-foreground antialiased"><StudioProviders {...(seed ? { seed } : {})}>{children}</StudioProviders></body>
   </html>;
 }

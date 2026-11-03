@@ -1,3 +1,4 @@
+import { producerUrl } from './producer-url';
 import { studioCopy } from './studio-copy';
 import { isAgent, type Agent } from './agents';
 
@@ -34,7 +35,7 @@ export function parseCellResponse(value: unknown, agent: Agent, id: string): Cel
 }
 
 async function request(path: string, signal: AbortSignal): Promise<unknown> {
-  const response = await fetch(path, { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
+  const response = await fetch(producerUrl(path), { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
   if (!response.ok) throw new Error(response.status === 404 ? studioCopy("studio.producer-could-not-find-the-requested-cell") : studioCopy("studio.producer-could-not-load-cells", { value0: String(response.status) }));
   return response.json();
 }

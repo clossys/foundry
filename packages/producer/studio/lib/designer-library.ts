@@ -1,3 +1,4 @@
+import { producerUrl } from './producer-url';
 import { optionCopy, optionsCopy } from './options-copy';
 import { referencesCopy } from './references-copy';
 import { contractCopy } from './contract-copy';
@@ -50,7 +51,7 @@ export function specimenHref(card: Pick<DesignerCard, 'specimen' | 'version'>, t
 }
 
 async function request(path: string, signal: AbortSignal): Promise<unknown> {
-  const response = await fetch(path, { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
+  const response = await fetch(producerUrl(path), { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
   if (response.status === 404) return undefined;
   if (!response.ok) throw new Error(studioCopy("studio.producer-could-not-load-the-designer-library", { value0: String(response.status) }));
   return response.json();
