@@ -1,0 +1,67 @@
+{
+  "name": "animate-marquee",
+  "type": "registry:theme",
+  "cssVars": {
+    "theme": {
+      "animate-marquee": "marquee var(--duration) infinite linear"
+    }
+  },
+  "css": {
+    "@keyframes marquee": {
+      "from": {
+        "transform": "translateX(0)"
+      },
+      "to": {
+        "transform": "translateX(calc(-100% - var(--gap)))"
+      }
+    }
+  },
+  "files": [
+    {
+      "path": "clossys/themes.animate-marquee.json",
+      "type": "registry:file",
+      "content": "{\n  \"themes\": {\n    \"animate-marquee\": {\n      \"default\": {\n        \"$type\": \"duration\",\n        \"$value\": \"marquee var(--duration) infinite linear\",\n        \"$extensions\": {\n          \"com.clossys.css\": {\n            \"raw\": \"marquee var(--duration) infinite linear\"\n          },\n          \"com.clossys.provenance\": {\n            \"sourceLabel\": \"magicui\",\n            \"sourceAddress\": \"magicui/marquee@efe76fc#cssVars.theme\",\n            \"sourceVariable\": \"--animate-marquee\"\n          }\n        }\n      }\n    }\n  }\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "themes.animate-marquee",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "magicui/marquee@efe76fc"
+      ],
+      "hash": "sha256:42e1105f44b0a0dd7be3a3b871952e487541a6db0af2ab62af879e5cedcb1f14",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "themes.animate-marquee/animate-marquee",
+      "package": "designer",
+      "layer": "themes",
+      "slot": "themes.animate-marquee",
+      "kind": "registry:theme",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER"
+      },
+      "reason": "--animate-marquee and its keyframes taken unchanged from the contract-referenced magicui/marquee@efe76fc cssVars.",
+      "createdAt": "2026-11-02T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "n/a",
+          "note": "non-code theme payload"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": []
+      }
+    }
+  }
+}
