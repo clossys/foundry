@@ -1,7 +1,7 @@
 ---
 slot: "narratives.legal-document"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.reach.geography@1","director:identity.verbal.voice@1","director:advantage.proposition.proof@1"]}
+source: {"kind":"derived","ref":["director:focus.reach.geography@1","director:identity.verbal.voice@1","director:advantage.proposition.proof@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -23,11 +23,11 @@ source: {"kind":"derived","ref":["director:focus.reach.geography@1","director:id
     },
     {
       "type": "paragraph",
-      "text": "Foundry packages are released under the MIT license. See LICENSE in the public repository."
+      "text": "\u00a9 2026 Clossys. Clossys Foundry is released under the MIT license."
     },
     {
       "type": "paragraph",
-      "text": "NEED: copyright holder line and revision date."
+      "text": "The full text is in LICENSE in the public repository. Revised Nov 3, 2026."
     }
   ]
 }

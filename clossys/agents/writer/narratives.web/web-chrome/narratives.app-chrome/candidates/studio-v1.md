@@ -1,7 +1,7 @@
 ---
 slot: "narratives.app-chrome"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.naming.architecture@1","director:identity.verbal.voice@1","director:identity.naming.name@1"]}
+source: {"kind":"derived","ref":["director:identity.naming.architecture@1","director:identity.verbal.voice@1","director:identity.naming.name@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -13,8 +13,7 @@ source: {"kind":"derived","ref":["director:identity.naming.architecture@1","dire
   "id": "studio.chrome",
   "context": "studio.chrome",
   "frame": {
-    "frameId": "frames.app-shell",
-    "configId": "NEED"
+    "frameId": "frames.studio-shell"
   },
   "regions": {
     "header": {

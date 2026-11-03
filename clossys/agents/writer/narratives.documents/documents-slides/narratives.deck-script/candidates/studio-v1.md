@@ -1,7 +1,7 @@
 ---
 slot: "narratives.deck-script"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.promise@1","director:advantage.proposition.proof@1","director:identity.verbal.narrative@1"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.promise@1","director:advantage.proposition.proof@1","director:identity.verbal.narrative@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -12,7 +12,7 @@ source: {"kind":"derived","ref":["director:advantage.proposition.promise@1","dir
 {
   "id": "studio.deck.intro",
   "context": "studio.deck.intro",
-  "title": "Foundry in three slides",
+  "title": "Clossys Foundry in three slides",
   "frame": {
     "frameId": "frames.document"
   },
