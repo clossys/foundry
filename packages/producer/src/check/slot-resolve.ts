@@ -135,7 +135,11 @@ function modelStores(root: string, writer: Map<string, string[]>): SlotStore[] {
             if (entry.pin?.candidate === name && entry.pin.sha256 === candidate.sha256) for (const row of records) {
               for (const key of new Set([row.key, String(row.meta.id), `${entry.id}#${row.key}`])) writer.set(key, [...(writer.get(key) ?? []), row.text]);
             }
-          } else if (slot.kind === "page") normalized.copyKeys = Object.entries(doc.copy ?? {}).map(([key, slot]) => `${slot}#${key}`);
+          } else if (slot.kind === "page") {
+            // Page copy maps copy slot to `<writer slot>#<key>`, page-wide and per section instance.
+            const bound = [doc.copy, ...Object.values(doc.bindings ?? {}).map((binding: any) => binding?.copy)];
+            normalized.copyKeys = [...new Set(bound.flatMap(copy => Object.values(copy ?? {}) as string[]))];
+          }
           else if (slot.kind === "element") {
             const keys = doc.meta?.element?.reads?.copyKeys ?? [];
             if (Array.isArray(keys) && keys.every(key => typeof key === "string")) normalized.copyKeys = keys;

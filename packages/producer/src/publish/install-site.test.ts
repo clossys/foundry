@@ -36,8 +36,8 @@ async function nativeFixture(removeLegacy = true): Promise<string> {
   for (const id of ["home", "about"]) {
     const path = join(publisher, "cells", `page.${id}`, "v1.md");
     const copy = id === "home"
-      ? "- frame.title: writer:site.name\n- hero.heading: writer:home.hero.heading\n- hero.body: writer:home.hero.body\n"
-      : "- frame.title: writer:site.studio.name\n- hero.heading: writer:site.studio.heading\n";
+      ? "- frame.title = name: writer:site.studio\n- hero.heading = heading: writer:home.hero\n- hero.body = body: writer:home.hero\n"
+      : "- frame.title = name: writer:site.studio\n- hero.heading = heading: writer:site.studio\n";
     writeFileSync(path, readFileSync(path, "utf8").replace("## Copy\n", `## Copy\n${copy}`));
   }
   const plan = await planMigration(join(consumer, "clossys"));
@@ -82,7 +82,7 @@ describe("clossys publish --install --site", () => {
     const consumer = await nativeFixture();
     const out = join(temp("producer-site-"), "out");
     const calls: string[][] = [];
-    const result = await publishSite({ root: consumer, site: "example-site", out, build: true, origin: "https://example.test", vite: async (args, { cwd }) => { calls.push([...args, cwd]); return { code: 0, stdout: "", stderr: "" }; } });
+    const result = await publishSite({ root: consumer, site: "example-site", out, build: true, origin: "https://example.test", selection: { module: join(consumer, "component-selection.ts") }, vite: async (args, { cwd }) => { calls.push([...args, cwd]); return { code: 0, stdout: "", stderr: "" }; } });
     expect(result.findings.filter(row => row.severity !== "info")).toEqual([]);
     const map = JSON.parse(readFileSync(join(fixture, base, "content-map", "example-site.json"), "utf8"));
     const paths = map.entries.filter((entry: { kind: string }) => entry.kind === "page").map((entry: { path: string }) => entry.path);

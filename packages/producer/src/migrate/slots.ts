@@ -284,7 +284,12 @@ export function pageBlocks(body: string): { copy: Record<string, string>; blocks
     const line = lines[i]!;
     const h = /^## (.+)$/.exec(line);
     if (h) { heading = h[1]!; continue; }
-    if (heading === "Copy") { const bullet = /^- ([^:]+): writer:(.+)$/.exec(line); if (bullet) copy[bullet[1]!] = bullet[2]!; continue; }
+    if (heading === "Copy") {
+      // `- key: writer:<cell>` binds copy slot `key` to Writer key `key`; `- slot = key: writer:<cell>` binds `slot` to `key`.
+      const bullet = /^- ([^:]+): writer:(.+)$/.exec(line);
+      if (bullet) { const spec = bullet[1]!.trim(), equals = spec.indexOf(" = "); copy[equals >= 0 ? spec.slice(0, equals).trim() : spec] = `${bullet[2]!.trim()}#${equals >= 0 ? spec.slice(equals + 3).trim() : spec}`; }
+      continue;
+    }
     if (line === "```json" && (PAGE_BLOCKS as readonly string[]).includes(heading)) {
       const content: string[] = [];
       while (++i < lines.length && lines[i] !== "```") content.push(lines[i]!);
@@ -350,7 +355,7 @@ function planPublisher(consumer: string, store: OldStore | null): AgentPlan {
     };
     const name = candidateName("page", cell.version, "json");
     slot.candidates.push({ name, bytes: jsonBytes(candidate) });
-    slot.raw.uses = [...new Set([...slot.raw.uses, ...(candidate.frame ? [candidate.frame] : []), ...candidate.sections, ...actionSections, ...Object.values(copy)])];
+    slot.raw.uses = [...new Set([...slot.raw.uses, ...(candidate.frame ? [candidate.frame] : []), ...candidate.sections, ...actionSections, ...Object.values(copy).map(ref => ref.slice(0, ref.indexOf("#")))])];
     if (store!.tree.active[cell.id] === cell.version) {
       slot.pin = { candidate: name, pinnedBy: MIGRATION_PINNED_BY, at: atOf(f.updated) ?? EPOCH };
       if (pub && typeof f.updated === "string") pageUpdated.set(pub.id, [...(pageUpdated.get(pub.id) ?? []), f.updated]);

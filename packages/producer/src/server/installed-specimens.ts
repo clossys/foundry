@@ -195,9 +195,9 @@ async function buildPass(options: { library: string; substrate: string; pins: In
     dependencies = { ...dependencies, ...substrateDependencies(result.slots) };
     if (slot.startsWith("components.")) {
       // A component is a small part of a page: centre it on the page ground instead of pinning it to the top-left corner.
-      await writeFile(join(pagesDir, `${page}--item.tsx`), pageModule(result.page, substrate));
+      await writeFile(join(pagesDir, `${page}--item.tsx`), pageModule(result.page, substrate, { host: false }));
       await writeFile(join(pagesDir, `${page}.tsx`), componentPage(`./${page}--item`, state));
-    } else await writeFile(join(pagesDir, `${page}.tsx`), pageModule(result.page, substrate));
+    } else await writeFile(join(pagesDir, `${page}.tsx`), pageModule(result.page, substrate, { host: false }));
     pages.set(pageKey(slot, pin.version), { page, element: pin.element, version: pin.version, build: build.key });
   }
   if (!pages.size) return { pages, findings, built: false };

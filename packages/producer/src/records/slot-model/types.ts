@@ -86,5 +86,9 @@ export const KIND_EXT: Readonly<Record<SlotKind, "md" | "json">> = {
 };
 
 export const SLOT_ID = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}$/;
+/** A page candidate's copy binding target: `<writer slot>#<key>`. Page `copy` maps copy slot to this ref, never the reverse. */
+export const WRITER_KEY_REF = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}#[^\s#]+$/;
+/** A section instance key on a page: the slot id, `#<n>` for its nth listing (see Publisher `sectionInstances`). */
+export const INSTANCE_KEY = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}(#[1-9][0-9]*)?$/;
 export const NODE_ID = /^[a-z0-9][a-z0-9.-]*$/;
 export const CANDIDATE_NAME = /^([a-z0-9][a-z0-9.-]*)-v([1-9][0-9]*)\.(md|json)$/;

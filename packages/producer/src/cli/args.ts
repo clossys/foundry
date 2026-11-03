@@ -31,6 +31,8 @@ export interface CliArgs {
   origin?: string;
   /** publish --install --site: run the substrate's Vite build. */
   build: boolean;
+  /** publish --install: the consumer's component selection module, `<module>[#export]`. */
+  selection?: string;
   /** check: validate the slot model and report coverage (slots / with candidate / pinned). */
   slots: boolean;
   /** check --slots: also report blocked-by per agent. */
@@ -47,7 +49,7 @@ export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check>
   + "Page check: clossys check --pages <generated-manifest.json> --report <report.json> [--json]\n"
   + "Slots: clossys check [--slots] [--readiness] [--root <dir>] (enforced by default); migration: clossys migrate slots [--check] [--compare]\n"
   + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root)\n"
-  + "Install: clossys publish --install --page <page id | page record.json> [--out <dir>] [--records <consumer dir>]...\n"
+  + "Install: clossys publish --install --page <page id | page record.json> --selection <component selection module>[#export] [--out <dir>] [--records <consumer dir>]...\n"
   + "Site: clossys publish --install --site <route pack id> [--origin <deployment origin>] [--build] [--out <dir>] [--records <consumer dir>]... (one routed app: content-map paths, route-pack slots, one frame)";
 
 export function parseArgs(argv: readonly string[]): CliArgs {
@@ -75,6 +77,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       case "--records": args.records.push(value()); break;
       case "--install": args.install = true; break;
       case "--page": args.page = value(); break;
+      case "--selection": args.selection = value(); break;
       case "--site": args.site = value(); break;
       case "--build": args.build = true; break;
       case "--origin": args.origin = value(); break;
@@ -103,6 +106,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   if ((args.install || args.page !== undefined || args.site !== undefined || args.build || args.origin !== undefined) && args.verb !== "publish") throw new CliUsageError("--install, --page, --site, --origin and --build require publish");
   if (args.page !== undefined && args.site !== undefined) throw new CliUsageError("publish --install takes --page or --site, not both");
   if (args.install && args.page === undefined && args.site === undefined && !args.help) throw new CliUsageError("publish --install requires --page <page id | page record.json> or --site <route pack id>");
+  if (args.selection !== undefined && !args.install) throw new CliUsageError("--selection requires publish --install");
   if ((args.page !== undefined || args.site !== undefined) && !args.install) throw new CliUsageError("--page and --site require --install");
   if ((args.build || args.origin !== undefined) && args.site === undefined) throw new CliUsageError("--build and --origin require --site");
   if (args.brief && args.verb !== "write" && args.verb !== "design") throw new CliUsageError("--brief requires design or write");

@@ -12,6 +12,8 @@
  * slots to consumer asset ids. A copy slot the page leaves unbound binds to the Writer key of
  * the same name when Writer has one; otherwise it renders empty and is an info finding. Every
  * other unresolved slot or key is a finding that stops the page; nothing falls back to sample copy.
+ * A section slot listed more than once mounts once per listing: each listing is an instance with
+ * its own key (`sectionInstances`) and its own copy binding.
  */
 import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
@@ -26,12 +28,16 @@ const MANIFEST_SCHEMA = "clossys.install/1";
 export interface InstallPageRecord {
   readonly id: string;
   readonly frame: string;
+  /** Ordered section slots; a slot listed again is another instance of it (see `sectionInstances`). */
   readonly sections: readonly string[];
   /** Slots installed before the page but never mounted, such as a theme or a font. */
   readonly include?: readonly string[];
   /** Page-wide copy bindings: copy slot name to Writer key, for every mounted slot. */
   readonly copy?: Readonly<Record<string, string>>;
-  /** Per slot: copy slot name to Writer key, asset slot name to consumer asset id. A slot binding overrides the page-wide one. */
+  /**
+   * Per slot or section instance key: copy slot name to Writer key, asset slot name to consumer
+   * asset id. An instance binding overrides its slot's, which overrides the page-wide one.
+   */
   readonly bindings?: Readonly<Record<string, {
     readonly copy?: Readonly<Record<string, string>>;
     readonly assets?: Readonly<Record<string, string>>;
@@ -46,6 +52,8 @@ export type InstallFindingCode =
   | "invalid-page" | "unpinned-slot" | "unpinned-dependency" | "missing-record" | "not-a-registry-item" | "no-entry"
   | "install-failed" | "hash-mismatch" | "unbound-copy-slot" | "missing-copy-key"
   | "unbound-asset-slot" | "missing-asset" | "render-failed"
+  // A page needs the consumer's component selection to mount inside the Publisher host (`./host.ts`).
+  | "need-component-selection"
   // Site mode (`./site.ts`): the content map and route pack disagree, or a link leads nowhere.
   | "site-contract" | "site-route-missing" | "site-route-duplicate" | "site-route-extra" | "site-path-mismatch"
   | "site-sections-mismatch" | "site-frame-mismatch" | "site-inactive-slot" | "site-cell-mismatch" | "site-dead-link" | "build-failed";
@@ -53,6 +61,18 @@ export type InstallFindingCode =
 export interface InstallFinding { readonly code: InstallFindingCode; readonly slot?: string; readonly detail: string; readonly severity?: "info" }
 /** Whether a finding stops the page (everything but `info`). */
 export const isBlocking = (finding: InstallFinding): boolean => finding.severity !== "info";
+
+/** One mount of a section slot: the first listing's key is the slot id, the nth's is `<slot>#<n>`. */
+export interface SectionInstance { readonly slot: string; readonly key: string }
+/** The page's section instances, in order. */
+export function sectionInstances(sections: readonly string[]): SectionInstance[] {
+  const seen = new Map<string, number>();
+  return sections.map(slot => {
+    const n = (seen.get(slot) ?? 0) + 1;
+    seen.set(slot, n);
+    return { slot, key: n === 1 ? slot : `${slot}#${n}` };
+  });
+}
 
 /** Runs the shadcn CLI: `args` follow the binary (`["add", ...]`); never through a shell. */
 export type ShadcnRunner = (args: readonly string[], options: { readonly cwd: string }) => Promise<{ readonly code: number; readonly stdout: string; readonly stderr: string }>;
@@ -266,6 +286,38 @@ export function substrateDependencies(slots: readonly ResolvedSlot[]): Record<st
   return Object.fromEntries(Object.entries(union).sort(([a], [b]) => a.localeCompare(b)));
 }
 
+/** First-party packages the substrate already declares (any spec: version, `file:`, tarball). */
+async function declaredFirstParty(substrate: string): Promise<ReadonlySet<string>> {
+  let manifest: unknown;
+  try { manifest = JSON.parse(await readFile(join(substrate, "package.json"), "utf8")); } catch { return new Set(); }
+  if (!isRecord(manifest)) return new Set();
+  const names = ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]
+    .flatMap(field => isRecord(manifest[field]) ? Object.keys(manifest[field]) : []);
+  return new Set(names.filter(name => name.startsWith("@clossys/")));
+}
+
+const dependencyName = (dependency: string) => {
+  const at = dependency.indexOf("@", dependency.startsWith("@") ? 1 : 0);
+  return at > 0 ? dependency.slice(0, at) : dependency;
+};
+
+/**
+ * The item as handed to shadcn: `@clossys/*` npm dependencies the substrate already declares are
+ * dropped, so `shadcn add` never adds or upgrades them over a vendored or `file:` install.
+ */
+export function itemForSubstrate(item: string, declared: ReadonlySet<string>): string {
+  const value = JSON.parse(item) as Record<string, unknown>;
+  let changed = false;
+  const next: Record<string, unknown> = { ...value };
+  for (const field of ["dependencies", "devDependencies"] as const) {
+    const list = value[field];
+    if (!Array.isArray(list)) continue;
+    const kept = list.filter(dependency => typeof dependency !== "string" || !declared.has(dependencyName(dependency)));
+    if (kept.length !== list.length) { next[field] = kept; changed = true; }
+  }
+  return changed ? `${JSON.stringify(next, null, 2)}\n` : item;
+}
+
 interface ManifestEntry { readonly id: string; readonly version: number; readonly itemHash: string; readonly files: Readonly<Record<string, string>> }
 interface Manifest { readonly schema: typeof MANIFEST_SCHEMA; readonly items: Readonly<Record<string, ManifestEntry>> }
 
@@ -306,6 +358,7 @@ export async function installPage(options: InstallOptions): Promise<InstallResul
   const manifest = await readManifest(substrate);
   const items: Record<string, ManifestEntry> = { ...manifest.items };
   const installed: InstallResult["installed"][number][] = [];
+  const declared = await declaredFirstParty(substrate);
   const scratch = await mkdtemp(join(tmpdir(), "clossys-install-"));
   try {
     for (const slot of slots) {
@@ -319,7 +372,7 @@ export async function installPage(options: InstallOptions): Promise<InstallResul
         continue;
       }
       const itemFile = join(scratch, `${id.replace(/[^A-Za-z0-9._-]/g, "_")}.v${version}.json`);
-      await writeFile(itemFile, slot.item);
+      await writeFile(itemFile, itemForSubstrate(slot.item, declared));
       const run = await options.runner(["add", itemFile, "--yes", "--overwrite", "--cwd", substrate], { cwd: substrate });
       if (run.code !== 0) { findings.push({ code: "install-failed", slot: slot.slot, detail: `shadcn add ${id}@v${version} exited ${run.code}: ${(run.stderr || run.stdout).trim().split("\n").slice(-3).join(" ")}` }); continue; }
       const hashes: Record<string, string> = {};
@@ -343,6 +396,8 @@ export async function installPage(options: InstallOptions): Promise<InstallResul
 /** One mounted slot of a bound page: the installed entry and its bound props. */
 export interface BoundSlot {
   readonly slot: string;
+  /** The mount key `$element` references: the slot id, or `<slot>#<n>` for a section's nth instance. */
+  readonly key: string;
   readonly role: SlotRole;
   readonly id: string;
   readonly version: number;
@@ -361,6 +416,7 @@ export interface BoundPage {
   readonly schema: "clossys.bound-page/1";
   readonly id: string;
   readonly frame: BoundSlot;
+  /** Section instances in page order; a slot listed twice appears twice, under distinct keys. */
   readonly sections: readonly BoundSlot[];
   /** Slots the frame or a section composes through `$element`. */
   readonly parts: readonly BoundSlot[];
@@ -385,40 +441,45 @@ function resolveProps(value: unknown, texts: Readonly<Record<string, string>>, v
 }
 
 /**
- * Bind every copy and asset slot of every mounted slot. A copy slot binds to the slot binding,
- * then the page-wide binding, then the Writer key of the same name; a copy slot with none of
- * these renders empty and is an `info` finding. An unknown Writer key or an unbound asset is a
- * blocking finding, and then no page is emitted.
+ * Bind every copy and asset slot of every mounted slot, once per section instance. A copy slot
+ * binds to the instance binding, then the slot binding, then the page-wide binding, then the
+ * Writer key of the same name; a copy slot with none of these renders empty and is an `info`
+ * finding. An unknown Writer key or an unbound asset is a blocking finding, and then no page is emitted.
  */
 export function bindPage(options: BindOptions): { page?: BoundPage; findings: InstallFinding[] } {
   const findings: InstallFinding[] = [];
+  const instances = sectionInstances(options.page.sections);
   const bound: BoundSlot[] = [];
-  for (const slot of options.slots) {
-    if (!slot.mounted || !slot.entry) continue;
-    const binding = options.page.bindings?.[slot.slot] ?? {};
+  const bindOne = (slot: ResolvedSlot, key: string): BoundSlot => {
+    const own = options.page.bindings?.[key], shared = key === slot.slot ? undefined : options.page.bindings?.[slot.slot];
     const copy: Record<string, string> = {}, assets: Record<string, string> = {}, texts: Record<string, string> = {}, values: Record<string, unknown> = {};
     for (const name of slot.copySlots) {
-      const key = binding.copy?.[name] ?? options.page.copy?.[name] ?? (Object.hasOwn(options.copy, name) ? name : undefined);
-      if (!key) { texts[name] = ""; findings.push({ code: "unbound-copy-slot", slot: slot.slot, severity: "info", detail: `${options.page.id}: ${slot.record.id} copy slot ${name} is bound to no Writer key; it renders empty` }); continue; }
-      if (!Object.hasOwn(options.copy, key)) { findings.push({ code: "missing-copy-key", slot: slot.slot, detail: `${options.page.id}: Writer has no key ${key} (for ${slot.record.id} ${name})` }); continue; }
-      copy[name] = key; texts[name] = options.copy[key]!;
+      const writerKey = own?.copy?.[name] ?? shared?.copy?.[name] ?? options.page.copy?.[name] ?? (Object.hasOwn(options.copy, name) ? name : undefined);
+      if (!writerKey) { texts[name] = ""; findings.push({ code: "unbound-copy-slot", slot: key, severity: "info", detail: `${options.page.id}: ${slot.record.id} copy slot ${name} is bound to no Writer key; it renders empty` }); continue; }
+      if (!Object.hasOwn(options.copy, writerKey)) { findings.push({ code: "missing-copy-key", slot: key, detail: `${options.page.id}: Writer has no key ${writerKey} (for ${slot.record.id} ${name})` }); continue; }
+      copy[name] = writerKey; texts[name] = options.copy[writerKey]!;
     }
     for (const name of slot.assetSlots) {
-      const asset = binding.assets?.[name];
-      if (!asset) { findings.push({ code: "unbound-asset-slot", slot: slot.slot, detail: `${options.page.id}: ${slot.record.id} asset slot ${name} is bound to no asset id` }); continue; }
-      if (!options.assets || !Object.hasOwn(options.assets, asset)) { findings.push({ code: "missing-asset", slot: slot.slot, detail: `${options.page.id}: no consumer asset ${asset} (for ${slot.record.id} ${name})` }); continue; }
+      const asset = own?.assets?.[name] ?? shared?.assets?.[name];
+      if (!asset) { findings.push({ code: "unbound-asset-slot", slot: key, detail: `${options.page.id}: ${slot.record.id} asset slot ${name} is bound to no asset id` }); continue; }
+      if (!options.assets || !Object.hasOwn(options.assets, asset)) { findings.push({ code: "missing-asset", slot: key, detail: `${options.page.id}: no consumer asset ${asset} (for ${slot.record.id} ${name})` }); continue; }
       assets[name] = asset; values[name] = options.assets[asset];
     }
     const props = resolveProps(slot.props, texts, values) as Record<string, unknown>;
-    if (slot.role === "frame") props.children = options.page.sections.map(section => ({ $element: section }));
-    bound.push({
-      slot: slot.slot, role: slot.role, id: slot.record.id, version: slot.record.version, entry: slot.entry, props,
+    if (slot.role === "frame") props.children = instances.map(instance => ({ $element: instance.key }));
+    return {
+      slot: slot.slot, key, role: slot.role, id: slot.record.id, version: slot.record.version, entry: slot.entry!, props,
       ...(slot.copyKeys ? { copyKeys: slot.copyKeys } : {}), copy, text: texts, assets,
-    });
+    };
+  };
+  for (const slot of options.slots) {
+    if (!slot.mounted || !slot.entry) continue;
+    if (slot.role === "section") for (const instance of instances) { if (instance.slot === slot.slot) bound.push(bindOne(slot, instance.key)); }
+    else bound.push(bindOne(slot, slot.slot));
   }
   const frame = bound.find(slot => slot.role === "frame");
   if (findings.some(isBlocking) || !frame) return { findings };
-  const sections = options.page.sections.map(name => bound.find(slot => slot.slot === name)).filter((slot): slot is BoundSlot => !!slot);
+  const sections = instances.map(instance => bound.find(slot => slot.key === instance.key)).filter((slot): slot is BoundSlot => !!slot);
   return { page: { schema: "clossys.bound-page/1", id: options.page.id, frame, sections, parts: bound.filter(slot => slot.role === "part") }, findings };
 }
 
@@ -432,7 +493,9 @@ export async function installAndBind(options: InstallOptions & Omit<BindOptions,
 
 export { planSite, applySiteNavigation, siteLinkFindings } from "./site.js";
 export type { SitePlan, SitePlanRoute, SiteLink, SiteRoutePack, SiteRoutePackRoute, SiteRouteSlot } from "./site.js";
-export { resolveNativeNextDraft } from "./native-next-draft.js";
+export { NATIVE_NEXT_HOST_FILE, resolveNativeNextDraft } from "./native-next-draft.js";
+export { needComponentSelection, PAGE_HOST_EXPORT, pageHostModule, relativeSpecifier } from "./host.js";
+export type { PageHostModuleOptions, PageHostSelection } from "./host.js";
 export type { NativeNextDraftCandidate, NativeNextDraftOptions, NativeNextDraftResult } from "./native-next-draft.js";
 
 export { resolveNativeNextFonts } from "./native-next-fonts.js";

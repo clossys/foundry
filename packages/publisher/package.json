@@ -81,6 +81,10 @@
       "react-server": "./dist/web/server.js",
       "import": "./dist/web/index.js"
     },
+    "./web/host": {
+      "types": "./dist/web/publisher-host.d.ts",
+      "import": "./dist/web/publisher-host.js"
+    },
     "./web/content-route": {
       "types": "./dist/web/content-route.d.ts",
       "react-server": "./dist/web/content-route.js",

@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { CompositeCatalogData, CompositeLibraryData } from "@clossys/designer/catalog";
 import { directoryRecordSource, recordStoreSource } from "../specimen/source.js";
 import type { SpecimenRecordSource } from "../specimen/types.js";
+import { fixtureSelection, workspaceNodePaths } from "./__fixtures__/page-host.js";
 import { installAndBind, resolveNativeNextDraft, type InstallPageRecord, type InstallPins, type NativeNextDraftCandidate, type ShadcnRunner } from "./index.js";
 
 const fixtures = join(import.meta.dirname, "__fixtures__");
@@ -17,6 +18,8 @@ const temps: string[] = [];
 const json = async (name: string) => JSON.parse(await readFile(join(fixtures, name), "utf8"));
 let page: InstallPageRecord, pins: InstallPins, copy: Record<string, string>;
 let server: Server, registryUrl: string;
+/** The consumer's component selection module, substrate-relative (see `fixtureSelection`). */
+const selection = { module: "selection.ts" };
 
 /** The real store seam, retaining the public fixture versions' actual file hashes. */
 function sourceAt(root = join(fixtures, "library")): SpecimenRecordSource {
@@ -69,7 +72,7 @@ describe("resolveNativeNextDraft", () => {
   it("emits an unapproved Next entry from real native records, installs through the public seam, and renders Writer copy", async () => {
     const originalPins = JSON.stringify(pins);
     const source = sourceAt();
-    const draft = await resolveNativeNextDraft({ page, candidates: await admissions(source), source, copy });
+    const draft = await resolveNativeNextDraft({ page, candidates: await admissions(source), source, copy, selection });
     expect(draft.findings).toEqual([]);
     expect(draft.status).toBe("DRAFT");
     expect(draft.approved).toBe(false);
@@ -80,6 +83,11 @@ describe("resolveNativeNextDraft", () => {
     expect(draft.module).toContain('from "../components/frames/plain-frame"');
     expect(draft.module).toContain('from "../components/sections/simple-hero"');
     expect(draft.module!.match(/^export /gm)).toEqual(["export "]);
+    expect(draft.module).toContain('import { PageHost } from "./publisher-host"');
+    expect(draft.module).toContain("createElement(PageHost, null, mount(");
+    expect(draft.host?.file).toBe("app/publisher-host.tsx");
+    expect(draft.host?.module).toMatch(/^"use client";/);
+    expect(draft.host?.module).toContain('import { componentSelection as selection } from "../selection"');
     expect(draft).not.toHaveProperty("productionPinDocs");
     expect(JSON.stringify(pins)).toBe(originalPins);
 
@@ -93,11 +101,13 @@ describe("resolveNativeNextDraft", () => {
     expect(installed.page).toEqual(draft.page);
     await mkdir(join(dir, "app"));
     await writeFile(join(dir, "app/page.tsx"), draft.module!);
+    await writeFile(join(dir, draft.host!.file), draft.host!.module);
+    await writeFile(join(dir, "selection.ts"), fixtureSelection);
     const esbuild = await import("esbuild");
     const built = await esbuild.build({
-      entryPoints: [join(dir, "app/page.tsx")],
+      entryPoints: [join(dir, "app/page.tsx")], nodePaths: workspaceNodePaths(),
       bundle: true, write: false, platform: "node", format: "esm", jsx: "automatic",
-      plugins: [{ name: "host-react", setup(build) { build.onResolve({ filter: /^react(\/.*)?$/ }, args => ({ path: requireHere.resolve(args.path), external: true })); } }],
+      plugins: [{ name: "host-react", setup(build) { build.onResolve({ filter: /^react(-dom)?(\/.*)?$/ }, args => ({ path: requireHere.resolve(args.path), external: true })); } }],
     });
     const out = join(dir, "draft.mjs");
     await writeFile(out, built.outputFiles[0]!.text);
@@ -115,7 +125,7 @@ describe("resolveNativeNextDraft", () => {
     const source = sourceAt(root), candidates = await admissions(source);
     const file = join(root, "sections.hero/simple-hero/v1/simple-hero.json");
     await writeFile(file, (await readFile(file, "utf8")).replace("<h1", "<h2").replace("</h1>", "</h2>"));
-    const draft = await resolveNativeNextDraft({ page, candidates, source, copy });
+    const draft = await resolveNativeNextDraft({ page, candidates, source, copy, selection });
     expect(draft.findings).toEqual([expect.objectContaining({ code: "hash-mismatch", slot: "sections.hero" })]);
     expect(draft.module).toBeUndefined();
     expect(draft.install).toBeUndefined();
@@ -131,14 +141,21 @@ describe("resolveNativeNextDraft", () => {
         ? { ...record, ...(variant === "id" ? { id: "sections.other/changed" } : {}), ...(variant === "version" ? { version: 2 } : {}) }
         : record;
     } };
-    const draft = await resolveNativeNextDraft({ page, candidates, source, copy });
+    const draft = await resolveNativeNextDraft({ page, candidates, source, copy, selection });
     expect(draft.findings.length).toBeGreaterThan(0);
     expect(draft.module).toBeUndefined();
     expect(draft.install).toBeUndefined();
   });
 
+  it("emits no page without the consumer's component selection: a need-component-selection finding", async () => {
+    const draft = await resolveNativeNextDraft({ page, candidates: await admissions(), source: sourceAt(), copy });
+    expect(draft.findings).toEqual([expect.objectContaining({ code: "need-component-selection", detail: expect.stringMatching(/^NEED component selection: home /) })]);
+    expect(draft.module).toBeUndefined();
+    expect(draft.host).toBeUndefined();
+  });
+
   it("refuses a newly referenced section without a current candidate", async () => {
-    const draft = await resolveNativeNextDraft({ page: { ...page, sections: [...page.sections, "sections.other"] }, candidates: await admissions(), source: sourceAt(), copy });
+    const draft = await resolveNativeNextDraft({ page: { ...page, sections: [...page.sections, "sections.other"] }, candidates: await admissions(), source: sourceAt(), copy, selection });
     expect(draft.findings).toEqual([expect.objectContaining({ code: "unpinned-slot", slot: "sections.other" })]);
     expect(draft.module).toBeUndefined();
   });
@@ -147,13 +164,13 @@ describe("resolveNativeNextDraft", () => {
     const root = join(await temp(), "library");
     await cp(join(fixtures, "library"), root, { recursive: true });
     const source = sourceAt(root), candidates = await admissions(source);
-    const draft = await resolveNativeNextDraft({ page, candidates, source, copy });
+    const draft = await resolveNativeNextDraft({ page, candidates, source, copy, selection });
     await rm(join(root, "sections.hero"), { recursive: true });
     const selected = candidates["sections.hero"]!;
     const snapshot = await draft.install!.source.read(`sections.hero/${selected.element}`, selected.version);
     expect(snapshot!.contentHash).toBe(selected.contentHash);
     expect(snapshot!.payload.raw).toContain("SimpleHero");
-    const again = await resolveNativeNextDraft({ page, candidates, source, copy });
+    const again = await resolveNativeNextDraft({ page, candidates, source, copy, selection });
     expect(again.findings).toEqual([expect.objectContaining({ code: "missing-record" })]);
     expect(again.module).toBeUndefined();
   });
@@ -190,7 +207,7 @@ describe("native server/client module composition", () => {
   it("materializes a named client module's nested copyKeys from verified entry bytes", async () => {
     const { source } = await withEntry("sections.hero", clientHero, { export: "Island", copyKeys: "copyKeys.content" });
     const candidates = await admissions(source);
-    const draft = await resolveNativeNextDraft({ page, candidates, source, copy });
+    const draft = await resolveNativeNextDraft({ page, candidates, source, copy, selection });
     expect(draft.findings).toEqual([]);
     expect(draft.module).toContain('import { Island as c1 }');
     expect(draft.module).toContain(`"heading": ${JSON.stringify(copy["home.hero.heading"])}`);
@@ -217,7 +234,7 @@ describe("native server/client module composition", () => {
     'export const copyKeys = {}; export const copyKeys = {};',
   ])("refuses unsupported copy mapping without emitting a module or install: %s", async mapping => {
     const { source } = await withEntry("sections.hero", `export function Island() { return null; }\n${mapping}`, { export: "Island", copyKeys: "copyKeys" });
-    const draft = await resolveNativeNextDraft({ page, candidates: await admissions(source), source, copy });
+    const draft = await resolveNativeNextDraft({ page, candidates: await admissions(source), source, copy, selection });
     expect(draft.findings).toEqual([expect.objectContaining({ code: "render-failed" })]);
     expect(draft.module).toBeUndefined();
     expect(draft.install).toBeUndefined();
@@ -232,7 +249,7 @@ describe("native server/client module composition", () => {
   ])("refuses a copy map with %s outside its literal declaration", async (_name, mutation) => {
     const content = `export function Island() { return null; }\nexport const copyKeys = { heading: "hero.heading" };\n${mutation}`;
     const { source } = await withEntry("sections.hero", content, { export: "Island", copyKeys: "copyKeys" });
-    const draft = await resolveNativeNextDraft({ page, candidates: await admissions(source), source, copy });
+    const draft = await resolveNativeNextDraft({ page, candidates: await admissions(source), source, copy, selection });
     expect(draft.findings).toEqual([expect.objectContaining({ code: "render-failed", detail: expect.stringContaining("reference outside its literal declaration") })]);
     expect(draft.module).toBeUndefined();
     expect(draft.install).toBeUndefined();
@@ -245,7 +262,7 @@ describe("native server/client module composition", () => {
     ['export class Island { render() { return null; } }', "Island"],
   ])("selects an unambiguous native export without runtime reflection", async (content, name) => {
     const { source } = await withEntry("sections.hero", content);
-    const draft = await resolveNativeNextDraft({ page, candidates: await admissions(source), source, copy });
+    const draft = await resolveNativeNextDraft({ page, candidates: await admissions(source), source, copy, selection });
     expect(draft.findings).toEqual([]);
     expect(draft.module).toContain(`import { ${name} as c1 }`);
   });
@@ -256,7 +273,7 @@ describe("native server/client module composition", () => {
     'export const copyKeys = {};',
   ])("refuses an ambiguous or indirect undeclared component export", async content => {
     const { source } = await withEntry("sections.hero", content);
-    const draft = await resolveNativeNextDraft({ page, candidates: await admissions(source), source, copy });
+    const draft = await resolveNativeNextDraft({ page, candidates: await admissions(source), source, copy, selection });
     expect(draft.findings).toEqual([expect.objectContaining({ code: "render-failed" })]);
     expect(draft.module).toBeUndefined();
     expect(draft.install).toBeUndefined();
@@ -268,7 +285,7 @@ describe("native server/client module composition", () => {
 // The mandatory package globalSetup builds dist. Do not run this test in a source-only cloud session.
 // Mutation proof: restoring the whole-page "use client" fails the real Designer server graph;
 // replacing prepared copy data with client-module export reflection fails the Next client proxy.
-// Provider mutation: in the generated layout value replace profile.components.components
+// Provider mutation: in the generated selection module replace profile.components.components
 // with {} while retaining its real selectionHash and descriptors; Next build must fail
 // with "NEED component selection: components.link". Restore before the normal run.
 it.skipIf(!process.env.FOUNDRY_NATIVE_NEXT_ROOT)("builds a genuine Next16 consumer with Designer SiteFrame and a native client island", async () => {
@@ -304,7 +321,7 @@ it.skipIf(!process.env.FOUNDRY_NATIVE_NEXT_ROOT)("builds a genuine Next16 consum
   expect(chosen.descriptor).toEqual(adopted);
   expect(sha256(stableStringify(descriptor))).toBe(origin.sha256);
   // Real adopted descriptors and source modules are runtime-pending, not qualified fills.
-  const selection = { profile: { components: { ...profile.components, components: { ...profile.components.components, "components.link": { ...chosen, descriptor } } } }, selectionHash: profile.components.selectionHash, descriptors: { "components.link": chosen.origin.sha256 } };
+  const adoptedSelection = { profile: { components: { ...profile.components, components: { ...profile.components.components, "components.link": { ...chosen, descriptor } } } }, selectionHash: profile.components.selectionHash, descriptors: { "components.link": chosen.origin.sha256 } };
   const template = join(import.meta.dirname, "../../templates/site");
   await writeFile(join(dir, "package.json"), await readFile(join(template, "package.json")));
   await writeFile(join(dir, "tsconfig.json"), JSON.stringify({ compilerOptions: { paths: { "@/*": ["./*"] }, jsx: "react-jsx" } }));
@@ -320,7 +337,7 @@ export function NativeFrame({ children, copy }: { children?: ReactNode; copy: { 
   const first = await withEntry("frames.plain", frame, { export: "NativeFrame", copyKeys: "copyKeys" });
   const reused = join(await temp(), "reused"); await cp(first.root, reused, { recursive: true });
   const { source } = await withEntry("sections.hero", clientHero, { export: "Island", copyKeys: "copyKeys.content" }, reused);
-  const draft = await resolveNativeNextDraft({ page, candidates: await admissions(source), source, copy });
+  const draft = await resolveNativeNextDraft({ page, candidates: await admissions(source), source, copy, selection });
   expect(draft.findings).toEqual([]);
   expect(draft.status).toBe("DRAFT"); expect(draft.approved).toBe(false);
   const installed = await installAndBind({ ...draft.install!, substrate: dir, runner: realRunner });
@@ -328,12 +345,13 @@ export function NativeFrame({ children, copy }: { children?: ReactNode; copy: { 
   expect(installed.page).toEqual(draft.page);
   await mkdir(join(dir, "app")); await mkdir(join(dir, "public"));
   await writeFile(join(dir, "app/page.tsx"), draft.module!);
-  await writeFile(join(dir, "app/layout.tsx"), `"use client";
-import type { ReactNode } from "react";
-import { ConsumerComponentProvider, type ConsumerComponentSelection } from "@clossys/designer/frames";
+  await writeFile(join(dir, draft.host!.file), draft.host!.module);
+  await writeFile(join(dir, "selection.ts"), `import type { ConsumerComponentSelection } from "@clossys/designer/frames";
 import { Link } from "@clossys/designer/components";
-const value: ConsumerComponentSelection = { profile: ${JSON.stringify(selection.profile)}, selectionHash: ${JSON.stringify(selection.selectionHash)}, descriptors: ${JSON.stringify(selection.descriptors)}, modules: { "@clossys/designer/components": { Link } } };
-export default function Layout({children}: {children: ReactNode}) { return <html lang="en"><body><ConsumerComponentProvider value={value}>{children}</ConsumerComponentProvider></body></html>; }
+export const componentSelection: ConsumerComponentSelection = { profile: ${JSON.stringify(adoptedSelection.profile)}, selectionHash: ${JSON.stringify(adoptedSelection.selectionHash)}, descriptors: ${JSON.stringify(adoptedSelection.descriptors)}, modules: { "@clossys/designer/components": { Link } } };
+`);
+  await writeFile(join(dir, "app/layout.tsx"), `import type { ReactNode } from "react";
+export default function Layout({children}: {children: ReactNode}) { return <html lang="en"><body>{children}</body></html>; }
 `);
   await writeFile(join(dir, "public/mark.svg"), '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><circle cx="24" cy="24" r="20"/></svg>');
   const result = await new Promise<{ code: number; stdout: string; stderr: string }>(done => execFile(process.execPath, [nativeRequire.resolve("next/dist/bin/next"), "build"], { cwd: dir, timeout: 180_000 }, (error, stdout, stderr) => done({ code: error ? 1 : 0, stdout, stderr })));

@@ -67,7 +67,7 @@ async function fixture(map = ordinary(), withRoutes = true) {
       const { instanceId: _id, path: _path, label: _label, keywords: _keywords, ...extras } = route ?? {};
       await put(candidatePath(path, id), { schema: "clossys.page/1", title: entry.title, ...(entry.path === undefined ? { slug: entry.slug } : { path: entry.path }),
         frame: entry.kind !== "external" && "frameId" in entry.source ? entry.source.frameId : null,
-        sections: entry.kind !== "external" && "sectionIds" in entry.source ? entry.source.sectionIds : [], copy: { heading: "strings.headings" }, ...(entry.pin ? { nav: entry.pin } : {}),
+        sections: entry.kind !== "external" && "sectionIds" in entry.source ? entry.source.sectionIds : [], copy: { heading: "strings.headings#heading" }, ...(entry.pin ? { nav: entry.pin } : {}),
         meta: { source: { kind: "original", ref: [] }, entry: { publication: map.publicationId, entryId: entry.id, fields,
           entryMeta: entry.pin ? { pin: entry.pin } : {}, blocks: { ...(entry.constructs === undefined ? {} : { Constructs: entry.constructs }), ...(entry.manifest === undefined ? {} : { Manifest: entry.manifest }),
             ...(entry.actions === undefined ? {} : { Actions: entry.actions }), ...(route === undefined ? {} : { Route: extras }) } } } });
@@ -87,7 +87,7 @@ it("NATIVE projection equals the legacy oracle exactly, then survives removal of
   for (const name of ["tree.json", "cells", "content-map", "route-pack", "compile.json"]) await rm(join(f.path, name), { recursive: true, force: true });
   expect(await readPinnedPublication(f.path, f.map.publicationId)).toEqual({ map: f.map, routePack: f.routePack });
   expect(await selectedBytes(f.path, f.ids)).toEqual(before);
-  expect(JSON.parse((await readFile(candidatePath(f.path, "page.designer"))).toString()).copy).toEqual({ heading: "strings.headings" });
+  expect(JSON.parse((await readFile(candidatePath(f.path, "page.designer"))).toString()).copy).toEqual({ heading: "strings.headings#heading" });
 });
 
 it("NATIVE preserves a nonweb format, slide kind and slug without inventing a route pack", async () => {
@@ -168,6 +168,7 @@ it.each([
   ["invalid source", (v: JsonObject) => { v.meta.source = { kind: "derived", ref: [] }; }, /source/],
   ["conflicting source", (v: JsonObject) => { v.frame = "frames.extra"; }, /source/],
   ["invalid copy", (v: JsonObject) => { v.copy.heading = 7; }, /page contract/],
+  ["reversed copy direction (Writer key to copy slot)", (v: JsonObject) => { v.copy = { "strings.headings": "heading" }; }, /page contract/],
   ["wrong group", (v: JsonObject) => { v.nav.group = "foreign"; }, /navigation/],
 ] as const)("NATIVE rejects selected page %s after repinning its bytes", async (_name, mutate, message) => {
   const f = await fixture(); await edit(candidatePath(f.path, "page.designer"), mutate); await repin(f.path, "page.designer");
