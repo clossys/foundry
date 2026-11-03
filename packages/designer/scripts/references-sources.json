@@ -63,7 +63,7 @@
       "style": "radix",
       "source": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/{path}",
       "version": "8139698",
-      "versionBasis": "registry host did not resolve; source files from the MIT GitHub repository (radix base, mist kit) at a pinned commit",
+      "versionBasis": "registry host did not resolve; source files from the MIT GitHub repository (radix base; mist kit, plus the dusk and veil kits for blocks with no mist equivalent that passes the consumer flavour) at a pinned commit",
       "upstream": "github.com/tailark/blocks@8139698115c1341bfd2e3e286c04bb4d8146f472",
       "license": "MIT",
       "licenseFiles": {
@@ -280,6 +280,66 @@
           "registryDependencies": [
             "@tailark-oss/mist-toggle"
           ]
+        },
+        "dusk-hero-section-4": {
+          "type": "registry:block",
+          "files": [
+            "dusk/blocks/hero-section/four/hero-section.tsx"
+          ],
+          "registryDependencies": [
+            "@tailark-oss/dusk-hero-section-4-header",
+            "@tailark-oss/dusk-button",
+            "@tailark-oss/dusk-kbd",
+            "@tailark-oss/dusk-hero-section-4-logo-cloud"
+          ]
+        },
+        "dusk-hero-section-4-header": {
+          "type": "registry:component",
+          "files": [
+            "dusk/blocks/hero-section/four/header.tsx"
+          ],
+          "registryDependencies": [
+            "@tailark-oss/dusk-button",
+            "@tailark-oss/dusk-logo"
+          ]
+        },
+        "dusk-hero-section-4-logo-cloud": {
+          "type": "registry:component",
+          "files": [
+            "dusk/blocks/hero-section/four/logo-cloud.tsx"
+          ],
+          "registryDependencies": [
+            "@tailark-oss/core-spotify",
+            "@tailark-oss/core-vercel",
+            "@tailark-oss/core-supabase",
+            "@tailark-oss/core-hulu",
+            "@tailark-oss/core-bolt",
+            "@tailark-oss/core-beacon"
+          ]
+        },
+        "dusk-button": {
+          "type": "registry:ui",
+          "files": [
+            "dusk/ui/button.tsx"
+          ]
+        },
+        "dusk-kbd": {
+          "type": "registry:ui",
+          "files": [
+            "dusk/ui/kdb.tsx"
+          ]
+        },
+        "dusk-logo": {
+          "type": "registry:ui",
+          "files": [
+            "dusk/ui/logo.tsx"
+          ]
+        },
+        "veil-team-1": {
+          "type": "registry:block",
+          "files": [
+            "veil/blocks/team/one.tsx"
+          ]
         }
       },
       "skipDependencies": {
@@ -341,6 +401,27 @@
       },
       "items": {
         "inter-tight": {
+          "type": "registry:font",
+          "files": [
+            "package.json",
+            "metadata.json"
+          ]
+        }
+      }
+    },
+    "fontsource-source-serif-4": {
+      "namespace": "@fontsource-variable",
+      "kind": "github-files",
+      "source": "https://cdn.jsdelivr.net/npm/@fontsource-variable/source-serif-4@5.3.1/{path}",
+      "version": "5.3.1",
+      "versionBasis": "npm package @fontsource-variable/source-serif-4@5.3.1 (immutable npm version, served by jsDelivr); Fontsource self-hosts the Google Fonts family",
+      "upstream": "github.com/fontsource/font-files (fonts/variable/source-serif-4)",
+      "license": "OFL-1.1",
+      "licenseFiles": {
+        "LICENSE": "https://cdn.jsdelivr.net/npm/@fontsource-variable/source-serif-4@5.3.1/LICENSE"
+      },
+      "items": {
+        "source-serif-4": {
           "type": "registry:font",
           "files": [
             "package.json",
@@ -1334,7 +1415,9 @@
       "registry": "tailwindcss-typography",
       "name": "typography",
       "slots": [
-        "sections.legal-prose"
+        "sections.legal-prose",
+        "sections.article",
+        "sections.sectioned-document"
       ]
     },
     {
@@ -1387,7 +1470,9 @@
     {
       "registry": "shadcn-aria",
       "name": "dropdown-menu",
-      "slots": []
+      "slots": [
+        "components.menu"
+      ]
     },
     {
       "registry": "shadcn-aria",
@@ -1497,7 +1582,9 @@
     {
       "registry": "shadcn-aria",
       "name": "empty-example",
-      "slots": []
+      "slots": [
+        "sections.boundary-message"
+      ]
     },
     {
       "registry": "shadcn-aria",
@@ -1507,7 +1594,20 @@
     {
       "registry": "shadcn-aria",
       "name": "item-example",
-      "slots": []
+      "slots": [
+        "sections.activity-feed",
+        "sections.link-index",
+        "sections.specimen-asset-grid",
+        "sections.specimen-color-ramp",
+        "sections.specimen-icon-grid",
+        "sections.specimen-motion-player",
+        "sections.specimen-radius-ladder",
+        "sections.specimen-rich-passage",
+        "sections.specimen-spacing-ladder",
+        "sections.specimen-swatch",
+        "sections.specimen-type-ladder",
+        "sections.status-list"
+      ]
     },
     {
       "registry": "shadcn-aria",
@@ -1541,6 +1641,135 @@
       "name": "sonner-example",
       "slots": [
         "frames.site-shell"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "slider",
+      "slots": [
+        "components.slider"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "radio-group",
+      "slots": [
+        "components.radio-group"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "progress",
+      "slots": [
+        "components.meter",
+        "components.progress-bar"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "combobox",
+      "slots": [
+        "components.combo-box"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "button-group",
+      "slots": [
+        "components.toolbar"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "table-example",
+      "slots": [
+        "sections.access-matrix",
+        "sections.audit-log",
+        "sections.data-grid",
+        "sections.data-table",
+        "sections.specimen-copy-in-context",
+        "sections.specimen-frame-viewports",
+        "sections.specimen-page-viewports",
+        "sections.specimen-section-viewports",
+        "sections.specimen-variant-matrix"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "carousel-example",
+      "slots": [
+        "sections.gallery"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "alert-example",
+      "slots": [
+        "sections.notices"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "pagination-example",
+      "slots": [
+        "sections.pagination"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "command-example",
+      "slots": [
+        "frames.command"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sheet-example",
+      "slots": [
+        "frames.inspector",
+        "frames.sheet"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "field-example",
+      "slots": [
+        "sections.settings"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "progress-example",
+      "slots": [
+        "sections.usage"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "aspect-ratio-example",
+      "slots": [
+        "sections.media"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "dusk-hero-section-4",
+      "slots": [
+        "sections.hero"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "veil-team-1",
+      "slots": [
+        "sections.people"
+      ]
+    },
+    {
+      "registry": "fontsource-source-serif-4",
+      "name": "source-serif-4",
+      "slots": [
+        "themes.font-serif"
       ]
     },
     {

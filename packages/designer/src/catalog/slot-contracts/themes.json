@@ -615,7 +615,14 @@
       "requires": "dtcg#format,dtcg#alias",
       "tier": "scale"
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "fontsource-source-serif-4",
+        "item": "source-serif-4",
+        "version": "5.3.1",
+        "hash": "sha256:7bb91c91c76668f3275b478d82ca705275a769d76d122adc699b525d981d8be0"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.themes",
     "specimenKind": "text"
   },

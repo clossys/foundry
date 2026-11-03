@@ -24,7 +24,7 @@
       "versionBasis": "registry endpoint used by shadcn CLI 4.23.0 for the aria-nova style (components.json style aria-nova), served at the registry's fetchedAt; upstream source commit recorded in upstream",
       "upstream": "github.com/shadcn-ui/ui@b8d7baa15b1dca5716f13153e63795fc3d741f6b",
       "style": "aria-nova",
-      "fetchedAt": "2026-10-31T20:10:55Z",
+      "fetchedAt": "2026-11-03T07:23:48Z",
       "license": "MIT",
       "licenseFiles": [
         "shadcn-aria/LICENSE.md"
@@ -57,9 +57,10 @@
       "namespace": "@tailark-oss",
       "source": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/{path}",
       "version": "8139698",
-      "versionBasis": "registry host did not resolve; source files from the MIT GitHub repository (radix base, mist kit) at a pinned commit",
+      "versionBasis": "registry host did not resolve; source files from the MIT GitHub repository (radix base; mist kit, plus the dusk and veil kits for blocks with no mist equivalent that passes the consumer flavour) at a pinned commit",
       "upstream": "github.com/tailark/blocks@8139698115c1341bfd2e3e286c04bb4d8146f472",
       "style": "radix",
+      "fetchedAt": "2026-11-03T07:23:49Z",
       "license": "MIT",
       "licenseFiles": [
         "tailark-oss/LICENCE.md"
@@ -96,6 +97,18 @@
       "license": "OFL-1.1",
       "licenseFiles": [
         "fontsource/LICENSE"
+      ]
+    },
+    "fontsource-source-serif-4": {
+      "namespace": "@fontsource-variable",
+      "source": "https://cdn.jsdelivr.net/npm/@fontsource-variable/source-serif-4@5.3.1/{path}",
+      "version": "5.3.1",
+      "versionBasis": "npm package @fontsource-variable/source-serif-4@5.3.1 (immutable npm version, served by jsDelivr); Fontsource self-hosts the Google Fonts family",
+      "upstream": "github.com/fontsource/font-files (fonts/variable/source-serif-4)",
+      "fetchedAt": "2026-11-03T07:23:49Z",
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "fontsource-source-serif-4/LICENSE"
       ]
     },
     "assistant-ui": {
@@ -152,6 +165,12 @@
       "sha256": "798456e9f649d796bad55d80f9ee50a71eb2d16920300a66a8221b70123e40db",
       "bytes": 1068,
       "sourceUrl": "https://raw.githubusercontent.com/sadmann7/diceui/04aad54e7cb02f209b31f294cea020208a3deed6/LICENSE"
+    },
+    {
+      "path": "fontsource-source-serif-4/LICENSE",
+      "sha256": "18aabf190848725e2576eefb5c29ba06aac1029d02132252a7f312eac2e50cf3",
+      "bytes": 4314,
+      "sourceUrl": "https://cdn.jsdelivr.net/npm/@fontsource-variable/source-serif-4@5.3.1/LICENSE"
     },
     {
       "path": "fontsource/LICENSE",
@@ -884,6 +903,34 @@
         "@diceui/file-upload",
         "@diceui/scroll-spy",
         "@diceui/stepper"
+      ]
+    },
+    {
+      "registry": "fontsource-source-serif-4",
+      "name": "source-serif-4",
+      "version": "5.3.1",
+      "dir": "fontsource-source-serif-4/source-serif-4@5.3.1",
+      "type": "registry:font",
+      "sourceUrl": "https://cdn.jsdelivr.net/npm/@fontsource-variable/source-serif-4@5.3.1/package.json",
+      "license": "OFL-1.1",
+      "direct": true,
+      "slots": [
+        "themes.font-serif"
+      ],
+      "hash": "sha256:7bb91c91c76668f3275b478d82ca705275a769d76d122adc699b525d981d8be0",
+      "files": [
+        {
+          "path": "metadata.json",
+          "sha256": "e9df0b218b6bad71618c81765b8f01963daf511362c0041c5ce32fdb92ac66f3",
+          "bytes": 777,
+          "origin": "https://cdn.jsdelivr.net/npm/@fontsource-variable/source-serif-4@5.3.1/metadata.json"
+        },
+        {
+          "path": "package.json",
+          "sha256": "86762fcbb6dfeaef935b5efc4fed82280ba49d261bca6e5112376468378357c3",
+          "bytes": 1511,
+          "origin": "https://cdn.jsdelivr.net/npm/@fontsource-variable/source-serif-4@5.3.1/package.json"
+        }
       ]
     },
     {
@@ -2041,6 +2088,135 @@
     },
     {
       "registry": "shadcn-aria",
+      "name": "alert-example",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/alert-example@4.23.0",
+      "type": "registry:example",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/alert-example.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.notices"
+      ],
+      "registryDependencies": [
+        "alert",
+        "badge",
+        "example"
+      ],
+      "hash": "sha256:ec7983fabfd62fd4d9679623f5833b4a41ee0ce5144cbf1aee05b4c6686e6a61",
+      "files": [
+        {
+          "path": "alert-example.json",
+          "sha256": "d4827782226585f1b3be66b5003d8897e5aa62170756601e78d0f746d9b63bbd",
+          "bytes": 8272,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/alert-example.json"
+        },
+        {
+          "path": "registry/aria-nova/examples/alert-example.tsx",
+          "sha256": "6a0b01a8affcde9743855e416906ff25bf2214e6e98bbd9440e413983784d71c",
+          "bytes": 7534,
+          "origin": "alert-example.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "alert",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/alert@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/alert.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:0e5101f42dc33c37357531f83d9f663899002797b23be624f5b036339742e2a6",
+      "files": [
+        {
+          "path": "alert.json",
+          "sha256": "abde9afc67734891b02f4bf8d149f2a7bc4478006a96a781687ed98243d89d75",
+          "bytes": 2629,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/alert.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/alert.tsx",
+          "sha256": "f253568242c1c69b343f12474002fdbe229f603158171c59e21c491ab79f2e6e",
+          "bytes": 2038,
+          "origin": "alert.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/alert-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "aspect-ratio-example",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/aspect-ratio-example@4.23.0",
+      "type": "registry:example",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/aspect-ratio-example.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.media"
+      ],
+      "registryDependencies": [
+        "aspect-ratio",
+        "example"
+      ],
+      "hash": "sha256:4767e956af6d431d89969799bc6ff0e49f85f3d85b1588e01aafb211d7f86c67",
+      "files": [
+        {
+          "path": "aspect-ratio-example.json",
+          "sha256": "6f0c87d163505157df11676ba611ae8f295cc2033c80892991514ce5218e2407",
+          "bytes": 2886,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/aspect-ratio-example.json"
+        },
+        {
+          "path": "registry/aria-nova/examples/aspect-ratio-example.tsx",
+          "sha256": "393ba0632b8d4a1c98de4b8840dcc8a0c2ff0d7b6f6b48bf806814b84194fdc8",
+          "bytes": 2362,
+          "origin": "aspect-ratio-example.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "aspect-ratio",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/aspect-ratio@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/aspect-ratio.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:694009e544a67e457e0258bbc0298b0f71d2da21d3c321db7a9647c5a2040b6c",
+      "files": [
+        {
+          "path": "aspect-ratio.json",
+          "sha256": "c2262c25e989b0dd2f2cae11d39140eee5e06af8c11ec28250bcc5fcf0524a87",
+          "bytes": 932,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/aspect-ratio.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/aspect-ratio.tsx",
+          "sha256": "6df19df6b983c450361081b695dbf3541a6fe4a9d2ec148766991e4eb0bf6473",
+          "bytes": 394,
+          "origin": "aspect-ratio.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/aspect-ratio-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
       "name": "attachment",
       "version": "4.23.0",
       "dir": "shadcn-aria/attachment@4.23.0",
@@ -2137,7 +2313,9 @@
         }
       ],
       "requiredBy": [
-        "@shadcn-aria/dashboard-01"
+        "@shadcn-aria/alert-example",
+        "@shadcn-aria/dashboard-01",
+        "@shadcn-aria/field-example"
       ]
     },
     {
@@ -2210,6 +2388,40 @@
     },
     {
       "registry": "shadcn-aria",
+      "name": "button-group",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/button-group@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/button-group.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.toolbar"
+      ],
+      "registryDependencies": [
+        "separator"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:213335bc93133b79d65ddcec9188e2ab5dbbf25f289e4679d549b412ebcd780e",
+      "files": [
+        {
+          "path": "button-group.json",
+          "sha256": "4ae09ed81ef04a428b6afb8b359e1a3bdd85a8ef04b36dffcf495fd2b52b14c5",
+          "bytes": 3368,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/button-group.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/button-group.tsx",
+          "sha256": "affae763eddc5ecd5cdba8534b6a48267cf16e16e3e226f83001cda2d52179ee",
+          "bytes": 2681,
+          "origin": "button-group.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
       "name": "button",
       "version": "4.23.0",
       "dir": "shadcn-aria/button@4.23.0",
@@ -2239,6 +2451,9 @@
       "requiredBy": [
         "@shadcn-aria/attachment",
         "@shadcn-aria/calendar",
+        "@shadcn-aria/carousel",
+        "@shadcn-aria/combobox",
+        "@shadcn-aria/command-example",
         "@shadcn-aria/dashboard-01",
         "@shadcn-aria/dialog",
         "@shadcn-aria/empty-example",
@@ -2247,10 +2462,13 @@
         "@shadcn-aria/message-example",
         "@shadcn-aria/message-scroller",
         "@shadcn-aria/message-scroller-example",
+        "@shadcn-aria/pagination",
         "@shadcn-aria/questionnaire",
         "@shadcn-aria/questionnaire-example",
         "@shadcn-aria/sheet",
-        "@shadcn-aria/sidebar"
+        "@shadcn-aria/sheet-example",
+        "@shadcn-aria/sidebar",
+        "@shadcn-aria/table-example"
       ]
     },
     {
@@ -2318,10 +2536,80 @@
         }
       ],
       "requiredBy": [
+        "@shadcn-aria/carousel-example",
         "@shadcn-aria/chart",
         "@shadcn-aria/dashboard-01",
         "@shadcn-aria/message-scroller-example",
         "@shadcn-aria/questionnaire-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "carousel-example",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/carousel-example@4.23.0",
+      "type": "registry:example",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/carousel-example.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.gallery"
+      ],
+      "registryDependencies": [
+        "card",
+        "carousel",
+        "example"
+      ],
+      "hash": "sha256:8a19e1586aac1583d3cec777f65231da9105d1b3085d01c3c5e6a92d2bb275d3",
+      "files": [
+        {
+          "path": "carousel-example.json",
+          "sha256": "443bf4b9457dc7796fe1f678b464891e8e1d30db19227b7292768a75156f2dae",
+          "bytes": 3609,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/carousel-example.json"
+        },
+        {
+          "path": "registry/aria-nova/examples/carousel-example.tsx",
+          "sha256": "f606cc01680f72642cf65b86c8fa3f6d6fc8658fb3367d01fd968a1805c3f353",
+          "bytes": 3078,
+          "origin": "carousel-example.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "carousel",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/carousel@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/carousel.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "registryDependencies": [
+        "button"
+      ],
+      "dependencies": [
+        "cn",
+        "embla-carousel-react"
+      ],
+      "hash": "sha256:0900fbfdefdcd426eb33b3aaaa4cb8bf36bbaed99029d2675cfb680d0dc7fc98",
+      "files": [
+        {
+          "path": "carousel.json",
+          "sha256": "cb8c457d16b0daeb89d6f1614e5fd476f70f476b9cd13161a66d5917d78d1489",
+          "bytes": 7064,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/carousel.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/carousel.tsx",
+          "sha256": "04614eb279acddae4169984ea78d009ba72ce3e2f4834e0ff17d1d8f5b8f9693",
+          "bytes": 6050,
+          "origin": "carousel.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/carousel-example"
       ]
     },
     {
@@ -2389,7 +2677,8 @@
         }
       ],
       "requiredBy": [
-        "@shadcn-aria/dashboard-01"
+        "@shadcn-aria/dashboard-01",
+        "@shadcn-aria/field-example"
       ]
     },
     {
@@ -2425,6 +2714,74 @@
     },
     {
       "registry": "shadcn-aria",
+      "name": "combobox",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/combobox@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/combobox.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.combo-box"
+      ],
+      "registryDependencies": [
+        "button",
+        "input-group"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:b00108e37b6d691e0735dae4460702807fa27316fb880afa303a184737a1d9ec",
+      "files": [
+        {
+          "path": "combobox.json",
+          "sha256": "d8565bd17fa3c5a0cc47e53f0c29b772c6b12be3e265b07e9fd99abd4f570428",
+          "bytes": 12908,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/combobox.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/combobox.tsx",
+          "sha256": "7b06500504c19fe57b615934cfbffb2da7948de001f239fb80deb47d29845078",
+          "bytes": 11704,
+          "origin": "combobox.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "command-example",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/command-example@4.23.0",
+      "type": "registry:example",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/command-example.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "frames.command"
+      ],
+      "registryDependencies": [
+        "button",
+        "command",
+        "example"
+      ],
+      "hash": "sha256:46357c0ab3410253773513718349312e87d6f770604ed29dbe9782fbc04ee76e",
+      "files": [
+        {
+          "path": "command-example.json",
+          "sha256": "be3b9afe0b285334aeb1f98acc7ed614284f7f5561b8d8e0e2a801b8d0b328bc",
+          "bytes": 23384,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/command-example.json"
+        },
+        {
+          "path": "registry/aria-nova/examples/command-example.tsx",
+          "sha256": "1103aa302dc7a9b32782918e28edf44e1c16ca054f31ce64686ea61d6c6b90b2",
+          "bytes": 21867,
+          "origin": "command-example.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
       "name": "command",
       "version": "4.23.0",
       "dir": "shadcn-aria/command@4.23.0",
@@ -2454,6 +2811,9 @@
           "bytes": 6554,
           "origin": "command.json#files[0].content"
         }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/command-example"
       ]
     },
     {
@@ -2649,7 +3009,9 @@
       "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/dropdown-menu.json",
       "license": "MIT",
       "direct": true,
-      "slots": [],
+      "slots": [
+        "components.menu"
+      ],
       "dependencies": [
         "cn"
       ],
@@ -2671,7 +3033,8 @@
       "requiredBy": [
         "@shadcn-aria/dashboard-01",
         "@shadcn-aria/sidebar-07",
-        "@shadcn-aria/sidebar-15"
+        "@shadcn-aria/sidebar-15",
+        "@shadcn-aria/table-example"
       ]
     },
     {
@@ -2683,7 +3046,9 @@
       "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/empty-example.json",
       "license": "MIT",
       "direct": true,
-      "slots": [],
+      "slots": [
+        "sections.boundary-message"
+      ],
       "registryDependencies": [
         "button",
         "empty",
@@ -2768,13 +3133,64 @@
         }
       ],
       "requiredBy": [
+        "@shadcn-aria/alert-example",
+        "@shadcn-aria/aspect-ratio-example",
+        "@shadcn-aria/carousel-example",
+        "@shadcn-aria/command-example",
         "@shadcn-aria/empty-example",
+        "@shadcn-aria/field-example",
         "@shadcn-aria/item-example",
         "@shadcn-aria/message-example",
         "@shadcn-aria/message-scroller-example",
+        "@shadcn-aria/pagination-example",
+        "@shadcn-aria/progress-example",
         "@shadcn-aria/questionnaire-example",
         "@shadcn-aria/separator-example",
-        "@shadcn-aria/sonner-example"
+        "@shadcn-aria/sheet-example",
+        "@shadcn-aria/sonner-example",
+        "@shadcn-aria/table-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "field-example",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/field-example@4.23.0",
+      "type": "registry:example",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/field-example.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.settings"
+      ],
+      "registryDependencies": [
+        "badge",
+        "checkbox",
+        "field",
+        "input",
+        "input-otp",
+        "native-select",
+        "radio-group",
+        "select",
+        "slider",
+        "switch",
+        "textarea",
+        "example"
+      ],
+      "hash": "sha256:a9190bd125764398d1bdaad5dcfd07a08ea3c0d79791e16b600804f14196a3df",
+      "files": [
+        {
+          "path": "field-example.json",
+          "sha256": "efed0dc2c979fb0160e4f099729f6b97f4dd97215f704a8092829bf81b9315db",
+          "bytes": 37274,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/field-example.json"
+        },
+        {
+          "path": "registry/aria-nova/examples/field-example.tsx",
+          "sha256": "d17f79a8b4635228d06142e0d1f6737ab8ff7655a9e27bbb3992244d015be9ac",
+          "bytes": 35117,
+          "origin": "field-example.json#files[0].content"
+        }
       ]
     },
     {
@@ -2808,6 +3224,12 @@
           "bytes": 6418,
           "origin": "field.json#files[0].content"
         }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/field-example",
+        "@shadcn-aria/pagination-example",
+        "@shadcn-aria/progress-example",
+        "@shadcn-aria/sheet-example"
       ]
     },
     {
@@ -2844,10 +3266,44 @@
         }
       ],
       "requiredBy": [
+        "@shadcn-aria/combobox",
         "@shadcn-aria/command",
         "@shadcn-aria/empty-example",
         "@shadcn-aria/message-scroller-example",
         "@shadcn-aria/select"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "input-otp",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/input-otp@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/input-otp.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "dependencies": [
+        "cn",
+        "input-otp"
+      ],
+      "hash": "sha256:c180b52f17628ae072c5f9f74a76ed1612a762286c518b1e94800b94e5973ce3",
+      "files": [
+        {
+          "path": "input-otp.json",
+          "sha256": "c0eeee00ff9f526288dada9539267339b8a893d40ab69099fafd790f09630415",
+          "bytes": 3428,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/input-otp.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/input-otp.tsx",
+          "sha256": "800f2398fc404a1fa529d7af8c7647e22553205c482a15bc0c26775f145a6465",
+          "bytes": 2732,
+          "origin": "input-otp.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/field-example"
       ]
     },
     {
@@ -2880,8 +3336,11 @@
       ],
       "requiredBy": [
         "@shadcn-aria/dashboard-01",
+        "@shadcn-aria/field-example",
         "@shadcn-aria/input-group",
-        "@shadcn-aria/sidebar"
+        "@shadcn-aria/sheet-example",
+        "@shadcn-aria/sidebar",
+        "@shadcn-aria/table-example"
       ]
     },
     {
@@ -2893,7 +3352,20 @@
       "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/item-example.json",
       "license": "MIT",
       "direct": true,
-      "slots": [],
+      "slots": [
+        "sections.activity-feed",
+        "sections.link-index",
+        "sections.specimen-asset-grid",
+        "sections.specimen-color-ramp",
+        "sections.specimen-icon-grid",
+        "sections.specimen-motion-player",
+        "sections.specimen-radius-ladder",
+        "sections.specimen-rich-passage",
+        "sections.specimen-spacing-ladder",
+        "sections.specimen-swatch",
+        "sections.specimen-type-ladder",
+        "sections.status-list"
+      ],
       "registryDependencies": [
         "button",
         "item",
@@ -2947,7 +3419,8 @@
         }
       ],
       "requiredBy": [
-        "@shadcn-aria/item-example"
+        "@shadcn-aria/item-example",
+        "@shadcn-aria/progress-example"
       ]
     },
     {
@@ -3213,6 +3686,107 @@
     },
     {
       "registry": "shadcn-aria",
+      "name": "native-select",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/native-select@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/native-select.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:05b2276e94228679e0394e4d74923edecfa36e26bd2b7ef5a20e1314487e4643",
+      "files": [
+        {
+          "path": "native-select.json",
+          "sha256": "a574e6efc4cec63d09634a5b0ddcbdd9c77541fe7a79add1ef3b96abbcf652ef",
+          "bytes": 2944,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/native-select.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/native-select.tsx",
+          "sha256": "17552c2df3b8f5ee44675979c3c29a02f48454e9204f2a02b64f4b7f28bdfc2c",
+          "bytes": 2312,
+          "origin": "native-select.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/field-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "pagination-example",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/pagination-example@4.23.0",
+      "type": "registry:example",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/pagination-example.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.pagination"
+      ],
+      "registryDependencies": [
+        "field",
+        "pagination",
+        "select",
+        "example"
+      ],
+      "hash": "sha256:612ffa3486e6247b68a086d515842c422edee42811c8fcfb59afa8ffd45825ea",
+      "files": [
+        {
+          "path": "pagination-example.json",
+          "sha256": "3c206891faa3cad052a1b54f4192984ac9ef7e4d42c283b9b043f4a14b32e882",
+          "bytes": 4094,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/pagination-example.json"
+        },
+        {
+          "path": "registry/aria-nova/examples/pagination-example.tsx",
+          "sha256": "62d831024ff24fda0832faa9f99819d89bf7a0663a265449cabb9e1c16a8626e",
+          "bytes": 3503,
+          "origin": "pagination-example.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "pagination",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/pagination@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/pagination.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "registryDependencies": [
+        "button"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:27c357c02a9c0958589ef3d8bfee7c5358745dd8fdaae8cbea30353d7ae0529e",
+      "files": [
+        {
+          "path": "pagination.json",
+          "sha256": "d5968105e2d49310e3696e664b18adcba81b711fa51044073767c1298c92d8c8",
+          "bytes": 4157,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/pagination.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/pagination.tsx",
+          "sha256": "ed52b5520bd5c42310e99c38470cff17bc6f14467170f92ceb67e3b1d5fae072",
+          "bytes": 3362,
+          "origin": "pagination.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/pagination-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
       "name": "popover",
       "version": "4.23.0",
       "dir": "shadcn-aria/popover@4.23.0",
@@ -3241,6 +3815,76 @@
       ],
       "requiredBy": [
         "@shadcn-aria/sidebar-15"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "progress-example",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/progress-example@4.23.0",
+      "type": "registry:example",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/progress-example.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.usage"
+      ],
+      "registryDependencies": [
+        "field",
+        "item",
+        "progress",
+        "slider",
+        "example"
+      ],
+      "hash": "sha256:644e55e1efbcaa96af93eb5c4ce2b66718533f91e9798e295f81e519e1375cdd",
+      "files": [
+        {
+          "path": "progress-example.json",
+          "sha256": "bdfc9cf1615fdeb5864e2a3ce32a56bf5b690b1f2e275338b1dfa35f4ebc1f19",
+          "bytes": 3904,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/progress-example.json"
+        },
+        {
+          "path": "registry/aria-nova/examples/progress-example.tsx",
+          "sha256": "6aba44bf397de0eecf44e69ef5538f2102ea3c4244d799516cac8c847e3763a8",
+          "bytes": 3279,
+          "origin": "progress-example.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "progress",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/progress@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/progress.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.meter",
+        "components.progress-bar"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:2ef007dff770ff504801d9f844baadf008cef0fafafe86b54282d9753ce94a55",
+      "files": [
+        {
+          "path": "progress.json",
+          "sha256": "940d2a2207703f3c4143da3f5da24a67b40a2357410d41a94730d6ee8c975e1a",
+          "bytes": 3927,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/progress.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/progress.tsx",
+          "sha256": "934c813cad8a74564c327b2ffe21d1b850b9956bc973b68ccda9144e2c474541",
+          "bytes": 3184,
+          "origin": "progress.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/progress-example"
       ]
     },
     {
@@ -3315,6 +3959,40 @@
     },
     {
       "registry": "shadcn-aria",
+      "name": "radio-group",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/radio-group@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/radio-group.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.radio-group"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:7d37385e5e4da5aeb98dd7e94e7d94fc0b94e9edb2a23dcaa3bbfd4e90c50127",
+      "files": [
+        {
+          "path": "radio-group.json",
+          "sha256": "f9908946cb69e727eb6dafecd89b9bf54e2d396b8767df322884514616240b24",
+          "bytes": 3040,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/radio-group.json"
+        },
+        {
+          "path": "registry/aria-nova/ui/radio-group.tsx",
+          "sha256": "b6f6a1176dd35655e2d7e53861e9a4b45d113ec7a31c2b20db9aede9349b719d",
+          "bytes": 2409,
+          "origin": "radio-group.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/field-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
       "name": "scroll-area",
       "version": "4.23.0",
       "dir": "shadcn-aria/scroll-area@4.23.0",
@@ -3375,7 +4053,10 @@
       ],
       "requiredBy": [
         "@shadcn-aria/calendar",
-        "@shadcn-aria/dashboard-01"
+        "@shadcn-aria/dashboard-01",
+        "@shadcn-aria/field-example",
+        "@shadcn-aria/pagination-example",
+        "@shadcn-aria/table-example"
       ]
     },
     {
@@ -3439,6 +4120,7 @@
         }
       ],
       "requiredBy": [
+        "@shadcn-aria/button-group",
         "@shadcn-aria/dashboard-01",
         "@shadcn-aria/field",
         "@shadcn-aria/item",
@@ -3447,6 +4129,42 @@
         "@shadcn-aria/sidebar-07",
         "@shadcn-aria/sidebar-11",
         "@shadcn-aria/sidebar-15"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sheet-example",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/sheet-example@4.23.0",
+      "type": "registry:example",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/sheet-example.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "frames.inspector",
+        "frames.sheet"
+      ],
+      "registryDependencies": [
+        "button",
+        "field",
+        "input",
+        "sheet",
+        "example"
+      ],
+      "hash": "sha256:4adf6955838a2ea628ad3ca6bf4cd5892690bde7ee6e7796d24802e07ab9f8e4",
+      "files": [
+        {
+          "path": "registry/aria-nova/examples/sheet-example.tsx",
+          "sha256": "f71e967df9302ff65c440c92754f3a6ba1ff4ec635eefd976ba3a70446b06dbd",
+          "bytes": 4558,
+          "origin": "sheet-example.json#files[0].content"
+        },
+        {
+          "path": "sheet-example.json",
+          "sha256": "e521aaf1b59f2955bee5df74600ea4fbb7a75e7404facfd41c04af7c78f9dc3c",
+          "bytes": 5141,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/sheet-example.json"
+        }
       ]
     },
     {
@@ -3482,6 +4200,7 @@
       ],
       "requiredBy": [
         "@shadcn-aria/dashboard-01",
+        "@shadcn-aria/sheet-example",
         "@shadcn-aria/sidebar"
       ]
     },
@@ -3761,6 +4480,41 @@
     },
     {
       "registry": "shadcn-aria",
+      "name": "slider",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/slider@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/slider.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.slider"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:53d4b6ce82662fc0e9081b5a40d2eeb554796628188b0ea4e94d17a5f6fdb50b",
+      "files": [
+        {
+          "path": "registry/aria-nova/ui/slider.tsx",
+          "sha256": "456c0667a7fa6b2de3d666c5dc3af795c5e9700efccf46e94640016d55406e23",
+          "bytes": 1960,
+          "origin": "slider.json#files[0].content"
+        },
+        {
+          "path": "slider.json",
+          "sha256": "ddfccff43753a6e1d55555c49c21e30cc2f3c756b5d4cf688a27b943ef0dc463",
+          "bytes": 2582,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/slider.json"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/field-example",
+        "@shadcn-aria/progress-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
       "name": "sonner-example",
       "version": "4.23.0",
       "dir": "shadcn-aria/sonner-example@4.23.0",
@@ -3885,6 +4639,53 @@
           "bytes": 3328,
           "origin": "https://ui.shadcn.com/r/styles/aria-nova/switch.json"
         }
+      ],
+      "requiredBy": [
+        "@shadcn-aria/field-example"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "table-example",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/table-example@4.23.0",
+      "type": "registry:example",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/table-example.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.access-matrix",
+        "sections.audit-log",
+        "sections.data-grid",
+        "sections.data-table",
+        "sections.specimen-copy-in-context",
+        "sections.specimen-frame-viewports",
+        "sections.specimen-page-viewports",
+        "sections.specimen-section-viewports",
+        "sections.specimen-variant-matrix"
+      ],
+      "registryDependencies": [
+        "button",
+        "dropdown-menu",
+        "input",
+        "select",
+        "table",
+        "example"
+      ],
+      "hash": "sha256:8c44bc07b38ec55da8731ae1ad629f3267547856a3e36a926468367c656ec7de",
+      "files": [
+        {
+          "path": "registry/aria-nova/examples/table-example.tsx",
+          "sha256": "1f4501f1d6093962fb6c510b3c7b8a1dbbdd370e3b2b881e1b06dbf768df33d5",
+          "bytes": 14382,
+          "origin": "table-example.json#files[0].content"
+        },
+        {
+          "path": "table-example.json",
+          "sha256": "5e3f80c2f02d19e2c2c9e1256453abe26b27dec6f580b075bbddca76e9518ed9",
+          "bytes": 15545,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/table-example.json"
+        }
       ]
     },
     {
@@ -3916,7 +4717,8 @@
         }
       ],
       "requiredBy": [
-        "@shadcn-aria/dashboard-01"
+        "@shadcn-aria/dashboard-01",
+        "@shadcn-aria/table-example"
       ]
     },
     {
@@ -3980,6 +4782,7 @@
         }
       ],
       "requiredBy": [
+        "@shadcn-aria/field-example",
         "@shadcn-aria/input-group"
       ]
     },
@@ -6172,6 +6975,162 @@
     },
     {
       "registry": "tailark-oss",
+      "name": "dusk-button",
+      "version": "8139698",
+      "dir": "tailark-oss/dusk-button@8139698",
+      "type": "registry:ui",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/dusk/ui/button.tsx",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "hash": "sha256:43948f654ac321bf3325048ab295ce9a4b16c1018f5c07bf2cb45191cd2eec8d",
+      "files": [
+        {
+          "path": "dusk/ui/button.tsx",
+          "sha256": "92a4684551f3e00f6e7a142a3c335afeadf7c17658801c18b78228aba506a5d6",
+          "bytes": 2479,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/dusk/ui/button.tsx"
+        }
+      ],
+      "requiredBy": [
+        "@tailark-oss/dusk-hero-section-4",
+        "@tailark-oss/dusk-hero-section-4-header"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "dusk-hero-section-4-header",
+      "version": "8139698",
+      "dir": "tailark-oss/dusk-hero-section-4-header@8139698",
+      "type": "registry:component",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/dusk/blocks/hero-section/four/header.tsx",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "registryDependencies": [
+        "@tailark-oss/dusk-button",
+        "@tailark-oss/dusk-logo"
+      ],
+      "hash": "sha256:14649fde1469e18b6fb8c1483755f5337ec0afed31f8d52fe36a9557e562a0ac",
+      "files": [
+        {
+          "path": "dusk/blocks/hero-section/four/header.tsx",
+          "sha256": "74a83f1d518a29b810bfd8a35b3023fed9337ac06cc5724e5868ba6dc99bce95",
+          "bytes": 6099,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/dusk/blocks/hero-section/four/header.tsx"
+        }
+      ],
+      "requiredBy": [
+        "@tailark-oss/dusk-hero-section-4"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "dusk-hero-section-4-logo-cloud",
+      "version": "8139698",
+      "dir": "tailark-oss/dusk-hero-section-4-logo-cloud@8139698",
+      "type": "registry:component",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/dusk/blocks/hero-section/four/logo-cloud.tsx",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "registryDependencies": [
+        "@tailark-oss/core-spotify",
+        "@tailark-oss/core-vercel",
+        "@tailark-oss/core-supabase",
+        "@tailark-oss/core-hulu",
+        "@tailark-oss/core-bolt",
+        "@tailark-oss/core-beacon"
+      ],
+      "hash": "sha256:4fce61d7c59d7be4beee1285ca4b28b2b6dffbe0c824b955132d6f83e2753477",
+      "files": [
+        {
+          "path": "dusk/blocks/hero-section/four/logo-cloud.tsx",
+          "sha256": "328fb22906e55f8e9940a219d6f9385d026aac6b58c443b5b4f613346a7e1eca",
+          "bytes": 1897,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/dusk/blocks/hero-section/four/logo-cloud.tsx"
+        }
+      ],
+      "requiredBy": [
+        "@tailark-oss/dusk-hero-section-4"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "dusk-hero-section-4",
+      "version": "8139698",
+      "dir": "tailark-oss/dusk-hero-section-4@8139698",
+      "type": "registry:block",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/dusk/blocks/hero-section/four/hero-section.tsx",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.hero"
+      ],
+      "registryDependencies": [
+        "@tailark-oss/dusk-hero-section-4-header",
+        "@tailark-oss/dusk-button",
+        "@tailark-oss/dusk-kbd",
+        "@tailark-oss/dusk-hero-section-4-logo-cloud"
+      ],
+      "hash": "sha256:59b31624923bd1b75ec95525c0b91189e9cd1189169c407daafdcec6bec2d282",
+      "files": [
+        {
+          "path": "dusk/blocks/hero-section/four/hero-section.tsx",
+          "sha256": "547ebb62aef89111bae1a7ae3bdc415000fc1e36bfee6d9cdb631be36636f2ec",
+          "bytes": 4230,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/dusk/blocks/hero-section/four/hero-section.tsx"
+        }
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "dusk-kbd",
+      "version": "8139698",
+      "dir": "tailark-oss/dusk-kbd@8139698",
+      "type": "registry:ui",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/dusk/ui/kdb.tsx",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "hash": "sha256:83974bb3eba9a6f51d35aa0e22d3377e6747d0350a9c970313e47501f0c3bc89",
+      "files": [
+        {
+          "path": "dusk/ui/kdb.tsx",
+          "sha256": "027984987b09864cd2ded6fca2585ae3f9f68d10d4d1d248b54f77fbe88b8cc5",
+          "bytes": 915,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/dusk/ui/kdb.tsx"
+        }
+      ],
+      "requiredBy": [
+        "@tailark-oss/dusk-hero-section-4"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "dusk-logo",
+      "version": "8139698",
+      "dir": "tailark-oss/dusk-logo@8139698",
+      "type": "registry:ui",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/dusk/ui/logo.tsx",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "hash": "sha256:ce45f73b0834079d6a3628a74757a26d5d43466c53e9b91c6b2efcfae4b4806f",
+      "files": [
+        {
+          "path": "dusk/ui/logo.tsx",
+          "sha256": "ffaa32614c24ec9af7bb426e6f65882514e787f6b7eca7d66531d358229727f7",
+          "bytes": 6603,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/dusk/ui/logo.tsx"
+        }
+      ],
+      "requiredBy": [
+        "@tailark-oss/dusk-hero-section-4-header"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
       "name": "mist-accordion",
       "version": "8139698",
       "dir": "tailark-oss/mist-accordion@8139698",
@@ -6807,6 +7766,28 @@
       ]
     },
     {
+      "registry": "tailark-oss",
+      "name": "veil-team-1",
+      "version": "8139698",
+      "dir": "tailark-oss/veil-team-1@8139698",
+      "type": "registry:block",
+      "sourceUrl": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/veil/blocks/team/one.tsx",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.people"
+      ],
+      "hash": "sha256:1577dbd45fca49a6e075db84fae989ea94af4d3b184c61a920c81a4f28191eec",
+      "files": [
+        {
+          "path": "veil/blocks/team/one.tsx",
+          "sha256": "2c60911b61a8ee9afd47461e1dd54ffb1e311bc9b028031a6e7d9c45a98edcc9",
+          "bytes": 3071,
+          "origin": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/veil/blocks/team/one.tsx"
+        }
+      ]
+    },
+    {
       "registry": "tailwindcss-typography",
       "name": "typography",
       "version": "0.5.20",
@@ -6816,7 +7797,9 @@
       "license": "MIT",
       "direct": true,
       "slots": [
-        "sections.legal-prose"
+        "sections.legal-prose",
+        "sections.article",
+        "sections.sectioned-document"
       ],
       "hash": "sha256:3db9d6b777a0e6d630effed7b9b13eed549194a559eaa0f50ed31347022d2cd5",
       "files": [
@@ -6857,20 +7840,28 @@
       "reason": "registry @reui is approved-alternate only and not in this unit's registry list"
     },
     {
+      "ref": "@tailark-oss/core-beacon",
+      "reason": "third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/dusk-hero-section-4-logo-cloud)"
+    },
+    {
+      "ref": "@tailark-oss/core-bolt",
+      "reason": "third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/dusk-hero-section-4-logo-cloud)"
+    },
+    {
       "ref": "@tailark-oss/core-hulu",
-      "reason": "third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-logo-cloud-1)"
+      "reason": "third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/dusk-hero-section-4-logo-cloud); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-logo-cloud-1)"
     },
     {
       "ref": "@tailark-oss/core-spotify",
-      "reason": "third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-hero-section-1); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-logo-cloud-1); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-pricing-1)"
+      "reason": "third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/dusk-hero-section-4-logo-cloud); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-hero-section-1); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-logo-cloud-1); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-pricing-1)"
     },
     {
       "ref": "@tailark-oss/core-supabase",
-      "reason": "third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-hero-section-1); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-logo-cloud-1); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-pricing-1)"
+      "reason": "third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/dusk-hero-section-4-logo-cloud); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-hero-section-1); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-logo-cloud-1); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-pricing-1)"
     },
     {
       "ref": "@tailark-oss/core-vercel",
-      "reason": "third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-hero-section-1); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-logo-cloud-1); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-pricing-1)"
+      "reason": "third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/dusk-hero-section-4-logo-cloud); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-hero-section-1); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-logo-cloud-1); third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos (required by @tailark-oss/mist-pricing-1)"
     },
     {
       "ref": "@tailwindcss/typography",

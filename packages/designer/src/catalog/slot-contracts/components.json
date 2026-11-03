@@ -2134,6 +2134,12 @@
     },
     "references": [
       {
+        "registry": "shadcn-aria",
+        "item": "combobox",
+        "version": "4.23.0",
+        "hash": "sha256:b00108e37b6d691e0735dae4460702807fa27316fb880afa303a184737a1d9ec"
+      },
+      {
         "registry": "shadcn",
         "item": "combobox",
         "version": "4.23.0",
@@ -3168,159 +3174,59 @@
         "description": "member axis: none | single | multiple"
       },
       {
-        "name": "themes.border",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.input",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-border",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.radius",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.shadow",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.spacing",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.destructive",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.background",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary",
-        "kind": "theme",
-        "required": false
-      },
-      {
         "name": "themes.accent",
         "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.muted",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.primary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary-foreground",
-        "kind": "theme",
-        "required": false
+        "required": true
       },
       {
         "name": "themes.accent-foreground",
         "kind": "theme",
-        "required": false
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
       },
       {
         "name": "themes.muted-foreground",
         "kind": "theme",
-        "required": false
+        "required": true
       },
       {
-        "name": "themes.sidebar-foreground",
+        "name": "themes.popover",
         "kind": "theme",
-        "required": false
+        "required": true
       },
       {
-        "name": "themes.sidebar-primary-foreground",
+        "name": "themes.popover-foreground",
         "kind": "theme",
-        "required": false
+        "required": true
       },
       {
-        "name": "themes.sidebar-accent-foreground",
+        "name": "themes.radius",
         "kind": "theme",
-        "required": false
+        "required": true
       },
       {
-        "name": "themes.font-sans",
+        "name": "themes.shadow",
         "kind": "theme",
-        "required": false
+        "required": true
       },
       {
-        "name": "themes.font-heading",
+        "name": "themes.spacing",
         "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-mono",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.tracking-tight",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.ring",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-ring",
-        "kind": "theme",
-        "required": false
+        "required": true
       },
       {
         "name": "assets.icon-check",
@@ -3340,7 +3246,14 @@
       "members.mode": "closed",
       "root": "rac:Menu"
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "dropdown-menu",
+        "version": "4.23.0",
+        "hash": "sha256:141fa0475d6b5895cdd74bf917e260727847ab8535a52993e4dd161691a64953"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.components",
     "specimenKind": "visual"
   },
@@ -3369,6 +3282,11 @@
         "required": true
       },
       {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
         "name": "themes.primary",
         "kind": "theme",
         "required": true
@@ -3391,6 +3309,12 @@
       "root": "rac:Meter"
     },
     "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "progress",
+        "version": "4.23.0",
+        "hash": "sha256:2ef007dff770ff504801d9f844baadf008cef0fafafe86b54282d9753ce94a55"
+      },
       {
         "registry": "shadcn",
         "item": "progress",
@@ -3892,6 +3816,11 @@
         "required": true
       },
       {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
         "name": "themes.primary",
         "kind": "theme",
         "required": true
@@ -3913,6 +3842,12 @@
       "root": "rac:ProgressBar"
     },
     "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "progress",
+        "version": "4.23.0",
+        "hash": "sha256:2ef007dff770ff504801d9f844baadf008cef0fafafe86b54282d9753ce94a55"
+      },
       {
         "registry": "shadcn",
         "item": "progress",
@@ -3990,6 +3925,12 @@
       "root": "rac:RadioGroup"
     },
     "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "radio-group",
+        "version": "4.23.0",
+        "hash": "sha256:7d37385e5e4da5aeb98dd7e94e7d94fc0b94e9edb2a23dcaa3bbfd4e90c50127"
+      },
       {
         "registry": "shadcn",
         "item": "radio-group",
@@ -4386,6 +4327,12 @@
       "root": "rac:Slider"
     },
     "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "slider",
+        "version": "4.23.0",
+        "hash": "sha256:53d4b6ce82662fc0e9081b5a40d2eeb554796628188b0ea4e94d17a5f6fdb50b"
+      },
       {
         "registry": "shadcn",
         "item": "slider",
@@ -5108,6 +5055,12 @@
       "root": "rac:Toolbar"
     },
     "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "button-group",
+        "version": "4.23.0",
+        "hash": "sha256:213335bc93133b79d65ddcec9188e2ab5dbbf25f289e4679d549b412ebcd780e"
+      },
       {
         "registry": "shadcn",
         "item": "button-group",
