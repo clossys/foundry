@@ -5,6 +5,8 @@
  * on. This meta-check fails when:
  *
  *   unenforced           a rule has `status: "unenforced"`, or claims enforcement with no check;
+ *   unwired              a rule has `status: "pending-wire"`: its check is being built on the branch
+ *                        named in `pending_wire` and is not wired here yet (still a failing rule);
  *   unknown-check        a listed check names no package script or no check:studio sub-check;
  *   unreachable          a listed check is not reachable from root `check`/`test`
  *                        (the scripts/check-orphan-checks.mjs graph);
@@ -58,7 +60,8 @@ export function shapeFindings(doc) {
     seen.add(id);
     if (!oneLine(row?.owner_words?.quote) || row.owner_words.quote.length > 200) bad(id, "owner_words.quote must be one short line");
     if (!DATE.test(row?.owner_words?.date ?? "")) bad(id, "owner_words.date must be YYYY-MM-DD");
-    if (!["enforced", "unenforced"].includes(row?.status)) bad(id, 'status must be "enforced" or "unenforced"');
+    if (!["enforced", "unenforced", "pending-wire"].includes(row?.status)) bad(id, 'status must be "enforced", "unenforced" or "pending-wire"');
+    if (row?.status === "pending-wire" && (!oneLine(row?.pending_wire?.check) || !oneLine(row?.pending_wire?.branch))) bad(id, "a pending-wire rule needs pending_wire { check, branch }");
     for (const key of ["checks", "related"]) if (row?.[key] !== undefined && (!Array.isArray(row[key]) || row[key].some(ref => typeof ref !== "string"))) bad(id, `${key} must be a list of check references`);
     if (row?.status === "enforced" && typeof row?.fixture !== "string") bad(id, "an enforced rule needs a fixture path");
     if (row?.status === "unenforced" && !oneLine(row?.note)) bad(id, "an unenforced rule needs a one-line note saying what is missing");
@@ -126,6 +129,12 @@ export async function ruleFindings(root, { timeoutMs = 600_000, log = () => {} }
       if (!wired) add("unreachable", row.id, `${ref} is not reachable from root check or test`);
     }
     if (row.status === "unenforced") { add("unenforced", row.id, row.note ?? "no check enforces this rule"); continue; }
+    if (row.status === "pending-wire") {
+      const { check, branch } = row.pending_wire;
+      const present = [...packages].filter(([, manifest]) => typeof manifest?.scripts?.[check] === "string").map(([dir]) => dir);
+      add("unwired", row.id, `${check} is pending wire from ${branch}; ${present.length ? `it now exists in ${present.join(", ")}: list it in checks with a fixture and set status enforced` : "it is not on this branch yet"}`);
+      continue;
+    }
     if (!(row.checks ?? []).length) { add("unenforced", row.id, "status is enforced but no check is listed"); continue; }
     let held = true;
     const fixtureRoot = resolve(root, row.fixture);

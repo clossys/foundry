@@ -40,9 +40,10 @@ test("shape: ids, owner words, status and the note an unenforced rule needs", ()
     { id: "R-NO-DATE", owner_words: { quote: "q", date: "Nov 3" }, status: "unenforced", note: "missing" },
     { id: "R-NO-NOTE", owner_words: words, status: "unenforced" },
     { id: "R-NO-FIXTURE", owner_words: words, status: "enforced", checks: [".#check:a"] },
+    { id: "R-NO-WIRE", owner_words: words, status: "pending-wire", note: "no branch named", pending_wire: { check: "check:x" } },
     { id: "R-BAD-RUN", owner_words: words, status: "unenforced", note: "n", fixture_runs: [{ check: ".#check:a", cwd: ".", run: "x", expect: "(" }] },
   ] }).map(finding => finding.id);
-  assert.deepEqual(found, ["bad id", "R-NO-DATE", "R-NO-NOTE", "R-NO-FIXTURE", "R-BAD-RUN"]);
+  assert.deepEqual(found, ["bad id", "R-NO-DATE", "R-NO-NOTE", "R-NO-FIXTURE", "R-NO-WIRE", "R-BAD-RUN"]);
   assert.deepEqual(shapeFindings({}).map(finding => finding.rule), ["shape"]);
 });
 
@@ -55,9 +56,13 @@ test("an enforced rule whose check fails on its fixture holds; unenforced, passi
     { id: "R-SILENT", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs", { expect: "^a different finding" })] },
     { id: "R-OPEN", owner_words: words, status: "unenforced", note: "a check that fails on its fixture does not lift unenforced", checks: [".#check:a"], fixture: "rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs")] },
     { id: "R-UNKNOWN", owner_words: words, status: "unenforced", note: "names a missing script", related: [".#check:missing"] },
+    { id: "R-PENDING", owner_words: words, status: "pending-wire", note: "built elsewhere", pending_wire: { check: "check:later", branch: "claude/later" } },
+    { id: "R-LANDED", owner_words: words, status: "pending-wire", note: "landed, not wired", pending_wire: { check: "check:b", branch: "claude/b" } },
   ]);
   const result = await ruleFindings(root);
-  assert.deepEqual(kinds(result), ["fixture-not-detected R-SILENT", "fixture-passed R-PASSES", "fixture-unrelated R-UNRELATED", "unenforced R-OPEN", "unenforced R-UNKNOWN", "unknown-check R-UNKNOWN", "unreachable R-UNWIRED"]);
+  assert.deepEqual(kinds(result), ["fixture-not-detected R-SILENT", "fixture-passed R-PASSES", "fixture-unrelated R-UNRELATED", "unenforced R-OPEN", "unenforced R-UNKNOWN", "unknown-check R-UNKNOWN", "unreachable R-UNWIRED", "unwired R-LANDED", "unwired R-PENDING"]);
+  assert.match(result.findings.find(finding => finding.id === "R-PENDING").message, /check:later is pending wire from claude\/later; it is not on this branch yet/);
+  assert.match(result.findings.find(finding => finding.id === "R-LANDED").message, /it now exists in \.: list it in checks/);
   assert.equal(result.enforced, 2, "R-HOLDS and R-UNWIRED fail on their fixtures; R-UNWIRED is still reported unreachable");
 });
 

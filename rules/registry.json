@@ -353,6 +353,32 @@
       },
       "status": "unenforced",
       "note": "Every L3 slot is pinned or marked not-needed: check-slot-state lands with W4 and is not on this base."
+    },
+    {
+      "id": "R-COMPILE-PURE",
+      "owner_words": {
+        "quote": "the rendering itself is just the same deterministic plumbing that works everytime without llm token spend",
+        "date": "2026-11-03"
+      },
+      "status": "pending-wire",
+      "pending_wire": {
+        "check": "check:compile-pure",
+        "branch": "claude/compile-pure"
+      },
+      "note": "compile reads only ia.json, the content map, pins and pinned candidate files, offline, byte-identical across runs; the check is built on claude/compile-pure."
+    },
+    {
+      "id": "R-DECISIONS-BY-CLI",
+      "owner_words": {
+        "quote": "process driven by code and identifiers so that we decide which candidate goes in which slot",
+        "date": "2026-11-03"
+      },
+      "status": "pending-wire",
+      "pending_wire": {
+        "check": "check:decisions",
+        "branch": "claude/pin-cli"
+      },
+      "note": "Slot decisions (pin, not-needed) are written only by the clossys pin CLI; the check is built on claude/pin-cli."
     }
   ],
   "exemptions": [
